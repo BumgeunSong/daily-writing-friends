@@ -6,20 +6,24 @@ import FeedPage from './components/FeedPage';
 import PostCreationPage from './components/PostCreationPage';
 import PostDetailPage from './components/PostDetailPage';
 import PrivateRoute from './components/PrivateRoute';
+import Header from './components/Header';
 
 function App() {
   const { currentUser } = useAuth();
 
   return (
-    <Switch>
-      <Route exact path="/login">
-        {!currentUser ? <LoginPage /> : <Redirect to="/feed" />}
-      </Route>
-      <PrivateRoute exact path="/feed" component={FeedPage} />
-      <PrivateRoute exact path="/create" component={PostCreationPage} />
-      <PrivateRoute exact path="/post/:id" component={PostDetailPage} />
-      <Redirect to="/feed" />
-    </Switch>
+    <>
+      <Header />
+      <Switch>
+        <Route exact path="/login">
+          {!currentUser ? <LoginPage /> : <Redirect to="/feed" />}
+        </Route>
+        <PrivateRoute exact path="/feed" component={FeedPage} />
+        <PrivateRoute exact path="/create" component={PostCreationPage} />
+        <PrivateRoute exact path="/post/:id" component={PostDetailPage} />
+        <Redirect to="/feed" />
+      </Switch>
+    </>
   );
 }
 
