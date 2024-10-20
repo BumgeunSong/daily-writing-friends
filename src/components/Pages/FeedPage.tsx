@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { firestore } from '../../firebase';
 import { collection, query, orderBy, limit, onSnapshot, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import { Post } from '../../types/Posts';
-
+import LogoutButton from './LogoutButton';
 const FeedPage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const navigate = useNavigate();
@@ -41,6 +41,7 @@ const FeedPage: React.FC = () => {
 
   return (
     <div>
+      <LogoutButton />
       <h1>Feed</h1>
       {posts.map((post) => (
         <div key={post.id} onClick={() => navigate(`/post/${post.id}`)}>
