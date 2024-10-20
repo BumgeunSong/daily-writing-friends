@@ -2,10 +2,10 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
-import LoginPage from './components/LoginPage';
-import FeedPage from './components/FeedPage';
-import PostCreationPage from './components/PostCreationPage';
-import PostDetailPage from './components/PostDetailPage';
+import LoginPage from './components/Pages/LoginPage';
+import FeedPage from './components/Pages/FeedPage';
+import PostCreationPage from './components/Pages/PostCreationPage';
+import PostDetailPage from './components/Pages/PostDetailPage';
 
 const App: React.FC = () => {
   const { currentUser } = useAuth();

@@ -1,6 +1,6 @@
 // src/components/LoginPage.tsx
 import React from 'react';
-import { signInWithGoogle } from '../firebase';
+import { signInWithGoogle } from '../../firebase';
 
 const LoginPage: React.FC = () => {
   const handleLogin = async () => {
