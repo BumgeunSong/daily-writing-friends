@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { firestore } from '../../firebase';
 import { collection, query, orderBy, limit, onSnapshot, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import { Post } from '../../types/Posts';
-import LogoutButton from './LogoutButton';
 import PostCard from './PostCard';
 import AppHeader from './AppHeader';
 import { useNavigate } from 'react-router-dom';

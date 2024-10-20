@@ -6,13 +6,18 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Post } from '@/types/Posts'
+import { useNavigate } from 'react-router-dom'
 
 interface PostCardProps {
     post: Post;
 }
   
 const PostCard: React.FC<PostCardProps> = ({ post }) => {
-  const [expanded, setExpanded] = useState(false)
+const navigate = useNavigate();
+
+  const handleCardClick = () => {
+    navigate(`/post/${post.id}`)
+  }
 
   return (
     <Card className="mb-4">
@@ -32,28 +37,14 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className={expanded ? '' : 'line-clamp-3'}>
-          <ReactMarkdown className="prose dark:prose-invert">{post.content}</ReactMarkdown>
+      <CardContent 
+        onClick={handleCardClick}
+        className="cursor-pointer hover:bg-muted transition-colors duration-200"
+      >
+        <div className="line-clamp-3">
+          <ReactMarkdown>{post.content}</ReactMarkdown>
         </div>
       </CardContent>
-      <CardFooter>
-        <Button
-          variant="ghost"
-          className="w-full"
-          onClick={() => setExpanded(!expanded)}
-        >
-          {expanded ? (
-            <>
-              Show Less <ChevronUp className="ml-2 h-4 w-4" />
-            </>
-          ) : (
-            <>
-              Show More <ChevronDown className="ml-2 h-4 w-4" />
-            </>
-          )}
-        </Button>
-      </CardFooter>
     </Card>
   )
 }
