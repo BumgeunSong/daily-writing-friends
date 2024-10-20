@@ -6,6 +6,7 @@ import { Post } from '@/types/Posts'
 import { useNavigate } from 'react-router-dom'
 import { User } from 'lucide-react'
 import DOMPurify from 'dompurify';
+
 interface PostCardProps {
     post: Post;
 }
@@ -39,9 +40,9 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
             </CardHeader>
             <CardContent
                 onClick={handleCardClick}
-                className="cursor-pointer hover:bg-muted transition-colors duration-200"
+                className="cursor-pointer hover:bg-muted transition-colors duration-200 p-6"
             >
-                <div className="line-clamp-3" dangerouslySetInnerHTML={{ __html: sanitizedContent }}>
+                <div className="line-clamp-5" dangerouslySetInnerHTML={{ __html: sanitizedContent }}>
                 </div>
             </CardContent>
         </Card>
