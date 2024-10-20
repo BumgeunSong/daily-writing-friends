@@ -1,12 +1,10 @@
-import { useState } from 'react'
 import { formatDistanceToNow } from 'date-fns'
-import { ChevronDown, ChevronUp, User } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 import { Post } from '@/types/Posts'
 import { useNavigate } from 'react-router-dom'
+import { User } from 'lucide-react'
 
 interface PostCardProps {
     post: Post;
