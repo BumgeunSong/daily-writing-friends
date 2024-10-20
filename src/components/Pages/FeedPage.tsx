@@ -45,7 +45,7 @@ const FeedPage: React.FC = () => {
     <div style={{ position: 'relative' }}>
       <LogoutButton />
       <WritePostButton />
-      <h1>Feed</h1>
+      <h1>매일 글쓰기 프렌즈</h1>
       {posts.map((post) => (
         <div key={post.id} onClick={() => navigate(`/post/${post.id}`)}>
           <h2>{post.title}</h2>

@@ -13,8 +13,8 @@ const LoginPage: React.FC = () => {
 
   return (
     <div>
-      <h1>Login</h1>
-      <button onClick={handleLogin}>Sign in with Google</button>
+      <h1>매일 글쓰기 프렌즈</h1>
+      <button onClick={handleLogin}>구글로 로그인하기</button>
     </div>
   );
 };
