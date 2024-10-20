@@ -6,6 +6,7 @@ import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import BackToFeedButton from './BackToFeedButton';
 
 const EditPostPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -44,6 +45,7 @@ const EditPostPage: React.FC = () => {
     return (
         <div>
             <h1>Edit Post</h1>
+            <BackToFeedButton />
             <form onSubmit={handleSubmit}>
                 <ReactQuill value={content} onChange={setContent} />
                 <button type="submit">Update Post</button>

@@ -6,6 +6,7 @@ import { deleteDoc, doc } from 'firebase/firestore';
 import { fetchPost } from '../../utils/postUtils';
 import { Post } from '../../types/Posts';
 import { useAuth } from '../../contexts/AuthContext';
+import BackToFeedButton from '../Pages/BackToFeedButton';
 
 const deletePost = async (id: string): Promise<void> => {
   await deleteDoc(doc(firestore, 'posts', id));
@@ -65,6 +66,7 @@ const PostDetailPage: React.FC = () => {
 
   return (
     <div>
+      <BackToFeedButton />
       <h1>{post.title}</h1>
       <div dangerouslySetInnerHTML={{ __html: post.content }} />
       <p>
