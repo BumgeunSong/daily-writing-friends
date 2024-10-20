@@ -6,6 +6,7 @@ import LoginPage from './components/Pages/LoginPage';
 import FeedPage from './components/Pages/FeedPage';
 import PostCreationPage from './components/Pages/PostCreationPage';
 import PostDetailPage from './components/Pages/PostDetailPage';
+import EditPostPage from './components/Pages/EditPostPage';
 
 const App: React.FC = () => {
   const { currentUser } = useAuth();
@@ -28,6 +29,10 @@ const App: React.FC = () => {
         <Route
           path="/post/:id"
           element={currentUser ? <PostDetailPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/edit/:id"
+          element={currentUser ? <EditPostPage /> : <Navigate to="/login" />}
         />
         <Route
           path="/"

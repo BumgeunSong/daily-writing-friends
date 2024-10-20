@@ -2,30 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, NavigateFunction } from 'react-router-dom';
 import { firestore } from '../../firebase';
-import { deleteDoc, doc, getDoc } from 'firebase/firestore';
+import { deleteDoc, doc } from 'firebase/firestore';
+import { fetchPost } from '../../utils/postUtils';
 import { Post } from '../../types/Posts';
 import { useAuth } from '../../contexts/AuthContext';
-
-const fetchPost = async (id: string): Promise<Post | null> => {
-  const docRef = doc(firestore, 'posts', id);
-  const docSnap = await getDoc(docRef);
-  
-  if (!docSnap.exists()) {
-    console.log('해당 문서가 없습니다!');
-    return null;
-  }
-
-  const data = docSnap.data();
-  return {
-    id: docSnap.id,
-    title: data.title,
-    content: data.content,
-    authorId: data.authorId,
-    authorName: data.authorName,
-    createdAt: data.createdAt?.toDate() || new Date(),
-    updatedAt: data.updatedAt?.toDate(),
-  };
-};
 
 const deletePost = async (id: string): Promise<void> => {
   await deleteDoc(doc(firestore, 'posts', id));
@@ -92,7 +72,7 @@ const PostDetailPage: React.FC = () => {
       </p>
       {isAuthor && (
         <div>
-          <button>수정</button>
+          <button onClick={() => navigate(`/edit/${id}`)}>수정</button>
           <button onClick={() => handleDelete(id!, navigate)}>삭제</button>
         </div>
       )}
