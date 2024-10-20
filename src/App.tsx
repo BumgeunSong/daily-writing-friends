@@ -7,6 +7,7 @@ import FeedPage from './components/Pages/FeedPage';
 import PostCreationPage from './components/Pages/PostCreationPage';
 import PostDetailPage from './components/Pages/PostDetailPage';
 import EditPostPage from './components/Pages/EditPostPage';
+import './index.css';
 
 const App: React.FC = () => {
   const { currentUser } = useAuth();

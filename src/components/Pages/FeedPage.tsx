@@ -1,15 +1,17 @@
 // src/components/FeedPage.tsx
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { firestore } from '../../firebase';
 import { collection, query, orderBy, limit, onSnapshot, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import { Post } from '../../types/Posts';
 import LogoutButton from './LogoutButton';
-import WritePostButton from './WritePostButton';
+import PostCard from './PostCard';
+import AppHeader from './AppHeader';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '../ui/button';
+import { PlusCircle } from 'lucide-react';
 
 const FeedPage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const q = query(
@@ -37,26 +39,33 @@ const FeedPage: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  const getFirstFiveLines = (text: string) => {
-    return text.split('\n').slice(0, 5).join('\n');
-  };
+  const navigate = useNavigate();
+  const handleWritePost = () => {
+    navigate('/create');
+  }
 
   return (
-    <div style={{ position: 'relative' }}>
-      <LogoutButton />
-      <WritePostButton />
-      <h1>매일 글쓰기 프렌즈</h1>
-      {posts.map((post) => (
-        <div key={post.id} onClick={() => navigate(`/post/${post.id}`)}>
-          <h2>{post.title}</h2>
-          <p>{getFirstFiveLines(post.content)}</p>
-          <p>
-            By {post.authorName} on {post.createdAt.toLocaleString()}
-          </p>
+    <div className="min-h-screen bg-background">
+      <AppHeader />
+      <main className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+          <Button 
+            onClick={handleWritePost}
+            size="lg"
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors duration-200 shadow-lg text-lg py-6 rounded-lg"
+          >
+            <PlusCircle className="mr-2 h-6 w-6" />
+            글 쓰러 가기
+          </Button>
         </div>
-      ))}
+        <div className="space-y-6">
+          {posts.map((post) => (
+            <PostCard key={post.id} post={post}/>
+          ))}
+        </div>
+      </main>
     </div>
-  );
+  )
 };
 
 export default FeedPage;
