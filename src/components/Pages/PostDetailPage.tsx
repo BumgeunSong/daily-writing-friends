@@ -33,6 +33,10 @@ const deletePost = async (id: string): Promise<void> => {
 
 const handleDelete = async (id: string, navigate: NavigateFunction): Promise<void> => {
   if (!id) return;
+
+  const confirmDelete = window.confirm('정말로 이 게시물을 삭제하시겠습니까?');
+  if (!confirmDelete) return;
+
   try {
     await deletePost(id);
     navigate('/feed');
