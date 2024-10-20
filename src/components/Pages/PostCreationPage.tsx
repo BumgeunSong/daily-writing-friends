@@ -8,16 +8,18 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
 const PostCreationPage: React.FC = () => {
+  const [title, setTitle] = useState<string>('');
   const [content, setContent] = useState<string>('');
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!title.trim() || !content.trim()) return;
 
     try {
       await addDoc(collection(firestore, 'posts'), {
+        title,
         content,
         authorId: currentUser?.uid,
         authorName: currentUser?.displayName,
@@ -31,10 +33,26 @@ const PostCreationPage: React.FC = () => {
 
   return (
     <div>
-      <h1>Create Post</h1>
+      <h1>새 글 작성</h1>
       <form onSubmit={handleSubmit}>
-        <ReactQuill value={content} onChange={setContent} />
-        <button type="submit">Post</button>
+        <div>
+          <label htmlFor="title">제목:</label>
+          <input
+            type="text"
+            id="title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label htmlFor="content">내용:</label>
+          <ReactQuill
+            value={content}
+            onChange={setContent}
+          />
+        </div>
+        <button type="submit">게시하기</button>
       </form>
     </div>
   );
