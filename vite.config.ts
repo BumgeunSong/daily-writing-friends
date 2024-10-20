@@ -17,6 +17,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
+        '#minpath': path.resolve(__dirname, 'node_modules/vfile/lib/minpath.browser.js'),
       },
     },
   }
