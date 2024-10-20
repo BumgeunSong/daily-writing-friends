@@ -14,7 +14,6 @@ const EditPostPage: React.FC = () => {
     const { currentUser } = useAuth();
     const navigate = useNavigate();
 
-
     useEffect(() => {
         const loadPost = async () => {
             if (!id) return;
@@ -44,11 +43,11 @@ const EditPostPage: React.FC = () => {
 
     return (
         <div>
-            <h1>Edit Post</h1>
+            <h1>글 수정하기</h1>
             <BackToFeedButton />
             <form onSubmit={handleSubmit}>
                 <ReactQuill value={content} onChange={setContent} />
-                <button type="submit">Update Post</button>
+                <button type="submit">수정</button>
             </form>
         </div>
     );
