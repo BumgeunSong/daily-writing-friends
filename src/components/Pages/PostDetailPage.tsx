@@ -1,8 +1,8 @@
 // src/components/PostDetailPage.tsx
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { firestore } from '../../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc } from 'firebase/firestore';
 import { Post } from '../../types/Posts';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -10,6 +10,17 @@ const PostDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [post, setPost] = useState<Post | null>(null);
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
+
+  const handleDelete = async () => {
+    if (!id) return;
+    try {
+      await deleteDoc(doc(firestore, 'posts', id));
+      navigate('/feed');
+    } catch (error) {
+      console.error('Error deleting post:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -24,6 +35,7 @@ const PostDetailPage: React.FC = () => {
           const data = docSnap.data();
           setPost({
             id: docSnap.id,
+            title: data.title,
             content: data.content,
             authorId: data.authorId,
             authorName: data.authorName,
@@ -49,16 +61,15 @@ const PostDetailPage: React.FC = () => {
 
   return (
     <div>
-      <h1>Post Details</h1>
+      <h1>{post.title}</h1>
       <div dangerouslySetInnerHTML={{ __html: post.content }} />
       <p>
-        By {post.authorName} on {post.createdAt.toLocaleString()}
+        작성자: {post.authorName} | 작성일: {post.createdAt.toLocaleString()}
       </p>
       {isAuthor && (
         <div>
-          {/* Implement edit and delete functionalities */}
-          <button>Edit</button>
-          <button>Delete</button>
+          <button>수정</button>
+          <button onClick={handleDelete}>삭제</button>
         </div>
       )}
     </div>
