@@ -1,6 +1,6 @@
 import { formatDistanceToNow } from 'date-fns'
 import ReactMarkdown from 'react-markdown'
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Post } from '@/types/Posts'
 import { useNavigate } from 'react-router-dom'
