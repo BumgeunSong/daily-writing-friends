@@ -1,6 +1,6 @@
 // src/components/PostDetailPage.tsx
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, NavigateFunction } from 'react-router-dom';
 import { firestore } from '../../firebase';
 import { deleteDoc, doc, getDoc } from 'firebase/firestore';
 import { Post } from '../../types/Posts';
