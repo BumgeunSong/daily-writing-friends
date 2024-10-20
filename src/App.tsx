@@ -23,7 +23,7 @@ const App: React.FC = () => {
         />
         <Route
           path="/create"
-          element={currentUser ? <PostCreationPage /> : <Navigate to="/login" />}
+          element={<PostCreationPage />}
         />
         <Route
           path="/post/:id"
