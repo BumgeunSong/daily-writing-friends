@@ -21,6 +21,7 @@ const FeedPage: React.FC = () => {
         const data = doc.data();
         return {
           id: doc.id,
+          title: data.title,
           content: data.content,
           authorId: data.authorId,
           authorName: data.authorName,
@@ -43,6 +44,7 @@ const FeedPage: React.FC = () => {
       <h1>Feed</h1>
       {posts.map((post) => (
         <div key={post.id} onClick={() => navigate(`/post/${post.id}`)}>
+          <h2>{post.title}</h2>
           <p>{getFirstFiveLines(post.content)}</p>
           <p>
             By {post.authorName} on {post.createdAt.toLocaleString()}
