@@ -1,4 +1,3 @@
-// src/components/PostDetailPage.tsx
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams, NavigateFunction } from 'react-router-dom';
 import { firestore } from '../../firebase';
@@ -6,7 +5,10 @@ import { deleteDoc, doc } from 'firebase/firestore';
 import { fetchPost } from '../../utils/postUtils';
 import { Post } from '../../types/Posts';
 import { useAuth } from '../../contexts/AuthContext';
-import BackToFeedButton from '../Pages/BackToFeedButton';
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
+import { ChevronLeft, Edit, Trash2 } from 'lucide-react'
 
 const deletePost = async (id: string): Promise<void> => {
   await deleteDoc(doc(firestore, 'posts', id));
@@ -26,7 +28,7 @@ const handleDelete = async (id: string, navigate: NavigateFunction): Promise<voi
   }
 };
 
-const PostDetailPage: React.FC = () => {
+export default function PostDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [post, setPost] = useState<Post | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,31 +57,60 @@ const PostDetailPage: React.FC = () => {
   }, [id]);
 
   if (isLoading) {
-    return <div>로딩 중...</div>;
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-8">
+        <Skeleton className="h-12 w-3/4 mb-4" />
+        <Skeleton className="h-4 w-full mb-2" />
+        <Skeleton className="h-4 w-full mb-2" />
+        <Skeleton className="h-4 w-2/3" />
+      </div>
+    );
   }
 
   if (!post) {
-    return <div>게시물을 찾을 수 없습니다.</div>;
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-8 text-center">
+        <h1 className="text-2xl font-bold mb-4">게시물을 찾을 수 없습니다.</h1>
+        <Button onClick={() => navigate('/feed')}>
+          <ChevronLeft className="mr-2 h-4 w-4" /> 피드로 돌아가기
+        </Button>
+      </div>
+    );
   }
 
   const isAuthor = currentUser?.uid === post.authorId;
 
   return (
-    <div>
-      <BackToFeedButton />
-      <h1>{post.title}</h1>
-      <div dangerouslySetInnerHTML={{ __html: post.content }} />
-      <p>
-        작성자: {post.authorName} | 작성일: {post.createdAt.toLocaleString()}
-      </p>
-      {isAuthor && (
-        <div>
-          <button onClick={() => navigate(`/edit/${id}`)}>수정</button>
-          <button onClick={() => handleDelete(id!, navigate)}>삭제</button>
-        </div>
-      )}
+    <div className="max-w-2xl mx-auto px-4 py-8">
+      <Button variant="ghost" onClick={() => navigate('/feed')} className="mb-6">
+        <ChevronLeft className="mr-2 h-4 w-4" /> 피드로 돌아가기
+      </Button>
+      <Card>
+        <CardHeader className="flex flex-col space-y-2">
+          <h1 className="text-3xl font-bold">{post.title}</h1>
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <p>
+              작성자: {post.authorName} | 작성일: {post.createdAt.toLocaleString()}
+            </p>
+            {isAuthor && (
+              <div className="flex space-x-2">
+                <Button variant="ghost" size="icon" onClick={() => navigate(`/edit/${id}`)}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => handleDelete(id!, navigate)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div 
+            dangerouslySetInnerHTML={{ __html: post.content }} 
+            className="prose prose-sm sm:prose lg:prose-lg mx-auto"
+          />
+        </CardContent>
+      </Card>
     </div>
   );
-};
-
-export default PostDetailPage;
+}
