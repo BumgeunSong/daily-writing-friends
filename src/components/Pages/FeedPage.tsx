@@ -5,7 +5,7 @@ import { collection, query, orderBy, limit, onSnapshot, DocumentData, QueryDocum
 import { Post } from '../../types/Posts';
 import PostCard from './PostCard';
 import AppHeader from './AppHeader';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { PlusCircle } from 'lucide-react';
 
@@ -38,24 +38,20 @@ const FeedPage: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  const navigate = useNavigate();
-  const handleWritePost = () => {
-    navigate('/create');
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
       <main className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-          <Button 
-            onClick={handleWritePost}
-            size="lg"
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors duration-200 shadow-lg text-lg py-6 rounded-lg"
-          >
-            <PlusCircle className="mr-2 h-6 w-6" />
-            글 쓰러 가기
-          </Button>
+        <div className="mb-8">
+          <Link to="/create">
+            <Button 
+              size="lg"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors duration-200 shadow-lg text-lg py-6 rounded-lg"
+            >
+              <PlusCircle className="mr-2 h-6 w-6" />
+              글 쓰러 가기
+            </Button>
+          </Link>
         </div>
         <div className="space-y-6">
           {posts.map((post) => (

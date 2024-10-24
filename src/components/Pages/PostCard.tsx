@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown'
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Post } from '@/types/Posts'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { User } from 'lucide-react'
 import DOMPurify from 'dompurify';
 
@@ -12,12 +12,6 @@ interface PostCardProps {
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post }) => {
-    const navigate = useNavigate();
-
-    const handleCardClick = () => {
-        navigate(`/post/${post.id}`)
-    }
-
     const sanitizedContent = DOMPurify.sanitize(post.content);
 
     return (
@@ -38,13 +32,14 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
                     </div>
                 </div>
             </CardHeader>
-            <CardContent
-                onClick={handleCardClick}
-                className="cursor-pointer hover:bg-muted transition-colors duration-200 p-6"
-            >
-                <div className="line-clamp-5" dangerouslySetInnerHTML={{ __html: sanitizedContent }}>
-                </div>
-            </CardContent>
+            <Link to={`/post/${post.id}`}>
+                <CardContent
+                    className="cursor-pointer hover:bg-muted transition-colors duration-200 p-6"
+                >
+                    <div className="line-clamp-5" dangerouslySetInnerHTML={{ __html: sanitizedContent }}>
+                    </div>
+                </CardContent>
+            </Link>
         </Card>
     )
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams, NavigateFunction } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { firestore } from '../../firebase';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { fetchPost } from '../../utils/postUtils';
@@ -9,12 +9,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChevronLeft, Edit, Trash2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom';
 
 const deletePost = async (id: string): Promise<void> => {
   await deleteDoc(doc(firestore, 'posts', id));
 };
 
-const handleDelete = async (id: string, navigate: NavigateFunction): Promise<void> => {
+const handleDelete = async (id: string, navigate: (path: string) => void): Promise<void> => {
   if (!id) return;
 
   const confirmDelete = window.confirm('정말로 이 게시물을 삭제하시겠습니까?');
@@ -34,7 +35,6 @@ export default function PostDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { currentUser } = useAuth();
   const navigate = useNavigate();
-
   useEffect(() => {
     const loadPost = async () => {
       if (!id) {
@@ -71,9 +71,11 @@ export default function PostDetailPage() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8 text-center">
         <h1 className="text-2xl font-bold mb-4">게시물을 찾을 수 없습니다.</h1>
-        <Button onClick={() => navigate('/feed')}>
-          <ChevronLeft className="mr-2 h-4 w-4" /> 피드로 돌아가기
-        </Button>
+        <Link to="/feed">
+          <Button>
+            <ChevronLeft className="mr-2 h-4 w-4" /> 피드로 돌아가기
+          </Button>
+        </Link>
       </div>
     );
   }
@@ -82,9 +84,11 @@ export default function PostDetailPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <Button variant="ghost" onClick={() => navigate('/feed')} className="mb-6">
-        <ChevronLeft className="mr-2 h-4 w-4" /> 피드로 돌아가기
-      </Button>
+      <Link to="/feed">
+        <Button variant="ghost" className="mb-6">
+          <ChevronLeft className="mr-2 h-4 w-4" /> 피드로 돌아가기
+        </Button>
+      </Link>
       <Card>
         <CardHeader className="flex flex-col space-y-2">
           <h1 className="text-3xl font-bold">{post.title}</h1>
@@ -94,10 +98,12 @@ export default function PostDetailPage() {
             </p>
             {isAuthor && (
               <div className="flex space-x-2">
-                <Button variant="ghost" size="icon" onClick={() => navigate(`/edit/${id}`)}>
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(id!, navigate)}>
+                <Link to={`/edit/${id}`}>
+                  <Button variant="ghost" size="icon">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Button variant="ghost" size="icon" onClick={() => handleDelete(id!, (path) => navigate(path))}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
