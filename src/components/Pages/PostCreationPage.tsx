@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { firestore } from '../../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
@@ -7,6 +7,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { ChevronLeft } from 'lucide-react';
 
 const TitleInput = React.forwardRef<
   HTMLTextAreaElement,
@@ -70,6 +71,11 @@ export default function PostCreationPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
+      <Link to="/feed">
+        <Button variant="ghost" className="mb-6">
+          <ChevronLeft className="mr-2 h-4 w-4" /> 피드로 돌아가기
+        </Button>
+      </Link>
       <form onSubmit={handleSubmit} className="space-y-6">
         <TitleInput
           value={title}
