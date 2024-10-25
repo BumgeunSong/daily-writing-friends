@@ -5,7 +5,11 @@ import { LogOut } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/firebase';
 
-const AppHeader: React.FC = () => {
+interface BoardHeadderProps {
+    title: string;
+}
+
+const BoardHeader: React.FC<BoardHeadderProps> = ({ title }) => {
     const navigate = useNavigate();
     const handleLogout = async () => {
         try {
@@ -19,7 +23,7 @@ const AppHeader: React.FC = () => {
     return (
         <header className="bg-primary text-primary-foreground py-4">
             <div className="container mx-auto px-4 flex justify-between items-center">
-                <h1 className="text-2xl font-bold sm:text-3xl">매일 글쓰기 프렌즈</h1>
+                <h1 className="text-2xl font-bold sm:text-3xl">{title}</h1>
                 <Button
                     variant="ghost"
                     size="icon"
@@ -34,4 +38,4 @@ const AppHeader: React.FC = () => {
     )
 }
 
-export default AppHeader
+export default BoardHeader

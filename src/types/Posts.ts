@@ -1,6 +1,7 @@
 // src/types/Post.ts
 export interface Post {
     id: string;
+    boardId: string;
     title: string;
     content: string;
     authorId: string;

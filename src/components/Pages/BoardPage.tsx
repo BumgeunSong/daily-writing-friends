@@ -1,20 +1,46 @@
-// src/components/FeedPage.tsx
+// src/components/BoardPage.tsx
 import React, { useEffect, useState } from 'react';
 import { firestore } from '../../firebase';
-import { collection, query, orderBy, limit, onSnapshot, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, limit, onSnapshot, DocumentData, QueryDocumentSnapshot, where, doc, getDoc } from 'firebase/firestore';
 import { Post } from '../../types/Posts';
 import PostCard from './PostCard';
-import AppHeader from './AppHeader';
-import { Link } from 'react-router-dom';
+import BoardHeader from './AppHeader';
+import { Link, useParams } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { PlusCircle } from 'lucide-react';
 
-const FeedPage: React.FC = () => {
+const BoardPage: React.FC = () => {
+  const { boardId } = useParams<{ boardId: string }>();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [boardTitle, setBoardTitle] = useState<string>('');
 
   useEffect(() => {
+    if (!boardId) {
+      console.error('No boardId provided');
+      return;
+    }
+
+    // Fetch board title
+    const fetchBoardTitle = async () => {
+      try {
+        const boardDocRef = doc(firestore, 'boards', boardId);
+        const boardDoc = await getDoc(boardDocRef);
+        if (boardDoc.exists()) {
+          const boardData = boardDoc.data();
+          setBoardTitle(boardData?.title || 'Board');
+        } else {
+          console.error('Board not found');
+        }
+      } catch (error) {
+        console.error('Error fetching board title:', error);
+      }
+    };
+
+    fetchBoardTitle();
+
     const q = query(
       collection(firestore, 'posts'),
+      where('boardId', '==', boardId),
       orderBy('createdAt', 'desc'),
       limit(10)
     );
@@ -24,6 +50,7 @@ const FeedPage: React.FC = () => {
         const data = doc.data();
         return {
           id: doc.id,
+          boardId: data.boardId,
           title: data.title,
           content: data.content,
           authorId: data.authorId,
@@ -40,7 +67,7 @@ const FeedPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <AppHeader />
+      <BoardHeader title={ boardTitle }/>
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <Link to="/create">
@@ -63,4 +90,4 @@ const FeedPage: React.FC = () => {
   )
 };
 
-export default FeedPage;
+export default BoardPage;

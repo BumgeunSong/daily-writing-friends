@@ -3,10 +3,13 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import LoginPage from './components/Pages/LoginPage';
-import FeedPage from './components/Pages/FeedPage';
+import FeedPage from './components/Pages/BoardPage';
 import PostCreationPage from './components/Pages/PostCreationPage';
 import PostDetailPage from './components/Pages/PostDetailPage';
 import EditPostPage from './components/Pages/EditPostPage';
+import BoardListPage from './components/Pages/BoardListPage';
+import BoardPage from './components/Pages/BoardPage';
+
 import './index.css';
 
 const App: React.FC = () => {
@@ -17,11 +20,15 @@ const App: React.FC = () => {
       <Routes>
         <Route
           path="/login"
-          element={!currentUser ? <LoginPage /> : <Navigate to="/feed" />}
+          element={!currentUser ? <LoginPage /> : <Navigate to="/boards" />}
         />
         <Route
-          path="/feed"
-          element={currentUser ? <FeedPage /> : <Navigate to="/login" />}
+          path="/boards"
+          element={currentUser ? <BoardListPage /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/board/:boardId"
+          element={currentUser ? <BoardPage /> : <Navigate to="/login" />}
         />
         <Route
           path="/create"
@@ -37,7 +44,7 @@ const App: React.FC = () => {
         />
         <Route
           path="/"
-          element={<Navigate to="/feed" />}
+          element={<Navigate to="/boards" />}
         />
         <Route
           path="*"
