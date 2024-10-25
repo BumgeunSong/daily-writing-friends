@@ -15,22 +15,22 @@ const deletePost = async (id: string): Promise<void> => {
   await deleteDoc(doc(firestore, 'posts', id));
 };
 
-const handleDelete = async (id: string, navigate: (path: string) => void): Promise<void> => {
+const handleDelete = async (id: string, boardId: string, navigate: (path: string) => void): Promise<void> => {
   if (!id) return;
 
   const confirmDelete = window.confirm('정말로 이 게시물을 삭제하시겠습니까?');
   if (!confirmDelete) return;
-
+  
   try {
     await deletePost(id);
-    navigate('/feed');
+    navigate(`/board/${boardId}`);
   } catch (error) {
     console.error('게시물 삭제 오류:', error);
   }
 };
 
 export default function PostDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id, boardId } = useParams<{ id: string, boardId: string }>();
   const [post, setPost] = useState<Post | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { currentUser } = useAuth();
@@ -71,7 +71,7 @@ export default function PostDetailPage() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8 text-center">
         <h1 className="text-2xl font-bold mb-4">게시물을 찾을 수 없습니다.</h1>
-        <Link to="/feed">
+        <Link to={`/board/${boardId}`}>
           <Button>
             <ChevronLeft className="mr-2 h-4 w-4" /> 피드로 돌아가기
           </Button>
@@ -84,7 +84,7 @@ export default function PostDetailPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <Link to="/feed">
+      <Link to={`/board/${boardId}`}>
         <Button variant="ghost" className="mb-6">
           <ChevronLeft className="mr-2 h-4 w-4" /> 피드로 돌아가기
         </Button>
@@ -98,12 +98,12 @@ export default function PostDetailPage() {
             </p>
             {isAuthor && (
               <div className="flex space-x-2">
-                <Link to={`/edit/${id}`}>
+                <Link to={`/board/${boardId}/edit/${id}`}>
                   <Button variant="ghost" size="icon">
                     <Edit className="h-4 w-4" />
                   </Button>
                 </Link>
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(id!, (path) => navigate(path))}>
+                <Button variant="ghost" size="icon" onClick={() => handleDelete(id!, boardId!, (path) => navigate(path))}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>

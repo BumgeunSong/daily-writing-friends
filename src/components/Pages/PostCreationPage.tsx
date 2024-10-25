@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import { firestore } from '../../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
@@ -50,7 +50,8 @@ export default function PostCreationPage() {
   const [content, setContent] = useState<string>('');
   const { currentUser } = useAuth();
   const navigate = useNavigate();
-
+  const { boardId } = useParams<{ boardId: string }>();
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
@@ -59,11 +60,12 @@ export default function PostCreationPage() {
       await addDoc(collection(firestore, 'posts'), {
         title,
         content,
+        boardId,
         authorId: currentUser?.uid,
         authorName: currentUser?.displayName,
         createdAt: serverTimestamp(),
       });
-      navigate('/feed');
+      navigate(`/board/${boardId}`);
     } catch (error) {
       console.error('Error creating post:', error);
     }
@@ -71,7 +73,7 @@ export default function PostCreationPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <Link to="/feed">
+      <Link to={`/board/${boardId}`}>
         <Button variant="ghost" className="mb-6">
           <ChevronLeft className="mr-2 h-4 w-4" /> 피드로 돌아가기
         </Button>

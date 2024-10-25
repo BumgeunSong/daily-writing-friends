@@ -31,15 +31,15 @@ const App: React.FC = () => {
           element={currentUser ? <BoardPage /> : <Navigate to="/login" />}
         />
         <Route
-          path="/create"
+          path="/create/:boardId"
           element={<PostCreationPage />}
         />
         <Route
-          path="/post/:id"
+          path="/board/:boardId/post/:id"
           element={currentUser ? <PostDetailPage /> : <Navigate to="/login" />}
         />
         <Route
-          path="/edit/:id"
+          path="/board/:boardId/edit/:id"
           element={currentUser ? <EditPostPage /> : <Navigate to="/login" />}
         />
         <Route

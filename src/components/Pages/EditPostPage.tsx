@@ -10,10 +10,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChevronLeft, Save } from 'lucide-react'
+import { Post } from '@/types/Posts';
 
 export default function EditPostPage() {
-  const { id } = useParams<{ id: string }>();
-  const [post, setPost] = useState<{ title: string; content: string; authorName: string; createdAt: Date } | null>(null);
+  const { id, boardId } = useParams<{ id: string, boardId: string }>();
+  const [post, setPost] = useState<Post | null>(null);
   const [content, setContent] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const { currentUser } = useAuth();
@@ -46,7 +47,7 @@ export default function EditPostPage() {
         content,
         updatedAt: serverTimestamp(),
       });
-      navigate(`/post/${id}`);
+      navigate(`/board/${boardId}/post/${id}`);
     } catch (error) {
       console.error('Error updating post:', error);
     }
@@ -74,7 +75,7 @@ export default function EditPostPage() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8 text-center">
         <h1 className="text-2xl font-bold mb-4">게시물을 찾을 수 없습니다.</h1>
-        <Button onClick={() => navigate('/feed')}>
+        <Button onClick={() => navigate(`/board/${boardId}`)}>
           <ChevronLeft className="mr-2 h-4 w-4" /> 피드로 돌아가기
         </Button>
       </div>
@@ -83,7 +84,7 @@ export default function EditPostPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <Button variant="ghost" onClick={() => navigate('/feed')} className="mb-6">
+      <Button variant="ghost" onClick={() => navigate(`/board/${boardId}`)} className="mb-6">
         <ChevronLeft className="mr-2 h-4 w-4" /> 피드로 돌아가기
       </Button>
       <form onSubmit={handleSubmit}>

@@ -4,7 +4,7 @@ import { firestore } from '../../firebase';
 import { collection, query, orderBy, limit, onSnapshot, DocumentData, QueryDocumentSnapshot, where, doc, getDoc } from 'firebase/firestore';
 import { Post } from '../../types/Posts';
 import PostCard from './PostCard';
-import BoardHeader from './AppHeader';
+import BoardHeader from './BoardHeader';
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { PlusCircle } from 'lucide-react';
@@ -70,7 +70,7 @@ const BoardPage: React.FC = () => {
       <BoardHeader title={ boardTitle }/>
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <Link to="/create">
+          <Link to={`/create/${boardId}`}>
             <Button 
               size="lg"
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors duration-200 shadow-lg text-lg py-6 rounded-lg"

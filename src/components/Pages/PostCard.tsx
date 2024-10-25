@@ -32,7 +32,7 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
                     </div>
                 </div>
             </CardHeader>
-            <Link to={`/post/${post.id}`}>
+            <Link to={`/board/${post.boardId}/post/${post.id}`}>
                 <CardContent
                     className="cursor-pointer hover:bg-muted transition-colors duration-200 p-6"
                 >
