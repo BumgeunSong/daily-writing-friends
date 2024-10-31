@@ -18,16 +18,13 @@ const BoardListPage: React.FC = () => {
 
             try {
                 // Fetch user permissions
-                console.log("currentUser.uid:", currentUser.uid);
                 const userDocRef = doc(firestore, 'users', currentUser.uid);
                 const userDoc = await getDoc(userDocRef);
                 const user = userDoc.data() as User;
-                console.log("user:", user);
                 const userBoardPermissions = user?.boardPermissions || {};
 
                 // Fetch boards based on user permissions
                 const boardIds = Object.keys(userBoardPermissions);
-                console.log("boardIds:", boardIds);
                 if (boardIds.length > 0) {
                     const q = query(collection(firestore, 'boards'), where('__name__', 'in', boardIds));
                     const querySnapshot = await getDocs(q);
@@ -36,7 +33,6 @@ const BoardListPage: React.FC = () => {
                         ...doc.data()
                     })) as Board[];
 
-                    console.log("boardsData:", boardsData);
                     setBoards(boardsData);
                 } else {
                     setBoards([]);
