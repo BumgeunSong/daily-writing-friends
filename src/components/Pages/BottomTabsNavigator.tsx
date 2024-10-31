@@ -22,7 +22,6 @@ export default function BottomTabsNavigator() {
             }`}
           >
             <tab.icon className="h-6 w-6" />
-            <span className="text-xs mt-1">{tab.name}</span>
           </Link>
         ))}
       </div>
