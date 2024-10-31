@@ -14,6 +14,7 @@ export const fetchPost = async (id: string): Promise<Post | null> => {
   const data = docSnap.data();
   return {
     id: docSnap.id,
+    boardId: data.boardId,
     title: data.title,
     content: data.content,
     authorId: data.authorId,
