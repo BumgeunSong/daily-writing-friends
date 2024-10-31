@@ -10,6 +10,7 @@ import BoardPage from './components/pages/BoardPage'
 import BottomTabsNavigator from './components/pages/BottomTabsNavigator'
 import NotificationsPage from './components/pages/NotificationsPage'
 import AccountPage from './components/pages/AccountPage'
+import RecentBoard from './components/pages/RecentBoard'
 
 import './index.css'
 
@@ -34,7 +35,7 @@ export default function App() {
         element={!currentUser ? <LoginPage /> : <Navigate to="/boards" />}
       />
       <Route element={currentUser ? <AuthenticatedLayout /> : <Navigate to="/login" />}>
-        <Route path="/boards" element={<BoardListPage />} />
+        <Route path="/boards" element={<RecentBoard />} />
         <Route path="/boards/list" element={<BoardListPage />} />
         <Route path="/board/:boardId" element={<BoardPage />} />
         <Route path="/create/:boardId" element={<PostCreationPage />} />

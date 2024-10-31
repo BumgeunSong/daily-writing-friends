@@ -6,8 +6,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Board } from '../../types/Board';
 import { User } from '../../types/User';
 import { Link } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-
 
 const BoardListPage: React.FC = () => {
     const { currentUser } = useAuth();
@@ -53,6 +51,11 @@ const BoardListPage: React.FC = () => {
         fetchBoards();
     }, [currentUser]);
 
+    const handleBoardClick = (boardId: string) => {
+        localStorage.removeItem('boardId');
+        localStorage.setItem('boardId', boardId);
+    };
+
     if (loading) {
         return <div>Loading...</div>;
     }
@@ -67,7 +70,11 @@ const BoardListPage: React.FC = () => {
             ) : (
                 <ul className="space-y-4">
                     {boards.map(board => (
-                        <Link to={`/board/${board.id}`} key={board.id}>
+                        <Link
+                            to={`/board/${board.id}`}
+                            onClick={() => handleBoardClick(board.id)}
+                            key={board.id}
+                        >
                             <li className="p-4 bg-white rounded shadow hover:bg-gray-100 transition">
                                 <h2 className="text-xl font-semibold">{board.title}</h2>
                                 <p className="text-gray-600">{board.description}</p>
