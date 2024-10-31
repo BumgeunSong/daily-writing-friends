@@ -1,4 +1,3 @@
-import React from 'react'
 import { signInWithGoogle } from '../../firebase'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -33,9 +32,8 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <div className="flex justify-center mb-6">
-            <img src="/placeholder.svg?height=100&width=100" alt="Logo" className="w-24 h-24" />
+            <img src="/pencil_icon.svg" alt="Logo" className="w-16 h-16" />
           </div>
-          <p className="text-center text-muted-foreground">구글 계정으로 로그인하여 시작하세요.</p>
         </CardContent>
         <CardFooter>
           <Button
