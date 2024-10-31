@@ -35,6 +35,7 @@ export default function App() {
       />
       <Route element={currentUser ? <AuthenticatedLayout /> : <Navigate to="/login" />}>
         <Route path="/boards" element={<BoardListPage />} />
+        <Route path="/boards/list" element={<BoardListPage />} />
         <Route path="/board/:boardId" element={<BoardPage />} />
         <Route path="/create/:boardId" element={<PostCreationPage />} />
         <Route path="/board/:boardId/post/:id" element={<PostDetailPage />} />
