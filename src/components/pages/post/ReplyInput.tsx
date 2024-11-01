@@ -3,26 +3,27 @@ import { useAuth } from '../../../contexts/AuthContext'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Send } from 'lucide-react'
-import { addCommentToPost } from '@/utils/commentUtils'
+import { addReplyToComment } from '@/utils/commentUtils'
 
-interface CommentInputProps {
+interface ReplyInputProps {
   postId: string
+  commentId: string
   placeholder?: string
 }
 
-const CommentInput: React.FC<CommentInputProps> = ({ postId, placeholder }) => {
-  const [newComment, setNewComment] = useState('')
+const CommentInput: React.FC<ReplyInputProps> = ({ postId, commentId, placeholder }) => {
+  const [newReply, setNewReply] = useState('')
   const { currentUser } = useAuth()
 
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!currentUser || !postId || !newComment.trim()) return
+    if (!currentUser || !postId || !newReply.trim()) return
 
     try {
-      await addCommentToPost(postId, newComment, currentUser.uid, currentUser.displayName, currentUser.photoURL)
-      setNewComment('')
+      await addReplyToComment(postId, commentId, newReply, currentUser.uid, currentUser.displayName, currentUser.photoURL)
+      setNewReply('')
     } catch (error) {
-      console.error('댓글 추가 오류:', error)
+      console.error('답글 추가 오류:', error)
     }
   }
 
@@ -31,8 +32,8 @@ const CommentInput: React.FC<CommentInputProps> = ({ postId, placeholder }) => {
       <Input
         type="text"
         placeholder={placeholder}
-        value={newComment}
-        onChange={(e) => setNewComment(e.target.value)}
+        value={newReply}
+        onChange={(e) => setNewReply(e.target.value)}
         className="flex-1"
       />
       <Button type="submit" size="icon">
