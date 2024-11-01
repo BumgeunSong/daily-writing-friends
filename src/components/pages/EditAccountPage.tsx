@@ -24,32 +24,21 @@ export default function EditAccountPage() {
     setNickname(e.target.value);
   };
 
-  const resizeImage = (file: File, callback: (resizedFile: File) => void) => {
+  const cropAndResizeImage = (file: File, callback: (resizedFile: File) => void) => {
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
         const maxSize = 96;
-        let width = img.width;
-        let height = img.height;
+        const size = Math.min(img.width, img.height); // Crop to square
+        const offsetX = (img.width - size) / 2;
+        const offsetY = (img.height - size) / 2;
 
-        if (width > height) {
-          if (width > maxSize) {
-            height *= maxSize / width;
-            width = maxSize;
-          }
-        } else {
-          if (height > maxSize) {
-            width *= maxSize / height;
-            height = maxSize;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = maxSize;
+        canvas.height = maxSize;
         const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
+        ctx?.drawImage(img, offsetX, offsetY, size, size, 0, 0, maxSize, maxSize);
 
         canvas.toBlob((blob) => {
           if (blob) {
@@ -66,7 +55,7 @@ export default function EditAccountPage() {
   const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      resizeImage(file, (resizedFile) => {
+      cropAndResizeImage(file, (resizedFile) => {
         setProfilePhoto(resizedFile);
         setPreviewUrl(URL.createObjectURL(resizedFile));
       });
