@@ -26,7 +26,7 @@ export default function LoginPage() {
       // Create user data in Firestore
       const newUser: User = {
         uid: userCredential.user.uid,
-        displayName: userCredential.user.displayName,
+        realName: userCredential.user.displayName,
         nickname: userCredential.user.displayName,
         email: userCredential.user.email,
         profilePhotoURL: userCredential.user.photoURL,

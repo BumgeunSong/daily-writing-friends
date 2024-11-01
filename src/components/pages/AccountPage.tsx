@@ -1,13 +1,24 @@
-'use client'
-
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { fetchUserData } from '../../utils/userUtils'
 import { User } from '../../types/User'
+import { auth } from '../../firebase'
+import { signOut } from 'firebase/auth'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Edit } from 'lucide-react'
+import { Edit, LogOut } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useNavigate } from 'react-router-dom'
 
 export default function AccountPage() {
   const { currentUser } = useAuth()
@@ -30,6 +41,16 @@ export default function AccountPage() {
 
     getUserData()
   }, [currentUser])
+
+  const navigate = useNavigate()
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login'); // 로그아웃 후 로그인 페이지로 이동
+    } catch (error) {
+      console.error('로그아웃 오류:', error);
+    }
+  }
 
   if (loading) {
     return (
@@ -66,19 +87,38 @@ export default function AccountPage() {
                 <span className="font-semibold">Email:</span> {userData.email}
               </p>
               <p className="text-sm">
-                <span className="font-semibold">자기소개:</span> {userData.bio || '아직 자기소개가 없어요.'}
+                <span className="font-semibold">Bio:</span> {userData.bio || 'No bio provided'}
               </p>
             </div>
-            <Button 
-              className="w-full transition-all duration-300 ease-in-out transform hover:scale-105"
-              onClick={() => {
-                // Add logic to navigate to edit page or open edit modal
-                console.log('Edit button clicked')
-              }}
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              내 정보 수정하기
-            </Button>
+            <div className="space-y-4">
+              <Button
+                className="w-full transition-all duration-300 ease-in-out transform hover:scale-105"
+                onClick={() => {
+                  // Add logic to navigate to edit page or open edit modal
+                  console.log('Edit button clicked')
+                }}
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                내 정보 수정하기
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="w-full">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    로그아웃
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>로그아웃 하시겠습니까?</AlertDialogTitle>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>취소</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleSignOut}>확인</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </CardContent>
         </div>
       </Card>
