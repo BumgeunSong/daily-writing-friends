@@ -5,7 +5,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
-  User,
+  UserCredential,
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
@@ -29,15 +29,13 @@ const firestore = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 // Auth functions
-const signInWithGoogle = (): Promise<void> => {
-  return signInWithPopup(auth, provider)
-    .then(() => {
-      // Handle successful sign-in
-    })
-    .catch((error) => {
-      console.error('Error during sign-in:', error);
-      throw error;
-    });
+const signInWithGoogle = async (): Promise<UserCredential> => {
+  try {
+    return await signInWithPopup(auth, provider);
+  } catch (error) {
+    console.error('Error during sign-in:', error);
+    throw error;
+  }
 };
 
 const signOutUser = (): Promise<void> => {
