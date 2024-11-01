@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { Comment } from '../../../types/Comment'
 import { onSnapshot, orderBy, query, collection } from 'firebase/firestore'
 import { firestore } from '@/firebase'
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Replies from './Replies'
 
 interface CommentListProps {

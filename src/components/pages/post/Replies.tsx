@@ -37,7 +37,7 @@ const Replies: React.FC<RepliesProps> = ({ postId, commentId }) => {
         onClick={handleReply}
       >
         <MessageCircle className="h-2 w-2" />
-        {replyingTo === commentId ? '취소' : `댓글 ${replyCount}개`}
+        {replyingTo === commentId ? '댓글 접기' : `댓글 ${replyCount}개`}
       </Button>
       {replyingTo === commentId && (
         <div className='mt-2'>

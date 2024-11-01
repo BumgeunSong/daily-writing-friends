@@ -17,6 +17,7 @@ const Comments: React.FC<CommentsProps> = ({ postId }) => {
       <CardContent>
         <CommentList postId={postId} />
       </CardContent>
+      <div className="border-t border-gray-200 my-2" />
       <CardFooter>
         <CommentInput postId={postId} />
       </CardFooter>
