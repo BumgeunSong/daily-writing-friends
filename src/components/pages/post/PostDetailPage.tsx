@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { firestore } from '../../firebase';
+import { firestore } from '../../../firebase';
 import { deleteDoc, doc } from 'firebase/firestore';
-import { fetchPost } from '../../utils/postUtils';
-import { Post } from '../../types/Posts';
-import { useAuth } from '../../contexts/AuthContext';
+import { fetchPost } from '../../../utils/postUtils';
+import { Post } from '../../../types/Posts';
+import { useAuth } from '../../../contexts/AuthContext';
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"

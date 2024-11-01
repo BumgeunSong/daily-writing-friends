@@ -1,10 +1,10 @@
 // src/components/Pages/BoardListPage.tsx
 import React, { useEffect, useState } from 'react';
-import { firestore } from '../../firebase';
+import { firestore } from '../../../firebase';
 import { collection, getDocs, query, where, getDoc, doc } from 'firebase/firestore';
-import { useAuth } from '../../contexts/AuthContext';
-import { Board } from '../../types/Board';
-import { User } from '../../types/User';
+import { useAuth } from '../../../contexts/AuthContext';
+import { Board } from '../../../types/Board';
+import { User } from '../../../types/User';
 import { Link } from 'react-router-dom';
 
 const BoardListPage: React.FC = () => {

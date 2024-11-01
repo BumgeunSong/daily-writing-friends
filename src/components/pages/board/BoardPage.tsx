@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { firestore } from '../../firebase'
+import { firestore } from '../../../firebase'
 import {
   collection,
   query,
@@ -12,11 +12,11 @@ import {
   doc,
   getDoc,
 } from 'firebase/firestore'
-import { Post } from '../../types/Posts'
-import PostCard from './PostCard'
+import { Post } from '../../../types/Posts'
+import PostCard from '../post/PostCard'
 import BoardHeader from './BoardHeader'
 import { Link, useParams } from 'react-router-dom'
-import { Button } from '../ui/button'
+import { Button } from '../../ui/button'
 import { Plus } from 'lucide-react'
 
 export default function BoardPage() {

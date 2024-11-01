@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { updateUserData } from '../../utils/userUtils';
-import { User } from '../../types/User';
+import { updateUserData } from '../../../utils/userUtils';
+import { User } from '../../../types/User';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Camera } from 'lucide-react';
-import { storage } from '../../firebase';
+import { storage } from '../../../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function EditAccountPage() {

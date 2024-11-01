@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { firestore } from '../../firebase';
-import { fetchPost } from '../../utils/postUtils';
+import { firestore } from '../../../firebase';
+import { fetchPost } from '../../../utils/postUtils';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../../contexts/AuthContext';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { Button } from "@/components/ui/button"

@@ -1,7 +1,7 @@
-import { signInWithGoogle } from '../../firebase'
+import { signInWithGoogle } from '../../../firebase'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../../contexts/AuthContext'
 import { Loader2 } from 'lucide-react'
 import { createUserData, fetchUserData } from '@/utils/userUtils'
 import { User } from '@/types/User'

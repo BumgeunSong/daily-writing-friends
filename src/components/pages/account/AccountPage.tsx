@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '../../contexts/AuthContext'
-import { fetchUserData } from '../../utils/userUtils'
-import { User } from '../../types/User'
-import { auth } from '../../firebase'
+import { useAuth } from '../../../contexts/AuthContext'
+import { fetchUserData } from '../../../utils/userUtils'
+import { User } from '../../../types/User'
+import { auth } from '../../../firebase'
 import { signOut } from 'firebase/auth'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
