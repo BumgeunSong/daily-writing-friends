@@ -33,14 +33,14 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
                     <Avatar className="h-8 w-8">
                         <AvatarImage
                             src={authorData?.profilePhotoURL || ''}
-                            alt={authorData?.displayName || 'User'}
+                            alt={authorData?.realName || 'User'}
                         />
                         <AvatarFallback>
                             <User className="h-4 w-4" />
                         </AvatarFallback>
                     </Avatar>
                     <div className="ml-2">
-                        <p className="text-sm font-medium">{authorData?.displayName}</p>
+                        <p className="text-sm font-medium">{authorData?.nickname}</p>
                         <p className="text-xs text-muted-foreground">
                             {formatDistanceToNow(post.createdAt, { addSuffix: true })}
                         </p>

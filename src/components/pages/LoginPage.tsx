@@ -27,6 +27,7 @@ export default function LoginPage() {
       const newUser: User = {
         uid: userCredential.user.uid,
         displayName: userCredential.user.displayName,
+        nickname: userCredential.user.displayName,
         email: userCredential.user.email,
         profilePhotoURL: userCredential.user.photoURL,
         bio: null,
