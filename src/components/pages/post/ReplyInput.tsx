@@ -28,7 +28,7 @@ const CommentInput: React.FC<ReplyInputProps> = ({ postId, commentId, placeholde
   }
 
   return (
-    <form onSubmit={handleAddComment} className="w-full flex items-center space-x-2">
+    <form onSubmit={handleAddComment} className="w-full flex items-center space-x-2 mt-4">
       <Input
         type="text"
         placeholder={placeholder}
