@@ -1,97 +1,101 @@
-import React, { useState, useRef } from 'react'
-import { updateUserData } from '../../utils/userUtils'
-import { User } from '../../types/User'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Camera } from 'lucide-react'
-import { storage } from '../../firebase'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import React, { useState, useRef } from 'react';
+import { updateUserData } from '../../utils/userUtils';
+import { User } from '../../types/User';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Camera } from 'lucide-react';
+import { storage } from '../../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function EditAccountPage() {
   const location = useLocation();
   const { userData } = location.state as { userData: User };
-  const [nickname, setNickname] = useState<string>(userData.nickname || '')
-  const [profilePhoto, setProfilePhoto] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState(userData.profilePhotoURL || '')
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const navigate = useNavigate()
+  const [nickname, setNickname] = useState<string>(userData.nickname || '');
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState(userData.profilePhotoURL || '');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
 
   const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNickname(e.target.value)
-  }
+    setNickname(e.target.value);
+  };
+
+  const resizeImage = (file: File, callback: (resizedFile: File) => void) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxSize = 96;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxSize) {
+            height *= maxSize / width;
+            width = maxSize;
+          }
+        } else {
+          if (height > maxSize) {
+            width *= maxSize / height;
+            height = maxSize;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const resizedFile = new File([blob], file.name, { type: file.type });
+            callback(resizedFile);
+          }
+        }, file.type);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
-      const reader = new FileReader()
-
-      reader.onload = (event) => {
-        const img = new Image()
-        img.onload = () => {
-          const canvas = document.createElement('canvas')
-          const maxSize = 96
-          let width = img.width
-          let height = img.height
-
-          if (width > height) {
-            if (width > maxSize) {
-              height *= maxSize / width
-              width = maxSize
-            }
-          } else {
-            if (height > maxSize) {
-              width *= maxSize / height
-              height = maxSize
-            }
-          }
-
-          canvas.width = width
-          canvas.height = height
-          const ctx = canvas.getContext('2d')
-          ctx?.drawImage(img, 0, 0, width, height)
-
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const resizedFile = new File([blob], file.name, { type: file.type })
-              setProfilePhoto(resizedFile)
-              setPreviewUrl(URL.createObjectURL(resizedFile))
-            }
-          }, file.type)
-        }
-        img.src = event.target?.result as string
-      }
-
-      reader.readAsDataURL(file)
+      const file = e.target.files[0];
+      resizeImage(file, (resizedFile) => {
+        setProfilePhoto(resizedFile);
+        setPreviewUrl(URL.createObjectURL(resizedFile));
+      });
     }
-  }
+  };
+
+  const uploadProfilePhoto = async (file: File, userId: string) => {
+    const storageRef = ref(storage, `profilePhotos/${userId}`);
+    await uploadBytes(storageRef, file);
+    return await getDownloadURL(storageRef);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     try {
-      // Update user data in Firestore
-      await updateUserData(userData.uid, { nickname })
+      await updateUserData(userData.uid, { nickname });
 
-      // Handle profile photo upload if needed
       if (profilePhoto) {
-        const storageRef = ref(storage, `profilePhotos/${userData.uid}`);
-        await uploadBytes(storageRef, profilePhoto);
-        const downloadURL = await getDownloadURL(storageRef);
-
-        // Update Firestore with the new profile photo URL
+        const downloadURL = await uploadProfilePhoto(profilePhoto, userData.uid);
         await updateUserData(userData.uid, { profilePhotoURL: downloadURL });
       }
 
-      alert('Account information updated successfully!')
-      navigate('/account') // Redirect to account page after successful update
+      alert('Account information updated successfully!');
+      navigate('/account');
     } catch (error) {
-      console.error('Error updating account information:', error)
+      console.error('Error updating account information:', error);
     }
-  }
+  };
 
   return (
     <div className="flex justify-center items-start min-h-screen bg-gray-50 p-4">
@@ -147,5 +151,5 @@ export default function EditAccountPage() {
         </form>
       </Card>
     </div>
-  )
+  );
 }
