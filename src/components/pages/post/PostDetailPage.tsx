@@ -1,95 +1,62 @@
-import React, { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { firestore } from '../../../firebase'
-import { deleteDoc, doc, collection, query, orderBy, onSnapshot } from 'firebase/firestore'
-import { fetchPost } from '../../../utils/postUtils'
-import { Post } from '../../../types/Posts'
-import { Comment } from '../../../types/Comment'
-import { useAuth } from '../../../contexts/AuthContext'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Input } from "@/components/ui/input"
-import { ChevronLeft, Edit, Trash2, Send } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import addCommentToPost from '@/utils/commentUtils'
+import React, { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { firestore } from '../../../firebase';
+import { deleteDoc, doc } from 'firebase/firestore';
+import { fetchPost } from '../../../utils/postUtils';
+import { Post } from '../../../types/Posts';
+import { useAuth } from '../../../contexts/AuthContext';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ChevronLeft, Edit, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import Comments from './Comments';
 
 const deletePost = async (id: string): Promise<void> => {
-  await deleteDoc(doc(firestore, 'posts', id))
-}
+  await deleteDoc(doc(firestore, 'posts', id));
+};
 
 const handleDelete = async (id: string, boardId: string, navigate: (path: string) => void): Promise<void> => {
-  if (!id) return
+  if (!id) return;
 
-  const confirmDelete = window.confirm('정말로 이 게시물을 삭제하시겠습니까?')
-  if (!confirmDelete) return
-
+  const confirmDelete = window.confirm('정말로 이 게시물을 삭제하시겠습니까?');
+  if (!confirmDelete) return;
+  
   try {
-    await deletePost(id)
-    navigate(`/board/${boardId}`)
+    await deletePost(id);
+    navigate(`/board/${boardId}`);
   } catch (error) {
-    console.error('게시물 삭제 오류:', error)
+    console.error('게시물 삭제 오류:', error);
   }
-}
+};
 
 export default function PostDetailPage() {
-  const { id, boardId } = useParams<{ id: string, boardId: string }>()
-  const [post, setPost] = useState<Post | null>(null)
-  const [comments, setComments] = useState<Comment[]>([])
-  const [newComment, setNewComment] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
-  const { currentUser } = useAuth()
-  const navigate = useNavigate()
+  const { id, boardId } = useParams<{ id: string, boardId: string }>();
+  const [post, setPost] = useState<Post | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadPost = async () => {
       if (!id) {
-        console.error('게시물 ID가 제공되지 않았습니다')
-        setIsLoading(false)
-        return
+        console.error('게시물 ID가 제공되지 않았습니다');
+        setIsLoading(false);
+        return;
       }
 
       try {
-        const fetchedPost = await fetchPost(id)
-        setPost(fetchedPost)
-
-        // Set up real-time listener for comments subcollection
-        const postRef = doc(firestore, 'posts', id)
-        const commentsQuery = query(
-          collection(postRef, 'comments'),
-          orderBy('createdAt', 'desc')
-        )
-
-        const unsubscribe = onSnapshot(commentsQuery, (snapshot) => {
-          const fetchedComments = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          })) as Comment[]
-          setComments(fetchedComments)
-        })
-
-        return () => unsubscribe()
+        const fetchedPost = await fetchPost(id);
+        setPost(fetchedPost);
       } catch (error) {
-        console.error('게시물 가져오기 오류:', error)
+        console.error('게시물 가져오기 오류:', error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    loadPost()
-  }, [id])
-
-  const handleAddComment = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!currentUser || !id || !newComment.trim()) return
-
-    try {
-      await addCommentToPost(id, newComment, currentUser.uid, currentUser.displayName, currentUser.photoURL)
-      setNewComment('')
-    } catch (error) {
-      console.error('댓글 추가 오류:', error)
-    }
-  }
+    loadPost();
+  }, [id]);
 
   if (isLoading) {
     return (
@@ -99,7 +66,7 @@ export default function PostDetailPage() {
         <Skeleton className="h-4 w-full mb-2" />
         <Skeleton className="h-4 w-2/3" />
       </div>
-    )
+    );
   }
 
   if (!post) {
@@ -112,10 +79,10 @@ export default function PostDetailPage() {
           </Button>
         </Link>
       </div>
-    )
+    );
   }
 
-  const isAuthor = currentUser?.uid === post.authorId
+  const isAuthor = currentUser?.uid === post.authorId;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -146,44 +113,14 @@ export default function PostDetailPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div
-            dangerouslySetInnerHTML={{ __html: post.content }}
+          <div 
+            dangerouslySetInnerHTML={{ __html: post.content }} 
             className="prose prose-sm sm:prose lg:prose-lg mx-auto"
           />
         </CardContent>
       </Card>
 
-      <Card className="mt-8">
-        <CardHeader>
-          <h2 className="text-xl font-semibold">댓글</h2>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {comments.map((comment) => (
-            <div key={comment.id} className="flex items-start space-x-4">
-              <div className="flex-1">
-                <div className="flex items-center space-x-2">
-                  <p className="font-semibold">{comment.userName}</p>
-                </div>
-                <p className="text-sm mt-1">{comment.content}</p>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-        <CardFooter>
-          <form onSubmit={handleAddComment} className="w-full flex items-center space-x-2">
-            <Input
-              type="text"
-              placeholder="댓글을 입력하세요..."
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              className="flex-1"
-            />
-            <Button type="submit" size="icon">
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
-        </CardFooter>
-      </Card>
+      <Comments postId={id!} />
     </div>
-  )
+  );
 }
