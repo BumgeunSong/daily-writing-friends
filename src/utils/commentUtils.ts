@@ -1,5 +1,5 @@
 import { firestore } from '../firebase';
-import { collection, addDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, doc, serverTimestamp } from 'firebase/firestore';
 
 // Function to add a comment to a post
 const addCommentToPost = async (postId: string, content: string, userId: string, userName: string, userProfileImage: string) => {
@@ -10,7 +10,7 @@ const addCommentToPost = async (postId: string, content: string, userId: string,
         userId,
         userName,
         userProfileImage,
-        createdAt: new Date(),  
+        createdAt: serverTimestamp(),  
     });
     console.log('Comment added successfully');
   } catch (error) {
