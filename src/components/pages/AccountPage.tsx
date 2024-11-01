@@ -24,6 +24,7 @@ export default function AccountPage() {
   const { currentUser } = useAuth()
   const [userData, setUserData] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const getUserData = async () => {
@@ -42,13 +43,18 @@ export default function AccountPage() {
     getUserData()
   }, [currentUser])
 
-  const navigate = useNavigate()
   const handleSignOut = async () => {
     try {
       await signOut(auth);
       navigate('/login'); // 로그아웃 후 로그인 페이지로 이동
     } catch (error) {
       console.error('로그아웃 오류:', error);
+    }
+  }
+
+  const handleEditProfile = () => {
+    if (userData) {
+      navigate('/account/edit', { state: { userData } }); // Pass userData to EditAccountPage
     }
   }
 
@@ -80,23 +86,19 @@ export default function AccountPage() {
             className="w-32 h-32 rounded-full border-4 border-white shadow-lg mb-4"
           />
           <CardContent className="text-center w-full">
-            <h2 className="text-2xl font-bold mb-1">{userData.realName}</h2>
-            <p className="text-gray-600 mb-4">@{userData.nickname}</p>
+            <h2 className="text-2xl font-bold mb-4">{userData.nickname}</h2>
             <div className="space-y-2 mb-6">
               <p className="text-sm">
                 <span className="font-semibold">Email:</span> {userData.email}
               </p>
               <p className="text-sm">
-                <span className="font-semibold">Bio:</span> {userData.bio || 'No bio provided'}
+                <span className="font-semibold">자기소개:</span> {userData.bio || '아직 자기소개가 없어요.'}
               </p>
             </div>
             <div className="space-y-4">
               <Button
                 className="w-full transition-all duration-300 ease-in-out transform hover:scale-105"
-                onClick={() => {
-                  // Add logic to navigate to edit page or open edit modal
-                  console.log('Edit button clicked')
-                }}
+                onClick={handleEditProfile}
               >
                 <Edit className="w-4 h-4 mr-2" />
                 내 정보 수정하기

@@ -13,6 +13,7 @@ import AccountPage from './components/pages/AccountPage'
 import RecentBoard from './components/pages/RecentBoard'
 
 import './index.css'
+import EditAccountPage from './components/pages/EditAccountPage'
 
 const AuthenticatedLayout = () => {
   return (
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="/board/:boardId/edit/:id" element={<EditPostPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/account" element={<AccountPage />} />
+        <Route path="/account/edit" element={<EditAccountPage />} />
       </Route>
       <Route path="/" element={<Navigate to="/boards" />} />
       <Route path="*" element={<Navigate to="/" />} />
