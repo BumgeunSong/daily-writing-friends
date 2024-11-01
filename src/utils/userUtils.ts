@@ -11,7 +11,7 @@ export async function fetchUserData(uid: string): Promise<User | null> {
     if (userDoc.exists()) {
       return userDoc.data() as User;
     } else {
-      console.log('No such user document!');
+      console.log(`No such user document called ${uid}!`);
       return null;
     }
   } catch (error) {
