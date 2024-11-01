@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Camera } from 'lucide-react'
+import { storage } from '../../firebase'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 
 export default function EditAccountPage() {
   const location = useLocation();
@@ -25,8 +27,45 @@ export default function EditAccountPage() {
   const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
-      setProfilePhoto(file)
-      setPreviewUrl(URL.createObjectURL(file))
+      const reader = new FileReader()
+
+      reader.onload = (event) => {
+        const img = new Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          const maxSize = 96
+          let width = img.width
+          let height = img.height
+
+          if (width > height) {
+            if (width > maxSize) {
+              height *= maxSize / width
+              width = maxSize
+            }
+          } else {
+            if (height > maxSize) {
+              width *= maxSize / height
+              height = maxSize
+            }
+          }
+
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const resizedFile = new File([blob], file.name, { type: file.type })
+              setProfilePhoto(resizedFile)
+              setPreviewUrl(URL.createObjectURL(resizedFile))
+            }
+          }, file.type)
+        }
+        img.src = event.target?.result as string
+      }
+
+      reader.readAsDataURL(file)
     }
   }
 
@@ -39,8 +78,12 @@ export default function EditAccountPage() {
 
       // Handle profile photo upload if needed
       if (profilePhoto) {
-        // Implement photo upload logic here
-        console.log('Profile photo selected:', profilePhoto)
+        const storageRef = ref(storage, `profilePhotos/${userData.uid}`);
+        await uploadBytes(storageRef, profilePhoto);
+        const downloadURL = await getDownloadURL(storageRef);
+
+        // Update Firestore with the new profile photo URL
+        await updateUserData(userData.uid, { profilePhotoURL: downloadURL });
       }
 
       alert('Account information updated successfully!')

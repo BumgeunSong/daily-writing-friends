@@ -8,7 +8,7 @@ import {
   UserCredential,
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-
+import { getStorage } from 'firebase/storage';
 const firebaseConfig = {
   apiKey: process.env.VITE_FIREBASE_API_KEY as string,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string,
@@ -24,6 +24,7 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firebase services
 const auth = getAuth(app);
 const firestore = getFirestore(app);
+const storage = getStorage(app);
 
 // Google Auth Provider
 const provider = new GoogleAuthProvider();
@@ -49,4 +50,4 @@ const signOutUser = (): Promise<void> => {
     });
 };
 
-export { auth, firestore, signInWithGoogle, signOutUser };
+export { auth, firestore, signInWithGoogle, signOutUser, storage };
