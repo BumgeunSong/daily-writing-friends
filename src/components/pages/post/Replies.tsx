@@ -17,7 +17,7 @@ const Replies: React.FC<RepliesProps> = ({ postId, commentId }) => {
   };
 
   return (
-    <div className='ml-2'>
+    <div className='ml-4'>
       <Button
         variant="ghost"
         size="sm"
