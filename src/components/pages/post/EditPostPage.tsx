@@ -56,7 +56,7 @@ export default function EditPostPage() {
   const modules = {
     toolbar: [
       ['bold'],
-      ['link', 'image'],
+      ['link'],
     ],
   };
 

@@ -94,7 +94,7 @@ export default function PostCreationPage() {
             modules={{
               toolbar: [
                 ['bold'],
-                ['link', 'image'],
+                ['link'],
               ],
             }}
           />
