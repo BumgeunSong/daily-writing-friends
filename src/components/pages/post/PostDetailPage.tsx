@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, Edit, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Comments from './Comments';
+import { fetchUserNickname } from '@/utils/userUtils';
 
 const deletePost = async (id: string): Promise<void> => {
   await deleteDoc(doc(firestore, 'posts', id));
@@ -33,6 +34,7 @@ const handleDelete = async (id: string, boardId: string, navigate: (path: string
 export default function PostDetailPage() {
   const { id, boardId } = useParams<{ id: string, boardId: string }>();
   const [post, setPost] = useState<Post | null>(null);
+  const [authorNickname, setAuthorNickname] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { currentUser } = useAuth();
   const navigate = useNavigate();
@@ -55,7 +57,14 @@ export default function PostDetailPage() {
       }
     };
 
+    // 작성자 닉네임 가져오기
+    const loadNickname = async () => {
+      const authorNickname = await fetchUserNickname(post?.authorId || '');
+      setAuthorNickname(authorNickname);
+    };
+
     loadPost();
+    loadNickname();
   }, [id]);
 
   if (isLoading) {
@@ -96,7 +105,7 @@ export default function PostDetailPage() {
           <h1 className="text-3xl font-bold">{post.title}</h1>
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <p>
-              작성자: {post.authorName} | 작성일: {post.createdAt.toLocaleString()}
+              작성자: {authorNickname} | 작성일: {post.createdAt.toLocaleString()}
             </p>
             {isAuthor && (
               <div className="flex space-x-2">

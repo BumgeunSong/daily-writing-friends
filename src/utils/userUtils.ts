@@ -20,6 +20,12 @@ export async function fetchUserData(uid: string): Promise<User | null> {
   }
 }
 
+// Function to fetch user nickname from Firestore
+export async function fetchUserNickname(uid: string): Promise<string | null> {
+  const user = await fetchUserData(uid);
+  return user?.nickname || null;
+} 
+
 // Function to update user data in Firestore
 export async function updateUserData(uid: string, data: Partial<User>): Promise<void> {
   try {
