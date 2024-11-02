@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Camera } from 'lucide-react';
+import { Camera, Loader2 } from 'lucide-react';
 import { storage } from '../../../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -17,6 +17,7 @@ export default function EditAccountPage() {
   const [nickname, setNickname] = useState<string>(userData.nickname || '');
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState(userData.profilePhotoURL || '');
+  const [loading, setLoading] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
@@ -70,6 +71,7 @@ export default function EditAccountPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
 
     try {
       await updateUserData(userData.uid, { nickname });
@@ -79,10 +81,11 @@ export default function EditAccountPage() {
         await updateUserData(userData.uid, { profilePhotoURL: downloadURL });
       }
 
-      alert('Account information updated successfully!');
       navigate('/account');
     } catch (error) {
       console.error('Error updating account information:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -133,8 +136,8 @@ export default function EditAccountPage() {
             <Button type="button" variant="outline" className="w-full" onClick={() => navigate('/account')}>
               취소
             </Button>
-            <Button type="submit" className="w-full">
-              저장하기
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? <Loader2 className="animate-spin w-4 h-4" /> : '저장하기'}
             </Button>
           </CardFooter>
         </form>
