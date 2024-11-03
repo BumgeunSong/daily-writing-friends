@@ -12,8 +12,7 @@ const ReplyRow: React.FC<ReplyRowProps>  = ({ reply }) => {
 
   useEffect(() => {
     const loadNickname = async () => {
-      const nickname = await fetchUserNickname(reply.userId || '');
-      setUserNickname(nickname);
+      fetchUserNickname(reply.userId).then(setUserNickname);
     };
     loadNickname();
   }, [reply.userId]);

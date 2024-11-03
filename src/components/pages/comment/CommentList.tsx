@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Comment } from '../../../types/Comment'
 import { onSnapshot, orderBy, query, collection } from 'firebase/firestore'
 import { firestore } from '@/firebase'
-import Replies from '../reply/Replies'
+import CommentRow from './CommentRow'
 
 interface CommentListProps {
     postId: string
@@ -29,21 +29,7 @@ const CommentList: React.FC<CommentListProps> = ({ postId }) => {
     return (
         <div className="space-y-4">
             {comments.map((comment) => (
-                <div key={comment.id} className="flex flex-col space-y-2">
-                    <div className="flex items-start space-x-4">
-                        <div className="flex-1">
-                            <div className="flex items-center space-x-2">
-                                <p className="font-semibold">{comment.userName}</p>
-                                <span className="text-xs text-muted-foreground">
-                                    {comment.createdAt?.toDate().toLocaleString()}
-                                </span>
-                            </div>
-                            <p className="text-sm mt-2">{comment.content}</p>
-                            <Replies postId={postId} commentId={comment.id} />
-                        </div>
-                    </div>
-                    
-                </div>
+                <CommentRow key={comment.id} postId={postId} comment={comment} />
             ))}
         </div>
     )
