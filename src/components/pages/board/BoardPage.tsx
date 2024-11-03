@@ -13,7 +13,7 @@ import {
   getDoc,
 } from 'firebase/firestore'
 import { Post } from '../../../types/Posts'
-import PostCard from '../post/PostCard'
+import PostSummaryCard from '../post/PostSummaryCard'
 import BoardHeader from './BoardHeader'
 import { Link, useParams } from 'react-router-dom'
 import { Button } from '../../ui/button'
@@ -80,7 +80,7 @@ export default function BoardPage() {
       <main className="container mx-auto px-4 py-8 pb-24">
         <div className="space-y-6">
           {posts.map((post) => (
-            <PostCard key={post.id} post={post} />
+            <PostSummaryCard key={post.id} post={post} />
           ))}
         </div>
       </main>

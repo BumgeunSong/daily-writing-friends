@@ -9,11 +9,11 @@ import DOMPurify from 'dompurify';
 import { fetchUserData } from '@/utils/userUtils'
 import { useEffect, useState } from 'react'
 
-interface PostCardProps {
+interface PostSummaryCardProps {
     post: Post;
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post }) => {
+const PostSummaryCard: React.FC<PostSummaryCardProps> = ({ post }) => {
     const sanitizedContent = DOMPurify.sanitize(post.content);
     const [authorData, setAuthorData] = useState<Author | null>(null)
     useEffect(() => {
@@ -58,4 +58,4 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
     )
 }
 
-export default PostCard;
+export default PostSummaryCard;
