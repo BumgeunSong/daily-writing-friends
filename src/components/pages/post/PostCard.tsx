@@ -20,7 +20,6 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
         const fetchAuthorData = async () => {
             const authorData = await fetchUserData(post.authorId)
             setAuthorData(authorData)
-            console.log("profilePhotoURL", authorData?.profilePhotoURL)
         }
         fetchAuthorData()
     }, [post.authorId])
