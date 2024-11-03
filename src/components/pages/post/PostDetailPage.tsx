@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, Edit, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Comments from '../comment/CommentList';
+import Comments from '../comment/Comments';
 import { fetchUserNickname } from '@/utils/userUtils';
 
 const deletePost = async (id: string): Promise<void> => {
@@ -57,15 +57,23 @@ export default function PostDetailPage() {
       }
     };
 
-    // 작성자 닉네임 가져오기
+    loadPost();
+  }, [id]);
+
+  useEffect(() => {
     const loadNickname = async () => {
-      const authorNickname = await fetchUserNickname(post?.authorId || '');
-      setAuthorNickname(authorNickname);
+      if (post?.authorId) {
+        try {
+          const nickname = await fetchUserNickname(post.authorId);
+          setAuthorNickname(nickname);
+        } catch (error) {
+          console.error('작성자 닉네임 가져오기 오류:', error);
+        }
+      }
     };
 
-    loadPost();
     loadNickname();
-  }, [id]);
+  }, [post]);
 
   if (isLoading) {
     return (
@@ -105,7 +113,7 @@ export default function PostDetailPage() {
           <h1 className="text-3xl font-bold">{post.title}</h1>
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <p>
-              작성자: {authorNickname} | 작성일: {post.createdAt.toLocaleString()}
+              작성자: {authorNickname || '??'} | 작성일: {post.createdAt.toLocaleString()}
             </p>
             {isAuthor && (
               <div className="flex space-x-2">
