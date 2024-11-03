@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, Edit, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Comments from './Comments';
+import Comments from '../comment/CommentList';
 import { fetchUserNickname } from '@/utils/userUtils';
 
 const deletePost = async (id: string): Promise<void> => {
