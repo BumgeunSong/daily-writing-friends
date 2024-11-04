@@ -13,7 +13,7 @@ const CommentList: React.FC<CommentListProps> = ({ postId }) => {
 
     useEffect(() => {
         const postRef = collection(firestore, 'posts', postId, 'comments')
-        const commentsQuery = query(postRef, orderBy('createdAt', 'desc'))
+        const commentsQuery = query(postRef, orderBy('createdAt', 'asc'))
 
         const unsubscribe = onSnapshot(commentsQuery, (snapshot) => {
             const fetchedComments = snapshot.docs.map(doc => ({
