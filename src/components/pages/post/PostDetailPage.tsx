@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { firestore } from '../../../firebase';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { fetchPost } from '../../../utils/postUtils';
 import { Post } from '../../../types/Posts';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, Edit, Trash2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import Comments from '../comment/Comments';
 import { fetchUserNickname } from '@/utils/userUtils';
 
@@ -77,7 +75,7 @@ export default function PostDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-8">
         <Skeleton className="h-12 w-3/4 mb-4" />
         <Skeleton className="h-4 w-full mb-2" />
         <Skeleton className="h-4 w-full mb-2" />
@@ -88,7 +86,7 @@ export default function PostDetailPage() {
 
   if (!post) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-8 text-center">
+      <div className="max-w-4xl mx-auto px-4 py-8 text-center">
         <h1 className="text-2xl font-bold mb-4">게시물을 찾을 수 없습니다.</h1>
         <Link to={`/board/${boardId}`}>
           <Button>
@@ -102,15 +100,15 @@ export default function PostDetailPage() {
   const isAuthor = currentUser?.uid === post.authorId;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-8">
       <Link to={`/board/${boardId}`}>
         <Button variant="ghost" className="mb-6">
           <ChevronLeft className="mr-2 h-4 w-4" /> 피드로 돌아가기
         </Button>
       </Link>
-      <Card>
-        <CardHeader className="flex flex-col space-y-2">
-          <h1 className="text-3xl font-bold">{post.title}</h1>
+      <article className="space-y-6">
+        <header className="space-y-4">
+          <h1 className="text-4xl font-bold leading-tight">{post.title}</h1>
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <p>
               작성자: {authorNickname || '??'} | 작성일: {post.createdAt.toLocaleString()}
@@ -118,26 +116,26 @@ export default function PostDetailPage() {
             {isAuthor && (
               <div className="flex space-x-2">
                 <Link to={`/board/${boardId}/edit/${id}`}>
-                  <Button variant="ghost" size="icon">
-                    <Edit className="h-4 w-4" />
+                  <Button variant="outline" size="sm">
+                    <Edit className="h-4 w-4 mr-2" /> 수정
                   </Button>
                 </Link>
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(id!, boardId!, (path) => navigate(path))}>
-                  <Trash2 className="h-4 w-4" />
+                <Button variant="outline" size="sm" onClick={() => handleDelete(id!, boardId!, (path) => navigate(path))}>
+                  <Trash2 className="h-4 w-4 mr-2" /> 삭제
                 </Button>
               </div>
             )}
           </div>
-        </CardHeader>
-        <CardContent>
-          <div 
-            dangerouslySetInnerHTML={{ __html: post.content }} 
-            className="prose prose-sm sm:prose lg:prose-lg mx-auto"
-          />
-        </CardContent>
-      </Card>
+        </header>
+        <div 
+          dangerouslySetInnerHTML={{ __html: post.content }} 
+          className="prose prose-lg max-w-none"
+        />
+      </article>
 
-      <Comments postId={id!} />
+      <div className="mt-12">
+        <Comments postId={id!} />
+      </div>
     </div>
   );
 }
