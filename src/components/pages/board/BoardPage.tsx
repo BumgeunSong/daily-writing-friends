@@ -51,7 +51,7 @@ export default function BoardPage() {
       collection(firestore, 'posts'),
       where('boardId', '==', boardId),
       orderBy('createdAt', 'desc'),
-      limit(10)
+      limit(30)
     )
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
