@@ -10,6 +10,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') {
         e.preventDefault(); // Prevent form submission on 'Enter' key press
+      console.log('key >>>', e.key)
       }
       if (onKeyDown) {
         onKeyDown(e); // Call any additional onKeyDown handler passed as a prop
