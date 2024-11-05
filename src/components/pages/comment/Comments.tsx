@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import CommentList from './CommentList';
 import CommentInput from './CommentInput';
 
@@ -8,20 +7,13 @@ interface CommentsProps {
 }
 
 const Comments: React.FC<CommentsProps> = ({ postId }) => {
-  
   return (
-    <Card className="mt-8">
-      <CardHeader>
-        <h2 className="text-xl font-semibold">댓글</h2>
-      </CardHeader>
-      <CardContent>
-        <CommentList postId={postId} />
-      </CardContent>
-      <div className="border-t border-gray-200 my-2" />
-      <CardFooter>
-        <CommentInput postId={postId} />
-      </CardFooter>
-    </Card>
+    <section className="mt-12 space-y-8">
+      <h2 className="text-2xl font-semibold">댓글</h2>
+      <CommentList postId={postId} />
+      <div className="border-t border-gray-200 my-6" />
+      <CommentInput postId={postId} />
+    </section>
   );
 };
 

@@ -132,7 +132,7 @@ export default function PostDetailPage() {
           className="prose prose-lg max-w-none"
         />
       </article>
-
+      <div className="border-t border-gray-200 mt-12"></div>
       <div className="mt-12">
         <Comments postId={id!} />
       </div>

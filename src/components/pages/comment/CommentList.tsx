@@ -27,7 +27,7 @@ const CommentList: React.FC<CommentListProps> = ({ postId }) => {
     }, [postId])
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             {comments.map((comment) => (
                 <CommentRow key={comment.id} postId={postId} comment={comment} />
             ))}

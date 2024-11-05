@@ -11,11 +11,11 @@ interface ReplyInputProps {
   placeholder?: string
 }
 
-const CommentInput: React.FC<ReplyInputProps> = ({ postId, commentId, placeholder }) => {
+const ReplyInput: React.FC<ReplyInputProps> = ({ postId, commentId, placeholder }) => {
   const [newReply, setNewReply] = useState('')
   const { currentUser } = useAuth()
 
-  const handleAddComment = async (e: React.FormEvent) => {
+  const handleAddReply = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!currentUser || !postId || !newReply.trim()) return
 
@@ -28,19 +28,19 @@ const CommentInput: React.FC<ReplyInputProps> = ({ postId, commentId, placeholde
   }
 
   return (
-    <form onSubmit={handleAddComment} className="w-full flex items-center space-x-2 mt-4">
+    <form onSubmit={handleAddReply} className="w-full flex items-center space-x-4">
       <Input
         type="text"
-        placeholder={placeholder}
+        placeholder={placeholder || "답글을 입력하세요..."}
         value={newReply}
         onChange={(e) => setNewReply(e.target.value)}
-        className="flex-1"
+        className="flex-1 text-base"
       />
       <Button type="submit" size="icon">
-        <Send className="h-4 w-4" />
+        <Send className="h-4 w-4 mr-2" />
       </Button>
     </form>
   )
 }
 
-export default CommentInput
+export default ReplyInput

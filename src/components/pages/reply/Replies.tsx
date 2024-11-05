@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { MessageCircle } from 'lucide-react';
 import ReplyInput from './ReplyInput';
 import ReplyList from './ReplyList';
 import { firestore } from '../../../firebase';
@@ -29,18 +28,17 @@ const Replies: React.FC<RepliesProps> = ({ postId, commentId }) => {
   };
 
   return (
-    <div className='ml-4'>
+    <div className='mt-4 space-y-4'>
       <Button
         variant="ghost"
         size="sm"
-        className="mt-2 text-muted-foreground hover:text-foreground"
+        className="text-sm text-muted-foreground hover:text-foreground p-0 h-auto font-normal"
         onClick={handleReply}
       >
-        <MessageCircle className="h-2 w-2" />
-        {replyingTo === commentId ? '댓글 접기' : `댓글 ${replyCount}개`}
+        {replyingTo === commentId ? '답글 접기' : `답글 ${replyCount}개 보기`}
       </Button>
       {replyingTo === commentId && (
-        <div className='mt-2'>
+        <div className='space-y-4 border-l-2 border-gray-200 pl-4 mt-2'>
           <ReplyList postId={postId} commentId={commentId} />
           <ReplyInput postId={postId} commentId={commentId} />
         </div>
