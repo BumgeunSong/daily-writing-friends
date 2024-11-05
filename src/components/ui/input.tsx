@@ -8,9 +8,11 @@ export interface InputProps
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, onKeyDown, ...props }, ref) => {
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-      e.preventDefault();
+      if (e.key === 'Enter') {
+        e.preventDefault(); // Prevent form submission on 'Enter' key press
+      }
       if (onKeyDown) {
-        onKeyDown(e);
+        onKeyDown(e); // Call any additional onKeyDown handler passed as a prop
       }
     };
 
