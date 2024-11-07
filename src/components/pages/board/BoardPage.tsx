@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { firestore } from '../../../firebase'
 import {
   collection,
@@ -22,7 +22,6 @@ export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>()
   const [posts, setPosts] = useState<Post[]>([])
   const [boardTitle, setBoardTitle] = useState<string>('')
-  const scrollPosition = useRef<number>(0)
 
   useEffect(() => {
     if (!boardId) {
@@ -76,15 +75,22 @@ export default function BoardPage() {
 
     const unsubscribe = fetchPosts()
 
-    // Restore scroll position
-    window.scrollTo(0, scrollPosition.current)
-
-    return () => {
-      // Save scroll position
-      scrollPosition.current = window.scrollY
-      unsubscribe()
+    // Restore scroll position after content is loaded
+    const savedScrollPosition = sessionStorage.getItem(`scrollPosition-${boardId}`)
+    if (savedScrollPosition) {
+      setTimeout(() => {
+        window.scrollTo(0, parseInt(savedScrollPosition, 10))
+      }, 100)
     }
+
+    return unsubscribe
   }, [boardId])
+
+  const handlePostClick = () => {
+    // Save scroll position before navigating
+    console.log("Save scroll position", window.scrollY)
+    sessionStorage.setItem(`scrollPosition-${boardId}`, window.scrollY.toString())
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -92,7 +98,7 @@ export default function BoardPage() {
       <main className="container mx-auto px-4 py-8 pb-24">
         <div className="space-y-6">
           {posts.map((post) => (
-            <PostSummaryCard key={post.id} post={post} />
+            <PostSummaryCard key={post.id} post={post} onClick={handlePostClick} />
           ))}
         </div>
       </main>

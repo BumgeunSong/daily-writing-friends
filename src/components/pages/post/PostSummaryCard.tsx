@@ -11,9 +11,10 @@ import { useEffect, useState } from 'react'
 
 interface PostSummaryCardProps {
     post: Post;
+    onClick: () => void;
 }
 
-const PostSummaryCard: React.FC<PostSummaryCardProps> = ({ post }) => {
+const PostSummaryCard: React.FC<PostSummaryCardProps> = ({ post, onClick }) => {
     const sanitizedContent = DOMPurify.sanitize(post.content);
     const [authorData, setAuthorData] = useState<Author | null>(null)
     useEffect(() => {
@@ -46,7 +47,7 @@ const PostSummaryCard: React.FC<PostSummaryCardProps> = ({ post }) => {
                     </div>
                 </div>
             </CardHeader>
-            <Link to={`/board/${post.boardId}/post/${post.id}`}>
+            <Link to={`/board/${post.boardId}/post/${post.id}`} onClick={onClick}>
                 <CardContent
                     className="cursor-pointer hover:bg-muted transition-colors duration-200 p-6"
                 >
