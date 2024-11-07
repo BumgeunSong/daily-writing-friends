@@ -1,10 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { firestore } from '../../../firebase'
 import {
   collection,
   query,
   orderBy,
-  limit,
   onSnapshot,
   DocumentData,
   QueryDocumentSnapshot,
@@ -23,6 +22,7 @@ export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>()
   const [posts, setPosts] = useState<Post[]>([])
   const [boardTitle, setBoardTitle] = useState<string>('')
+  const scrollPosition = useRef<number>(0)
 
   useEffect(() => {
     if (!boardId) {
@@ -47,31 +47,43 @@ export default function BoardPage() {
 
     fetchBoardTitle()
 
-    const q = query(
-      collection(firestore, 'posts'),
-      where('boardId', '==', boardId),
-      orderBy('createdAt', 'desc'),
-      limit(30)
-    )
+    const fetchPosts = () => {
+      const q = query(
+        collection(firestore, 'posts'),
+        where('boardId', '==', boardId),
+        orderBy('createdAt', 'desc')
+      )
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const postsData: Post[] = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
-        const data = doc.data()
-        return {
-          id: doc.id,
-          boardId: data.boardId,
-          title: data.title,
-          content: data.content,
-          authorId: data.authorId,
-          authorName: data.authorName,
-          createdAt: data.createdAt?.toDate() || new Date(),
-          updatedAt: data.updatedAt?.toDate(),
-        }
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const postsData: Post[] = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+          const data = doc.data()
+          return {
+            id: doc.id,
+            boardId: data.boardId,
+            title: data.title,
+            content: data.content,
+            authorId: data.authorId,
+            authorName: data.authorName,
+            createdAt: data.createdAt?.toDate() || new Date(),
+            updatedAt: data.updatedAt?.toDate(),
+          }
+        })
+        setPosts(postsData)
       })
-      setPosts(postsData)
-    })
 
-    return () => unsubscribe()
+      return unsubscribe
+    }
+
+    const unsubscribe = fetchPosts()
+
+    // Restore scroll position
+    window.scrollTo(0, scrollPosition.current)
+
+    return () => {
+      // Save scroll position
+      scrollPosition.current = window.scrollY
+      unsubscribe()
+    }
   }, [boardId])
 
   return (
