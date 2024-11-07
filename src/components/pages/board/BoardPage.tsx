@@ -29,67 +29,19 @@ export default function BoardPage() {
       return
     }
 
-    const fetchBoardTitle = async () => {
-      try {
-        const boardDocRef = doc(firestore, 'boards', boardId)
-        const boardDoc = await getDoc(boardDocRef)
-        if (boardDoc.exists()) {
-          const boardData = boardDoc.data()
-          setBoardTitle(boardData?.title || 'Board')
-        } else {
-          console.error('Board not found')
-        }
-      } catch (error) {
-        console.error('Error fetching board title:', error)
-      }
-    }
-
-    fetchBoardTitle()
-
-    const fetchPosts = () => {
-      const q = query(
-        collection(firestore, 'posts'),
-        where('boardId', '==', boardId),
-        orderBy('createdAt', 'desc')
-      )
-
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const postsData: Post[] = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
-          const data = doc.data()
-          return {
-            id: doc.id,
-            boardId: data.boardId,
-            title: data.title,
-            content: data.content,
-            authorId: data.authorId,
-            authorName: data.authorName,
-            createdAt: data.createdAt?.toDate() || new Date(),
-            updatedAt: data.updatedAt?.toDate(),
-          }
-        })
-        setPosts(postsData)
-      })
-
-      return unsubscribe
-    }
-
-    const unsubscribe = fetchPosts()
-
-    // Restore scroll position after content is loaded
-    const savedScrollPosition = sessionStorage.getItem(`scrollPosition-${boardId}`)
-    if (savedScrollPosition) {
-      setTimeout(() => {
-        window.scrollTo(0, parseInt(savedScrollPosition, 10))
-      }, 100)
-    }
+    fetchBoardTitle(boardId, setBoardTitle)
+    const unsubscribe = fetchPosts(boardId, setPosts)
+    restoreScrollPosition(boardId)
 
     return unsubscribe
   }, [boardId])
 
   const handlePostClick = () => {
-    // Save scroll position before navigating
-    console.log("Save scroll position", window.scrollY)
-    sessionStorage.setItem(`scrollPosition-${boardId}`, window.scrollY.toString())
+    if (!boardId) {
+      console.error('No boardId provided')
+      return
+    }
+    saveScrollPosition(boardId)
   }
 
   return (
@@ -116,4 +68,63 @@ export default function BoardPage() {
       </Link>
     </div>
   )
+}
+
+function fetchBoardTitle(boardId: string, setBoardTitle: React.Dispatch<React.SetStateAction<string>>) {
+  const fetchTitle = async () => {
+    try {
+      const boardDocRef = doc(firestore, 'boards', boardId)
+      const boardDoc = await getDoc(boardDocRef)
+      if (boardDoc.exists()) {
+        const boardData = boardDoc.data()
+        setBoardTitle(boardData?.title || 'Board')
+      } else {
+        console.error('Board not found')
+      }
+    } catch (error) {
+      console.error('Error fetching board title:', error)
+    }
+  }
+  fetchTitle()
+}
+
+function fetchPosts(boardId: string, setPosts: React.Dispatch<React.SetStateAction<Post[]>>) {
+  const q = query(
+    collection(firestore, 'posts'),
+    where('boardId', '==', boardId),
+    orderBy('createdAt', 'desc')
+  )
+
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const postsData: Post[] = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        boardId: data.boardId,
+        title: data.title,
+        content: data.content,
+        authorId: data.authorId,
+        authorName: data.authorName,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate(),
+      }
+    })
+    setPosts(postsData)
+  })
+
+  return unsubscribe
+}
+
+function restoreScrollPosition(boardId: string) {
+  const savedScrollPosition = sessionStorage.getItem(`scrollPosition-${boardId}`)
+  if (savedScrollPosition) {
+    setTimeout(() => {
+      window.scrollTo(0, parseInt(savedScrollPosition, 10))
+    }, 100)
+  }
+}
+
+function saveScrollPosition(boardId: string) {
+  console.log("Save scroll position", window.scrollY)
+  sessionStorage.setItem(`scrollPosition-${boardId}`, window.scrollY.toString())
 }
