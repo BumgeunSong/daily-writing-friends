@@ -28,12 +28,12 @@ const CommentInput: React.FC<CommentInputProps> = ({ postId, placeholder }) => {
 
   return (
     <form onSubmit={handleAddComment} className="w-full flex items-center space-x-4">
-      <Input
-        type="text"
+      <textarea
         placeholder={placeholder || "댓글을 입력하세요..."}
         value={newComment}
         onChange={(e) => setNewComment(e.target.value)}
-        className="flex-1 text-lg"
+        className="flex-1 text-lg p-2 border rounded resize-none"
+        rows={3} // Adjust the number of rows as needed
       />
       <Button type="submit" size="icon">
         <Send className="h-4 w-4" />

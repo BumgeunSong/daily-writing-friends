@@ -29,12 +29,12 @@ const ReplyInput: React.FC<ReplyInputProps> = ({ postId, commentId, placeholder 
 
   return (
     <form onSubmit={handleAddReply} className="w-full flex items-center space-x-4">
-      <Input
-        type="text"
+      <textarea
         placeholder={placeholder || "답글을 입력하세요..."}
         value={newReply}
         onChange={(e) => setNewReply(e.target.value)}
-        className="flex-1 text-base"
+        className="flex-1 text-base p-2 border rounded resize-none"
+        rows={3} // Adjust the number of rows as needed
       />
       <Button type="submit" size="icon">
         <Send className="h-4 w-4 mr-2" />
