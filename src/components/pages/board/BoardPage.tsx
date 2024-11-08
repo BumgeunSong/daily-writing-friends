@@ -119,8 +119,11 @@ function restoreScrollPosition(boardId: string) {
   const savedScrollPosition = sessionStorage.getItem(`scrollPosition-${boardId}`)
   if (savedScrollPosition) {
     setTimeout(() => {
-      window.scrollTo(0, parseInt(savedScrollPosition, 10))
-    }, 100)
+      window.scrollTo({
+        top: parseInt(savedScrollPosition, 10),
+        left: 0
+      });
+    }, 300)
   }
 }
 
