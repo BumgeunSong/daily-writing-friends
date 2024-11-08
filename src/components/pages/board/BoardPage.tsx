@@ -36,6 +36,15 @@ export default function BoardPage() {
     return unsubscribe
   }, [boardId])
 
+  useEffect(() => {
+    if (!boardId) {
+      return
+    }
+    if (posts.length > 0) {
+      restoreScrollPosition(boardId)
+    }
+  }, [posts])
+
   const handlePostClick = () => {
     if (!boardId) {
       console.error('No boardId provided')
@@ -123,7 +132,7 @@ function restoreScrollPosition(boardId: string) {
         top: parseInt(savedScrollPosition, 10),
         left: 0
       });
-    }, 300)
+    }, 100)
   }
 }
 
