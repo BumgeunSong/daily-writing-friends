@@ -58,6 +58,10 @@ export default function AccountPage() {
     }
   }
 
+  const handleFeedback = () => {
+    window.open('https://docs.google.com/forms/d/e/1FAIpQLSfujE9OSO58OZ6qFe9qw1vimWEcuPCX6jyDNCRZKOdCVWB5UQ/viewform?usp=sf_link', '_blank');
+  }
+
   if (loading) {
     return (
       <div className="flex flex-col items-center p-4 pt-8">
@@ -102,6 +106,12 @@ export default function AccountPage() {
               >
                 <Edit className="w-4 h-4 mr-2" />
                 내 정보 수정하기
+              </Button>
+              <Button
+                className="w-full transition-all duration-300 ease-in-out transform hover:scale-105"
+                onClick={handleFeedback}
+              >
+                의견 보내기
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
