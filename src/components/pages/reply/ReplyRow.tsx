@@ -30,7 +30,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({
   };
 
   const handleDelete = async () => {
-    if (window.confirm("대댓글을 삭제하시겠습니까?")) {
+    if (window.confirm("답글을 삭제하시겠습니까?")) {
       await deleteReplyToComment(postId, commentId, reply.id);
     }
   };
