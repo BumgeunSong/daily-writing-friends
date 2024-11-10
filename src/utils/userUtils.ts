@@ -1,5 +1,5 @@
 import { firestore } from '../firebase';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
 import { User } from '../types/User';
 
 // Helper function to get user data from localStorage
@@ -38,6 +38,20 @@ export async function fetchUserData(uid: string): Promise<User | null> {
     console.error('Error fetching user data:', error);
     throw error;
   }
+}
+
+// Function to listen for user data changes and update cache
+export function listenForUserDataChanges(uid: string, onChange: (data: User) => void): () => void {
+  const userDocRef = doc(firestore, 'users', uid);
+  const unsubscribe = onSnapshot(userDocRef, (doc) => {
+    if (doc.exists()) {
+      const userData = doc.data() as User;
+      cacheUserData(uid, userData); // Update cache with new data
+      onChange(userData); // Call the onChange callback with the new data
+    }
+  });
+
+  return unsubscribe; // Return the unsubscribe function to stop listening when needed
 }
 
 // Function to fetch user nickname from Firestore
