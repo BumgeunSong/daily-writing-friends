@@ -2,13 +2,24 @@ import { firestore } from '../firebase';
 import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { User } from '../types/User';
 
+// Helper function to get user data from localStorage
+function getCachedUserData(uid: string): User | null {
+  const cachedUserData = localStorage.getItem(`user-${uid}`);
+  return cachedUserData ? JSON.parse(cachedUserData) as User : null;
+}
+
+// Helper function to cache user data in localStorage
+function cacheUserData(uid: string, data: User): void {
+  localStorage.setItem(`user-${uid}`, JSON.stringify(data));
+}
+
 // Function to fetch user data from Firestore with caching
 export async function fetchUserData(uid: string): Promise<User | null> {
   try {
-    // Check if user data is in localStorage
-    const cachedUserData = localStorage.getItem(`user-${uid}`);
+    // Attempt to retrieve user data from cache
+    const cachedUserData = getCachedUserData(uid);
     if (cachedUserData) {
-      return JSON.parse(cachedUserData) as User;
+      return cachedUserData;
     }
 
     // Fetch from Firestore if not in cache
@@ -17,8 +28,7 @@ export async function fetchUserData(uid: string): Promise<User | null> {
 
     if (userDoc.exists()) {
       const userData = userDoc.data() as User;
-      // Cache the user data in localStorage
-      localStorage.setItem(`user-${uid}`, JSON.stringify(userData));
+      cacheUserData(uid, userData); // Cache the user data
       return userData;
     } else {
       console.log(`No such user document called ${uid}!`);
@@ -34,7 +44,7 @@ export async function fetchUserData(uid: string): Promise<User | null> {
 export async function fetchUserNickname(uid: string): Promise<string | null> {
   const user = await fetchUserData(uid);
   return user?.nickname || null;
-} 
+}
 
 // Function to update user data in Firestore and cache
 export async function updateUserData(uid: string, data: Partial<User>): Promise<void> {
@@ -43,10 +53,10 @@ export async function updateUserData(uid: string, data: Partial<User>): Promise<
     await updateDoc(userDocRef, data);
 
     // Update the cache with the new data
-    const cachedUserData = localStorage.getItem(`user-${uid}`);
+    const cachedUserData = getCachedUserData(uid);
     if (cachedUserData) {
-      const updatedUserData = { ...JSON.parse(cachedUserData), ...data };
-      localStorage.setItem(`user-${uid}`, JSON.stringify(updatedUserData));
+      const updatedUserData = { ...cachedUserData, ...data };
+      cacheUserData(uid, updatedUserData);
     }
   } catch (error) {
     console.error('Error updating user data:', error);
@@ -75,7 +85,7 @@ export async function createUserData(data: User): Promise<void> {
     await setDoc(userDocRef, data);
 
     // Cache the new user data
-    localStorage.setItem(`user-${data.uid}`, JSON.stringify(data));
+    cacheUserData(data.uid, data);
   } catch (error) {
     console.error('Error creating user data:', error);
     throw error;
