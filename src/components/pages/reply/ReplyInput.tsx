@@ -1,34 +1,39 @@
-import React, { useState } from 'react'
-import { useAuth } from '../../../contexts/AuthContext'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Send } from 'lucide-react'
-import { addReplyToComment } from '@/utils/commentUtils'
+import React, { useState } from "react";
+import { useAuth } from "../../../contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Send } from "lucide-react";
 
 interface ReplyInputProps {
-  postId: string
-  commentId: string
-  placeholder?: string
+  placeholder?: string;
+  initialValue?: string;
+  onSubmit: (content: string) => void;
 }
 
-const ReplyInput: React.FC<ReplyInputProps> = ({ postId, commentId, placeholder }) => {
-  const [newReply, setNewReply] = useState('')
-  const { currentUser } = useAuth()
+const ReplyInput: React.FC<ReplyInputProps> = ({
+  placeholder,
+  initialValue = "",
+  onSubmit,
+}) => {
+  const [newReply, setNewReply] = useState(initialValue);
+  const { currentUser } = useAuth();
 
   const handleAddReply = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!currentUser || !postId || !newReply.trim()) return
+    e.preventDefault();
+    if (!currentUser || !newReply.trim()) return;
 
     try {
-      await addReplyToComment(postId, commentId, newReply, currentUser.uid, currentUser.displayName, currentUser.photoURL)
-      setNewReply('')
+      await onSubmit(newReply);
+      setNewReply("");
     } catch (error) {
-      console.error('답글 추가 오류:', error)
+      console.error("답글 추가 오류:", error);
     }
-  }
+  };
 
   return (
-    <form onSubmit={handleAddReply} className="w-full flex items-center space-x-4">
+    <form
+      onSubmit={handleAddReply}
+      className="w-full flex items-center space-x-4"
+    >
       <textarea
         placeholder={placeholder || "답글을 입력하세요..."}
         value={newReply}
@@ -40,7 +45,7 @@ const ReplyInput: React.FC<ReplyInputProps> = ({ postId, commentId, placeholder 
         <Send className="h-4 w-4 mr-2" />
       </Button>
     </form>
-  )
-}
+  );
+};
 
-export default ReplyInput
+export default ReplyInput;
