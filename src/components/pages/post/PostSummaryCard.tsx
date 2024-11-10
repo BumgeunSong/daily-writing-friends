@@ -1,9 +1,9 @@
 import { formatDistanceToNow } from 'date-fns'
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Post } from '@/types/Posts'
 import { Link } from 'react-router-dom'
-import { User } from 'lucide-react'
+import { MessageCircle, User } from 'lucide-react'
 import { User as Author } from '@/types/User'
 import DOMPurify from 'dompurify';
 import { fetchUserData } from '@/utils/userUtils'
@@ -55,6 +55,12 @@ const PostSummaryCard: React.FC<PostSummaryCardProps> = ({ post, onClick }) => {
                     </div>
                 </CardContent>
             </Link>
+            <CardFooter>
+                <div className="flex items-center"> 
+                    <MessageCircle className="h-4 w-4 mr-1" />
+                    <p className="text-sm">{post.comments}</p>
+                </div>
+            </CardFooter>
         </Card>
     )
 }

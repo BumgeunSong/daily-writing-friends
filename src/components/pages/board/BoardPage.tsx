@@ -10,6 +10,7 @@ import {
   where,
   doc,
   getDoc,
+  getDocs,
 } from 'firebase/firestore'
 import { Post } from '../../../types/Posts'
 import PostSummaryCard from '../post/PostSummaryCard'
@@ -104,9 +105,17 @@ function fetchPosts(boardId: string, setPosts: React.Dispatch<React.SetStateActi
     orderBy('createdAt', 'desc')
   )
 
-  const unsubscribe = onSnapshot(q, (snapshot) => {
-    const postsData: Post[] = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+  const unsubscribe = onSnapshot(q,  async (snapshot) => {
+    const postsData: Post[] = await Promise.all(snapshot.docs.map(async (doc: QueryDocumentSnapshot<DocumentData>) => {
       const data = doc.data()
+   
+      const commentsRef = collection(firestore, 'posts', doc.id, 'comments')
+      const commentsSnapshot = await getDocs(commentsRef)
+      const comments = commentsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+      })) 
+
       return {
         id: doc.id,
         boardId: data.boardId,
@@ -114,10 +123,11 @@ function fetchPosts(boardId: string, setPosts: React.Dispatch<React.SetStateActi
         content: data.content,
         authorId: data.authorId,
         authorName: data.authorName,
+        comments: comments.length,
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate(),
       }
-    })
+    }))
     setPosts(postsData)
   })
 
