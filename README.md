@@ -33,7 +33,7 @@
 
 1. **저장소 클론:**
    ```bash
-   git clone https://github.com/yourusername/daily-writing-friends.git
+   git clone https://github.com/BumgeunSong/daily-writing-friends.git
    cd daily-writing-friends
    ```
 
@@ -45,12 +45,12 @@
 3. **환경 변수 설정:**
    Firebase 프로젝트에 대한 접근 권한을 요청하여 환경 변수를 설정합니다. `.env` 파일을 프로젝트 루트에 생성하고 다음과 같이 설정합니다:
    ```plaintext
-   VITE_API_KEY=your_api_key
-   VITE_AUTH_DOMAIN=your_auth_domain
-   VITE_PROJECT_ID=your_project_id
-   VITE_STORAGE_BUCKET=your_storage_bucket
-   VITE_MESSAGING_SENDER_ID=your_messaging_sender_id
-   VITE_APP_ID=your_app_id
+   VITE_FIREBASE_API_KEY=your_api_key
+   VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
+   VITE_FIREBASE_PROJECT_ID=your_project_id
+   VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+   VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+   VITE_FIREBASE_APP_ID=your_app_id
    ```
 
 ## 로컬에서 프로젝트 실행하기
