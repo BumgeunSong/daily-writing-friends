@@ -54,7 +54,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({
       <div className="flex-1">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <p className="font-semibold text-lg">{userNickname || "??"}</p>
+            <p className="font-semibold text-base">{userNickname || "??"}</p>
             <span className="text-sm text-muted-foreground">
               {reply.createdAt?.toDate().toLocaleString()}
             </span>
