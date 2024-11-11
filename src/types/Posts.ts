@@ -7,5 +7,6 @@ export interface Post {
     authorId: string;
     authorName: string;
     createdAt: Date;
+    comments: number;
     updatedAt?: Date;
 }
