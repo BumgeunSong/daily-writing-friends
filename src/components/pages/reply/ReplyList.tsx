@@ -3,6 +3,7 @@ import { firestore } from '../../../firebase';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { Reply } from '@/types/Reply';
 import ReplyRow from './ReplyRow';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ReplyListProps {
   postId: string;
@@ -11,6 +12,9 @@ interface ReplyListProps {
 
 const ReplyList: React.FC<ReplyListProps> = ({ postId, commentId }) => {
   const [replies, setReplies] = useState<Reply[]>([]);
+  const { currentUser } = useAuth();
+
+
 
   useEffect(() => {
     const repliesRef = collection(firestore, 'posts', postId, 'comments', commentId, 'replies');
@@ -30,7 +34,13 @@ const ReplyList: React.FC<ReplyListProps> = ({ postId, commentId }) => {
   return (
     <div className="space-y-4">
       {replies.map((reply) => (
-        <ReplyRow key={reply.id} reply={reply} />
+        <ReplyRow
+          key={reply.id}
+          reply={reply}
+          isAuthor={currentUser?.uid === reply.userId}
+          commentId={commentId}
+          postId={postId}
+        />
       ))}
     </div>
   );
