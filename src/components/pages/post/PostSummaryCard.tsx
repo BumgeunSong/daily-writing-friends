@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom'
 import { User } from 'lucide-react'
 import { User as Author } from '@/types/User'
 import DOMPurify from 'dompurify';
-import { fetchUserData } from '@/utils/userUtils'
+import { fetchUserData, listenForUserDataChanges } from '@/utils/userUtils'
 import { useEffect, useState } from 'react'
 
 interface PostSummaryCardProps {
@@ -17,13 +17,27 @@ interface PostSummaryCardProps {
 const PostSummaryCard: React.FC<PostSummaryCardProps> = ({ post, onClick }) => {
     const sanitizedContent = DOMPurify.sanitize(post.content);
     const [authorData, setAuthorData] = useState<Author | null>(null)
+
     useEffect(() => {
         const fetchAuthorData = async () => {
-            const authorData = await fetchUserData(post.authorId)
-            setAuthorData(authorData)
-        }
-        fetchAuthorData()
-    }, [post.authorId])
+            try {
+                const authorData = await fetchUserData(post.authorId);
+                setAuthorData(authorData);
+
+                // Set up real-time listener for author data changes
+                const unsubscribe = listenForUserDataChanges(post.authorId, (newData) => {
+                    setAuthorData(newData);
+                });
+
+                // Clean up the listener on component unmount
+                return () => unsubscribe();
+            } catch (error) {
+                console.error('Error fetching author data:', error);
+            }
+        };
+
+        fetchAuthorData();
+    }, [post.authorId]);
 
     return (
         <Card className="mb-4">
