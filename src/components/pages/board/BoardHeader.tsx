@@ -5,7 +5,7 @@ import { firestore } from '../../../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 interface BoardHeaderProps {
-  boardId: string;
+  boardId: string | undefined;
 }
 
 const BoardHeader: React.FC<BoardHeaderProps> = ({ boardId }) => {
@@ -14,6 +14,12 @@ const BoardHeader: React.FC<BoardHeaderProps> = ({ boardId }) => {
   useEffect(() => {
     const fetchBoardTitle = async () => {
       try {
+        if (!boardId) {
+          console.error('No boardId provided');
+          setTitle('Board not found');
+          return;
+        }
+        
         const boardDocRef = doc(firestore, 'boards', boardId);
         const boardDoc = await getDoc(boardDocRef);
         if (boardDoc.exists()) {
