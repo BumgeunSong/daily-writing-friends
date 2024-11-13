@@ -1,42 +1,19 @@
-import { useEffect, useState } from "react";
-import { firestore } from "../../../firebase";
-import {
-  doc,
-  getDoc,
-} from "firebase/firestore";
-import BoardHeader from "./BoardHeader";
-import PostList from "./PostList";
-import { Link, useParams, useNavigate } from "react-router-dom";
-import { Button } from "../../ui/button";
-import { Plus } from "lucide-react";
+import { useEffect } from 'react';
+import PostList from './PostList';
+import BoardHeader from './BoardHeader';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Button } from '../../ui/button';
+import { Plus } from 'lucide-react';
 
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
-  const [boardTitle, setBoardTitle] = useState<string>("");
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!boardId) {
-      console.error("No boardId provided");
+      console.error('No boardId provided');
       return;
     }
-
-    const fetchBoardTitle = async () => {
-      try {
-        const boardDocRef = doc(firestore, "boards", boardId);
-        const boardDoc = await getDoc(boardDocRef);
-        if (boardDoc.exists()) {
-          const boardData = boardDoc.data();
-          setBoardTitle(boardData?.title || "Board");
-        } else {
-          console.error("Board not found");
-        }
-      } catch (error) {
-        console.error("Error fetching board title:", error);
-      }
-    };
-
-    fetchBoardTitle();
 
     // Restore scroll position
     const savedScrollPosition = sessionStorage.getItem(`scrollPosition-${boardId}`);
@@ -60,7 +37,7 @@ export default function BoardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <BoardHeader title={boardTitle} />
+      <BoardHeader boardId={boardId} />
       <main className="container mx-auto px-4 py-8 pb-24">
         <PostList boardId={boardId!} onPostClick={handlePostClick} />
       </main>
