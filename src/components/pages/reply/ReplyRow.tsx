@@ -87,7 +87,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({
               initialValue={reply.content}
             />
           ) : (
-            <p>{reply.content}</p>
+            <p className="whitespace-pre-wrap">{reply.content}</p>
           )}
         </div>
       </div>

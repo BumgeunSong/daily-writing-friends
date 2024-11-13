@@ -81,7 +81,7 @@ const CommentRow: React.FC<CommentRowProps> = ({
                 initialValue={comment.content}
               />
             ) : (
-              <p>{comment.content}</p>
+              <p className="whitespace-pre-wrap">{comment.content}</p>
             )}
           </div>
         </div>
