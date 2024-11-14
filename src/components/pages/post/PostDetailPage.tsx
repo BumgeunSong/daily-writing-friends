@@ -101,8 +101,16 @@ export default function PostDetailPage() {
 
   const isAuthor = currentUser?.uid === post.authorId;
 
-  const editedContent = convertUrlsToLinks(post.content);
-  const sanitizedContent = DOMPurify.sanitize(editedContent);
+  const sanitizedContent = DOMPurify.sanitize(post.content, {
+    ADD_ATTR: ['target'],
+    ADD_TAGS: ['a'],
+  });
+
+  // Apply hyperlink styles to <a> tags
+  const contentWithStyledLinks = sanitizedContent.replace(
+    /<a /g,
+    '<a class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer" '
+  );
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -133,7 +141,7 @@ export default function PostDetailPage() {
           </div>
         </header>
         <div 
-          dangerouslySetInnerHTML={{ __html: sanitizedContent }} 
+          dangerouslySetInnerHTML={{ __html: contentWithStyledLinks }} 
           className="prose prose-lg max-w-none"
         />
       </article>
