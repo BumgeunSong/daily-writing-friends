@@ -11,6 +11,7 @@ import { ChevronLeft, Edit, Trash2 } from 'lucide-react';
 import Comments from '../comment/Comments';
 import { fetchUserNickname } from '@/utils/userUtils';
 import { convertUrlsToLinks } from '@/utils/contentUtils';
+import DOMPurify from 'dompurify';
 
 const deletePost = async (id: string): Promise<void> => {
   await deleteDoc(doc(firestore, 'posts', id));
@@ -100,6 +101,9 @@ export default function PostDetailPage() {
 
   const isAuthor = currentUser?.uid === post.authorId;
 
+  const editedContent = convertUrlsToLinks(post.content);
+  const sanitizedContent = DOMPurify.sanitize(editedContent);
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <Link to={`/board/${boardId}`}>
@@ -129,7 +133,7 @@ export default function PostDetailPage() {
           </div>
         </header>
         <div 
-          dangerouslySetInnerHTML={{ __html: convertUrlsToLinks(post.content) }} 
+          dangerouslySetInnerHTML={{ __html: sanitizedContent }} 
           className="prose prose-lg max-w-none"
         />
       </article>
