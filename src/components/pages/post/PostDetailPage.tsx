@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, Edit, Trash2 } from 'lucide-react';
 import Comments from '../comment/Comments';
 import { fetchUserNickname } from '@/utils/userUtils';
+import { convertUrlsToLinks } from '@/utils/contentUtils';
 
 const deletePost = async (id: string): Promise<void> => {
   await deleteDoc(doc(firestore, 'posts', id));
@@ -128,7 +129,7 @@ export default function PostDetailPage() {
           </div>
         </header>
         <div 
-          dangerouslySetInnerHTML={{ __html: post.content }} 
+          dangerouslySetInnerHTML={{ __html: convertUrlsToLinks(post.content) }} 
           className="prose prose-lg max-w-none"
         />
       </article>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Edit, Trash2, X } from "lucide-react";
 import CommentInput from "./CommentInput";
 import { deleteCommentToPost, updateCommentToPost } from "@/utils/commentUtils";
+import { convertUrlsToLinks } from "@/utils/contentUtils";
 
 interface CommentRowProps {
   postId: string;
@@ -78,7 +79,7 @@ const CommentRow: React.FC<CommentRowProps> = ({
             {isEditing ? (
               <CommentInput
                 onSubmit={handleEditSubmit}
-                initialValue={comment.content}
+                initialValue={convertUrlsToLinks(comment.content)}
               />
             ) : (
               <p className="whitespace-pre-wrap">{comment.content}</p>

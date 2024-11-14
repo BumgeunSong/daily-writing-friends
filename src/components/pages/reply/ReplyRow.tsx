@@ -8,7 +8,7 @@ import {
   deleteReplyToComment,
   updateReplyToComment,
 } from "@/utils/commentUtils";
-
+import { convertUrlsToLinks } from "@/utils/contentUtils";
 interface ReplyRowProps {
   reply: Reply;
   commentId: string;
@@ -84,7 +84,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({
           {isEditing ? (
             <ReplyInput
               onSubmit={handleEditSubmit}
-              initialValue={reply.content}
+              initialValue={convertUrlsToLinks(reply.content)}
             />
           ) : (
             <p className="whitespace-pre-wrap">{reply.content}</p>
