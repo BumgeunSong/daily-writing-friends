@@ -3,10 +3,11 @@ import { Comment } from "../../../types/Comment";
 import Replies from "../reply/Replies";
 import { fetchUserNickname } from "../../../utils/userUtils";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, X } from "lucide-react";
+import { Edit, Trash2, X } from 'lucide-react';
 import CommentInput from "./CommentInput";
 import { deleteCommentToPost, updateCommentToPost } from "@/utils/commentUtils";
 import { convertUrlsToLinks } from "@/utils/contentUtils";
+import DOMPurify from 'dompurify';
 
 interface CommentRowProps {
   postId: string;
@@ -42,6 +43,16 @@ const CommentRow: React.FC<CommentRowProps> = ({
   }, [comment.userId]);
 
   const EditIcon = isEditing ? X : Edit;
+
+  const sanitizedContent = DOMPurify.sanitize(convertUrlsToLinks(comment.content), {
+    ADD_ATTR: ['target'],
+    ADD_TAGS: ['a'],
+  });
+
+  const contentWithStyledLinks = sanitizedContent.replace(
+    /<a /g,
+    '<a class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer" '
+  );
 
   return (
     <div className="flex flex-col space-y-4">
@@ -79,10 +90,13 @@ const CommentRow: React.FC<CommentRowProps> = ({
             {isEditing ? (
               <CommentInput
                 onSubmit={handleEditSubmit}
-                initialValue={convertUrlsToLinks(comment.content)}
+                initialValue={comment.content}
               />
             ) : (
-              <p className="whitespace-pre-wrap">{comment.content}</p>
+              <div 
+                className="whitespace-pre-wrap"
+                dangerouslySetInnerHTML={{ __html: contentWithStyledLinks }}
+              />
             )}
           </div>
         </div>
