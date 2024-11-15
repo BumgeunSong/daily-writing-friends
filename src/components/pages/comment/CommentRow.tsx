@@ -43,17 +43,8 @@ const CommentRow: React.FC<CommentRowProps> = ({
   }, [comment.userId]);
 
   const EditIcon = isEditing ? X : Edit;
-
-  const sanitizedContent = DOMPurify.sanitize(convertUrlsToLinks(comment.content), {
-    ADD_ATTR: ['target'],
-    ADD_TAGS: ['a'],
-  });
-
-  const contentWithStyledLinks = sanitizedContent.replace(
-    /<a /g,
-    '<a class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer" '
-  );
-
+  const sanitizedContent = DOMPurify.sanitize(convertUrlsToLinks(comment.content));
+  
   return (
     <div className="flex flex-col space-y-4">
       <div className="flex items-start space-x-4">
@@ -95,7 +86,7 @@ const CommentRow: React.FC<CommentRowProps> = ({
             ) : (
               <div 
                 className="whitespace-pre-wrap"
-                dangerouslySetInnerHTML={{ __html: contentWithStyledLinks }}
+                dangerouslySetInnerHTML={{ __html: sanitizedContent }}
               />
             )}
           </div>

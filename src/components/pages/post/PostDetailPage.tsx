@@ -106,12 +106,6 @@ export default function PostDetailPage() {
     ADD_TAGS: ['a'],
   });
 
-  // Apply hyperlink styles to <a> tags
-  const contentWithStyledLinks = sanitizedContent.replace(
-    /<a /g,
-    '<a class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer" '
-  );
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <Link to={`/board/${boardId}`}>
@@ -141,7 +135,7 @@ export default function PostDetailPage() {
           </div>
         </header>
         <div 
-          dangerouslySetInnerHTML={{ __html: contentWithStyledLinks }} 
+          dangerouslySetInnerHTML={{ __html: sanitizedContent }} 
           className="prose prose-lg max-w-none"
         />
       </article>

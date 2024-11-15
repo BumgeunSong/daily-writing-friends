@@ -56,11 +56,6 @@ const ReplyRow: React.FC<ReplyRowProps> = ({
     ADD_TAGS: ['a'],
   });
 
-  const contentWithStyledLinks = sanitizedContent.replace(
-    /<a /g,
-    '<a class="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer" '
-  );
-
   return (
     <div key={reply.id} className="flex items-start space-x-4">
       <div className="flex-1">
@@ -101,7 +96,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({
           ) : (
             <div 
               className="whitespace-pre-wrap"
-              dangerouslySetInnerHTML={{ __html: contentWithStyledLinks }}
+              dangerouslySetInnerHTML={{ __html: sanitizedContent }}
             />
           )}
         </div>
