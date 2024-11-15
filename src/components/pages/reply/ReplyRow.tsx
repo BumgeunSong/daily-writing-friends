@@ -8,6 +8,8 @@ import {
   deleteReplyToComment,
   updateReplyToComment,
 } from "@/utils/commentUtils";
+import { convertUrlsToLinks } from "@/utils/contentUtils";
+import DOMPurify from 'dompurify';
 
 interface ReplyRowProps {
   reply: Reply;
@@ -49,6 +51,11 @@ const ReplyRow: React.FC<ReplyRowProps> = ({
     loadNickname();
   }, [reply.userId]);
 
+  const sanitizedContent = DOMPurify.sanitize(convertUrlsToLinks(reply.content), {
+    ADD_ATTR: ['target'],
+    ADD_TAGS: ['a'],
+  });
+
   return (
     <div key={reply.id} className="flex items-start space-x-4">
       <div className="flex-1">
@@ -87,7 +94,10 @@ const ReplyRow: React.FC<ReplyRowProps> = ({
               initialValue={reply.content}
             />
           ) : (
-            <p className="whitespace-pre-wrap">{reply.content}</p>
+            <div 
+              className="prose whitespace-pre-wrap"
+              dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+            />
           )}
         </div>
       </div>

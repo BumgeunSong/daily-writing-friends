@@ -3,9 +3,11 @@ import { Comment } from "../../../types/Comment";
 import Replies from "../reply/Replies";
 import { fetchUserNickname } from "../../../utils/userUtils";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2, X } from "lucide-react";
+import { Edit, Trash2, X } from 'lucide-react';
 import CommentInput from "./CommentInput";
 import { deleteCommentToPost, updateCommentToPost } from "@/utils/commentUtils";
+import { convertUrlsToLinks } from "@/utils/contentUtils";
+import DOMPurify from 'dompurify';
 
 interface CommentRowProps {
   postId: string;
@@ -41,7 +43,8 @@ const CommentRow: React.FC<CommentRowProps> = ({
   }, [comment.userId]);
 
   const EditIcon = isEditing ? X : Edit;
-
+  const sanitizedContent = DOMPurify.sanitize(convertUrlsToLinks(comment.content));
+  
   return (
     <div className="flex flex-col space-y-4">
       <div className="flex items-start space-x-4">
@@ -74,14 +77,17 @@ const CommentRow: React.FC<CommentRowProps> = ({
               </div>
             )}
           </div>
-          <div className="text-base mt-2">
+          <div className="text-base mt-2 prose">
             {isEditing ? (
               <CommentInput
                 onSubmit={handleEditSubmit}
                 initialValue={comment.content}
               />
             ) : (
-              <p className="whitespace-pre-wrap">{comment.content}</p>
+              <div 
+                className="whitespace-pre-wrap"
+                dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+              />
             )}
           </div>
         </div>
