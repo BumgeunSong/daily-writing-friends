@@ -8,6 +8,7 @@ import {
   DocumentData,
   QueryDocumentSnapshot,
   where,
+  Query,
 } from 'firebase/firestore';
 import { Post } from '../../../types/Posts';
 import PostSummaryCard from '../post/PostSummaryCard';
@@ -15,9 +16,10 @@ import PostSummaryCard from '../post/PostSummaryCard';
 interface PostListProps {
   boardId: string;
   onPostClick: (postId: string) => void;
+  selectedAuthorId: string | null;
 }
 
-const PostList: React.FC<PostListProps> = ({ boardId, onPostClick }) => {
+const PostList: React.FC<PostListProps> = ({ boardId, onPostClick, selectedAuthorId }) => {
   const [posts, setPosts] = useState<Post[]>([]);
 
   useEffect(() => {
@@ -26,11 +28,15 @@ const PostList: React.FC<PostListProps> = ({ boardId, onPostClick }) => {
       return;
     }
 
-    const q = query(
+    let q: Query<DocumentData> = query(
       collection(firestore, 'posts'),
       where('boardId', '==', boardId),
       orderBy('createdAt', 'desc')
     );
+
+    if (selectedAuthorId) {
+      q = query(q, where('authorId', '==', selectedAuthorId));
+    }
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const postsData: Post[] = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
@@ -50,7 +56,7 @@ const PostList: React.FC<PostListProps> = ({ boardId, onPostClick }) => {
     });
 
     return () => unsubscribe();
-  }, [boardId]);
+  }, [boardId, selectedAuthorId]);
 
   return (
     <div className="space-y-6">

@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import PostList from './PostList';
 import BoardHeader from './BoardHeader';
+import AuthorList from './AuthorList';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Button } from '../../ui/button';
 import { Plus } from 'lucide-react';
@@ -8,6 +9,7 @@ import { Plus } from 'lucide-react';
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
+  const [selectedAuthorId, setSelectedAuthorId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!boardId) {
@@ -35,11 +37,18 @@ export default function BoardPage() {
     navigate(`/post/${postId}`);
   };
 
+  const handleAuthorSelect = (authorId: string) => {
+    setSelectedAuthorId(authorId === selectedAuthorId ? null : authorId);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <BoardHeader boardId={boardId} />
       <main className="container mx-auto px-4 py-8 pb-24">
-        <PostList boardId={boardId!} onPostClick={handlePostClick} />
+        <div className="mb-6">
+          <AuthorList onAuthorSelect={handleAuthorSelect} />
+        </div>
+        <PostList boardId={boardId!} onPostClick={handlePostClick} selectedAuthorId={selectedAuthorId} />
       </main>
       <Link
         to={`/create/${boardId}`}
