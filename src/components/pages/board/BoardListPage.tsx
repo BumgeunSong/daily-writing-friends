@@ -1,11 +1,9 @@
 // src/components/Pages/BoardListPage.tsx
 import React, { useEffect, useState } from 'react';
-import { firestore } from '../../../firebase';
-import { collection, getDocs, query, where, getDoc, doc } from 'firebase/firestore';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Board } from '../../../types/Board';
-import { User } from '../../../types/User';
 import { Link } from 'react-router-dom';
+import { fetchBoardsWithUserPermissions } from '../../../utils/boardUtils';
 
 const BoardListPage: React.FC = () => {
     const { currentUser } = useAuth();
@@ -17,26 +15,8 @@ const BoardListPage: React.FC = () => {
             if (!currentUser) return;
 
             try {
-                // Fetch user permissions
-                const userDocRef = doc(firestore, 'users', currentUser.uid);
-                const userDoc = await getDoc(userDocRef);
-                const user = userDoc.data() as User;
-                const userBoardPermissions = user?.boardPermissions || {};
-
-                // Fetch boards based on user permissions
-                const boardIds = Object.keys(userBoardPermissions);
-                if (boardIds.length > 0) {
-                    const q = query(collection(firestore, 'boards'), where('__name__', 'in', boardIds));
-                    const querySnapshot = await getDocs(q);
-                    const boardsData: Board[] = querySnapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data()
-                    })) as Board[];
-
-                    setBoards(boardsData);
-                } else {
-                    setBoards([]);
-                }
+                const boardsData = await fetchBoardsWithUserPermissions(currentUser.uid);
+                setBoards(boardsData);
             } catch (error) {
                 console.error('Error fetching boards:', error);
             } finally {

@@ -1,72 +1,45 @@
-import { useEffect, useState } from "react";
-import { firestore } from "../../../firebase";
-import {
-  collection,
-  query,
-  orderBy,
-  onSnapshot,
-  DocumentData,
-  QueryDocumentSnapshot,
-  where,
-  doc,
-  getDoc,
-  getDocs,
-} from "firebase/firestore";
-import { Post } from "../../../types/Posts";
-import PostSummaryCard from "../post/PostSummaryCard";
-import BoardHeader from "./BoardHeader";
-import { Link, useParams } from "react-router-dom";
-import { Button } from "../../ui/button";
-import { Plus } from "lucide-react";
+import { useEffect } from 'react';
+import PostList from './PostList';
+import BoardHeader from './BoardHeader';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Button } from '../../ui/button';
+import { Plus } from 'lucide-react';
 
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [boardTitle, setBoardTitle] = useState<string>("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!boardId) {
-      console.error("No boardId provided");
+      console.error('No boardId provided');
       return;
     }
 
-    fetchBoardTitle(boardId, setBoardTitle);
-    const unsubscribe = fetchPosts(boardId, setPosts);
-    restoreScrollPosition(boardId);
+    // Restore scroll position
+    const savedScrollPosition = sessionStorage.getItem(`scrollPosition-${boardId}`);
+    if (savedScrollPosition) {
+      setTimeout(() => {
+        window.scrollTo(0, parseInt(savedScrollPosition, 10));
+      }, 0);
+    }
 
-    return unsubscribe;
+    return () => {
+      // Save scroll position
+      sessionStorage.setItem(`scrollPosition-${boardId}`, window.scrollY.toString());
+    };
   }, [boardId]);
 
-  useEffect(() => {
-    if (!boardId) {
-      return;
-    }
-    if (posts.length > 0) {
-      restoreScrollPosition(boardId);
-    }
-  }, [posts]);
-
-  const handlePostClick = () => {
-    if (!boardId) {
-      console.error("No boardId provided");
-      return;
-    }
-    saveScrollPosition(boardId);
+  const handlePostClick = (postId: string) => {
+    // Save scroll position before navigating
+    sessionStorage.setItem(`scrollPosition-${boardId}`, window.scrollY.toString());
+    navigate(`/post/${postId}`);
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <BoardHeader title={boardTitle} />
+      <BoardHeader boardId={boardId} />
       <main className="container mx-auto px-4 py-8 pb-24">
-        <div className="space-y-6">
-          {posts.map((post) => (
-            <PostSummaryCard
-              key={post.id}
-              post={post}
-              onClick={handlePostClick}
-            />
-          ))}
-        </div>
+        <PostList boardId={boardId!} onPostClick={handlePostClick} />
       </main>
       <Link
         to={`/create/${boardId}`}
@@ -81,102 +54,5 @@ export default function BoardPage() {
         </Button>
       </Link>
     </div>
-  );
-}
-
-function fetchBoardTitle(
-  boardId: string,
-  setBoardTitle: React.Dispatch<React.SetStateAction<string>>
-) {
-  const fetchTitle = async () => {
-    try {
-      const boardDocRef = doc(firestore, "boards", boardId);
-      const boardDoc = await getDoc(boardDocRef);
-      if (boardDoc.exists()) {
-        const boardData = boardDoc.data();
-        setBoardTitle(boardData?.title || "Board");
-      } else {
-        console.error("Board not found");
-      }
-    } catch (error) {
-      console.error("Error fetching board title:", error);
-    }
-  };
-  fetchTitle();
-}
-
-function fetchPosts(
-  boardId: string,
-  setPosts: React.Dispatch<React.SetStateAction<Post[]>>
-) {
-  const q = query(
-    collection(firestore, "posts"),
-    where("boardId", "==", boardId),
-    orderBy("createdAt", "desc")
-  );
-
-  const unsubscribe = onSnapshot(q, async (snapshot) => {
-    const postsData: Post[] = await Promise.all(
-      snapshot.docs.map(async (post: QueryDocumentSnapshot<DocumentData>) => {
-        const data = post.data();
-
-        const commentsRef = collection(firestore, "posts", post.id, "comments");
-        const commentsSnapshot = await getDocs(commentsRef);
-        const commentsCount = await Promise.all(
-          commentsSnapshot.docs.map(async (comment) => {
-            const repliesRef = collection(
-              firestore,
-              "posts",
-              post.id,
-              "comments",
-              comment.id,
-              "replies"
-            );
-
-            const repliesSnapshot = await getDocs(repliesRef);
-            const repliesCount = repliesSnapshot.docs.length;
-
-            return Number(comment.exists()) + repliesCount;
-          })
-        );
-
-        return {
-          id: post.id,
-          boardId: data.boardId,
-          title: data.title,
-          content: data.content,
-          authorId: data.authorId,
-          authorName: data.authorName,
-          comments: commentsCount.reduce((acc, curr) => acc + curr, 0),
-          createdAt: data.createdAt?.toDate() || new Date(),
-          updatedAt: data.updatedAt?.toDate(),
-        };
-      })
-    );
-    setPosts(postsData);
-  });
-
-  return unsubscribe;
-}
-
-function restoreScrollPosition(boardId: string) {
-  const savedScrollPosition = sessionStorage.getItem(
-    `scrollPosition-${boardId}`
-  );
-  if (savedScrollPosition) {
-    setTimeout(() => {
-      window.scrollTo({
-        top: parseInt(savedScrollPosition, 10),
-        left: 0,
-      });
-    }, 100);
-  }
-}
-
-function saveScrollPosition(boardId: string) {
-  console.log("Save scroll position", window.scrollY);
-  sessionStorage.setItem(
-    `scrollPosition-${boardId}`,
-    window.scrollY.toString()
   );
 }
