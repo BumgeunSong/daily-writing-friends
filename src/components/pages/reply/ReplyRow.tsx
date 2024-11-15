@@ -95,7 +95,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({
             />
           ) : (
             <div 
-              className="whitespace-pre-wrap"
+              className="prose whitespace-pre-wrap"
               dangerouslySetInnerHTML={{ __html: sanitizedContent }}
             />
           )}

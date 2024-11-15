@@ -77,7 +77,7 @@ const CommentRow: React.FC<CommentRowProps> = ({
               </div>
             )}
           </div>
-          <div className="text-base mt-2">
+          <div className="text-base mt-2 prose">
             {isEditing ? (
               <CommentInput
                 onSubmit={handleEditSubmit}
