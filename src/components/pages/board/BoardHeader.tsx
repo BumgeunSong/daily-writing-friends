@@ -4,7 +4,7 @@ import { ChevronDown } from 'lucide-react';
 import { fetchBoardTitle } from '../../../utils/boardUtils';
 
 interface BoardHeaderProps {
-  boardId: string | undefined;
+  boardId?: string;
 }
 
 const BoardHeader: React.FC<BoardHeaderProps> = ({ boardId }) => {
