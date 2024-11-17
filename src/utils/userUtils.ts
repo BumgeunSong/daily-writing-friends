@@ -1,5 +1,5 @@
 import { firestore } from '../firebase';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, getDocs, collection } from 'firebase/firestore';
 import { User } from '../types/User';
 
 // Helper function to get user data from localStorage
@@ -38,6 +38,12 @@ export async function fetchUserData(uid: string): Promise<User | null> {
     console.error('Error fetching user data:', error);
     throw error;
   }
+}
+
+// Function to fetch all user data from firestore
+export async function fetchAllUserData(): Promise<User[]> {
+  const users = await getDocs(collection(firestore, 'users'));
+  return users.docs.map((doc) => doc.data() as User);
 }
 
 // Function to listen for user data changes and update cache
