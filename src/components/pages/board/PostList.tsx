@@ -1,17 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { firestore } from '../../../firebase';
-import {
-  collection,
-  query,
-  orderBy,
-  onSnapshot,
-  DocumentData,
-  QueryDocumentSnapshot,
-  where,
-  Query,
-} from 'firebase/firestore';
 import { Post } from '../../../types/Posts';
 import PostSummaryCard from '../post/PostSummaryCard';
+import { fetchPosts } from '@/utils/postUtils';
 
 interface PostListProps {
   boardId: string;
@@ -28,32 +18,7 @@ const PostList: React.FC<PostListProps> = ({ boardId, onPostClick, selectedAutho
       return;
     }
 
-    let q: Query<DocumentData> = query(
-      collection(firestore, 'posts'),
-      where('boardId', '==', boardId),
-      orderBy('createdAt', 'desc')
-    );
-
-    if (selectedAuthorId) {
-      q = query(q, where('authorId', '==', selectedAuthorId));
-    }
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const postsData: Post[] = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          boardId: data.boardId,
-          title: data.title,
-          content: data.content,
-          authorId: data.authorId,
-          authorName: data.authorName,
-          createdAt: data.createdAt?.toDate() || new Date(),
-          comments: data.comments || 0,
-        };
-      });
-      setPosts(postsData);
-    });
+    const unsubscribe = fetchPosts(boardId, setPosts);
 
     return () => unsubscribe();
   }, [boardId, selectedAuthorId]);
