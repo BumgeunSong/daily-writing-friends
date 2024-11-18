@@ -18,7 +18,7 @@ const PostList: React.FC<PostListProps> = ({ boardId, onPostClick, selectedAutho
       return;
     }
 
-    const unsubscribe = fetchPosts(boardId, setPosts);
+    const unsubscribe = fetchPosts(boardId, selectedAuthorId, setPosts);
 
     return () => unsubscribe();
   }, [boardId, selectedAuthorId]);

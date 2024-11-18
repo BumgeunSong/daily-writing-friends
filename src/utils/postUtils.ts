@@ -15,15 +15,20 @@ export const fetchPost = async (id: string): Promise<Post | null> => {
 
 export function fetchPosts(
   boardId: string,
+  selectedAuthorId: string | null,
   setPosts: React.Dispatch<React.SetStateAction<Post[]>>
 ) {
-  const q = query(
+  let q = query(
     collection(firestore, "posts"),
     where("boardId", "==", boardId),
-    orderBy("createdAt", "desc")
+    orderBy("createdAt", "desc"),
   );
 
-  return onSnapshot(q, async (snapshot) => {
+  if (selectedAuthorId) {
+    q = query(q, where("authorId", "==", selectedAuthorId));
+  } 
+
+  return onSnapshot(q, async (snapshot) => {  
     const postsData = await Promise.all(snapshot.docs.map(mapDocToPost));
     setPosts(postsData);
   });
