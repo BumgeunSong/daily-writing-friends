@@ -36,8 +36,8 @@ export default function App() {
         <Route path='/boards/list' element={<BoardListPage />} />
         <Route path='/board/:boardId' element={<BoardPage />} />
         <Route path='/create/:boardId' element={<PostCreationPage />} />
-        <Route path='/board/:boardId/post/:id' element={<PostDetailPage />} />
-        <Route path='/board/:boardId/edit/:id' element={<EditPostPage />} />
+        <Route path='/board/:boardId/post/:postId' element={<PostDetailPage />} />
+        <Route path='/board/:boardId/edit/:postId' element={<EditPostPage />} />
         <Route path='/notifications' element={<NotificationsPage />} />
         <Route path='/account' element={<AccountPage />} />
         <Route path='/account/edit' element={<EditAccountPage />} />

@@ -35,7 +35,7 @@ const handleDelete = async (
 };
 
 export default function PostDetailPage() {
-  const { id, boardId } = useParams<{ id: string; boardId: string }>();
+  const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
   const [post, setPost] = useState<Post | null>(null);
   const [authorNickname, setAuthorNickname] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,14 +44,14 @@ export default function PostDetailPage() {
 
   useEffect(() => {
     const loadPost = async () => {
-      if (!id || !boardId) {
+      if (!postId || !boardId) {
         console.error('게시물 ID가 제공되지 않았습니다');
         setIsLoading(false);
         return;
       }
 
       try {
-        const fetchedPost = await fetchPost(boardId, id);
+        const fetchedPost = await fetchPost(boardId, postId);
         setPost(fetchedPost);
       } catch (error) {
         console.error('게시물 가져오기 오류:', error);
@@ -61,7 +61,7 @@ export default function PostDetailPage() {
     };
 
     loadPost();
-  }, [id]);
+  }, [postId]);
 
   useEffect(() => {
     const loadNickname = async () => {
@@ -125,7 +125,7 @@ export default function PostDetailPage() {
             </p>
             {isAuthor && (
               <div className='flex space-x-2'>
-                <Link to={`/board/${boardId}/edit/${id}`}>
+                <Link to={`/board/${boardId}/edit/${postId}`}>
                   <Button variant='outline' size='sm'>
                     <Edit className='mr-2 size-4' /> 수정
                   </Button>
@@ -133,7 +133,7 @@ export default function PostDetailPage() {
                 <Button
                   variant='outline'
                   size='sm'
-                  onClick={() => handleDelete(id!, boardId!, (path) => navigate(path))}
+                  onClick={() => handleDelete(postId!, boardId!, (path) => navigate(path))}
                 >
                   <Trash2 className='mr-2 size-4' /> 삭제
                 </Button>
@@ -148,7 +148,7 @@ export default function PostDetailPage() {
       </article>
       <div className='mt-12 border-t border-gray-200'></div>
       <div className='mt-12'>
-        {boardId && id && <Comments boardId={boardId} postId={id} />}
+        {boardId && postId && <Comments boardId={boardId} postId={postId} />}
       </div>
     </div>
   );
