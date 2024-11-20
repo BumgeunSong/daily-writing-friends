@@ -1,13 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, Link, useParams } from 'react-router-dom';
-import { firestore } from '../../../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { useAuth } from '../../../contexts/AuthContext';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
 import { ChevronLeft } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import ReactQuill from 'react-quill';
+import { useNavigate, Link, useParams } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { useAuth } from '../../../contexts/AuthContext';
+import { firestore } from '../../../firebase';
+import 'react-quill/dist/quill.snow.css';
 
 const TitleInput = React.forwardRef<
   HTMLTextAreaElement,
@@ -34,8 +34,8 @@ const TitleInput = React.forwardRef<
     <textarea
       ref={innerRef}
       className={cn(
-        "w-full resize-none overflow-hidden text-3xl font-bold focus:outline-none placeholder:text-muted-foreground",
-        className
+        'w-full resize-none overflow-hidden text-3xl font-bold focus:outline-none placeholder:text-muted-foreground',
+        className,
       )}
       rows={1}
       {...props}
@@ -51,7 +51,7 @@ export default function PostCreationPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
@@ -72,35 +72,32 @@ export default function PostCreationPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
+    <div className='mx-auto max-w-3xl px-4 py-8'>
       <Link to={`/board/${boardId}`}>
-        <Button variant="ghost" className="mb-6">
-          <ChevronLeft className="mr-2 h-4 w-4" /> 피드로 돌아가기
+        <Button variant='ghost' className='mb-6'>
+          <ChevronLeft className='mr-2 size-4' /> 피드로 돌아가기
         </Button>
       </Link>
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className='space-y-6'>
         <TitleInput
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="제목을 입력하세요"
-          className="mb-4"
+          placeholder='제목을 입력하세요'
+          className='mb-4'
         />
-        <div className="min-h-[300px]">
+        <div className='min-h-[300px]'>
           <ReactQuill
             value={content}
             onChange={setContent}
-            placeholder="내용을 입력하세요..."
-            className="h-full"
+            placeholder='내용을 입력하세요...'
+            className='h-full'
             modules={{
-              toolbar: [
-                ['bold'],
-                ['link'],
-              ],
+              toolbar: [['bold'], ['link']],
             }}
           />
         </div>
-        <div className="flex justify-end">
-          <Button type="submit" className="px-6 py-2">
+        <div className='flex justify-end'>
+          <Button type='submit' className='px-6 py-2'>
             게시하기
           </Button>
         </div>

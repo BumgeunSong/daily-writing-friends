@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import ReplyInput from "./ReplyInput";
-import ReplyList from "./ReplyList";
-import { firestore } from "../../../firebase";
-import { collection, onSnapshot } from "firebase/firestore";
-import { addReplyToComment } from "@/utils/commentUtils";
-import { useAuth } from "@/contexts/AuthContext";
+import { collection, onSnapshot } from 'firebase/firestore';
+import React, { useState, useEffect } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { addReplyToComment } from '@/utils/commentUtils';
+import ReplyInput from './ReplyInput';
+import ReplyList from './ReplyList';
+import { firestore } from '../../../firebase';
 
 interface RepliesProps {
   postId: string;
@@ -24,19 +25,12 @@ const Replies: React.FC<RepliesProps> = ({ postId, commentId }) => {
       content,
       currentUser.uid,
       currentUser.displayName,
-      currentUser.photoURL
+      currentUser.photoURL,
     );
   };
 
   useEffect(() => {
-    const repliesRef = collection(
-      firestore,
-      "posts",
-      postId,
-      "comments",
-      commentId,
-      "replies"
-    );
+    const repliesRef = collection(firestore, 'posts', postId, 'comments', commentId, 'replies');
     const unsubscribe = onSnapshot(repliesRef, (snapshot) => {
       setReplyCount(snapshot.size);
     });
@@ -49,17 +43,17 @@ const Replies: React.FC<RepliesProps> = ({ postId, commentId }) => {
   };
 
   return (
-    <div className="mt-4 space-y-4">
+    <div className='mt-4 space-y-4'>
       <Button
-        variant="ghost"
-        size="sm"
-        className="text-sm text-muted-foreground hover:text-foreground p-0 h-auto font-normal"
+        variant='ghost'
+        size='sm'
+        className='h-auto p-0 text-sm font-normal text-muted-foreground hover:text-foreground'
         onClick={handleReply}
       >
-        {replyingTo === commentId ? "답글 접기" : `답글 ${replyCount}개 보기`}
+        {replyingTo === commentId ? '답글 접기' : `답글 ${replyCount}개 보기`}
       </Button>
       {replyingTo === commentId && (
-        <div className="space-y-4 border-l-2 border-gray-200 pl-4 mt-2">
+        <div className='mt-2 space-y-4 border-l-2 border-gray-200 pl-4'>
           <ReplyList postId={postId} commentId={commentId} />
           <ReplyInput onSubmit={handleSubmit} />
         </div>

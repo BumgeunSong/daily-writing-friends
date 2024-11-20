@@ -1,21 +1,8 @@
 [
-    {
-        "origin": [
-            "https://artico-app-4f9d4.web.app",
-            "https://dailywritingfriends.com"
-        ],
-        "method": [
-            "GET",
-            "POST",
-            "PUT",
-            "DELETE",
-            "HEAD",
-            "OPTIONS"
-        ],
-        "maxAgeSeconds": 3600,
-        "responseHeader": [
-            "Content-Type",
-            "Authorization"
-        ]
-    }
+  {
+    "origin": ["https://artico-app-4f9d4.web.app", "https://dailywritingfriends.com"],
+    "method": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type", "Authorization"]
+  }
 ]

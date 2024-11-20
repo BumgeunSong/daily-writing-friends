@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { useAuth } from "../../../contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
+import { Send } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface CommentInputProps {
   initialValue?: string;
@@ -10,7 +11,7 @@ interface CommentInputProps {
 }
 
 const CommentInput: React.FC<CommentInputProps> = ({
-  initialValue = "",
+  initialValue = '',
   placeholder,
   onSubmit,
 }) => {
@@ -23,26 +24,23 @@ const CommentInput: React.FC<CommentInputProps> = ({
 
     try {
       await onSubmit(newComment);
-      setNewComment("");
+      setNewComment('');
     } catch (error) {
-      console.error("댓글 추가 오류:", error);
+      console.error('댓글 추가 오류:', error);
     }
   };
 
   return (
-    <form
-      onSubmit={handleAddComment}
-      className="w-full flex items-center space-x-4"
-    >
+    <form onSubmit={handleAddComment} className='flex w-full items-center space-x-4'>
       <textarea
-        placeholder={placeholder || "댓글을 입력하세요..."}
+        placeholder={placeholder || '댓글을 입력하세요...'}
         value={newComment}
         onChange={(e) => setNewComment(e.target.value)}
-        className="flex-1 text-lg p-2 border rounded resize-none"
+        className='flex-1 resize-none rounded border p-2 text-lg'
         rows={3} // Adjust the number of rows as needed
       />
-      <Button type="submit" size="icon">
-        <Send className="h-4 w-4" />
+      <Button type='submit' size='icon'>
+        <Send className='size-4' />
       </Button>
     </form>
   );

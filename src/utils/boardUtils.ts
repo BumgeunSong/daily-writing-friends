@@ -1,5 +1,6 @@
-import { firestore } from '../firebase';
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
+
+import { firestore } from '../firebase';
 import { Board } from '../types/Board';
 import { User } from '../types/User';
 
@@ -31,9 +32,9 @@ export async function fetchBoardsWithUserPermissions(userId: string): Promise<Bo
     if (boardIds.length > 0) {
       const q = query(collection(firestore, 'boards'), where('__name__', 'in', boardIds));
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => ({
+      return querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       })) as Board[];
     } else {
       return [];

@@ -1,15 +1,16 @@
-import React, { useState, useRef } from 'react';
-import { updateUserData } from '../../../utils/userUtils';
-import { User } from '../../../types/User';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Camera, Loader2 } from 'lucide-react';
-import { storage } from '../../../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { Camera, Loader2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { storage } from '../../../firebase';
+import { User } from '../../../types/User';
+import { updateUserData } from '../../../utils/userUtils';
 
 export default function EditAccountPage() {
   const location = useLocation();
@@ -90,54 +91,62 @@ export default function EditAccountPage() {
   };
 
   return (
-    <div className="flex justify-center items-start min-h-screen bg-gray-50 p-4">
-      <Card className="w-full max-w-md">
+    <div className='flex min-h-screen items-start justify-center bg-gray-50 p-4'>
+      <Card className='w-full max-w-md'>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">내 정보 수정하기</CardTitle>
+          <CardTitle className='text-center text-2xl font-bold'>내 정보 수정하기</CardTitle>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-6">
-            <div className="flex flex-col items-center space-y-4">
-              <Avatar className="w-32 h-32 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+          <CardContent className='space-y-6'>
+            <div className='flex flex-col items-center space-y-4'>
+              <Avatar
+                className='size-32 cursor-pointer'
+                onClick={() => fileInputRef.current?.click()}
+              >
                 <AvatarImage src={previewUrl} alt={nickname} />
-                <AvatarFallback className="bg-gray-200 text-gray-600 text-4xl flex items-center justify-center">
-                  {nickname ? nickname[0].toUpperCase() : <Camera className="w-8 h-8" />}
+                <AvatarFallback className='flex items-center justify-center bg-gray-200 text-4xl text-gray-600'>
+                  {nickname ? nickname[0].toUpperCase() : <Camera className='size-8' />}
                 </AvatarFallback>
               </Avatar>
               <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-2"
+                type='button'
+                variant='outline'
+                size='sm'
+                className='mt-2'
                 onClick={() => fileInputRef.current?.click()}
               >
                 프로필 사진 변경
               </Button>
               <Input
-                type="file"
-                accept="image/*"
+                type='file'
+                accept='image/*'
                 onChange={handleProfilePhotoChange}
-                className="hidden"
+                className='hidden'
                 ref={fileInputRef}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="nickname">닉네임</Label>
+            <div className='space-y-2'>
+              <Label htmlFor='nickname'>닉네임</Label>
               <Input
-                id="nickname"
-                type="text"
+                id='nickname'
+                type='text'
                 value={nickname}
                 onChange={handleNicknameChange}
-                placeholder="새로운 닉네임을 입력하세요"
+                placeholder='새로운 닉네임을 입력하세요'
               />
             </div>
           </CardContent>
-          <CardFooter className="flex justify-between gap-4">
-            <Button type="button" variant="outline" className="w-full" onClick={() => navigate('/account')}>
+          <CardFooter className='flex justify-between gap-4'>
+            <Button
+              type='button'
+              variant='outline'
+              className='w-full'
+              onClick={() => navigate('/account')}
+            >
               취소
             </Button>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? <Loader2 className="animate-spin w-4 h-4" /> : '저장하기'}
+            <Button type='submit' className='w-full' disabled={loading}>
+              {loading ? <Loader2 className='size-4 animate-spin' /> : '저장하기'}
             </Button>
           </CardFooter>
         </form>

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
+
+import { fetchPosts } from '@/utils/postUtils';
 import { Post } from '../../../types/Posts';
 import PostSummaryCard from '../post/PostSummaryCard';
-import { fetchPosts } from '@/utils/postUtils';
 
 interface PostListProps {
   boardId: string;
@@ -24,7 +25,7 @@ const PostList: React.FC<PostListProps> = ({ boardId, onPostClick, selectedAutho
   }, [boardId, selectedAuthorId]);
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {posts.map((post) => (
         <PostSummaryCard key={post.id} post={post} onClick={() => onPostClick(post.id)} />
       ))}
