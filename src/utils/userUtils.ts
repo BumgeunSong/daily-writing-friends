@@ -1,11 +1,21 @@
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot,
+  getDocs,
+  collection,
+} from 'firebase/firestore';
+
 import { firestore } from '../firebase';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, getDocs, collection } from 'firebase/firestore';
 import { User } from '../types/User';
 
 // Helper function to get user data from localStorage
 function getCachedUserData(uid: string): User | null {
   const cachedUserData = localStorage.getItem(`user-${uid}`);
-  return cachedUserData ? JSON.parse(cachedUserData) as User : null;
+  return cachedUserData ? (JSON.parse(cachedUserData) as User) : null;
 }
 
 // Helper function to cache user data in localStorage

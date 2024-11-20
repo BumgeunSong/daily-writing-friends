@@ -1,30 +1,30 @@
-import { Link, useLocation } from 'react-router-dom'
-import { Home, Bell, User } from 'lucide-react'
+import { Home, Bell, User } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 
 const tabs = [
   { name: 'Home', icon: Home, path: '/boards' },
   { name: 'Notifications', icon: Bell, path: '/notifications' },
   { name: 'Account', icon: User, path: '/account' },
-]
+];
 
 export default function BottomTabsNavigator() {
-  const location = useLocation()
+  const location = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border">
-      <div className="flex justify-around">
+    <nav className='fixed inset-x-0 bottom-0 border-t border-border bg-background'>
+      <div className='flex justify-around'>
         {tabs.map((tab) => (
           <Link
             key={tab.name}
             to={tab.path}
-            className={`p-4 flex flex-col items-center ${
+            className={`flex flex-col items-center p-4 ${
               location.pathname === tab.path ? 'text-primary' : 'text-muted-foreground'
             }`}
           >
-            <tab.icon className="h-6 w-6" />
+            <tab.icon className='size-6' />
           </Link>
         ))}
       </div>
     </nav>
-  )
+  );
 }

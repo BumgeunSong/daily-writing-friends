@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { firestore } from '../../../firebase';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+
+import { useAuth } from '@/contexts/AuthContext';
 import { Reply } from '@/types/Reply';
 import ReplyRow from './ReplyRow';
-import { useAuth } from '@/contexts/AuthContext';
+import { firestore } from '../../../firebase';
 
 interface ReplyListProps {
   postId: string;
@@ -14,16 +15,14 @@ const ReplyList: React.FC<ReplyListProps> = ({ postId, commentId }) => {
   const [replies, setReplies] = useState<Reply[]>([]);
   const { currentUser } = useAuth();
 
-
-
   useEffect(() => {
     const repliesRef = collection(firestore, 'posts', postId, 'comments', commentId, 'replies');
     const repliesQuery = query(repliesRef, orderBy('createdAt', 'asc'));
 
     const unsubscribe = onSnapshot(repliesQuery, (snapshot) => {
-      const fetchedReplies = snapshot.docs.map(doc => ({
+      const fetchedReplies = snapshot.docs.map((doc) => ({
         id: doc.id,
-        ...doc.data()
+        ...doc.data(),
       })) as Reply[];
       setReplies(fetchedReplies);
     });
@@ -32,7 +31,7 @@ const ReplyList: React.FC<ReplyListProps> = ({ postId, commentId }) => {
   }, [postId, commentId]);
 
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       {replies.map((reply) => (
         <ReplyRow
           key={reply.id}

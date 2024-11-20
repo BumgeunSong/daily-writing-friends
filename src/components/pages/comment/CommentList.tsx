@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { Comment } from "../../../types/Comment";
-import { onSnapshot, orderBy, query, collection } from "firebase/firestore";
-import { firestore } from "@/firebase";
-import CommentRow from "./CommentRow";
-import { useAuth } from "@/contexts/AuthContext";
+import { onSnapshot, orderBy, query, collection } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+
+import { useAuth } from '@/contexts/AuthContext';
+import { firestore } from '@/firebase';
+import CommentRow from './CommentRow';
+import { Comment } from '../../../types/Comment';
 
 interface CommentListProps {
   postId: string;
@@ -14,8 +15,8 @@ const CommentList: React.FC<CommentListProps> = ({ postId }) => {
   const { currentUser } = useAuth();
 
   useEffect(() => {
-    const postRef = collection(firestore, "posts", postId, "comments");
-    const commentsQuery = query(postRef, orderBy("createdAt", "asc"));
+    const postRef = collection(firestore, 'posts', postId, 'comments');
+    const commentsQuery = query(postRef, orderBy('createdAt', 'asc'));
 
     const unsubscribe = onSnapshot(commentsQuery, (snapshot) => {
       const fetchedComments = snapshot.docs.map((doc) => ({
@@ -29,7 +30,7 @@ const CommentList: React.FC<CommentListProps> = ({ postId }) => {
   }, [postId]);
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {comments.map((comment) => (
         <CommentRow
           key={comment.id}

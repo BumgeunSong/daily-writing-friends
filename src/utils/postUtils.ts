@@ -1,5 +1,17 @@
+import {
+  collection,
+  orderBy,
+  doc,
+  getDoc,
+  where,
+  query,
+  onSnapshot,
+  QueryDocumentSnapshot,
+  DocumentData,
+  getDocs,
+} from 'firebase/firestore';
+
 import { firestore } from '../firebase';
-import { collection, orderBy, doc, getDoc, where, query, onSnapshot, QueryDocumentSnapshot, DocumentData, getDocs } from 'firebase/firestore';
 import { Post } from '../types/Posts';
 
 export const fetchPost = async (id: string): Promise<Post | null> => {
@@ -16,19 +28,19 @@ export const fetchPost = async (id: string): Promise<Post | null> => {
 export function fetchPosts(
   boardId: string,
   selectedAuthorId: string | null,
-  setPosts: React.Dispatch<React.SetStateAction<Post[]>>
+  setPosts: React.Dispatch<React.SetStateAction<Post[]>>,
 ) {
   let q = query(
-    collection(firestore, "posts"),
-    where("boardId", "==", boardId),
-    orderBy("createdAt", "desc"),
+    collection(firestore, 'posts'),
+    where('boardId', '==', boardId),
+    orderBy('createdAt', 'desc'),
   );
 
   if (selectedAuthorId) {
-    q = query(q, where("authorId", "==", selectedAuthorId));
-  } 
+    q = query(q, where('authorId', '==', selectedAuthorId));
+  }
 
-  return onSnapshot(q, async (snapshot) => {  
+  return onSnapshot(q, async (snapshot) => {
     const postsData = await Promise.all(snapshot.docs.map(mapDocToPost));
     setPosts(postsData);
   });
@@ -50,10 +62,14 @@ async function mapDocToPost(docSnap: QueryDocumentSnapshot<DocumentData>): Promi
 }
 
 async function getCommentsCount(postId: string): Promise<number> {
-  const commentsSnapshot = await getDocs(collection(firestore, "posts", postId, "comments"));
-  const commentsCount = await Promise.all(commentsSnapshot.docs.map(async (comment) => {
-    const repliesSnapshot = await getDocs(collection(firestore, "posts", postId, "comments", comment.id, "replies"));
-    return Number(comment.exists()) + repliesSnapshot.docs.length;
-  }));
+  const commentsSnapshot = await getDocs(collection(firestore, 'posts', postId, 'comments'));
+  const commentsCount = await Promise.all(
+    commentsSnapshot.docs.map(async (comment) => {
+      const repliesSnapshot = await getDocs(
+        collection(firestore, 'posts', postId, 'comments', comment.id, 'replies'),
+      );
+      return Number(comment.exists()) + repliesSnapshot.docs.length;
+    }),
+  );
   return commentsCount.reduce((acc, curr) => acc + curr, 0);
 }

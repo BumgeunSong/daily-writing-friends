@@ -1,15 +1,13 @@
-import { Reply } from "@/types/Reply";
-import { fetchUserNickname } from "@/utils/userUtils";
-import { useEffect, useState } from "react";
-import ReplyInput from "./ReplyInput";
-import { Button } from "@/components/ui/button";
-import { Edit, Trash2, X } from "lucide-react";
-import {
-  deleteReplyToComment,
-  updateReplyToComment,
-} from "@/utils/commentUtils";
-import { convertUrlsToLinks } from "@/utils/contentUtils";
 import DOMPurify from 'dompurify';
+import { Edit, Trash2, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Reply } from '@/types/Reply';
+import { deleteReplyToComment, updateReplyToComment } from '@/utils/commentUtils';
+import { convertUrlsToLinks } from '@/utils/contentUtils';
+import { fetchUserNickname } from '@/utils/userUtils';
+import ReplyInput from './ReplyInput';
 
 interface ReplyRowProps {
   reply: Reply;
@@ -18,12 +16,7 @@ interface ReplyRowProps {
   isAuthor: boolean;
 }
 
-const ReplyRow: React.FC<ReplyRowProps> = ({
-  reply,
-  commentId,
-  postId,
-  isAuthor,
-}) => {
+const ReplyRow: React.FC<ReplyRowProps> = ({ reply, commentId, postId, isAuthor }) => {
   const [userNickname, setUserNickname] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -32,7 +25,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({
   };
 
   const handleDelete = async () => {
-    if (window.confirm("답글을 삭제하시겠습니까?")) {
+    if (window.confirm('답글을 삭제하시겠습니까?')) {
       await deleteReplyToComment(postId, commentId, reply.id);
     }
   };
@@ -57,45 +50,37 @@ const ReplyRow: React.FC<ReplyRowProps> = ({
   });
 
   return (
-    <div key={reply.id} className="flex items-start space-x-4">
-      <div className="flex-1">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <p className="font-semibold text-base">{userNickname || "??"}</p>
-            <span className="text-sm text-muted-foreground">
+    <div key={reply.id} className='flex items-start space-x-4'>
+      <div className='flex-1'>
+        <div className='flex items-center justify-between'>
+          <div className='flex items-center space-x-3'>
+            <p className='text-base font-semibold'>{userNickname || '??'}</p>
+            <span className='text-sm text-muted-foreground'>
               {reply.createdAt?.toDate().toLocaleString()}
             </span>
           </div>
           {isAuthor && (
             <div>
               <Button
-                variant="outline"
-                size="sm"
+                variant='outline'
+                size='sm'
                 onClick={handleEditToggle}
-                className="text-primary-500"
+                className='text-primary'
               >
-                <EditIcon className="h-4 w-4" />
+                <EditIcon className='size-4' />
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-red-500"
-                onClick={handleDelete}
-              >
-                <Trash2 className="h-4 w-4" />
+              <Button variant='outline' size='sm' className='text-red-500' onClick={handleDelete}>
+                <Trash2 className='size-4' />
               </Button>
             </div>
           )}
         </div>
-        <div className="text-base mt-2">
+        <div className='mt-2 text-base'>
           {isEditing ? (
-            <ReplyInput
-              onSubmit={handleEditSubmit}
-              initialValue={reply.content}
-            />
+            <ReplyInput onSubmit={handleEditSubmit} initialValue={reply.content} />
           ) : (
-            <div 
-              className="prose whitespace-pre-wrap"
+            <div
+              className='prose whitespace-pre-wrap'
               dangerouslySetInnerHTML={{ __html: sanitizedContent }}
             />
           )}

@@ -8,7 +8,7 @@ const RecentBoard: React.FC = () => {
     return <Navigate to={`/board/${boardId}`} />;
   }
 
-  return <Navigate to="/boards/list" />;
+  return <Navigate to='/boards/list' />;
 };
 
-export default RecentBoard; 
+export default RecentBoard;

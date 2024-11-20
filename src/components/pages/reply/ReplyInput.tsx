@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { useAuth } from "../../../contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
+import { Send } from 'lucide-react';
+import React, { useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface ReplyInputProps {
   placeholder?: string;
@@ -9,11 +10,7 @@ interface ReplyInputProps {
   onSubmit: (content: string) => void;
 }
 
-const ReplyInput: React.FC<ReplyInputProps> = ({
-  placeholder,
-  initialValue = "",
-  onSubmit,
-}) => {
+const ReplyInput: React.FC<ReplyInputProps> = ({ placeholder, initialValue = '', onSubmit }) => {
   const [newReply, setNewReply] = useState(initialValue);
   const { currentUser } = useAuth();
 
@@ -23,26 +20,23 @@ const ReplyInput: React.FC<ReplyInputProps> = ({
 
     try {
       await onSubmit(newReply);
-      setNewReply("");
+      setNewReply('');
     } catch (error) {
-      console.error("답글 추가 오류:", error);
+      console.error('답글 추가 오류:', error);
     }
   };
 
   return (
-    <form
-      onSubmit={handleAddReply}
-      className="w-full flex items-center space-x-4"
-    >
+    <form onSubmit={handleAddReply} className='flex w-full items-center space-x-4'>
       <textarea
-        placeholder={placeholder || "답글을 입력하세요..."}
+        placeholder={placeholder || '답글을 입력하세요...'}
         value={newReply}
         onChange={(e) => setNewReply(e.target.value)}
-        className="flex-1 text-base p-2 border rounded resize-none"
+        className='flex-1 resize-none rounded border p-2 text-base'
         rows={3} // Adjust the number of rows as needed
       />
-      <Button type="submit" size="icon">
-        <Send className="h-4 w-4 mr-2" />
+      <Button type='submit' size='icon'>
+        <Send className='mr-2 size-4' />
       </Button>
     </form>
   );
