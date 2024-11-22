@@ -13,6 +13,7 @@ import PostCreationPage from './components/pages/post/PostCreationPage';
 import PostDetailPage from './components/pages/post/PostDetailPage';
 import { useAuth } from './contexts/AuthContext';
 import './index.css';
+import { ProtectedRoute } from './components/route/ProtectedRoute';
 
 const AuthenticatedLayout = () => {
   return (
@@ -31,7 +32,13 @@ export default function App() {
   return (
     <Routes>
       <Route path='/login' element={!currentUser ? <LoginPage /> : <Navigate to='/boards' />} />
-      <Route element={currentUser ? <AuthenticatedLayout /> : <Navigate to='/login' />}>
+      <Route
+        element={
+          <ProtectedRoute>
+            <AuthenticatedLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route path='/boards' element={<RecentBoard />} />
         <Route path='/boards/list' element={<BoardListPage />} />
         <Route path='/board/:boardId' element={<BoardPage />} />
