@@ -41,9 +41,8 @@ export default function EditPostPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim() || !id) return;
-
     try {
-      const docRef = doc(firestore, 'posts', id);
+      const docRef = doc(firestore, `boards/${boardId}/posts`, id);
       await updateDoc(docRef, {
         content,
         updatedAt: serverTimestamp(),

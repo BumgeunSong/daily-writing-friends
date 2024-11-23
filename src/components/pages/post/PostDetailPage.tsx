@@ -12,8 +12,8 @@ import { Post } from '../../../types/Posts';
 import { fetchPost } from '../../../utils/postUtils';
 import Comments from '../comment/Comments';
 
-const deletePost = async (id: string): Promise<void> => {
-  await deleteDoc(doc(firestore, 'posts', id));
+const deletePost = async (boardId: string, id: string): Promise<void> => {
+  await deleteDoc(doc(firestore, `boards/${boardId}/posts`, id));
 };
 
 const handleDelete = async (
@@ -27,7 +27,7 @@ const handleDelete = async (
   if (!confirmDelete) return;
 
   try {
-    await deletePost(id);
+    await deletePost(boardId, id);
     navigate(`/board/${boardId}`);
   } catch (error) {
     console.error('게시물 삭제 오류:', error);
