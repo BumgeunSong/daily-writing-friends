@@ -9,6 +9,8 @@ import {
   QueryDocumentSnapshot,
   DocumentData,
   getDocs,
+  setDoc,
+  serverTimestamp,
 } from 'firebase/firestore';
 
 import { firestore } from '../firebase';
@@ -71,4 +73,16 @@ async function getCommentsCount(boardId: string, postId: string): Promise<number
     }),
   );
   return commentsCount.reduce((acc, curr) => acc + curr, 0);
+}
+
+export async function createPost(boardId: string, title: string, content: string, authorId: string, authorName: string) {
+  const postRef = doc(collection(firestore, `boards/${boardId}/posts`));
+  return setDoc(postRef, {
+    title,
+    boardId,
+    content,
+    authorId,
+    authorName,
+    createdAt: serverTimestamp(),
+  });
 }

@@ -1,4 +1,3 @@
-import { collection, addDoc, serverTimestamp, setDoc, doc } from 'firebase/firestore';
 import { ChevronLeft } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 import ReactQuill from 'react-quill';
@@ -6,7 +5,7 @@ import { useNavigate, Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
-import { firestore } from '../../../firebase';
+import { createPost } from '@/utils/postUtils';
 import 'react-quill/dist/quill.snow.css';
 
 const TitleInput = React.forwardRef<
@@ -54,16 +53,10 @@ export default function PostCreationPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
+    if (!boardId) return;
 
     try {
-      const postRef = doc(collection(firestore, `boards/${boardId}/posts`));
-      await setDoc(postRef, {
-        title,
-        content,
-        authorId: currentUser?.uid,
-        authorName: currentUser?.displayName,
-        createdAt: serverTimestamp(),
-      });
+      await createPost(boardId, title, content, currentUser?.uid, currentUser?.displayName);
       navigate(`/board/${boardId}`);
     } catch (error) {
       console.error('Error creating post:', error);
