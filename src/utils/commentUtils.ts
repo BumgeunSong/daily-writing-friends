@@ -3,6 +3,7 @@ import { collection, addDoc, doc, serverTimestamp, updateDoc, deleteDoc } from '
 import { firestore } from '../firebase';
 
 export const addCommentToPost = async (
+  boardId: string,
   postId: string,
   content: string,
   userId: string,
@@ -10,7 +11,7 @@ export const addCommentToPost = async (
   userProfileImage: string,
 ) => {
   try {
-    const postRef = doc(firestore, 'posts', postId);
+    const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
     await addDoc(collection(postRef, 'comments'), {
       content,
       userId,
@@ -24,18 +25,18 @@ export const addCommentToPost = async (
   }
 };
 
-export const updateCommentToPost = async (postId: string, commentId: string, content: string) => {
+export const updateCommentToPost = async (boardId: string, postId: string, commentId: string, content: string) => {
   try {
-    const postRef = doc(firestore, 'posts', postId);
+    const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
     await updateDoc(doc(postRef, 'comments', commentId), { content });
   } catch (error) {
     console.error('Error updating comment:', error);
   }
 };
 
-export const deleteCommentToPost = async (postId: string, commentId: string) => {
+export const deleteCommentToPost = async (boardId: string, postId: string, commentId: string) => {
   try {
-    const postRef = doc(firestore, 'posts', postId);
+    const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
     await deleteDoc(doc(postRef, 'comments', commentId));
   } catch (error) {
     console.error('Error deleting comment:', error);
@@ -43,6 +44,7 @@ export const deleteCommentToPost = async (postId: string, commentId: string) => 
 };
 
 export const addReplyToComment = async (
+  boardId: string,
   postId: string,
   commentId: string,
   content: string,
@@ -51,7 +53,7 @@ export const addReplyToComment = async (
   userProfileImage: string,
 ) => {
   try {
-    const postRef = doc(firestore, 'posts', postId);
+    const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
     await addDoc(collection(postRef, 'comments', commentId, 'replies'), {
       content,
       userId,
@@ -66,13 +68,14 @@ export const addReplyToComment = async (
 };
 
 export const updateReplyToComment = async (
+  boardId: string,
   postId: string,
   commentId: string,
   replyId: string,
   content: string,
 ) => {
   try {
-    const postRef = doc(firestore, 'posts', postId);
+    const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
     await updateDoc(doc(postRef, 'comments', commentId, 'replies', replyId), {
       content,
     });
@@ -81,9 +84,9 @@ export const updateReplyToComment = async (
   }
 };
 
-export const deleteReplyToComment = async (postId: string, commentId: string, replyId: string) => {
+export const deleteReplyToComment = async (boardId: string, postId: string, commentId: string, replyId: string) => {
   try {
-    const postRef = doc(firestore, 'posts', postId);
+    const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
     await deleteDoc(doc(postRef, 'comments', commentId, 'replies', replyId));
   } catch (error) {
     console.error('Error deleting reply:', error);

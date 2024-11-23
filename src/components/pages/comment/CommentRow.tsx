@@ -11,6 +11,7 @@ import { fetchUserNickname } from '../../../utils/userUtils';
 import Replies from '../reply/Replies';
 
 interface CommentRowProps {
+  boardId: string;
   postId: string;
   comment: Comment;
   isAuthor: boolean;

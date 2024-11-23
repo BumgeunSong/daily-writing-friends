@@ -7,15 +7,16 @@ import CommentRow from './CommentRow';
 import { Comment } from '../../../types/Comment';
 
 interface CommentListProps {
+  boardId: string;
   postId: string;
 }
 
-const CommentList: React.FC<CommentListProps> = ({ postId }) => {
+const CommentList: React.FC<CommentListProps> = ({ boardId, postId }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const { currentUser } = useAuth();
 
   useEffect(() => {
-    const postRef = collection(firestore, 'posts', postId, 'comments');
+    const postRef = collection(firestore, `boards/${boardId}/posts/${postId}/comments`);
     const commentsQuery = query(postRef, orderBy('createdAt', 'asc'));
 
     const unsubscribe = onSnapshot(commentsQuery, (snapshot) => {
@@ -27,13 +28,14 @@ const CommentList: React.FC<CommentListProps> = ({ postId }) => {
     });
 
     return () => unsubscribe();
-  }, [postId]);
+  }, [boardId, postId]);
 
   return (
     <div className='space-y-6'>
       {comments.map((comment) => (
         <CommentRow
           key={comment.id}
+          boardId={boardId}
           postId={postId}
           comment={comment}
           isAuthor={comment.userId === currentUser?.uid}

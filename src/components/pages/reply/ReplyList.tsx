@@ -7,16 +7,17 @@ import ReplyRow from './ReplyRow';
 import { firestore } from '../../../firebase';
 
 interface ReplyListProps {
+  boardId: string;
   postId: string;
   commentId: string;
 }
 
-const ReplyList: React.FC<ReplyListProps> = ({ postId, commentId }) => {
+const ReplyList: React.FC<ReplyListProps> = ({ boardId, postId, commentId }) => {
   const [replies, setReplies] = useState<Reply[]>([]);
   const { currentUser } = useAuth();
 
   useEffect(() => {
-    const repliesRef = collection(firestore, 'posts', postId, 'comments', commentId, 'replies');
+    const repliesRef = collection(firestore, `boards/${boardId}/posts/${postId}/comments/${commentId}/replies`);
     const repliesQuery = query(repliesRef, orderBy('createdAt', 'asc'));
 
     const unsubscribe = onSnapshot(repliesQuery, (snapshot) => {
@@ -28,7 +29,7 @@ const ReplyList: React.FC<ReplyListProps> = ({ postId, commentId }) => {
     });
 
     return () => unsubscribe();
-  }, [postId, commentId]);
+  }, [boardId, postId, commentId]);
 
   return (
     <div className='space-y-4'>
