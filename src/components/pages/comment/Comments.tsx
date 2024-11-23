@@ -28,7 +28,6 @@ const Comments: React.FC<CommentsProps> = ({ boardId, postId }) => {
     );
   };
 
-  console.log('boardId', boardId);
   return (
     <section className='mt-12 space-y-8'>
       <h2 className='text-2xl font-semibold'>댓글</h2>
