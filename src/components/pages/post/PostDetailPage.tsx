@@ -44,14 +44,14 @@ export default function PostDetailPage() {
 
   useEffect(() => {
     const loadPost = async () => {
-      if (!id) {
+      if (!id || !boardId) {
         console.error('게시물 ID가 제공되지 않았습니다');
         setIsLoading(false);
         return;
       }
 
       try {
-        const fetchedPost = await fetchPost(id);
+        const fetchedPost = await fetchPost(boardId, id);
         setPost(fetchedPost);
       } catch (error) {
         console.error('게시물 가져오기 오류:', error);
@@ -148,7 +148,7 @@ export default function PostDetailPage() {
       </article>
       <div className='mt-12 border-t border-gray-200'></div>
       <div className='mt-12'>
-        <Comments postId={id!} />
+        <Comments boardId={boardId!} postId={id!} />
       </div>
     </div>
   );

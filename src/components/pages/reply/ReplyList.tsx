@@ -36,6 +36,7 @@ const ReplyList: React.FC<ReplyListProps> = ({ boardId, postId, commentId }) => 
       {replies.map((reply) => (
         <ReplyRow
           key={reply.id}
+          boardId={boardId}
           reply={reply}
           isAuthor={currentUser?.uid === reply.userId}
           commentId={commentId}

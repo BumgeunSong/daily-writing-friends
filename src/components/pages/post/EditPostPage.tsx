@@ -23,9 +23,9 @@ export default function EditPostPage() {
 
   useEffect(() => {
     const loadPost = async () => {
-      if (!id) return;
+      if (!id || !boardId) return;
       try {
-        const fetchedPost = await fetchPost(id);
+        const fetchedPost = await fetchPost(boardId, id);
         if (!fetchedPost) throw new Error('Post not found');
         setPost(fetchedPost);
         setContent(fetchedPost.content);

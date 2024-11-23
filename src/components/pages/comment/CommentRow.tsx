@@ -17,7 +17,7 @@ interface CommentRowProps {
   isAuthor: boolean;
 }
 
-const CommentRow: React.FC<CommentRowProps> = ({ postId, comment, isAuthor }) => {
+const CommentRow: React.FC<CommentRowProps> = ({ boardId, postId, comment, isAuthor }) => {
   const [userNickName, setUserNickName] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -27,12 +27,12 @@ const CommentRow: React.FC<CommentRowProps> = ({ postId, comment, isAuthor }) =>
 
   const handleDelete = async () => {
     if (window.confirm('댓글을 삭제하시겠습니까?')) {
-      await deleteCommentToPost(postId, comment.id);
+      await deleteCommentToPost(boardId, postId, comment.id);
     }
   };
 
   const handleEditSubmit = async (content: string) => {
-    await updateCommentToPost(postId, comment.id, content);
+    await updateCommentToPost(boardId, postId, comment.id, content);
     setIsEditing(false);
   };
 
@@ -82,7 +82,7 @@ const CommentRow: React.FC<CommentRowProps> = ({ postId, comment, isAuthor }) =>
           </div>
         </div>
       </div>
-      <Replies postId={postId} commentId={comment.id} />
+      <Replies boardId={boardId} postId={postId} commentId={comment.id} />
     </div>
   );
 };
