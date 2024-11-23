@@ -1,4 +1,4 @@
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, setDoc, doc } from 'firebase/firestore';
 import { ChevronLeft } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
 import ReactQuill from 'react-quill';
@@ -51,16 +51,15 @@ export default function PostCreationPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
 
     try {
-      await addDoc(collection(firestore, 'posts'), {
+      const postRef = doc(collection(firestore, `boards/${boardId}/posts`));
+      await setDoc(postRef, {
         title,
         content,
-        boardId,
         authorId: currentUser?.uid,
         authorName: currentUser?.displayName,
         createdAt: serverTimestamp(),
