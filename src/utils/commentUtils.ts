@@ -1,6 +1,31 @@
-import { collection, addDoc, doc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
-
+import { collection, addDoc, doc, serverTimestamp, updateDoc, deleteDoc, getDocs, query, orderBy, onSnapshot, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { Comment } from '../types/Comment';
 import { firestore } from '../firebase';
+
+export function fetchComments(
+  boardId: string,
+  postId: string,
+  setComments: React.Dispatch<React.SetStateAction<Comment[]>>,
+) {
+  const commentsRef = collection(firestore, `boards/${boardId}/posts/${postId}/comments`);
+  const commentsQuery = query(commentsRef, orderBy('createdAt', 'asc'));
+  return onSnapshot(commentsQuery, async (snapshot) => {
+    const comments = await Promise.all(snapshot.docs.map((doc) => mapDocToComment(doc)));
+    setComments(comments);
+  });
+};
+
+async function mapDocToComment(docSnap: QueryDocumentSnapshot<DocumentData>): Promise<Comment> {
+  const data = docSnap.data();
+  return {
+    id: docSnap.id,
+    content: data.content,
+    userId: data.userId,
+    userName: data.userName,
+    userProfileImage: data.userProfileImage,
+    createdAt: data.createdAt,
+  };
+}
 
 export const addCommentToPost = async (
   boardId: string,

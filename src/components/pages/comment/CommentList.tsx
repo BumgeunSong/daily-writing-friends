@@ -1,10 +1,8 @@
-import { onSnapshot, orderBy, query, collection } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-
 import { useAuth } from '@/contexts/AuthContext';
-import { firestore } from '@/firebase';
 import CommentRow from './CommentRow';
 import { Comment } from '../../../types/Comment';
+import { fetchComments } from '@/utils/commentUtils';
 
 interface CommentListProps {
   boardId: string;
@@ -14,19 +12,8 @@ interface CommentListProps {
 const CommentList: React.FC<CommentListProps> = ({ boardId, postId }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const { currentUser } = useAuth();
-
   useEffect(() => {
-    const postRef = collection(firestore, `boards/${boardId}/posts/${postId}/comments`);
-    const commentsQuery = query(postRef, orderBy('createdAt', 'asc'));
-
-    const unsubscribe = onSnapshot(commentsQuery, (snapshot) => {
-      const fetchedComments = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Comment[];
-      setComments(fetchedComments);
-    });
-
+    const unsubscribe = fetchComments(boardId, postId, setComments);
     return () => unsubscribe();
   }, [boardId, postId]);
 
