@@ -6,10 +6,11 @@ import CommentInput from './CommentInput';
 import CommentList from './CommentList';
 
 interface CommentsProps {
+  boardId: string;
   postId: string;
 }
 
-const Comments: React.FC<CommentsProps> = ({ postId }) => {
+const Comments: React.FC<CommentsProps> = ({ boardId, postId }) => {
   const { currentUser } = useAuth();
 
   const handleSubmit = async (content: string) => {
@@ -18,6 +19,7 @@ const Comments: React.FC<CommentsProps> = ({ postId }) => {
     }
 
     await addCommentToPost(
+      boardId,
       postId,
       content,
       currentUser.uid,
@@ -26,10 +28,11 @@ const Comments: React.FC<CommentsProps> = ({ postId }) => {
     );
   };
 
+  console.log('boardId', boardId);
   return (
     <section className='mt-12 space-y-8'>
       <h2 className='text-2xl font-semibold'>댓글</h2>
-      <CommentList postId={postId} />
+      <CommentList boardId={boardId} postId={postId} />
       <div className='my-6 border-t border-gray-200' />
       <CommentInput onSubmit={handleSubmit} />
     </section>

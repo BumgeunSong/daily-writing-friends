@@ -148,7 +148,7 @@ export default function PostDetailPage() {
       </article>
       <div className='mt-12 border-t border-gray-200'></div>
       <div className='mt-12'>
-        <Comments boardId={boardId!} postId={id!} />
+        {boardId && id && <Comments boardId={boardId} postId={id} />}
       </div>
     </div>
   );
