@@ -12,8 +12,8 @@ import { Post } from '../../../types/Posts';
 import { fetchPost } from '../../../utils/postUtils';
 import Comments from '../comment/Comments';
 
-const deletePost = async (id: string): Promise<void> => {
-  await deleteDoc(doc(firestore, 'posts', id));
+const deletePost = async (boardId: string, id: string): Promise<void> => {
+  await deleteDoc(doc(firestore, `boards/${boardId}/posts`, id));
 };
 
 const handleDelete = async (
@@ -27,7 +27,7 @@ const handleDelete = async (
   if (!confirmDelete) return;
 
   try {
-    await deletePost(id);
+    await deletePost(boardId, id);
     navigate(`/board/${boardId}`);
   } catch (error) {
     console.error('게시물 삭제 오류:', error);
@@ -44,14 +44,14 @@ export default function PostDetailPage() {
 
   useEffect(() => {
     const loadPost = async () => {
-      if (!id) {
+      if (!id || !boardId) {
         console.error('게시물 ID가 제공되지 않았습니다');
         setIsLoading(false);
         return;
       }
 
       try {
-        const fetchedPost = await fetchPost(id);
+        const fetchedPost = await fetchPost(boardId, id);
         setPost(fetchedPost);
       } catch (error) {
         console.error('게시물 가져오기 오류:', error);
@@ -148,7 +148,7 @@ export default function PostDetailPage() {
       </article>
       <div className='mt-12 border-t border-gray-200'></div>
       <div className='mt-12'>
-        <Comments postId={id!} />
+        {boardId && id && <Comments boardId={boardId} postId={id} />}
       </div>
     </div>
   );

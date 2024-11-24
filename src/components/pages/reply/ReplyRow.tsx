@@ -11,12 +11,13 @@ import ReplyInput from './ReplyInput';
 
 interface ReplyRowProps {
   reply: Reply;
+  boardId: string;
   commentId: string;
   postId: string;
   isAuthor: boolean;
 }
 
-const ReplyRow: React.FC<ReplyRowProps> = ({ reply, commentId, postId, isAuthor }) => {
+const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, isAuthor }) => {
   const [userNickname, setUserNickname] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -26,12 +27,12 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ reply, commentId, postId, isAuthor 
 
   const handleDelete = async () => {
     if (window.confirm('답글을 삭제하시겠습니까?')) {
-      await deleteReplyToComment(postId, commentId, reply.id);
+      await deleteReplyToComment(boardId, postId, commentId, reply.id);
     }
   };
 
   const handleEditSubmit = async (content: string) => {
-    await updateReplyToComment(postId, commentId, reply.id, content);
+    await updateReplyToComment(boardId, postId, commentId, reply.id, content);
     setIsEditing(false);
   };
 

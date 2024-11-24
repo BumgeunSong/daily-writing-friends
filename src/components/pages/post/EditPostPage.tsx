@@ -23,9 +23,9 @@ export default function EditPostPage() {
 
   useEffect(() => {
     const loadPost = async () => {
-      if (!id) return;
+      if (!id || !boardId) return;
       try {
-        const fetchedPost = await fetchPost(id);
+        const fetchedPost = await fetchPost(boardId, id);
         if (!fetchedPost) throw new Error('Post not found');
         setPost(fetchedPost);
         setContent(fetchedPost.content);
@@ -41,9 +41,8 @@ export default function EditPostPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim() || !id) return;
-
     try {
-      const docRef = doc(firestore, 'posts', id);
+      const docRef = doc(firestore, `boards/${boardId}/posts`, id);
       await updateDoc(docRef, {
         content,
         updatedAt: serverTimestamp(),

@@ -9,17 +9,19 @@ import ReplyList from './ReplyList';
 import { firestore } from '../../../firebase';
 
 interface RepliesProps {
+  boardId: string;
   postId: string;
   commentId: string;
 }
 
-const Replies: React.FC<RepliesProps> = ({ postId, commentId }) => {
+const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyCount, setReplyCount] = useState<number>(0);
   const { currentUser } = useAuth();
 
   const handleSubmit = async (content: string) => {
     await addReplyToComment(
+      boardId,
       postId,
       commentId,
       content,
@@ -54,7 +56,7 @@ const Replies: React.FC<RepliesProps> = ({ postId, commentId }) => {
       </Button>
       {replyingTo === commentId && (
         <div className='mt-2 space-y-4 border-l-2 border-gray-200 pl-4'>
-          <ReplyList postId={postId} commentId={commentId} />
+          <ReplyList boardId={boardId} postId={postId} commentId={commentId} />
           <ReplyInput onSubmit={handleSubmit} />
         </div>
       )}
