@@ -57,7 +57,7 @@ const PostSummaryCard: React.FC<PostSummaryCardProps> = ({ post, onClick }) => {
           <div className='ml-2'>
             <p className='text-sm font-medium'>{authorData?.nickname}</p>
             <p className='text-xs text-muted-foreground'>
-              {formatDistanceToNow(post.createdAt?.toLocaleString() || '?', { addSuffix: true })}
+              {post.createdAt?.toLocaleString() || '?'}
             </p>
           </div>
         </div>
