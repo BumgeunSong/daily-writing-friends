@@ -7,19 +7,25 @@ import { User } from '@/types/User';
 import { createUserData, fetchUserData } from '@/utils/userUtils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { signInWithGoogle } from '../../../firebase';
+import { useNavigate } from 'react-router-dom';
 
 export default function LoginPage() {
-  const { loading } = useAuth();
+  const { loading, redirectPathAfterLogin, setRedirectPathAfterLogin } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogin = async () => {
     try {
       const userCredential = await signInWithGoogle();
       await ensureUserDataInFirestore(userCredential);
+
+      // Redirect to the stored path or a default path after successful login
+      const redirectTo = redirectPathAfterLogin || '/boards';
+      setRedirectPathAfterLogin(null); // Clear the redirect path
+      navigate(redirectTo, { replace: true });
     } catch (error) {
       console.error('Error signing in with Google:', error);
     }
   };
-
   const ensureUserDataInFirestore = async (userCredential: UserCredential) => {
     // Fetch user data from Firestore
     const userData = await fetchUserData(userCredential.user.uid);
