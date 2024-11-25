@@ -8,7 +8,7 @@ export interface Post {
   content: string;
   authorId: string;
   authorName: string;
-  createdAt: Timestamp;
+  createdAt?: Date;
   comments: number;
-  updatedAt?: Timestamp;
+  updatedAt?: Date;
 }
