@@ -121,7 +121,7 @@ export default function PostDetailPage() {
           <h1 className='text-4xl font-bold leading-tight'>{post.title}</h1>
           <div className='flex items-center justify-between text-sm text-muted-foreground'>
             <p>
-              작성자: {authorNickname || '??'} | 작성일: {post.createdAt.toLocaleString()}
+              작성자: {authorNickname || '??'} | 작성일: {post.createdAt?.toLocaleString() || '?'}
             </p>
             {isAuthor && (
               <div className='flex space-x-2'>

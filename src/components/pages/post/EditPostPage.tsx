@@ -90,7 +90,7 @@ export default function EditPostPage() {
             <h1 className='text-3xl font-bold'>{post.title}</h1>
             <div className='flex items-center justify-between text-sm text-muted-foreground'>
               <p>
-                작성자: {post.authorName} | 작성일: {post.createdAt.toLocaleString()}
+                작성자: {post.authorName} | 작성일: {post.createdAt?.toLocaleString() || '?'}
               </p>
             </div>
           </CardHeader>
