@@ -1,14 +1,13 @@
 import DOMPurify from 'dompurify';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { ChevronLeft, Edit, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchUserNickname } from '@/utils/userUtils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { firestore } from '../../../firebase';
-import { Post } from '../../../types/Posts';
+import { useQuery } from '@tanstack/react-query';
 import { fetchPost } from '../../../utils/postUtils';
 import Comments from '../comment/Comments';
 
@@ -21,7 +20,6 @@ const handleDelete = async (
   boardId: string,
   navigate: (path: string) => void,
 ): Promise<void> => {
-
   const confirmDelete = window.confirm('정말로 이 게시물을 삭제하시겠습니까?');
   if (!confirmDelete) return;
 
@@ -35,47 +33,24 @@ const handleDelete = async (
 
 export default function PostDetailPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
-  const [post, setPost] = useState<Post | null>(null);
-  const [authorNickname, setAuthorNickname] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const loadPost = async () => {
-      if (!postId || !boardId) {
-        console.error('게시물 ID가 제공되지 않았습니다');
-        setIsLoading(false);
-        return;
-      }
+  const { data: post, isLoading, error } = useQuery(
+    ['post', boardId, postId],
+    () => fetchPost(boardId!, postId!),
+    {
+      enabled: !!boardId && !!postId,
+    }
+  );
 
-      try {
-        const fetchedPost = await fetchPost(boardId, postId);
-        setPost(fetchedPost);
-      } catch (error) {
-        console.error('게시물 가져오기 오류:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadPost();
-  }, [postId]);
-
-  useEffect(() => {
-    const loadNickname = async () => {
-      if (post?.authorId) {
-        try {
-          const nickname = await fetchUserNickname(post.authorId);
-          setAuthorNickname(nickname);
-        } catch (error) {
-          console.error('작성자 닉네임 가져오기 오류:', error);
-        }
-      }
-    };
-
-    loadNickname();
-  }, [post]);
+  const { data: authorNickname } = useQuery(
+    ['authorNickname', post?.authorId],
+    () => fetchUserNickname(post!.authorId),
+    {
+      enabled: !!post?.authorId,
+    }
+  );
 
   if (isLoading) {
     return (
@@ -88,7 +63,7 @@ export default function PostDetailPage() {
     );
   }
 
-  if (!post) {
+  if (error || !post) {
     return (
       <div className='mx-auto max-w-4xl px-4 py-8 text-center'>
         <h1 className='mb-4 text-2xl font-bold'>게시물을 찾을 수 없습니다.</h1>
