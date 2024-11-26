@@ -1,4 +1,3 @@
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ChevronLeft, Save } from 'lucide-react';
 import React, { useState } from 'react';
 import ReactQuill from 'react-quill';
@@ -9,8 +8,7 @@ import 'react-quill/dist/quill.snow.css';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { fetchPost } from '../../../utils/postUtils';
-import { firestore } from '@/firebase';
+import { fetchPost, updatePost } from '../../../utils/postUtils';
 
 export default function EditPostPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
@@ -29,16 +27,12 @@ export default function EditPostPage() {
       },
     }
   );
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim() || !postId) return;
     try {
-      const docRef = doc(firestore, `boards/${boardId}/posts`, postId);
-      await updateDoc(docRef, {
-        content,
-        updatedAt: serverTimestamp(),
-      });
+      await updatePost(boardId!, postId!, content);
       navigate(`/board/${boardId}/post/${postId}`);
     } catch (error) {
       console.error('Error updating post:', error);

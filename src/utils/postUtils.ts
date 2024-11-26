@@ -11,6 +11,7 @@ import {
   getDocs,
   setDoc,
   serverTimestamp,
+  updateDoc,
 } from 'firebase/firestore';
 
 import { firestore } from '../firebase';
@@ -79,5 +80,13 @@ export async function createPost(boardId: string, title: string, content: string
     authorId,
     authorName,
     createdAt: serverTimestamp(),
+  });
+}
+
+export async function updatePost(boardId: string, postId: string, content: string): Promise<void> {
+  const docRef = doc(firestore, `boards/${boardId}/posts`, postId);
+  await updateDoc(docRef, {
+    content,
+    updatedAt: serverTimestamp(),
   });
 }
