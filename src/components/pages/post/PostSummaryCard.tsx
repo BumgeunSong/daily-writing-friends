@@ -1,4 +1,3 @@
-import { formatDistanceToNow } from 'date-fns';
 import DOMPurify from 'dompurify';
 import { MessageCircle, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
