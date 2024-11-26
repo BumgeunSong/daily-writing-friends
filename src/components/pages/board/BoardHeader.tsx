@@ -1,7 +1,7 @@
 import { ChevronDown } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-
+import { useQuery } from '@tanstack/react-query';
 import { fetchBoardTitle } from '../../../utils/boardUtils';
 
 interface BoardHeaderProps {
@@ -9,16 +9,21 @@ interface BoardHeaderProps {
 }
 
 const BoardHeader: React.FC<BoardHeaderProps> = ({ boardId }) => {
-  const [title, setTitle] = useState<string>('Loading...');
+  const { data: title = 'Loading...', isLoading, error } = useQuery(
+    ['boardTitle', boardId],
+    () => fetchBoardTitle(boardId || ''),
+    {
+      enabled: !!boardId, // boardId가 있을 때만 쿼리 실행
+    }
+  );
 
-  useEffect(() => {
-    const loadBoardTitle = async () => {
-      const title = await fetchBoardTitle(boardId || '');
-      setTitle(title);
-    };
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
-    loadBoardTitle();
-  }, [boardId]);
+  if (error) {
+    return <div>Error loading board title</div>;
+  }
 
   return (
     <header className='bg-primary py-4 text-primary-foreground'>
