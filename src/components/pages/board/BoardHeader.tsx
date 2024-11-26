@@ -8,8 +8,11 @@ interface BoardHeaderProps {
   boardId?: string;
 }
 
-const BoardHeader: React.FC<BoardHeaderProps> = ({ boardId }) => {
-  const { data: title = 'Loading...', isLoading, error } = useQuery(
+const LoadingComponent: React.FC = () => <div>Loading...</div>;
+const ErrorComponent: React.FC = () => <div>Error loading board title</div>;
+
+const BoardHeader: React.FC<BoardHeaderProps> = React.memo(({ boardId }) => {
+  const { data: title, isLoading, error } = useQuery(
     ['boardTitle', boardId],
     () => fetchBoardTitle(boardId || ''),
     {
@@ -18,11 +21,11 @@ const BoardHeader: React.FC<BoardHeaderProps> = ({ boardId }) => {
   );
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoadingComponent />;
   }
 
   if (error) {
-    return <div>Error loading board title</div>;
+    return <ErrorComponent />;
   }
 
   return (
@@ -38,6 +41,6 @@ const BoardHeader: React.FC<BoardHeaderProps> = ({ boardId }) => {
       </div>
     </header>
   );
-};
+});
 
 export default BoardHeader;
