@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import { fetchPosts } from '@/utils/postUtils';
 import { Post } from '../../../types/Posts';
@@ -11,18 +12,21 @@ interface PostListProps {
 }
 
 const PostList: React.FC<PostListProps> = ({ boardId, onPostClick, selectedAuthorId }) => {
-  const [posts, setPosts] = useState<Post[]>([]);
-
-  useEffect(() => {
-    if (!boardId) {
-      console.error('No boardId provided');
-      return;
+  const { data: posts = [], isLoading, error } = useQuery<Post[]>(
+    ['posts', boardId, selectedAuthorId],
+    () => fetchPosts(boardId, selectedAuthorId),
+    {
+      enabled: !!boardId, // boardId가 있을 때만 쿼리 실행
     }
+  );
 
-    const unsubscribe = fetchPosts(boardId, selectedAuthorId, setPosts);
+  if (isLoading) {
+    return <div>Loading posts...</div>;
+  }
 
-    return () => unsubscribe();
-  }, [boardId, selectedAuthorId]);
+  if (error) {
+    return <div>Error loading posts. Please try again later.</div>;
+  }
 
   return (
     <div className='space-y-6'>
