@@ -14,7 +14,7 @@ import { firestore } from '../../../firebase';
 import { fetchPost } from '../../../utils/postUtils';
 
 export default function EditPostPage() {
-  const { id, boardId } = useParams<{ id: string; boardId: string }>();
+  const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
   const [post, setPost] = useState<Post | null>(null);
   const [content, setContent] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -23,9 +23,9 @@ export default function EditPostPage() {
 
   useEffect(() => {
     const loadPost = async () => {
-      if (!id || !boardId) return;
+      if (!postId || !boardId) return;
       try {
-        const fetchedPost = await fetchPost(boardId, id);
+        const fetchedPost = await fetchPost(boardId, postId);
         if (!fetchedPost) throw new Error('Post not found');
         setPost(fetchedPost);
         setContent(fetchedPost.content);
@@ -36,18 +36,18 @@ export default function EditPostPage() {
       }
     };
     loadPost();
-  }, [id, currentUser]);
+  }, [postId, currentUser]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim() || !id) return;
+    if (!content.trim() || !postId) return;
     try {
-      const docRef = doc(firestore, `boards/${boardId}/posts`, id);
+      const docRef = doc(firestore, `boards/${boardId}/posts`, postId);
       await updateDoc(docRef, {
         content,
         updatedAt: serverTimestamp(),
       });
-      navigate(`/board/${boardId}/post/${id}`);
+      navigate(`/board/${boardId}/post/${postId}`);
     } catch (error) {
       console.error('Error updating post:', error);
     }

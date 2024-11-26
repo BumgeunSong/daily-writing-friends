@@ -17,7 +17,7 @@ import { firestore } from '../firebase';
 import { Post } from '../types/Posts';
 
 export const fetchPost = async (boardId: string, postId: string): Promise<Post | null> => {
-  const docSnap = await getDoc(doc(firestore, `boards/${boardId}/posts`, postId));
+  const docSnap = await getDoc(doc(firestore, `boards/${boardId}/posts/${postId}`));
 
   if (!docSnap.exists()) {
     console.log('해당 문서가 없습니다!');
