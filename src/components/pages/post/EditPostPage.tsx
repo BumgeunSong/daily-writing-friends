@@ -1,42 +1,34 @@
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ChevronLeft, Save } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import ReactQuill from 'react-quill';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 
 import 'react-quill/dist/quill.snow.css';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Post } from '@/types/Posts';
-import { useAuth } from '../../../contexts/AuthContext';
-import { firestore } from '../../../firebase';
 import { fetchPost } from '../../../utils/postUtils';
+import { firestore } from '@/firebase';
 
 export default function EditPostPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
-  const [post, setPost] = useState<Post | null>(null);
   const [content, setContent] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(true);
-  const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const loadPost = async () => {
-      if (!postId || !boardId) return;
-      try {
-        const fetchedPost = await fetchPost(boardId, postId);
-        if (!fetchedPost) throw new Error('Post not found');
-        setPost(fetchedPost);
-        setContent(fetchedPost.content);
-      } catch (error) {
-        console.error('Error loading post:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadPost();
-  }, [postId, currentUser]);
+  const { data: post, isLoading, error } = useQuery(
+    ['post', boardId, postId],
+    () => fetchPost(boardId!, postId!),
+    {
+      enabled: !!boardId && !!postId,
+      onSuccess: (fetchedPost) => {
+        if (fetchedPost) {
+          setContent(fetchedPost.content);
+        }
+      },
+    }
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +60,7 @@ export default function EditPostPage() {
     );
   }
 
-  if (!post) {
+  if (error || !post) {
     return (
       <div className='mx-auto max-w-2xl px-4 py-8 text-center'>
         <h1 className='mb-4 text-2xl font-bold'>게시물을 찾을 수 없습니다.</h1>
