@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchPost, updatePost } from '../../../utils/postUtils';
 
-export default function EditPostPage() {
+export default function PostEditPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
   const [content, setContent] = useState<string>('');
   const navigate = useNavigate();

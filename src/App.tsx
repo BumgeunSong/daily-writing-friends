@@ -8,7 +8,7 @@ import RecentBoard from './components/pages/board/RecentBoard';
 import BottomTabsNavigator from './components/pages/BottomTabsNavigator';
 import LoginPage from './components/pages/login/LoginPage';
 import NotificationsPage from './components/pages/notification/NotificationsPage';
-import EditPostPage from './components/pages/post/EditPostPage';
+import PostEditPage from './components/pages/post/PostEditPage';
 import PostCreationPage from './components/pages/post/PostCreationPage';
 import PostDetailPage from './components/pages/post/PostDetailPage';
 import { useAuth } from './contexts/AuthContext';
@@ -44,7 +44,7 @@ export default function App() {
         <Route path='/board/:boardId' element={<BoardPage />} />
         <Route path='/create/:boardId' element={<PostCreationPage />} />
         <Route path='/board/:boardId/post/:postId' element={<PostDetailPage />} />
-        <Route path='/board/:boardId/edit/:postId' element={<EditPostPage />} />
+        <Route path='/board/:boardId/edit/:postId' element={<PostEditPage />} />
         <Route path='/notifications' element={<NotificationsPage />} />
         <Route path='/account' element={<AccountPage />} />
         <Route path='/account/edit' element={<EditAccountPage />} />
