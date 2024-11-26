@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchPosts } from '@/utils/postUtils';
 import { Post } from '../../../types/Posts';
 import PostSummaryCard from '../post/PostSummaryCard';
+import StatusMessage from '../../common/StatusMessage';
 
 interface PostListProps {
   boardId: string;
@@ -16,16 +17,20 @@ const PostList: React.FC<PostListProps> = ({ boardId, onPostClick, selectedAutho
     ['posts', boardId, selectedAuthorId],
     () => fetchPosts(boardId, selectedAuthorId),
     {
-      enabled: !!boardId, // boardId가 있을 때만 쿼리 실행
+      enabled: !!boardId,
     }
   );
 
   if (isLoading) {
-    return <div>Loading posts...</div>;
+    return <StatusMessage isLoading loadingMessage="글을 불러오는 중..." />;
   }
 
   if (error) {
-    return <div>Error loading posts. Please try again later.</div>;
+    return <StatusMessage error errorMessage="글을 불러오는 중에 문제가 생겼어요. 잠시 후 다시 시도해주세요." />;
+  }
+
+  if (posts.length === 0) {
+    return <StatusMessage error errorMessage="글이 하나도 없어요." />;
   }
 
   return (
@@ -38,3 +43,4 @@ const PostList: React.FC<PostListProps> = ({ boardId, onPostClick, selectedAutho
 };
 
 export default PostList;
+
