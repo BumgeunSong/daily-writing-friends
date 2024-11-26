@@ -1,40 +1,32 @@
 // src/components/Pages/BoardListPage.tsx
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-
 import { useAuth } from '../../../contexts/AuthContext';
 import { Board } from '../../../types/Board';
 import { fetchBoardsWithUserPermissions } from '../../../utils/boardUtils';
+import { useQuery } from '@tanstack/react-query';
 
 const BoardListPage: React.FC = () => {
   const { currentUser } = useAuth();
-  const [boards, setBoards] = useState<Board[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchBoards = async () => {
-      if (!currentUser) return;
-
-      try {
-        const boardsData = await fetchBoardsWithUserPermissions(currentUser.uid);
-        setBoards(boardsData);
-      } catch (error) {
-        console.error('Error fetching boards:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBoards();
-  }, [currentUser]);
+  const { data: boards = [], isLoading, error } = useQuery<Board[]>(
+    ['boards', currentUser?.uid],
+    () => fetchBoardsWithUserPermissions(currentUser!.uid),
+    {
+      enabled: !!currentUser, // currentUser가 있을 때만 쿼리 실행
+    }
+  );
 
   const handleBoardClick = (boardId: string) => {
-    localStorage.removeItem('boardId');
     localStorage.setItem('boardId', boardId);
   };
 
-  if (loading) {
+  if (isLoading) {
     return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error loading boards. Please try again later.</div>;
   }
 
   return (
