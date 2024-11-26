@@ -5,6 +5,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { Board } from '../../../types/Board';
 import { fetchBoardsWithUserPermissions } from '../../../utils/boardUtils';
 import { useQuery } from '@tanstack/react-query';
+import StatusMessage from '../../common/StatusMessage';
 
 const BoardListPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -22,11 +23,11 @@ const BoardListPage: React.FC = () => {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <StatusMessage isLoading loadingMessage="게시판을 불러오는 중..." />;
   }
 
   if (error) {
-    return <div>Error loading boards. Please try again later.</div>;
+    return <StatusMessage error errorMessage="게시판을 불러오는 중에 문제가 생겼어요. 잠시 후 다시 시도해주세요." />;
   }
 
   return (

@@ -3,13 +3,11 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { fetchBoardTitle } from '../../../utils/boardUtils';
+import StatusMessage from '../../common/StatusMessage';
 
 interface BoardHeaderProps {
   boardId?: string;
 }
-
-const LoadingComponent: React.FC = () => <div>Loading...</div>;
-const ErrorComponent: React.FC = () => <div>Error loading board title</div>;
 
 const BoardHeader: React.FC<BoardHeaderProps> = React.memo(({ boardId }) => {
   const { data: title, isLoading, error } = useQuery(
@@ -21,11 +19,11 @@ const BoardHeader: React.FC<BoardHeaderProps> = React.memo(({ boardId }) => {
   );
 
   if (isLoading) {
-    return <LoadingComponent />;
+    return <StatusMessage isLoading loadingMessage="타이틀을 불러오는 중..." />;
   }
 
   if (error) {
-    return <ErrorComponent />;
+    return <StatusMessage error errorMessage="타이틀을 불러오는 중에 문제가 생겼어요." />;
   }
 
   return (
