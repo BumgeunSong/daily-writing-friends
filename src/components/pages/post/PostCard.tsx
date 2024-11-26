@@ -9,12 +9,12 @@ import { Post } from '@/types/Posts';
 import { User as Author } from '@/types/User';
 import { fetchUserData } from '@/utils/userUtils';
 
-interface PostSummaryCardProps {
+interface PostCardProps {
   post: Post;
   onClick: () => void;
 }
 
-const PostSummaryCard: React.FC<PostSummaryCardProps> = ({ post, onClick }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
   const sanitizedContent = DOMPurify.sanitize(post.content);
 
   const { data: authorData, error } = useQuery<Author | null>(
@@ -69,4 +69,4 @@ const PostSummaryCard: React.FC<PostSummaryCardProps> = ({ post, onClick }) => {
   );
 };
 
-export default PostSummaryCard;
+export default PostCard;

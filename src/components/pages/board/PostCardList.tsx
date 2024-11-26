@@ -3,16 +3,16 @@ import { useQuery } from '@tanstack/react-query';
 
 import { fetchPosts } from '@/utils/postUtils';
 import { Post } from '../../../types/Posts';
-import PostSummaryCard from '../post/PostSummaryCard';
+import PostCard from '../post/PostCard';
 import StatusMessage from '../../common/StatusMessage';
 
-interface PostListProps {
+interface PostCardListProps {
   boardId: string;
   onPostClick: (postId: string) => void;
   selectedAuthorId: string | null;
 }
 
-const PostList: React.FC<PostListProps> = ({ boardId, onPostClick, selectedAuthorId }) => {
+const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, selectedAuthorId }) => {
   const { data: posts = [], isLoading, error } = useQuery<Post[]>(
     ['posts', boardId, selectedAuthorId],
     () => fetchPosts(boardId, selectedAuthorId),
@@ -36,11 +36,11 @@ const PostList: React.FC<PostListProps> = ({ boardId, onPostClick, selectedAutho
   return (
     <div className='space-y-6'>
       {posts.map((post) => (
-        <PostSummaryCard key={post.id} post={post} onClick={() => onPostClick(post.id)} />
+        <PostCard key={post.id} post={post} onClick={() => onPostClick(post.id)} />
       ))}
     </div>
   );
 };
 
-export default PostList;
+export default PostCardList;
 

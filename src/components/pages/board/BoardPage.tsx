@@ -4,7 +4,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 
 import AuthorList from './AuthorList';
 import BoardHeader from './BoardHeader';
-import PostList from './PostList';
+import PostCardList from './PostCardList';
 import { Button } from '../../ui/button';
 
 export default function BoardPage() {
@@ -49,7 +49,7 @@ export default function BoardPage() {
         <div className='mb-6'>
           <AuthorList onAuthorSelect={handleAuthorSelect} />
         </div>
-        <PostList
+        <PostCardList
           boardId={boardId!}
           onPostClick={handlePostClick}
           selectedAuthorId={selectedAuthorId}
