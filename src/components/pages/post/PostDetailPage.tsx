@@ -17,17 +17,16 @@ const deletePost = async (boardId: string, id: string): Promise<void> => {
 };
 
 const handleDelete = async (
-  id: string,
+  postId: string,
   boardId: string,
   navigate: (path: string) => void,
 ): Promise<void> => {
-  if (!id) return;
 
   const confirmDelete = window.confirm('정말로 이 게시물을 삭제하시겠습니까?');
   if (!confirmDelete) return;
 
   try {
-    await deletePost(boardId, id);
+    await deletePost(boardId, postId);
     navigate(`/board/${boardId}`);
   } catch (error) {
     console.error('게시물 삭제 오류:', error);
@@ -130,13 +129,15 @@ export default function PostDetailPage() {
                     <Edit className='mr-2 size-4' /> 수정
                   </Button>
                 </Link>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={() => handleDelete(postId!, boardId!, (path) => navigate(path))}
-                >
-                  <Trash2 className='mr-2 size-4' /> 삭제
-                </Button>
+                {boardId && postId && (
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => handleDelete(postId!, boardId!, (path) => navigate(path))}
+                  >
+                    <Trash2 className='mr-2 size-4' /> 삭제
+                  </Button>
+                )}
               </div>
             )}
           </div>
