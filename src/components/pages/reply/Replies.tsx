@@ -1,4 +1,3 @@
-import { collection, onSnapshot } from 'firebase/firestore';
 import React, { useState, useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { addReplyToComment } from '@/utils/commentUtils';
 import ReplyInput from './ReplyInput';
 import ReplyList from './ReplyList';
-import { firestore } from '../../../firebase';
+import { fetchReplyCount } from '@/utils/replyUtils';
 
 interface RepliesProps {
   boardId: string;
@@ -32,13 +31,9 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
   };
 
   useEffect(() => {
-    const repliesRef = collection(firestore, 'posts', postId, 'comments', commentId, 'replies');
-    const unsubscribe = onSnapshot(repliesRef, (snapshot) => {
-      setReplyCount(snapshot.size);
-    });
-
+    const unsubscribe = fetchReplyCount(boardId, postId, commentId, setReplyCount);
     return () => unsubscribe();
-  }, [postId, commentId]);
+  }, [boardId, postId, commentId]);
 
   const handleReply = () => {
     setReplyingTo(replyingTo === commentId ? null : commentId);
