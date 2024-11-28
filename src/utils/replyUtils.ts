@@ -13,4 +13,12 @@ export function fetchReplies(boardId: string, postId: string, commentId: string,
   });
   return unsubscribe;
 }
+
+export function fetchReplyCount(boardId: string, postId: string, commentId: string, setReplyCount: (count: number) => void) {
+  const repliesRef = collection(firestore, `boards/${boardId}/posts/${postId}/comments/${commentId}/replies`);
+  const unsubscribe = onSnapshot(repliesRef, (snapshot) => {
+    setReplyCount(snapshot.size);
+  });
+  return unsubscribe;
+}
     
