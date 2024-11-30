@@ -26,6 +26,9 @@ export const onReplyCreatedOnComment = onDocumentCreated(
 
     const message = `${reply.userName}님이 당신의 '${commentData.content.slice(0, 10)}...' 댓글에 답글을 달았어요.`;
 
+    console.log("commentAuthorId", commentAuthorId);
+    console.log("replyAuthorId", replyAuthorId);
+
     // 댓글 작성자에게 알림 생성
     if (commentAuthorId && commentAuthorId !== replyAuthorId) {
       const notification: Notification = {
@@ -40,6 +43,8 @@ export const onReplyCreatedOnComment = onDocumentCreated(
         read: false,
       };
 
+      // 글 작성자에게 알림 생성
+      console.log("Notification created", notification);
       // 사용자 하위 컬렉션에 알림 추가
       await admin
         .firestore()
