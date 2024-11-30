@@ -7,7 +7,6 @@ import { Post } from "../types/Post";
 export const onCommentCreated = onDocumentCreated(
     "boards/{boardId}/posts/{postId}/comments/{commentId}",
     async (event) => {
-        console.log("event triggered", event);
         const comment = event.data?.data() as Comment;
 
         // 댓글 작성자와 게시물 소유자 ID 가져오기
@@ -37,9 +36,6 @@ export const onCommentCreated = onDocumentCreated(
             timestamp: Timestamp.now(),
             read: false,
         };
-
-        console.log("notification created", notification);
-        console.log("postAuthorId", postAuthorId);
         // 사용자 하위 컬렉션에 알림 추가
         await admin
             .firestore()
