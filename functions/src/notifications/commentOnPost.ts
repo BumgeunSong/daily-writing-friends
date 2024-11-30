@@ -23,7 +23,7 @@ export const onCommentCreated = onDocumentCreated(
         const postAuthorId = postData.authorId;
         const postTitle = postData.title;
 
-        const message = `${comment.userName}님이 ${postTitle}에 댓글을 달았어요.`;
+        const message = `${comment.userName}님이 '${postTitle.slice(0, 10)}...' 글에 댓글을 달았어요.`;
 
         // 게시물 소유자에게 알림 생성
         const notification: Notification = {
