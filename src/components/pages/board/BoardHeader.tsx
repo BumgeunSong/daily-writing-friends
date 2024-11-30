@@ -1,24 +1,30 @@
 import { ChevronDown } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-
+import { useQuery } from '@tanstack/react-query';
 import { fetchBoardTitle } from '../../../utils/boardUtils';
+import StatusMessage from '../../common/StatusMessage';
 
 interface BoardHeaderProps {
   boardId?: string;
 }
 
-const BoardHeader: React.FC<BoardHeaderProps> = ({ boardId }) => {
-  const [title, setTitle] = useState<string>('Loading...');
+const BoardHeader: React.FC<BoardHeaderProps> = React.memo(({ boardId }) => {
+  const { data: title, isLoading, error } = useQuery(
+    ['boardTitle', boardId],
+    () => fetchBoardTitle(boardId || ''),
+    {
+      enabled: !!boardId, // boardId가 있을 때만 쿼리 실행
+    }
+  );
 
-  useEffect(() => {
-    const loadBoardTitle = async () => {
-      const title = await fetchBoardTitle(boardId || '');
-      setTitle(title);
-    };
+  if (isLoading) {
+    return <StatusMessage isLoading loadingMessage="타이틀을 불러오는 중..." />;
+  }
 
-    loadBoardTitle();
-  }, [boardId]);
+  if (error) {
+    return <StatusMessage error errorMessage="타이틀을 불러오는 중에 문제가 생겼어요." />;
+  }
 
   return (
     <header className='bg-primary py-4 text-primary-foreground'>
@@ -27,12 +33,12 @@ const BoardHeader: React.FC<BoardHeaderProps> = ({ boardId }) => {
           to='/boards/list'
           className='flex items-center space-x-2 rounded p-2 transition hover:bg-primary-foreground/10'
         >
-          <span className='text-2xl font-bold sm:text-3xl'>{title}</span>
+          <span className='text-2xl font-bold sm:text-3xl'>{title || '타이틀 없음'}</span>
           <ChevronDown className='size-5' />
         </Link>
       </div>
     </header>
   );
-};
+});
 
 export default BoardHeader;

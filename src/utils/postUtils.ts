@@ -11,6 +11,7 @@ import {
   getDocs,
   setDoc,
   serverTimestamp,
+  updateDoc,
 } from 'firebase/firestore';
 
 import { firestore } from '../firebase';
@@ -27,11 +28,7 @@ export const fetchPost = async (boardId: string, postId: string): Promise<Post |
   return mapDocToPost(docSnap, boardId);
 };
 
-export function fetchPosts(
-  boardId: string,
-  selectedAuthorId: string | null,
-  setPosts: React.Dispatch<React.SetStateAction<Post[]>>,
-) {
+export async function fetchPosts(boardId: string, selectedAuthorId: string | null): Promise<Post[]> {
   let q = query(
     collection(firestore, `boards/${boardId}/posts`),
     orderBy('createdAt', 'desc'),
@@ -41,10 +38,9 @@ export function fetchPosts(
     q = query(q, where('authorId', '==', selectedAuthorId));
   }
 
-  return onSnapshot(q, async (snapshot) => {
-    const postsData = await Promise.all(snapshot.docs.map((doc) => mapDocToPost(doc, boardId)));
-    setPosts(postsData);
-  });
+  const snapshot = await getDocs(q);
+  const postsData = await Promise.all(snapshot.docs.map((doc) => mapDocToPost(doc, boardId)));
+  return postsData;
 }
 
 async function mapDocToPost(docSnap: QueryDocumentSnapshot<DocumentData>, boardId: string): Promise<Post> {
@@ -84,5 +80,13 @@ export async function createPost(boardId: string, title: string, content: string
     authorId,
     authorName,
     createdAt: serverTimestamp(),
+  });
+}
+
+export async function updatePost(boardId: string, postId: string, content: string): Promise<void> {
+  const docRef = doc(firestore, `boards/${boardId}/posts`, postId);
+  await updateDoc(docRef, {
+    content,
+    updatedAt: serverTimestamp(),
   });
 }
