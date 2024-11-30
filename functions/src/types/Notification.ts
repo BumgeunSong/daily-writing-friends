@@ -5,6 +5,7 @@ export interface Notification {
   boardId: string;
   postId: string;
   commentId?: string;
+  replyId?: string;
   fromUserId: string;
   message: string;
   timestamp: Timestamp;
