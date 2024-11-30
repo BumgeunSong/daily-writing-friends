@@ -30,6 +30,7 @@ export const onCommentCreated = onDocumentCreated(
         const notification: Notification = {
             type: NotificationType.COMMENT_ON_POST,
             fromUserId: commentAuthorId,
+            boardId: boardId,
             postId: postId,
             commentId: event.params.commentId,
             message: message,

@@ -2,6 +2,7 @@ import {Timestamp} from 'firebase-admin/firestore';
 
 export interface Notification {
   type: NotificationType;
+  boardId: string;
   postId: string;
   commentId?: string;
   fromUserId: string;
