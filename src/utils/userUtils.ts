@@ -7,6 +7,8 @@ import {
   onSnapshot,
   getDocs,
   collection,
+  where,
+  query,
 } from 'firebase/firestore';
 
 import { firestore } from '../firebase';
@@ -54,6 +56,33 @@ export async function fetchUserData(uid: string): Promise<User | null> {
 export async function fetchAllUserData(): Promise<User[]> {
   const users = await getDocs(collection(firestore, 'users'));
   return users.docs.map((doc) => doc.data() as User);
+}
+
+// Function to fetch all user data with board permission from firestore
+export async function fetchAllUserDataWithBoardPermission(boardId: string): Promise<User[]> {
+  try {
+    // 캐시에서 사용자 데이터 가져오기
+    const cachedUsers = localStorage.getItem(`permissionedUsers_${boardId}`);
+    if (cachedUsers) {
+      return JSON.parse(cachedUsers);
+    }
+
+    const usersQuery = query(
+      collection(firestore, 'users'),
+      where(`boardPermissions.${boardId}`, 'in', ['read', 'write'])
+    );
+
+    const querySnapshot = await getDocs(usersQuery);
+    const users = querySnapshot.docs.map((doc) => doc.data() as User);
+
+    // 캐시에 사용자 데이터 저장
+    localStorage.setItem(`permissionedUsers_${boardId}`, JSON.stringify(users));
+
+    return users;
+  } catch (error) {
+    console.error('Error fetching users with board permission:', error);
+    return [];
+  }
 }
 
 // Function to listen for user data changes and update cache

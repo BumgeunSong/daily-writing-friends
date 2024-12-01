@@ -47,7 +47,7 @@ export default function BoardPage() {
       <BoardHeader boardId={boardId} />
       <main className='container mx-auto px-4 py-8 pb-24'>
         <div className='mb-6'>
-          <AuthorList onAuthorSelect={handleAuthorSelect} />
+          {boardId && <AuthorList boardId={boardId} onAuthorSelect={handleAuthorSelect} />}
         </div>
         <PostCardList
           boardId={boardId!}

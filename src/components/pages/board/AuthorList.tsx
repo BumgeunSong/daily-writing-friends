@@ -1,21 +1,22 @@
 import React, { useEffect, useState } from 'react';
 
 import { User } from '@/types/User';
-import { fetchAllUserData } from '@/utils/userUtils';
+import { fetchAllUserData, fetchAllUserDataWithBoardPermission } from '@/utils/userUtils';
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
 import { ScrollArea, ScrollBar } from '../../ui/scroll-area';
 
 interface AuthorListProps {
+  boardId: string;
   onAuthorSelect: (authorId: string) => void;
 }
 
-const AuthorList: React.FC<AuthorListProps> = ({ onAuthorSelect }) => {
+const AuthorList: React.FC<AuthorListProps> = ({ boardId, onAuthorSelect }) => {
   const [authors, setAuthors] = useState<User[]>([]);
 
   useEffect(() => {
     const fetchAuthors = async () => {
       try {
-        const authorData = await fetchAllUserData();
+        const authorData = await fetchAllUserDataWithBoardPermission(boardId);
         setAuthors(authorData);
       } catch (error) {
         console.error('Error fetching author data:', error);
