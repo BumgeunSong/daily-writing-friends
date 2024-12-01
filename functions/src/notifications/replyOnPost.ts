@@ -4,6 +4,7 @@ import { Notification, NotificationType } from "../types/Notification";
 import { Timestamp } from "firebase-admin/firestore";
 import { Post } from "../types/Post";
 import admin from "../admin";
+import { generateMessage } from "./messageGenerator";
 
 export const onReplyCreatedOnPost = onDocumentCreated(
     "boards/{boardId}/posts/{postId}/comments/{commentId}/replies/{replyId}",
@@ -24,7 +25,7 @@ export const onReplyCreatedOnPost = onDocumentCreated(
         const postData = postSnapshot.data() as Post;
         const postAuthorId = postData.authorId;
 
-        const message = `${reply.userName}님이 '${postData.title.slice(0, 12)}...' 글에 답글을 달았어요.`;
+        const message = generateMessage(NotificationType.REPLY_ON_POST, reply.userName, postData.title);
 
         console.log("postAuthorId", postAuthorId);
         console.log("replyAuthorId", replyAuthorId);

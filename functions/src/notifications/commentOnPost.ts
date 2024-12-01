@@ -4,6 +4,8 @@ import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { Comment } from "../types/Comment";
 import { Notification, NotificationType } from "../types/Notification";
 import { Post } from "../types/Post";
+import { generateMessage } from "./messageGenerator";
+
 export const onCommentCreated = onDocumentCreated(
     "boards/{boardId}/posts/{postId}/comments/{commentId}",
     async (event) => {
@@ -23,7 +25,7 @@ export const onCommentCreated = onDocumentCreated(
         const postAuthorId = postData.authorId;
         const postTitle = postData.title;
 
-        const message = `${comment.userName}님이 '${postTitle.slice(0, 12)}...' 글에 댓글을 달았어요.`;
+        const message = generateMessage(NotificationType.COMMENT_ON_POST, comment.userName, postTitle);
 
         // 게시물 소유자에게 알림 생성
         const notification: Notification = {

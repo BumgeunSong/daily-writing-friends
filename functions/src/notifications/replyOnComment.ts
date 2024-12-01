@@ -4,7 +4,7 @@ import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { Reply } from "../types/Reply";
 import { Comment } from "../types/Comment";
 import { Notification, NotificationType } from "../types/Notification";
-
+import { generateMessage } from "./messageGenerator";
 export const onReplyCreatedOnComment = onDocumentCreated(
   "boards/{boardId}/posts/{postId}/comments/{commentId}/replies/{replyId}",
   async (event) => {
@@ -25,7 +25,7 @@ export const onReplyCreatedOnComment = onDocumentCreated(
     const commentData = commentSnapshot.data() as Comment;
     const commentAuthorId = commentData.userId;
 
-    const message = `${reply.userName}님이 당신의 '${commentData.content.slice(0, 12)}...' 댓글에 답글을 달았어요.`;
+    const message = generateMessage(NotificationType.REPLY_ON_COMMENT, reply.userName, commentData.content);
 
     console.log("commentAuthorId", commentAuthorId);
     console.log("replyAuthorId", replyAuthorId);
