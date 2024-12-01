@@ -12,6 +12,8 @@ export const onReplyCreatedOnPost = onDocumentCreated(
 
         const postId = event.params.postId;
         const boardId = event.params.boardId;
+        const commentId = event.params.commentId;
+        const replyId = event.params.replyId;
         const replyAuthorId = reply.userId;
 
         // 게시물 소유자 ID 가져오기
@@ -34,7 +36,8 @@ export const onReplyCreatedOnPost = onDocumentCreated(
                 fromUserId: replyAuthorId,
                 boardId: boardId,
                 postId: postId,
-                replyId: reply.id,
+                commentId: commentId,
+                replyId: replyId,
                 message: message,
                 timestamp: Timestamp.now(),
                 read: false,
