@@ -2,9 +2,16 @@
 // notifications collection is under user/{userId}/notifications
 import { getDocs, query, collection } from 'firebase/firestore';
 import { firestore } from '@/firebase';
+import { Notification } from '@/types/Notification';
 
-export const getNotifications = async (userId: string) => {
-    const notificationsQuery = query(collection(firestore, `user/${userId}/notifications`));
-    const notifications = await getDocs(notificationsQuery);
-    return notifications;
+// define return type of getNotifications as Promise<Notification[]>
+export const getNotifications = async (userId: string): Promise<Notification[]> => {
+    try {
+        const notificationsQuery = query(collection(firestore, `users/${userId}/notifications`));
+        const notifications = await getDocs(notificationsQuery);
+        return notifications.docs.map((doc) => doc.data() as Notification);
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
+        throw error;
+    }
 };
