@@ -1,10 +1,20 @@
 import React from 'react';
+import { Card } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import NotificationsHeader from './NotificationsHeader';
+import NotificationsList from './NotificationsList';
+import { Notification, NotificationType } from '@/types/Notification';
+import { Timestamp } from 'firebase/firestore';
 
 const NotificationsPage: React.FC = () => {
   return (
-    <div className='flex min-h-screen flex-col items-center justify-center bg-gray-100'>
-      <span className='mb-4 text-6xl'>🚧</span>
-      <p className='text-xl font-semibold text-gray-700'>알림 기능은 아직 준비중이에요.</p>
+    <div className='container mx-auto max-w-2xl py-8'>
+      <NotificationsHeader unreadCount={0} onMarkAllAsReadClick={() => { }} />
+      <Card>
+        <ScrollArea className='h-[600px]'>
+          <NotificationsList notifications={MOCK_NOTIFICATIONS} />
+        </ScrollArea>
+      </Card>
     </div>
   );
 };
