@@ -25,7 +25,7 @@ export const onReplyCreatedOnComment = onDocumentCreated(
     const commentData = commentSnapshot.data() as Comment;
     const commentAuthorId = commentData.userId;
 
-    const message = `${reply.userName}님이 당신의 '${commentData.content.slice(0, 10)}...' 댓글에 답글을 달았어요.`;
+    const message = `${reply.userName}님이 당신의 '${commentData.content.slice(0, 12)}...' 댓글에 답글을 달았어요.`;
 
     console.log("commentAuthorId", commentAuthorId);
     console.log("replyAuthorId", replyAuthorId);

@@ -24,7 +24,7 @@ export const onReplyCreatedOnPost = onDocumentCreated(
         const postData = postSnapshot.data() as Post;
         const postAuthorId = postData.authorId;
 
-        const message = `${reply.userName}님이 '${postData.title.slice(0, 10)}...' 글에 답글을 달았어요.`;
+        const message = `${reply.userName}님이 '${postData.title.slice(0, 12)}...' 글에 답글을 달았어요.`;
 
         console.log("postAuthorId", postAuthorId);
         console.log("replyAuthorId", replyAuthorId);
