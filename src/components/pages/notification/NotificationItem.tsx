@@ -27,7 +27,6 @@ function getNotificationLink(notification: Notification): string {
 }
 
 export const NotificationItem = ({ notification }: NotificationItemProps) => {
-    console.log("notification id: ", notification.id);
     return (
       <Link to={getNotificationLink(notification)}>
         <div
