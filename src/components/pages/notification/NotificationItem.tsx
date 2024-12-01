@@ -9,19 +9,6 @@ interface NotificationItemProps {
   notification: Notification;
 }
 
-const getNotificationIcon = (type: NotificationType): React.ReactNode => {
-  switch (type) {
-    case NotificationType.COMMENT_ON_POST:
-      return <MessageSquare className='size-4' />;
-    case NotificationType.REPLY_ON_COMMENT:
-      return <MessageSquare className='size-4' />;
-    case NotificationType.REPLY_ON_POST:
-      return <MessageSquare className='size-4' />;
-    default:
-      return null;
-  }
-};
-
 function getNotificationLink(notification: Notification): string {
   return `/board/${notification.boardId}/post/${notification.postId}`;
 }
