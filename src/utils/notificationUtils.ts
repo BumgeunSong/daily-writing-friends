@@ -1,17 +1,26 @@
-// Function to get notification of a user from firestore
-// notifications collection is under user/{userId}/notifications
-import { getDocs, query, collection } from 'firebase/firestore';
+import { getDocs, query, collection, orderBy, Timestamp, limit, startAfter } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { Notification } from '@/types/Notification';
 
-// define return type of getNotifications as Promise<Notification[]>
-export const getNotifications = async (userId: string): Promise<Notification[]> => {
+export const getNotifications = async (userId: string, limitCount: number, after?: Timestamp): Promise<Notification[]> => {
+    let notificationsQuery = query(
+        collection(firestore, `users/${userId}/notifications`),
+        orderBy('timestamp', 'desc'),
+        limit(limitCount)
+    );
+
+    if (after) {
+        notificationsQuery = query(notificationsQuery, startAfter(after));
+    }
+
     try {
-        const notificationsQuery = query(collection(firestore, `users/${userId}/notifications`));
-        const notifications = await getDocs(notificationsQuery);
-        return notifications.docs.map((doc) => doc.data() as Notification);
+        const notificationsSnapshot = await getDocs(notificationsQuery);
+        return notificationsSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data()
+        } as Notification));
     } catch (error) {
         console.error('Error fetching notifications:', error);
-        throw error;
+        return [];
     }
 };
