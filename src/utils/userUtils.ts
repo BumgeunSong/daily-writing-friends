@@ -7,6 +7,8 @@ import {
   onSnapshot,
   getDocs,
   collection,
+  where,
+  query,
 } from 'firebase/firestore';
 
 import { firestore } from '../firebase';
@@ -54,6 +56,24 @@ export async function fetchUserData(uid: string): Promise<User | null> {
 export async function fetchAllUserData(): Promise<User[]> {
   const users = await getDocs(collection(firestore, 'users'));
   return users.docs.map((doc) => doc.data() as User);
+}
+
+// Function to fetch all user data with board permission from firestore
+export async function fetchAllUserDataWithBoardPermission(boardId: string): Promise<User[]> {
+  try {
+    const usersQuery = query(
+      collection(firestore, 'users'),
+      where(`boardPermissions.${boardId}`, 'in', ['read', 'write'])
+    );
+
+    const querySnapshot = await getDocs(usersQuery);
+    const users = querySnapshot.docs.map((doc) => doc.data() as User);
+
+    return users;
+  } catch (error) {
+    console.error('Error fetching users with board permission:', error);
+    return [];
+  }
 }
 
 // Function to listen for user data changes and update cache
