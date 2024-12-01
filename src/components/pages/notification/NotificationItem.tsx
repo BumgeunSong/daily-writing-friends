@@ -33,9 +33,8 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
             }`}
         >
           <div
-            className={`rounded-full p-2.5 ${!notification.read ? 'bg-primary/90 text-primary-foreground shadow-sm' : 'bg-muted/60'
-              }`}
-        >
+            className='rounded-full p-2.5 bg-primary/90 text-primary-foreground shadow-sm'
+          >
           {getNotificationIcon(notification.type)}
         </div>
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Notification } from '@/types/Notification';
 import { CardContent } from '@/components/ui/card';
 import { NotificationItem } from './NotificationItem';

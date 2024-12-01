@@ -9,8 +9,8 @@ import { Timestamp } from 'firebase/firestore';
 const NotificationsPage: React.FC = () => {
   return (
     <div className='container mx-auto max-w-2xl py-8'>
-      <NotificationsHeader unreadCount={0} onMarkAllAsReadClick={() => { }} />
-      <Card>
+      <NotificationsHeader />
+      <Card className='overflow-hidden'>
         <ScrollArea className='h-[600px]'>
           <NotificationsList notifications={MOCK_NOTIFICATIONS} />
         </ScrollArea>
