@@ -17,7 +17,7 @@ export const onReplyCreatedOnPost = onDocumentCreated(
         const commentId = event.params.commentId;
         const replyId = event.params.replyId;
         const replyAuthorId = reply.userId;
-
+        const replyAuthorProfile = reply.userProfileImage;
         // 게시물 소유자 ID 가져오기
         const postSnapshot = await admin
             .firestore()
@@ -33,6 +33,7 @@ export const onReplyCreatedOnPost = onDocumentCreated(
             const notification: Notification = {
                 type: NotificationType.REPLY_ON_POST,
                 fromUserId: replyAuthorId,
+                fromUserProfileImage: replyAuthorProfile,
                 boardId: boardId,
                 postId: postId,
                 commentId: commentId,

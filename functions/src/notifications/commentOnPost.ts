@@ -16,6 +16,7 @@ export const onCommentCreated = onDocumentCreated(
         const postId = event.params.postId;
         const boardId = event.params.boardId;
         const commentAuthorId = comment.userId;
+        const commentAuthorProfile = comment.userProfileImage;
 
         // 게시물 소유자 ID 가져오기
         const postSnapshot = await admin
@@ -33,6 +34,7 @@ export const onCommentCreated = onDocumentCreated(
             const notification: Notification = {
                 type: NotificationType.COMMENT_ON_POST,
                 fromUserId: commentAuthorId,
+                fromUserProfileImage: commentAuthorProfile,
                 boardId: boardId,
                 postId: postId,
                 commentId: event.params.commentId,

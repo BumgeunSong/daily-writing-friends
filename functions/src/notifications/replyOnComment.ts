@@ -18,7 +18,7 @@ export const onReplyCreatedOnComment = onDocumentCreated(
     const commentId = event.params.commentId;
     const replyId = event.params.replyId;
     const replyAuthorId = reply.userId;
-
+    const replyAuthorProfile = reply.userProfileImage;
     // 댓글 작성자 ID 가져오기
     const commentSnapshot = await admin
       .firestore()
@@ -34,6 +34,7 @@ export const onReplyCreatedOnComment = onDocumentCreated(
       const notification: Notification = {
         type: NotificationType.REPLY_ON_COMMENT,
         fromUserId: replyAuthorId,
+        fromUserProfileImage: replyAuthorProfile,
         boardId: boardId,
         postId: postId,
         commentId: commentId,

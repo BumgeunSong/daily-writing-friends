@@ -7,6 +7,7 @@ export interface Notification {
   commentId?: string;
   replyId?: string;
   fromUserId: string;
+  fromUserProfileImage?: string;
   message: string;
   timestamp: Timestamp;
   read: boolean;
