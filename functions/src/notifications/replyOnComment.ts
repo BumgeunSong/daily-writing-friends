@@ -5,6 +5,8 @@ import { Reply } from "../types/Reply";
 import { Comment } from "../types/Comment";
 import { Notification, NotificationType } from "../types/Notification";
 import { generateMessage } from "./messageGenerator";
+import { shouldGenerateNotification } from "./shouldGenerateNotification";
+
 export const onReplyCreatedOnComment = onDocumentCreated(
   "boards/{boardId}/posts/{postId}/comments/{commentId}/replies/{replyId}",
   async (event) => {
@@ -28,7 +30,7 @@ export const onReplyCreatedOnComment = onDocumentCreated(
     const message = generateMessage(NotificationType.REPLY_ON_COMMENT, reply.userName, commentData.content);
 
     // 댓글 작성자에게 알림 생성
-    if (commentAuthorId && commentAuthorId !== replyAuthorId) {
+    if (shouldGenerateNotification(NotificationType.REPLY_ON_COMMENT, commentAuthorId, replyAuthorId)) {
       const notification: Notification = {
         type: NotificationType.REPLY_ON_COMMENT,
         fromUserId: replyAuthorId,

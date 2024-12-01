@@ -1,4 +1,3 @@
-
 import { NotificationType } from "../types/Notification";
 
 export const generateMessage = (notificationType: NotificationType, userName: string, contentTitle: string) => {

@@ -5,6 +5,7 @@ import { Timestamp } from "firebase-admin/firestore";
 import { Post } from "../types/Post";
 import admin from "../admin";
 import { generateMessage } from "./messageGenerator";
+import { shouldGenerateNotification } from "./shouldGenerateNotification";
 
 export const onReplyCreatedOnPost = onDocumentCreated(
     "boards/{boardId}/posts/{postId}/comments/{commentId}/replies/{replyId}",
@@ -28,7 +29,7 @@ export const onReplyCreatedOnPost = onDocumentCreated(
         const message = generateMessage(NotificationType.REPLY_ON_POST, reply.userName, postData.title);
 
         // 게시물 소유자에게 알림 생성
-        if (postAuthorId && postAuthorId !== replyAuthorId) {
+        if (shouldGenerateNotification(NotificationType.REPLY_ON_POST, postAuthorId, replyAuthorId)) {
             const notification: Notification = {
                 type: NotificationType.REPLY_ON_POST,
                 fromUserId: replyAuthorId,

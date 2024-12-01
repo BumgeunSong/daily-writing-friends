@@ -5,6 +5,7 @@ import { Comment } from "../types/Comment";
 import { Notification, NotificationType } from "../types/Notification";
 import { Post } from "../types/Post";
 import { generateMessage } from "./messageGenerator";
+import { shouldGenerateNotification } from "./shouldGenerateNotification";
 
 export const onCommentCreated = onDocumentCreated(
     "boards/{boardId}/posts/{postId}/comments/{commentId}",
@@ -27,22 +28,23 @@ export const onCommentCreated = onDocumentCreated(
 
         const message = generateMessage(NotificationType.COMMENT_ON_POST, comment.userName, postTitle);
 
-        // 게시물 소유자에게 알림 생성
-        const notification: Notification = {
-            type: NotificationType.COMMENT_ON_POST,
-            fromUserId: commentAuthorId,
-            boardId: boardId,
-            postId: postId,
-            commentId: event.params.commentId,
-            message: message,
-            timestamp: Timestamp.now(),
-            read: false,
-        };
-        // 사용자 하위 컬렉션에 알림 추가
-        await admin
-            .firestore()
-            .collection(`users/${postAuthorId}/notifications`)
-            .add(notification);
-
+        if (shouldGenerateNotification(NotificationType.COMMENT_ON_POST, postAuthorId, commentAuthorId)) {
+            // 게시물 소유자에게 알림 생성
+            const notification: Notification = {
+                type: NotificationType.COMMENT_ON_POST,
+                fromUserId: commentAuthorId,
+                boardId: boardId,
+                postId: postId,
+                commentId: event.params.commentId,
+                message: message,
+                timestamp: Timestamp.now(),
+                read: false,
+            };
+            // 사용자 하위 컬렉션에 알림 추가
+            await admin
+                .firestore()
+                .collection(`users/${postAuthorId}/notifications`)
+                .add(notification);
+        }
     }
 );
