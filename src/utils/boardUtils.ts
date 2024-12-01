@@ -6,11 +6,20 @@ import { User } from '../types/User';
 
 export async function fetchBoardTitle(boardId: string): Promise<string> {
   try {
+    const cachedTitle = localStorage.getItem(`boardTitle_${boardId}`);
+    if (cachedTitle) {
+      return cachedTitle;
+    }
+
     const boardDocRef = doc(firestore, 'boards', boardId);
     const boardDoc = await getDoc(boardDocRef);
     if (boardDoc.exists()) {
       const boardData = boardDoc.data();
-      return boardData?.title || 'Board';
+      const title = boardData?.title || 'Board';
+
+      localStorage.setItem(`boardTitle_${boardId}`, title);
+
+      return title;
     } else {
       console.error('Board not found');
       return 'Board not found';
