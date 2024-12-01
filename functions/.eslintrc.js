@@ -41,6 +41,7 @@ module.exports = {
     "react-hooks/exhaustive-deps": "warn",
     "no-var": "error",
     "prefer-const": "warn",
+     "no-debugger": "off",
     "import/order": [
       "warn",
       {
