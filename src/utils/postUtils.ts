@@ -28,6 +28,11 @@ export const fetchPost = async (boardId: string, postId: string): Promise<Post |
   return mapDocToPost(docSnap, boardId);
 };
 
+export const fetchPostTitle = async (boardId: string, postId: string): Promise<string | undefined> => {
+  const post = await fetchPost(boardId, postId);
+  return post?.title
+}
+
 export async function fetchPosts(boardId: string, selectedAuthorId: string | null): Promise<Post[]> {
   let q = query(
     collection(firestore, `boards/${boardId}/posts`),
