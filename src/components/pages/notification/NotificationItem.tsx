@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Notification, NotificationType } from '@/types/Notification';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { usePostTitle } from '@/utils/postUtils';
-import { fetchUserNickname } from '@/utils/userUtils';
+import { useUserNickname } from '@/utils/userUtils';
 
 interface NotificationItemProps {
   notification: Notification;
@@ -15,13 +15,14 @@ function getNotificationLink(notification: Notification): string {
 
 export const NotificationItem = ({ notification }: NotificationItemProps) => {
   const { data: postTitle } = usePostTitle(notification.boardId, notification.postId);
+  const { data: userNickName } = useUserNickname(notification.fromUserId);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    if (postTitle) {
-      generateMessage(notification, postTitle).then(setMessage);
+    if (postTitle && userNickName) {
+      generateMessage(notification, postTitle, userNickName).then(setMessage);
     }
-  }, [notification, postTitle]);
+  }, [notification, postTitle, userNickName]);
 
   return (
     <Link to={getNotificationLink(notification)}>
@@ -48,9 +49,8 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
   );
 };
 
-const generateMessage = async (notification: Notification, postTitle: string): Promise<string> => {
+const generateMessage = async (notification: Notification, postTitle: string, userNickName: string): Promise<string> => {
   const postTitleSnippet = generateTitleSnippet(postTitle || '');
-  const userNickName = await fetchUserNickname(notification.fromUserId);
 
   switch (notification.type) {
     case NotificationType.COMMENT_ON_POST:
