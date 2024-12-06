@@ -101,7 +101,7 @@ export function listenForUserDataChanges(uid: string, onChange: (data: User) => 
 }
 
 // 사용자 닉네임을 가져오는 함수
-const fetchUserNickname = async (uid: string): Promise<string | null> => {
+export const fetchUserNickname = async (uid: string): Promise<string | null> => {
   const user = await fetchUserData(uid);
   return user?.nickname || null;
 };
