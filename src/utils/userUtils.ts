@@ -13,6 +13,7 @@ import {
 
 import { firestore } from '../firebase';
 import { User } from '../types/User';
+import { useQuery } from '@tanstack/react-query';
 
 // Helper function to get user data from localStorage
 function getCachedUserData(uid: string): User | null {
@@ -99,11 +100,19 @@ export function listenForUserDataChanges(uid: string, onChange: (data: User) => 
   return unsubscribe; // Return the unsubscribe function to stop listening when needed
 }
 
-// Function to fetch user nickname from Firestore
-export async function fetchUserNickname(uid: string): Promise<string | null> {
+// 사용자 닉네임을 가져오는 함수
+export const fetchUserNickname = async (uid: string): Promise<string | null> => {
   const user = await fetchUserData(uid);
   return user?.nickname || null;
-}
+};
+
+// 사용자 닉네임을 가져오는 React Query 훅
+export const useUserNickname = (uid: string) => {
+  return useQuery(['userNickname', uid], () => fetchUserNickname(uid), {
+    staleTime: 1000 * 60 * 5, // 5분 동안 데이터가 신선하다고 간주
+    cacheTime: 1000 * 60 * 10, // 10분 동안 캐시 유지
+  });
+};
 
 // Function to update user data in Firestore and cache
 export async function updateUserData(uid: string, data: Partial<User>): Promise<void> {

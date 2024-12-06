@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Notification } from '@/types/Notification';
+import { Notification, NotificationType } from '@/types/Notification';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { fetchPostTitle } from '@/utils/postUtils';
-import { fetchUserNickname } from '@/utils/userUtils';
-import { NotificationMessage } from './NotificationMessage';
+import { usePostTitle } from '@/utils/postUtils';
+import { useUserNickname } from '@/utils/userUtils';
+
 interface NotificationItemProps {
   notification: Notification;
 }
@@ -14,13 +14,15 @@ function getNotificationLink(notification: Notification): string {
 }
 
 export const NotificationItem = ({ notification }: NotificationItemProps) => {
-  const [postTitle, setPostTitle] = useState('');
-  const [userNickName, setUserNickName] = useState('');
+  const { data: postTitle } = usePostTitle(notification.boardId, notification.postId);
+  const { data: userNickName } = useUserNickname(notification.fromUserId);
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
-    getPostTitle(notification.boardId, notification.postId).then(setPostTitle);
-    getUserNickName(notification.fromUserId).then(setUserNickName);
-  }, [notification]);
+    if (postTitle && userNickName) {
+      generateMessage(notification, postTitle, userNickName).then(setMessage);
+    }
+  }, [notification, postTitle, userNickName]);
 
   return (
     <Link to={getNotificationLink(notification)}>
@@ -36,7 +38,7 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
         </Avatar>
         <div className='flex-1 space-y-1'>
           <p className='text-sm font-medium leading-tight text-foreground'>
-            <NotificationMessage userNickName={userNickName} postTitle={postTitle} notificationType={notification.type} />
+            {message}
           </p>
           <span className='text-[11px] text-muted-foreground/80'>
             {notification.timestamp.toDate().toLocaleString()}
@@ -47,12 +49,24 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
   );
 };
 
-const getPostTitle = async (boardId: string, postId: string) => {
-  const postTitle = await fetchPostTitle(boardId, postId);
-  return postTitle || '';
+const generateMessage = async (notification: Notification, postTitle: string, userNickName: string): Promise<string> => {
+  const postTitleSnippet = generateTitleSnippet(postTitle || '');
+
+  switch (notification.type) {
+    case NotificationType.COMMENT_ON_POST:
+      return `${userNickName}님이 ${postTitleSnippet} 글에 댓글을 달았어요.`;
+    case NotificationType.REPLY_ON_COMMENT:
+      return `${userNickName}님이 ${postTitleSnippet} 댓글에 답글을 달았어요.`;
+    case NotificationType.REPLY_ON_POST:
+      return `${userNickName}님이 ${postTitleSnippet} 글에 답글을 달았어요.`;
+    default:
+      return `${userNickName}님이 알림을 보냈습니다.`;
+  }
 };
 
-const getUserNickName = async (userId: string) => {
-  const userNickName = await fetchUserNickname(userId);
-  return userNickName || '';
+const generateTitleSnippet = (contentTitle: string) => {
+  if (contentTitle.length > 12) {
+    return contentTitle.slice(0, 12) + "...";
+  }
+  return contentTitle;
 };
