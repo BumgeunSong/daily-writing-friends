@@ -3,7 +3,8 @@ import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Settings } from 'lucide-react';
+import { Settings, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const NotificationSettingPage: React.FC = () => {
   const [inAppNotification, setInAppNotification] = useState(true);
@@ -16,11 +17,14 @@ const NotificationSettingPage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
-      <div className='h-16 mb-4 flex items-center px-4'>
+      <div className='h-16 mb-4 flex items-center justify-between px-4'>
         <div className='flex items-center gap-2'>
           <Settings className='size-5' />
           <h1 className='text-2xl font-bold'>알림 설정</h1>
         </div>
+        <Link to="/notifications" className="ml-auto">
+          <X className='size-5' />
+        </Link>
       </div>
       <Card className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
@@ -60,4 +64,3 @@ const NotificationSettingPage: React.FC = () => {
 };
 
 export default NotificationSettingPage;
-
