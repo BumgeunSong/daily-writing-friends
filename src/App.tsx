@@ -14,6 +14,7 @@ import PostDetailPage from './components/pages/post/PostDetailPage';
 import { useAuth } from './contexts/AuthContext';
 import './index.css';
 import { ProtectedRoute } from './components/route/ProtectedRoute';
+import NotificationSettingPage from './components/pages/notification/NotificationSettingPage';
 
 const AuthenticatedLayout = () => {
   return (
@@ -46,6 +47,7 @@ export default function App() {
         <Route path='/board/:boardId/post/:postId' element={<PostDetailPage />} />
         <Route path='/board/:boardId/edit/:postId' element={<PostEditPage />} />
         <Route path='/notifications' element={<NotificationsPage />} />
+        <Route path='/notifications/settings' element={<NotificationSettingPage />} />
         <Route path='/account' element={<AccountPage />} />
         <Route path='/account/edit' element={<EditAccountPage />} />
       </Route>
