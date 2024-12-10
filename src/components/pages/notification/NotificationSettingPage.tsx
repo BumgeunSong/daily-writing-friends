@@ -5,14 +5,24 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Settings, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { requestPermission } from '@/messaging/requestPermission';
+import { useAuth } from '@/contexts/AuthContext';
 
 const NotificationSettingPage: React.FC = () => {
-  const [inAppNotification, setInAppNotification] = useState(true);
-  const [pushNotification, setPushNotification] = useState(true);
-  const [emailNotification, setEmailNotification] = useState(true);
+  const { currentUser } = useAuth();
+  const [inAppNotification] = useState(true);
+  const [emailNotification] = useState(true);
+  const [pushNotification, setPushNotification] = useState(false);
 
-  const handleToggle = (setter: React.Dispatch<React.SetStateAction<boolean>>) => {
-    setter((prev) => !prev);
+  const handlePushNotificationToggle = () => {
+    if (!pushNotification) {
+        try {
+            requestPermission(currentUser?.uid);
+            setPushNotification((prev) => !prev);
+        } catch (error) {
+            console.error(error);
+        }
+    }
   };
 
   return (
@@ -35,7 +45,6 @@ const NotificationSettingPage: React.FC = () => {
                 id="in-app-notification"
                 checked={inAppNotification}
                 disabled={true}
-                onCheckedChange={() => handleToggle(setInAppNotification)}
               />
             </div>
             <div className="flex items-center justify-between">
@@ -44,7 +53,7 @@ const NotificationSettingPage: React.FC = () => {
                 id="push-notification"
                 checked={pushNotification}
                 disabled={false}
-                onCheckedChange={() => handleToggle(setPushNotification)}
+                onCheckedChange={handlePushNotificationToggle}
               />
             </div>
             <div className="flex items-center justify-between">
@@ -53,7 +62,6 @@ const NotificationSettingPage: React.FC = () => {
                 id="email-notification"
                 checked={emailNotification}
                 disabled={true}
-                onCheckedChange={() => handleToggle(setEmailNotification)}
               />
             </div>
           </div>
