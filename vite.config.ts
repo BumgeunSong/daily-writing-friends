@@ -1,30 +1,38 @@
-import path from 'path';
+import path, { resolve } from 'path';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
+import replace from '@rollup/plugin-replace';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
+  
+  const apiKey = env.VITE_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY;
+  const authDomain = env.VITE_FIREBASE_AUTH_DOMAIN || process.env.VITE_FIREBASE_AUTH_DOMAIN;
+  const projectId = env.VITE_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID;
+  const storageBucket = env.VITE_FIREBASE_STORAGE_BUCKET || process.env.VITE_FIREBASE_STORAGE_BUCKET;
+  const messagingSenderId = env.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.VITE_FIREBASE_MESSAGING_SENDER_ID;
+  const appId = env.VITE_FIREBASE_APP_ID || process.env.VITE_FIREBASE_APP_ID;
+
   return {
-    plugins: [react()],
+    plugins: [
+      react(),
+      replace({
+        'process.env.VITE_FIREBASE_API_KEY': JSON.stringify(apiKey),
+        'process.env.VITE_FIREBASE_AUTH_DOMAIN': JSON.stringify(authDomain),
+        'process.env.VITE_FIREBASE_PROJECT_ID': JSON.stringify(projectId),
+        'process.env.VITE_FIREBASE_STORAGE_BUCKET': JSON.stringify(storageBucket),
+        'process.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(messagingSenderId),
+        'process.env.VITE_FIREBASE_APP_ID': JSON.stringify(appId),
+        preventAssignment: true
+      })
+    ],
     define: {
-      'process.env.VITE_FIREBASE_API_KEY': JSON.stringify(
-        env.VITE_FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY,
-      ),
-      'process.env.VITE_FIREBASE_AUTH_DOMAIN': JSON.stringify(
-        env.VITE_FIREBASE_AUTH_DOMAIN || process.env.VITE_FIREBASE_AUTH_DOMAIN,
-      ),
-      'process.env.VITE_FIREBASE_PROJECT_ID': JSON.stringify(
-        env.VITE_FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID,
-      ),
-      'process.env.VITE_FIREBASE_STORAGE_BUCKET': JSON.stringify(
-        env.VITE_FIREBASE_STORAGE_BUCKET || process.env.VITE_FIREBASE_STORAGE_BUCKET,
-      ),
-      'process.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(
-        env.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-      ),
-      'process.env.VITE_FIREBASE_APP_ID': JSON.stringify(
-        env.VITE_FIREBASE_APP_ID || process.env.VITE_FIREBASE_APP_ID,
-      ),
+      'process.env.VITE_FIREBASE_API_KEY': JSON.stringify(apiKey),
+      'process.env.VITE_FIREBASE_AUTH_DOMAIN': JSON.stringify(authDomain),
+      'process.env.VITE_FIREBASE_PROJECT_ID': JSON.stringify(projectId),
+      'process.env.VITE_FIREBASE_STORAGE_BUCKET': JSON.stringify(storageBucket),
+      'process.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(messagingSenderId),
+      'process.env.VITE_FIREBASE_APP_ID': JSON.stringify(appId),
     },
     resolve: {
       alias: {
