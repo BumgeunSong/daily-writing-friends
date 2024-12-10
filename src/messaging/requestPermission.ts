@@ -1,6 +1,6 @@
 import { getToken } from "firebase/messaging";
 import { messaging } from "../firebase";
-import { sendTokenToServer } from "@/utils/tokenUntils";
+import { sendFirebaseMessagingTokenToServer } from "@/utils/tokenUntils";
 
 export async function checkExistingPermission(): Promise<void> {
     const permission = Notification.permission;
@@ -20,7 +20,7 @@ export async function requestPermission(userId: string): Promise<void> {
             const token = await requestFirebaseToken();
             if (token) {
                 console.log("New token:", token);
-                sendTokenToServer(userId, token);
+                sendFirebaseMessagingTokenToServer(userId, token);
             }
         } else {
             console.log("User denied notifications");

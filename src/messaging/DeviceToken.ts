@@ -1,6 +1,6 @@
 import { Timestamp } from "firebase/firestore";
 
-export interface DeviceToken {
+export interface FirebaseMessagingToken {
     token: string;
     timestamp: Timestamp;
 }
