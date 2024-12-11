@@ -1,12 +1,12 @@
 import { ChevronLeft } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
-import ReactQuill from 'react-quill';
+import ReactQuill from 'react-quill-new';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { createPost } from '@/utils/postUtils';
-import 'react-quill/dist/quill.snow.css';
+import 'react-quill-new/dist/quill.snow.css';
 
 const TitleInput = React.forwardRef<
   HTMLTextAreaElement,
