@@ -10,7 +10,7 @@ import {
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getMessaging, onMessage } from "firebase/messaging";
-
+import onMessageInForeground from "./messaging/foregroundMessage";
 const firebaseConfig = {
   apiKey: process.env.VITE_FIREBASE_API_KEY as string,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string,
@@ -53,9 +53,7 @@ const signOutUser = (): Promise<void> => {
     });
 };
 
-onMessage(messaging, (payload) => {
-  console.log('Message received in foreground: ', payload);
-  // Handle the message if needed
-}); 
+onMessage(messaging, onMessageInForeground);
+
 
 export { auth, firestore, signInWithGoogle, signOutUser, storage, messaging };
