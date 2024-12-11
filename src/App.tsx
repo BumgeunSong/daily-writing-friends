@@ -15,6 +15,7 @@ import { useAuth } from './contexts/AuthContext';
 import './index.css';
 import { ProtectedRoute } from './components/route/ProtectedRoute';
 import NotificationSettingPage from './components/pages/notification/NotificationSettingPage';
+import { Toaster } from './components/ui/toaster';
 
 const AuthenticatedLayout = () => {
   return (
@@ -22,6 +23,7 @@ const AuthenticatedLayout = () => {
       <div className='grow'>
         <Outlet />
       </div>
+      <Toaster />
       <BottomTabsNavigator />
     </div>
   );
