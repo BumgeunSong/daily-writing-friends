@@ -1,3 +1,4 @@
+import { useSafeArea } from '@/hooks/useSafeArea';
 import { Home, Bell, User } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -9,9 +10,13 @@ const tabs = [
 
 export default function BottomTabsNavigator() {
   const location = useLocation();
+  const { bottom: safeAreaBottom } = useSafeArea();
 
   return (
-    <nav className='fixed inset-x-0 bottom-0 border-t border-border bg-background'>
+    <nav 
+    className='fixed inset-x-0 bottom-0 border-t border-border bg-background'
+    style={{ paddingBottom: `${safeAreaBottom}px` }}
+    >
       <div className='flex justify-around'>
         {tabs.map((tab) => (
           <Link

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -7,21 +7,34 @@ import { Settings, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { requestPermission } from '@/messaging/requestPermission';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePushSupport } from '@/hooks/usePushSupport';
 
 const NotificationSettingPage: React.FC = () => {
   const { currentUser } = useAuth();
   const [inAppNotification] = useState(true);
   const [emailNotification] = useState(true);
   const [pushNotification, setPushNotification] = useState(false);
+  const { isIOSSafari, isPWA, isPushSupported } = usePushSupport();
 
-  const handlePushNotificationToggle = () => {
+  const handlePushNotificationToggle = async () => {
     if (!pushNotification) {
-        try {
-            requestPermission(currentUser?.uid);
-            setPushNotification((prev) => !prev);
-        } catch (error) {
-            console.error(error);
-        }
+      if (isIOSSafari && !isPWA) {
+        alert('iOS에서 푸시 알림을 받으려면 이 웹사이트를 홈 화면에 추가해주세요.');
+        return;
+      }
+
+      if (!isPushSupported) {
+        alert('이 브라우저는 푸시 알림을 지원하지 않습니다.');
+        return;
+      }
+
+      try {
+        await requestPermission(currentUser?.uid);
+        setPushNotification((prev) => !prev);
+      } catch (error) {
+        console.error('푸시 알림 권한 요청 실패:', error);
+        alert('푸시 알림 권한 요청에 실패했습니다. 브라우저 설정을 확인해주세요.');
+      }
     }
   };
 
@@ -48,11 +61,18 @@ const NotificationSettingPage: React.FC = () => {
               />
             </div>
             <div className="flex items-center justify-between">
-              <Label htmlFor="push-notification">푸시 알림</Label>
+              <div>
+                <Label htmlFor="push-notification">푸시 알림</Label>
+                {isIOSSafari && !isPWA && (
+                  <p className="text-sm text-muted-foreground">
+                    iOS에서 푸시 알림을 받으려면 이 웹사이트를 홈 화면에 추가해주세요.
+                  </p>
+                )}
+              </div>
               <Switch
                 id="push-notification"
                 checked={pushNotification}
-                disabled={false}
+                disabled={isIOSSafari && !isPWA}
                 onCheckedChange={handlePushNotificationToggle}
               />
             </div>
