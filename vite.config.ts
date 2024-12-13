@@ -1,6 +1,7 @@
 import path, { resolve } from 'path';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
+import { sentryVitePlugin } from '@sentry/vite-plugin';
 import replace from '@rollup/plugin-replace';
 
 export default defineConfig(({ mode }) => {
@@ -12,8 +13,12 @@ export default defineConfig(({ mode }) => {
   const storageBucket = env.VITE_FIREBASE_STORAGE_BUCKET || process.env.VITE_FIREBASE_STORAGE_BUCKET;
   const messagingSenderId = env.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.VITE_FIREBASE_MESSAGING_SENDER_ID;
   const appId = env.VITE_FIREBASE_APP_ID || process.env.VITE_FIREBASE_APP_ID;
+  const sentryAuthToken = env.SENTRY_AUTH_TOKEN || process.env.SENTRY_AUTH_TOKEN;
 
   return {
+    build: {
+      sourcemap: true,
+    },
     plugins: [
       react(),
       replace({
@@ -24,6 +29,12 @@ export default defineConfig(({ mode }) => {
         'process.env.VITE_FIREBASE_MESSAGING_SENDER_ID': JSON.stringify(messagingSenderId),
         'process.env.VITE_FIREBASE_APP_ID': JSON.stringify(appId),
         preventAssignment: true
+      }),
+      // Put the Sentry vite plugin after all other plugins
+      sentryVitePlugin({
+        authToken: sentryAuthToken,
+        org: 'bumgeun-song',
+        project: 'daily-writing-friends',
       })
     ],
     define: {
