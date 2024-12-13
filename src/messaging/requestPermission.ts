@@ -6,9 +6,13 @@ export async function checkExistingPermission(): Promise<void> {
     const permission = Notification.permission;
     if (permission === "granted") {
         // user already granted permission in the past
-        const token = await requestFirebaseToken();
-        if (token) {
-            console.log("Existing token:", token);
+        try {
+            const token = await requestFirebaseToken();
+            if (token) {
+                console.log("Existing token:", token);
+            }
+        } catch (error) {
+            console.error("Error getting token:", error);
         }
     }
 }
@@ -32,6 +36,9 @@ export async function requestPermission(userId: string): Promise<void> {
 
 
 export async function requestFirebaseToken(): Promise<string | null> {
+    if (!messaging) { 
+        throw new Error('Firebase messaging is not supported in this browser');
+    }
     try {
         const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY as string;
         const token = await getToken(messaging, { vapidKey });
