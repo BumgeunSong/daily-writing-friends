@@ -3,13 +3,11 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import NotificationsHeader from './NotificationsHeader';
 import NotificationsList from './NotificationsList';
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import StatusMessage from '@/components/common/StatusMessage';
 import { useInView } from 'react-intersection-observer';
 import { Loader2 } from 'lucide-react';
-import { getNotifications } from '@/utils/notificationUtils';
-
+import { useNotifications } from '@/hooks/useNotifications';
 const NotificationsPage: React.FC = () => {
   const { currentUser } = useAuth();
   const [inViewRef, inView] = useInView();
@@ -22,17 +20,7 @@ const NotificationsPage: React.FC = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteQuery(
-    ['notifications', currentUser?.uid],
-    ({ pageParam }) => getNotifications(currentUser?.uid, limitCount, pageParam),
-    {
-      enabled: !!currentUser?.uid, // currentUser가 있을 때만 쿼리 실행
-      getNextPageParam: (lastPage) => {
-        const lastNotification = lastPage[lastPage.length - 1];
-        return lastNotification ? lastNotification.timestamp : undefined;
-      },
-    }
-  );
+  } = useNotifications(currentUser?.uid, limitCount);
 
   useEffect(() => {
     if (inView && hasNextPage) {
