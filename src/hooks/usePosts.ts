@@ -3,6 +3,7 @@ import { query, collection, orderBy, where, getDocs } from "firebase/firestore";
 import { firestore } from "@/firebase";
 import { Post } from "@/types/Posts";
 import { useQuery } from "@tanstack/react-query";
+import * as Sentry from '@sentry/react';
 
 export const usePosts = (boardId: string, selectedAuthorId: string | null) => {
     return useQuery<Post[]>(
@@ -10,6 +11,13 @@ export const usePosts = (boardId: string, selectedAuthorId: string | null) => {
       () => fetchPosts(boardId, selectedAuthorId),
       {
         enabled: !!boardId,
+        onError: (error) => {
+            console.error("게시글 데이터를 불러오던 중 에러가 발생했습니다:", error);
+            Sentry.captureException(error);
+        },
+        staleTime: 1000 * 30, // 30 seconds
+        cacheTime: 1000 * 60 * 5, // 5 minutes
+        refetchOnWindowFocus: true, // Refetch when the window regains focus
       }
     );
   };
