@@ -1,65 +1,35 @@
-import { useState, useEffect } from 'react';
 import * as Sentry from '@sentry/react';
 import { User } from '@/types/User';
 import { firestore } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { useQuery } from '@tanstack/react-query';
 
 export const useUserData = (userId: string | null) => {
-    const [userData, setUserData] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
+    const { data: userData, isLoading, error } = useQuery<User | null>(
+        ['userData', userId],
+        () => fetchUserData(userId!),
+        {
+            enabled: !!userId, // Only run the query if userId is not null
+            onError: (error) => {
+                console.error('유저 데이터를 불러오던 중 에러가 발생했습니다:', error);
+                Sentry.captureException(error);
+            },
+            staleTime: 1000 * 60 * 5, // 5 minutes
+            cacheTime: 1000 * 60 * 10, // 10 minutes
+        }
+    );
 
-    useEffect(() => {
-        const getUserData = async () => {
-            if (userId) {
-                try {
-                    const data = await fetchUserData(userId);
-                    setUserData(data);
-                } catch (error) {
-                    console.error('유저 데이터를 불러오던 중 에러가 발생했습니다:', error);
-                    Sentry.captureException(error);
-                } finally {
-                    setLoading(false);
-                }
-            } else {
-                setLoading(false);
-            }
-        };
-
-        getUserData();
-    }, [userId]);
-
-    return { userData, loading };
+    return { userData, isLoading, error };
 };
 
-
-// Helper function to get user data from localStorage
-function getCachedUserData(uid: string): User | null {
-    const cachedUserData = localStorage.getItem(`user-${uid}`);
-    return cachedUserData ? (JSON.parse(cachedUserData) as User) : null;
-}
-
-// Helper function to cache user data in localStorage
-function cacheUserData(uid: string, data: User): void {
-    localStorage.setItem(`user-${uid}`, JSON.stringify(data));
-}
-
-// Function to fetch user data from Firestore with caching
+// Function to fetch user data from Firestore
 async function fetchUserData(uid: string): Promise<User | null> {
     try {
-        // Attempt to retrieve user data from cache
-        const cachedUserData = getCachedUserData(uid);
-        if (cachedUserData) {
-            return cachedUserData;
-        }
-
-        // Fetch from Firestore if not in cache
         const userDocRef = doc(firestore, 'users', uid);
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
-            const userData = userDoc.data() as User;
-            cacheUserData(uid, userData); // Cache the user data
-            return userData;
+            return userDoc.data() as User;
         } else {
             console.log(`No such user document called ${uid}!`);
             return null;
