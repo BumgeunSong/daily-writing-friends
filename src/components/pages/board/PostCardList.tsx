@@ -1,10 +1,7 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-
-import { fetchPosts } from '@/utils/postUtils';
-import { Post } from '../../../types/Posts';
 import PostCard from '../post/PostCard';
 import StatusMessage from '../../common/StatusMessage';
+import { usePosts } from '@/hooks/usePosts';
 
 interface PostCardListProps {
   boardId: string;
@@ -13,13 +10,7 @@ interface PostCardListProps {
 }
 
 const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, selectedAuthorId }) => {
-  const { data: posts = [], isLoading, error } = useQuery<Post[]>(
-    ['posts', boardId, selectedAuthorId],
-    () => fetchPosts(boardId, selectedAuthorId),
-    {
-      enabled: !!boardId,
-    }
-  );
+  const { data: posts = [], isLoading, error } = usePosts(boardId, selectedAuthorId);
 
   if (isLoading) {
     return <StatusMessage isLoading loadingMessage="글을 불러오는 중..." />;
