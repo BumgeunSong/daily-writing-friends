@@ -1,8 +1,6 @@
 import { signOut } from 'firebase/auth';
 import { Edit, LogOut } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,31 +16,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '../../../contexts/AuthContext';
 import { auth } from '../../../firebase';
-import { User } from '../../../types/User';
-import { fetchUserData } from '../../../utils/userUtils';
+import { useUserData } from '@/hooks/useUserData';
 
 export default function AccountPage() {
   const { currentUser } = useAuth();
-  const [userData, setUserData] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const getUserData = async () => {
-      if (currentUser) {
-        try {
-          const data = await fetchUserData(currentUser.uid);
-          setUserData(data);
-        } catch (error) {
-          console.error('Error fetching user data:', error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    getUserData();
-  }, [currentUser]);
+  const { userData, loading } = useUserData(currentUser?.uid);
 
   const handleSignOut = async () => {
     try {

@@ -1,17 +1,13 @@
 import {
   collection,
-  orderBy,
   doc,
   getDoc,
-  where,
-  query,
-  onSnapshot,
-  QueryDocumentSnapshot,
-  DocumentData,
-  getDocs,
   setDoc,
   serverTimestamp,
   updateDoc,
+  getDocs,
+  DocumentData,
+  QueryDocumentSnapshot,
 } from 'firebase/firestore';
 
 import { firestore } from '../firebase';
@@ -28,28 +24,6 @@ export const fetchPost = async (boardId: string, postId: string): Promise<Post |
 
   return mapDocToPost(docSnap, boardId);
 };
-
-export const usePostTitle = (boardId: string, postId: string) => {
-  return useQuery(['postTitle', boardId, postId], async () => {
-    const post = await fetchPost(boardId, postId);
-    return post?.title;
-  });
-};
-
-export async function fetchPosts(boardId: string, selectedAuthorId: string | null): Promise<Post[]> {
-  let q = query(
-    collection(firestore, `boards/${boardId}/posts`),
-    orderBy('createdAt', 'desc'),
-  );
-
-  if (selectedAuthorId) {
-    q = query(q, where('authorId', '==', selectedAuthorId));
-  }
-
-  const snapshot = await getDocs(q);
-  const postsData = await Promise.all(snapshot.docs.map((doc) => mapDocToPost(doc, boardId)));
-  return postsData;
-}
 
 async function mapDocToPost(docSnap: QueryDocumentSnapshot<DocumentData>, boardId: string): Promise<Post> {
   const data = docSnap.data();
@@ -78,6 +52,13 @@ async function getCommentsCount(boardId: string, postId: string): Promise<number
   );
   return commentsCount.reduce((acc, curr) => acc + curr, 0);
 }
+
+export const usePostTitle = (boardId: string, postId: string) => {
+  return useQuery(['postTitle', boardId, postId], async () => {
+    const post = await fetchPost(boardId, postId);
+    return post?.title;
+  });
+};
 
 export async function createPost(boardId: string, title: string, content: string, authorId: string, authorName: string) {
   const postRef = doc(collection(firestore, `boards/${boardId}/posts`));
