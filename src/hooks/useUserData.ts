@@ -5,6 +5,13 @@ import { doc, getDoc } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
 
 export const useUserData = (userId: string | null) => {
+    if (userId === null) {
+        const noUserIdError = new Error('유저 ID가 존재하지 않아 유저 데이터를 불러올 수 없습니다.');
+        console.error(noUserIdError);
+        Sentry.captureException(noUserIdError);
+        return { userData: null, isLoading: false, error: noUserIdError };
+    }
+
     const { data: userData, isLoading, error } = useQuery<User | null>(
         ['userData', userId],
         () => fetchUserData(userId!),
