@@ -3,6 +3,8 @@ import PostCard from '../post/PostCard';
 import StatusMessage from '../../common/StatusMessage';
 import { usePosts } from '@/hooks/usePosts';
 import { useInView } from 'react-intersection-observer';
+import { Skeleton } from '@/components/ui/skeleton';
+import PostCardSkeleton from '@/components/ui/PostCardSkeleton';
 
 interface PostCardListProps {
   boardId: string;
@@ -30,7 +32,13 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, selec
   }, [inView, hasNextPage, fetchNextPage]);
 
   if (isLoading) {
-    return <StatusMessage isLoading loadingMessage="글을 불러오는 중..." />;
+    return (
+      <div className="space-y-6">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <PostCardSkeleton key={index} />
+        ))}
+      </div>
+    );
   }
 
   if (isError) {
