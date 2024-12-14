@@ -17,7 +17,11 @@ export const useNotifications = (userId: string | null, limitCount: number) => {
             onError: (error) => {
                 console.error("알림 데이터를 불러오던 중 에러가 발생했습니다:", error);
                 Sentry.captureException(error);
-            }
+            },
+            staleTime: 1000 * 30, // 30 seconds
+            cacheTime: 1000 * 60 * 5, // 5 minutes
+            refetchInterval: 1000 * 60, // Refetch every 1 minute
+            refetchOnWindowFocus: true, // Refetch when the window regains focus
         }
     );
 };
