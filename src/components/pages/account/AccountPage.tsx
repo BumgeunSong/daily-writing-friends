@@ -21,7 +21,7 @@ import { useUserData } from '@/hooks/useUserData';
 export default function AccountPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
-  const { userData, loading } = useUserData(currentUser?.uid);
+  const { userData, isLoading } = useUserData(currentUser?.uid);
 
   const handleSignOut = async () => {
     try {
@@ -45,7 +45,7 @@ export default function AccountPage() {
     );
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className='flex flex-col items-center p-4 pt-8'>
         <Skeleton className='mb-4 size-32 rounded-full' />
