@@ -4,8 +4,6 @@ import { Notification, NotificationType } from "../types/Notification";
 import { User } from "../types/User";
 import { FirebaseMessagingToken } from "../types/FirebaseMessagingToken";
 import { Post } from "../types/Post";
-import { Comment } from "../types/Comment";
-import { Reply } from "../types/Reply";
 
 // Send cloud message via FCM tokens to user when notification is created
 // firebase messaging token is subcollection of users
@@ -38,37 +36,13 @@ export const onNotificationCreated = onDocumentCreated(
                 .get();
             const post = postData.data() as Post;
 
-            const commentData = await admin.firestore()
-                .collection("boards")
-                .doc(notification.boardId)
-                .collection("posts")
-                .doc(notification.postId)
-                .collection("comments")
-                .doc(notification.commentId || '')
-                .get();
-            const comment = commentData.data() as Comment;
-
-            const replyData = await admin.firestore()
-                .collection("boards")
-                .doc(notification.boardId)
-                .collection("posts")
-                .doc(notification.postId)
-                .collection("comments")
-                .doc(notification.commentId || '')
-                .collection("replies")
-                .doc(notification.replyId || '')
-                .get();
-            const reply = replyData.data() as Reply;
-
             const notificationTitle = getNotificationTitle({
-                userNickName: user.nickname ?? user.realName ?? '',
-                postTitle: post.title,
                 notificationType: notification.type,
             });
 
             const notificationMessage = getNotificationMessage({
-                commentContent: comment.content,
-                replyContent: reply.content,
+                postTitle: post.title,
+                userNickName: user.nickname ?? user.realName ?? '',
                 notificationType: notification.type,
             });
 
@@ -79,7 +53,7 @@ export const onNotificationCreated = onDocumentCreated(
                         notification: {
                             title: notificationTitle,
                             body: notificationMessage,
-                            imageUrl: user.profilePhotoURL ?? undefined,
+                            imageUrl: notification.fromUserProfileImage,
                         },
                     });
                 } catch (error) {
@@ -93,19 +67,17 @@ export const onNotificationCreated = onDocumentCreated(
 );
 
 interface NotificationTitleProps {
-    userNickName: string;
-    postTitle: string;
     notificationType: NotificationType;
 }
 
-function getNotificationTitle({ userNickName, postTitle, notificationType }: NotificationTitleProps): string {
+function getNotificationTitle({ notificationType }: NotificationTitleProps): string {
     switch (notificationType) {
         case NotificationType.COMMENT_ON_POST:
-            return `${userNickName}님이 <strong>'${postTitleSnippet(postTitle)}'</strong> 글에 댓글을 달았어요.`;
+            return `댓글 알림`;
         case NotificationType.REPLY_ON_COMMENT:
-            return `${userNickName}님이 <strong>'${postTitleSnippet(postTitle)}'</strong> 댓글에 답글을 달았어요.`;
+            return `답글 알림`;
         case NotificationType.REPLY_ON_POST:
-            return `${userNickName}님이 <strong>'${postTitleSnippet(postTitle)}'</strong> 글에 답글을 달았어요.`;
+            return `답글 알림`;
     }
 }
 
@@ -117,25 +89,18 @@ const postTitleSnippet = (contentTitle: string) => {
 };
 
 interface NotificationMessageProps {
-    commentContent: string | null;
-    replyContent: string | null;
+    postTitle: string;
+    userNickName: string;
     notificationType: NotificationType;
 }
 
-function getNotificationMessage({ commentContent, replyContent, notificationType }: NotificationMessageProps): string {
+function getNotificationMessage({ postTitle, userNickName, notificationType }: NotificationMessageProps): string {
     switch (notificationType) {
         case NotificationType.COMMENT_ON_POST:
-            return contentSnippet(commentContent ?? '');
+            return `${userNickName}님이 '${postTitleSnippet(postTitle)}' 글에 댓글을 달았어요.`;
         case NotificationType.REPLY_ON_COMMENT:
-            return contentSnippet(replyContent ?? '');
+            return `${userNickName}님이 '${postTitleSnippet(postTitle)}' 댓글에 답글을 달았어요.`;
         case NotificationType.REPLY_ON_POST:
-            return contentSnippet(replyContent ?? '');
+            return `${userNickName}님이 '${postTitleSnippet(postTitle)}' 글에 답글을 달았어요.`;
     }
 }
-
-const contentSnippet = (content: string) => {
-    if (content.length > 24) {
-        return content.slice(0, 24) + "...";
-    }
-    return content;
-};
