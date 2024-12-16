@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Settings, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { requestPermission } from '@/messaging/requestPermission';
+import { hasPushNotificationPermission, requestPermission } from '@/messaging/requestPermission';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePushSupport } from '@/hooks/usePushSupport';
 
@@ -15,6 +15,14 @@ const NotificationSettingPage: React.FC = () => {
   const [emailNotification] = useState(true);
   const [pushNotification, setPushNotification] = useState(false);
   const { isIOSSafari, isPWA, isPushSupported } = usePushSupport();
+
+  useEffect(() => {
+    const checkPermission = async () => {
+      const permission = await hasPushNotificationPermission();
+      setPushNotification(permission);
+    }
+    checkPermission();
+  }, [pushNotification]);
 
   const handlePushNotificationToggle = async () => {
     if (!pushNotification) {

@@ -2,19 +2,19 @@ import { getToken } from "firebase/messaging";
 import { messaging } from "../firebase";
 import { sendFirebaseMessagingTokenToServer } from "@/utils/tokenUntils";
 
-export async function checkExistingPermission(): Promise<void> {
+export async function hasPushNotificationPermission(): Promise<boolean> {
     const permission = Notification.permission;
     if (permission === "granted") {
         // user already granted permission in the past
         try {
-            const token = await requestFirebaseToken();
-            if (token) {
-                console.log("Existing token:", token);
-            }
+            await requestFirebaseToken();
+            return true
         } catch (error) {
             console.error("Error getting token:", error);
+            return false
         }
     }
+    return false
 }
 
 export async function requestPermission(userId: string): Promise<void> {
