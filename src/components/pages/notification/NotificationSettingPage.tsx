@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { hasPushNotificationPermission, requestPermission } from '@/messaging/requestPermission';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePushSupport } from '@/hooks/usePushSupport';
+import { useQuery } from '@tanstack/react-query';
 
 const NotificationSettingPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -17,12 +18,12 @@ const NotificationSettingPage: React.FC = () => {
   const { isIOSSafari, isPWA, isPushSupported } = usePushSupport();
 
   useEffect(() => {
-    const checkPermission = async () => {
-      const permission = await hasPushNotificationPermission();
-      setPushNotification(permission);
+    if (currentUser) {
+      hasPushNotificationPermission(currentUser.uid).then((permission) => {
+        setPushNotification(permission);
+      });
     }
-    checkPermission();
-  }, [pushNotification]);
+  }, [currentUser, pushNotification]);
 
   const handlePushNotificationToggle = async () => {
     if (!pushNotification) {
