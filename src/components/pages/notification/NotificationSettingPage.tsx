@@ -13,7 +13,7 @@ const NotificationSettingPage: React.FC = () => {
   const { currentUser } = useAuth();
   const [inAppNotification] = useState(true);
   const [emailNotification] = useState(true);
-  const { hasPushPermission, togglePushNotification } = usePushPermission(currentUser?.uid);
+  const { hasPushPermission, togglePushNotification } = usePushPermission(currentUser?.uid || '');
   const { isIOSSafari, isPWA, isPushSupported } = usePushSupport();
 
   return (
