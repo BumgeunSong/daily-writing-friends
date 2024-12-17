@@ -46,18 +46,26 @@ export const onNotificationCreated = onDocumentCreated(
                 notificationType: notification.type,
             });
 
-            for (const fcmToken of fcmTokens) {
+            const tokens = fcmTokens.map(token => token.token);
+
+            if (tokens.length > 0) {
                 try {
-                    await admin.messaging().send({
-                        token: fcmToken.token,
+                    const response = await admin.messaging().sendMulticast({
+                        tokens,
                         notification: {
                             title: notificationTitle,
                             body: notificationMessage,
                             imageUrl: notification.fromUserProfileImage,
                         },
                     });
+
+                    response.responses.forEach((resp, idx) => {
+                        if (!resp.success) {
+                            console.error(`Error sending message to token ${tokens[idx]}:`, resp.error);
+                        }
+                    });
                 } catch (error) {
-                    console.error(`Error sending message to token ${fcmToken.token}:`, notification.message, error);
+                    console.error("Error sending multicast message:", error);
                 }
             }
         } catch (error) {
