@@ -14,7 +14,7 @@ const NotificationSettingPage: React.FC = () => {
   const [inAppNotification] = useState(true);
   const [emailNotification] = useState(true);
   const { hasPushPermission, togglePushNotification } = usePushPermission(currentUser?.uid || '');
-  const { isIOSSafari, isPWA, isPushSupported } = usePushSupport();
+  const { isIOSSafari, isAndroid, isPWA, isPushSupported } = usePushSupport();
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
@@ -44,6 +44,11 @@ const NotificationSettingPage: React.FC = () => {
                 {isIOSSafari && !isPWA && (
                   <p className="text-sm text-muted-foreground">
                     iOS에서 푸시 알림을 받으려면 이 웹사이트를 홈 화면에 추가해주세요.
+                  </p>
+                )}
+                {isAndroid && !isPWA && (
+                  <p className="text-sm text-muted-foreground">
+                    Android에서 푸시 알림을 받으려면 이 웹사이트를 홈 화면에 추가해주세요.
                   </p>
                 )}
               </div>
