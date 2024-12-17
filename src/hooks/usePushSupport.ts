@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 
 interface PushSupportState {
   isIOSSafari: boolean;
+  isAndroid: boolean;
   isPWA: boolean;
   isPushSupported: boolean;
 }
@@ -10,7 +11,7 @@ export const usePushSupport = (): PushSupportState => {
   const [isIOSSafari, setIsIOSSafari] = useState(false);
   const [isPWA, setIsPWA] = useState(false);
   const [isPushSupported, setIsPushSupported] = useState(false);
-
+  const [isAndroid, setIsAndroid] = useState(false);
   useEffect(() => {
     // 푸시 알림 지원 여부 확인
     const checkPushSupport = () => {
@@ -31,9 +32,14 @@ export const usePushSupport = (): PushSupportState => {
       return window.matchMedia('(display-mode: standalone)').matches;
     };
 
+    const checkAndroid = () => {
+      return navigator.userAgent.includes('Android');
+    };
+
     setIsIOSSafari(checkIOSSafari());
     setIsPWA(checkPWA());
     setIsPushSupported(checkPushSupport());
+    setIsAndroid(checkAndroid());
 
     // PWA 상태 변경 감지
     const mediaQuery = window.matchMedia('(display-mode: standalone)');
@@ -50,6 +56,7 @@ export const usePushSupport = (): PushSupportState => {
 
   return {
     isIOSSafari,
+    isAndroid,
     isPWA,
     isPushSupported,
   };
