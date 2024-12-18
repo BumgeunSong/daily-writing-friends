@@ -78,9 +78,11 @@ async function requestFirebaseToken(userId: string): Promise<string | null> {
 
 async function sendFirebaseMessagingTokenToServer(userId: string, token: string) {
     const firebaseMessagingTokenCollection = collection(firestore, `users/${userId}/firebaseMessagingTokens`);
+
     const newFirebaseMessagingToken: FirebaseMessagingToken = {
         token,
         timestamp: Timestamp.now(),
+        userAgent: navigator.userAgent,
     };
     // if token already exists, update it
     const querySnapshot = await getDocs(query(firebaseMessagingTokenCollection, where("token", "==", token)));
