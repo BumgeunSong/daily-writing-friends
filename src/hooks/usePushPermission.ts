@@ -8,25 +8,31 @@ import { Timestamp } from 'firebase/firestore';
 
 export function usePushPermission(userId: string) {
     const [hasPushPermission, setHasPushPermission] = useState(false);
-    
+    const [isLoading, setIsLoading] = useState(true);
+
     useEffect(() => {
         if (userId) {
             checkPushNotificationPermission(userId).then((permission) => {
                 setHasPushPermission(permission);
+                setIsLoading(false);
             }).catch((error) => {
                 console.error("Error checking push notification permission:", error);
+                setIsLoading(false);
             });
+        } else {
+            setIsLoading(false);
         }
     }, [userId]);
 
     const togglePushNotification = async () => {
         if (hasPushPermission) {
-            cancelPushNotification(userId);
+            await cancelPushNotification(userId);
         } else {
-            startPushNotification(userId);
+            await startPushNotification(userId);
         }
     };
-    return { hasPushPermission, togglePushNotification };
+
+    return { hasPushPermission, togglePushNotification, isLoading };
 }
 
 async function cancelPushNotification(userId: string) {
@@ -75,7 +81,6 @@ async function requestFirebaseToken(userId: string): Promise<string | null> {
     }
 }
 
-
 async function sendFirebaseMessagingTokenToServer(userId: string, token: string) {
     const firebaseMessagingTokenCollection = collection(firestore, `users/${userId}/firebaseMessagingTokens`);
 
@@ -84,7 +89,6 @@ async function sendFirebaseMessagingTokenToServer(userId: string, token: string)
         timestamp: Timestamp.now(),
         userAgent: navigator.userAgent,
     };
-    // if token already exists, update it
     const querySnapshot = await getDocs(query(firebaseMessagingTokenCollection, where("token", "==", token)));
     if (querySnapshot.empty) {
         await addDoc(firebaseMessagingTokenCollection, newFirebaseMessagingToken);
@@ -92,8 +96,7 @@ async function sendFirebaseMessagingTokenToServer(userId: string, token: string)
         const docRef = querySnapshot.docs[0].ref;
         await updateDoc(docRef, { token: newFirebaseMessagingToken.token, timestamp: Timestamp.now() });
     }
-};
-
+}
 
 async function deleteFirebaseToken(userId: string, token: string): Promise<void> {
     const firebaseMessagingTokenCollection = collection(firestore, `users/${userId}/firebaseMessagingTokens`);

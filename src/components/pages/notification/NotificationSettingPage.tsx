@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -6,15 +6,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Settings, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePushSupport } from '@/hooks/usePushSupport';
-import { usePushPermission } from '@/hooks/usePushPermission';
+import PushNotificationSwitch from './PushNotificationSwitch';
 
 const NotificationSettingPage: React.FC = () => {
   const { currentUser } = useAuth();
-  const [inAppNotification] = useState(true);
-  const [emailNotification] = useState(true);
-  const { hasPushPermission, togglePushNotification } = usePushPermission(currentUser?.uid || '');
-  const { isIOSSafari, isAndroid, isPWA, isPushSupported } = usePushSupport();
+  const [inAppNotification] = React.useState(true);
+  const [emailNotification] = React.useState(true);
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
@@ -38,32 +35,7 @@ const NotificationSettingPage: React.FC = () => {
                 disabled={true}
               />
             </div>
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="push-notification">푸시 알림</Label>
-                {isIOSSafari && !isPWA && (
-                  <p className="text-sm text-muted-foreground">
-                    iOS에서 푸시 알림을 받으려면 이 웹사이트를 홈 화면에 추가해주세요.
-                  </p>
-                )}
-                {isAndroid && !isPWA && (
-                  <p className="text-sm text-muted-foreground">
-                    Android에서 푸시 알림을 받으려면 이 웹사이트를 홈 화면에 추가해주세요.
-                  </p>
-                )}
-                {!isPushSupported && (
-                  <p className="text-sm text-muted-foreground">
-                    푸시 알림을 지원하지 않는 환경입니다. 최신 브라우저를 사용하고 있는지 확인하세요.
-                  </p>
-                )}
-              </div>
-              <Switch
-                id="push-notification"
-                checked={hasPushPermission}
-                disabled={!isPushSupported}
-                onCheckedChange={togglePushNotification}
-              />
-            </div>
+            <PushNotificationSwitch userId={currentUser?.uid || ''} />
             <div className="flex items-center justify-between">
               <Label htmlFor="email-notification">이메일 알림</Label>
               <Switch
