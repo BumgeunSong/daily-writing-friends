@@ -46,12 +46,12 @@ export const onNotificationCreated = onDocumentCreated(
                 notificationType: notification.type,
             });
 
-            const tokens = fcmTokens.map(token => token.token);
-
-            if (tokens.length > 0) {
+            // filter out tokens that is duplicated
+            const uniqueTokens = [...new Set(fcmTokens.map(token => token.token))];
+            if (uniqueTokens.length > 0) {
                 try {
                     const response = await admin.messaging().sendMulticast({
-                        tokens,
+                        tokens: uniqueTokens,
                         notification: {
                             title: notificationTitle,
                             body: notificationMessage,
@@ -61,7 +61,7 @@ export const onNotificationCreated = onDocumentCreated(
 
                     response.responses.forEach((resp, idx) => {
                         if (!resp.success) {
-                            console.error(`Error sending message to token ${tokens[idx]}:`, resp.error);
+                            console.error(`Error sending message to token ${uniqueTokens[idx]}:`, resp.error);
                         }
                     });
                 } catch (error) {
