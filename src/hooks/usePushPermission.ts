@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getToken } from "firebase/messaging";
 import { firestore, messaging } from "../firebase";
 import { addDoc } from 'firebase/firestore';
-import { FirebaseMessagingToken } from '@/messaging/DeviceToken';
+import { FirebaseMessagingToken } from '@/messaging/FirebaseMessagingToken';
 import { collection, getDocs, query, where, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Timestamp } from 'firebase/firestore';
 

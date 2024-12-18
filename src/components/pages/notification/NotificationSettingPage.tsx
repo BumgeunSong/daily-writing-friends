@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -51,11 +51,16 @@ const NotificationSettingPage: React.FC = () => {
                     Android에서 푸시 알림을 받으려면 이 웹사이트를 홈 화면에 추가해주세요.
                   </p>
                 )}
+                {!isPushSupported && (
+                  <p className="text-sm text-muted-foreground">
+                    푸시 알림을 지원하지 않는 환경입니다. 최신 브라우저를 사용하고 있는지 확인하세요.
+                  </p>
+                )}
               </div>
               <Switch
                 id="push-notification"
                 checked={hasPushPermission}
-                disabled={isPushSupported}
+                disabled={!isPushSupported}
                 onCheckedChange={togglePushNotification}
               />
             </div>
