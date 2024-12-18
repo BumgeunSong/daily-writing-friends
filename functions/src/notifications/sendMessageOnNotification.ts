@@ -14,11 +14,11 @@ export const onNotificationCreated = onDocumentCreated(
         const notification = event.data?.data() as Notification;
 
         try {
-            const userData = await admin.firestore()
+            const fromUserData = await admin.firestore()
                 .collection("users")
-                .doc(userId)
+                .doc(notification.fromUserId)
                 .get();
-            const user = userData.data() as User;
+            const fromUser = fromUserData.data() as User;
 
             // fetch every fcm token of the user
             const fcmTokenData = await admin.firestore()
@@ -42,16 +42,16 @@ export const onNotificationCreated = onDocumentCreated(
 
             const notificationMessage = getNotificationMessage({
                 postTitle: post.title,
-                userNickName: user.nickname ?? user.realName ?? '',
+                fromUserNickName: fromUser.nickname ?? fromUser.realName ?? '',
                 notificationType: notification.type,
             });
 
-            const tokens = fcmTokens.map(token => token.token);
-
-            if (tokens.length > 0) {
+            // filter out tokens that is duplicated
+            const uniqueTokens = [...new Set(fcmTokens.map(token => token.token))];
+            if (uniqueTokens.length > 0) {
                 try {
                     const response = await admin.messaging().sendMulticast({
-                        tokens,
+                        tokens: uniqueTokens,
                         notification: {
                             title: notificationTitle,
                             body: notificationMessage,
@@ -61,7 +61,7 @@ export const onNotificationCreated = onDocumentCreated(
 
                     response.responses.forEach((resp, idx) => {
                         if (!resp.success) {
-                            console.error(`Error sending message to token ${tokens[idx]}:`, resp.error);
+                            console.error(`Error sending message to token ${uniqueTokens[idx]}:`, resp.error);
                         }
                     });
                 } catch (error) {
@@ -98,17 +98,17 @@ const postTitleSnippet = (contentTitle: string) => {
 
 interface NotificationMessageProps {
     postTitle: string;
-    userNickName: string;
+    fromUserNickName: string;
     notificationType: NotificationType;
 }
 
-function getNotificationMessage({ postTitle, userNickName, notificationType }: NotificationMessageProps): string {
+function getNotificationMessage({ postTitle, fromUserNickName, notificationType }: NotificationMessageProps): string {
     switch (notificationType) {
         case NotificationType.COMMENT_ON_POST:
-            return `${userNickName}님이 '${postTitleSnippet(postTitle)}' 글에 댓글을 달았어요.`;
+            return `${fromUserNickName}님이 '${postTitleSnippet(postTitle)}' 글에 댓글을 달았어요.`;
         case NotificationType.REPLY_ON_COMMENT:
-            return `${userNickName}님이 '${postTitleSnippet(postTitle)}' 댓글에 답글을 달았어요.`;
+            return `${fromUserNickName}님이 '${postTitleSnippet(postTitle)}' 댓글에 답글을 달았어요.`;
         case NotificationType.REPLY_ON_POST:
-            return `${userNickName}님이 '${postTitleSnippet(postTitle)}' 글에 답글을 달았어요.`;
+            return `${fromUserNickName}님이 '${postTitleSnippet(postTitle)}' 글에 답글을 달았어요.`;
     }
 }
