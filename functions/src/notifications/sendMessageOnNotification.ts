@@ -59,9 +59,13 @@ export const onNotificationCreated = onDocumentCreated(
                         },
                     });
 
-                    response.responses.forEach((resp, idx) => {
+                    response.responses.forEach(async (resp, idx) => {
                         if (!resp.success) {
                             console.error(`Error sending message to token ${uniqueTokens[idx]}:`, resp.error);
+                            if (resp.error?.code === 'messaging/registration-token-not-registered') {
+                                // Remove invalid token from the database
+                                await removeInvalidToken(userId, uniqueTokens[idx]);
+                            }
                         }
                     });
                 } catch (error) {
@@ -73,6 +77,26 @@ export const onNotificationCreated = onDocumentCreated(
         }
     }
 );
+
+async function removeInvalidToken(userId: string, token: string) {
+    try {
+        const tokenRef = admin.firestore()
+            .collection("users")
+            .doc(userId)
+            .collection("firebaseMessagingTokens")
+            .where("token", "==", token);
+
+        const snapshot = await tokenRef.get();
+        if (!snapshot.empty) {
+            snapshot.forEach(async (doc) => {
+                await doc.ref.delete();
+                console.log(`Removed invalid token: ${token}`);
+            });
+        }
+    } catch (error) {
+        console.error(`Error removing invalid token ${token}:`, error);
+    }
+}
 
 interface NotificationTitleProps {
     notificationType: NotificationType;
