@@ -27,8 +27,10 @@ export function usePushPermission(userId: string) {
     const togglePushNotification = async () => {
         if (hasPushPermission) {
             await cancelPushNotification(userId);
+            setHasPushPermission(false);
         } else {
             await startPushNotification(userId);
+            setHasPushPermission(true);
         }
     };
 
