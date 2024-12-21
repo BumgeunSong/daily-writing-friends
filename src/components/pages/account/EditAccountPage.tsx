@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { storage } from '../../../firebase';
 import { User } from '../../../types/User';
 import { updateUserData } from '../../../utils/userUtils';
+import { cropAndResizeImage } from '../../../utils/ImageUtils';
 
 export default function EditAccountPage() {
   const location = useLocation();
@@ -24,34 +25,6 @@ export default function EditAccountPage() {
 
   const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNickname(e.target.value);
-  };
-
-  const cropAndResizeImage = (file: File, callback: (resizedFile: File) => void) => {
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const maxSize = 96;
-        const size = Math.min(img.width, img.height); // Crop to square
-        const offsetX = (img.width - size) / 2;
-        const offsetY = (img.height - size) / 2;
-
-        canvas.width = maxSize;
-        canvas.height = maxSize;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, offsetX, offsetY, size, size, 0, 0, maxSize, maxSize);
-
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const resizedFile = new File([blob], file.name, { type: file.type });
-            callback(resizedFile);
-          }
-        }, file.type);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleProfilePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
