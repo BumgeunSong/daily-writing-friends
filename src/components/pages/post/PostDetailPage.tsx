@@ -84,7 +84,7 @@ export default function PostDetailPage() {
   });
 
   return (
-    <div className='mx-auto max-w-4xl px-4 py-8 p-safe'>
+    <div className='mx-auto max-w-4xl px-4 py-8'>
       <Link to={`/board/${boardId}`}>
         <Button variant='ghost' className='mb-6'>
           <ChevronLeft className='mr-2 size-4' /> 피드로 돌아가기
