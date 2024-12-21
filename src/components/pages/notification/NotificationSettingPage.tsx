@@ -14,7 +14,7 @@ const NotificationSettingPage: React.FC = () => {
   const [emailNotification] = React.useState(true);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
+    <div className="flex flex-col h-[calc(100vh-4rem)] p-safe">
       <div className='h-16 mb-4 flex items-center justify-between px-4'>
         <div className='flex items-center gap-2'>
           <Settings className='size-5' />
