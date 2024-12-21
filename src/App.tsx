@@ -16,12 +16,14 @@ import './index.css';
 import { ProtectedRoute } from './components/route/ProtectedRoute';
 import NotificationSettingPage from './components/pages/notification/NotificationSettingPage';
 import { Toaster } from './components/ui/toaster';
-
+import PullToReload from './components/ui/PullToReload';
 const AuthenticatedLayout = () => {
   return (
     <div className='flex min-h-screen flex-col pb-16 safe-top safe-right safe-bottom safe-left'>
       <div className='grow'>
-        <Outlet />
+        <PullToReload>
+          <Outlet />
+        </PullToReload>
       </div>
       <Toaster />
       <BottomTabsNavigator />
