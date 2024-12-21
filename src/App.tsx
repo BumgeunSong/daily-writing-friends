@@ -19,7 +19,7 @@ import { Toaster } from './components/ui/toaster';
 
 const AuthenticatedLayout = () => {
   return (
-    <div className='flex min-h-screen flex-col pb-16 p-safe'>
+    <div className='flex min-h-screen flex-col pb-16 safe-top safe-right safe-bottom safe-left'>
       <div className='grow'>
         <Outlet />
       </div>
