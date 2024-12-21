@@ -64,8 +64,13 @@ export default function EditAccountPage() {
   };
 
   return (
-    <div className='flex min-h-screen items-start justify-center bg-gray-50 p-4'>
-      <Card className='w-full max-w-md'>
+    <div className='flex min-h-screen items-start justify-center bg-gray-50 p-4 relative'>
+      {loading && (
+        <div className='absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50'>
+          <Loader2 className='size-8 animate-spin text-gray-600' />
+        </div>
+      )}
+      <Card className={`w-full max-w-md ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
         <CardHeader>
           <CardTitle className='text-center text-2xl font-bold'>내 정보 수정하기</CardTitle>
         </CardHeader>
@@ -74,7 +79,7 @@ export default function EditAccountPage() {
             <div className='flex flex-col items-center space-y-4'>
               <Avatar
                 className='size-32 cursor-pointer'
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => !loading && fileInputRef.current?.click()}
               >
                 <AvatarImage src={previewUrl} alt={nickname} />
                 <AvatarFallback className='flex items-center justify-center bg-gray-200 text-4xl text-gray-600'>
@@ -86,7 +91,8 @@ export default function EditAccountPage() {
                 variant='outline'
                 size='sm'
                 className='mt-2'
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => !loading && fileInputRef.current?.click()}
+                disabled={loading}
               >
                 프로필 사진 변경
               </Button>
@@ -96,6 +102,7 @@ export default function EditAccountPage() {
                 onChange={handleProfilePhotoChange}
                 className='hidden'
                 ref={fileInputRef}
+                disabled={loading}
               />
             </div>
             <div className='space-y-2'>
@@ -106,6 +113,7 @@ export default function EditAccountPage() {
                 value={nickname}
                 onChange={handleNicknameChange}
                 placeholder='새로운 닉네임을 입력하세요'
+                disabled={loading}
               />
             </div>
           </CardContent>
@@ -115,6 +123,7 @@ export default function EditAccountPage() {
               variant='outline'
               className='w-full'
               onClick={() => navigate('/account')}
+              disabled={loading}
             >
               취소
             </Button>
