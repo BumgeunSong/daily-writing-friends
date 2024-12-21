@@ -1,11 +1,9 @@
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
-
+import { Routes, Route, Navigate } from 'react-router-dom';
 import AccountPage from './components/pages/account/AccountPage';
-import EditAccountPage from './components/common/EditAccountPage';
+import EditAccountPage from './components/pages/account/EditAccountPage';
 import BoardListPage from './components/pages/board/BoardListPage';
 import BoardPage from './components/pages/board/BoardPage';
 import RecentBoard from './components/pages/board/RecentBoard';
-import BottomTabsNavigator from './components/pages/BottomTabsNavigator';
 import LoginPage from './components/pages/login/LoginPage';
 import NotificationsPage from './components/pages/notification/NotificationsPage';
 import PostEditPage from './components/pages/post/PostEditPage';
@@ -15,21 +13,7 @@ import { useAuth } from './contexts/AuthContext';
 import './index.css';
 import { ProtectedRoute } from './components/route/ProtectedRoute';
 import NotificationSettingPage from './components/pages/notification/NotificationSettingPage';
-import { Toaster } from './components/ui/toaster';
-import PullToReload from './components/ui/PullToReload';
-const AuthenticatedLayout = () => {
-  return (
-    <div className='flex min-h-screen flex-col pb-16 safe-top safe-right safe-bottom safe-left'>
-      <div className='grow'>
-        <PullToReload>
-          <Outlet />
-        </PullToReload>
-      </div>
-      <Toaster />
-      <BottomTabsNavigator />
-    </div>
-  );
-};
+import PostLoginLayout from './components/common/\bPostLoginLayout';
 
 export default function App() {
   const { currentUser } = useAuth();
@@ -40,7 +24,7 @@ export default function App() {
       <Route
         element={
           <ProtectedRoute>
-            <AuthenticatedLayout />
+            <PostLoginLayout />
           </ProtectedRoute>
         }
       >
