@@ -1,6 +1,7 @@
 import { signOut } from 'firebase/auth';
 import { Edit, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,7 @@ export default function AccountPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { userData, isLoading } = useUserData(currentUser?.uid);
+  const toast = useToast();
 
   const handleSignOut = async () => {
     try {
@@ -29,6 +31,9 @@ export default function AccountPage() {
       navigate('/login'); // 로그아웃 후 로그인 페이지로 이동
     } catch (error) {
       console.error('로그아웃 오류:', error);
+      toast.toast({
+        description: '로그아웃에 실패했습니다. 다시 시도해주세요.'
+      });
     }
   };
 
