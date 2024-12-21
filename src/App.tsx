@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 
 import AccountPage from './components/pages/account/AccountPage';
-import EditAccountPage from './components/pages/account/EditAccountPage';
+import EditAccountPage from './components/common/EditAccountPage';
 import BoardListPage from './components/pages/board/BoardListPage';
 import BoardPage from './components/pages/board/BoardPage';
 import RecentBoard from './components/pages/board/RecentBoard';
