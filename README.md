@@ -50,7 +50,7 @@
    ```
 
 3. **환경 변수 설정:**
-   Firebase 프로젝트에 대한 접근 권한을 요청하여 환경 변수를 설정합니다. `.env` 파일을 프로젝트 루트에 생성하고 다음과 같이 설정합니다:
+   관리자에게 Firebase, Sentry 프로젝트에 대한 접근 권한을 요청하여 환경 변수를 설정합니다. `.env` 파일을 프로젝트 루트에 생성하고 다음과 같이 설정합니다:
    ```plaintext
    VITE_FIREBASE_API_KEY=your_api_key
    VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
@@ -58,6 +58,8 @@
    VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
    VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
    VITE_FIREBASE_APP_ID=your_app_id
+   VITE_FIREBASE_MESSAGING_VAPID_KEY=your_firebase_messaging_vapid_key
+   CENTRY_AUTH_TOKEN=your_sentry_token
    ```
 
 ## 로컬에서 프로젝트 실행하기
