@@ -13,9 +13,7 @@ async function fetchBoardFirstDay(boardId: string): Promise<Date | null> {
 }
 
 // Function to calculate weekdays from the first day
-function calculateWeekdaysFromFirstDay(firstDay: Date | null): number | null {
-  if (!firstDay) return null;
-
+function calculateWeekdaysFromFirstDay(firstDay: Date): number {
   const today = new Date();
   const daysArray = Array.from(
     { length: Math.ceil((today.getTime() - firstDay.getTime()) / (1000 * 60 * 60 * 24)) },
@@ -36,7 +34,8 @@ export const updatePostDaysFromFirstDay = onDocumentCreated('posts', async (even
 
   // Fetch the board's first day
   const firstDay = await fetchBoardFirstDay(boardId);
-
+  if (!firstDay) return;
+  
   // Calculate days from the first day
   const weekDaysFromFirstDay = calculateWeekdaysFromFirstDay(firstDay);
 
