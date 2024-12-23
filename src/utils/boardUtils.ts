@@ -32,10 +32,6 @@ export async function fetchBoardTitle(boardId: string): Promise<string> {
 
 export async function fetchBoardsWithUserPermissions(userId: string): Promise<Board[]> {
   try {
-    const cachedBoards = localStorage.getItem(`boards_${userId}`);
-    if (cachedBoards) {
-      return JSON.parse(cachedBoards);
-    }
 
     const userDocRef = doc(firestore, 'users', userId);
     const userDoc = await getDoc(userDocRef);
@@ -50,8 +46,6 @@ export async function fetchBoardsWithUserPermissions(userId: string): Promise<Bo
         id: doc.id,
         ...doc.data(),
       })) as Board[];
-
-      localStorage.setItem(`boards_${userId}`, JSON.stringify(boards));
 
       return boards;
     } else {

@@ -2,12 +2,12 @@ import DOMPurify from 'dompurify';
 import { MessageCircle, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Post } from '@/types/Posts';
 import { User as Author } from '@/types/User';
 import { fetchUserData } from '@/utils/userUtils';
+import { Badge } from '@/components/ui/badge';
 
 interface PostCardProps {
   post: Post;
@@ -32,6 +32,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
   return (
     <Card className='mb-4'>
       <CardHeader>
+        <div className='flex items-center gap-2'>
+          {post.weekDaysFromFirstDay !== undefined && (
+            <Badge variant="secondary" className="text-xs font-semibold px-2 py-1 rounded-full">
+              {post.weekDaysFromFirstDay + 1}일차
+            </Badge>
+          )}
+        </div>
         <h2 className='text-2xl font-bold'>{post.title}</h2>
         <div className='mt-2 flex items-center'>
           <Avatar className='size-8'>

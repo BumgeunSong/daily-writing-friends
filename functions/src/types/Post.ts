@@ -8,4 +8,5 @@ export interface Post {
   createdAt?: Date;
   comments: number;
   updatedAt?: Date;
+  weekDaysFromFirstDay?: number;
 }

@@ -9,12 +9,13 @@ import StatusMessage from '../../common/StatusMessage';
 
 const BoardListPage: React.FC = () => {
   const { currentUser } = useAuth();
-
   const { data: boards = [], isLoading, error } = useQuery<Board[]>(
     ['boards', currentUser?.uid],
     () => fetchBoardsWithUserPermissions(currentUser!.uid),
     {
       enabled: !!currentUser, // currentUser가 있을 때만 쿼리 실행
+      staleTime: 1000 * 60 * 5, // 5분 동안 데이터가 신선하다고 간주
+      cacheTime: 1000 * 60 * 30, // 10분 동안 캐시 유지
     }
   );
 
