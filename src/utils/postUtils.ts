@@ -37,6 +37,7 @@ async function mapDocToPost(docSnap: QueryDocumentSnapshot<DocumentData>, boardI
     comments: await getCommentsCount(boardId, docSnap.id),
     createdAt: data.createdAt?.toDate() || new Date(),
     updatedAt: data.updatedAt?.toDate(),
+    weekDaysFromFirstDay: data.weekDaysFromFirstDay
   };
 }
 
