@@ -5,11 +5,28 @@ import { Post } from '../types/Post';
 import admin from '../admin';
 import { Board } from '../types/Board';
 
+export const updatePostDaysFromFirstDay = onDocumentCreated('/boards/{boardId}/posts/{postId}', async (event) => {
+  const post = event.data?.data() as Post;
+  const boardId = event.params.boardId;
+
+  // Fetch the board's first day
+  const firstDay = await fetchBoardFirstDay(boardId);
+  if (!firstDay) return;
+
+  // Calculate days from the first day
+  const weekDaysFromFirstDay = calculateWeekdaysFromFirstDay(firstDay);
+
+  // Update existing post with the calculated days
+  if (weekDaysFromFirstDay) {
+    await admin.firestore().doc(`boards/${boardId}/posts/${post.id}`).update({ weekDaysFromFirstDay });
+  }
+});
+
 // Function to fetch the board's first day
 async function fetchBoardFirstDay(boardId: string): Promise<Date | null> {
-    const board = await admin.firestore().doc(`boards/${boardId}`).get();
-    const boardData = board.data() as Board;
-    return boardData.firstDay?.toDate() || null;
+  const board = await admin.firestore().doc(`boards/${boardId}`).get();
+  const boardData = board.data() as Board;
+  return boardData.firstDay?.toDate() || null;
 }
 
 // Function to calculate weekdays from the first day
@@ -27,20 +44,3 @@ function calculateWeekdaysFromFirstDay(firstDay: Date): number {
 
   return weekdaysCount;
 }
-
-export const updatePostDaysFromFirstDay = onDocumentCreated('/boards/{boardId}/posts/{postId}', async (event) => {
-  const post = event.data?.data() as Post;
-  const boardId = event.params.boardId;
-
-  // Fetch the board's first day
-  const firstDay = await fetchBoardFirstDay(boardId);
-  if (!firstDay) return;
-
-  // Calculate days from the first day
-  const weekDaysFromFirstDay = calculateWeekdaysFromFirstDay(firstDay);
-
-  // Update existing post with the calculated days
-  if (weekDaysFromFirstDay) {
-    await admin.firestore().doc(`boards/${boardId}/posts/${post.id}`).update({ weekDaysFromFirstDay });
-  }
-});
