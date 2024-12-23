@@ -34,9 +34,9 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
       <CardHeader>
         <h2 className='text-2xl font-bold'>{post.title}</h2>
         <div className='flex items-center gap-2'>
-          {post.daysFromFirstDay !== undefined && (
+          {post.weekDaysFromFirstDay !== undefined && (
             <Badge variant="secondary" className="text-xs font-semibold px-2 py-1 rounded-full">
-              {post.daysFromFirstDay}일차
+              {post.weekDaysFromFirstDay + 1}일차
             </Badge>
           )}
           <h2 className='text-2xl font-bold'>{post.title}</h2>
