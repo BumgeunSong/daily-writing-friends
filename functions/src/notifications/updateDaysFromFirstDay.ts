@@ -12,11 +12,22 @@ async function fetchBoardFirstDay(boardId: string): Promise<Date | null> {
     return boardData.firstDay?.toDate() || null;
 }
 
-// Function to calculate days from the first day
-function calculateDaysFromFirstDay(firstDay: Date | null): number | null {
+// Function to calculate weekdays from the first day
+function calculateWeekdaysFromFirstDay(firstDay: Date | null): number | null {
   if (!firstDay) return null;
-  const diffTime = Math.abs(new Date().getTime() - firstDay.getTime());
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  const today = new Date();
+  const daysArray = Array.from(
+    { length: Math.ceil((today.getTime() - firstDay.getTime()) / (1000 * 60 * 60 * 24)) },
+    (_, i) => new Date(firstDay.getTime() + i * (1000 * 60 * 60 * 24))
+  );
+
+  const weekdaysCount = daysArray.filter(date => {
+    const dayOfWeek = date.getDay();
+    return dayOfWeek !== 0 && dayOfWeek !== 6; // Exclude Sundays (0) and Saturdays (6)
+  }).length;
+
+  return weekdaysCount;
 }
 
 export const updatePostDaysFromFirstDay = onDocumentCreated('posts', async (event) => {
@@ -27,10 +38,10 @@ export const updatePostDaysFromFirstDay = onDocumentCreated('posts', async (even
   const firstDay = await fetchBoardFirstDay(boardId);
 
   // Calculate days from the first day
-  const daysFromFirstDay = calculateDaysFromFirstDay(firstDay);
+  const weekDaysFromFirstDay = calculateWeekdaysFromFirstDay(firstDay);
 
   // Update existing post with the calculated days
-  if (daysFromFirstDay) {
-    await admin.firestore().doc(`boards/${boardId}/posts/${post.id}`).update({ daysFromFirstDay });
+  if (weekDaysFromFirstDay) {
+    await admin.firestore().doc(`boards/${boardId}/posts/${post.id}`).update({ weekDaysFromFirstDay });
   }
 });

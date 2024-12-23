@@ -11,5 +11,5 @@ export interface Post {
   createdAt?: Date;
   comments: number;
   updatedAt?: Date;
-  daysFromFirstDay?: number;
+  weekDaysFromFirstDay?: number;
 }
