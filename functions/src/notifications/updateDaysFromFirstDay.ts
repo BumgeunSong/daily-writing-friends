@@ -28,14 +28,14 @@ function calculateWeekdaysFromFirstDay(firstDay: Date): number {
   return weekdaysCount;
 }
 
-export const updatePostDaysFromFirstDay = onDocumentCreated('posts', async (event) => {
+export const updatePostDaysFromFirstDay = onDocumentCreated('/boards/{boardId}/posts/{postId}', async (event) => {
   const post = event.data?.data() as Post;
-  const boardId = post.boardId;
+  const boardId = event.params.boardId;
 
   // Fetch the board's first day
   const firstDay = await fetchBoardFirstDay(boardId);
   if (!firstDay) return;
-  
+
   // Calculate days from the first day
   const weekDaysFromFirstDay = calculateWeekdaysFromFirstDay(firstDay);
 
