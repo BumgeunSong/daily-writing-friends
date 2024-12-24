@@ -1,21 +1,27 @@
 import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
-
-import AccountPage from './components/pages/account/AccountPage';
-import EditAccountPage from './components/pages/account/EditAccountPage';
-import BoardListPage from './components/pages/board/BoardListPage';
-import BoardPage from './components/pages/board/BoardPage';
-import RecentBoard from './components/pages/board/RecentBoard';
-import BottomTabsNavigator from './components/pages/BottomTabsNavigator';
-import LoginPage from './components/pages/login/LoginPage';
-import NotificationsPage from './components/pages/notification/NotificationsPage';
-import PostEditPage from './components/pages/post/PostEditPage';
-import PostCreationPage from './components/pages/post/PostCreationPage';
-import PostDetailPage from './components/pages/post/PostDetailPage';
 import { useAuth } from './contexts/AuthContext';
 import './index.css';
 import { ProtectedRoute } from './components/route/ProtectedRoute';
-import NotificationSettingPage from './components/pages/notification/NotificationSettingPage';
 import { Toaster } from './components/ui/toaster';
+import { lazy, Suspense } from 'react';
+import BottomTabsNavigator from './components/pages/BottomTabsNavigator';
+
+const RecentBoard = lazy(() => import('./components/pages/board/RecentBoard'));
+const LoginPage = lazy(() => import('./components/pages/login/LoginPage')); 
+const BoardPage = lazy(() => import('./components/pages/board/BoardPage'));
+const PostDetailPage = lazy(() => import('./components/pages/post/PostDetailPage'));
+const AccountPage = lazy(() => import('./components/pages/account/AccountPage'));
+const EditAccountPage = lazy(() => import('./components/pages/account/EditAccountPage'));
+const NotificationsPage = lazy(() => import('./components/pages/notification/NotificationsPage'));
+const NotificationSettingPage = lazy(() => import('./components/pages/notification/NotificationSettingPage'));
+const PostCreationPage = lazy(() => import('./components/pages/post/PostCreationPage'));
+const PostEditPage = lazy(() => import('./components/pages/post/PostEditPage'));
+const BoardListPage = lazy(() => import('./components/pages/board/BoardListPage'));
+
+// Add loading fallback
+function LoadingFallback() {
+  return <div>Loading...</div>;
+}
 
 const AuthenticatedLayout = () => {
   return (
@@ -34,7 +40,11 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path='/login' element={!currentUser ? <LoginPage /> : <Navigate to='/boards' />} />
+      <Route path='/login' element={
+          <Suspense fallback={<LoadingFallback />}>
+            {!currentUser ? <LoginPage /> : <Navigate to='/boards' />}
+          </Suspense>
+        }  />
       <Route
         element={
           <ProtectedRoute>
@@ -42,16 +52,52 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route path='/boards' element={<RecentBoard />} />
+        <Route path='/boards' element={
+          <Suspense fallback={<LoadingFallback />}>
+            <RecentBoard />
+          </Suspense>
+        } />
         <Route path='/boards/list' element={<BoardListPage />} />
-        <Route path='/board/:boardId' element={<BoardPage />} />
-        <Route path='/create/:boardId' element={<PostCreationPage />} />
-        <Route path='/board/:boardId/post/:postId' element={<PostDetailPage />} />
-        <Route path='/board/:boardId/edit/:postId' element={<PostEditPage />} />
-        <Route path='/notifications' element={<NotificationsPage />} />
-        <Route path='/notifications/settings' element={<NotificationSettingPage />} />
-        <Route path='/account' element={<AccountPage />} />
-        <Route path='/account/edit' element={<EditAccountPage />} />
+        <Route path='/board/:boardId' element={
+          <Suspense fallback={<LoadingFallback />}>
+            <BoardPage />
+          </Suspense>
+        } />
+        <Route path='/create/:boardId' element={
+          <Suspense fallback={<LoadingFallback />}>
+            <PostCreationPage />
+          </Suspense>
+        } />
+        <Route path='/board/:boardId/post/:postId' element={
+          <Suspense fallback={<LoadingFallback />}>
+            <PostDetailPage />
+          </Suspense>
+        } />
+        <Route path='/board/:boardId/edit/:postId' element={
+          <Suspense fallback={<LoadingFallback />}>
+            <PostEditPage />
+          </Suspense>
+        } />
+        <Route path='/notifications' element={
+          <Suspense fallback={<LoadingFallback />}>
+            <NotificationsPage />
+          </Suspense>
+        } />
+        <Route path='/notifications/settings' element={
+          <Suspense fallback={<LoadingFallback />}>
+            <NotificationSettingPage />
+          </Suspense>
+        } />
+        <Route path='/account' element={
+          <Suspense fallback={<LoadingFallback />}>
+            <AccountPage />
+          </Suspense>
+        } />
+        <Route path='/account/edit' element={
+          <Suspense fallback={<LoadingFallback />}>
+            <EditAccountPage />
+          </Suspense>
+        } />
       </Route>
       <Route path='/' element={<Navigate to='/boards' />} />
       <Route path='*' element={<Navigate to='/' />} />
