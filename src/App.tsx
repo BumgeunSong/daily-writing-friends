@@ -1,11 +1,10 @@
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from './contexts/AuthContext';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
 import { ProtectedRoute } from './components/route/ProtectedRoute';
-import { Toaster } from './components/ui/toaster';
-import { lazy, Suspense } from 'react';
-import BottomTabsNavigator from './components/pages/BottomTabsNavigator';
-
+import { lazy } from 'react';
+import { AfterLoginLayout } from './components/common/AfterLoginLayout';
+import { LazyRoute } from './components/common/LazyRoute';
+import { useAuth } from './contexts/AuthContext';
 const RecentBoard = lazy(() => import('./components/pages/board/RecentBoard'));
 const LoginPage = lazy(() => import('./components/pages/login/LoginPage')); 
 const BoardPage = lazy(() => import('./components/pages/board/BoardPage'));
@@ -18,86 +17,32 @@ const PostCreationPage = lazy(() => import('./components/pages/post/PostCreation
 const PostEditPage = lazy(() => import('./components/pages/post/PostEditPage'));
 const BoardListPage = lazy(() => import('./components/pages/board/BoardListPage'));
 
-// Add loading fallback
-function LoadingFallback() {
-  return <div>Loading...</div>;
-}
-
-const AuthenticatedLayout = () => {
-  return (
-    <div className='flex min-h-screen flex-col pb-16 safe-top safe-right safe-bottom safe-left'>
-      <div className='grow'>
-        <Outlet />
-      </div>
-      <Toaster />
-      <BottomTabsNavigator />
-    </div>
-  );
-};
-
 export default function App() {
   const { currentUser } = useAuth();
-
   return (
     <Routes>
-      <Route path='/login' element={
-          <Suspense fallback={<LoadingFallback />}>
-            {!currentUser ? <LoginPage /> : <Navigate to='/boards' />}
-          </Suspense>
-        }  />
+      {currentUser ? (
+        <Route path='/login' element={<LazyRoute element={LoginPage} />} />
+      ) : (
+        <Route path='/login' element={<Navigate to='/boards' />} />
+      )}
       <Route
         element={
           <ProtectedRoute>
-            <AuthenticatedLayout />
+            <AfterLoginLayout />
           </ProtectedRoute>
         }
       >
-        <Route path='/boards' element={
-          <Suspense fallback={<LoadingFallback />}>
-            <RecentBoard />
-          </Suspense>
-        } />
-        <Route path='/boards/list' element={<BoardListPage />} />
-        <Route path='/board/:boardId' element={
-          <Suspense fallback={<LoadingFallback />}>
-            <BoardPage />
-          </Suspense>
-        } />
-        <Route path='/create/:boardId' element={
-          <Suspense fallback={<LoadingFallback />}>
-            <PostCreationPage />
-          </Suspense>
-        } />
-        <Route path='/board/:boardId/post/:postId' element={
-          <Suspense fallback={<LoadingFallback />}>
-            <PostDetailPage />
-          </Suspense>
-        } />
-        <Route path='/board/:boardId/edit/:postId' element={
-          <Suspense fallback={<LoadingFallback />}>
-            <PostEditPage />
-          </Suspense>
-        } />
-        <Route path='/notifications' element={
-          <Suspense fallback={<LoadingFallback />}>
-            <NotificationsPage />
-          </Suspense>
-        } />
-        <Route path='/notifications/settings' element={
-          <Suspense fallback={<LoadingFallback />}>
-            <NotificationSettingPage />
-          </Suspense>
-        } />
-        <Route path='/account' element={
-          <Suspense fallback={<LoadingFallback />}>
-            <AccountPage />
-          </Suspense>
-        } />
-        <Route path='/account/edit' element={
-          <Suspense fallback={<LoadingFallback />}>
-            <EditAccountPage />
-          </Suspense>
-        } />
+        <Route path='/boards' element={<LazyRoute element={RecentBoard} />} />
+        <Route path='/boards/list' element={<LazyRoute element={BoardListPage} />} />
+        <Route path='/board/:boardId' element={<LazyRoute element={BoardPage} />} />
+        <Route path='/create/:boardId' element={<LazyRoute element={PostCreationPage} />} />
+        <Route path='/board/:boardId/post/:postId' element={<LazyRoute element={PostDetailPage} />} />
+        <Route path='/board/:boardId/edit/:postId' element={<LazyRoute element={PostEditPage} />} />
+        <Route path='/notifications' element={<LazyRoute element={NotificationsPage} />} />
+        <Route path='/notifications/settings' element={<LazyRoute element={NotificationSettingPage} />} />
+        <Route path='/account' element={<LazyRoute element={AccountPage} />} />
+        <Route path='/account/edit' element={<LazyRoute element={EditAccountPage} />} />
       </Route>
       <Route path='/' element={<Navigate to='/boards' />} />
       <Route path='*' element={<Navigate to='/' />} />
