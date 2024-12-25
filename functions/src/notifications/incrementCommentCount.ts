@@ -18,7 +18,7 @@ export const onCommentDeleted = onDocumentDeleted(
 );
 
 // Post 문서 업데이트
-async function incrementCommentCount(
+export async function incrementCommentCount(
     boardId: string,
     postId: string,
     increment: number

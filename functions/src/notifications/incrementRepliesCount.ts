@@ -17,7 +17,7 @@ export const onReplyDeleted = onDocumentDeleted(
     }
 );
 
-async function incrementRepliesCount(
+export async function incrementRepliesCount(
     boardId: string,
     postId: string,
     increment: number
