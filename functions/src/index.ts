@@ -4,8 +4,8 @@ import { onReplyCreatedOnPost } from './notifications/replyOnPost';
 import { onNotificationCreated } from './notifications/sendMessageOnNotification';
 import { updatePostDaysFromFirstDay } from './notifications/updateDaysFromFirstDay';
 import { updateCommentRepliesCounts } from './notifications/updateCommentRepliesCounts';
-import { incrementCommentCount } from './notifications/incrementCommentCount';
-import { incrementRepliesCount } from './notifications/incrementRepliesCount';
+import { decrementCommentCountOnCommentDeleted, incrementCommentCountOnCommentCreated } from './notifications/incrementCommentCount';
+import { decrementRepliesCountOnReplyDeleted, incrementRepliesCountOnReplyCreated } from './notifications/incrementRepliesCount';
 
 export {
   onCommentCreated,
@@ -14,6 +14,8 @@ export {
   onNotificationCreated,
   updatePostDaysFromFirstDay,
   updateCommentRepliesCounts,
-  incrementCommentCount,
-  incrementRepliesCount
+  incrementCommentCountOnCommentCreated,
+  decrementCommentCountOnCommentDeleted,
+  incrementRepliesCountOnReplyCreated,
+  decrementRepliesCountOnReplyDeleted
 };

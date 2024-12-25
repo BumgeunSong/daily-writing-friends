@@ -2,7 +2,7 @@ import { onDocumentCreated, onDocumentDeleted } from "firebase-functions/firesto
 import admin from "../admin";
 
 // 답글 생성 시
-export const onReplyCreated = onDocumentCreated(  
+export const incrementRepliesCountOnReplyCreated = onDocumentCreated(  
     "boards/{boardId}/posts/{postId}/comments/{commentId}/reply/{replyId}",
     async (event) => {
         await incrementRepliesCount(event.params.boardId, event.params.postId, 1);
@@ -10,14 +10,14 @@ export const onReplyCreated = onDocumentCreated(
 );  
 
 // 답글 삭제 시
-export const onReplyDeleted = onDocumentDeleted(  
+export const decrementRepliesCountOnReplyDeleted = onDocumentDeleted(  
     "boards/{boardId}/posts/{postId}/comments/{commentId}/reply/{replyId}",
     async (event) => {
         await incrementRepliesCount(event.params.boardId, event.params.postId, -1);
     }
 );
 
-export async function incrementRepliesCount(
+async function incrementRepliesCount(
     boardId: string,
     postId: string,
     increment: number

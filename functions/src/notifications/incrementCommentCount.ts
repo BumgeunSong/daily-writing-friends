@@ -2,7 +2,7 @@ import { onDocumentCreated, onDocumentDeleted } from "firebase-functions/firesto
 import admin from "../admin";
 
 // 댓글 생성 시
-export const onCommentCreated = onDocumentCreated(  
+export const incrementCommentCountOnCommentCreated = onDocumentCreated(  
     "boards/{boardId}/posts/{postId}/comments/{commentId}",
     async (event) => {
         await incrementCommentCount(event.params.boardId, event.params.postId, 1);
@@ -10,7 +10,7 @@ export const onCommentCreated = onDocumentCreated(
 );
 
 // 댓글 삭제 시
-export const onCommentDeleted = onDocumentDeleted(  
+export const decrementCommentCountOnCommentDeleted = onDocumentDeleted(  
     "boards/{boardId}/posts/{postId}/comments/{commentId}",
     async (event) => {
         await incrementCommentCount(event.params.boardId, event.params.postId, -1);
@@ -18,7 +18,7 @@ export const onCommentDeleted = onDocumentDeleted(
 );
 
 // Post 문서 업데이트
-export async function incrementCommentCount(
+async function incrementCommentCount(
     boardId: string,
     postId: string,
     increment: number
