@@ -8,6 +8,8 @@ import {
   getDocs,
   DocumentData,
   QueryDocumentSnapshot,
+  query,
+  orderBy,
 } from 'firebase/firestore';
 
 import { firestore } from '../firebase';
@@ -80,3 +82,17 @@ export async function updatePost(boardId: string, postId: string, content: strin
     updatedAt: serverTimestamp(),
   });
 }
+
+export const fetchAdjacentPosts = async (boardId: string, currentPostId: string) => {
+  const postsRef = collection(firestore, `boards/${boardId}/posts`);
+  const q = query(postsRef, orderBy('createdAt', 'desc'));
+  const snapshot = await getDocs(q);
+  
+  const posts = snapshot.docs.map(doc => ({ id: doc.id }));
+  const currentIndex = posts.findIndex(post => post.id === currentPostId);
+  
+  return {
+    prevPost: currentIndex < posts.length - 1 ? posts[currentIndex + 1].id : null,
+    nextPost: currentIndex > 0 ? posts[currentIndex - 1].id : null
+  };
+};
