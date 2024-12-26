@@ -37,14 +37,18 @@ export const usePostTitle = (boardId: string, postId: string) => {
 
 export async function createPost(boardId: string, title: string, content: string, authorId: string, authorName: string) {
   const postRef = doc(collection(firestore, `boards/${boardId}/posts`));
-  return setDoc(postRef, {
-    title,
+  const post: Post = {
+    id: postRef.id,
     boardId,
+    title,
     content,
     authorId,
     authorName,
-    createdAt: serverTimestamp(),
-  });
+    countOfComments: 0,
+    countOfReplies: 0,
+    createdAt: new Date(),
+  };
+  return setDoc(postRef, post);
 }
 
 export async function updatePost(boardId: string, postId: string, content: string): Promise<void> {
