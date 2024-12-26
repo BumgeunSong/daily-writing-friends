@@ -1,44 +1,139 @@
 import * as admin from 'firebase-admin';
 import { onRequest } from 'firebase-functions/https';
 
-// 이 함수는 모든 게시판의 모든 게시글의 모든 댓글의 모든 대댓글의 개수를 가장 최신 상태로 업데이트합니다.
-export const updateCommentRepliesCounts = onRequest(async (req, res) => {
-    const everyBoardDocs = (await admin.firestore().collection('boards').get()).docs;
+const BATCH_SIZE = 100;
+const FUNCTION_TIMEOUT = 540000; // 9분
 
-    for (const boardDoc of everyBoardDocs) {
-        const boardId = boardDoc.id;
-        await updatePostCounts(boardId, boardDoc);
-    }
+interface BatchStats {
+  processedBoards: number;
+  processedPosts: number;
+  errors: string[];
+  startTime: number;
+}
 
-    res.send('Comment/Reply counts updated successfully');
+// 배치 처리 상태 관리
+const createStats = (): BatchStats => ({
+  processedBoards: 0,
+  processedPosts: 0,
+  errors: [],
+  startTime: Date.now()
 });
 
-async function updatePostCounts(boardId: string, boardDoc: FirebaseFirestore.QueryDocumentSnapshot) {
-    const everyPostDocs = (await boardDoc.ref.collection('posts').get()).docs;
-    for (const postDoc of everyPostDocs) {
-        const postId = postDoc.id;
-        await updateCommentAndReplyCounts(boardId, postId, postDoc);
+export const updateCommentRepliesCounts = onRequest(async (req, res) => {
+  const stats = createStats();
+  const db = admin.firestore();
+
+  try {
+    const boardsSnapshot = await db.collection('boards').get();
+
+    for (const boardDoc of boardsSnapshot.docs) {
+      await processBoard(boardDoc, stats);
+      stats.processedBoards++;
+
+      // 타임아웃 체크
+      if (Date.now() - stats.startTime > FUNCTION_TIMEOUT) {
+        throw new Error('Function timeout approaching');
+      }
     }
-}
 
-async function updateCommentAndReplyCounts(boardId: string, postId: string, postDoc: FirebaseFirestore.QueryDocumentSnapshot) {
-    const everyCommentDocs = (await postDoc.ref.collection('comments').get()).docs;
-    const commentCount = everyCommentDocs.length;
+    res.json({
+      success: true,
+      stats: {
+        ...stats,
+        executionTime: `${(Date.now() - stats.startTime) / 1000} seconds`
+      }
+    });
 
-    for (const commentDoc of everyCommentDocs) {
-        const repliesCount = await getRepliesCount(commentDoc);
-        try {
-            await admin.firestore().doc(`boards/${boardId}/posts/${postId}`).update({
-                countOfComments: commentCount,
-                countOfReplies: repliesCount
-            });
-        } catch (error) {
-            console.error(`Error updating comment/reply counts on post ${postId} of board ${boardId}:`, error);
+  } catch (error) {
+    console.error('Error in updateCommentRepliesCounts:', error);
+    res.status(500).json({
+      success: false,
+      error: error,
+      stats: {
+        ...stats,
+        executionTime: `${(Date.now() - stats.startTime) / 1000} seconds`
+      }
+    });
+  }
+});
+
+async function processBoard(
+  boardDoc: FirebaseFirestore.QueryDocumentSnapshot,
+  stats: BatchStats
+) {
+  const db = admin.firestore();
+  let lastDoc = null;
+
+  do {
+    let query = boardDoc.ref.collection('posts')
+      .orderBy('createdAt')
+      .limit(BATCH_SIZE);
+    
+    if (lastDoc) {
+      query = query.startAfter(lastDoc);
+    }
+
+    const postsSnapshot = await query.get();
+    if (postsSnapshot.empty) break;
+
+    // 트랜잭션으로 배치 처리
+    await db.runTransaction(async (transaction) => {
+      // 1. 먼저 모든 읽기 작업을 수행
+      const updatePromises = await Promise.all(
+        postsSnapshot.docs.map(async (postDoc) => {
+          try {
+            const counts = await getCommentAndReplyCounts(postDoc.ref, transaction);
+            return {
+              ref: postDoc.ref,
+              counts,
+              success: true
+            };
+          } catch (error) {
+            stats.errors.push(`Error processing post ${postDoc.id}: ${error}`);
+            console.error(`Error processing post ${postDoc.id}:`, error);
+            return {
+              ref: postDoc.ref,
+              success: false
+            };
+          }
+        })
+      );
+
+      // 2. 그 다음 모든 쓰기 작업을 수행
+      updatePromises.forEach(update => {
+        if (update.success) {
+          transaction.update(update.ref, {
+            countOfComments: update.counts!.commentCount,
+            countOfReplies: update.counts!.replyCount
+          });
+          stats.processedPosts++;
         }
-    }
+      });
+    });
+
+    lastDoc = postsSnapshot.docs[postsSnapshot.docs.length - 1];
+    console.log(`Processed ${stats.processedPosts} posts in board ${boardDoc.id}`);
+
+  } while (lastDoc);
 }
 
-async function getRepliesCount(commentDoc: FirebaseFirestore.QueryDocumentSnapshot): Promise<number> {
-    const everyReplyDocs = (await commentDoc.ref.collection('replies').get()).docs;
-    return everyReplyDocs.length;
-}
+async function getCommentAndReplyCounts(
+    postRef: FirebaseFirestore.DocumentReference,
+    transaction: FirebaseFirestore.Transaction
+  ): Promise<{ commentCount: number; replyCount: number }> {
+    // 1. 모든 읽기 작업을 배열로 수집
+    const commentsSnapshot = await transaction.get(postRef.collection('comments'));
+    const replyReads = commentsSnapshot.docs.map(commentDoc => 
+      transaction.get(commentDoc.ref.collection('replies'))
+    );
+    
+    // 2. 모든 읽기 작업을 한번에 실행
+    const replySnapshots = await Promise.all(replyReads);
+    
+    // 3. 결과 계산
+    const commentCount = commentsSnapshot.size;
+    const replyCount = replySnapshots.reduce((sum, snapshot) => sum + snapshot.size, 0);
+  
+    return { commentCount, replyCount };
+  }
+  
