@@ -65,7 +65,6 @@ async function processBoard(
   let lastDoc = null;
 
   do {
-    // 배치 크기만큼 게시물 조회
     let query = boardDoc.ref.collection('posts')
       .orderBy('createdAt')
       .limit(BATCH_SIZE);
@@ -79,22 +78,37 @@ async function processBoard(
 
     // 트랜잭션으로 배치 처리
     await db.runTransaction(async (transaction) => {
-      for (const postDoc of postsSnapshot.docs) {
-        try {
-          const counts = await getCommentAndReplyCounts(postDoc.ref, transaction);
-          
-          transaction.update(postDoc.ref, {
-            countOfComments: counts.commentCount,
-            countOfReplies: counts.replyCount,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-          });
+      // 1. 먼저 모든 읽기 작업을 수행
+      const updatePromises = await Promise.all(
+        postsSnapshot.docs.map(async (postDoc) => {
+          try {
+            const counts = await getCommentAndReplyCounts(postDoc.ref, transaction);
+            return {
+              ref: postDoc.ref,
+              counts,
+              success: true
+            };
+          } catch (error) {
+            stats.errors.push(`Error processing post ${postDoc.id}: ${error}`);
+            console.error(`Error processing post ${postDoc.id}:`, error);
+            return {
+              ref: postDoc.ref,
+              success: false
+            };
+          }
+        })
+      );
 
+      // 2. 그 다음 모든 쓰기 작업을 수행
+      updatePromises.forEach(update => {
+        if (update.success) {
+          transaction.update(update.ref, {
+            countOfComments: update.counts!.commentCount,
+            countOfReplies: update.counts!.replyCount
+          });
           stats.processedPosts++;
-        } catch (error) {
-          stats.errors.push(`Error processing post ${postDoc.id}: ${error}`);
-          console.error(`Error processing post ${postDoc.id}:`, error);
         }
-      }
+      });
     });
 
     lastDoc = postsSnapshot.docs[postsSnapshot.docs.length - 1];
@@ -107,14 +121,19 @@ async function getCommentAndReplyCounts(
   postRef: FirebaseFirestore.DocumentReference,
   transaction: FirebaseFirestore.Transaction
 ): Promise<{ commentCount: number; replyCount: number }> {
+  // 모든 읽기 작업을 한번에 수행
   const commentsSnapshot = await transaction.get(postRef.collection('comments'));
-  const commentCount = commentsSnapshot.size;
+  
+  // 댓글에 대한 답글 수 읽기를 병렬로 처리
+  const replyCounts = await Promise.all(
+    commentsSnapshot.docs.map(async (commentDoc) => {
+      const replySnapshot = await transaction.get(commentDoc.ref.collection('reply'));
+      return replySnapshot.size;
+    })
+  );
 
-  let totalReplyCount = 0;
-  await Promise.all(commentsSnapshot.docs.map(async (commentDoc) => {
-    const replySnapshot = await transaction.get(commentDoc.ref.collection('reply'));
-    totalReplyCount += replySnapshot.size;
-  }));
-
-  return { commentCount, replyCount: totalReplyCount };
+  return {
+    commentCount: commentsSnapshot.size,
+    replyCount: replyCounts.reduce((sum, count) => sum + count, 0)
+  };
 }
