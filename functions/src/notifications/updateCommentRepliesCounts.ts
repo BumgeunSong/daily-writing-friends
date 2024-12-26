@@ -118,22 +118,22 @@ async function processBoard(
 }
 
 async function getCommentAndReplyCounts(
-  postRef: FirebaseFirestore.DocumentReference,
-  transaction: FirebaseFirestore.Transaction
-): Promise<{ commentCount: number; replyCount: number }> {
-  // 모든 읽기 작업을 한번에 수행
-  const commentsSnapshot = await transaction.get(postRef.collection('comments'));
+    postRef: FirebaseFirestore.DocumentReference,
+    transaction: FirebaseFirestore.Transaction
+  ): Promise<{ commentCount: number; replyCount: number }> {
+    // 1. 모든 읽기 작업을 배열로 수집
+    const commentsSnapshot = await transaction.get(postRef.collection('comments'));
+    const replyReads = commentsSnapshot.docs.map(commentDoc => 
+      transaction.get(commentDoc.ref.collection('reply'))
+    );
+    
+    // 2. 모든 읽기 작업을 한번에 실행
+    const replySnapshots = await Promise.all(replyReads);
+    
+    // 3. 결과 계산
+    const commentCount = commentsSnapshot.size;
+    const replyCount = replySnapshots.reduce((sum, snapshot) => sum + snapshot.size, 0);
   
-  // 댓글에 대한 답글 수 읽기를 병렬로 처리
-  const replyCounts = await Promise.all(
-    commentsSnapshot.docs.map(async (commentDoc) => {
-      const replySnapshot = await transaction.get(commentDoc.ref.collection('reply'));
-      return replySnapshot.size;
-    })
-  );
-
-  return {
-    commentCount: commentsSnapshot.size,
-    replyCount: replyCounts.reduce((sum, count) => sum + count, 0)
-  };
-}
+    return { commentCount, replyCount };
+  }
+  
