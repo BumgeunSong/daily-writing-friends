@@ -7,6 +7,8 @@ export interface Post {
   authorName: string;
   createdAt?: Date;
   comments: number;
+  countOfComments: number;
+  countOfReplies: number;
   updatedAt?: Date;
   weekDaysFromFirstDay?: number;
 }

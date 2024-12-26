@@ -69,7 +69,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
       <CardFooter>
         <div className='flex items-center'>
           <MessageCircle className='mr-1 size-4' />
-          <p className='text-sm'>{post.comments}</p>
+          <p className='text-sm'>{post.countOfComments + post.countOfReplies}</p>
         </div>
       </CardFooter>
     </Card>

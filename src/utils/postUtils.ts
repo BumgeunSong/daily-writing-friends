@@ -9,52 +9,24 @@ import {
   DocumentData,
   QueryDocumentSnapshot,
   query,
-  orderBy,
+  orderBy
 } from 'firebase/firestore';
 
 import { firestore } from '../firebase';
 import { Post } from '../types/Posts';
 import { useQuery } from '@tanstack/react-query';
+import { mapDocToPost } from './mapDocToPost';
 
 export const fetchPost = async (boardId: string, postId: string): Promise<Post | null> => {
   const docSnap = await getDoc(doc(firestore, `boards/${boardId}/posts/${postId}`));
 
   if (!docSnap.exists()) {
     console.log('해당 문서가 없습니다!');
-    return null;
+    return null; 
   }
 
-  return mapDocToPost(docSnap, boardId);
+  return mapDocToPost(docSnap);
 };
-
-async function mapDocToPost(docSnap: QueryDocumentSnapshot<DocumentData>, boardId: string): Promise<Post> {
-  const data = docSnap.data();
-  return {
-    id: docSnap.id,
-    boardId: data.boardId,
-    title: data.title,
-    content: data.content,
-    authorId: data.authorId,
-    authorName: data.authorName,
-    comments: await getCommentsCount(boardId, docSnap.id),
-    createdAt: data.createdAt?.toDate() || new Date(),
-    updatedAt: data.updatedAt?.toDate(),
-    weekDaysFromFirstDay: data.weekDaysFromFirstDay
-  };
-}
-
-async function getCommentsCount(boardId: string, postId: string): Promise<number> {
-  const commentsSnapshot = await getDocs(collection(firestore, `boards/${boardId}/posts/${postId}/comments`));
-  const commentsCount = await Promise.all(
-    commentsSnapshot.docs.map(async (comment) => {
-      const repliesSnapshot = await getDocs(
-        collection(firestore, `boards/${boardId}/posts/${postId}/comments/${comment.id}/replies`),
-      );
-      return Number(comment.exists()) + repliesSnapshot.docs.length;
-    }),
-  );
-  return commentsCount.reduce((acc, curr) => acc + curr, 0);
-}
 
 export const usePostTitle = (boardId: string, postId: string) => {
   return useQuery(['postTitle', boardId, postId], async () => {

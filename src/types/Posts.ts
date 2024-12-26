@@ -1,5 +1,3 @@
-// src/types/Post.ts
-import { Timestamp } from 'firebase/firestore';
 
 export interface Post {
   id: string;
@@ -9,7 +7,8 @@ export interface Post {
   authorId: string;
   authorName: string;
   createdAt?: Date;
-  comments: number;
+  countOfComments: number;
+  countOfReplies: number;
   updatedAt?: Date;
   weekDaysFromFirstDay?: number;
 }
