@@ -124,7 +124,7 @@ async function getCommentAndReplyCounts(
     // 1. 모든 읽기 작업을 배열로 수집
     const commentsSnapshot = await transaction.get(postRef.collection('comments'));
     const replyReads = commentsSnapshot.docs.map(commentDoc => 
-      transaction.get(commentDoc.ref.collection('reply'))
+      transaction.get(commentDoc.ref.collection('replies'))
     );
     
     // 2. 모든 읽기 작업을 한번에 실행
