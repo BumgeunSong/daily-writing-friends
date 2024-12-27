@@ -59,11 +59,20 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
         </div>
       </CardHeader>
       <Link to={`/board/${post.boardId}/post/${post.id}`} onClick={onClick}>
-        <CardContent className='cursor-pointer p-6 transition-colors duration-200 hover:bg-muted'>
+        <CardContent className='cursor-pointer space-y-4 p-6 transition-colors duration-200 hover:bg-muted'>
           <div
             className='line-clamp-3 text-sm text-muted-foreground'
             dangerouslySetInnerHTML={{ __html: contentPreview }}
           />
+          {post.thumbnailImageURL && (
+            <div className='aspect-video w-full overflow-hidden rounded-lg bg-muted'>
+              <img
+                src={post.thumbnailImageURL}
+                alt="게시글 썸네일"
+                className='h-full w-full object-cover transition-transform duration-300 hover:scale-105'
+              />
+            </div>
+          )}
         </CardContent>
       </Link>
       <CardFooter>
