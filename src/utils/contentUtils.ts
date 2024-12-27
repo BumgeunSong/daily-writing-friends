@@ -13,21 +13,21 @@ const sanitizePostContent = (content: string): string => {
   return convertBulletListToUl(sanitized);
 };
 
-// ol[data-list="bullet"] -> ul 변환
+// Quill에서 bullet list를 사용하는 경우, ol 태그를 사용하기 때문에 직접 ul 태그로 바꿔준다.
 const convertBulletListToUl = (html: string): string => {
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = html;
-
-  // bullet 리스트를 ul로 변환
   const bulletLists = tempDiv.querySelectorAll('ol li[data-list="bullet"]');
   bulletLists.forEach(item => {
     const ul = document.createElement('ul');
     const li = document.createElement('li');
     li.innerHTML = item.innerHTML;
     ul.appendChild(li);
-    item.parentNode?.replaceChild(ul, item);
+    const ol = item.closest('ol');
+    if (ol) {
+      ol.parentNode?.replaceChild(ul, ol);
+    }
   });
-
   return tempDiv.innerHTML;
 };
 
