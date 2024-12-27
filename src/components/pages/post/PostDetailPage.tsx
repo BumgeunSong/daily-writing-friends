@@ -1,6 +1,6 @@
 import DOMPurify from 'dompurify';
 import { deleteDoc, doc } from 'firebase/firestore';
-import { ChevronLeft, ChevronRight, Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -8,8 +8,10 @@ import { fetchUserNickname } from '@/utils/userUtils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { firestore } from '../../../firebase';
 import { useQuery } from '@tanstack/react-query';
-import { fetchPost, fetchAdjacentPosts } from '../../../utils/postUtils';
+import { fetchPost } from '../../../utils/postUtils';
 import Comments from '../comment/Comments';
+import { PostBackButton } from './PostBackButton';
+import { PostAdjacentButtons } from './PostAdjacentButtons';
 
 const deletePost = async (boardId: string, id: string): Promise<void> => {
   await deleteDoc(doc(firestore, `boards/${boardId}/posts`, id));
@@ -52,17 +54,9 @@ export default function PostDetailPage() {
     }
   );
 
-  const { data: adjacentPosts } = useQuery(
-    ['adjacentPosts', boardId, postId],
-    () => fetchAdjacentPosts(boardId!, postId!),
-    {
-      enabled: !!boardId && !!postId,
-    }
-  );
-
   if (isLoading) {
     return (
-      <div className='mx-auto max-w-4xl px-4 py-8'>
+      <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
         <Skeleton className='mb-4 h-12 w-3/4' />
         <Skeleton className='mb-2 h-4 w-full' />
         <Skeleton className='mb-2 h-4 w-full' />
@@ -73,13 +67,9 @@ export default function PostDetailPage() {
 
   if (error || !post) {
     return (
-      <div className='mx-auto max-w-4xl px-4 py-8 text-center'>
+      <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8 text-center'>
         <h1 className='mb-4 text-2xl font-bold'>게시물을 찾을 수 없습니다.</h1>
-        <Link to={`/board/${boardId}`}>
-          <Button>
-            <ChevronLeft className='mr-2 size-4' /> 피드로 돌아가기
-          </Button>
-        </Link>
+        {boardId && <PostBackButton boardId={boardId} />}
       </div>
     );
   }
@@ -92,16 +82,12 @@ export default function PostDetailPage() {
   });
 
   return (
-    <div className='mx-auto max-w-4xl px-4 py-8'>
-      <Link to={`/board/${boardId}`}>
-        <Button variant='ghost' className='mb-6'>
-          <ChevronLeft className='mr-2 size-4' /> 피드로 돌아가기
-        </Button>
-      </Link>
+    <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
+      {boardId && <PostBackButton boardId={boardId} className='mb-6' />}
       <article className='space-y-6'>
         <header className='space-y-4'>
-          <h1 className='text-4xl font-bold leading-tight'>{post.title}</h1>
-          <div className='flex items-center justify-between text-sm text-muted-foreground'>
+          <h1 className='text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl mb-4'>{post.title}</h1>
+          <div className='flex items-center justify-between text-sm text-gray-500 dark:text-gray-400'>
             <p>
               작성자: {authorNickname || '??'} | 작성일: {post.createdAt?.toLocaleString() || '?'}
             </p>
@@ -127,34 +113,11 @@ export default function PostDetailPage() {
         </header>
         <div
           dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-          className='prose prose-lg max-w-none'
+          className='prose prose-lg prose-slate dark:prose-invert max-w-none mt-6 prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold'
         />
       </article>
       <div className='mt-12 border-t border-gray-200'></div>
-      <div className='mt-6 flex justify-between'>
-        {adjacentPosts?.prevPost ? (
-          <Link to={`/board/${boardId}/post/${adjacentPosts.prevPost}`}>
-            <Button variant='outline'>
-              <ChevronLeft className='mr-2 size-4' /> 이전 글
-            </Button>
-          </Link>
-        ) : (
-          <Button variant='outline' disabled>
-            <ChevronLeft className='mr-2 size-4' /> 이전 글
-          </Button>
-        )}
-        {adjacentPosts?.nextPost ? (
-          <Link to={`/board/${boardId}/post/${adjacentPosts.nextPost}`}>
-            <Button variant='outline'>
-              다음 글 <ChevronRight className='ml-2 size-4' />
-            </Button>
-          </Link>
-        ) : (
-          <Button variant='outline' disabled>
-            다음 글 <ChevronRight className='ml-2 size-4' />
-          </Button>
-        )}
-      </div>
+      {boardId && postId && <PostAdjacentButtons boardId={boardId} postId={postId} />}
       <div className='mt-12'>
         {boardId && postId && <Comments boardId={boardId} postId={postId} />}
       </div>

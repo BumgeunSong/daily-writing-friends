@@ -1,48 +1,11 @@
-import { ChevronLeft } from 'lucide-react';
-import React, { useState, useRef, useEffect } from 'react';
-import ReactQuill from 'react-quill-new';
-import { useNavigate, Link, useParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { createPost } from '@/utils/postUtils';
-import 'react-quill-new/dist/quill.snow.css';
-
-const TitleInput = React.forwardRef<
-  HTMLTextAreaElement,
-  React.TextareaHTMLAttributes<HTMLTextAreaElement>
->(({ className, ...props }, ref) => {
-  const innerRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    if (innerRef.current) {
-      innerRef.current.style.height = 'auto';
-      innerRef.current.style.height = `${innerRef.current.scrollHeight}px`;
-    }
-  }, [props.value]);
-
-  useEffect(() => {
-    if (typeof ref === 'function') {
-      ref(innerRef.current);
-    } else if (ref) {
-      ref.current = innerRef.current;
-    }
-  }, [ref]);
-
-  return (
-    <textarea
-      ref={innerRef}
-      className={cn(
-        'w-full resize-none overflow-hidden text-3xl font-bold focus:outline-none placeholder:text-muted-foreground',
-        className,
-      )}
-      rows={1}
-      {...props}
-    />
-  );
-});
-
-TitleInput.displayName = 'TitleInput';
+import { PostTextEditor } from './PostTextEditor';
+import { PostTitleEditor } from './PostTitleEditor';
+import { PostBackButton } from './PostBackButton';
 
 export default function PostCreationPage() {
   const [title, setTitle] = useState<string>('');
@@ -50,6 +13,7 @@ export default function PostCreationPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
@@ -64,32 +28,20 @@ export default function PostCreationPage() {
   };
 
   return (
-    <div className='mx-auto max-w-3xl px-4 py-8'>
-      <Link to={`/board/${boardId}`}>
-        <Button variant='ghost' className='mb-6'>
-          <ChevronLeft className='mr-2 size-4' /> 피드로 돌아가기
-        </Button>
-      </Link>
+    <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
+      {boardId && <PostBackButton boardId={boardId} className='mb-6' />}
       <form onSubmit={handleSubmit} className='space-y-6'>
-        <TitleInput
+        <PostTitleEditor
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder='제목을 입력하세요'
           className='mb-4'
         />
-        <div className='min-h-[300px]'>
-          <ReactQuill
-            value={content}
-            onChange={setContent}
-            placeholder='내용을 입력하세요...'
-            className='h-full'
-            modules={{
-              toolbar: [['bold'], ['link']],
-            }}
-          />
-        </div>
+        <PostTextEditor 
+          value={content}
+          onChange={setContent}
+        />
         <div className='flex justify-end'>
-          <Button type='submit' className='px-6 py-2'>
+          <Button type='submit' className='px-6'>
             게시하기
           </Button>
         </div>
