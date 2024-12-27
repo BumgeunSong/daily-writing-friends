@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import ReactQuill from 'react-quill-new';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../../firebase';
@@ -185,21 +185,6 @@ const imageHandler = async (postId: string, quillRef: any, toast: any) => {
   };
 };
 
-const modules = (postId: string, quillRef: any, toast: any) => ({
-  toolbar: {
-    container: [
-      ['bold', 'underline', 'strike'],
-      ['blockquote'],
-      [{ 'header': 1 }, { 'header': 2 }],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      ['link', 'image'],
-    ],
-    handlers: {
-      image: () => imageHandler(postId, quillRef, toast),
-    },
-  },
-});
-
 const formats = [
   'bold', 'underline', 'strike',
   'blockquote', 'header',
@@ -214,6 +199,25 @@ export function PostTextEditor({
 }: PostTextEditorProps) {
   const quillRef = useRef<any>(null);
   const { toast } = useToast();
+
+  // modules를 useMemo로 메모이제이션
+  const modules = useMemo(
+    () => ({
+      toolbar: {
+        container: [
+          ['bold', 'underline', 'strike'],
+          ['blockquote'],
+          [{ 'header': 1 }, { 'header': 2 }],
+          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+          ['link', 'image'],
+        ],
+        handlers: {
+          image: () => imageHandler(postId, quillRef, toast),
+        },
+      },
+    }),
+    [postId, toast] // postId와 toast가 변경될 때만 재생성
+  );
 
   useEffect(() => {
     const styleTag = document.createElement('style');
@@ -233,7 +237,7 @@ export function PostTextEditor({
         onChange={onChange}
         placeholder={placeholder}
         theme="snow"
-        modules={modules(postId, quillRef, toast)}
+        modules={modules}
         formats={formats}
         className="prose prose-lg prose-slate dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold"
       />
