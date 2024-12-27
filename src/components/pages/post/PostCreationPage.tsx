@@ -1,12 +1,11 @@
 import { ChevronLeft } from 'lucide-react';
 import React, { useState, useRef, useEffect } from 'react';
-import ReactQuill from 'react-quill-new';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { createPost } from '@/utils/postUtils';
-import 'react-quill-new/dist/quill.snow.css';
+import { PostTextEditor } from './PostTextEditor';
 
 const TitleInput = React.forwardRef<
   HTMLTextAreaElement,
@@ -50,6 +49,7 @@ export default function PostCreationPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) return;
@@ -77,19 +77,12 @@ export default function PostCreationPage() {
           placeholder='제목을 입력하세요'
           className='mb-4'
         />
-        <div className='min-h-[300px]'>
-          <ReactQuill
-            value={content}
-            onChange={setContent}
-            placeholder='내용을 입력하세요...'
-            className='h-full'
-            modules={{
-              toolbar: [['bold'], ['link']],
-            }}
-          />
-        </div>
+        <PostTextEditor 
+          value={content}
+          onChange={setContent}
+        />
         <div className='flex justify-end'>
-          <Button type='submit' className='px-6 py-2'>
+          <Button type='submit' className='px-6'>
             게시하기
           </Button>
         </div>
