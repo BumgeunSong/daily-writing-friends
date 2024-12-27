@@ -1,53 +1,24 @@
 import { Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 
 import AuthorList from './AuthorList';
 import BoardHeader from './BoardHeader';
 import PostCardList from './PostCardList';
 import { Button } from '../../ui/button';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
   const [selectedAuthorId, setSelectedAuthorId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!boardId) {
-      console.error('No boardId provided');
-      return;
-    }
-
-    try {
-      const savedScrollPosition = sessionStorage.getItem(`scrollPosition-${boardId}`);
-      if (savedScrollPosition) {
-        window.requestAnimationFrame(() => {
-          try {
-            window.scrollTo({
-              top: parseInt(savedScrollPosition, 10),
-              behavior: 'instant'
-            });
-          } catch (error) {
-            console.error('Scroll restoration failed:', error);
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Session storage access failed:', error);
-    }
-
-    return () => {
-      try {
-        sessionStorage.setItem(`scrollPosition-${boardId}`, window.scrollY.toString());
-      } catch (error) {
-        console.error('Failed to save scroll position:', error);
-      }
-    };
-  }, [boardId]);
+  const { saveScrollPosition } = useScrollRestoration({
+    key: boardId || '',
+    enabled: !!boardId
+  });
 
   const handlePostClick = (postId: string) => {
-    // Save scroll position before navigating
-    sessionStorage.setItem(`scrollPosition-${boardId}`, window.scrollY.toString());
+    saveScrollPosition();
     navigate(`/post/${postId}`);
   };
 
