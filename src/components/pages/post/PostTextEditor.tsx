@@ -1,8 +1,9 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useState } from 'react';
 import ReactQuill from 'react-quill-new';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../../firebase';
 import { useToast } from '@/hooks/use-toast';
+import { Progress } from '@/components/ui/progress';
 import 'react-quill-new/dist/quill.snow.css';
 
 interface PostTextEditorProps {
@@ -125,72 +126,6 @@ const quillStyles = `
 }
 `;
 
-const imageHandler = async (postId: string, quillRef: any, toast: any) => {
-  const input = document.createElement('input');
-  input.setAttribute('type', 'file');
-  input.setAttribute('accept', 'image/*');
-  input.click();
-
-  input.onchange = async () => {
-    const file = input.files?.[0];
-    if (!file) return;
-
-    try {
-      // 파일 크기 체크 (예: 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast({
-          title: "오류",
-          description: "파일 크기는 5MB를 초과할 수 없습니다.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // 파일 타입 체크
-      if (!file.type.startsWith('image/')) {
-        toast({
-          title: "오류",
-          description: "이미지 파일만 업로드할 수 있습니다.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // 파일명 생성
-      const fileName = `${Date.now()}_${file.name}`;
-      const storageRef = ref(storage, `postImages/${postId}/${fileName}`);
-
-      // 파일 업로드
-      const snapshot = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
-
-      // 에디터에 이미지 삽입
-      const editor = quillRef.current?.getEditor();
-      const range = editor?.getSelection(true);
-      editor?.insertEmbed(range?.index, 'image', downloadURL);
-
-      toast({
-        title: "성공",
-        description: "이미지가 업로드되었습니다.",
-      });
-
-    } catch (error) {
-      console.error('Image upload error:', error);
-      toast({
-        title: "오류",
-        description: "이미지 업로드에 실패했습니다.",
-        variant: "destructive",
-      });
-    }
-  };
-};
-
-const formats = [
-  'bold', 'underline', 'strike',
-  'blockquote', 'header',
-  'list', 'link', 'image'
-];
-
 export function PostTextEditor({ 
   value, 
   onChange, 
@@ -199,8 +134,93 @@ export function PostTextEditor({
 }: PostTextEditorProps) {
   const quillRef = useRef<any>(null);
   const { toast } = useToast();
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  // modules를 useMemo로 메모이제이션
+  const imageHandler = async () => {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      try {
+        setIsUploading(true);
+        setUploadProgress(0);
+
+        // 파일 크기 체크 (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast({
+            title: "오류",
+            description: "파일 크기는 5MB를 초과할 수 없습니다.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // 파일 타입 체크
+        if (!file.type.startsWith('image/')) {
+          toast({
+            title: "오류",
+            description: "이미지 파일만 업로드할 수 있습니다.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // 업로드 시작 표시
+        setUploadProgress(20);
+
+        // 파일명 생성
+        const fileName = `${Date.now()}_${file.name}`;
+        const storageRef = ref(storage, `postImages/${postId}/${fileName}`);
+
+        // 파일 업로드
+        setUploadProgress(40);
+        const snapshot = await uploadBytes(storageRef, file);
+        setUploadProgress(70);
+        
+        // URL 가져오기
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        setUploadProgress(90);
+
+        // 에디터에 이미지 삽입
+        const editor = quillRef.current?.getEditor();
+        const range = editor?.getSelection(true);
+        editor?.insertEmbed(range?.index, 'image', downloadURL);
+        
+        setUploadProgress(100);
+        toast({
+          title: "성공",
+          description: "이미지가 업로드되었습니다.",
+        });
+
+      } catch (error) {
+        console.error('Image upload error:', error);
+        toast({
+          title: "오류",
+          description: "이미지 업로드에 실패했습니다.",
+          variant: "destructive",
+        });
+      } finally {
+        // 약간의 딜레이 후 로딩 상태 초기화
+        setTimeout(() => {
+          setIsUploading(false);
+          setUploadProgress(0);
+        }, 500);
+      }
+    };
+  };
+
+  const formats = [
+    'bold', 'underline', 'strike',
+    'blockquote', 'header',
+    'list', 'link', 'image'
+  ];
+
   const modules = useMemo(
     () => ({
       toolbar: {
@@ -212,11 +232,11 @@ export function PostTextEditor({
           ['link', 'image'],
         ],
         handlers: {
-          image: () => imageHandler(postId, quillRef, toast),
+          image: imageHandler,
         },
       },
     }),
-    [postId, toast] // postId와 toast가 변경될 때만 재생성
+    [postId, toast]
   );
 
   useEffect(() => {
@@ -230,17 +250,27 @@ export function PostTextEditor({
   }, []);
 
   return (
-    <div className='rounded-lg border border-border bg-background'>
-      <ReactQuill
-        ref={quillRef}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        theme="snow"
-        modules={modules}
-        formats={formats}
-        className="prose prose-lg prose-slate dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold"
-      />
+    <div className='space-y-2'>
+      {isUploading && (
+        <div className='relative w-full'>
+          <Progress value={uploadProgress} className="h-1" />
+          <p className='text-sm text-muted-foreground mt-1 text-center'>
+            이미지 업로드 중... {uploadProgress}%
+          </p>
+        </div>
+      )}
+      <div className='rounded-lg border border-border bg-background'>
+        <ReactQuill
+          ref={quillRef}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          theme="snow"
+          modules={modules}
+          formats={formats}
+          className="prose prose-lg prose-slate dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold"
+        />
+      </div>
     </div>
   );
 }
