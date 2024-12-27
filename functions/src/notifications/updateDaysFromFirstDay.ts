@@ -63,13 +63,18 @@ function isWorkingDay(date: Date): boolean {
   }
 
   const temporaryHolidays: Record<string, boolean> = {
-    '2025-01-01': true,
-    '2025-01-02': true,
-    '2025-01-03': true,
+    '2024-12-31': true, // 신정
+    '2025-01-01': true, // 신정
+    '2025-01-28': true, // 설날
+    '2025-01-29': true, // 설날
+    '2025-01-30': true, // 설날
   };
 
   const yearMonthDay = date.toISOString().split('T')[0];
-  const isWorkingDay = !temporaryHolidays[yearMonthDay];
 
-  return isWorkingDay;
+  if (temporaryHolidays[yearMonthDay]) {
+    return false;
+  }
+
+  return true;
 }
