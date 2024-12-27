@@ -55,7 +55,81 @@ export default {
           5: 'hsl(var(--chart-5))',
         },
       },
+      spacing: {
+        '12': '3rem',
+      },
+      typography: (theme) => ({
+        DEFAULT: {
+          css: {
+            color: theme('colors.gray.700'),
+            a: {
+              color: theme('colors.primary.500'),
+              '&:hover': {
+                color: theme('colors.primary.600'),
+              },
+            },
+            h2: {
+              fontWeight: '700',
+              letterSpacing: theme('letterSpacing.tight'),
+              color: theme('colors.gray.900'),
+            },
+            h3: {
+              fontWeight: '600',
+              color: theme('colors.gray.900'),
+            },
+            'ol li:before': {
+              fontWeight: '600',
+              color: theme('colors.gray.500'),
+            },
+            'ul li:before': {
+              backgroundColor: theme('colors.gray.400'),
+            },
+            code: {
+              color: theme('colors.gray.900'),
+            },
+            'blockquote p:first-of-type::before': {
+              content: 'none',
+            },
+            'blockquote p:last-of-type::after': {
+              content: 'none',
+            },
+          },
+        },
+        dark: {
+          css: {
+            color: theme('colors.gray.300'),
+            a: {
+              color: theme('colors.primary.500'),
+              '&:hover': {
+                color: theme('colors.primary.400'),
+              },
+            },
+            h2: {
+              color: theme('colors.gray.100'),
+            },
+            h3: {
+              color: theme('colors.gray.100'),
+            },
+            code: {
+              color: theme('colors.gray.100'),
+            },
+            'blockquote p:first-of-type::before': {
+              content: 'none',
+            },
+            'blockquote p:last-of-type::after': {
+              content: 'none',
+            },
+            'ol li:before': {
+              color: theme('colors.gray.400'),
+            },
+            'ul li:before': {
+              backgroundColor: theme('colors.gray.600'),
+            },
+          },
+        },
+      }),
     },
   },
   plugins: [tailwindcssAnimate, typography, safeArea],
 };
+

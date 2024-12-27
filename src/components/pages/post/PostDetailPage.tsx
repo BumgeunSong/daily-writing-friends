@@ -100,8 +100,8 @@ export default function PostDetailPage() {
       </Link>
       <article className='space-y-6'>
         <header className='space-y-4'>
-          <h1 className='text-4xl font-bold leading-tight'>{post.title}</h1>
-          <div className='flex items-center justify-between text-sm text-muted-foreground'>
+          <h1 className='text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl'>{post.title}</h1>
+          <div className='flex items-center justify-between text-sm text-gray-500 dark:text-gray-400'>
             <p>
               작성자: {authorNickname || '??'} | 작성일: {post.createdAt?.toLocaleString() || '?'}
             </p>
@@ -127,7 +127,7 @@ export default function PostDetailPage() {
         </header>
         <div
           dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-          className='prose prose-lg max-w-none'
+          className='prose prose-lg prose-slate dark:prose-invert max-w-none'
         />
       </article>
       <div className='mt-12 border-t border-gray-200'></div>
@@ -161,3 +161,4 @@ export default function PostDetailPage() {
     </div>
   );
 }
+
