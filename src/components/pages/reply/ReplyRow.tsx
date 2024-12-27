@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Reply } from '@/types/Reply';
 import { deleteReplyToComment, updateReplyToComment } from '@/utils/commentUtils';
-import { convertUrlsToLinks } from '@/utils/contentUtils';
+import { sanitizeCommentContent } from '@/utils/contentUtils';
 import { fetchUserNickname } from '@/utils/userUtils';
 import ReplyInput from './ReplyInput';
 
@@ -45,10 +45,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
     loadNickname();
   }, [reply.userId]);
 
-  const sanitizedContent = DOMPurify.sanitize(convertUrlsToLinks(reply.content), {
-    ADD_ATTR: ['target'],
-    ADD_TAGS: ['a'],
-  });
+  const sanitizedContent = sanitizeCommentContent(reply.content);
 
   return (
     <div key={reply.id} className='flex items-start space-x-4'>

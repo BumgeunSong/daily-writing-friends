@@ -1,5 +1,21 @@
 import DOMPurify from 'dompurify';
 
+// 게시글 본문용 DOMPurify 설정
+const sanitizePostContent = (content: string): string => {
+  return DOMPurify.sanitize(content, {
+    ADD_ATTR: ['target'],
+    ADD_TAGS: ['a', 'ul', 'ol', 'li'],
+  });
+};
+
+// 댓글/답글용 DOMPurify 설정
+const sanitizeCommentContent = (content: string): string => {
+  return DOMPurify.sanitize(convertUrlsToLinks(content), {
+    ADD_ATTR: ['target'],
+    ADD_TAGS: ['a', 'ul', 'ol', 'li'],
+  });
+};
+
 function convertUrlsToLinks(content: string): string {
   const urlRegex =
     /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\\/%?=~_|!:,.;]*[-A-Z0-9+&@#\\/%=~_|]|\bwww\.[-A-Z0-9+&@#\\/%?=~_|!:,.;]*[-A-Z0-9+&@#\\/%=~_|]|\b[-A-Z0-9+&@#\\/%?=~_|!:,.;]+\.[A-Z]{2,4}\b)/gi;
@@ -45,4 +61,9 @@ const getContentPreview = (content: string) => {
   return processContent(sanitizedContent);
 };
 
-export { convertUrlsToLinks, getContentPreview };
+export { 
+  convertUrlsToLinks, 
+  getContentPreview,
+  sanitizePostContent,
+  sanitizeCommentContent 
+};
