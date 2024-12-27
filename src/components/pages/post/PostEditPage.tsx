@@ -1,14 +1,13 @@
 import { ChevronLeft, Save } from 'lucide-react';
 import React, { useState } from 'react';
-import ReactQuill from 'react-quill';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
-import 'react-quill/dist/quill.snow.css';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchPost, updatePost } from '../../../utils/postUtils';
+import { PostTextEditor } from './PostTextEditor';
 
 export default function PostEditPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
@@ -37,10 +36,6 @@ export default function PostEditPage() {
     } catch (error) {
       console.error('Error updating post:', error);
     }
-  };
-
-  const modules = {
-    toolbar: [['bold'], ['link']],
   };
 
   if (isLoading) {
@@ -81,11 +76,10 @@ export default function PostEditPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <ReactQuill
+            <PostTextEditor
               value={content}
               onChange={setContent}
-              modules={modules}
-              className='min-h-[200px]'
+              placeholder='내용을 수정하세요...'
             />
           </CardContent>
           <CardFooter className='flex justify-end'>
