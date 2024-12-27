@@ -18,17 +18,30 @@ export default function BoardPage() {
       return;
     }
 
-    // Restore scroll position
-    const savedScrollPosition = sessionStorage.getItem(`scrollPosition-${boardId}`);
-    if (savedScrollPosition) {
-      setTimeout(() => {
-        window.scrollTo(0, parseInt(savedScrollPosition, 10));
-      }, 0);
+    try {
+      const savedScrollPosition = sessionStorage.getItem(`scrollPosition-${boardId}`);
+      if (savedScrollPosition) {
+        window.requestAnimationFrame(() => {
+          try {
+            window.scrollTo({
+              top: parseInt(savedScrollPosition, 10),
+              behavior: 'instant'
+            });
+          } catch (error) {
+            console.error('Scroll restoration failed:', error);
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Session storage access failed:', error);
     }
 
     return () => {
-      // Save scroll position
-      sessionStorage.setItem(`scrollPosition-${boardId}`, window.scrollY.toString());
+      try {
+        sessionStorage.setItem(`scrollPosition-${boardId}`, window.scrollY.toString());
+      } catch (error) {
+        console.error('Failed to save scroll position:', error);
+      }
     };
   }, [boardId]);
 
