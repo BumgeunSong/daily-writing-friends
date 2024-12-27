@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { deleteCommentToPost, updateCommentToPost } from '@/utils/commentUtils';
-import { convertUrlsToLinks } from '@/utils/contentUtils';
+import { sanitizeCommentContent } from '@/utils/contentUtils';
 import CommentInput from './CommentInput';
 import { Comment } from '../../../types/Comment';
 import { fetchUserNickname } from '../../../utils/userUtils';
@@ -41,7 +41,7 @@ const CommentRow: React.FC<CommentRowProps> = ({ boardId, postId, comment, isAut
   }, [comment.userId]);
 
   const EditIcon = isEditing ? X : Edit;
-  const sanitizedContent = DOMPurify.sanitize(convertUrlsToLinks(comment.content));
+  const sanitizedContent = sanitizeCommentContent(comment.content);
 
   return (
     <div className='flex flex-col space-y-4'>

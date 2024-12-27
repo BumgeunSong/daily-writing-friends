@@ -32,7 +32,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
   return (
     <Card>
       <CardHeader>
-        <div className='flex items-center gap-2'>
+        <div className='flex items-center'>
           {post.weekDaysFromFirstDay !== undefined && (
             <Badge variant="secondary" className="text-xs font-semibold px-2 py-1 rounded-full">
               {post.weekDaysFromFirstDay + 1}일차
@@ -59,9 +59,14 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
         </div>
       </CardHeader>
       <Link to={`/board/${post.boardId}/post/${post.id}`} onClick={onClick}>
-        <CardContent className='cursor-pointer p-6 transition-colors duration-200 hover:bg-muted'>
+        <CardContent className='cursor-pointer px-6 transition-colors duration-200 hover:bg-muted'>
           <div
-            className='prose prose-lg prose-slate dark:prose-invert line-clamp-3'
+            className='
+            prose prose-lg prose-slate dark:prose-invert 
+            prose-p:my-3
+            prose-ul:my-3
+            prose-ol:my-3
+            line-clamp-3'
             dangerouslySetInnerHTML={{ __html: contentPreview }}
           />
           {post.thumbnailImageURL && (

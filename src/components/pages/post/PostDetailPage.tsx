@@ -12,6 +12,7 @@ import { fetchPost } from '../../../utils/postUtils';
 import Comments from '../comment/Comments';
 import { PostBackButton } from './PostBackButton';
 import { PostAdjacentButtons } from './PostAdjacentButtons';
+import { sanitizePostContent } from '@/utils/contentUtils';
 
 const deletePost = async (boardId: string, id: string): Promise<void> => {
   await deleteDoc(doc(firestore, `boards/${boardId}/posts`, id));
@@ -76,10 +77,7 @@ export default function PostDetailPage() {
 
   const isAuthor = currentUser?.uid === post.authorId;
 
-  const sanitizedContent = DOMPurify.sanitize(post.content, {
-    ADD_ATTR: ['target'],
-    ADD_TAGS: ['a'],
-  });
+  const sanitizedContent = sanitizePostContent(post.content);
 
   return (
     <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
@@ -113,7 +111,13 @@ export default function PostDetailPage() {
         </header>
         <div
           dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-          className='prose prose-lg prose-slate dark:prose-invert max-w-none mt-6 prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold'
+          className="prose prose-lg prose-slate dark:prose-invert max-w-none mt-6
+            prose-h1:text-3xl prose-h1:font-semibold 
+            prose-h2:text-2xl prose-h2:font-semibold
+            prose-p:my-4
+            prose-ul:my-4
+            prose-ol:my-4
+            "
         />
       </article>
       <div className='mt-12 border-t border-gray-200'></div>
