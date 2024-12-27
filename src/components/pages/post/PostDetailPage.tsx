@@ -111,7 +111,13 @@ export default function PostDetailPage() {
         </header>
         <div
           dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-          className='prose prose-lg prose-slate dark:prose-invert max-w-none mt-6 prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold'
+          className="prose prose-lg prose-slate dark:prose-invert max-w-none mt-6
+            prose-h1:text-3xl prose-h1:font-semibold 
+            prose-h2:text-2xl prose-h2:font-semibold
+            prose-p:my-4
+            prose-ul:my-4
+            prose-ol:my-4
+            "
         />
       </article>
       <div className='mt-12 border-t border-gray-200'></div>
