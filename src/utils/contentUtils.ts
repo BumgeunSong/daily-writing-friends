@@ -2,17 +2,40 @@ import DOMPurify from 'dompurify';
 
 // 게시글 본문용 DOMPurify 설정
 const sanitizePostContent = (content: string): string => {
-  return DOMPurify.sanitize(content, {
+  // DOMPurify 설정
+  const config = {
     ADD_ATTR: ['target'],
-    ADD_TAGS: ['a', 'ul', 'ol', 'li'],
-  });
+    ADD_TAGS: ['a', 'ul', 'ol', 'li'], // ul 태그 허용
+  };
+
+  // HTML 정제 및 변환
+  const sanitized = DOMPurify.sanitize(content, config);
+  return convertBulletListToUl(sanitized);
 };
 
-// 댓글/답글용 DOMPurify 설정
+// ol[data-list="bullet"] -> ul 변환
+const convertBulletListToUl = (html: string): string => {
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+
+  // bullet 리스트를 ul로 변환
+  const bulletLists = tempDiv.querySelectorAll('ol li[data-list="bullet"]');
+  bulletLists.forEach(item => {
+    const ul = document.createElement('ul');
+    const li = document.createElement('li');
+    li.innerHTML = item.innerHTML;
+    ul.appendChild(li);
+    item.parentNode?.replaceChild(ul, item);
+  });
+
+  return tempDiv.innerHTML;
+};
+
+// 댓글/답글용 DOMPurify 설정 (게시글과 동일하게 적용)
 const sanitizeCommentContent = (content: string): string => {
   return DOMPurify.sanitize(convertUrlsToLinks(content), {
-    ADD_ATTR: ['target'],
-    ADD_TAGS: ['a', 'ul', 'ol', 'li'],
+    ADD_ATTR: ['target', 'data-list'],
+    ADD_TAGS: ['a', 'ol', 'li'],
   });
 };
 
