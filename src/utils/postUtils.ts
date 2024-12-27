@@ -75,9 +75,9 @@ export const fetchAdjacentPosts = async (boardId: string, currentPostId: string)
 
 export const extractFirstImageUrl = (content: string): string | null => {
   try {
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = content;
-    const firstImage = tempDiv.querySelector('img');
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(content, 'text/html');
+    const firstImage = doc.querySelector('img');
     return firstImage?.src || null;
   } catch (error) {
     console.error('Error extracting image URL:', error);
