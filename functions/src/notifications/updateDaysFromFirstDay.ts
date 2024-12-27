@@ -3,6 +3,7 @@
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import admin from '../admin';
 import { Board } from '../types/Board';
+import { isWorkingDay } from './isWorkingDay';
 
 export const updatePostDaysFromFirstDay = onDocumentCreated('/boards/{boardId}/posts/{postId}', async (event) => {
   const postId = event.params.postId;
@@ -17,16 +18,16 @@ export const updatePostDaysFromFirstDay = onDocumentCreated('/boards/{boardId}/p
     }
 
     // Calculate days from the first day
-    const weekDaysFromFirstDay = calculateWeekdaysFromFirstDay(firstDay);
+    const workingDaysFromFirstDay = calculateWorkingDaysFromFirstDay(firstDay);
 
     // Update existing post with the calculated days
-    if (weekDaysFromFirstDay !== null) {
-      await admin.firestore().doc(`boards/${boardId}/posts/${postId}`).update({ weekDaysFromFirstDay });
+    if (workingDaysFromFirstDay !== null) {
+      await admin.firestore().doc(`boards/${boardId}/posts/${postId}`).update({ weekDaysFromFirstDay: workingDaysFromFirstDay });
     } else {
-      console.error(`Failed to calculate weekDaysFromFirstDay for postId: ${postId}`);
+      console.error(`Failed to calculate workingDaysFromFirstDay for postId: ${postId}`);
     }
   } catch (error) {
-    console.error(`Error updating post days from first day for postId: ${postId}`, error);
+    console.error(`Error updating post working days from first day for postId: ${postId}`, error);
   }
 });
 
@@ -42,18 +43,15 @@ async function fetchBoardFirstDay(boardId: string): Promise<Date | null> {
   }
 }
 
-// Function to calculate weekdays from the first day
-function calculateWeekdaysFromFirstDay(firstDay: Date): number {
+// Function to calculate working days from the first day
+function calculateWorkingDaysFromFirstDay(firstDay: Date): number {
   const today = new Date();
   const daysArray = Array.from(
     { length: Math.ceil((today.getTime() - firstDay.getTime()) / (1000 * 60 * 60 * 24)) },
     (_, i) => new Date(firstDay.getTime() + i * (1000 * 60 * 60 * 24))
   );
 
-  const weekdaysCount = daysArray.filter(date => {
-    const dayOfWeek = date.getDay();
-    return dayOfWeek !== 0 && dayOfWeek !== 6; // Exclude Sundays (0) and Saturdays (6)
-  }).length;
+  const workingDaysCount = daysArray.filter(isWorkingDay).length;
 
-  return weekdaysCount;
+  return workingDaysCount;
 }
