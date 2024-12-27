@@ -1,5 +1,5 @@
 import { ChevronLeft, Save } from 'lucide-react';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
@@ -8,43 +8,7 @@ import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchPost, updatePost } from '../../../utils/postUtils';
 import { PostTextEditor } from './PostTextEditor';
-import { cn } from '@/lib/utils';
-
-const TitleInput = React.forwardRef<
-  HTMLTextAreaElement,
-  React.TextareaHTMLAttributes<HTMLTextAreaElement>
->(({ className, ...props }, ref) => {
-  const innerRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    if (innerRef.current) {
-      innerRef.current.style.height = 'auto';
-      innerRef.current.style.height = `${innerRef.current.scrollHeight}px`;
-    }
-  }, [props.value]);
-
-  useEffect(() => {
-    if (typeof ref === 'function') {
-      ref(innerRef.current);
-    } else if (ref) {
-      ref.current = innerRef.current;
-    }
-  }, [ref]);
-
-  return (
-    <textarea
-      ref={innerRef}
-      className={cn(
-        'w-full resize-none overflow-hidden text-4xl sm:text-5xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 focus:outline-none placeholder:text-muted-foreground mb-6',
-        className,
-      )}
-      rows={1}
-      {...props}
-    />
-  );
-});
-
-TitleInput.displayName = 'TitleInput';
+import { PostTitleEditor } from './PostTitleEditor';
 
 export default function PostEditPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
@@ -107,10 +71,9 @@ export default function PostEditPage() {
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader className='flex flex-col space-y-2'>
-            <TitleInput
+            <PostTitleEditor
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder='제목을 입력하세요'
             />
             <div className='flex items-center justify-between text-sm text-muted-foreground'>
               <p>
