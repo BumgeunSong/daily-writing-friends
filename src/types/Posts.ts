@@ -4,6 +4,7 @@ export interface Post {
   boardId: string;
   title: string;
   content: string;
+  thumbnailImageURL?: string;
   authorId: string;
   authorName: string;
   createdAt?: Date;

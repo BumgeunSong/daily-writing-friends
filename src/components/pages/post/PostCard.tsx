@@ -1,4 +1,3 @@
-import DOMPurify from 'dompurify';
 import { MessageCircle, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -8,6 +7,7 @@ import { Post } from '@/types/Posts';
 import { User as Author } from '@/types/User';
 import { fetchUserData } from '@/utils/userUtils';
 import { Badge } from '@/components/ui/badge';
+import { getContentPreview } from '@/utils/contentUtils';
 
 interface PostCardProps {
   post: Post;
@@ -15,13 +15,13 @@ interface PostCardProps {
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
-  const sanitizedContent = DOMPurify.sanitize(post.content);
+  const contentPreview = getContentPreview(post.content);
 
   const { data: authorData, error } = useQuery<Author | null>(
     ['authorData', post.authorId],
     () => fetchUserData(post.authorId),
     {
-      staleTime: 60 * 1000, // 1 minute
+      staleTime: 60 * 1000,
     }
   );
 
@@ -30,7 +30,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
   }
 
   return (
-    <Card className='mb-4'>
+    <Card>
       <CardHeader>
         <div className='flex items-center gap-2'>
           {post.weekDaysFromFirstDay !== undefined && (
@@ -61,12 +61,21 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
       <Link to={`/board/${post.boardId}/post/${post.id}`} onClick={onClick}>
         <CardContent className='cursor-pointer p-6 transition-colors duration-200 hover:bg-muted'>
           <div
-            className='line-clamp-5'
-            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-          ></div>
+            className='prose prose-lg prose-slate dark:prose-invert line-clamp-3'
+            dangerouslySetInnerHTML={{ __html: contentPreview }}
+          />
+          {post.thumbnailImageURL && (
+            <div className='aspect-video w-full overflow-hidden rounded-lg bg-muted'>
+              <img
+                src={post.thumbnailImageURL}
+                alt="게시글 썸네일"
+                className='h-full w-full object-cover transition-transform duration-300 hover:scale-105'
+              />
+            </div>
+          )}
         </CardContent>
       </Link>
-      <CardFooter>
+      <CardFooter className='pt-2'>
         <div className='flex items-center'>
           <MessageCircle className='mr-1 size-4' />
           <p className='text-sm'>{post.countOfComments + post.countOfReplies}</p>
