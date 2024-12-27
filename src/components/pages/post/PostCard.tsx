@@ -61,7 +61,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
       <Link to={`/board/${post.boardId}/post/${post.id}`} onClick={onClick}>
         <CardContent className='cursor-pointer space-y-4 p-6 transition-colors duration-200 hover:bg-muted'>
           <div
-            className='line-clamp-3 text-sm text-muted-foreground'
+            className='prose prose-lg prose-slate dark:prose-invert line-clamp-3'
             dangerouslySetInnerHTML={{ __html: contentPreview }}
           />
           {post.thumbnailImageURL && (
