@@ -87,6 +87,36 @@ const quillStyles = `
     line-height: 1.75;
   }
 }
+
+/* 목록 스타일링 */
+.ql-editor ol, 
+.ql-editor ul {
+  padding-left: 1rem;  /* 기본값 2.5em에서 1rem으로 줄임 */
+}
+
+.ql-editor li {
+  padding-left: 0.5rem;  /* 기본값 1.5em에서 0.5rem으로 줄임 */
+}
+
+/* 중첩된 목록의 들여쓰기 조정 */
+.ql-editor li.ql-indent-1 {
+  padding-left: 1.5rem;  /* 기본값 4.5em에서 1.5rem으로 줄임 */
+}
+
+/* 순서 있는 목록의 번호 위치 조정 */
+.ql-editor ol li {
+  counter-reset: list-1 list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9;
+  counter-increment: list-0;
+}
+
+.ql-editor ol li:before {
+  left: -1rem;  /* 번호 위치 조정 */
+}
+
+/* 순서 없는 목록의 불릿 위치 조정 */
+.ql-editor ul li:before {
+  left: -1rem;  /* 불릿 위치 조정 */
+}
 `;
 
 const modules = {
@@ -102,7 +132,7 @@ const modules = {
 const formats = [
   'bold', 'underline', 'strike',
   'blockquote', 'header',
-  'list', 'bullet',
+  'list',
   'link'
 ];
 
