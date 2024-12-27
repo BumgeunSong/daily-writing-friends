@@ -1,4 +1,3 @@
-import DOMPurify from 'dompurify';
 import { MessageCircle, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -8,6 +7,7 @@ import { Post } from '@/types/Posts';
 import { User as Author } from '@/types/User';
 import { fetchUserData } from '@/utils/userUtils';
 import { Badge } from '@/components/ui/badge';
+import { getContentPreview } from '@/utils/contentUtils';
 
 interface PostCardProps {
   post: Post;
@@ -15,13 +15,13 @@ interface PostCardProps {
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
-  const sanitizedContent = DOMPurify.sanitize(post.content);
+  const contentPreview = getContentPreview(post.content);
 
   const { data: authorData, error } = useQuery<Author | null>(
     ['authorData', post.authorId],
     () => fetchUserData(post.authorId),
     {
-      staleTime: 60 * 1000, // 1 minute
+      staleTime: 60 * 1000,
     }
   );
 
@@ -61,9 +61,9 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
       <Link to={`/board/${post.boardId}/post/${post.id}`} onClick={onClick}>
         <CardContent className='cursor-pointer p-6 transition-colors duration-200 hover:bg-muted'>
           <div
-            className='line-clamp-5'
-            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-          ></div>
+            className='line-clamp-3 text-sm text-muted-foreground'
+            dangerouslySetInnerHTML={{ __html: contentPreview }}
+          />
         </CardContent>
       </Link>
       <CardFooter>
