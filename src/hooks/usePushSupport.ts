@@ -9,11 +9,13 @@ interface PushSupportState {
 }
 
 export const usePushSupport = (): PushSupportState => {
-  const [isIOSSafari, setIsIOSSafari] = useState(false);
-  const [isPWA, setIsPWA] = useState(false);
-  const [isPushSupported, setIsPushSupported] = useState(false);
-  const [isAndroid, setIsAndroid] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [supportState, setSupportState] = useState<PushSupportState>({
+    isIOSSafari: false,
+    isAndroid: false,
+    isPWA: false,
+    isPushSupported: false,
+    isLoading: true
+  });
 
   useEffect(() => {
     const checkPushSupport = () => {
@@ -36,15 +38,21 @@ export const usePushSupport = (): PushSupportState => {
       return navigator.userAgent.includes('Android');
     };
 
-    setIsIOSSafari(checkIOSSafari());
-    setIsPWA(checkPWA());
-    setIsPushSupported(checkPushSupport());
-    setIsAndroid(checkAndroid());
-    setIsLoading(false);
+    // 모든 상태를 한 번에 업데이트
+    setSupportState({
+      isIOSSafari: checkIOSSafari(),
+      isPWA: checkPWA(),
+      isPushSupported: checkPushSupport(),
+      isAndroid: checkAndroid(),
+      isLoading: false
+    });
 
     const mediaQuery = window.matchMedia('(display-mode: standalone)');
     const handleChange = (e: MediaQueryListEvent) => {
-      setIsPWA(e.matches);
+      setSupportState(prev => ({
+        ...prev,
+        isPWA: e.matches
+      }));
     };
 
     mediaQuery.addEventListener('change', handleChange);
@@ -54,11 +62,5 @@ export const usePushSupport = (): PushSupportState => {
     };
   }, []);
 
-  return {
-    isIOSSafari,
-    isAndroid,
-    isPWA,
-    isPushSupported,
-    isLoading,
-  };
+  return supportState;
 };

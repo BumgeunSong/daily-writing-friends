@@ -10,8 +10,8 @@ import PushNotificationSwitch from './PushNotificationSwitch';
 
 const NotificationSettingPage: React.FC = () => {
   const { currentUser } = useAuth();
-  const [inAppNotification] = React.useState(true);
-  const [emailNotification] = React.useState(true);
+  const [inAppNotification] = React.useState(false);
+  const [emailNotification] = React.useState(false);
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
