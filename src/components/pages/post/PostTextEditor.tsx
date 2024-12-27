@@ -1,11 +1,15 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import ReactQuill from 'react-quill-new';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../../../firebase';
+import { useToast } from '@/hooks/use-toast';
 import 'react-quill-new/dist/quill.snow.css';
 
 interface PostTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  postId?: string; // 이미지 저장 경로를 위한 postId
 }
 
 const quillStyles = `
@@ -121,24 +125,96 @@ const quillStyles = `
 }
 `;
 
-const modules = {
-  toolbar: [
-    ['bold', 'underline', 'strike'],
-    ['blockquote'],
-    [{ 'header': 1 }, { 'header': 2 }],
-    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-    ['link']
-  ]
+const imageHandler = async (postId: string, quillRef: any, toast: any) => {
+  const input = document.createElement('input');
+  input.setAttribute('type', 'file');
+  input.setAttribute('accept', 'image/*');
+  input.click();
+
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    if (!file) return;
+
+    try {
+      // 파일 크기 체크 (예: 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "오류",
+          description: "파일 크기는 5MB를 초과할 수 없습니다.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // 파일 타입 체크
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "오류",
+          description: "이미지 파일만 업로드할 수 있습니다.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // 파일명 생성
+      const fileName = `${Date.now()}_${file.name}`;
+      const storageRef = ref(storage, `postImages/${postId}/${fileName}`);
+
+      // 파일 업로드
+      const snapshot = await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(snapshot.ref);
+
+      // 에디터에 이미지 삽입
+      const editor = quillRef.current?.getEditor();
+      const range = editor?.getSelection(true);
+      editor?.insertEmbed(range?.index, 'image', downloadURL);
+
+      toast({
+        title: "성공",
+        description: "이미지가 업로드되었습니다.",
+      });
+
+    } catch (error) {
+      console.error('Image upload error:', error);
+      toast({
+        title: "오류",
+        description: "이미지 업로드에 실패했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
 };
+
+const modules = (postId: string, quillRef: any, toast: any) => ({
+  toolbar: {
+    container: [
+      ['bold', 'underline', 'strike'],
+      ['blockquote'],
+      [{ 'header': 1 }, { 'header': 2 }],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      ['link', 'image'],
+    ],
+    handlers: {
+      image: () => imageHandler(postId, quillRef, toast),
+    },
+  },
+});
 
 const formats = [
   'bold', 'underline', 'strike',
   'blockquote', 'header',
-  'list',
-  'link'
+  'list', 'link', 'image'
 ];
 
-export function PostTextEditor({ value, onChange, placeholder = '내용을 입력하세요...' }: PostTextEditorProps) {
+export function PostTextEditor({ 
+  value, 
+  onChange, 
+  placeholder = '내용을 입력하세요...', 
+  postId = 'temp' 
+}: PostTextEditorProps) {
+  const quillRef = useRef<any>(null);
+  const { toast } = useToast();
+
   useEffect(() => {
     const styleTag = document.createElement('style');
     styleTag.textContent = quillStyles;
@@ -152,11 +228,12 @@ export function PostTextEditor({ value, onChange, placeholder = '내용을 입�
   return (
     <div className='rounded-lg border border-border bg-background'>
       <ReactQuill
+        ref={quillRef}
         value={value}
         onChange={onChange}
         placeholder={placeholder}
         theme="snow"
-        modules={modules}
+        modules={modules(postId, quillRef, toast)}
         formats={formats}
         className="prose prose-lg prose-slate dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold"
       />
