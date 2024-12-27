@@ -10,6 +10,7 @@ import { firestore } from '../../../firebase';
 import { useQuery } from '@tanstack/react-query';
 import { fetchPost, fetchAdjacentPosts } from '../../../utils/postUtils';
 import Comments from '../comment/Comments';
+import { PostBackButton } from './PostBackButton';
 
 const deletePost = async (boardId: string, id: string): Promise<void> => {
   await deleteDoc(doc(firestore, `boards/${boardId}/posts`, id));
@@ -75,11 +76,7 @@ export default function PostDetailPage() {
     return (
       <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8 text-center'>
         <h1 className='mb-4 text-2xl font-bold'>게시물을 찾을 수 없습니다.</h1>
-        <Link to={`/board/${boardId}`}>
-          <Button>
-            <ChevronLeft className='mr-2 size-4' /> 피드로 돌아가기
-          </Button>
-        </Link>
+        {boardId && <PostBackButton boardId={boardId} />}
       </div>
     );
   }
@@ -93,11 +90,7 @@ export default function PostDetailPage() {
 
   return (
     <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
-      <Link to={`/board/${boardId}`}>
-        <Button variant='ghost' className='mb-6'>
-          <ChevronLeft className='mr-2 size-4' /> 피드로 돌아가기
-        </Button>
-      </Link>
+      {boardId && <PostBackButton boardId={boardId} className='mb-6' />}
       <article className='space-y-6'>
         <header className='space-y-4'>
           <h1 className='text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl mb-4'>{post.title}</h1>

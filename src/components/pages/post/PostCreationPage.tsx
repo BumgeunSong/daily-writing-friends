@@ -1,11 +1,11 @@
-import { ChevronLeft } from 'lucide-react';
 import React, { useState } from 'react';
-import { useNavigate, Link, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../../../contexts/AuthContext';
 import { createPost } from '@/utils/postUtils';
 import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
+import { PostBackButton } from './PostBackButton';
 
 export default function PostCreationPage() {
   const [title, setTitle] = useState<string>('');
@@ -29,11 +29,7 @@ export default function PostCreationPage() {
 
   return (
     <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
-      <Link to={`/board/${boardId}`}>
-        <Button variant='ghost' className='mb-6'>
-          <ChevronLeft className='mr-2 size-4' /> 피드로 돌아가기
-        </Button>
-      </Link>
+      {boardId && <PostBackButton boardId={boardId} className='mb-6' />}
       <form onSubmit={handleSubmit} className='space-y-6'>
         <PostTitleEditor
           value={title}

@@ -9,6 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { fetchPost, updatePost } from '../../../utils/postUtils';
 import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
+import { PostBackButton } from './PostBackButton';
+
 
 export default function PostEditPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
@@ -65,9 +67,7 @@ export default function PostEditPage() {
 
   return (
     <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
-      <Button variant='ghost' onClick={() => navigate(`/board/${boardId}`)} className='mb-6'>
-        <ChevronLeft className='mr-2 size-4' /> 피드로 돌아가기
-      </Button>
+      {boardId && <PostBackButton boardId={boardId} className='mb-6' />}
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader className='flex flex-col space-y-2'>
