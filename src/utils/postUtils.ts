@@ -42,6 +42,7 @@ export async function createPost(boardId: string, title: string, content: string
     boardId,
     title,
     content,
+    thumbnailImageURL: extractFirstImageUrl(content),
     authorId,
     authorName,
     countOfComments: 0,
@@ -55,6 +56,7 @@ export async function updatePost(boardId: string, postId: string, content: strin
   const docRef = doc(firestore, `boards/${boardId}/posts`, postId);
   await updateDoc(docRef, {
     content,
+    thumbnailImageURL: extractFirstImageUrl(content),
     updatedAt: serverTimestamp(),
   });
 }
@@ -71,4 +73,16 @@ export const fetchAdjacentPosts = async (boardId: string, currentPostId: string)
     prevPost: currentIndex < posts.length - 1 ? posts[currentIndex + 1].id : null,
     nextPost: currentIndex > 0 ? posts[currentIndex - 1].id : null
   };
+};
+
+export const extractFirstImageUrl = (content: string): string | undefined => {
+  try {
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = content;
+    const firstImage = tempDiv.querySelector('img');
+    return firstImage?.src || undefined;
+  } catch (error) {
+    console.error('Error extracting image URL:', error);
+    return undefined;
+  }
 };
