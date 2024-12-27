@@ -10,7 +10,6 @@ interface PostTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
-  postId?: string; // 이미지 저장 경로를 위한 postId
 }
 
 const quillStyles = `
@@ -126,11 +125,24 @@ const quillStyles = `
 }
 `;
 
+const formatDate = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+
+  return {
+    dateFolder: `${year}${month}${day}`,
+    timePrefix: `${hours}${minutes}${seconds}`
+  };
+};
+
 export function PostTextEditor({ 
   value, 
   onChange, 
   placeholder = '내용을 입력하세요...', 
-  postId = 'temp' 
 }: PostTextEditorProps) {
   const quillRef = useRef<any>(null);
   const { toast } = useToast();
@@ -174,9 +186,11 @@ export function PostTextEditor({
         // 업로드 시작 표시
         setUploadProgress(20);
 
-        // 파일명 생성
-        const fileName = `${Date.now()}_${file.name}`;
-        const storageRef = ref(storage, `postImages/${postId}/${fileName}`);
+        // 날짜 기반 파일 경로 생성
+        const now = new Date();
+        const { dateFolder, timePrefix } = formatDate(now);
+        const fileName = `${timePrefix}_${file.name}`;
+        const storageRef = ref(storage, `postImages/${dateFolder}/${fileName}`);
 
         // 파일 업로드
         setUploadProgress(40);
@@ -236,7 +250,7 @@ export function PostTextEditor({
         },
       },
     }),
-    [postId, toast]
+    [toast]
   );
 
   useEffect(() => {
