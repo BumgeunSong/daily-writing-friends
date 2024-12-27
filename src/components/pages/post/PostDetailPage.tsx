@@ -62,7 +62,7 @@ export default function PostDetailPage() {
 
   if (isLoading) {
     return (
-      <div className='mx-auto max-w-4xl px-4 py-8'>
+      <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
         <Skeleton className='mb-4 h-12 w-3/4' />
         <Skeleton className='mb-2 h-4 w-full' />
         <Skeleton className='mb-2 h-4 w-full' />
@@ -73,7 +73,7 @@ export default function PostDetailPage() {
 
   if (error || !post) {
     return (
-      <div className='mx-auto max-w-4xl px-4 py-8 text-center'>
+      <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8 text-center'>
         <h1 className='mb-4 text-2xl font-bold'>게시물을 찾을 수 없습니다.</h1>
         <Link to={`/board/${boardId}`}>
           <Button>
@@ -92,7 +92,7 @@ export default function PostDetailPage() {
   });
 
   return (
-    <div className='mx-auto max-w-4xl px-4 py-8'>
+    <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
       <Link to={`/board/${boardId}`}>
         <Button variant='ghost' className='mb-6'>
           <ChevronLeft className='mr-2 size-4' /> 피드로 돌아가기
@@ -100,7 +100,7 @@ export default function PostDetailPage() {
       </Link>
       <article className='space-y-6'>
         <header className='space-y-4'>
-          <h1 className='text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl'>{post.title}</h1>
+          <h1 className='text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl mb-4'>{post.title}</h1>
           <div className='flex items-center justify-between text-sm text-gray-500 dark:text-gray-400'>
             <p>
               작성자: {authorNickname || '??'} | 작성일: {post.createdAt?.toLocaleString() || '?'}
@@ -127,7 +127,7 @@ export default function PostDetailPage() {
         </header>
         <div
           dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-          className='prose prose-lg prose-slate dark:prose-invert max-w-none'
+          className='prose prose-lg prose-slate dark:prose-invert max-w-none mt-6 prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold'
         />
       </article>
       <div className='mt-12 border-t border-gray-200'></div>
@@ -161,4 +161,3 @@ export default function PostDetailPage() {
     </div>
   );
 }
-

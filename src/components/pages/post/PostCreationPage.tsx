@@ -32,7 +32,7 @@ const TitleInput = React.forwardRef<
     <textarea
       ref={innerRef}
       className={cn(
-        'w-full resize-none overflow-hidden text-3xl font-bold focus:outline-none placeholder:text-muted-foreground',
+        'w-full resize-none overflow-hidden text-4xl sm:text-5xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 focus:outline-none placeholder:text-muted-foreground mb-6',
         className,
       )}
       rows={1}
@@ -64,7 +64,7 @@ export default function PostCreationPage() {
   };
 
   return (
-    <div className='mx-auto max-w-3xl px-4 py-8'>
+    <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
       <Link to={`/board/${boardId}`}>
         <Button variant='ghost' className='mb-6'>
           <ChevronLeft className='mr-2 size-4' /> 피드로 돌아가기

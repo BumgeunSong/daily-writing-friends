@@ -17,7 +17,7 @@ const quillStyles = `
 }
 
 .ql-editor {
-  padding: 1rem;
+  padding: 1.5rem;
   color: hsl(var(--foreground));
   background-color: hsl(var(--background));
 }
@@ -40,13 +40,28 @@ const quillStyles = `
   color: hsl(var(--primary) / 0.8);
 }
 
-/* 툴바 스타일링 */
+/* Updated heading styles */
+.ql-editor h1 {
+  font-size: 1.875rem;
+  font-weight: 600;
+  margin-top: 2.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.ql-editor h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 1.25rem;
+}
+
+/* Toolbar styling */
 .ql-toolbar {
   border-top-left-radius: 0.5rem;
   border-top-right-radius: 0.5rem;
   border-color: hsl(var(--border));
   background-color: hsl(var(--muted));
-  padding: 0.5rem;
+  padding: 0.75rem;
 }
 
 .ql-container {
@@ -56,8 +71,8 @@ const quillStyles = `
 }
 
 .ql-toolbar button {
-  height: 2rem;
-  width: 2rem;
+  height: 2.5rem;
+  width: 2.5rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -73,49 +88,36 @@ const quillStyles = `
   color: hsl(var(--primary));
 }
 
-/* 플레이스홀더 스타일링 */
+/* Placeholder styling */
 .ql-editor.ql-blank::before {
   color: hsl(var(--muted-foreground));
   font-style: normal;
 }
 
-/* prose 스타일 매칭 */
+/* Matching prose styles */
 .ql-editor {
   max-width: none;
-  prose-lg: {
-    font-size: 1.125rem;
-    line-height: 1.75;
-  }
+  font-size: 1.125rem;
+  line-height: 1.75;
 }
 
-/* 목록 스타일링 */
+/* List styling */
 .ql-editor ol, 
 .ql-editor ul {
-  padding-left: 1rem;  /* 기본값 2.5em에서 1rem으로 줄임 */
+  padding-left: 1.5rem;
 }
 
 .ql-editor li {
-  padding-left: 0.5rem;  /* 기본값 1.5em에서 0.5rem으로 줄임 */
+  padding-left: 0.5rem;
 }
 
-/* 중첩된 목록의 들여쓰기 조정 */
 .ql-editor li.ql-indent-1 {
-  padding-left: 1.5rem;  /* 기본값 4.5em에서 1.5rem으로 줄임 */
+  padding-left: 1.5rem;
 }
 
-/* 순서 있는 목록의 번호 위치 조정 */
-.ql-editor ol li {
-  counter-reset: list-1 list-2 list-3 list-4 list-5 list-6 list-7 list-8 list-9;
-  counter-increment: list-0;
-}
-
-.ql-editor ol li:before {
-  left: -1rem;  /* 번호 위치 조정 */
-}
-
-/* 순서 없는 목록의 불릿 위치 조정 */
+.ql-editor ol li:before,
 .ql-editor ul li:before {
-  left: -1rem;  /* 불릿 위치 조정 */
+  left: -1.5rem;
 }
 `;
 
@@ -156,7 +158,9 @@ export function PostTextEditor({ value, onChange, placeholder = '내용을 입�
         theme="snow"
         modules={modules}
         formats={formats}
+        className="prose prose-lg prose-slate dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold"
       />
     </div>
   );
 }
+

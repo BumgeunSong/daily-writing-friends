@@ -1,5 +1,5 @@
 import { ChevronLeft, Save } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
@@ -8,9 +8,47 @@ import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton';
 import { fetchPost, updatePost } from '../../../utils/postUtils';
 import { PostTextEditor } from './PostTextEditor';
+import { cn } from '@/lib/utils';
+
+const TitleInput = React.forwardRef<
+  HTMLTextAreaElement,
+  React.TextareaHTMLAttributes<HTMLTextAreaElement>
+>(({ className, ...props }, ref) => {
+  const innerRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (innerRef.current) {
+      innerRef.current.style.height = 'auto';
+      innerRef.current.style.height = `${innerRef.current.scrollHeight}px`;
+    }
+  }, [props.value]);
+
+  useEffect(() => {
+    if (typeof ref === 'function') {
+      ref(innerRef.current);
+    } else if (ref) {
+      ref.current = innerRef.current;
+    }
+  }, [ref]);
+
+  return (
+    <textarea
+      ref={innerRef}
+      className={cn(
+        'w-full resize-none overflow-hidden text-4xl sm:text-5xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 focus:outline-none placeholder:text-muted-foreground mb-6',
+        className,
+      )}
+      rows={1}
+      {...props}
+    />
+  );
+});
+
+TitleInput.displayName = 'TitleInput';
 
 export default function PostEditPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
+  const [title, setTitle] = useState<string>('');
   const [content, setContent] = useState<string>('');
   const navigate = useNavigate();
 
@@ -21,6 +59,7 @@ export default function PostEditPage() {
       enabled: !!boardId && !!postId,
       onSuccess: (fetchedPost) => {
         if (fetchedPost) {
+          setTitle(fetchedPost.title);
           setContent(fetchedPost.content);
         }
       },
@@ -29,7 +68,7 @@ export default function PostEditPage() {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim() || !postId) return;
+    if (!title.trim() || !content.trim() || !postId) return;
     try {
       await updatePost(boardId!, postId!, content);
       navigate(`/board/${boardId}/post/${postId}`);
@@ -40,7 +79,7 @@ export default function PostEditPage() {
 
   if (isLoading) {
     return (
-      <div className='mx-auto max-w-2xl px-4 py-8'>
+      <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
         <Skeleton className='mb-4 h-12 w-3/4' />
         <Skeleton className='mb-2 h-4 w-full' />
         <Skeleton className='mb-2 h-4 w-full' />
@@ -51,7 +90,7 @@ export default function PostEditPage() {
 
   if (error || !post) {
     return (
-      <div className='mx-auto max-w-2xl px-4 py-8 text-center'>
+      <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8 text-center'>
         <h1 className='mb-4 text-2xl font-bold'>게시물을 찾을 수 없습니다.</h1>
         <Button onClick={() => navigate(`/board/${boardId}`)}>
           <ChevronLeft className='mr-2 size-4' /> 피드로 돌아가기
@@ -61,14 +100,18 @@ export default function PostEditPage() {
   }
 
   return (
-    <div className='mx-auto max-w-2xl px-4 py-8'>
+    <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
       <Button variant='ghost' onClick={() => navigate(`/board/${boardId}`)} className='mb-6'>
         <ChevronLeft className='mr-2 size-4' /> 피드로 돌아가기
       </Button>
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader className='flex flex-col space-y-2'>
-            <h1 className='text-3xl font-bold'>{post.title}</h1>
+            <TitleInput
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder='제목을 입력하세요'
+            />
             <div className='flex items-center justify-between text-sm text-muted-foreground'>
               <p>
                 작성자: {post.authorName} | 작성일: {post.createdAt?.toLocaleString() || '?'}
@@ -92,3 +135,4 @@ export default function PostEditPage() {
     </div>
   );
 }
+
