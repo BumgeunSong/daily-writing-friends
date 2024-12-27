@@ -6,8 +6,6 @@ import {
   serverTimestamp,
   updateDoc,
   getDocs,
-  DocumentData,
-  QueryDocumentSnapshot,
   query,
   orderBy
 } from 'firebase/firestore';
@@ -75,14 +73,14 @@ export const fetchAdjacentPosts = async (boardId: string, currentPostId: string)
   };
 };
 
-export const extractFirstImageUrl = (content: string): string | undefined => {
+export const extractFirstImageUrl = (content: string): string | null => {
   try {
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = content;
     const firstImage = tempDiv.querySelector('img');
-    return firstImage?.src || undefined;
+    return firstImage?.src || null;
   } catch (error) {
     console.error('Error extracting image URL:', error);
-    return undefined;
+    return null;
   }
 };
