@@ -1,3 +1,8 @@
+import { ref } from "firebase/storage";
+import { storage } from "@/firebase";
+import { uploadBytes } from "firebase/storage";
+import { getDownloadURL } from "firebase/storage";
+import { formatDate } from "./dateUtils";
 
 const cropAndResizeImage = async (file: File, callback: (resizedFile: File) => void) => {
     try {
@@ -64,4 +69,37 @@ const blobToFile = (blob: Blob, fileName: string, fileType: string): File => {
     return new File([blob], fileName, { type: fileType });
 };
 
-export { cropAndResizeImage }
+
+// 파일 유효성 검사
+const validatePostImageFile = (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+        throw new Error("파일 크기는 5MB를 초과할 수 없습니다.");
+    }
+    if (!file.type.startsWith('image/')) {
+        throw new Error("이미지 파일만 업로드할 수 없습니다.");
+    }
+};
+
+// 파일 경로 생성
+const createStorageRef = (file: File) => {
+    const { dateFolder, timePrefix } = formatDate(new Date());
+    const fileName = `${timePrefix}_${file.name}`;
+    return ref(storage, `postImages/${dateFolder}/${fileName}`);
+};
+
+// 이미지 업로드 처리
+const uploadPostImage = async (file: File, onProgress: (progress: number) => void) => {
+    onProgress(20);
+    const storageRef = createStorageRef(file);
+
+    onProgress(40);
+    const snapshot = await uploadBytes(storageRef, file);
+    onProgress(70);
+
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    onProgress(90);
+
+    return downloadURL;
+};
+
+export { cropAndResizeImage, uploadPostImage, validatePostImageFile }
