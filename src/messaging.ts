@@ -7,7 +7,9 @@ export function initializeMessaging(app: FirebaseApp): Messaging | null {
     let messaging: Messaging | null = null;
     try {
         messaging = getMessaging(app);
-        onMessage(messaging, onMessageInForeground);
+        if (messaging) {
+            onMessage(messaging, onMessageInForeground);
+        }
     } catch (error) {
         console.error('Firebase messaging은 이 브라우저에서 지원되지 않습니다:', error);
         messaging = null;
