@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { getToken } from "firebase/messaging";
-import { firestore, messaging } from "../firebase";
+import { app, firestore } from "../firebase";
 import { addDoc } from 'firebase/firestore';
 import { FirebaseMessagingToken } from '@/messaging/FirebaseMessagingToken';
 import { collection, getDocs, query, where, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Timestamp } from 'firebase/firestore';
+import { initializeMessaging } from '@/messaging';
+import { toast } from './use-toast';
 
 export function usePushPermission(userId: string) {
     const [hasPushPermission, setHasPushPermission] = useState(false);
@@ -25,12 +27,19 @@ export function usePushPermission(userId: string) {
     }, [userId]);
 
     const togglePushNotification = async () => {
-        if (hasPushPermission) {
-            await cancelPushNotification(userId);
-            setHasPushPermission(false);
+        try {
+            if (hasPushPermission) {
+                await cancelPushNotification(userId);
+                setHasPushPermission(false);
         } else {
-            await startPushNotification(userId);
-            setHasPushPermission(true);
+                await startPushNotification(userId);
+                setHasPushPermission(true);
+            }
+        } catch (error) {
+            toast({
+                description: "알림 설정에 문제가 생겼어요",
+                variant: "destructive",
+            });
         }
     };
 
@@ -66,6 +75,7 @@ async function checkPushNotificationPermission(userId: string): Promise<boolean>
 }
 
 async function requestFirebaseToken(userId: string): Promise<string | null> {
+    const messaging = initializeMessaging(app);
     if (!messaging) { 
         throw new Error('Firebase messaging is not supported in this browser');
     }
