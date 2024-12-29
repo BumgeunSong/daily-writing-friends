@@ -6,7 +6,9 @@ import { FirebaseApp } from "firebase/app";
 export function initializeMessaging(app: FirebaseApp): Messaging | null {
     let messaging: Messaging | null = null;
     try {
-        messaging = getMessaging(app);
+        if (typeof window !== "undefined" && typeof window.navigator !== "undefined") {
+            messaging = getMessaging(app);
+        }
         if (messaging) {
             onMessage(messaging, onMessageInForeground);
         }
