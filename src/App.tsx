@@ -19,20 +19,22 @@ const BoardListPage = lazy(() => import('./components/pages/board/BoardListPage'
 
 export default function App() {
   const { currentUser } = useAuth();
+  
   return (
     <Routes>
-      {currentUser ? (
-        <Route path='/login' element={<LazyRoute element={LoginPage} />} />
-      ) : (
-        <Route path='/login' element={<Navigate to='/boards' />} />
-      )}
-      <Route
-        element={
-          <ProtectedRoute>
-            <AfterLoginLayout />
-          </ProtectedRoute>
-        }
-      >
+      <Route path='/login' element={
+        !currentUser ? (
+          <LazyRoute element={LoginPage} />
+        ) : (
+          <Navigate to='/boards' replace />
+        )
+      } />
+      
+      <Route element={
+        <ProtectedRoute>
+          <AfterLoginLayout />
+        </ProtectedRoute>
+      }>
         <Route path='/boards' element={<LazyRoute element={RecentBoard} />} />
         <Route path='/boards/list' element={<LazyRoute element={BoardListPage} />} />
         <Route path='/board/:boardId' element={<LazyRoute element={BoardPage} />} />
@@ -44,8 +46,16 @@ export default function App() {
         <Route path='/account' element={<LazyRoute element={AccountPage} />} />
         <Route path='/account/edit' element={<LazyRoute element={EditAccountPage} />} />
       </Route>
-      <Route path='/' element={<Navigate to='/boards' />} />
-      <Route path='*' element={<Navigate to='/' />} />
+
+      <Route path='/' element={
+        currentUser ? (
+          <Navigate to='/boards' replace />
+        ) : (
+          <Navigate to='/login' replace />
+        )
+      } />
+      
+      <Route path='*' element={<Navigate to='/' replace />} />
     </Routes>
   );
 }
