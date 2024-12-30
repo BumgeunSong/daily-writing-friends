@@ -16,6 +16,15 @@ interface WritingStats {
 type Contribution = Record<string, number | null>;
 
 export const getWritingStats = onRequest(async (req, res) => {
+    // GET 메서드만 허용
+    if (req.method !== 'GET') {
+        res.status(405).json({
+            status: 'error',
+            message: 'Method not allowed'
+        });
+        return;
+    }
+
     try {
         const db = admin.firestore();
         
