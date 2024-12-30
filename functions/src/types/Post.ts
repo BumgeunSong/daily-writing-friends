@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase-admin/firestore';
+
 export interface Post {
   id: string;
   boardId: string;
@@ -5,10 +7,10 @@ export interface Post {
   content: string;
   authorId: string;
   authorName: string;
-  createdAt?: Date;
+  createdAt?: Timestamp;
   comments: number;
   countOfComments: number;
   countOfReplies: number;
-  updatedAt?: Date;
+  updatedAt?: Timestamp;
   weekDaysFromFirstDay?: number;
 }

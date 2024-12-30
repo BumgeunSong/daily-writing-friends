@@ -6,6 +6,7 @@ import { updatePostDaysFromFirstDay } from './notifications/updateDaysFromFirstD
 import { updateCommentRepliesCounts } from './notifications/updateCommentRepliesCounts';
 import { decrementCommentCountOnCommentDeleted, incrementCommentCountOnCommentCreated } from './notifications/incrementCommentCount';
 import { decrementRepliesCountOnReplyDeleted, incrementRepliesCountOnReplyCreated } from './notifications/incrementRepliesCount';
+import { updateWritingHistoryByBatch } from './writingHistory/updateWritingHistoryByBatch';
 
 export {
   onCommentCreated,
@@ -17,5 +18,6 @@ export {
   incrementCommentCountOnCommentCreated,
   decrementCommentCountOnCommentDeleted,
   incrementRepliesCountOnReplyCreated,
-  decrementRepliesCountOnReplyDeleted
+  decrementRepliesCountOnReplyDeleted,
+  updateWritingHistoryByBatch
 };
