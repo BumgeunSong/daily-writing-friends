@@ -22,7 +22,7 @@ export function UserStatsCard({ stats }: UserStatsCardProps) {
             <div className="flex flex-col gap-2">
               <div>
                 <h3 className="font-semibold">{user.nickname || user.realname || "Anonymous"}</h3>
-                <p className="text-sm text-muted-foreground">{user.bio || "No bio provided"}</p>
+                <p className="text-sm text-muted-foreground">{user.bio || "아직 자기소개가 없어요."}</p>
               </div>
             </div>
           </div>
