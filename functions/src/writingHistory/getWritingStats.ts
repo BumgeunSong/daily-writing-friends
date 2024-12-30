@@ -10,15 +10,17 @@ interface WritingStats {
         profilePhotoURL: string | null;
         bio: string | null;
     }
-    contributions: Contribution;
+    contributions: Contribution[];
 }
 
-type Contribution = Record<string, number | null>;
+type Contribution = {
+    date: string;
+    contentLength: number | null;
+}
 
 // 기여도 합계 계산 함수 수정: 작성한 날의 합계로 기여도 계산
-const calculateTotalContributions = (contributions: Contribution): number => {
-    return Object.values(contributions)
-        .reduce((sum: number, value: number | null) => sum + (value !== null ? 1 : 0), 0);
+const calculateTotalContributions = (contributions: Contribution[]): number => {
+    return contributions.reduce((sum: number, value: Contribution) => sum + (value.contentLength !== null ? 1 : 0), 0);
 };
 
 export const getWritingStats = onRequest(async (req, res) => {
@@ -76,22 +78,20 @@ export const getWritingStats = onRequest(async (req, res) => {
                 };
             })
         );
-
         // 4. null 값 필터링 (writingHistory가 없는 사용자 제외)
-        const filteredStats = writingStats
-            .filter((stat): stat is WritingStats & { totalContributions: number } => 
+        const filteredStats: WritingStats[] = writingStats
+            .filter((stat): stat is Exclude<typeof stat, null> => 
                 stat !== null
             )
             // 총 기여도 기준으로 내림차순 정렬
-            .sort((a, b) => b.totalContributions - a.totalContributions)
+            .sort((a, b) => (b?.totalContributions ?? 0) - (a?.totalContributions ?? 0))
             // totalContributions 필드 제거
             .map(({ totalContributions, ...stat }) => stat);
 
         res.status(200).json({
             status: 'success',
             data: {
-                writingStats: filteredStats,
-                workingDays
+                writingStats: filteredStats
             }
         });
 
@@ -120,28 +120,29 @@ function getRecentWorkingDays(count: number): string[] {
     
     return workingDays.reverse();
 }
-
 // Contribution 객체 생성
 function createContributions(
     workingDays: string[],
     histories: admin.firestore.QueryDocumentSnapshot[]
-): Contribution {
-    const contributionMap: Contribution = {};
-    
+): Contribution[] {
     // 모든 영업일에 대해 초기값 null 설정
-    workingDays.forEach(day => {
-        contributionMap[day] = null;
-    });
+    const contributions = workingDays.map(day => ({
+        date: day,
+        contentLength: null
+    }));
 
     // writingHistory에서 컨텐츠 길이 매핑
     histories.forEach(history => {
         const data = history.data();
         const day = data.day;
-        
+
         if (workingDays.includes(day)) {
-            contributionMap[day] = data.post?.contentLength || null;
+            const contribution = contributions.find(contribution => contribution.date === day);
+            if (contribution) {
+                contribution.contentLength = data.post?.contentLength ?? null;
+            }
         }
     });
 
-    return contributionMap;
+    return contributions;
 }
