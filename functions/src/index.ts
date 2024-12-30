@@ -7,7 +7,7 @@ import { updateCommentRepliesCounts } from './notifications/updateCommentReplies
 import { decrementCommentCountOnCommentDeleted, incrementCommentCountOnCommentCreated } from './notifications/incrementCommentCount';
 import { decrementRepliesCountOnReplyDeleted, incrementRepliesCountOnReplyCreated } from './notifications/incrementRepliesCount';
 import { updateWritingHistoryByBatch } from './writingHistory/updateWritingHistoryByBatch';
-
+import { getWritingStats } from './writingHistory/getWritingStats';
 export {
   onCommentCreated,
   onReplyCreatedOnComment,
@@ -19,5 +19,6 @@ export {
   decrementCommentCountOnCommentDeleted,
   incrementRepliesCountOnReplyCreated,
   decrementRepliesCountOnReplyDeleted,
-  updateWritingHistoryByBatch
+  updateWritingHistoryByBatch,
+  getWritingStats
 };
