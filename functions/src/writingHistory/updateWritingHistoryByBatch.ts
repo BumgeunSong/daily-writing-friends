@@ -16,9 +16,7 @@ export const updateWritingHistoryByBatch = onRequest(async (req, res) => {
             return;
         }
 
-        console.log(`[Start] Fetching posts for boardId: ${boardId}`);
         const posts = await fetchBoardPosts(db, boardId);
-        console.log(`[Posts] Found ${posts.length} posts`);
 
         if (posts.length === 0) {
             res.status(200).json({
@@ -28,42 +26,65 @@ export const updateWritingHistoryByBatch = onRequest(async (req, res) => {
             return;
         }
 
-        // 포스트 데이터 로깅
-        posts.forEach(post => {
-            console.log(`[Post] ID: ${post.id}, AuthorId: ${post.authorId}, CreatedAt: ${post.createdAt}`);
-        });
-
         const postsByAuthor = groupPostsByAuthor(posts);
-        console.log(`[Authors] Grouped into ${postsByAuthor.size} authors`);
+        const [batch, operations] = await createBatchOperations(db, postsByAuthor);
+        await executeBatchOperations(batch, operations);
 
-        // 작성자별 포스트 수 로깅
-        for (const [authorId, authorPosts] of postsByAuthor.entries()) {
-            console.log(`[Author] ${authorId} has ${authorPosts.length} posts`);
+        // 검증 결과 수집
+        const verificationResults: Array<{
+            authorId: string;
+            documentsCount: number;
+            documents: Array<{
+                id: string;
+                data: any;
+            }>;
+        }> = [];
+
+        for (const [authorId] of postsByAuthor.entries()) {
+            const writingHistories = await db
+                .collection('users')
+                .doc(authorId)
+                .collection('writingHistories')
+                .get();
+
+            verificationResults.push({
+                authorId,
+                documentsCount: writingHistories.size,
+                documents: writingHistories.docs.map(doc => ({
+                    id: doc.id,
+                    data: doc.data()
+                }))
+            });
         }
 
-        const operations = await createBatchOperations(db, postsByAuthor);
-        console.log(`[Operations] Created ${operations.length} batch operations`);
+        const result = {
+            status: 'success',
+            summary: {
+                postsProcessed: posts.length,
+                authorsProcessed: postsByAuthor.size,
+                operationsCreated: operations.length,
+                timestamp: new Date().toISOString()
+            },
+            verification: {
+                results: verificationResults,
+                totalDocuments: verificationResults.reduce(
+                    (sum, result) => sum + result.documentsCount, 
+                    0
+                )
+            }
+        };
 
-        console.log('[Batch] Starting batch execution...');
-        await executeBatchOperations(db, operations);
-        console.log('[Batch] Completed batch execution');
+        res.status(200).json(result);
 
-        res.status(200).json({
-            message: 'Writing history updated successfully',
-            boardId,
-            totalAuthors: postsByAuthor.size,
-            totalPosts: posts.length,
-            operationsCount: operations.length
-        })
     } catch (error) {
         console.error('Error updating writing history:', error);
         res.status(500).json({
-            error: 'Failed to update writing history',
-            message: error instanceof Error ? error.message : 'Unknown error'
+            status: 'error',
+            error: error instanceof Error ? error.message : 'Unknown error',
+            timestamp: new Date().toISOString()
         });
     }
 });
-
 
 // 날짜 포맷 변환 (Date -> YYYY-MM-DD)
 const formatDate = (createdAt: Timestamp): string => {
@@ -136,7 +157,6 @@ const findExistingWritingHistory = async (
     return querySnapshot.empty ? null : querySnapshot.docs[0];
 };
 
-// 작성자별 배치 작업 생성
 const createAuthorOperations = async (
     db: admin.firestore.Firestore,
     batch: admin.firestore.WriteBatch,
@@ -144,18 +164,14 @@ const createAuthorOperations = async (
     posts: Post[]
 ): Promise<Array<() => void>> => {
     const operations: Array<() => void> = [];
-    console.log(`[Author Operations] Processing ${posts.length} posts for author ${authorId}`);
 
     for (const post of posts) {
-        console.log(`[Author Operations] Processing post ${post.id}`);
-        
         const existingDoc = await findExistingWritingHistory(
             db,
             authorId,
             post.boardId,
             post.id
         );
-        console.log(`[Author Operations] Existing doc for post ${post.id}: ${existingDoc ? 'found' : 'not found'}`);
 
         const writingHistoriesRef = db
             .collection('users')
@@ -165,7 +181,6 @@ const createAuthorOperations = async (
         const newData = createWritingHistoryData(post);
 
         if (existingDoc) {
-            console.log(`[Author Operations] Updating existing doc for post ${post.id}`);
             const updatedData = {
                 day: newData.day,
                 createdAt: newData.createdAt,
@@ -176,21 +191,22 @@ const createAuthorOperations = async (
             };
             operations.push(() => batch.update(existingDoc.ref, updatedData));
         } else {
-            console.log(`[Author Operations] Creating new doc for post ${post.id}`);
             const newDocRef = writingHistoriesRef.doc();
-            operations.push(() => batch.set(newDocRef, newData));
+            
+            operations.push(() => {
+                return batch.set(newDocRef, newData);
+            });
         }
     }
-
-    console.log(`[Author Operations] Created ${operations.length} operations for author ${authorId}`);
     return operations;
 };
+
 
 // 메인 배치 작업 생성 함수
 const createBatchOperations = async (
     db: admin.firestore.Firestore,
     postsByAuthor: Map<string, Post[]>
-): Promise<Array<() => void>> => {
+): Promise<[admin.firestore.WriteBatch, Array<() => void>]> => {
     const batch = db.batch();
     const operations: Array<() => void> = [];
 
@@ -204,52 +220,27 @@ const createBatchOperations = async (
         operations.push(...authorOperations);
     }
 
-    return operations;
+    return [batch, operations];
 };
 
-// 배치 작업 실행 (청크 단위로 처리)
+// 배치 작업 실행 함수 수정
 const executeBatchOperations = async (
-    db: admin.firestore.Firestore,
-    operations: Array<() => void>,
-    batchSize = 500
+    batch: admin.firestore.WriteBatch,
+    operations: Array<() => void>
 ) => {
-    let batch = db.batch();
-    let count = 0;
-    let totalCommitted = 0;
-
     for (const operation of operations) {
         try {
             operation();
-            count++;
-            console.log(`[Batch] Added operation ${count} to current batch`);
-
-            if (count >= batchSize) {
-                console.log(`[Batch] Committing batch of ${count} operations...`);
-                await batch.commit();
-                totalCommitted += count;
-                console.log(`[Batch] Successfully committed ${count} operations. Total: ${totalCommitted}`);
-                
-                batch = db.batch();
-                count = 0;
-
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                console.log('[Batch] Waited 1 second before next batch');
-            }
         } catch (error) {
-            console.error(`[Batch] Error in operation:`, error);
+            console.error('Operation failed:', error);
             throw error;
         }
     }
 
-    if (count > 0) {
-        console.log(`[Batch] Committing final batch of ${count} operations...`);
-        try {
-            await batch.commit();
-            totalCommitted += count;
-            console.log(`[Batch] Successfully committed final batch. Total operations: ${totalCommitted}`);
-        } catch (error) {
-            console.error(`[Batch] Error in final batch:`, error);
-            throw error;
-        }
+    try {
+        await batch.commit();
+    } catch (error) {
+        console.error('Batch commit failed:', error);
+        throw error;
     }
 };
