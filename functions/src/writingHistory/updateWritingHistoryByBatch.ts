@@ -3,88 +3,117 @@ import { onRequest } from 'firebase-functions/v2/https';
 import { Post } from '../types/Post';
 import { WritingHistory } from '../types/WritingHistory';
 import { Timestamp } from 'firebase-admin/firestore';
+import { Request, Response } from 'express';
 
 export const updateWritingHistoryByBatch = onRequest(async (req, res) => {
     try {
-        const db = admin.firestore();
-        const boardId = req.query.boardId as string;
-
+        const boardId = validateAndGetBoardId(req);
         if (!boardId) {
-            res.status(400).json({
-                error: 'boardId is required',
-            });
-            return;
+             res.status(400).json({ error: 'boardId is required' });
+             return
         }
 
-        const posts = await fetchBoardPosts(db, boardId);
-
-        if (posts.length === 0) {
-            res.status(200).json({
-                message: 'No posts found in this board',
-                boardId
-            })
-            return;
-        }
-
-        const postsByAuthor = groupPostsByAuthor(posts);
-        const [batch, operations] = await createBatchOperations(db, postsByAuthor);
-        await executeBatchOperations(batch, operations);
-
-        // 검증 결과 수집
-        const verificationResults: Array<{
-            authorId: string;
-            documentsCount: number;
-            documents: Array<{
-                id: string;
-                data: any;
-            }>;
-        }> = [];
-
-        for (const [authorId] of postsByAuthor.entries()) {
-            const writingHistories = await db
-                .collection('users')
-                .doc(authorId)
-                .collection('writingHistories')
-                .get();
-
-            verificationResults.push({
-                authorId,
-                documentsCount: writingHistories.size,
-                documents: writingHistories.docs.map(doc => ({
-                    id: doc.id,
-                    data: doc.data()
-                }))
-            });
-        }
-
-        const result = {
-            status: 'success',
-            summary: {
-                postsProcessed: posts.length,
-                authorsProcessed: postsByAuthor.size,
-                operationsCreated: operations.length,
-                timestamp: new Date().toISOString()
-            },
-            verification: {
-                results: verificationResults,
-                totalDocuments: verificationResults.reduce(
-                    (sum, result) => sum + result.documentsCount, 
-                    0
-                )
-            }
-        };
-
+        const db = admin.firestore();
+        const result = await processWritingHistoryUpdate(db, boardId);
         res.status(200).json(result);
-
     } catch (error) {
-        console.error('Error updating writing history:', error);
-        res.status(500).json({
-            status: 'error',
-            error: error instanceof Error ? error.message : 'Unknown error',
-            timestamp: new Date().toISOString()
-        });
+        handleError(error, res);
     }
 });
+
+const validateAndGetBoardId = (req: Request): string | null => {
+    const boardId = req.query.boardId as string;
+    return boardId || null;
+};
+
+const processWritingHistoryUpdate = async (
+    db: admin.firestore.Firestore,
+    boardId: string
+) => {
+    const posts = await fetchBoardPosts(db, boardId);
+    if (posts.length === 0) {
+        return {
+            message: 'No posts found in this board',
+            boardId
+        };
+    }
+
+    const postsByAuthor = groupPostsByAuthor(posts);
+    const [batch, operations] = await createBatchOperations(db, postsByAuthor);
+    await executeBatchOperations(batch, operations);
+
+    return await generateVerificationResult(db, postsByAuthor, {
+        posts,
+        operations
+    });
+};
+
+const generateVerificationResult = async (
+    db: admin.firestore.Firestore,
+    postsByAuthor: Map<string, Post[]>,
+    metadata: {
+        posts: Post[],
+        operations: Array<() => void>
+    }
+) => {
+    const verificationResults = await collectVerificationResults(db, postsByAuthor);
+    
+    return {
+        status: 'success',
+        summary: {
+            postsProcessed: metadata.posts.length,
+            authorsProcessed: postsByAuthor.size,
+            operationsCreated: metadata.operations.length,
+            timestamp: new Date().toISOString()
+        },
+        verification: {
+            results: verificationResults,
+            totalDocuments: verificationResults.reduce(
+                (sum, result) => sum + result.documentsCount,
+                0
+            )
+        }
+    };
+};
+
+const collectVerificationResults = async (
+    db: admin.firestore.Firestore,
+    postsByAuthor: Map<string, Post[]>
+): Promise<Array<{
+    authorId: string;
+    documentsCount: number;
+    documents: Array<{ id: string; data: any }>;
+}>> => {
+    const results = [];
+    
+    for (const [authorId] of postsByAuthor.entries()) {
+        const writingHistories = await db
+            .collection('users')
+            .doc(authorId)
+            .collection('writingHistories')
+            .get();
+
+        results.push({
+            authorId,
+            documentsCount: writingHistories.size,
+            documents: writingHistories.docs.map(doc => ({
+                id: doc.id,
+                data: doc.data()
+            }))
+        });
+    }
+
+    return results;
+};
+
+const handleError = (error: unknown, res: Response) => {
+    console.error('Error updating writing history:', error);
+    res.status(500).json({
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+    });
+};
 
 // 날짜 포맷 변환 (Date -> YYYY-MM-DD)
 const formatDate = (createdAt: Timestamp): string => {
