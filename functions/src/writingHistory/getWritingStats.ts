@@ -60,7 +60,7 @@ export const getWritingStats = onRequest(async (req, res) => {
                     user: {
                         id: userDoc.id,
                         nickname: userData.nickname,
-                        realname: userData.realname,
+                        realname: userData.realName,
                         profilePhotoURL: userData.profilePhotoURL,
                         bio: userData.bio
                     },
