@@ -16,7 +16,9 @@ export const updateWritingHistoryByBatch = onRequest(async (req, res) => {
             return;
         }
 
+        console.log(`[Start] Fetching posts for boardId: ${boardId}`);
         const posts = await fetchBoardPosts(db, boardId);
+        console.log(`[Posts] Found ${posts.length} posts`);
 
         if (posts.length === 0) {
             res.status(200).json({
@@ -26,9 +28,25 @@ export const updateWritingHistoryByBatch = onRequest(async (req, res) => {
             return;
         }
 
+        // 포스트 데이터 로깅
+        posts.forEach(post => {
+            console.log(`[Post] ID: ${post.id}, AuthorId: ${post.authorId}, CreatedAt: ${post.createdAt}`);
+        });
+
         const postsByAuthor = groupPostsByAuthor(posts);
+        console.log(`[Authors] Grouped into ${postsByAuthor.size} authors`);
+
+        // 작성자별 포스트 수 로깅
+        for (const [authorId, authorPosts] of postsByAuthor.entries()) {
+            console.log(`[Author] ${authorId} has ${authorPosts.length} posts`);
+        }
+
         const operations = await createBatchOperations(db, postsByAuthor);
+        console.log(`[Operations] Created ${operations.length} batch operations`);
+
+        console.log('[Batch] Starting batch execution...');
         await executeBatchOperations(db, operations);
+        console.log('[Batch] Completed batch execution');
 
         res.status(200).json({
             message: 'Writing history updated successfully',
@@ -126,14 +144,18 @@ const createAuthorOperations = async (
     posts: Post[]
 ): Promise<Array<() => void>> => {
     const operations: Array<() => void> = [];
+    console.log(`[Author Operations] Processing ${posts.length} posts for author ${authorId}`);
 
     for (const post of posts) {
+        console.log(`[Author Operations] Processing post ${post.id}`);
+        
         const existingDoc = await findExistingWritingHistory(
             db,
             authorId,
             post.boardId,
             post.id
         );
+        console.log(`[Author Operations] Existing doc for post ${post.id}: ${existingDoc ? 'found' : 'not found'}`);
 
         const writingHistoriesRef = db
             .collection('users')
@@ -143,7 +165,7 @@ const createAuthorOperations = async (
         const newData = createWritingHistoryData(post);
 
         if (existingDoc) {
-            // 기존 문서가 있는 경우 업데이트
+            console.log(`[Author Operations] Updating existing doc for post ${post.id}`);
             const updatedData = {
                 day: newData.day,
                 createdAt: newData.createdAt,
@@ -152,18 +174,15 @@ const createAuthorOperations = async (
                     contentLength: newData.post.contentLength
                 }
             };
-            operations.push(() => 
-                batch.update(existingDoc.ref, updatedData)
-            );
+            operations.push(() => batch.update(existingDoc.ref, updatedData));
         } else {
-            // 새로운 문서 생성
+            console.log(`[Author Operations] Creating new doc for post ${post.id}`);
             const newDocRef = writingHistoriesRef.doc();
-            operations.push(() => 
-                batch.set(newDocRef, newData)
-            );
+            operations.push(() => batch.set(newDocRef, newData));
         }
     }
 
+    console.log(`[Author Operations] Created ${operations.length} operations for author ${authorId}`);
     return operations;
 };
 
@@ -196,22 +215,41 @@ const executeBatchOperations = async (
 ) => {
     let batch = db.batch();
     let count = 0;
+    let totalCommitted = 0;
 
     for (const operation of operations) {
-        operation();
-        count++;
+        try {
+            operation();
+            count++;
+            console.log(`[Batch] Added operation ${count} to current batch`);
 
-        if (count >= batchSize) {
-            await batch.commit();
-            batch = db.batch();
-            count = 0;
+            if (count >= batchSize) {
+                console.log(`[Batch] Committing batch of ${count} operations...`);
+                await batch.commit();
+                totalCommitted += count;
+                console.log(`[Batch] Successfully committed ${count} operations. Total: ${totalCommitted}`);
+                
+                batch = db.batch();
+                count = 0;
 
-            // 배치 작업 사이에 약간의 딜레이 추가 (선택사항)
-            await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                console.log('[Batch] Waited 1 second before next batch');
+            }
+        } catch (error) {
+            console.error(`[Batch] Error in operation:`, error);
+            throw error;
         }
     }
 
     if (count > 0) {
-        await batch.commit();
+        console.log(`[Batch] Committing final batch of ${count} operations...`);
+        try {
+            await batch.commit();
+            totalCommitted += count;
+            console.log(`[Batch] Successfully committed final batch. Total operations: ${totalCommitted}`);
+        } catch (error) {
+            console.error(`[Batch] Error in final batch:`, error);
+            throw error;
+        }
     }
 };
