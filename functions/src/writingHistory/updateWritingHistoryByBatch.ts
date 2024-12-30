@@ -2,6 +2,7 @@ import * as admin from 'firebase-admin';
 import { onRequest } from 'firebase-functions/v2/https';
 import { Post } from '../types/Post';
 import { WritingHistory } from '../types/WritingHistory';
+import { Timestamp } from 'firebase-admin/firestore';
 
 export const updateWritingHistoryByBatch = onRequest(async (req, res) => {
     try {
@@ -96,55 +97,25 @@ const groupPostsByAuthor = (posts: Post[]): Map<string, Post[]> => {
         return acc;
     }, new Map<string, Post[]>());
 };
-// WritingHistory 문서 참조 생성
-const createWritingHistoryRef = (
+
+// WritingHistory 문서 참조 생성 및 기존 문서 찾기
+const findExistingWritingHistory = async (
     db: admin.firestore.Firestore,
     authorId: string,
+    boardId: string,
     postId: string
-) => {
-    return db
+): Promise<admin.firestore.QueryDocumentSnapshot | null> => {
+    const writingHistoriesRef = db
         .collection('users')
         .doc(authorId)
-        .collection('writingHistory')
-        .doc(postId);
-};
+        .collection('writingHistories');
 
-// 기존 문서 데이터 가져오기
-const getExistingDocument = async (
-    docRef: admin.firestore.DocumentReference
-) => {
-    const doc = await docRef.get();
-    return doc.exists ? doc.data() as WritingHistory : null;
-};
+    const querySnapshot = await writingHistoriesRef
+        .where('board.id', '==', boardId)
+        .where('post.id', '==', postId)
+        .get();
 
-// 업데이트할 데이터 생성
-const createUpdatedData = (
-    existingData: WritingHistory,
-    newData: WritingHistory
-): Partial<WritingHistory> => {
-    return {
-        ...existingData,
-        day: newData.day,
-        createdAt: newData.createdAt,
-        post: {
-            ...existingData.post,
-            contentLength: newData.post.contentLength
-        }
-    };
-};
-
-// 단일 문서에 대한 배치 작업 생성
-const createDocumentOperation = (
-    batch: admin.firestore.WriteBatch,
-    docRef: admin.firestore.DocumentReference,
-    existingData: WritingHistory | null,
-    newData: WritingHistory
-): () => void => {
-    if (existingData) {
-        const updatedData = createUpdatedData(existingData, newData);
-        return () => batch.update(docRef, updatedData);
-    }
-    return () => batch.set(docRef, newData);
+    return querySnapshot.empty ? null : querySnapshot.docs[0];
 };
 
 // 작성자별 배치 작업 생성
@@ -157,13 +128,40 @@ const createAuthorOperations = async (
     const operations: Array<() => void> = [];
 
     for (const post of posts) {
-        const docRef = createWritingHistoryRef(db, authorId, post.id);
-        const existingData = await getExistingDocument(docRef);
+        const existingDoc = await findExistingWritingHistory(
+            db,
+            authorId,
+            post.boardId,
+            post.id
+        );
+
+        const writingHistoriesRef = db
+            .collection('users')
+            .doc(authorId)
+            .collection('writingHistories');
+
         const newData = createWritingHistoryData(post);
 
-        operations.push(
-            createDocumentOperation(batch, docRef, existingData, newData)
-        );
+        if (existingDoc) {
+            // 기존 문서가 있는 경우 업데이트
+            const updatedData = {
+                day: newData.day,
+                createdAt: newData.createdAt,
+                post: {
+                    ...existingDoc.data().post,
+                    contentLength: newData.post.contentLength
+                }
+            };
+            operations.push(() => 
+                batch.update(existingDoc.ref, updatedData)
+            );
+        } else {
+            // 새로운 문서 생성
+            const newDocRef = writingHistoriesRef.doc();
+            operations.push(() => 
+                batch.set(newDocRef, newData)
+            );
+        }
     }
 
     return operations;
