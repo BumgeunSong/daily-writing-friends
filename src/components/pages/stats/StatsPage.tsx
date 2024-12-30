@@ -12,16 +12,15 @@ export default function StatsPage() {
     if (error) {
         return <ErrorState error={error} />
     }
-
     return (
         <div className="min-h-screen bg-background">
             <header className="bg-primary py-4 text-primary-foreground">
-                <div className="container">
+                <div className="container px-4">
                     <h1 className="text-2xl font-bold">Friends</h1>
                 </div>
             </header>
 
-            <main className="container py-8">
+            <main className="container px-4 py-8">
                 <ScrollArea className="h-[calc(100vh-12rem)]">
                     <div className="space-y-4 pb-20">
                         {writingStats?.map((stats) => (
