@@ -15,6 +15,12 @@ interface WritingStats {
 
 type Contribution = Record<string, number | null>;
 
+// 기여도 합계 계산 함수 수정: 작성한 날의 합계로 기여도 계산
+const calculateTotalContributions = (contributions: Contribution): number => {
+    return Object.values(contributions)
+        .reduce((sum: number, value: number | null) => sum + (value !== null ? 1 : 0), 0);
+};
+
 export const getWritingStats = onRequest(async (req, res) => {
     // GET 메서드만 허용
     if (req.method !== 'GET') {
@@ -64,20 +70,28 @@ export const getWritingStats = onRequest(async (req, res) => {
                         profilePhotoURL: userData.profilePhotoURL,
                         bio: userData.bio
                     },
-                    contributions
+                    contributions,
+                    // 정렬을 위한 총 기여도 추가
+                    totalContributions: calculateTotalContributions(contributions)
                 };
             })
         );
 
         // 4. null 값 필터링 (writingHistory가 없는 사용자 제외)
-        const filteredStats = writingStats.filter(
-            (stat): stat is WritingStats => stat !== null
-        );
+        const filteredStats = writingStats
+            .filter((stat): stat is WritingStats & { totalContributions: number } => 
+                stat !== null
+            )
+            // 총 기여도 기준으로 내림차순 정렬
+            .sort((a, b) => b.totalContributions - a.totalContributions)
+            // totalContributions 필드 제거
+            .map(({ totalContributions, ...stat }) => stat);
 
         res.status(200).json({
             status: 'success',
             data: {
-                writingStats: filteredStats
+                writingStats: filteredStats,
+                workingDays
             }
         });
 
