@@ -194,7 +194,7 @@ const createBatchOperations = async (
 const executeBatchOperations = async (
     db: admin.firestore.Firestore,
     operations: Array<() => void>,
-    batchSize: number = 500
+    batchSize = 500
 ) => {
     let batch = db.batch();
     let count = 0;
