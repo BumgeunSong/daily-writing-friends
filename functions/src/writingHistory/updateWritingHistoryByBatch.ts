@@ -47,19 +47,19 @@ export const updateWritingHistoryByBatch = onRequest(async (req, res) => {
 
 
 // 날짜 포맷 변환 (Date -> YYYY-MM-DD)
-const formatDate = (date: Date): string => {
-    return date.toISOString().split('T')[0];
+const formatDate = (createdAt: Timestamp): string => {
+    return createdAt.toDate().toISOString().split('T')[0];
 };
 
 // 게시물의 WritingHistory 데이터 생성
 const createWritingHistoryData = (post: Post): WritingHistory => {
-    const createdAt = admin.firestore.Timestamp.fromDate(
-        post.createdAt || new Date()
-    );
+    if (!post.createdAt) {
+        throw new Error(`createdAt is required. But post ${post.id} has no createdAt`);
+    }
 
     return {
-        day: formatDate(post.createdAt || new Date()),
-        createdAt,
+        day: formatDate(post.createdAt),
+        createdAt: post.createdAt,
         board: {
             id: post.boardId,
         },
