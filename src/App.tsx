@@ -5,6 +5,7 @@ import { lazy } from 'react';
 import { AfterLoginLayout } from './components/common/AfterLoginLayout';
 import { LazyRoute } from './components/common/LazyRoute';
 import { useAuth } from './contexts/AuthContext';
+import StatsPage from './components/pages/stats/StatsPage';
 const RecentBoard = lazy(() => import('./components/pages/board/RecentBoard'));
 const LoginPage = lazy(() => import('./components/pages/login/LoginPage')); 
 const BoardPage = lazy(() => import('./components/pages/board/BoardPage'));
@@ -45,6 +46,7 @@ export default function App() {
         <Route path='/notifications/settings' element={<LazyRoute element={NotificationSettingPage} />} />
         <Route path='/account' element={<LazyRoute element={AccountPage} />} />
         <Route path='/account/edit' element={<LazyRoute element={EditAccountPage} />} />
+        <Route path='/stats' element={<LazyRoute element={StatsPage} />} />
       </Route>
 
       <Route path='/' element={
