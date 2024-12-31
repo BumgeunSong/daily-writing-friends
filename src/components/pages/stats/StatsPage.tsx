@@ -39,15 +39,30 @@ function LoadingState() {
                 <ScrollArea className="h-[calc(100vh-12rem)]">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
                         {[...Array(5)].map((_, index) => (
-                            <div key={index} className="animate-pulse flex items-start gap-4 p-4 bg-card rounded-md">
-                                <div className="h-12 w-12 bg-muted rounded-full"></div>
-                                <div className="flex flex-1 flex-col gap-2">
-                                    <div className="h-4 bg-muted rounded w-1/3"></div>
-                                    <div className="h-3 bg-muted rounded w-1/2"></div>
-                                    <div className="mt-1 grid grid-cols-5 gap-1">
-                                        {[...Array(20)].map((_, i) => (
-                                            <div key={i} className="h-4 w-4 bg-muted rounded-sm"></div>
-                                        ))}
+                            <div key={index} className="w-full bg-card rounded-lg">
+                                <div className="flex items-start gap-4 p-4">
+                                    {/* Left section with avatar and user info */}
+                                    <div className="flex flex-1 items-start gap-4">
+                                        {/* Avatar skeleton */}
+                                        <div className="h-12 w-12 bg-muted rounded-full" />
+                                        
+                                        {/* User info skeleton */}
+                                        <div className="flex flex-col gap-2">
+                                            <div className="h-5 w-24 bg-muted rounded" />
+                                            <div className="h-4 w-32 bg-muted rounded" />
+                                        </div>
+                                    </div>
+
+                                    {/* Right section with contribution graph */}
+                                    <div className="flex flex-col items-end gap-2">
+                                        <div className="w-24 grid grid-rows-4 grid-flow-col gap-1">
+                                            {[...Array(20)].map((_, i) => (
+                                                <div 
+                                                    key={i} 
+                                                    className="aspect-square w-full bg-muted rounded-sm"
+                                                />
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
