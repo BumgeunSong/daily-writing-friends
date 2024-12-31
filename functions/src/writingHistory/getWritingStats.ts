@@ -74,6 +74,8 @@ export const getWritingStats = onRequest(
                         historiesSnapshot.docs
                     );
 
+                    const badges = createBadges(workingDays, historiesSnapshot.docs);
+
                     // WritingStats 생성
                     const userData = userDoc.data();
                     return {
@@ -85,7 +87,7 @@ export const getWritingStats = onRequest(
                             bio: userData.bio
                         },
                         contributions,
-                        badges: createBadges(contributions),
+                        badges: badges,
                         // 정렬을 위한 총 기여도 추가
                         totalContributions: calculateTotalContributions(contributions)
                     };
@@ -161,8 +163,11 @@ function createContributions(
     return contributions;
 }
 
-function createBadges(contributions: Contribution[]): WritingBadge[] {
-    const recentStreak = calculateRecentStreakIncludingLastDay(contributions);
+function createBadges(
+    workingDays: string[],
+    histories: admin.firestore.QueryDocumentSnapshot[]
+): WritingBadge[] {
+    const recentStreak = calculateRecentStreakIncludingLastDay(workingDays, histories);
     if (recentStreak < 2) {
         return [];
     }
@@ -174,16 +179,19 @@ function createBadges(contributions: Contribution[]): WritingBadge[] {
         }
     ];
 }
-
-function calculateRecentStreakIncludingLastDay(contributions: Contribution[]): number {
-    // if last day's contribution is null, return 0
-    // if last day's contribution is not null, check the day before (traverse backwards)
-    // sum up the number of days until the contribution is null
-    // return the sum       
-    return contributions.reverse().reduce((sum: number, value: Contribution) => {
-        if (value.contentLength === null) {
-            return sum;
+function calculateRecentStreakIncludingLastDay(
+    workingDays: string[],
+    histories: admin.firestore.QueryDocumentSnapshot[]
+): number {
+    let streak = 0;
+    for (const day of workingDays.reverse()) {
+        const isHistoryExistOnDay = histories.some(history => history.data().day === day);
+        if (isHistoryExistOnDay) {
+            streak += 1;
+        } else {
+            streak = 0;
+            break;
         }
-        return sum + 1;
-    }, 0);
+    }
+    return streak;
 }
