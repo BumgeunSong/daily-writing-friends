@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
 import { User } from '@/types/User';
-import { fetchAllUserData, fetchAllUserDataWithBoardPermission } from '@/utils/userUtils';
+import { fetchAllUserDataWithBoardPermission } from '@/utils/userUtils';
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
 import { ScrollArea, ScrollBar } from '../../ui/scroll-area';
 

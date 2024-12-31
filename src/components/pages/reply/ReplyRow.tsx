@@ -1,4 +1,3 @@
-import DOMPurify from 'dompurify';
 import { Edit, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

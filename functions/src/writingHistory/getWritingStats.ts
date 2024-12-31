@@ -33,7 +33,8 @@ export const getWritingStats = onRequest(
     { 
         cors: [
             'http://localhost:5173',
-            'https://www.dailywritingfriends.com'
+            'https://www.dailywritingfriends.com',
+            'https://dailywritingfriends.com'
         ] 
     },
     async (req, res) => {
