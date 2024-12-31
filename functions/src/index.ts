@@ -8,6 +8,7 @@ import { decrementCommentCountOnCommentDeleted, incrementCommentCountOnCommentCr
 import { decrementRepliesCountOnReplyDeleted, incrementRepliesCountOnReplyCreated } from './notifications/incrementRepliesCount';
 import { updateWritingHistoryByBatch } from './writingHistory/updateWritingHistoryByBatch';
 import { getWritingStats } from './writingHistory/getWritingStats';
+import { createWritingHistoryOnPostCreated } from './writingHistory/createWritingHistoryOnPostCreated';
 export {
   onCommentCreated,
   onReplyCreatedOnComment,
@@ -20,5 +21,6 @@ export {
   incrementRepliesCountOnReplyCreated,
   decrementRepliesCountOnReplyDeleted,
   updateWritingHistoryByBatch,
-  getWritingStats
+  getWritingStats,
+  createWritingHistoryOnPostCreated
 };
