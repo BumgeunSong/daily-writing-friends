@@ -121,7 +121,7 @@ const formatDate = (createdAt: Timestamp): string => {
 };
 
 // 게시물의 WritingHistory 데이터 생성
-const createWritingHistoryData = (post: Post): WritingHistory => {
+export const createWritingHistoryData = (post: Post): WritingHistory => {
     if (!post.createdAt) {
         throw new Error(`createdAt is required. But post ${post.id} has no createdAt`);
     }
