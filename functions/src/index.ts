@@ -9,6 +9,7 @@ import { decrementRepliesCountOnReplyDeleted, incrementRepliesCountOnReplyCreate
 import { updateWritingHistoryByBatch } from './writingHistory/updateWritingHistoryByBatch';
 import { getWritingStats } from './writingHistory/getWritingStats';
 import { createWritingHistoryOnPostCreated } from './writingHistory/createWritingHistoryOnPostCreated';
+import { deleteWritingHistoryOnPostDeleted } from './writingHistory/deleteWritingHistoryOnPostDeleted';
 export {
   onCommentCreated,
   onReplyCreatedOnComment,
@@ -22,5 +23,6 @@ export {
   decrementRepliesCountOnReplyDeleted,
   updateWritingHistoryByBatch,
   getWritingStats,
-  createWritingHistoryOnPostCreated
+  createWritingHistoryOnPostCreated,
+  deleteWritingHistoryOnPostDeleted
 };
