@@ -11,11 +11,17 @@ interface WritingStats {
         bio: string | null;
     }
     contributions: Contribution[];
+    badges: WritingBadge[];
 }
 
 type Contribution = {
     date: string;
     contentLength: number | null;
+}
+
+export interface WritingBadge {
+    name: string
+    emoji: string
 }
 
 // 기여도 합계 계산 함수 수정: 작성한 날의 합계로 기여도 계산
@@ -79,6 +85,7 @@ export const getWritingStats = onRequest(
                             bio: userData.bio
                         },
                         contributions,
+                        badges: createBadges(contributions),
                         // 정렬을 위한 총 기여도 추가
                         totalContributions: calculateTotalContributions(contributions)
                     };
@@ -152,4 +159,31 @@ function createContributions(
     });
 
     return contributions;
+}
+
+function createBadges(contributions: Contribution[]): WritingBadge[] {
+    const recentStreak = calculateRecentStreakIncludingLastDay(contributions);
+    if (recentStreak < 2) {
+        return [];
+    }
+
+    return [
+        {
+            name: `연속 ${recentStreak}일차`,
+            emoji: '🔥'
+        }
+    ];
+}
+
+function calculateRecentStreakIncludingLastDay(contributions: Contribution[]): number {
+    // if last day's contribution is null, return 0
+    // if last day's contribution is not null, check the day before (traverse backwards)
+    // sum up the number of days until the contribution is null
+    // return the sum       
+    return contributions.reverse().reduce((sum: number, value: Contribution) => {
+        if (value.contentLength === null) {
+            return sum;
+        }
+        return sum + 1;
+    }, 0);
 }
