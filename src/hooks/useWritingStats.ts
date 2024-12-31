@@ -14,9 +14,16 @@ interface WritingStatsResponse {
 }
 
 const fetchWritingStats = async (): Promise<WritingStats[]> => {
-    const response = await fetch('https://getwritingstats-ifrsorhslq-uc.a.run.app/', {
-        method: 'GET',
-    });
+    try {
+        const response = await fetch('https://getwritingstats-ifrsorhslq-uc.a.run.app/', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            mode: 'cors',
+            credentials: 'omit'
+        });
 
     if (!response.ok) {
         throw new Error('Network response was not ok');
