@@ -1,29 +1,19 @@
+import { useMemo } from "react"
 import { Contribution } from "@/types/WritingStats"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-
+import processContributions from "@/utils/contributionUtils"
 interface ContributionGraphProps {
     contributions: Contribution[]
     className?: string
 }
 
 export function ContributionGraph({ contributions, className }: ContributionGraphProps) {
-    // 4x5 매트릭스를 생성 (20일)
-    const matrix: (number | null)[][] = Array.from({ length: 4 }, () => Array(5).fill(null));
-
-    // 최근 20일의 기여도를 가져와서 오래된 순으로 정렬
-    const recentContributions = contributions
-        .slice(-20)
-
-    // 매트릭스를 채우기 (왼쪽에서 오른쪽으로, 위에서 아래로)
-    recentContributions.forEach((contribution, index) => {
-        const row = Math.floor(index / 5); // 5열로 변경
-        const col = index % 5;
-        matrix[row][col] = contribution.contentLength;
-    });
-
-    // 최대값 계산
-    const maxValue = Math.max(...contributions.map(c => c.contentLength || 0));
+    // 분리된 함수를 useMemo에서 호출
+    const { matrix, maxValue, recentContributions } = useMemo(
+        () => processContributions(contributions),
+        [contributions]
+    );
 
     return (
         <div className={cn("w-full grid grid-rows-4 grid-flow-col gap-1", className)}>
