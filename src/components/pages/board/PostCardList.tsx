@@ -3,7 +3,6 @@ import PostCard from '../post/PostCard';
 import StatusMessage from '../../common/StatusMessage';
 import { usePosts } from '@/hooks/usePosts';
 import { useInView } from 'react-intersection-observer';
-import { Skeleton } from '@/components/ui/skeleton';
 import PostCardSkeleton from '@/components/ui/PostCardSkeleton';
 
 interface PostCardListProps {

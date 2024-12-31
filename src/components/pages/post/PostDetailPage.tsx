@@ -1,4 +1,3 @@
-import DOMPurify from 'dompurify';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { Edit, Trash2 } from 'lucide-react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
