@@ -167,7 +167,7 @@ function createBadges(
     workingDays: string[],
     histories: admin.firestore.QueryDocumentSnapshot[]
 ): WritingBadge[] {
-    const recentStreak = calculateRecentStreakIncludingLastDay(workingDays, histories);
+    const recentStreak = calculateRecentStreak(workingDays, histories);
     if (recentStreak < 2) {
         return [];
     }
@@ -179,19 +179,26 @@ function createBadges(
         }
     ];
 }
-function calculateRecentStreakIncludingLastDay(
+
+function calculateRecentStreak(
     workingDays: string[],
     histories: admin.firestore.QueryDocumentSnapshot[]
 ): number {
+    const reversedDays = [...workingDays].reverse();
     let streak = 0;
-    for (const day of workingDays.reverse()) {
-        const isHistoryExistOnDay = histories.some(history => history.data().day === day);
-        if (isHistoryExistOnDay) {
-            streak += 1;
+    
+    for (const day of reversedDays) {
+        const hasWritingHistory = histories.some(history => {
+            const data = history.data();
+            return data.day === day && data.post?.contentLength != null;
+        });
+
+        if (hasWritingHistory) {
+            streak++;
         } else {
-            streak = 0;
             break;
         }
     }
+
     return streak;
 }
