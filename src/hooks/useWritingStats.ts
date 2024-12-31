@@ -2,7 +2,7 @@
 // return writing stats
 import { useQuery } from '@tanstack/react-query'
 import { WritingStats } from "@/types/WritingStats"
-
+import * as Sentry from '@sentry/react';
 interface WritingStatsResponse {
     status: 'success' | 'error';
     data: {
@@ -25,18 +25,42 @@ const fetchWritingStats = async (): Promise<WritingStats[]> => {
             credentials: 'omit'
         });
 
-    if (!response.ok) {
-        throw new Error('Network response was not ok');
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+        }
+
+        const json: WritingStatsResponse = await response.json();
+
+        if (json.status === 'error') {
+            throw new Error(json.error?.message || 'Server returned an error');
+        }
+
+        if (!json.data?.writingStats) {
+            throw new Error('Invalid response format: missing writingStats');
+        }
+
+        return json.data.writingStats;
+    } catch (error) {
+        // 더 자세한 에러 정보 제공
+        const errorMessage = error instanceof Error 
+            ? error.message 
+            : 'Failed to fetch writing stats';
+
+        // Sentry 에러 보고 추가
+        if (typeof Sentry !== 'undefined') {
+            Sentry.captureException(error, {
+                tags: {
+                    url: 'getwritingstats-endpoint',
+                },
+                extra: {
+                    errorMessage,
+                    timestamp: new Date().toISOString(),
+                },
+            });
+        }
+        throw new Error(errorMessage);
     }
-
-    const json: WritingStatsResponse = await response.json();
-
-    if (json.status === 'error') {
-        throw new Error(json.error?.message || 'Unknown error');
-    }
-
-    // writingStats 배열이 없는 경우 빈 배열 반환
-    return json.data.writingStats || [];
 }
 
 export const useWritingStats = () => {
