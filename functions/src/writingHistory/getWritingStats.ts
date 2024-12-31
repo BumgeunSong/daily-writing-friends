@@ -11,11 +11,17 @@ interface WritingStats {
         bio: string | null;
     }
     contributions: Contribution[];
+    badges: WritingBadge[];
 }
 
 type Contribution = {
     date: string;
     contentLength: number | null;
+}
+
+export interface WritingBadge {
+    name: string
+    emoji: string
 }
 
 // 기여도 합계 계산 함수 수정: 작성한 날의 합계로 기여도 계산
@@ -68,6 +74,8 @@ export const getWritingStats = onRequest(
                         historiesSnapshot.docs
                     );
 
+                    const badges = createBadges(workingDays, historiesSnapshot.docs);
+
                     // WritingStats 생성
                     const userData = userDoc.data();
                     return {
@@ -79,6 +87,7 @@ export const getWritingStats = onRequest(
                             bio: userData.bio
                         },
                         contributions,
+                        badges: badges,
                         // 정렬을 위한 총 기여도 추가
                         totalContributions: calculateTotalContributions(contributions)
                     };
@@ -152,4 +161,44 @@ function createContributions(
     });
 
     return contributions;
+}
+
+function createBadges(
+    workingDays: string[],
+    histories: admin.firestore.QueryDocumentSnapshot[]
+): WritingBadge[] {
+    const recentStreak = calculateRecentStreak(workingDays, histories);
+    if (recentStreak < 2) {
+        return [];
+    }
+
+    return [
+        {
+            name: `연속 ${recentStreak}일차`,
+            emoji: '🔥'
+        }
+    ];
+}
+
+function calculateRecentStreak(
+    workingDays: string[],
+    histories: admin.firestore.QueryDocumentSnapshot[]
+): number {
+    const reversedDays = [...workingDays].reverse();
+    let streak = 0;
+    
+    for (const day of reversedDays) {
+        const hasWritingHistory = histories.some(history => {
+            const data = history.data();
+            return data.day === day && data.post?.contentLength != null;
+        });
+
+        if (hasWritingHistory) {
+            streak++;
+        } else {
+            break;
+        }
+    }
+
+    return streak;
 }

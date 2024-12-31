@@ -1,8 +1,9 @@
-import { Home, Bell, User } from 'lucide-react';
+import { Home, Bell, User, ChartNoAxesColumnIncreasing } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 const tabs = [
   { name: 'Home', icon: Home, path: '/boards' },
+  { name: 'Stats', icon: ChartNoAxesColumnIncreasing, path: '/stats' },
   { name: 'Notifications', icon: Bell, path: '/notifications' },
   { name: 'Account', icon: User, path: '/account' },
 ];

@@ -7,9 +7,15 @@ export interface WritingStats {
         bio: string | null;
     }
     contributions: Contribution[];
+    badges: WritingBadge[];
 }
 
 export type Contribution = {
     date: string;
     contentLength: number | null;
+}
+
+export interface WritingBadge {
+    name: string
+    emoji: string
 }
