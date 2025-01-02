@@ -12,9 +12,12 @@ export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
   const [selectedAuthorId, setSelectedAuthorId] = useState<string | null>(null);
+  const [posts, setPosts] = useState([]);
+
   const { saveScrollPosition } = useScrollRestoration({
     key: boardId || '',
-    enabled: !!boardId
+    enabled: !!boardId,
+    deps: [posts]
   });
 
   const handlePostClick = (postId: string) => {
@@ -54,6 +57,7 @@ export default function BoardPage() {
           boardId={boardId!}
           onPostClick={handlePostClick}
           selectedAuthorId={selectedAuthorId}
+          onPostsLoad={setPosts}
         />
       </main>
       <Link
