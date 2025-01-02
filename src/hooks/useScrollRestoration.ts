@@ -1,50 +1,58 @@
 import { useEffect } from 'react';
 
-interface UseScrollRestorationProps {
-  key: string;
-  enabled?: boolean;
-}
-
-export const useScrollRestoration = ({ key, enabled = true }: UseScrollRestorationProps) => {
-  useEffect(() => {
-    if (!enabled || !key) return;
-
-    try {
-      const savedScrollPosition = sessionStorage.getItem(`scrollPosition-${key}`);
-      if (savedScrollPosition) {
-        window.requestAnimationFrame(() => {
-          try {
-            window.scrollTo({
-              top: parseInt(savedScrollPosition, 10),
-              behavior: 'instant'
-            });
-          } catch (error) {
-            console.error('Scroll restoration failed:', error);
-          }
+// 스크롤 위치 복원 함수
+const restoreScrollPosition = (key: string) => {
+  try {
+    const savedScrollPosition = sessionStorage.getItem(`scrollPosition-${key}`);
+    if (savedScrollPosition) {
+      const targetPosition = parseInt(savedScrollPosition, 10);
+      setTimeout(() => {
+        window.scrollTo({
+          top: targetPosition,
+          behavior: 'instant'
         });
-      }
-    } catch (error) {
-      console.error('Session storage access failed:', error);
+      }, 100);
     }
+  } catch (error) {
+    console.error('❌ Scroll restoration failed:', error);
+  }
+};
 
-    return () => {
-      try {
-        sessionStorage.setItem(`scrollPosition-${key}`, window.scrollY.toString());
-      } catch (error) {
-        console.error('Failed to save scroll position:', error);
-      }
-    };
-  }, [key, enabled]);
+// 스크롤 위치 저장 함수
+const saveScrollPosition = (key: string) => {
+  try {
+    const currentPosition = window.scrollY;
+    sessionStorage.setItem(`scrollPosition-${key}`, currentPosition.toString());
+  } catch (error) {
+    console.error('❌ Failed to save scroll position:', error);
+  }
+};
 
-  const saveScrollPosition = () => {
-    if (!enabled || !key) return;
-    
-    try {
-      sessionStorage.setItem(`scrollPosition-${key}`, window.scrollY.toString());
-    } catch (error) {
-      console.error('Failed to save scroll position:', error);
-    }
+export const useScrollRestoration = (key: string) => {
+  const handleRestoreScroll = () => {
+    if (!key) return;
+    restoreScrollPosition(key);
   };
 
-  return { saveScrollPosition };
+  const handleSaveScroll = () => {
+    if (!key) return;
+    saveScrollPosition(key);
+  };
+
+  useEffect(() => {
+    handleRestoreScroll();
+
+    window.addEventListener('beforeunload', handleSaveScroll);
+    window.addEventListener('popstate', handleSaveScroll);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleSaveScroll);
+      window.removeEventListener('popstate', handleSaveScroll);
+    };
+  }, [key]);
+
+  return {
+    saveScrollPosition: handleSaveScroll,
+    restoreScrollPosition: handleRestoreScroll,
+  };
 };
