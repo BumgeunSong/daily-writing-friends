@@ -1,53 +1,58 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 
-interface UseScrollRestorationProps {
-  key: string;
-  enabled?: boolean;
-  deps?: any[];
-}
-
-export const useScrollRestoration = ({ 
-  key, 
-  enabled = true,
-  deps = [] 
-}: UseScrollRestorationProps) => {
-  const restoreScrollPosition = useCallback(() => {
-    if (!enabled || !key) return;
-
-    try {
-      const savedScrollPosition = sessionStorage.getItem(`scrollPosition-${key}`);
-      if (savedScrollPosition) {
-        setTimeout(() => {
-          window.scrollTo({
-            top: parseInt(savedScrollPosition, 10),
-            behavior: 'instant'
-          });
-        }, 100);
-      }
-    } catch (error) {
-      console.error('Scroll restoration failed:', error);
+// 스크롤 위치 복원 함수
+const restoreScrollPosition = (key: string) => {
+  try {
+    const savedScrollPosition = sessionStorage.getItem(`scrollPosition-${key}`);
+    if (savedScrollPosition) {
+      const targetPosition = parseInt(savedScrollPosition, 10);
+      setTimeout(() => {
+        window.scrollTo({
+          top: targetPosition,
+          behavior: 'instant'
+        });
+      }, 100);
     }
-  }, [key, enabled]);
+  } catch (error) {
+    console.error('❌ Scroll restoration failed:', error);
+  }
+};
 
-  const saveScrollPosition = useCallback(() => {
-    if (!enabled || !key) return;
-    
-    try {
-      sessionStorage.setItem(`scrollPosition-${key}`, window.scrollY.toString());
-    } catch (error) {
-      console.error('Failed to save scroll position:', error);
-    }
-  }, [key, enabled]);
+// 스크롤 위치 저장 함수
+const saveScrollPosition = (key: string) => {
+  try {
+    const currentPosition = window.scrollY;
+    sessionStorage.setItem(`scrollPosition-${key}`, currentPosition.toString());
+  } catch (error) {
+    console.error('❌ Failed to save scroll position:', error);
+  }
+};
+
+export const useScrollRestoration = (key: string) => {
+  const handleRestoreScroll = () => {
+    if (!key) return;
+    restoreScrollPosition(key);
+  };
+
+  const handleSaveScroll = () => {
+    if (!key) return;
+    saveScrollPosition(key);
+  };
 
   useEffect(() => {
-    restoreScrollPosition();
-  }, [restoreScrollPosition, ...deps]);
+    handleRestoreScroll();
 
-  useEffect(() => {
+    window.addEventListener('beforeunload', handleSaveScroll);
+    window.addEventListener('popstate', handleSaveScroll);
+
     return () => {
-      saveScrollPosition();
+      window.removeEventListener('beforeunload', handleSaveScroll);
+      window.removeEventListener('popstate', handleSaveScroll);
     };
-  }, [saveScrollPosition]);
+  }, [key]);
 
-  return { saveScrollPosition };
+  return {
+    saveScrollPosition: handleSaveScroll,
+    restoreScrollPosition: handleRestoreScroll,
+  };
 };
