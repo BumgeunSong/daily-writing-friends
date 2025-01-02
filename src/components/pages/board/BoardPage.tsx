@@ -6,22 +6,13 @@ import AuthorList from './AuthorList';
 import BoardHeader from './BoardHeader';
 import PostCardList from './PostCardList';
 import { Button } from '../../ui/button';
-import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
   const [selectedAuthorId, setSelectedAuthorId] = useState<string | null>(null);
-  const [posts, setPosts] = useState([]);
-
-  const { saveScrollPosition } = useScrollRestoration({
-    key: boardId || '',
-    enabled: !!boardId,
-    deps: [posts]
-  });
 
   const handlePostClick = (postId: string) => {
-    saveScrollPosition();
     navigate(`/post/${postId}`);
   };
 
@@ -57,7 +48,6 @@ export default function BoardPage() {
           boardId={boardId!}
           onPostClick={handlePostClick}
           selectedAuthorId={selectedAuthorId}
-          onPostsLoad={setPosts}
         />
       </main>
       <Link
