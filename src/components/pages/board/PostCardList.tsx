@@ -4,7 +4,7 @@ import StatusMessage from '../../common/StatusMessage';
 import { usePosts } from '@/hooks/usePosts';
 import { useInView } from 'react-intersection-observer';
 import PostCardSkeleton from '@/components/ui/PostCardSkeleton';
-
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 interface PostCardListProps {
   boardId: string;
   onPostClick: (postId: string) => void;
@@ -26,11 +26,15 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, selec
 
   const allPosts = postPages?.pages.flatMap((page) => page) || [];
 
+  const { saveScrollPosition, restoreScrollPosition } = useScrollRestoration(`${boardId}-posts`);
+
   const handlePostClick = (postId: string) => {
     onPostClick(postId);
+    saveScrollPosition();
   };
 
   useEffect(() => {
+    restoreScrollPosition();
     if (inView && hasNextPage) {
       fetchNextPage();
     }
