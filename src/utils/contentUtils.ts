@@ -2,15 +2,10 @@ import DOMPurify from 'dompurify';
 
 // 게시글 본문용 DOMPurify 설정
 const sanitizePostContent = (content: string): string => {
-  // DOMPurify 설정
-  const config = {
-    ADD_ATTR: ['target'],
-    ADD_TAGS: ['a', 'ul', 'ol', 'li'], // ul 태그 허용
-  };
-
-  // HTML 정제 및 변환
-  const sanitized = DOMPurify.sanitize(content, config);
-  return convertBulletListToUl(sanitized);
+  // 가장 기본적인 설정만 유지
+  return DOMPurify.sanitize(content, {
+    USE_PROFILES: { html: true }
+  });
 };
 
 // Quill에서 bullet list를 사용하는 경우, ol 태그를 사용하기 때문에 직접 ul 태그로 바꿔준다.
@@ -34,8 +29,7 @@ const convertBulletListToUl = (html: string): string => {
 // 댓글/답글용 DOMPurify 설정 (게시글과 동일하게 적용)
 const sanitizeCommentContent = (content: string): string => {
   return DOMPurify.sanitize(convertUrlsToLinks(content), {
-    ADD_ATTR: ['target', 'data-list'],
-    ADD_TAGS: ['a', 'ol', 'li'],
+    USE_PROFILES: { html: true }
   });
 };
 
