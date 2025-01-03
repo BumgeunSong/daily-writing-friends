@@ -34,11 +34,16 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, selec
   };
 
   useEffect(() => {
-    restoreScrollPosition();
     if (inView && hasNextPage) {
       fetchNextPage();
     }
   }, [inView, hasNextPage, fetchNextPage]);
+
+  useEffect(() => {
+    if (boardId) {
+      restoreScrollPosition();
+    }
+  }, [boardId]);
 
   if (isLoading) {
     return (
