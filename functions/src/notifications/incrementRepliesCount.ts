@@ -3,7 +3,7 @@ import admin from "../admin";
 
 // 답글 생성 시
 export const incrementRepliesCountOnReplyCreated = onDocumentCreated(  
-    "boards/{boardId}/posts/{postId}/comments/{commentId}/reply/{replyId}",
+    "boards/{boardId}/posts/{postId}/comments/{commentId}/replies/{replyId}",
     async (event) => {
         await incrementRepliesCount(event.params.boardId, event.params.postId, 1);
     }
@@ -11,7 +11,7 @@ export const incrementRepliesCountOnReplyCreated = onDocumentCreated(
 
 // 답글 삭제 시
 export const decrementRepliesCountOnReplyDeleted = onDocumentDeleted(  
-    "boards/{boardId}/posts/{postId}/comments/{commentId}/reply/{replyId}",
+    "boards/{boardId}/posts/{postId}/comments/{commentId}/replies/{replyId}",
     async (event) => {
         await incrementRepliesCount(event.params.boardId, event.params.postId, -1);
     }
