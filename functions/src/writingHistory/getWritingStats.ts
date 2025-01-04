@@ -71,7 +71,8 @@ export const getWritingStats = onRequest(
                         historiesSnapshot.docs
                     );
 
-                    const badges = createBadges(workingDays, historiesSnapshot.docs);
+                    const streak = calculateRecentStreak(workingDays, historiesSnapshot.docs);
+                    const badges = createBadges(streak);
 
                     // WritingStats 생성
                     const userData = userDoc.data();
@@ -84,8 +85,9 @@ export const getWritingStats = onRequest(
                             bio: userData.bio
                         },
                         contributions,
-                        badges: badges,
-                        // 정렬을 위한 총 기여도 추가
+                        badges,
+                        // 정렬을 위한 임시 필드들
+                        streak,
                         totalContributions: calculateTotalContributions(contributions)
                     };
                 })
@@ -95,10 +97,17 @@ export const getWritingStats = onRequest(
                 .filter((stat): stat is Exclude<typeof stat, null> => 
                     stat !== null
                 )
-                // 총 기여도 기준으로 내림차순 정렬
-                .sort((a, b) => (b?.totalContributions ?? 0) - (a?.totalContributions ?? 0))
-                // totalContributions 필드 제거
-                .map(({ totalContributions, ...stat }) => stat);
+                // streak 우선, 동일한 경우 totalContributions로 정렬
+                .sort((a, b) => {
+                    // streak 기준 내림차순 정렬
+                    if (b.streak !== a.streak) {
+                        return b.streak - a.streak;
+                    }
+                    // streak가 같은 경우 totalContributions로 정렬
+                    return b.totalContributions - a.totalContributions;
+                })
+                // 임시 필드 제거
+                .map(({ streak, totalContributions, ...stat }) => stat);
 
             res.status(200).json({
                 status: 'success',
@@ -160,21 +169,15 @@ function createContributions(
     return contributions;
 }
 
-function createBadges(
-    workingDays: string[],
-    histories: admin.firestore.QueryDocumentSnapshot[]
-): WritingBadge[] {
-    const recentStreak = calculateRecentStreak(workingDays, histories);
-    if (recentStreak < 2) {
+function createBadges(streak: number): WritingBadge[] {
+    if (streak < 2) {
         return [];
     }
 
-    return [
-        {
-            name: `연속 ${recentStreak}일차`,
-            emoji: '🔥'
-        }
-    ];
+    return [{
+        name: `연속 ${streak}일차`,
+        emoji: '🔥'
+    }];
 }
 
 function calculateRecentStreak(
