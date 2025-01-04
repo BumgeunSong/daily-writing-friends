@@ -115,11 +115,6 @@ const handleError = (error: unknown, res: Response) => {
     });
 };
 
-// 날짜 포맷 변환 (Date -> YYYY-MM-DD)
-const formatDate = (createdAt: Timestamp): string => {
-    return createdAt.toDate().toISOString().split('T')[0];
-};
-
 // 게시물의 WritingHistory 데이터 생성
 export const createWritingHistoryData = (post: Post): WritingHistory => {
     if (!post.createdAt) {
@@ -127,7 +122,6 @@ export const createWritingHistoryData = (post: Post): WritingHistory => {
     }
 
     return {
-        day: formatDate(post.createdAt),
         createdAt: post.createdAt,
         board: {
             id: post.boardId,
@@ -211,7 +205,6 @@ const createAuthorOperations = async (
 
         if (existingDoc) {
             const updatedData = {
-                day: newData.day,
                 createdAt: newData.createdAt,
                 post: {
                     ...existingDoc.data().post,
