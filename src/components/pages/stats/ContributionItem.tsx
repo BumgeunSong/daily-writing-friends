@@ -10,8 +10,8 @@ interface ContributionItemProps {
 
 export function ContributionItem({ contribution, value, maxValue }: ContributionItemProps) {
     const intensity = !value ? 0 : Math.ceil((value / maxValue) * 4);
-    const date = contribution?.date;
-    const day = date ? new Date(date).getDate() : '';
+    const createdAt = contribution?.createdAt;
+    const day = createdAt ? new Date(createdAt).getDate() : '';
 
     return (
         <TooltipProvider>
@@ -37,7 +37,7 @@ export function ContributionItem({ contribution, value, maxValue }: Contribution
                 </TooltipTrigger>
                 <TooltipContent>
                     <p className="text-xs">
-                        {date}
+                        {createdAt}
                     </p>
                 </TooltipContent>
             </Tooltip>

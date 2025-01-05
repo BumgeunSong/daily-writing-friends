@@ -11,7 +11,7 @@ export interface WritingStats {
 }
 
 export type Contribution = {
-    date: string;
+    createdAt: string;
     contentLength: number | null;
 }
 
