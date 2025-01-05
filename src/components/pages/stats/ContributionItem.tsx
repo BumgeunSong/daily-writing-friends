@@ -11,7 +11,8 @@ interface ContributionItemProps {
 export function ContributionItem({ contribution, value, maxValue }: ContributionItemProps) {
     const intensity = !value ? 0 : Math.ceil((value / maxValue) * 4);
     const createdAt = contribution?.createdAt;
-    const day = createdAt ? new Date(createdAt).getDate() : '';
+    const yearMonthDay = createdAt ? new Date(createdAt).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '';
+    const day = createdAt ? new Date(createdAt).getDate().toString() : '';
 
     return (
         <TooltipProvider>
@@ -37,7 +38,7 @@ export function ContributionItem({ contribution, value, maxValue }: Contribution
                 </TooltipTrigger>
                 <TooltipContent>
                     <p className="text-xs">
-                        {createdAt}
+                        {yearMonthDay}
                     </p>
                 </TooltipContent>
             </Tooltip>
