@@ -2,7 +2,6 @@ import * as admin from 'firebase-admin';
 import { onRequest } from 'firebase-functions/v2/https';
 import { Post } from '../types/Post';
 import { WritingHistory } from '../types/WritingHistory';
-import { Timestamp } from 'firebase-admin/firestore';
 import { Request, Response } from 'express';
 
 export const updateWritingHistoryByBatch = onRequest(async (req, res) => {
