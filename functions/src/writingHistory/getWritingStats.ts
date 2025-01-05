@@ -1,6 +1,8 @@
 import { onRequest } from "firebase-functions/v2/https";
 import admin from "../admin";
-import { isWorkingDay } from "../notifications/isWorkingDay";
+import { Timestamp } from "firebase-admin/firestore";
+import { WritingHistory } from "../types/WritingHistory";
+import { getRecentWorkingDays, isSameDay, TimeZone } from "../dateUtils";
 
 interface UserData {
     id: string;
@@ -22,7 +24,7 @@ interface WritingStats {
 }
 
 type Contribution = {
-    date: string;
+    createdAt: Timestamp;
     contentLength: number | null;
 }
 
@@ -48,8 +50,8 @@ const createUserProfile = (id: string, data: FirebaseFirestore.DocumentData): Us
 // 단일 사용자의 WritingStats 생성 (순수 함수)
 const createUserWritingStats = (
     userData: UserData,
-    histories: FirebaseFirestore.QueryDocumentSnapshot[],
-    workingDays: string[]
+    histories: WritingHistory[],
+    workingDays: Date[]
 ): WritingStatsWithMeta | null => {
     if (histories.length === 0) return null;
 
@@ -84,14 +86,14 @@ const fetchUserWritingHistory = async (
     userDoc: FirebaseFirestore.QueryDocumentSnapshot
 ): Promise<{
     userData: UserData;
-    histories: FirebaseFirestore.QueryDocumentSnapshot[];
+    histories: WritingHistory[];
 }> => {
     const histories = await userDoc.ref.collection('writingHistories').get();
     const userData = createUserProfile(userDoc.id, userDoc.data());
 
     return {
         userData,
-        histories: histories.docs
+        histories: histories.docs.map(doc => doc.data() as WritingHistory)
     };
 };
 
@@ -145,60 +147,33 @@ export const getWritingStats = onRequest(
     }
 );
 
-// 최근 N개의 영업일 계산
-function getRecentWorkingDays(count: number): string[] {
-    const workingDays: string[] = [];
-    const currentDate = new Date();
-    
-    while (workingDays.length < count) {
-        if (isWorkingDay(currentDate)) {
-            workingDays.push(
-                currentDate.toISOString().split('T')[0]
-            );
-        }
-        currentDate.setDate(currentDate.getDate() - 1);
-    }
-    
-    return workingDays.reverse();
+function createContributions(workingDays: Date[], histories: WritingHistory[]): Contribution[] {
+    return workingDays.map(day => createContribution(day, histories));
 }
-// Contribution 객체 생성
-function createContributions(
-    workingDays: string[],
-    histories: admin.firestore.QueryDocumentSnapshot[]
-): Contribution[] {
-    // 모든 영업일에 대해 초기값 null 설정
-    const contributions = workingDays.map(day => ({
-        date: day,
-        contentLength: null
-    }));
 
-    // writingHistory에서 컨텐츠 길이 매핑
-    histories.forEach(history => {
-        const data = history.data();
-        const day = data.day;
+function createContribution(workingDay: Date, histories: WritingHistory[]): Contribution {
+    const history = histories.find(history => 
+        isSameDay(history.createdAt.toDate(), workingDay, TimeZone.KST)
+    );
 
-        if (workingDays.includes(day)) {
-            const contribution = contributions.find(contribution => contribution.date === day);
-            if (contribution) {
-                contribution.contentLength = data.post?.contentLength ?? null;
-            }
-        }
-    });
-
-    return contributions;
+    return {
+        createdAt: Timestamp.fromDate(workingDay),
+        contentLength: history?.post?.contentLength ?? null
+    };
 }
 
 function calculateRecentStreak(
-    workingDays: string[],
-    histories: admin.firestore.QueryDocumentSnapshot[]
+    workingDays: Date[],
+    histories: WritingHistory[]
 ): number {
     const reversedDays = [...workingDays].reverse();
     let streak = 0;
     
     for (const day of reversedDays) {
         const hasWritingHistory = histories.some(history => {
-            const data = history.data();
-            return data.day === day && data.post?.contentLength != null;
+            const isSameDayAsWorkingDay = isSameDay(history.createdAt.toDate(), day, TimeZone.KST);
+            const hasContentLength = history.post?.contentLength != null;
+            return isSameDayAsWorkingDay && hasContentLength;
         });
 
         if (hasWritingHistory) {
