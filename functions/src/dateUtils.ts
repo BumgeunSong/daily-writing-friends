@@ -47,17 +47,39 @@ function isWeekendByKST(date: Date, timeZone: TimeZone): boolean {
     return dayOfWeek === 0 || dayOfWeek === 6;
 }
 
+/**
+ * 주어진 날짜로부터 이전 날짜를 생성하는 순수 함수
+ */
+function getPreviousDate(date: Date): Date {
+    const previousDate = new Date(date);
+    previousDate.setDate(date.getDate() - 1);
+    return previousDate;
+}
+
+/**
+ * 주어진 날짜를 자정(00:00:00)으로 정규화하는 순수 함수
+ */
+function normalizeToMidnight(date: Date): Date {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    return normalized;
+}
+
+/**
+ * 최근 근무일 배열을 생성하는 순수 함수
+ */
 export function getRecentWorkingDays(count: number): Date[] {
     const workingDays: Date[] = [];
-    const currentDate = new Date();
+    let currentDate = normalizeToMidnight(new Date());
 
     while (workingDays.length < count) {
         if (isWorkingDay(currentDate)) {
-            workingDays.push(currentDate);
+            workingDays.push(new Date(currentDate));
         }
-        currentDate.setDate(currentDate.getDate() - 1);
+        currentDate = getPreviousDate(currentDate);
     }
 
+    // 날짜 오름차순 정렬 (과거 -> 최근)
     return workingDays.reverse();
 }
 
