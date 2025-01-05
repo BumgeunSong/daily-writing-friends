@@ -1,6 +1,4 @@
-import { WritingHistory } from "@/types/\bWritingHistory";
-
-enum TimeZone {
+export enum TimeZone {
     KST = 'Asia/Seoul',
     UTC = 'UTC'
 }
@@ -47,16 +45,6 @@ function isWeekendByKST(date: Date, timeZone: TimeZone): boolean {
     const dateInTimeZone = new Date(date.toLocaleString('en-US', { timeZone }));
     const dayOfWeek = dateInTimeZone.getDay();
     return dayOfWeek === 0 || dayOfWeek === 6;
-}
-
-export function getContentLengthOfWorkingDays(writingHistory: WritingHistory[], workingDays: Date[]): number[] {
-    return workingDays
-        .map(workingDay => {
-            const history = writingHistory.find(history => {
-                return isSameDay(history.createdAt.toDate(), workingDay, TimeZone.KST);
-            });
-            return history?.post?.contentLength ?? 0;
-        });
 }
 
 export function getRecentWorkingDays(count: number): Date[] {
