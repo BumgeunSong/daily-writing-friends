@@ -2,6 +2,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { UserStatsCard } from "./UserStatsCard"
 import { useWritingStats } from "@/hooks/useWritingStats"
 import StatsHeader from "./StatsHeader"
+import { StatsNoticeBanner } from "./StatsNoticeBanner"
 
 export default function StatsPage() {
     const { writingStats, isLoading, error } = useWritingStats()
@@ -18,7 +19,8 @@ export default function StatsPage() {
         <div className="min-h-screen bg-background">
             <StatsHeader />
             <main className="container px-4 py-8">
-                <ScrollArea className="h-[calc(100vh-12rem)]">
+                <ScrollArea className="h-[calc(100vh-16rem)]">
+                    <StatsNoticeBanner />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
                         {writingStats?.map((stats) => (
                             <UserStatsCard key={stats.user.id} stats={stats} />
@@ -35,8 +37,9 @@ function LoadingState() {
     return (
         <div className="min-h-screen bg-background">
             <StatsHeader />
-            <main className="container py-8">
-                <ScrollArea className="h-[calc(100vh-12rem)]">
+            <main className="container px-4 py-8">
+                <ScrollArea className="h-[calc(100vh-16rem)]">
+                    <StatsNoticeBanner />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
                         {[...Array(5)].map((_, index) => (
                             <div key={index} className="w-full bg-card rounded-lg">
