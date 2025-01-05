@@ -1,11 +1,11 @@
-import { Timestamp } from "firebase-admin/firestore";
 import { WritingHistory } from "../types/WritingHistory";
 import { isSameDay, TimeZone } from "../dateUtils";   
 
 type Contribution = {
-    createdAt: Timestamp;
+    createdAt: string;
     contentLength: number | null;
 }
+
 function createContributions(workingDays: Date[], histories: WritingHistory[]): Contribution[] {
     return workingDays.map(day => createContribution(day, histories));
 }
@@ -16,7 +16,7 @@ function createContribution(workingDay: Date, histories: WritingHistory[]): Cont
     );
 
     return {
-        createdAt: Timestamp.fromDate(workingDay),
+        createdAt: workingDay.toISOString(),
         contentLength: history?.post?.contentLength ?? null
     };
 }

@@ -23,7 +23,6 @@ interface WritingStats {
     badges: WritingBadge[];
 }
 
-
 export const getWritingStats = onRequest(
     { cors: true },
     async (req, res) => {
