@@ -1,8 +1,8 @@
 import { onRequest } from "firebase-functions/v2/https";
 import admin from "../admin";
-import { Timestamp } from "firebase-admin/firestore";
 import { WritingHistory } from "../types/WritingHistory";
 import { getRecentWorkingDays, isSameDay, TimeZone } from "../dateUtils";
+import { createContributions, Contribution } from "./createContributions";
 
 interface UserData {
     id: string;
@@ -23,10 +23,6 @@ interface WritingStats {
     badges: WritingBadge[];
 }
 
-type Contribution = {
-    createdAt: Timestamp;
-    contentLength: number | null;
-}
 
 export interface WritingBadge {
     name: string
@@ -147,20 +143,6 @@ export const getWritingStats = onRequest(
     }
 );
 
-function createContributions(workingDays: Date[], histories: WritingHistory[]): Contribution[] {
-    return workingDays.map(day => createContribution(day, histories));
-}
-
-function createContribution(workingDay: Date, histories: WritingHistory[]): Contribution {
-    const history = histories.find(history => 
-        isSameDay(history.createdAt.toDate(), workingDay, TimeZone.KST)
-    );
-
-    return {
-        createdAt: Timestamp.fromDate(workingDay),
-        contentLength: history?.post?.contentLength ?? null
-    };
-}
 
 function calculateRecentStreak(
     workingDays: Date[],
