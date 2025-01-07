@@ -16,10 +16,10 @@ export default function StatsPage() {
     }
     
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen flex flex-col bg-background">
             <StatsHeader />
-            <main className="container px-4 py-8">
-                <ScrollArea className="h-[calc(100vh-16rem)]">
+            <main className="flex-1 container px-4 py-4">
+                <ScrollArea className="h-full">
                     <StatsNoticeBanner />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
                         {writingStats?.map((stats) => (
@@ -35,10 +35,10 @@ export default function StatsPage() {
 // LoadingState와 ErrorState 컴포넌트도 StatsHeader를 사용하도록 수정
 function LoadingState() {
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen flex flex-col bg-background">
             <StatsHeader />
-            <main className="container px-4 py-8">
-                <ScrollArea className="h-[calc(100vh-16rem)]">
+            <main className="flex-1 container px-4 py-4">
+                <ScrollArea className="h-full">
                     <StatsNoticeBanner />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
                         {[...Array(5)].map((_, index) => (
