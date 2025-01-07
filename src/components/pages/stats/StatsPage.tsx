@@ -18,7 +18,7 @@ export default function StatsPage() {
     return (
         <div className="min-h-screen flex flex-col bg-background">
             <StatsHeader />
-            <main className="flex-1 container px-4 py-8">
+            <main className="flex-1 container px-4 py-4">
                 <ScrollArea className="h-full">
                     <StatsNoticeBanner />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
@@ -37,7 +37,7 @@ function LoadingState() {
     return (
         <div className="min-h-screen flex flex-col bg-background">
             <StatsHeader />
-            <main className="flex-1 container px-4 py-8">
+            <main className="flex-1 container px-4 py-4">
                 <ScrollArea className="h-full">
                     <StatsNoticeBanner />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
