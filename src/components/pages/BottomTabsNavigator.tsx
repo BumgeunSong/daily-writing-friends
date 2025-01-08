@@ -10,9 +10,10 @@ const tabs = [
 
 export default function BottomTabsNavigator() {
   const location = useLocation();
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
 
   return (
-    <nav className='fixed inset-x-0 bottom-0 border-t border-border bg-background pb-2'>
+    <nav className={`fixed inset-x-0 bottom-0 border-t border-border bg-background ${isIOS ? 'pb-2' : ''}`}>
       <div className='flex justify-around'>
         {tabs.map((tab) => (
           <Link
