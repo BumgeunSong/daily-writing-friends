@@ -33,7 +33,7 @@ const CommentInput: React.FC<CommentInputProps> = ({
   return (
     <form onSubmit={handleAddComment} className='flex w-full items-center space-x-4'>
       <textarea
-        placeholder={placeholder || '댓글을 입력하세요...'}
+        placeholder={placeholder || '재밌게 읽었다면 댓글로 글값을 남겨볼까요?'}
         value={newComment}
         onChange={(e) => setNewComment(e.target.value)}
         className='flex-1 resize-none rounded border p-2 text-lg'
