@@ -57,6 +57,10 @@ export default {
       },
       spacing: {
         '12': '3rem',
+        'safe-top': 'env(safe-area-inset-top)',
+        'safe-bottom': 'env(safe-area-inset-bottom)',
+        'safe-left': 'env(safe-area-inset-left)',
+        'safe-right': 'env(safe-area-inset-right)',
       },
       typography: (theme) => ({
         DEFAULT: {
@@ -130,6 +134,38 @@ export default {
       }),
     },
   },
-  plugins: [tailwindcssAnimate, typography, safeArea],
+  plugins: [
+    tailwindcssAnimate,
+    typography,
+    safeArea,
+    function({ addUtilities }) {
+      addUtilities({
+        '.safe-area': {
+          paddingTop: 'env(safe-area-inset-top)',
+          paddingRight: 'env(safe-area-inset-right)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          paddingLeft: 'env(safe-area-inset-left)',
+        },
+        '.safe-area-pt': {
+          paddingTop: 'env(safe-area-inset-top)',
+        },
+        '.safe-area-pr': {
+          paddingRight: 'env(safe-area-inset-right)',
+        },
+        '.safe-area-pb': {
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        },
+        '.safe-area-pl': {
+          paddingLeft: 'env(safe-area-inset-left)',
+        },
+        '.-mt-safe': {
+          marginTop: 'calc(env(safe-area-inset-top) * -1)',
+        },
+        '.-mb-safe': {
+          marginBottom: 'calc(env(safe-area-inset-bottom) * -1)',
+        },
+      })
+    }
+  ]
 };
 
