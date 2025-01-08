@@ -57,6 +57,10 @@ export default {
       },
       spacing: {
         '12': '3rem',
+        'safe-top': 'env(safe-area-inset-top)',
+        'safe-bottom': 'env(safe-area-inset-bottom)',
+        'safe-left': 'env(safe-area-inset-left)',
+        'safe-right': 'env(safe-area-inset-right)',
       },
       typography: (theme) => ({
         DEFAULT: {
@@ -130,6 +134,62 @@ export default {
       }),
     },
   },
-  plugins: [tailwindcssAnimate, typography, safeArea],
+  plugins: [
+    tailwindcssAnimate,
+    typography,
+    safeArea,
+    function({ addUtilities }) {
+      addUtilities({
+        '.safe-area': {
+          'padding-top': ['env(safe-area-inset-top)', 'constant(safe-area-inset-top)'],
+          'padding-right': ['env(safe-area-inset-right)', 'constant(safe-area-inset-right)'],
+          'padding-bottom': ['env(safe-area-inset-bottom)', 'constant(safe-area-inset-bottom)'],
+          'padding-left': ['env(safe-area-inset-left)', 'constant(safe-area-inset-left)'],
+          '@supports (padding: max(0px))': {
+            'padding-top': 'max(env(safe-area-inset-top), 0px)',
+            'padding-right': 'max(env(safe-area-inset-right), 0px)',
+            'padding-bottom': 'max(env(safe-area-inset-bottom), 0px)',
+            'padding-left': 'max(env(safe-area-inset-left), 0px)',
+          }
+        },
+        '.safe-area-pt': {
+          'padding-top': ['env(safe-area-inset-top)', 'constant(safe-area-inset-top)'],
+          '@supports (padding: max(0px))': {
+            'padding-top': 'max(env(safe-area-inset-top), 0px)',
+          }
+        },
+        '.safe-area-pr': {
+          'padding-right': ['env(safe-area-inset-right)', 'constant(safe-area-inset-right)'],
+          '@supports (padding: max(0px))': {
+            'padding-right': 'max(env(safe-area-inset-right), 0px)',
+          }
+        },
+        '.safe-area-pb': {
+          'padding-bottom': ['env(safe-area-inset-bottom)', 'constant(safe-area-inset-bottom)'],
+          '@supports (padding: max(0px))': {
+            'padding-bottom': 'max(env(safe-area-inset-bottom), 0px)',
+          }
+        },
+        '.safe-area-pl': {
+          'padding-left': ['env(safe-area-inset-left)', 'constant(safe-area-inset-left)'],
+          '@supports (padding: max(0px))': {
+            'padding-left': 'max(env(safe-area-inset-left), 0px)',
+          }
+        },
+        '.-mt-safe': {
+          'margin-top': ['calc(env(safe-area-inset-top) * -1)', 'calc(constant(safe-area-inset-top) * -1)'],
+          '@supports (margin: max(0px))': {
+            'margin-top': 'calc(max(env(safe-area-inset-top), 0px) * -1)',
+          }
+        },
+        '.-mb-safe': {
+          'margin-bottom': ['calc(env(safe-area-inset-bottom) * -1)', 'calc(constant(safe-area-inset-bottom) * -1)'],
+          '@supports (margin: max(0px))': {
+            'margin-bottom': 'calc(max(env(safe-area-inset-bottom), 0px) * -1)',
+          }
+        }
+      })
+    }
+  ]
 };
 
