@@ -141,29 +141,53 @@ export default {
     function({ addUtilities }) {
       addUtilities({
         '.safe-area': {
-          paddingTop: 'env(safe-area-inset-top)',
-          paddingRight: 'env(safe-area-inset-right)',
-          paddingBottom: 'env(safe-area-inset-bottom)',
-          paddingLeft: 'env(safe-area-inset-left)',
+          'padding-top': ['env(safe-area-inset-top)', 'constant(safe-area-inset-top)'],
+          'padding-right': ['env(safe-area-inset-right)', 'constant(safe-area-inset-right)'],
+          'padding-bottom': ['env(safe-area-inset-bottom)', 'constant(safe-area-inset-bottom)'],
+          'padding-left': ['env(safe-area-inset-left)', 'constant(safe-area-inset-left)'],
+          '@supports (padding: max(0px))': {
+            'padding-top': 'max(env(safe-area-inset-top), 0px)',
+            'padding-right': 'max(env(safe-area-inset-right), 0px)',
+            'padding-bottom': 'max(env(safe-area-inset-bottom), 0px)',
+            'padding-left': 'max(env(safe-area-inset-left), 0px)',
+          }
         },
         '.safe-area-pt': {
-          paddingTop: 'env(safe-area-inset-top)',
+          'padding-top': ['env(safe-area-inset-top)', 'constant(safe-area-inset-top)'],
+          '@supports (padding: max(0px))': {
+            'padding-top': 'max(env(safe-area-inset-top), 0px)',
+          }
         },
         '.safe-area-pr': {
-          paddingRight: 'env(safe-area-inset-right)',
+          'padding-right': ['env(safe-area-inset-right)', 'constant(safe-area-inset-right)'],
+          '@supports (padding: max(0px))': {
+            'padding-right': 'max(env(safe-area-inset-right), 0px)',
+          }
         },
         '.safe-area-pb': {
-          paddingBottom: 'env(safe-area-inset-bottom)',
+          'padding-bottom': ['env(safe-area-inset-bottom)', 'constant(safe-area-inset-bottom)'],
+          '@supports (padding: max(0px))': {
+            'padding-bottom': 'max(env(safe-area-inset-bottom), 0px)',
+          }
         },
         '.safe-area-pl': {
-          paddingLeft: 'env(safe-area-inset-left)',
+          'padding-left': ['env(safe-area-inset-left)', 'constant(safe-area-inset-left)'],
+          '@supports (padding: max(0px))': {
+            'padding-left': 'max(env(safe-area-inset-left), 0px)',
+          }
         },
         '.-mt-safe': {
-          marginTop: 'calc(env(safe-area-inset-top) * -1)',
+          'margin-top': ['calc(env(safe-area-inset-top) * -1)', 'calc(constant(safe-area-inset-top) * -1)'],
+          '@supports (margin: max(0px))': {
+            'margin-top': 'calc(max(env(safe-area-inset-top), 0px) * -1)',
+          }
         },
         '.-mb-safe': {
-          marginBottom: 'calc(env(safe-area-inset-bottom) * -1)',
-        },
+          'margin-bottom': ['calc(env(safe-area-inset-bottom) * -1)', 'calc(constant(safe-area-inset-bottom) * -1)'],
+          '@supports (margin: max(0px))': {
+            'margin-bottom': 'calc(max(env(safe-area-inset-bottom), 0px) * -1)',
+          }
+        }
       })
     }
   ]
