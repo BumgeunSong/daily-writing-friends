@@ -29,7 +29,7 @@ const ReplyInput: React.FC<ReplyInputProps> = ({ placeholder, initialValue = '',
   return (
     <form onSubmit={handleAddReply} className='flex w-full items-center space-x-4'>
       <textarea
-        placeholder={placeholder || '답글을 입력하세요...'}
+        placeholder={placeholder || '댓글을 달아줬다면 답을 해주는 게 인지상정!'}
         value={newReply}
         onChange={(e) => setNewReply(e.target.value)}
         className='flex-1 resize-none rounded border p-2 text-base'
