@@ -12,7 +12,7 @@ export default function BottomTabsNavigator() {
   const location = useLocation();
 
   return (
-    <nav className='fixed inset-x-0 bottom-0 border-t border-border bg-background safe-area-pb'>
+    <nav className='fixed inset-x-0 bottom-0 border-t border-border bg-background pb-2'>
       <div className='flex justify-around'>
         {tabs.map((tab) => (
           <Link
