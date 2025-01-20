@@ -6,10 +6,11 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { fetchPost, updatePost } from '../../../utils/postUtils';
+import { extractFirstImageUrl, fetchPost, updatePost } from '../../../utils/postUtils';
 import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
 import { PostBackButton } from './PostBackButton';
+import { toast } from '@/hooks/use-toast';
 
 
 export default function PostEditPage() {
@@ -31,15 +32,20 @@ export default function PostEditPage() {
       },
     }
   );
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !content.trim() || !postId) return;
     try {
-      await updatePost(boardId!, postId!, content);
+      await updatePost(boardId!, postId!, title, content);
       navigate(`/board/${boardId}/post/${postId}`);
     } catch (error) {
       console.error('Error updating post:', error);
+      toast({
+        title: "오류",
+        description: "게시물 수정에 실패했습니다.",
+        variant: "destructive",
+      });
     }
   };
 
