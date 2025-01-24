@@ -50,14 +50,20 @@ export async function createPost(boardId: string, title: string, content: string
   return setDoc(postRef, post);
 }
 
-export async function updatePost(boardId: string, postId: string, content: string): Promise<void> {
-  const docRef = doc(firestore, `boards/${boardId}/posts`, postId);
-  await updateDoc(docRef, {
-    content,
+export const updatePost = async (
+  boardId: string,
+  postId: string,
+  title: string,
+  content: string
+): Promise<void> => {
+  const postRef = doc(firestore, `boards/${boardId}/posts`, postId);
+  await updateDoc(postRef, {
+    title,
+    content,  
     thumbnailImageURL: extractFirstImageUrl(content),
     updatedAt: serverTimestamp(),
   });
-}
+};
 
 export const fetchAdjacentPosts = async (boardId: string, currentPostId: string) => {
   const postsRef = collection(firestore, `boards/${boardId}/posts`);
