@@ -3,8 +3,10 @@ import { UserStatsCard } from "./UserStatsCard"
 import { useWritingStats } from "@/hooks/useWritingStats"
 import StatsHeader from "./StatsHeader"
 import { StatsNoticeBanner } from "./StatsNoticeBanner"
+import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring"
 
 export default function StatsPage() {
+    usePerformanceMonitoring('StatsPage');
     const { writingStats, isLoading, error } = useWritingStats()
     
     if (isLoading) {

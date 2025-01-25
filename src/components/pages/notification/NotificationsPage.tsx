@@ -9,7 +9,9 @@ import { useInView } from 'react-intersection-observer';
 import { Loader2 } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { Skeleton } from '@/components/ui/skeleton';
+import { usePerformanceMonitoring } from '@/hooks/usePerformanceMonitoring';
 const NotificationsPage: React.FC = () => {
+  usePerformanceMonitoring('NotificationsPage');
   const { currentUser } = useAuth();
   const [inViewRef, inView] = useInView();
   const [limitCount] = useState(10);

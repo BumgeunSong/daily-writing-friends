@@ -5,6 +5,7 @@ import { usePosts } from '@/hooks/usePosts';
 import { useInView } from 'react-intersection-observer';
 import PostCardSkeleton from '@/components/ui/PostCardSkeleton';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
+import { usePerformanceMonitoring } from '@/hooks/usePerformanceMonitoring';
 interface PostCardListProps {
   boardId: string;
   onPostClick: (postId: string) => void;
@@ -14,6 +15,7 @@ interface PostCardListProps {
 const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, selectedAuthorId }) => {
   const [inViewRef, inView] = useInView();
   const [limitCount] = useState(7);
+  usePerformanceMonitoring('PostCardList')
 
   const {
     data: postPages,
