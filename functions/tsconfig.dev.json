@@ -2,6 +2,7 @@
   "extends": "./tsconfig.json",
   "include": [
     "src",
-    "jest.config.ts"
+    "jest.config.ts",
+    ".eslintrc.js"
   ]
 }
