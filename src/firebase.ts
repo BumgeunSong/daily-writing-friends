@@ -8,6 +8,7 @@ import {
   UserCredential,
 } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
+import { getPerformance } from "firebase/performance";
 import { getStorage } from 'firebase/storage';
 import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 
@@ -30,6 +31,7 @@ const storage = getStorage(app);
 const functions = getFunctions(app);
 // Google Auth Provider
 const provider = new GoogleAuthProvider();
+const performance = getPerformance(app);
 
 // Auth functions
 const signInWithGoogle = async (): Promise<UserCredential> => {
@@ -59,4 +61,4 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 
-export { auth, firestore, signInWithGoogle, signOutUser, storage, app };
+export { auth, firestore, signInWithGoogle, signOutUser, storage, app, performance };
