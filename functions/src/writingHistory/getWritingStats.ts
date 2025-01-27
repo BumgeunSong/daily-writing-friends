@@ -129,7 +129,13 @@ const fetchUserWritingHistory = async (
     userData: UserData;
     histories: WritingHistory[];
 }> => {
-    const histories = await userDoc.ref.collection('writingHistories').get();
+    // 현재 기록은 최근 영업일 20일 이내만 보여주므로 글쓰기 기록도 최대 30일 이내만 조회
+    const limit = 30;
+    const histories = await userDoc.ref
+        .collection('writingHistories')
+        .orderBy('createdAt', 'desc')
+        .limit(limit)
+        .get();
     const userData = createUserProfile(userDoc.id, userDoc.data());
 
     return {
