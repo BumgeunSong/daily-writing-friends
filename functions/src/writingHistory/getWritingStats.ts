@@ -1,9 +1,9 @@
 import { onRequest } from "firebase-functions/v2/https";
 import admin from "../admin";
-import { WritingHistory } from "../types/WritingHistory";
 import { getRecentWorkingDays } from "../dateUtils";
-import { createContributions, Contribution } from "./createContributions";
 import { createBadges, calculateRecentStreak, WritingBadge } from "./createBadges";
+import { createContributions, Contribution } from "./createContributions";
+import { WritingHistory } from "../types/WritingHistory";
 interface UserData {
     id: string;
     nickname: string | null;
@@ -23,52 +23,73 @@ interface WritingStats {
     badges: WritingBadge[];
 }
 
-export const getWritingStats = onRequest(
-    { cors: true },
-    async (req, res) => {
-        if (req.method !== 'GET') {
-            res.status(405).json({
-                status: 'error',
-                message: 'Method not allowed'
-            });
-            return;
-        }
+interface CachedStats {
+    lastUpdated: Date;
+    stats: WritingStats[];
+}
 
+export const getWritingStats = onRequest(
+    { 
+        cors: true,
+        timeoutSeconds: 30
+    },
+    async (req, res) => {
         try {
             const db = admin.firestore();
+            const cachedStatsRef = db.collection('cachedStats').doc('writingStats');
+            const cachedStats = await cachedStatsRef.get();
+            
+            if (cachedStats.exists) {
+                const data = cachedStats.data() as CachedStats;
+                const cacheAge = Date.now() - data.lastUpdated.getTime();
+                
+                // 캐시가 1분 이내라면 캐시된 데이터 반환
+                if (cacheAge < 1000 * 60 * 1) {
+                    res.status(200).json({
+                        status: 'success',
+                        data: {
+                            writingStats: data.stats
+                        }
+                    });
+                    return;
+                }
+            }
+
+            // 캐시가 없거나 만료된 경우 새로 계산
             const workingDays = getRecentWorkingDays(20);
-
-            // 1. 사용자 데이터 조회
             const usersSnapshot = await db.collection('users').get();
-
-            // 2. 각 사용자의 기록 조회
             const usersData = await Promise.all(
                 usersSnapshot.docs.map(fetchUserWritingHistory)
             );
 
-            // 3. WritingStats 생성
             const writingStatsWithMeta = usersData
                 .map(({ userData, histories }) =>
                     createUserWritingStats(userData, histories, workingDays)
                 )
                 .filter((stats): stats is WritingStatsWithMeta => stats !== null);
 
-            // 4. 정렬 및 최종 데이터 형식 변환
-            const filteredStats = sortWritingStats(writingStatsWithMeta);
+            const sortedStats = sortWritingStats(writingStatsWithMeta);
+
+            // 결과 캐시 저장
+            await cachedStatsRef.set({
+                lastUpdated: admin.firestore.Timestamp.now(),
+                stats: sortedStats
+            });
 
             res.status(200).json({
                 status: 'success',
                 data: {
-                    writingStats: filteredStats
+                    writingStats: sortedStats
                 }
             });
-
+            return;
         } catch (error) {
             console.error('Error getting writing stats:', error);
             res.status(500).json({
                 status: 'error',
                 message: error instanceof Error ? error.message : 'Unknown error'
             });
+            return;
         }
     }
 );
@@ -129,7 +150,13 @@ const fetchUserWritingHistory = async (
     userData: UserData;
     histories: WritingHistory[];
 }> => {
-    const histories = await userDoc.ref.collection('writingHistories').get();
+    // 현재 기록은 최근 영업일 20일 이내만 보여주므로 글쓰기 기록도 최대 30일 이내만 조회
+    const limit = 30;
+    const histories = await userDoc.ref
+        .collection('writingHistories')
+        .orderBy('createdAt', 'desc')
+        .limit(limit)
+        .get();
     const userData = createUserProfile(userDoc.id, userDoc.data());
 
     return {

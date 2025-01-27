@@ -1,11 +1,11 @@
 // update post daysFromFirstDay when post is created based on board's firstDay
 
+import { Timestamp } from 'firebase-admin/firestore';
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import admin from '../admin';
-import { Board } from '../types/Board';
 import { isWorkingDay } from '../dateUtils';
-import { Timestamp } from 'firebase-admin/firestore';
 import { TimeZone } from '../dateUtils';
+import { Board } from '../types/Board';
 
 export const updatePostDaysFromFirstDay = onDocumentCreated('/boards/{boardId}/posts/{postId}', async (event) => {
   const postId = event.params.postId;

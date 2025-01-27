@@ -8,10 +8,13 @@
     "strict": true,
     "target": "es2017",
     "types": ["jest", "node"],
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "skipLibCheck": true
   },
   "compileOnSave": true,
   "include": [
-    "src"
+    "src",
+    "jest.config.ts",
+    ".eslintrc.js"
   ]
 }

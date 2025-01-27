@@ -1,9 +1,9 @@
 import { onDocumentCreated } from "firebase-functions/firestore";
 import admin from "../admin";
-import { Notification, NotificationType } from "../types/Notification";
-import { User } from "../types/User";
 import { FirebaseMessagingToken } from "../types/FirebaseMessagingToken";
+import { Notification, NotificationType } from "../types/Notification";
 import { Post } from "../types/Post";
+import { User } from "../types/User";
 
 // Send cloud message via FCM tokens to user when notification is created
 // firebase messaging token is subcollection of users
