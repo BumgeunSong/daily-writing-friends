@@ -1,6 +1,6 @@
 import { onDocumentDeleted } from "firebase-functions/v2/firestore";
-import { Post } from "../types/Post";
 import admin from "../admin";
+import { Post } from "../types/Post";
 
 export const deleteWritingHistoryOnPostDeleted = onDocumentDeleted(
     "boards/{boardId}/posts/{postId}",

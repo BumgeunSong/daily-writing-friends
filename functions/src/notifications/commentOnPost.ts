@@ -1,11 +1,11 @@
-import admin from "../admin";
 import { Timestamp } from "firebase-admin/firestore";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
+import admin from "../admin";
+import { generateMessage } from "./messageGenerator";
+import { shouldGenerateNotification } from "./shouldGenerateNotification";
 import { Comment } from "../types/Comment";
 import { Notification, NotificationType } from "../types/Notification";
 import { Post } from "../types/Post";
-import { generateMessage } from "./messageGenerator";
-import { shouldGenerateNotification } from "./shouldGenerateNotification";
 
 export const onCommentCreated = onDocumentCreated(
     "boards/{boardId}/posts/{postId}/comments/{commentId}",

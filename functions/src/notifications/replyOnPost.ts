@@ -1,11 +1,11 @@
-import { onDocumentCreated } from "firebase-functions/firestore";
-import { Reply } from "../types/Reply";
-import { Notification, NotificationType } from "../types/Notification";
 import { Timestamp } from "firebase-admin/firestore";
-import { Post } from "../types/Post";
+import { onDocumentCreated } from "firebase-functions/firestore";
 import admin from "../admin";
 import { generateMessage } from "./messageGenerator";
 import { shouldGenerateNotification } from "./shouldGenerateNotification";
+import { Notification, NotificationType } from "../types/Notification";
+import { Post } from "../types/Post";
+import { Reply } from "../types/Reply";
 
 export const onReplyCreatedOnPost = onDocumentCreated(
     "boards/{boardId}/posts/{postId}/comments/{commentId}/replies/{replyId}",
