@@ -73,7 +73,7 @@ export const useWritingStats = () => {
         queryKey: ['writingStats'],
         queryFn: fetchWritingStats,
         staleTime: 1000 * 60 * 1, // 1 minute
-        cacheTime: 1000 * 60 * 3, // 3 minutes,
+        cacheTime: 1000 * 60 * 10, // 10 minutes,
         retry: 1, // 실패시 1번만 재시도
     });
 
