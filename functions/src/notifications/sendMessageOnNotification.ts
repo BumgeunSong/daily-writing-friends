@@ -4,6 +4,7 @@ import { FirebaseMessagingToken } from "../types/FirebaseMessagingToken";
 import { Notification, NotificationType } from "../types/Notification";
 import { Post } from "../types/Post";
 import { User } from "../types/User";
+import { MulticastMessage } from "firebase-admin/lib/messaging/messaging-api";
 
 // Send cloud message via FCM tokens to user when notification is created
 // firebase messaging token is subcollection of users
@@ -49,31 +50,56 @@ export const onNotificationCreated = onDocumentCreated(
             // filter out tokens that is duplicated
             const uniqueTokens = [...new Set(fcmTokens.map(token => token.token))];
             if (uniqueTokens.length > 0) {
-                try {
-                    const response = await admin.messaging().sendMulticast({
-                        tokens: uniqueTokens,
+                const message: MulticastMessage = {
+                    notification: {
+                        title: notificationTitle,
+                        body: notificationMessage,
+                    },
+                    data: {
+                        boardId: notification.boardId,
+                        postId: notification.postId,
+                        notificationType: notification.type,
+                    },
+                    tokens: uniqueTokens,
+                    android: {
+                        priority: "high",
                         notification: {
-                            title: notificationTitle,
-                            body: notificationMessage,
-                            imageUrl: notification.fromUserProfileImage,
+                            channelId: "default",
                         },
-                    });
+                    },
+                    apns: {
+                        payload: {
+                            aps: {
+                                badge: 1,
+                                sound: "default",
+                            },
+                        },
+                    },
+                };
 
-                    response.responses.forEach(async (resp, idx) => {
-                        if (!resp.success) {
-                            console.error(`Error sending message to token ${uniqueTokens[idx]}:`, resp.error);
-                            if (resp.error?.code === 'messaging/registration-token-not-registered') {
-                                // Remove invalid token from the database
-                                await removeInvalidToken(userId, uniqueTokens[idx]);
+                try {
+                    const response = await admin.messaging().sendEachForMulticast(message);
+                    
+                    // 실패한 토큰 처리
+                    const failureCount = response.failureCount;
+                    if (failureCount > 0) {
+                        const failedTokens: string[] = [];
+                        response.responses.forEach((resp, idx) => {
+                            if (!resp.success) {
+                                failedTokens.push(uniqueTokens[idx]);
+                                console.error('Error sending message:', resp.error);
                             }
-                        }
-                    });
+                        });
+                        
+                        // 실패한 토큰 삭제
+                        await Promise.all(failedTokens.map(token => removeInvalidToken(userId, token)));
+                    }
                 } catch (error) {
                     console.error("Error sending multicast message:", error);
                 }
             }
         } catch (error) {
-            console.error("Error processing notification:", notification.message, error);
+            console.error("Error processing notification:", error);
         }
     }
 );
