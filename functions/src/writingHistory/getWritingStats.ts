@@ -2,6 +2,7 @@ import { onRequest } from "firebase-functions/v2/https";
 import admin from "../admin";
 import { getRecentWorkingDays } from "../dateUtils";
 import { createBadges, calculateRecentStreak, WritingBadge } from "./createBadges";
+import { info, debug, warn, error as errorLog } from "firebase-functions/logger";
 import { createContributions, Contribution } from "./createContributions";
 import { WritingHistory } from "../types/WritingHistory";
 interface UserData {
@@ -27,6 +28,7 @@ interface CachedStats {
     lastUpdated: admin.firestore.Timestamp;
     stats: WritingStats[];
 }
+const CACHE_KEY = 'writingStats';
 
 export const getWritingStats = onRequest(
     { 
@@ -35,8 +37,7 @@ export const getWritingStats = onRequest(
     },
     async (req, res) => {
         try {
-            const cacheKey = 'writingStats';
-            const cachedStats = await getCachedStats(cacheKey);
+            const cachedStats = await getCachedStats(CACHE_KEY);
             if (cachedStats) {
                 res.status(200).json({
                     status: 'success',
@@ -63,7 +64,7 @@ export const getWritingStats = onRequest(
 
             const sortedStats = sortWritingStats(writingStatsWithMeta);
 
-            await saveCachedStats(cacheKey, sortedStats);
+            await saveCachedStats(CACHE_KEY, sortedStats);
             res.status(200).json({
                 status: 'success',
                 data: {
@@ -84,12 +85,14 @@ export const getWritingStats = onRequest(
 
 
 const getCachedStats = async (cacheKey: string): Promise<CachedStats | null> => {
+    debug("Received request for writing stats", { cacheKey });
     try {
         const db = admin.firestore();
         const cachedStatsRef = db.collection('cachedStats').doc(cacheKey);
         const cachedStats = await cachedStatsRef.get();
         
         if (!cachedStats.exists) {
+            debug("[CachedStats] Cache miss - No cached data found", { cacheKey });
             return null;
         }
 
@@ -98,21 +101,45 @@ const getCachedStats = async (cacheKey: string): Promise<CachedStats | null> => 
 
         // 캐시가 1분 이내인 경우에만 사용
         if (cacheAge < 1000 * 60 * 1) {
+            info("Cache hit", { 
+                cacheKey,
+                cacheAge: `${cacheAge}s`
+            });
             return data;
+        } else {
+            warn("Cache miss - Data expired", { 
+                cacheKey,
+                cacheAge: `${cacheAge}s`
+            });
+            return null;
         }
-        return null;
     } catch (error) {
-        console.error('Error fetching cached stats:', error);
+        errorLog("Error accessing cache", {
+            error: error instanceof Error ? error.message : 'Unknown error',
+            cacheKey
+        });
         return null;
     }
 };
 
 const saveCachedStats = async (cacheKey: string, stats: WritingStats[]): Promise<void> => {
-    const db = admin.firestore();
-    await db.collection('cachedStats').doc(cacheKey).set({
-        lastUpdated: admin.firestore.Timestamp.now(),
-        stats
+    info("Saving new cache", {
+        cacheKey,
+        statsCount: stats.length
     });
+    const db = admin.firestore();
+    try {
+        await db.collection('cachedStats').doc(cacheKey).set({
+            lastUpdated: admin.firestore.Timestamp.now(),
+            stats
+        });
+        info("Successfully saved cache", { cacheKey });
+    } catch (error) {
+        errorLog("Error saving cache", {
+            cacheKey,
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
 };
 
 // 기여도 합계 계산 함수 수정: 작성한 날의 합계로 기여도 계산
