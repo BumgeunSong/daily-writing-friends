@@ -28,7 +28,6 @@ interface CachedStats {
     lastUpdated: admin.firestore.Timestamp;
     stats: WritingStats[];
 }
-const CACHE_KEY = 'writingStats';
 
 export const getWritingStats = onRequest(
     { 
@@ -37,21 +36,51 @@ export const getWritingStats = onRequest(
     },
     async (req, res) => {
         try {
-            const cachedStats = await getCachedStats(CACHE_KEY);
+            const cohort = req.query.cohort as string | undefined;
+            const cacheKey = cohort ? `writingStats-${cohort}` : 'writingStats';
+            
+            debug("Received request for writing stats", {
+                cohort: cohort || 'all',
+                cacheKey
+            });
+
+            const cachedStats = await getCachedStats(cacheKey);
             if (cachedStats) {
+                info("Returning cached stats", {
+                    cacheKey,
+                    cohort: cohort || 'all',
+                    statsCount: cachedStats.stats.length
+                });
                 res.status(200).json({
                     status: 'success',
                     data: {
-                        writingStats: cachedStats.stats
+                        writingStats: cachedStats.stats,
+                        cohort: cohort || 'all'
                     }
                 });
                 return;
             }
 
-            // 캐시가 없거나 만료된 경우 새로 계산
             const workingDays = getRecentWorkingDays(20);
             const db = admin.firestore();
-            const usersSnapshot = await db.collection('users').get();
+            
+            // cohort 기반 쿼리 구성
+            const usersQuery = cohort 
+                ? db.collection('users').where('cohort', '==', cohort) 
+                : db.collection('users');
+            
+            debug("Fetching users data", { 
+                cohort: cohort || 'all',
+                workingDaysCount: workingDays.length 
+            });
+            
+            const usersSnapshot = await usersQuery.get();
+            
+            info("Found users", {
+                cohort: cohort || 'all',
+                userCount: usersSnapshot.size
+            });
+
             const usersData = await Promise.all(
                 usersSnapshot.docs.map(fetchUserWritingHistory)
             );
@@ -64,21 +93,30 @@ export const getWritingStats = onRequest(
 
             const sortedStats = sortWritingStats(writingStatsWithMeta);
 
-            await saveCachedStats(CACHE_KEY, sortedStats);
+            await saveCachedStats(cacheKey, sortedStats, cohort);
+            
+            info("Successfully generated writing stats", {
+                cohort: cohort || 'all',
+                statsCount: sortedStats.length
+            });
+
             res.status(200).json({
                 status: 'success',
                 data: {
-                    writingStats: sortedStats
+                    writingStats: sortedStats,
+                    cohort: cohort || 'all'
                 }
             });
-            return;
         } catch (error) {
-            console.error('Error getting writing stats:', error);
+            errorLog("Error getting writing stats", {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                cohort: req.query.cohort || 'all'
+            });
+            
             res.status(500).json({
                 status: 'error',
                 message: error instanceof Error ? error.message : 'Unknown error'
             });
-            return;
         }
     }
 );
@@ -122,7 +160,7 @@ const getCachedStats = async (cacheKey: string): Promise<CachedStats | null> => 
     }
 };
 
-const saveCachedStats = async (cacheKey: string, stats: WritingStats[]): Promise<void> => {
+const saveCachedStats = async (cacheKey: string, stats: WritingStats[], cohort?: string): Promise<void> => {
     info("Saving new cache", {
         cacheKey,
         statsCount: stats.length
