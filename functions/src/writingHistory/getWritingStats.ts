@@ -66,7 +66,7 @@ export const getWritingStats = onRequest(
             
             // cohort 기반 쿼리 구성
             const usersQuery = cohort 
-                ? db.collection('users').where('cohort', '==', cohort) 
+                ? db.collection('users').where('currentCohort', '==', cohort) 
                 : db.collection('users');
             
             debug("Fetching users data", { 
