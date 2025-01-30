@@ -4,7 +4,6 @@ import { FirebaseMessagingToken } from "../types/FirebaseMessagingToken";
 import { Notification, NotificationType } from "../types/Notification";
 import { Post } from "../types/Post";
 import { User } from "../types/User";
-import { MulticastMessage } from "firebase-admin/lib/messaging/messaging-api";
 
 // Send cloud message via FCM tokens to user when notification is created
 // firebase messaging token is subcollection of users
@@ -47,55 +46,44 @@ export const onNotificationCreated = onDocumentCreated(
                 notificationType: notification.type,
             });
 
-            // filter out tokens that is duplicated
             const uniqueTokens = [...new Set(fcmTokens.map(token => token.token))];
-            if (uniqueTokens.length > 0) {
-                const message: MulticastMessage = {
-                    notification: {
-                        title: notificationTitle,
-                        body: notificationMessage,
-                    },
-                    data: {
-                        boardId: notification.boardId,
-                        postId: notification.postId,
-                        notificationType: notification.type,
-                    },
-                    tokens: uniqueTokens,
-                    android: {
-                        priority: "high",
-                        notification: {
-                            channelId: "default",
-                        },
-                    },
-                    apns: {
-                        payload: {
-                            aps: {
-                                badge: 1,
-                                sound: "default",
-                            },
-                        },
-                    },
-                };
-
+            
+            for (const token of uniqueTokens) {
                 try {
-                    const response = await admin.messaging().sendEachForMulticast(message);
-                    
-                    // 실패한 토큰 처리
-                    const failureCount = response.failureCount;
-                    if (failureCount > 0) {
-                        const failedTokens: string[] = [];
-                        response.responses.forEach((resp, idx) => {
-                            if (!resp.success) {
-                                failedTokens.push(uniqueTokens[idx]);
-                                console.error('Error sending message:', resp.error);
+                    await admin.messaging().send({
+                        token,
+                        notification: {
+                            title: notificationTitle,
+                            body: notificationMessage,
+                        },
+                        data: {
+                            boardId: notification.boardId,
+                            postId: notification.postId,
+                            notificationType: notification.type,
+                        },
+                        android: {
+                            priority: "high",
+                            notification: {
+                                channelId: "default"
                             }
-                        });
-                        
-                        // 실패한 토큰 삭제
-                        await Promise.all(failedTokens.map(token => removeInvalidToken(userId, token)));
+                        },
+                        apns: {
+                            headers: {
+                                "apns-priority": "10"
+                            },
+                            payload: {
+                                aps: {
+                                    badge: 1,
+                                    sound: "default"
+                                }
+                            }
+                        }
+                    });
+                } catch (error: any) {
+                    console.error(`Error sending message to token ${token}:`, error);
+                    if (error.code === 'messaging/registration-token-not-registered') {
+                        await removeInvalidToken(userId, token);
                     }
-                } catch (error) {
-                    console.error("Error sending multicast message:", error);
                 }
             }
         } catch (error) {
