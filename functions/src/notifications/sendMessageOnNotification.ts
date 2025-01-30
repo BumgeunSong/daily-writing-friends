@@ -4,6 +4,7 @@ import { FirebaseMessagingToken } from "../types/FirebaseMessagingToken";
 import { Notification, NotificationType } from "../types/Notification";
 import { Post } from "../types/Post";
 import { User } from "../types/User";
+import { Message } from "firebase-admin/lib/messaging/messaging-api";
 
 // Send cloud message via FCM tokens to user when notification is created
 // firebase messaging token is subcollection of users
@@ -13,6 +14,12 @@ export const onNotificationCreated = onDocumentCreated(
         const userId = event.params.userId;
         const notification = event.data?.data() as Notification;
 
+        console.log("[FCM] Starting notification process", {
+            userId,
+            notificationId: event.params.notificationId,
+            notificationType: notification.type
+        });
+
         try {
             const fromUserData = await admin.firestore()
                 .collection("users")
@@ -20,13 +27,22 @@ export const onNotificationCreated = onDocumentCreated(
                 .get();
             const fromUser = fromUserData.data() as User;
 
-            // fetch every fcm token of the user
+            console.log("[FCM] Fetched fromUser data", {
+                fromUserId: notification.fromUserId,
+                fromUserNickname: fromUser.nickname
+            });
+
             const fcmTokenData = await admin.firestore()
                 .collection("users")
                 .doc(userId)
                 .collection("firebaseMessagingTokens")
                 .get();
             const fcmTokens = fcmTokenData.docs.map((doc) => doc.data() as FirebaseMessagingToken);
+
+            console.log("[FCM] Fetched FCM tokens", {
+                tokenCount: fcmTokens.length,
+                tokens: fcmTokens.map(t => t.token.slice(-6)) // 보안을 위해 토큰의 마지막 6자리만 로깅
+            });
 
             const postData = await admin.firestore()
                 .collection("boards")
@@ -50,7 +66,13 @@ export const onNotificationCreated = onDocumentCreated(
             
             for (const token of uniqueTokens) {
                 try {
-                    await admin.messaging().send({
+                    console.log("[FCM] Preparing to send message", {
+                        tokenEnd: token.slice(-6),
+                        title: notificationTitle,
+                        body: notificationMessage
+                    });
+
+                    const message: Message = {
                         token,
                         notification: {
                             title: notificationTitle,
@@ -78,16 +100,34 @@ export const onNotificationCreated = onDocumentCreated(
                                 }
                             }
                         }
+                    };
+
+                    console.log("[FCM] Message structure", JSON.stringify(message, null, 2));
+
+                    const response = await admin.messaging().send(message);
+                    console.log("[FCM] Message sent successfully", {
+                        tokenEnd: token.slice(-6),
+                        messageId: response
                     });
+
                 } catch (error: any) {
-                    console.error(`Error sending message to token ${token}:`, error);
+                    console.error("[FCM] Error sending message", {
+                        tokenEnd: token.slice(-6),
+                        errorCode: error.code,
+                        errorMessage: error.message,
+                        fullError: JSON.stringify(error, null, 2)
+                    });
+
                     if (error.code === 'messaging/registration-token-not-registered') {
+                        console.log("[FCM] Removing invalid token", {
+                            tokenEnd: token.slice(-6)
+                        });
                         await removeInvalidToken(userId, token);
                     }
                 }
             }
         } catch (error) {
-            console.error("Error processing notification:", error);
+            console.error("[FCM] Critical error in notification process", error);
         }
     }
 );
