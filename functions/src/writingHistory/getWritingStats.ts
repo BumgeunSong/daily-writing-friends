@@ -35,28 +35,21 @@ export const getWritingStats = onRequest(
     },
     async (req, res) => {
         try {
-            const db = admin.firestore();
-            const cachedStatsRef = db.collection('cachedStats').doc('writingStats');
-            const cachedStats = await cachedStatsRef.get();
-            
-            if (cachedStats.exists) {
-                const data = cachedStats.data() as CachedStats;
-                const cacheAge = admin.firestore.Timestamp.now().seconds - data.lastUpdated.seconds;
-                
-                // 캐시가 1분 이내라면 캐시된 데이터 반환
-                if (cacheAge < 1000 * 60 * 1) {
-                    res.status(200).json({
-                        status: 'success',
-                        data: {
-                            writingStats: data.stats
-                        }
-                    });
-                    return;
-                }
+            const cacheKey = 'writingStats';
+            const cachedStats = await getCachedStats(cacheKey);
+            if (cachedStats) {
+                res.status(200).json({
+                    status: 'success',
+                    data: {
+                        writingStats: cachedStats.stats
+                    }
+                });
+                return;
             }
 
             // 캐시가 없거나 만료된 경우 새로 계산
             const workingDays = getRecentWorkingDays(20);
+            const db = admin.firestore();
             const usersSnapshot = await db.collection('users').get();
             const usersData = await Promise.all(
                 usersSnapshot.docs.map(fetchUserWritingHistory)
@@ -70,12 +63,7 @@ export const getWritingStats = onRequest(
 
             const sortedStats = sortWritingStats(writingStatsWithMeta);
 
-            // 결과 캐시 저장
-            await cachedStatsRef.set({
-                lastUpdated: admin.firestore.Timestamp.now(),
-                stats: sortedStats
-            });
-
+            await saveCachedStats(cacheKey, sortedStats);
             res.status(200).json({
                 status: 'success',
                 data: {
@@ -94,6 +82,38 @@ export const getWritingStats = onRequest(
     }
 );
 
+
+const getCachedStats = async (cacheKey: string): Promise<CachedStats | null> => {
+    try {
+        const db = admin.firestore();
+        const cachedStatsRef = db.collection('cachedStats').doc(cacheKey);
+        const cachedStats = await cachedStatsRef.get();
+        
+        if (!cachedStats.exists) {
+            return null;
+        }
+
+        const data = cachedStats.data() as CachedStats;
+        const cacheAge = admin.firestore.Timestamp.now().seconds - data.lastUpdated.seconds;
+
+        // 캐시가 1분 이내인 경우에만 사용
+        if (cacheAge < 1000 * 60 * 1) {
+            return data;
+        }
+        return null;
+    } catch (error) {
+        console.error('Error fetching cached stats:', error);
+        return null;
+    }
+};
+
+const saveCachedStats = async (cacheKey: string, stats: WritingStats[]): Promise<void> => {
+    const db = admin.firestore();
+    await db.collection('cachedStats').doc(cacheKey).set({
+        lastUpdated: admin.firestore.Timestamp.now(),
+        stats
+    });
+};
 
 // 기여도 합계 계산 함수 수정: 작성한 날의 합계로 기여도 계산
 const calculateTotalContributions = (contributions: Contribution[]): number => {
