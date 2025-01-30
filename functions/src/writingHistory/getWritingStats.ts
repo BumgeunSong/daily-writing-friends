@@ -93,7 +93,7 @@ export const getWritingStats = onRequest(
 
             const sortedStats = sortWritingStats(writingStatsWithMeta);
 
-            await saveCachedStats(cacheKey, sortedStats, cohort);
+            await saveCachedStats(cacheKey, sortedStats);
             
             info("Successfully generated writing stats", {
                 cohort: cohort || 'all',
@@ -160,7 +160,7 @@ const getCachedStats = async (cacheKey: string): Promise<CachedStats | null> => 
     }
 };
 
-const saveCachedStats = async (cacheKey: string, stats: WritingStats[], cohort?: string): Promise<void> => {
+const saveCachedStats = async (cacheKey: string, stats: WritingStats[]): Promise<void> => {
     info("Saving new cache", {
         cacheKey,
         statsCount: stats.length

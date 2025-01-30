@@ -82,9 +82,7 @@ export const useWritingStats = () => {
         queryFn: () => fetchUserData(currentUser!.uid),
         enabled: !!currentUser?.uid
     });
-
-    console.log("userData", userData);
-    console.log("currentCohort", currentUser?.currentCohort);
+    
     const { 
         data: writingStats = [],
         isLoading, 
