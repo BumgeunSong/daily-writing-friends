@@ -3,19 +3,29 @@
 import { useQuery } from '@tanstack/react-query'
 import { WritingStats } from "@/types/WritingStats"
 import * as Sentry from '@sentry/react';
+import { useAuth } from '@/contexts/AuthContext';
+import { fetchUserData } from '@/utils/userUtils';
+import { User } from '@/types/User';
+
 interface WritingStatsResponse {
     status: 'success' | 'error';
     data: {
         writingStats: WritingStats[];
+        cohort: string;
     };
     error?: {
         message: string;
     };
 }
 
-const fetchWritingStats = async (): Promise<WritingStats[]> => {
+const fetchWritingStats = async (cohort: string | null): Promise<WritingStats[]> => {
     try {
-        const response = await fetch('https://getwritingstats-ifrsorhslq-uc.a.run.app/', {
+        const url = new URL('https://getwritingstats-ifrsorhslq-uc.a.run.app/');
+        if (cohort) {
+            url.searchParams.append('cohort', cohort);
+        }
+
+        const response = await fetch(url.toString(), {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
@@ -52,6 +62,7 @@ const fetchWritingStats = async (): Promise<WritingStats[]> => {
             Sentry.captureException(error, {
                 tags: {
                     url: 'getwritingstats-endpoint',
+                    cohort: cohort || 'all'
                 },
                 extra: {
                     errorMessage,
@@ -64,22 +75,33 @@ const fetchWritingStats = async (): Promise<WritingStats[]> => {
 }
 
 export const useWritingStats = () => {
+    const { currentUser } = useAuth();
+
+    const { data: userData } = useQuery<User | null>({
+        queryKey: ['userData', currentUser?.uid],
+        queryFn: () => fetchUserData(currentUser!.uid),
+        enabled: !!currentUser?.uid
+    });
+
+    console.log("userData", userData);
+    console.log("currentCohort", currentUser?.currentCohort);
     const { 
-        data: writingStats = [], // 기본값으로 빈 배열 설정
+        data: writingStats = [],
         isLoading, 
         error,
         isError
     } = useQuery<WritingStats[], Error>({
-        queryKey: ['writingStats'],
-        queryFn: fetchWritingStats,
+        queryKey: ['writingStats', userData?.currentCohort],
+        queryFn: () => fetchWritingStats(userData?.currentCohort || null),
         staleTime: 1000 * 60 * 1, // 1 minute
         cacheTime: 1000 * 60 * 10, // 10 minutes,
         retry: 1, // 실패시 1번만 재시도
+        enabled: !!userData
     });
 
     return { 
         writingStats, 
-        isLoading,
+        isLoading: isLoading || !userData,
         isError,
         error: error as Error | null,
     }
