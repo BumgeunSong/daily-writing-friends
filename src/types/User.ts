@@ -9,4 +9,5 @@ export interface User {
   boardPermissions: {
     [boardId: string]: 'read' | 'write'; // Permissions for each board
   };
+  currentCohort: string | null;
 }
