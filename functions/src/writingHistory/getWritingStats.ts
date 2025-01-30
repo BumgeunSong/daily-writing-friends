@@ -24,7 +24,7 @@ interface WritingStats {
 }
 
 interface CachedStats {
-    lastUpdated: Date;
+    lastUpdated: admin.firestore.Timestamp;
     stats: WritingStats[];
 }
 
@@ -41,7 +41,7 @@ export const getWritingStats = onRequest(
             
             if (cachedStats.exists) {
                 const data = cachedStats.data() as CachedStats;
-                const cacheAge = Date.now() - data.lastUpdated.getTime();
+                const cacheAge = admin.firestore.Timestamp.now().seconds - data.lastUpdated.seconds;
                 
                 // 캐시가 1분 이내라면 캐시된 데이터 반환
                 if (cacheAge < 1000 * 60 * 1) {
