@@ -1,10 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
-
-import { User } from '@/types/User';
-import { fetchAllUserDataWithBoardPermission } from '@/utils/userUtils';
+import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
 import { ScrollArea, ScrollBar } from '../../ui/scroll-area';
-import { getHourBasedSeed, shuffleArray } from '@/utils/shuffleUtils';
+import { useAuthors } from '@/hooks/useAuthors';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface AuthorListProps {
   boardId: string;
@@ -12,50 +10,27 @@ interface AuthorListProps {
 }
 
 const AuthorList: React.FC<AuthorListProps> = ({ boardId, onAuthorSelect }) => {
-  const [authors, setAuthors] = useState<User[]>([]);
-  const [currentHour, setCurrentHour] = useState(() => new Date().getHours());
+  const { authors, isLoading, error } = useAuthors(boardId);
 
-  const updateAuthors = useCallback(() => {
-    const newHour = new Date().getHours();
-    if (newHour !== currentHour) {
-      setCurrentHour(newHour);
-      const seed = getHourBasedSeed();
-      setAuthors(prev => shuffleArray(prev, seed));
-    }
-  }, [currentHour]);
+  if (error) {
+    return (<div/>);
+  }
 
-  // 다음 시간까지 남은 시간(ms)을 계산
-  const getTimeUntilNextHour = () => {
-    const now = new Date();
-    const nextHour = new Date(now);
-    nextHour.setHours(now.getHours() + 1, 0, 0, 0);
-    return nextHour.getTime() - now.getTime();
-  };
-
-  useEffect(() => {
-    const fetchAuthors = async () => {
-      try {
-        const authorData = await fetchAllUserDataWithBoardPermission(boardId);
-        const seed = getHourBasedSeed();
-        const shuffledAuthors = shuffleArray(authorData, seed);
-        setAuthors(shuffledAuthors);
-      } catch (error) {
-        console.error('Error fetching author data:', error);
-      }
-    };
-
-    fetchAuthors();
-
-    // 다음 시간까지 정확한 타이밍으로 대기
-    const timeout = setTimeout(() => {
-      updateAuthors();
-      // 이후 1시간 간격으로 실행
-      const hourlyInterval = setInterval(updateAuthors, 3600000);
-      return () => clearInterval(hourlyInterval);
-    }, getTimeUntilNextHour());
-
-    return () => clearTimeout(timeout);
-  }, [boardId, updateAuthors]);
+  if (isLoading) {
+    return (
+      <ScrollArea className='w-full whitespace-nowrap rounded-md border'>
+        <div className='flex w-max space-x-4 p-4'>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className='flex flex-col items-center space-y-1'>
+              <Skeleton className='size-12 rounded-full' />
+              <Skeleton className='h-4 w-20' />
+            </div>
+          ))}
+        </div>
+        <ScrollBar orientation='horizontal' />
+      </ScrollArea>
+    );
+  }
 
   return (
     <ScrollArea className='w-full whitespace-nowrap rounded-md border'>
