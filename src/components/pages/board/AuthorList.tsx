@@ -4,6 +4,7 @@ import { User } from '@/types/User';
 import { fetchAllUserDataWithBoardPermission } from '@/utils/userUtils';
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
 import { ScrollArea, ScrollBar } from '../../ui/scroll-area';
+import { getHourBasedSeed, shuffleArray } from '@/utils/shuffleUtils';
 
 interface AuthorListProps {
   boardId: string;
@@ -17,13 +18,23 @@ const AuthorList: React.FC<AuthorListProps> = ({ boardId, onAuthorSelect }) => {
     const fetchAuthors = async () => {
       try {
         const authorData = await fetchAllUserDataWithBoardPermission(boardId);
-        setAuthors(authorData);
+        const seed = getHourBasedSeed();
+        const shuffledAuthors = shuffleArray(authorData, seed);
+        setAuthors(shuffledAuthors);
       } catch (error) {
         console.error('Error fetching author data:', error);
       }
     };
+
     fetchAuthors();
-  }, []);
+
+    const interval = setInterval(() => {
+      const seed = getHourBasedSeed();
+      setAuthors(prev => shuffleArray(prev, seed));
+    }, 1000 * 60);
+
+    return () => clearInterval(interval);
+  }, [boardId]);
 
   return (
     <ScrollArea className='w-full whitespace-nowrap rounded-md border'>
