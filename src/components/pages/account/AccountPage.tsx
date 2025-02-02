@@ -1,5 +1,5 @@
 import { signOut } from 'firebase/auth';
-import { Edit, LogOut } from 'lucide-react';
+import { Edit, LogOut, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -11,6 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
+  AlertDialogDescription,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,12 +19,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '../../../contexts/AuthContext';
 import { auth } from '../../../firebase';
 import { useUserData } from '@/hooks/useUserData';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function AccountPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { userData, isLoading } = useUserData(currentUser?.uid);
-  const toast = useToast();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const handleSignOut = async () => {
     try {
@@ -31,8 +34,9 @@ export default function AccountPage() {
       navigate('/login'); // 로그아웃 후 로그인 페이지로 이동
     } catch (error) {
       console.error('로그아웃 오류:', error);
-      toast.toast({
-        description: '로그아웃에 실패했습니다. 다시 시도해주세요.'
+      toast({
+        variant: 'destructive',
+        description: '로그아웃에 실패했습니다. 다시 시도해주세요.',
       });
     }
   };
@@ -48,6 +52,34 @@ export default function AccountPage() {
       'https://docs.google.com/forms/d/e/1FAIpQLSfujE9OSO58OZ6qFe9qw1vimWEcuPCX6jyDNCRZKOdCVWB5UQ/viewform?usp=sf_link',
       '_blank',
     );
+  };
+
+  const handleClearCache = async () => {
+    try {
+      // React Query 캐시 초기화
+      await queryClient.removeQueries();
+      
+      // 브라우저 캐시 초기화
+      if ('caches' in window) {
+        const cacheKeys = await caches.keys();
+        await Promise.all(
+          cacheKeys.map(key => caches.delete(key))
+        );
+      }
+
+      // localStorage 초기화 (필요한 경우)
+      localStorage.clear();
+      
+      toast({
+        description: '캐시가 성공적으로 삭제되었습니다.',
+      });
+    } catch (error) {
+      console.error('캐시 삭제 오류:', error);
+      toast({
+        variant: 'destructive',
+        description: '캐시 삭제에 실패했습니다. 다시 시도해주세요.',
+      });
+    }
   };
 
   if (isLoading) {
@@ -115,6 +147,32 @@ export default function AccountPage() {
                   <AlertDialogFooter>
                     <AlertDialogCancel>취소</AlertDialogCancel>
                     <AlertDialogAction onClick={handleSignOut}>확인</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant='outline' 
+                    className='w-full text-red-500 hover:bg-red-50 hover:text-red-600'
+                  >
+                    <Trash2 className='mr-2 size-4' />
+                    캐시 삭제
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>캐시를 삭제하시겠습니까?</AlertDialogTitle>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>취소</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleClearCache}
+                      className='bg-red-500 hover:bg-red-600'
+                    >
+                      삭제
+                    </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
