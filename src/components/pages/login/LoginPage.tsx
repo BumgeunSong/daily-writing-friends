@@ -39,7 +39,7 @@ export default function LoginPage() {
         profilePhotoURL: userCredential.user.photoURL,
         bio: null,
         boardPermissions: {
-          '5pxedM1zGP4GbH7sx1X2': 'write', // default board id
+          'rW3Y3E2aEbpB0KqGiigd': 'read', // default board id
         },
       };
       await createUserData(newUser);
