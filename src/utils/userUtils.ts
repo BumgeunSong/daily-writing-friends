@@ -70,7 +70,7 @@ export async function fetchAllUserDataWithBoardPermission(boardId: string): Prom
 
     const usersQuery = query(
       collection(firestore, 'users'),
-      where(`boardPermissions.${boardId}`, 'in', ['read', 'write'])
+      where(`boardPermissions.${boardId}`, 'in', ['write'])
     );
 
     const querySnapshot = await getDocs(usersQuery);

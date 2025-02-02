@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
-
-import { User } from '@/types/User';
-import { fetchAllUserDataWithBoardPermission } from '@/utils/userUtils';
+import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
 import { ScrollArea, ScrollBar } from '../../ui/scroll-area';
+import { useAuthors } from '@/hooks/useAuthors';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface AuthorListProps {
   boardId: string;
@@ -11,19 +10,27 @@ interface AuthorListProps {
 }
 
 const AuthorList: React.FC<AuthorListProps> = ({ boardId, onAuthorSelect }) => {
-  const [authors, setAuthors] = useState<User[]>([]);
+  const { authors, isLoading, error } = useAuthors(boardId);
 
-  useEffect(() => {
-    const fetchAuthors = async () => {
-      try {
-        const authorData = await fetchAllUserDataWithBoardPermission(boardId);
-        setAuthors(authorData);
-      } catch (error) {
-        console.error('Error fetching author data:', error);
-      }
-    };
-    fetchAuthors();
-  }, []);
+  if (error) {
+    return (<div/>);
+  }
+
+  if (isLoading) {
+    return (
+      <ScrollArea className='w-full whitespace-nowrap rounded-md border'>
+        <div className='flex w-max space-x-4 p-4'>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className='flex flex-col items-center space-y-1'>
+              <Skeleton className='size-12 rounded-full' />
+              <Skeleton className='h-4 w-20' />
+            </div>
+          ))}
+        </div>
+        <ScrollBar orientation='horizontal' />
+      </ScrollArea>
+    );
+  }
 
   return (
     <ScrollArea className='w-full whitespace-nowrap rounded-md border'>
