@@ -11,7 +11,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-  AlertDialogDescription,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,14 +18,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '../../../contexts/AuthContext';
 import { auth } from '../../../firebase';
 import { useUserData } from '@/hooks/useUserData';
-import { useQueryClient } from '@tanstack/react-query';
+import { useClearCache } from '@/hooks/useClearCache';
 
 export default function AccountPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { userData, isLoading } = useUserData(currentUser?.uid);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const clearCache = useClearCache();
 
   const handleSignOut = async () => {
     try {
@@ -55,26 +54,17 @@ export default function AccountPage() {
   };
 
   const handleClearCache = async () => {
-    try {
-      // React Query 캐시 초기화
-      await queryClient.removeQueries();
-      
-      // 브라우저 캐시 초기화
-      if ('caches' in window) {
-        const cacheKeys = await caches.keys();
-        await Promise.all(
-          cacheKeys.map(key => caches.delete(key))
-        );
-      }
-
-      // localStorage 초기화 (필요한 경우)
-      localStorage.clear();
-      
+    const result = await clearCache({
+      clearReactQuery: true,
+      clearBrowserCache: true,
+      clearLocalStorage: true,
+    });
+    
+    if (result.success) {
       toast({
         description: '캐시가 성공적으로 삭제되었습니다.',
       });
-    } catch (error) {
-      console.error('캐시 삭제 오류:', error);
+    } else {
       toast({
         variant: 'destructive',
         description: '캐시 삭제에 실패했습니다. 다시 시도해주세요.',
