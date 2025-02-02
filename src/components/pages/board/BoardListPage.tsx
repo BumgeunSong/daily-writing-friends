@@ -16,6 +16,15 @@ const BoardListPage: React.FC = () => {
       enabled: !!currentUser, // currentUser가 있을 때만 쿼리 실행
       staleTime: 1000 * 60 * 5, // 5분 동안 데이터가 신선하다고 간주
       cacheTime: 1000 * 60 * 30, // 10분 동안 캐시 유지
+      select: (data) => {
+        // 코호트 순으로 정렬
+        return [...data].sort((a, b) => {
+          // cohort가 없는 경우 맨 뒤로
+          if (!a.cohort) return 1;
+          if (!b.cohort) return -1;
+          return a.cohort - b.cohort;
+        });
+      },
     }
   );
 
