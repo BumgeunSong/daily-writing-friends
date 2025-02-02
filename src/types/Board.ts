@@ -7,4 +7,5 @@ export interface Board {
   description: string;
   createdAt: Date;
   firstDay?: Timestamp;
+  cohort?: number;
 }
