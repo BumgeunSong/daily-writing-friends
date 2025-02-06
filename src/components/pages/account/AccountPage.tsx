@@ -1,5 +1,5 @@
 import { signOut } from 'firebase/auth';
-import { Edit, LogOut, Trash2 } from 'lucide-react';
+import { BarChart3, Edit, LogOut, MessageCircle, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -19,6 +19,8 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { auth } from '../../../firebase';
 import { useUserData } from '@/hooks/useUserData';
 import { useClearCache } from '@/hooks/useClearCache';
+import { useQuery } from '@tanstack/react-query';
+import { getUserActivityCount } from '@/utils/activityUtils';
 
 export default function AccountPage() {
   const { currentUser } = useAuth();
@@ -59,7 +61,7 @@ export default function AccountPage() {
       clearBrowserCache: true,
       clearLocalStorage: true,
     });
-    
+
     if (result.success) {
       toast({
         description: '캐시가 성공적으로 삭제되었습니다.',
@@ -90,10 +92,10 @@ export default function AccountPage() {
   }
 
   return (
-    <div className='flex min-h-screen flex-col items-center bg-gray-50 p-4 pt-8'>
+    <div className='flex min-h-screen flex-col items-center bg-gray-50 p-4 pb-24 pt-8'>
       <Card className='w-full max-w-md overflow-hidden'>
         <div className='relative h-32 bg-gradient-to-r from-gray-900 to-black' />
-        <div className='relative z-10 -mt-16 flex flex-col items-center'>
+        <div className='relative z-0 -mt-16 flex flex-col items-center'>
           <img
             src={userData.profilePhotoURL || '/placeholder.svg?height=128&width=128'}
             alt={`${userData.nickname}'s profile`}
@@ -110,19 +112,26 @@ export default function AccountPage() {
                 {userData.bio || '아직 자기소개가 없어요.'}
               </p>
             </div>
-            <div className='space-y-4'>
+            <ActivitySummary />
+            <div className='mt-6 space-y-3 pb-16'>
               <Button
-                className='w-full transition-all duration-300 ease-in-out hover:scale-105'
+                variant="default"
+                className='w-full'
                 onClick={handleEditProfile}
               >
-                <Edit className='mr-2 size-4' />내 정보 수정하기
+                <Edit className='mr-2 size-4' />
+                내 정보 수정하기
               </Button>
+
               <Button
-                className='w-full transition-all duration-300 ease-in-out hover:scale-105'
+                variant="secondary"
+                className='w-full'
                 onClick={handleFeedback}
               >
+                <MessageCircle className='mr-2 size-4' />
                 의견 보내기
               </Button>
+
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button variant='outline' className='w-full'>
@@ -140,11 +149,11 @@ export default function AccountPage() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-              
+
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button 
-                    variant='outline' 
+                  <Button
+                    variant='outline'
                     className='w-full text-red-500 hover:bg-red-50 hover:text-red-600'
                   >
                     <Trash2 className='mr-2 size-4' />
@@ -157,7 +166,7 @@ export default function AccountPage() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>취소</AlertDialogCancel>
-                    <AlertDialogAction 
+                    <AlertDialogAction
                       onClick={handleClearCache}
                       className='bg-red-500 hover:bg-red-600'
                     >
@@ -170,6 +179,41 @@ export default function AccountPage() {
           </CardContent>
         </div>
       </Card>
+    </div>
+  );
+}
+
+function ActivitySummary() {
+  // 최근 3일 동안의 활동 데이터 가져오기
+  const { currentUser } = useAuth();
+  const threeDaysAgo = new Date();
+  threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+  const { data: activityData } = useQuery({
+    queryKey: ['activityData', currentUser?.uid],
+    queryFn: () => getUserActivityCount(currentUser?.uid, threeDaysAgo, new Date()),
+  });
+
+  const totalActivityCount = activityData ? activityData.totalCount : 0;
+
+  return (
+    <div className='my-6 rounded-lg bg-white p-4 shadow-sm ring-1 ring-gray-900/5'>
+      <div className='mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900'>
+        <BarChart3 className='size-4' />
+        최근 3일 기록
+      </div>
+
+      <div className='grid grid-cols-2 gap-4'>
+        <div className='rounded-lg bg-blue-50 p-3 transition-all hover:bg-blue-100'>
+          <div className='flex items-center gap-2 text-blue-600'>
+            <MessageCircle className='size-4' />
+            <span className='text-sm font-medium'>댓글/답글</span>
+          </div>
+          <p className='mt-2 text-2xl font-bold text-blue-700'>
+            {totalActivityCount}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
