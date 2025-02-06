@@ -22,10 +22,18 @@ export interface ActivityCount {
  * @returns 댓글 수와 답글 수를 포함한 객체
  */
 export async function getUserActivityCount(
-  userId: string,
+  userId: string | undefined,
   startDate: Date,
   endDate: Date
 ): Promise<ActivityCount> {
+  if (!userId) {
+    return {
+      countOfComments: 0,
+      countOfReplies: 0,
+      totalCount: 0
+    };
+  }
+
   const firestore = getFirestore();
 
   try {
@@ -53,7 +61,14 @@ export async function getUserActivityCount(
           where('createdAt', '<', endTimestamp)
         )
       )
-    ]);
+    ]).catch(error => {
+      console.error('Query execution error:', error);
+      if (error instanceof Error && error.message.includes('permission')) {
+        console.warn('Permission error - returning empty results');
+        return [{ size: 0 }, { size: 0 }];
+      }
+      throw error;
+    });
 
     // 결과 카운트
     const countOfComments = commentsSnapshot.size;
@@ -68,16 +83,13 @@ export async function getUserActivityCount(
   } catch (error) {
     console.error('활동 수 조회 중 오류 발생:', error);
     
-    // 에러 타입 체크 및 사용자 친화적 에러 메시지
-    if (error instanceof Error) {
-      // Firebase 인덱스 관련 에러 체크
-      if (error.message.includes('index')) {
-        throw new Error('데이터베이스 인덱스가 필요합니다. 관리자에게 문의해주세요.');
-      }
-      // 권한 관련 에러 체크
-      if (error.message.includes('permission')) {
-        throw new Error('접근 권한이 없습니다.');
-      }
+    // 권한 오류 시 빈 결과 반환
+    if (error instanceof Error && error.message.includes('permission')) {
+      return {
+        countOfComments: 0,
+        countOfReplies: 0,
+        totalCount: 0
+      };
     }
     
     throw new Error('활동 수를 가져오는 중에 문제가 발생했습니다.');
