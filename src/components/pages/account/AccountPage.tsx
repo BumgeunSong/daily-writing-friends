@@ -192,6 +192,8 @@ function ActivitySummary() {
   const { data: activityData } = useQuery({
     queryKey: ['activityData', currentUser?.uid],
     queryFn: () => getUserActivityCount(currentUser?.uid, threeDaysAgo, new Date()),
+    cacheTime: 3 * 60 * 1000, // 3분 동안 캐시 유지
+    staleTime: 10 * 60 * 1000, // 10분 동안 캐시 유지
   });
 
   const totalActivityCount = activityData ? activityData.totalCount : 0;
