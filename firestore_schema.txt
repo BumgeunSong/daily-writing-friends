@@ -1,0 +1,88 @@
+Firestore Database Schema
+
+1. users Collection
+- Document ID: {userId}
+- Fields:
+  - uid (string): Unique identifier for the user
+  - realName (string | null): User's real name
+  - nickname (string | null): User's chosen nickname
+  - email (string | null): User's email address
+  - profilePhotoURL (string | null): Profile picture URL
+  - bio (string | null): Short bio about the user
+  - boardPermissions (map): { [boardId]: 'read' | 'write' }
+
+  Subcollections:
+  - notifications
+    - Document ID: {notificationId}
+    - Fields:
+      - id (string)
+      - type (enum): Notification type (COMMENT_ON_POST, REPLY_ON_COMMENT, REPLY_ON_POST)
+      - boardId (string)
+      - postId (string)
+      - commentId (string | optional)
+      - replyId (string | optional)
+      - fromUserId (string)
+      - fromUserProfileImage (string | optional)
+      - message (string)
+      - timestamp (Timestamp)
+      - read (boolean)
+
+  - writingHistories
+    - Document ID: {writingHistoryId}
+    - Fields:
+      - day (string): YYYY-MM-DD
+      - createdAt (Timestamp)
+      - board.id (string)
+      - post.id (string)
+      - post.contentLength (number)
+
+  - firebaseMessagingTokens
+    - Document ID: {firebaseMessagingTokenId}
+    - Fields: (Not explicitly defined)
+
+2. boards Collection
+- Document ID: {boardId}
+- Fields:
+  - id (string)
+  - title (string)
+  - description (string)
+  - createdAt (Date)
+  - firstDay (Timestamp | optional)
+  - cohort (number | optional)
+
+  Subcollections:
+  - posts
+    - Document ID: {postId}
+    - Fields:
+      - id (string)
+      - boardId (string)
+      - title (string)
+      - content (string)
+      - thumbnailImageURL (string | null)
+      - authorId (string)
+      - authorName (string)
+      - createdAt (Date | optional)
+      - updatedAt (Date | optional)
+      - countOfComments (number)
+      - countOfReplies (number)
+      - weekDaysFromFirstDay (number | optional)
+
+    - comments
+      - Document ID: {commentId}
+      - Fields:
+        - id (string)
+        - content (string)
+        - userId (string)
+        - userName (string)
+        - userProfileImage (string)
+        - createdAt (Timestamp)
+
+      - replies
+        - Document ID: {replyId}
+        - Fields:
+          - id (string)
+          - content (string)
+          - userId (string)
+          - userName (string)
+          - userProfileImage (string)
+          - createdAt (Timestamp)
