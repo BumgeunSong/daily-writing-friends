@@ -8,6 +8,7 @@ export interface WritingStats {
     }
     contributions: Contribution[];
     badges: WritingBadge[];
+    recentStreak: number;
 }
 
 export type Contribution = {

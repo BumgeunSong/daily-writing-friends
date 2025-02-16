@@ -29,11 +29,32 @@ async function fetchMultipleUserStats(userIds: string[]): Promise<WritingStats[]
     try {
         const statsPromises = userIds.map(fetchSingleUserStats);
         const results = await Promise.all(statsPromises);
-        return results.filter((result): result is WritingStats => result !== null);
+        return sort(results.filter((result): result is WritingStats => result !== null));
     } catch (error) {
         console.error('Error fetching multiple user stats:', error);
         throw error;
     }
+}
+function sort(writingStats: WritingStats[]): WritingStats[] {
+    return writingStats.sort((a, b) => {
+        // 1. sort by recentStreak
+        if (b.recentStreak !== a.recentStreak) {
+            return b.recentStreak - a.recentStreak;
+        }
+
+        // 2. if recentStreak is same, sort by number of contributions
+        const aContributions = a.contributions.length;
+        const bContributions = b.contributions.length;
+
+        // 3. if number of contributions is same, sort by sum of contentLength
+        if (bContributions !== aContributions) {
+            return bContributions - aContributions;
+        }
+
+        const aContentLengthSum = a.contributions.reduce((sum, contribution) => sum + (contribution.contentLength ?? 0), 0);
+        const bContentLengthSum = b.contributions.reduce((sum, contribution) => sum + (contribution.contentLength ?? 0), 0);
+        return bContentLengthSum - aContentLengthSum;
+    });
 }
 
 // 단일 사용자의 통계 가져오기
