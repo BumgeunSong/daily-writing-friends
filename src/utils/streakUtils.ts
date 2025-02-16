@@ -1,50 +1,64 @@
+
+import { isWorkingDay } from '@/utils/dateUtils';
+import { Contribution } from '@/types/WritingStats';
 import { Posting } from '@/types/Posting';
 
-// pure function to calculate current streak
-export function calculateCurrentStreak(postings: Posting[]): number {
-    if (!postings.length) {
-        return 0;
+// Helper: Converts a Date to a YYYY-MM-DD string in the given timezone.
+function getDateKey(date: Date, timeZone: string): string {
+    // Create a locale string in the given timezone then back to Date to normalize the date.
+    const localDate = new Date(date.toLocaleString('en-US', { timeZone }));
+    return localDate.toISOString().split('T')[0];
+}
+
+// Helper: Build a set of date keys that represent days when at least one posting occurred.
+function buildPostingDaysSet(postings: Posting[], timeZone: string): Set<string> {
+    const postingDays = new Set<string>();
+    for (const posting of postings) {
+        const postingDate = posting.createdAt.toDate();
+        const key = getDateKey(postingDate, timeZone);
+        postingDays.add(key);
     }
+    return postingDays;
+}
 
-    // 날짜별로 포스팅을 그룹화
-    const postingDates = postings.map(posting => 
-        posting.createdAt.toDate().toISOString().split('T')[0]
-    );
-    const uniqueDates = [...new Set(postingDates)].sort().reverse(); // 최신 날짜순
+// Pure function to check if a date has posting activity.
+function hasPostingOnDate(date: Date, postingDays: Set<string>, timeZone: string): boolean {
+    const key = getDateKey(date, timeZone);
+    return postingDays.has(key);
+}
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    const lastPostDate = new Date(uniqueDates[0]);
-    lastPostDate.setHours(0, 0, 0, 0);
+// Pure function that calculates the current streak given today's date, a postingDays set, 
+// and an isWorkingDay predicate.
+function calculateStreakFromDate(
+    startDate: Date,
+    postingDays: Set<string>,
+    timeZone: string,
+    isWorkingDayFn: (date: Date, timeZone: string) => boolean
+): number {
+    let streak = 0;
+    let currentDate = new Date(startDate.getTime());
 
-    // 어제까지 포스팅이 없으면 스트릭은 0
-    if (lastPostDate.getTime() < yesterday.getTime()) {
-        return 0;
-    }
-
-    let streak = 1; // 최소 1일
-    let currentDate = lastPostDate;
-
-    // 연속된 날짜 확인
-    for (let i = 1; i < uniqueDates.length; i++) {
-        const prevDate = new Date(uniqueDates[i]);
-        prevDate.setHours(0, 0, 0, 0);
-
-        const diffDays = Math.floor(
-            (currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24)
-        );
-
-        if (diffDays === 1) {
-            streak++;
-            currentDate = prevDate;
-        } else {
-            break; // 연속이 끊기면 중단
+    // Loop backwards until a working day is missing posting.
+    while (true) {
+        if (isWorkingDayFn(currentDate, timeZone)) {
+            if (hasPostingOnDate(currentDate, postingDays, timeZone)) {
+                streak++;
+            } else {
+                break;
+            }
         }
+        // Move one day back
+        currentDate = new Date(currentDate.getTime() - 86400000);
     }
 
     return streak;
+}
+
+// Main function that calculates the current streak.
+export function calculateCurrentStreak(postings: Posting[]): number {
+    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const postingDays = buildPostingDaysSet(postings, userTimeZone);
+    const today = new Date();
+
+    return calculateStreakFromDate(today, postingDays, userTimeZone, isWorkingDay);
 }

@@ -10,9 +10,10 @@ import { WritingStats, Contribution, WritingBadge } from '@/types/WritingStats';
 import { Posting } from '@/types/Posting';
 import { User } from '@/types/User';
 import { fetchUserData } from '@/utils/userUtils';
+import { getRecentWorkingDays } from '@/utils/dateUtils';
 import { calculateCurrentStreak } from '@/utils/streakUtils';
 
-export function useWritingStatsV2(userIds: string[]) {    
+export function useWritingStatsV2(userIds: string[]) {
     return useQuery({
         queryKey: ['writingStatsV2', userIds],
         queryFn: () => fetchMultipleUserStats(userIds),
@@ -88,11 +89,31 @@ async function fetchPostingData(userId: string): Promise<Posting[]> {
 }
 
 // 기여도 배열 생성
-function createContributions(postings: Posting[]): Contribution[] {
-    return postings.map(posting => ({
-        createdAt: posting.createdAt.toDate().toISOString(),
-        contentLength: posting.post.contentLength
-    }));
+function createContributions(postings: Posting[], workingDays: Date[]): Contribution[] {
+    // Helper function to get a date key in YYYY-MM-DD format.
+    const getDateKey = (date: Date): string => date.toISOString().split('T')[0];
+
+    // Build a map where the key is the date string and the value is the total contentLength.
+    const postingMap = new Map<string, number>();
+
+    for (const posting of postings) {
+        // Convert the Firebase Timestamp to a Date. (Assuming Timestamp has a toDate() method)
+        const postingDate = posting.createdAt.toDate();
+        const key = getDateKey(postingDate);
+        const currentSum = postingMap.get(key) || 0;
+        postingMap.set(key, currentSum + posting.post.contentLength);
+    }
+
+    // Build contributions for each working day.
+    return workingDays.map(day => {
+        const key = getDateKey(day);
+        // If no posting, contentLength is null. Otherwise, sum the content lengths.
+        const totalContentLength = postingMap.has(key) ? postingMap.get(key)! : null;
+        return {
+            createdAt: key,
+            contentLength: totalContentLength,
+        };
+    });
 }
 
 // 사용자 정보 객체 생성
@@ -109,7 +130,7 @@ function createUserInfo(user: User) {
 // 스트릭 배지 생성
 function createStreakBadge(streak: number): WritingBadge[] {
     if (streak < 2) return [];
-    
+
     return [{
         name: `연속 ${streak}일차`,
         emoji: '🔥'
@@ -118,13 +139,15 @@ function createStreakBadge(streak: number): WritingBadge[] {
 
 // WritingStats 계산
 function calculateWritingStats(user: User, postings: Posting[]): WritingStats {
-    const contributions = createContributions(postings);
+    const workingDays = getRecentWorkingDays();
+    const contributions = createContributions(postings, workingDays);
     const streak = calculateCurrentStreak(postings);
     const badges = createStreakBadge(streak);
 
     return {
         user: createUserInfo(user),
         contributions,
-        badges
+        badges,
+        recentStreak: streak
     };
 }
