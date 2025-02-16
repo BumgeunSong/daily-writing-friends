@@ -19,6 +19,12 @@ export function useWritingStatsV2(userIds: string[]) {
         queryKey: ['writingStatsV2', userIds],
         queryFn: () => fetchMultipleUserStats(userIds),
         enabled: userIds.length > 0,
+        // 캐시 설정
+        staleTime: 1 * 60 * 1000, // 5분 동안 데이터를 'fresh'하게 유지
+        cacheTime: 30 * 60 * 1000, // 30분 동안 캐시 유지
+        // 실시간 업데이트를 위한 주기적 리프레시
+        refetchInterval: 5 * 60 * 1000, // 5분마다 리프레시
+        refetchOnWindowFocus: true, // 윈도우 포커스 시 리프레시
     });
 }
 
