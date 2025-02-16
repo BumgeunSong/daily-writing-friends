@@ -59,31 +59,49 @@ export async function fetchAllUserData(): Promise<User[]> {
   return users.docs.map((doc) => doc.data() as User);
 }
 
+
 // Function to fetch all user data with board permission from firestore
-export async function fetchAllUserDataWithBoardPermission(boardId: string): Promise<User[]> {
-  try {
-    // 캐시에서 사용자 데이터 가져오기
-    const cachedUsers = localStorage.getItem(`permissionedUsers_${boardId}`);
-    if (cachedUsers) {
-      return JSON.parse(cachedUsers);
+export async function fetchAllUserDataWithBoardPermission(boardIds: string[]): Promise<User[]> {
+    try {
+        // 모든 보드 ID를 정렬하여 캐시 키 생성
+        const cacheKey = `permissionedUsers_${boardIds.sort().join('_')}`;
+        
+        // 캐시에서 사용자 데이터 가져오기
+        const cachedUsers = localStorage.getItem(cacheKey);
+        if (cachedUsers) {
+            return JSON.parse(cachedUsers);
+        }
+
+        // 각 보드별로 쿼리 생성
+        const queries = boardIds.map(boardId => 
+            query(
+                collection(firestore, 'users'),
+                where(`boardPermissions.${boardId}`, 'in', ['write'])
+            )
+        );
+
+        // 모든 쿼리 실행
+        const snapshots = await Promise.all(queries.map(q => getDocs(q)));
+        
+        // 모든 사용자 데이터 수집 (중복 제거)
+        const userMap = new Map<string, User>();
+        snapshots.forEach(snapshot => {
+            snapshot.docs.forEach(doc => {
+                const userData = doc.data() as User;
+                userMap.set(doc.id, userData);
+            });
+        });
+
+        const users = Array.from(userMap.values());
+
+        // 캐시에 사용자 데이터 저장
+        localStorage.setItem(cacheKey, JSON.stringify(users));
+
+        return users;
+    } catch (error) {
+        console.error('Error fetching users with board permission:', error);
+        return [];
     }
-
-    const usersQuery = query(
-      collection(firestore, 'users'),
-      where(`boardPermissions.${boardId}`, 'in', ['write'])
-    );
-
-    const querySnapshot = await getDocs(usersQuery);
-    const users = querySnapshot.docs.map((doc) => doc.data() as User);
-
-    // 캐시에 사용자 데이터 저장
-    localStorage.setItem(`permissionedUsers_${boardId}`, JSON.stringify(users));
-
-    return users;
-  } catch (error) {
-    console.error('Error fetching users with board permission:', error);
-    return [];
-  }
 }
 
 // Function to listen for user data changes and update cache

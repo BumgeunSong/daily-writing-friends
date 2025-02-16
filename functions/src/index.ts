@@ -6,10 +6,13 @@ import { onReplyCreatedOnPost } from './notifications/replyOnPost';
 import { onNotificationCreated } from './notifications/sendMessageOnNotification';
 import { updateCommentRepliesCounts } from './notifications/updateCommentRepliesCounts';
 import { updatePostDaysFromFirstDay } from './notifications/updateDaysFromFirstDay';
+import { createPosting } from './postings/createPosting';
+import { updatePosting } from './postings/updatePosting';
 import { createWritingHistoryOnPostCreated } from './writingHistory/createWritingHistoryOnPostCreated';
 import { deleteWritingHistoryOnPostDeleted } from './writingHistory/deleteWritingHistoryOnPostDeleted';
 import { getWritingStats } from './writingHistory/getWritingStats';
 import { updateWritingHistoryByBatch } from './writingHistory/updateWritingHistoryByBatch';
+
 export {
   onCommentCreated,
   onReplyCreatedOnComment,
@@ -24,5 +27,7 @@ export {
   updateWritingHistoryByBatch,
   getWritingStats,
   createWritingHistoryOnPostCreated,
-  deleteWritingHistoryOnPostDeleted
+  deleteWritingHistoryOnPostDeleted,
+  createPosting,
+  updatePosting
 };

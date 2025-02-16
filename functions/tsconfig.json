@@ -7,14 +7,17 @@
     "sourceMap": true,
     "strict": true,
     "target": "es2017",
-    "types": ["jest", "node"],
+    "types": ["node"],
     "esModuleInterop": true,
     "skipLibCheck": true
   },
   "compileOnSave": true,
   "include": [
-    "src",
-    "jest.config.ts",
-    ".eslintrc.js"
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "lib",
+    "**/*.test.ts"
   ]
 }

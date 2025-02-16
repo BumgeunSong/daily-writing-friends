@@ -1,20 +1,43 @@
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { UserStatsCard } from "./UserStatsCard"
-import { useWritingStats } from "@/hooks/useWritingStats"
+import { useWritingStatsV2 } from "@/hooks/useWritingStatsV2"
 import StatsHeader from "./StatsHeader"
 import { StatsNoticeBanner } from "./StatsNoticeBanner"
 import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring"
+import { useQuery } from "@tanstack/react-query"
+import { fetchAllUserDataWithBoardPermission } from "@/utils/userUtils"
+
+const ACTIVE_BOARD_ID: string[] = ['Qs8RNvGqMBFLmIAkiLUS', 'AyvgJGwmf4MnOmAvz0xH']
 
 export default function StatsPage() {
     usePerformanceMonitoring('StatsPage');
-    const { writingStats, isLoading, error } = useWritingStats()
+    const { 
+        data: activeUsers, 
+        isLoading: isLoadingUsers, 
+        error: usersError 
+    } = useQuery({
+        queryKey: ['activeUsers', ACTIVE_BOARD_ID],
+        queryFn: () => fetchAllUserDataWithBoardPermission(ACTIVE_BOARD_ID),
+    });
+
+    // 2. 사용자 ID 배열로 통계 가져오기
+    const { 
+        data: writingStats, 
+        isLoading: isLoadingStats, 
+        error: statsError 
+    } = useWritingStatsV2(
+        activeUsers?.map(user => user.uid) || []
+    );
+    
+    const isLoading = isLoadingUsers || isLoadingStats;
+    const error = usersError || statsError;
     
     if (isLoading) {
         return <LoadingState />
     }
 
     if (error) {
-        return <ErrorState error={error} />
+        return <ErrorState error={error instanceof Error ? error : new Error('Unknown error')} />
     }
     
     return (
@@ -34,7 +57,7 @@ export default function StatsPage() {
     )
 }
 
-// LoadingState와 ErrorState 컴포넌트도 StatsHeader를 사용하도록 수정
+// LoadingState와 ErrorState 컴포넌트는 그대로 유지
 function LoadingState() {
     return (
         <div className="min-h-screen flex flex-col bg-background">
@@ -46,19 +69,13 @@ function LoadingState() {
                         {[...Array(5)].map((_, index) => (
                             <div key={index} className="w-full bg-card rounded-lg">
                                 <div className="flex items-start gap-4 p-4">
-                                    {/* Left section with avatar and user info */}
                                     <div className="flex flex-1 items-start gap-4">
-                                        {/* Avatar skeleton */}
                                         <div className="h-12 w-12 bg-muted rounded-full" />
-                                        
-                                        {/* User info skeleton */}
                                         <div className="flex flex-col gap-2">
                                             <div className="h-5 w-24 bg-muted rounded" />
                                             <div className="h-4 w-32 bg-muted rounded" />
                                         </div>
                                     </div>
-
-                                    {/* Right section with contribution graph */}
                                     <div className="flex flex-col items-end gap-2">
                                         <div className="w-24 grid grid-rows-4 grid-flow-col gap-1">
                                             {[...Array(20)].map((_, i) => (
@@ -88,7 +105,7 @@ function ErrorState({ error }: { error: Error }) {
                     Error: {error.message}
                 </h2>
                 <p className="text-muted-foreground">
-                    We couldn't load the data. Please try again later.
+                    데이터를 불러올 수 없습니다. 나중에 다시 시도해주세요.
                 </p>
             </main>
         </div>

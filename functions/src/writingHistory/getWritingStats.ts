@@ -1,8 +1,8 @@
+import { info, debug, warn, error as errorLog } from "firebase-functions/logger";
 import { onRequest } from "firebase-functions/v2/https";
 import admin from "../admin";
 import { getRecentWorkingDays } from "../dateUtils";
 import { createBadges, calculateRecentStreak, WritingBadge } from "./createBadges";
-import { info, debug, warn, error as errorLog } from "firebase-functions/logger";
 import { createContributions, Contribution } from "./createContributions";
 import { WritingHistory } from "../types/WritingHistory";
 interface UserData {
