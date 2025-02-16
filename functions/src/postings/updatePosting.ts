@@ -12,7 +12,9 @@ export const updatePosting = onRequest(async (req, res) => {
     // Accept boardId as a query parameter (or in the request body)
     const boardId = req.query.boardId || req.body.boardId;
     if (!boardId) {
-      res.status(400).send("Missing boardId parameter.");
+      res.status(400).json({ 
+        error: "Missing boardId parameter." 
+      });
       return;
     }
   
@@ -70,9 +72,18 @@ export const updatePosting = onRequest(async (req, res) => {
       }
   
       console.log(`Migration completed for board ${boardId}: ${processedCount} post(s) processed, ${errorCount} error(s).`);
-      res.status(200).send(`Migration completed for board ${boardId}: ${processedCount} post(s) processed, ${errorCount} error(s).`);
+      res.status(200).json({
+        message: `Migration completed for board ${boardId}`,
+        stats: {
+          processed: processedCount,
+          errors: errorCount
+        }
+      });
     } catch (error) {
       console.error(`Error during migration for board ${boardId}:`, error);
-      res.status(500).send(`Error during migration for board ${boardId}: ${error}`);
+      res.status(500).json({
+        error: `Error during migration for board ${boardId}`,
+        details: error instanceof Error ? error.message : String(error)
+      });
     }
   });
