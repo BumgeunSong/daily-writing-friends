@@ -1,9 +1,7 @@
 import { isWorkingDay } from '@/utils/dateUtils';
 import { Posting } from '@/types/Posting';
-import { Timestamp } from 'firebase/firestore';
-// Helper: Converts a Date to a YYYY-MM-DD string in the given timezone.
+
 export function getDateKey(date: Date, timeZone?: string): string {
-    // timeZone이 제공되지 않으면 사용자의 타임존 사용
     const userTimeZone = timeZone || getUserTimeZone();
     
     const formatter = new Intl.DateTimeFormat('en-US', {
@@ -81,19 +79,3 @@ export function getUserTimeZone(): string {
         return 'Asia/Seoul'; // 기본값으로 KST 사용
     }
 }
-
-// 디버깅을 위한 테스트 함수
-function testDateConversion(timestamp: Timestamp) {
-    const date = timestamp.toDate();
-    const userTimeZone = getUserTimeZone();
-    
-    console.log('Original Date:', date.toISOString());
-    console.log('User TimeZone:', userTimeZone);
-    console.log('Local Date Key:', getDateKey(date)); // 사용자 타임존
-    console.log('KST Date Key:', getDateKey(date, 'Asia/Seoul'));
-    console.log('UTC Date Key:', getDateKey(date, 'UTC'));
-}
-
-// 사용 예시:
-const timestamp = new Timestamp(1739525815, 673000000); // 2025-01-16 in KST
-testDateConversion(timestamp);
