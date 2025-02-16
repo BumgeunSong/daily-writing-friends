@@ -1,13 +1,20 @@
-
 import { isWorkingDay } from '@/utils/dateUtils';
-import { Contribution } from '@/types/WritingStats';
 import { Posting } from '@/types/Posting';
-
+import { Timestamp } from 'firebase/firestore';
 // Helper: Converts a Date to a YYYY-MM-DD string in the given timezone.
-function getDateKey(date: Date, timeZone: string): string {
-    // Create a locale string in the given timezone then back to Date to normalize the date.
-    const localDate = new Date(date.toLocaleString('en-US', { timeZone }));
-    return localDate.toISOString().split('T')[0];
+export function getDateKey(date: Date, timeZone?: string): string {
+    // timeZone이 제공되지 않으면 사용자의 타임존 사용
+    const userTimeZone = timeZone || getUserTimeZone();
+    
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: userTimeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    });
+
+    const parts = formatter.format(date).split('/');
+    return `${parts[2]}-${parts[0]}-${parts[1]}`;
 }
 
 // Helper: Build a set of date keys that represent days when at least one posting occurred.
@@ -62,3 +69,31 @@ export function calculateCurrentStreak(postings: Posting[]): number {
 
     return calculateStreakFromDate(today, postingDays, userTimeZone, isWorkingDay);
 }
+
+// 사용자의 타임존을 가져오는 함수
+export function getUserTimeZone(): string {
+    try {
+        // 1. 브라우저의 타임존 정보 가져오기
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        return timeZone;
+    } catch (error) {
+        console.warn('Failed to get user timezone:', error);
+        return 'Asia/Seoul'; // 기본값으로 KST 사용
+    }
+}
+
+// 디버깅을 위한 테스트 함수
+function testDateConversion(timestamp: Timestamp) {
+    const date = timestamp.toDate();
+    const userTimeZone = getUserTimeZone();
+    
+    console.log('Original Date:', date.toISOString());
+    console.log('User TimeZone:', userTimeZone);
+    console.log('Local Date Key:', getDateKey(date)); // 사용자 타임존
+    console.log('KST Date Key:', getDateKey(date, 'Asia/Seoul'));
+    console.log('UTC Date Key:', getDateKey(date, 'UTC'));
+}
+
+// 사용 예시:
+const timestamp = new Timestamp(1739525815, 673000000); // 2025-01-16 in KST
+testDateConversion(timestamp);
