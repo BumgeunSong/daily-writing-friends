@@ -5,28 +5,28 @@ import StatsHeader from "./StatsHeader"
 import { StatsNoticeBanner } from "./StatsNoticeBanner"
 import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring"
 import { useQuery } from "@tanstack/react-query"
-import { fetchAllUserData } from "@/utils/userUtils"
+import { fetchAllUserDataWithBoardPermission } from "@/utils/userUtils"
+
+const ACTIVE_BOARD_ID: string[] = ['Qs8RNvGqMBFLmIAkiLUS', 'AyvgJGwmf4MnOmAvz0xH']
 
 export default function StatsPage() {
     usePerformanceMonitoring('StatsPage');
-    
-    // 1. 모든 사용자 데이터 가져오기
     const { 
-        data: users, 
+        data: activeUsers, 
         isLoading: isLoadingUsers, 
         error: usersError 
     } = useQuery({
-        queryKey: ['users'],
-        queryFn: fetchAllUserData
+        queryKey: ['activeUsers', ACTIVE_BOARD_ID],
+        queryFn: () => fetchAllUserDataWithBoardPermission(ACTIVE_BOARD_ID),
     });
-    
+
     // 2. 사용자 ID 배열로 통계 가져오기
     const { 
         data: writingStats, 
         isLoading: isLoadingStats, 
         error: statsError 
     } = useWritingStatsV2(
-        users?.map(user => user.uid) || []
+        activeUsers?.map(user => user.uid) || []
     );
     
     const isLoading = isLoadingUsers || isLoadingStats;

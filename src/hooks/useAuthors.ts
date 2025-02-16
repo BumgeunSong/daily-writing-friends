@@ -24,7 +24,7 @@ export const useAuthors = (boardId: string) => {
   const { data: authors, isLoading, error } = useQuery<User[], Error>({
     queryKey: ['authors', boardId, currentHour],
     queryFn: async () => {
-      const authorData = await fetchAllUserDataWithBoardPermission(boardId);
+      const authorData = await fetchAllUserDataWithBoardPermission([boardId]);
       const seed = getHourBasedSeed();
       return shuffleArray(authorData, seed);
     },
