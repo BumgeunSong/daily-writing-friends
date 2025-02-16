@@ -12,31 +12,48 @@ import { User } from '@/types/User';
 import { fetchUserData } from '@/utils/userUtils';
 import { calculateCurrentStreak } from '@/utils/streakUtils';
 
-export function useWritingStatsV2(userId: string) {    
+export function useWritingStatsV2(userIds: string[]) {    
     return useQuery({
-        queryKey: ['writingStatsV2', userId],
-        queryFn: async (): Promise<WritingStats> => {
-            if (!userId) {
-                throw new Error('User ID is required');
-            }
-
-            // 1. 사용자 정보 가져오기
-            const userData = await fetchUserData(userId);
-
-            if (!userData) {
-                throw new Error('User not found');
-            }
-
-            // 2. 포스팅 데이터 가져오기
-            const postings = await fetchPostingData(userId);
-
-            // 3. WritingStats 계산
-            return calculateWritingStats(userData, postings);
-        },
-        enabled: !!userId,
+        queryKey: ['writingStatsV2', userIds],
+        queryFn: () => fetchMultipleUserStats(userIds),
+        enabled: userIds.length > 0,
     });
 }
 
+// 여러 사용자의 통계를 병렬로 가져오기
+async function fetchMultipleUserStats(userIds: string[]): Promise<WritingStats[]> {
+    if (!userIds.length) {
+        return [];
+    }
+
+    try {
+        const statsPromises = userIds.map(fetchSingleUserStats);
+        const results = await Promise.all(statsPromises);
+        return results.filter((result): result is WritingStats => result !== null);
+    } catch (error) {
+        console.error('Error fetching multiple user stats:', error);
+        throw error;
+    }
+}
+
+// 단일 사용자의 통계 가져오기
+async function fetchSingleUserStats(userId: string): Promise<WritingStats | null> {
+    try {
+        const userData = await fetchUserData(userId);
+        if (!userData) {
+            console.error(`User not found: ${userId}`);
+            return null;
+        }
+
+        const postings = await fetchPostingData(userId);
+        return calculateWritingStats(userData, postings);
+    } catch (error) {
+        console.error(`Error processing user ${userId}:`, error);
+        return null;
+    }
+}
+
+// 포스팅 데이터 가져오기
 async function fetchPostingData(userId: string): Promise<Posting[]> {
     try {
         const postingsRef = collection(firestore, 'users', userId, 'postings');
@@ -49,30 +66,26 @@ async function fetchPostingData(userId: string): Promise<Posting[]> {
     }
 }
 
-function calculateWritingStats(user: User, postings: Posting[]): WritingStats {
-
-    // 3. Contributions 배열 생성
-    const contributions: Contribution[] = postings.map(posting => ({
+// 기여도 배열 생성
+function createContributions(postings: Posting[]): Contribution[] {
+    return postings.map(posting => ({
         createdAt: posting.createdAt.toDate().toISOString(),
         contentLength: posting.post.contentLength
     }));
+}
 
-    const streak = calculateCurrentStreak(postings);
-    const badges = createStreakBadge(streak);
-    // 4. WritingStats 객체 반환
+// 사용자 정보 객체 생성
+function createUserInfo(user: User) {
     return {
-        user: {
-            id: user.uid,
-            nickname: user.nickname || null,
-            realname: user.realName || null,
-            profilePhotoURL: user.profilePhotoURL || null,
-            bio: user.bio || null
-        },
-        contributions,
-        badges: badges
+        id: user.uid,
+        nickname: user.nickname || null,
+        realname: user.realName || null,
+        profilePhotoURL: user.profilePhotoURL || null,
+        bio: user.bio || null
     };
-}   
+}
 
+// 스트릭 배지 생성
 function createStreakBadge(streak: number): WritingBadge[] {
     if (streak < 2) return [];
     
@@ -80,4 +93,17 @@ function createStreakBadge(streak: number): WritingBadge[] {
         name: `연속 ${streak}일차`,
         emoji: '🔥'
     }];
+}
+
+// WritingStats 계산
+function calculateWritingStats(user: User, postings: Posting[]): WritingStats {
+    const contributions = createContributions(postings);
+    const streak = calculateCurrentStreak(postings);
+    const badges = createStreakBadge(streak);
+
+    return {
+        user: createUserInfo(user),
+        contributions,
+        badges
+    };
 }
