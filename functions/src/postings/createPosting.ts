@@ -1,8 +1,8 @@
+import { Timestamp } from "firebase-admin/firestore";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import admin from "../admin";
 import { Post } from "../types/Post";
 import { Posting } from "../types/Posting";
-import { Timestamp } from "firebase-admin/firestore";
 
 export const createPosting = onDocumentCreated(
   'boards/{boardId}/posts/{postId}',
