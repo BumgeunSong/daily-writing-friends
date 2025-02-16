@@ -34,7 +34,7 @@ function hasPostingOnDate(date: Date, postingDays: Set<string>, timeZone: string
 
 // Pure function that calculates the current streak given today's date, a postingDays set, 
 // and an isWorkingDay predicate.
-function calculateStreakFromDate(
+export function calculateStreakFromDate(
     startDate: Date,
     postingDays: Set<string>,
     timeZone: string,
@@ -64,7 +64,6 @@ export function calculateCurrentStreak(postings: Posting[]): number {
     const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const postingDays = buildPostingDaysSet(postings, userTimeZone);
     const today = new Date();
-
     return calculateStreakFromDate(today, postingDays, userTimeZone, isWorkingDay);
 }
 

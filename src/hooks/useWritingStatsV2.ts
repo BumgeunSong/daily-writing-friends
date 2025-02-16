@@ -132,6 +132,11 @@ function createUserInfo(user: User) {
 
 function createStreakBadge(streak: number): WritingBadge[] {
     if (streak < 2) return [];
+    if (streak > 20) return [{
+        name: `연속 20일 이상`,
+        emoji: '🔥'
+    }];
+
     return [{
         name: `연속 ${streak}일차`,
         emoji: '🔥'
