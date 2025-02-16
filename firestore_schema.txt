@@ -40,6 +40,15 @@ Firestore Database Schema
     - Document ID: {firebaseMessagingTokenId}
     - Fields: (Not explicitly defined)
 
+  - postings
+    - Document ID: {postingId}
+    - Fields:
+      - board.id (string)
+      - post.id (string)
+      - post.title (string)
+      - post.contentLength (number)
+      - createdAt (Timestamp)
+
 2. boards Collection
 - Document ID: {boardId}
 - Fields:
