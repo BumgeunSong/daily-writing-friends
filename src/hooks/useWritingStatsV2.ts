@@ -46,13 +46,6 @@ function sort(writingStats: WritingStats[]): WritingStats[] {
             return b.recentStreak - a.recentStreak;
         }
 
-        const aContributions = a.contributions.length;
-        const bContributions = b.contributions.length;
-
-        if (bContributions !== aContributions) {
-            return bContributions - aContributions;
-        }
-
         const aContentLengthSum = a.contributions.reduce((sum, contribution) => sum + (contribution.contentLength ?? 0), 0);
         const bContentLengthSum = b.contributions.reduce((sum, contribution) => sum + (contribution.contentLength ?? 0), 0);
         return bContentLengthSum - aContentLengthSum;
