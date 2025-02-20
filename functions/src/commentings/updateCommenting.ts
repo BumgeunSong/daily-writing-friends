@@ -8,7 +8,11 @@ import { Comment } from "../types/Comment";
  * It takes a boardId as a parameter, fetches every comment in that board,
  * converts each into a "commenting" record, and writes it to the corresponding user's subcollection.
 */
-export const updateCommenting = onRequest(async (req, res) => {
+export const updateCommenting = onRequest({
+    timeoutSeconds: 540, // 9분 (최대 540초)
+    memory: '1GiB',     // 메모리 할당량 증가
+    minInstances: 1     // 최소 인스턴스 수 설정
+}, async (req, res) => {
     // boardId를 쿼리 파라미터나 요청 본문에서 받기
     const boardId = req.query.boardId || req.body.boardId;
     if (!boardId) {
@@ -21,7 +25,9 @@ export const updateCommenting = onRequest(async (req, res) => {
     console.log(`Comment migration started for boardId: ${boardId}`);
 
     try {
-        // 해당 게시판의 모든 게시글 가져오기
+        // 배치 크기 설정
+        const BATCH_SIZE = 500;
+        
         const postsRef = admin.firestore()
             .collection('boards')
             .doc(boardId as string)
@@ -31,6 +37,10 @@ export const updateCommenting = onRequest(async (req, res) => {
         let processedCount = 0;
         let skippedCount = 0;
         let errorCount = 0;
+
+        // 배치 처리를 위한 배열
+        let batch = admin.firestore().batch();
+        let operationCount = 0;
 
         // 각 게시글의 댓글들을 처리
         for (const postDoc of postsSnapshot.docs) {
@@ -84,19 +94,36 @@ export const updateCommenting = onRequest(async (req, res) => {
                         createdAt: createdAt
                     };
 
-                    await admin.firestore()
+                    // 배치에 작업 추가
+                    const docRef = admin.firestore()
                         .collection('users')
                         .doc(authorId)
                         .collection('commentings')
-                        .add(commentingData);
+                        .doc(); // 자동 ID 생성
 
-                    console.log(`Successfully migrated comment ${commentId} for author ${authorId}`);
+                    batch.set(docRef, commentingData);
+                    operationCount++;
                     processedCount++;
+
+                    // 배치 크기에 도달하면 커밋
+                    if (operationCount >= BATCH_SIZE) {
+                        await batch.commit();
+                        batch = admin.firestore().batch();
+                        operationCount = 0;
+                        console.log(`Committed batch of ${BATCH_SIZE} operations`);
+                    }
+
                 } catch (writeError) {
                     console.error(`Error migrating comment ${commentId} for author ${authorId}:`, writeError);
                     errorCount++;
                 }
             }
+        }
+
+        // 남은 배치 커밋
+        if (operationCount > 0) {
+            await batch.commit();
+            console.log(`Committed final batch of ${operationCount} operations`);
         }
 
         console.log(`Migration completed for board ${boardId}:
