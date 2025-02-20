@@ -3,7 +3,7 @@ import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import admin from "../admin";
 import { Comment } from "../types/Comment";
 import { Commenting } from "../types/Commenting";
-
+import { Post } from "../types/Post";
 export const createCommenting = onDocumentCreated(
     'boards/{boardId}/posts/{postId}/comments/{commentId}',
     async (event) => {
@@ -34,7 +34,7 @@ export const createCommenting = onDocumentCreated(
                 .doc(postId)
                 .get();
 
-            const postData = postDoc.data();
+            const postData = postDoc.data() as Post;
             if (!postData) {
                 console.error('Post data not found.');
                 return null;
