@@ -12,6 +12,10 @@ import { createWritingHistoryOnPostCreated } from './writingHistory/createWritin
 import { deleteWritingHistoryOnPostDeleted } from './writingHistory/deleteWritingHistoryOnPostDeleted';
 import { getWritingStats } from './writingHistory/getWritingStats';
 import { updateWritingHistoryByBatch } from './writingHistory/updateWritingHistoryByBatch';
+import { createCommenting } from './commentings/createCommenting';
+import { updateCommenting } from './commentings/updateCommenting';
+import { createReplying } from './replyings/createReplying';
+import { updateReplying } from './replyings/updateReplying';
 
 export {
   onCommentCreated,
@@ -29,5 +33,9 @@ export {
   createWritingHistoryOnPostCreated,
   deleteWritingHistoryOnPostDeleted,
   createPosting,
-  updatePosting
+  updatePosting,
+  createCommenting,
+  updateCommenting,
+  createReplying,
+  updateReplying
 };
