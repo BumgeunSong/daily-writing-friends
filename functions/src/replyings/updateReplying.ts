@@ -12,8 +12,7 @@ import { Replying } from "../types/Replying";
 */
 export const updateReplying = onRequest({
     timeoutSeconds: 540, // 9분 (최대 540초)
-    memory: '1GiB',     // 메모리 할당량 증가
-    minInstances: 1     // 최소 인스턴스 수 설정
+    memory: '1GiB'     // 메모리 할당량 증가
 }, async (req, res) => {
     const boardId = req.query.boardId || req.body.boardId;
     if (!boardId) {

@@ -11,7 +11,6 @@ import { Comment } from "../types/Comment";
 export const updateCommenting = onRequest({
     timeoutSeconds: 540, // 9분 (최대 540초)
     memory: '1GiB',     // 메모리 할당량 증가
-    minInstances: 1     // 최소 인스턴스 수 설정
 }, async (req, res) => {
     // boardId를 쿼리 파라미터나 요청 본문에서 받기
     const boardId = req.query.boardId || req.body.boardId;
