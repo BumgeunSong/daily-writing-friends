@@ -1,6 +1,7 @@
 import { onRequest } from "firebase-functions/v2/https";
 import admin from "../admin";
 import { Posting } from "../types/Posting";
+import { Post } from "../types/Post";
 
 /**
  * updatePosting is a one-time migration function.
@@ -35,7 +36,7 @@ export const updatePosting = onRequest(async (req, res) => {
   
       // Loop through each post document
       for (const postDoc of postsSnapshot.docs) {
-        const postData = postDoc.data();
+        const postData = postDoc.data() as Post;
         const postId = postData.id;
         const postTitle = postData.title;
         const authorId = postData.authorId;
@@ -67,11 +68,17 @@ export const updatePosting = onRequest(async (req, res) => {
   
           // Use the post's createdAt timestamp directly.
           const createdAt = postData.createdAt;
+          if (!createdAt) {
+            console.error(`Post ${postId} is missing a createdAt timestamp. Skipping.`);
+            errorCount++;
+            continue;
+          }
+
           // Build the posting data model
           const postingData: Posting = {
             board: { id: boardId as string },
             post: { id: postId, title: postTitle, contentLength: contentLength },
-            createdAt: createdAt
+            createdAt: createdAt 
           };
   
           // Write the posting record into the user's subcollection.

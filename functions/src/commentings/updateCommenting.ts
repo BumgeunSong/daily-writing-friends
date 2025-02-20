@@ -1,7 +1,8 @@
 import { onRequest } from "firebase-functions/v2/https";
 import admin from "../admin";
 import { Commenting } from "../types/Commenting";
-
+import { Post } from "../types/Post";
+import { Comment } from "../types/Comment";
 /**
  * updateCommenting is a one-time migration function.
  * It takes a boardId as a parameter, fetches every comment in that board,
@@ -33,7 +34,7 @@ export const updateCommenting = onRequest(async (req, res) => {
 
         // 각 게시글의 댓글들을 처리
         for (const postDoc of postsSnapshot.docs) {
-            const postData = postDoc.data();
+            const postData = postDoc.data() as Post;
             const postId = postData.id;
             const postTitle = postData.title;
             const postAuthorId = postData.authorId;
@@ -45,9 +46,9 @@ export const updateCommenting = onRequest(async (req, res) => {
 
             // 각 댓글 처리
             for (const commentDoc of commentsSnapshot.docs) {
-                const commentData = commentDoc.data();
+                const commentData = commentDoc.data() as Comment;
                 const commentId = commentDoc.id;
-                const authorId = commentData.authorId;
+                const authorId = commentData.userId;
                 const createdAt = commentData.createdAt;
 
                 if (!authorId) {
