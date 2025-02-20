@@ -28,6 +28,7 @@ export const updateCommenting = onRequest(async (req, res) => {
         const postsSnapshot = await postsRef.get();
 
         let processedCount = 0;
+        let skippedCount = 0;
         let errorCount = 0;
 
         // 각 게시글의 댓글들을 처리
@@ -55,20 +56,33 @@ export const updateCommenting = onRequest(async (req, res) => {
                     continue;
                 }
 
-                // Commenting 데이터 모델 생성
-                const commentingData: Commenting = {
-                    board: { id: boardId as string },
-                    post: { 
-                        id: postId, 
-                        title: postTitle,
-                        authorId: postAuthorId
-                    },
-                    comment: { id: commentId },
-                    createdAt: createdAt
-                };
-
                 try {
-                    // 사용자의 commentings 서브컬렉션에 기록
+                    // 중복 체크: 같은 commentId를 가진 기록이 있는지 확인
+                    const existingCommentings = await admin.firestore()
+                        .collection('users')
+                        .doc(authorId)
+                        .collection('commentings')
+                        .where('comment.id', '==', commentId)
+                        .get();
+
+                    if (!existingCommentings.empty) {
+                        console.log(`Commenting record for comment ${commentId} already exists. Skipping.`);
+                        skippedCount++;
+                        continue;
+                    }
+
+                    // Commenting 데이터 모델 생성
+                    const commentingData: Commenting = {
+                        board: { id: boardId as string },
+                        post: { 
+                            id: postId, 
+                            title: postTitle,
+                            authorId: postAuthorId
+                        },
+                        comment: { id: commentId },
+                        createdAt: createdAt
+                    };
+
                     await admin.firestore()
                         .collection('users')
                         .doc(authorId)
@@ -84,11 +98,17 @@ export const updateCommenting = onRequest(async (req, res) => {
             }
         }
 
-        console.log(`Migration completed for board ${boardId}: ${processedCount} comment(s) processed, ${errorCount} error(s).`);
+        console.log(`Migration completed for board ${boardId}:
+            ${processedCount} comment(s) processed,
+            ${skippedCount} comment(s) skipped (duplicates),
+            ${errorCount} error(s).`
+        );
+
         res.status(200).json({
             message: `Migration completed for board ${boardId}`,
             stats: {
                 processed: processedCount,
+                skipped: skippedCount,
                 errors: errorCount
             }
         });
