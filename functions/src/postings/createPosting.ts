@@ -37,7 +37,6 @@ export const createPosting = onDocumentCreated(
       createdAt: createdAt || Timestamp.now(),
     };
 
-    // 4. Write the posting document into the user's activities subcollection.
     try {
       await admin.firestore()
         .collection('users')

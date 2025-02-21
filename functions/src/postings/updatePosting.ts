@@ -1,6 +1,7 @@
 import { onRequest } from "firebase-functions/v2/https";
 import admin from "../admin";
 import { Posting } from "../types/Posting";
+import { Post } from "../types/Post";
 
 /**
  * updatePosting is a one-time migration function.
@@ -22,16 +23,20 @@ export const updatePosting = onRequest(async (req, res) => {
   
     try {
       // Reference to the posts subcollection for the given board
-      const postsRef = admin.firestore().collection('boards').doc(boardId).collection('posts');
+      const postsRef = admin.firestore()
+        .collection('boards')
+        .doc(boardId as string)
+        .collection('posts');
       const postsSnapshot = await postsRef.get();
       console.log(`Found ${postsSnapshot.size} post(s) for board ${boardId}.`);
   
       let processedCount = 0;
+      let skippedCount = 0;
       let errorCount = 0;
   
       // Loop through each post document
       for (const postDoc of postsSnapshot.docs) {
-        const postData = postDoc.data();
+        const postData = postDoc.data() as Post;
         const postId = postData.id;
         const postTitle = postData.title;
         const authorId = postData.authorId;
@@ -42,20 +47,40 @@ export const updatePosting = onRequest(async (req, res) => {
           continue;
         }
   
-        // Compute the content length. Default to empty string if missing.
-        const content = postData.content || "";
-        const contentLength = content.length;
-  
-        // Use the post's createdAt timestamp directly.
-        const createdAt = postData.createdAt;
-        // Build the posting data model
-        const postingData: Posting = {
-          board: { id: boardId },
-          post: { id: postId, title: postTitle, contentLength: contentLength },
-          createdAt: createdAt
-        };
-  
         try {
+          // 중복 체크: 같은 postId를 가진 기록이 있는지 확인
+          const existingPostings = await admin.firestore()
+            .collection('users')
+            .doc(authorId)
+            .collection('postings')
+            .where('post.id', '==', postId)
+            .get();
+  
+          if (!existingPostings.empty) {
+            console.log(`Posting record for post ${postId} already exists. Skipping.`);
+            skippedCount++;
+            continue;
+          }
+  
+          // Compute the content length. Default to empty string if missing.
+          const content = postData.content || "";
+          const contentLength = content.length;
+  
+          // Use the post's createdAt timestamp directly.
+          const createdAt = postData.createdAt;
+          if (!createdAt) {
+            console.error(`Post ${postId} is missing a createdAt timestamp. Skipping.`);
+            errorCount++;
+            continue;
+          }
+
+          // Build the posting data model
+          const postingData: Posting = {
+            board: { id: boardId as string },
+            post: { id: postId, title: postTitle, contentLength: contentLength },
+            createdAt: createdAt 
+          };
+  
           // Write the posting record into the user's subcollection.
           await admin.firestore()
             .collection('users')
@@ -63,7 +88,7 @@ export const updatePosting = onRequest(async (req, res) => {
             .collection('postings')
             .add(postingData);
   
-          console.log(`Successfully migrated post ${postTitle} for author ${authorId}.`);
+          console.log(`Successfully migrated post ${postTitle} for author ${authorId}`);
           processedCount++;
         } catch (writeError) {
           console.error(`Error migrating post ${postTitle} for author ${authorId}:`, writeError);
@@ -71,11 +96,16 @@ export const updatePosting = onRequest(async (req, res) => {
         }
       }
   
-      console.log(`Migration completed for board ${boardId}: ${processedCount} post(s) processed, ${errorCount} error(s).`);
+      console.log(`Migration completed for board ${boardId}:
+        ${processedCount} post(s) processed,
+        ${skippedCount} post(s) skipped (duplicates),
+        ${errorCount} error(s).`
+      );
       res.status(200).json({
         message: `Migration completed for board ${boardId}`,
         stats: {
           processed: processedCount,
+          skipped: skippedCount,
           errors: errorCount
         }
       });
