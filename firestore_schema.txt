@@ -49,6 +49,27 @@ Firestore Database Schema
       - post.contentLength (number)
       - createdAt (Timestamp)
 
+  - commentings
+    - Document ID: {commentingId}
+    - Fields:
+      - board.id (string)
+      - post.id (string)
+      - post.authorId (string)
+      - comment.id (string)
+      - createdAt (Timestamp)
+
+
+  - replyings
+    - Document ID: {replyingId}
+    - Fields:
+      - board.id (string)
+      - post.id (string)
+      - post.authorId (string)
+      - comment.id (string)
+      - comment.authorId (string)
+      - reply.id (string)
+      - createdAt (Timestamp)
+
 2. boards Collection
 - Document ID: {boardId}
 - Fields:
