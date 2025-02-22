@@ -1,11 +1,27 @@
 import type React from "react"
+import { useActivity } from "@/hooks/useActivity"
 
-const CommentPrompt: React.FC = () => {
-  return (
-    <div className="space-y-2 text-gray-600 dark:text-gray-400">
-      <p className="space-y-1 text-sm">• 글에서 인상 깊었던 부분을 언급해보세요</p>
-    </div>
-  )
+interface CommentPromptProps {
+    postAuthorId: string;
+    postAuthorNickname: string | null;
+}
+const CommentPrompt: React.FC<CommentPromptProps> = ({ postAuthorId, postAuthorNickname }) => {
+    const fromDaysAgo = 7;
+    const { data: activity, isLoading, error } = useActivity(postAuthorId, fromDaysAgo);
+    const totalActivityCounts = (activity?.commentings || 0) + (activity?.replyings || 0);
+    console.log("activity", activity);
+    console.log("error", error);
+    const authorNickname = postAuthorNickname || "작성자";
+    const showPrompt = (isLoading == false) && totalActivityCounts > 0;
+
+    return (
+        <div className="space-y-2 text-gray-600 dark:text-gray-400">
+            {showPrompt ?
+                <p className="space-y-1 text-sm">{authorNickname}님은 최근 {fromDaysAgo}일간 나에게 {totalActivityCounts}개의 댓글/답글을 달아주었어요.</p>
+                : null
+            }
+        </div>
+    )
 }
 
 export default CommentPrompt

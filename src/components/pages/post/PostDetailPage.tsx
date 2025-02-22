@@ -160,7 +160,7 @@ export default function PostDetailPage() {
       <div className='mt-12 border-t border-gray-200'></div>
       {boardId && postId && <PostAdjacentButtons boardId={boardId} postId={postId} />}
       <div className='mt-12'>
-        {boardId && postId && <Comments boardId={boardId} postId={postId} />}
+        {boardId && postId && <Comments boardId={boardId} postId={postId} postAuthorId={post.authorId} postAuthorNickname={authorNickname || null} />}
       </div>
     </div>
   );

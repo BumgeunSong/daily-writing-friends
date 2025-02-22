@@ -3,13 +3,15 @@ import { useAuth } from "@/contexts/AuthContext"
 import { addCommentToPost } from "@/utils/commentUtils"
 import CommentInput from "./CommentInput"
 import CommentList from "./CommentList"
-
+import CommentPrompt from "./CommentPrompt"
 interface CommentsProps {
   boardId: string
   postId: string
+  postAuthorId: string
+  postAuthorNickname: string | null
 }
 
-const Comments: React.FC<CommentsProps> = ({ boardId, postId }) => {
+const Comments: React.FC<CommentsProps> = ({ boardId, postId, postAuthorId, postAuthorNickname }) => {
   const { currentUser } = useAuth()
 
   const handleSubmit = async (content: string) => {
@@ -25,7 +27,7 @@ const Comments: React.FC<CommentsProps> = ({ boardId, postId }) => {
       <h2 className="text-2xl font-semibold">댓글</h2>
       <CommentList boardId={boardId} postId={postId} />
       <div className="mt-6 space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
-        <p className="text-sm text-muted-foreground">글에서 인상 깊었던 부분을 언급해보세요</p>
+        <CommentPrompt postAuthorId={postAuthorId} postAuthorNickname={postAuthorNickname} />
         <CommentInput onSubmit={handleSubmit} />
       </div>
     </section>
