@@ -14,6 +14,7 @@ import {
 import { firestore } from '../firebase';
 import { User } from '../types/User';
 import { useQuery } from '@tanstack/react-query';
+import { UserProfile } from '../types/UserProfile';
 
 // Helper function to get user data from localStorage
 function getCachedUserData(uid: string): User | null {
@@ -117,6 +118,12 @@ export function listenForUserDataChanges(uid: string, onChange: (data: User) => 
 
   return unsubscribe; // Return the unsubscribe function to stop listening when needed
 }
+
+// 사용자 닉네임을 가져오는 함수
+export const fetchUserUserProfile = async (uid: string): Promise<UserProfile | null> => {
+  const user = await fetchUserData(uid);
+  return user ? { nickname: user.nickname, profilePhotoURL: user.profilePhotoURL } : null;
+};
 
 // 사용자 닉네임을 가져오는 함수
 export const fetchUserNickname = async (uid: string): Promise<string | null> => {
