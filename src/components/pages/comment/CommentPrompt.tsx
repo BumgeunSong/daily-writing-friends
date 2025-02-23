@@ -7,10 +7,8 @@ interface CommentPromptProps {
 }
 const CommentPrompt: React.FC<CommentPromptProps> = ({ postAuthorId, postAuthorNickname }) => {
     const fromDaysAgo = 7;
-    const { data: activity, isLoading, error } = useActivity(postAuthorId, fromDaysAgo);
+    const { data: activity, isLoading } = useActivity(postAuthorId, fromDaysAgo);
     const totalActivityCounts = (activity?.commentings || 0) + (activity?.replyings || 0);
-    console.log("activity", activity);
-    console.log("error", error);
     const authorNickname = postAuthorNickname || "작성자";
     const showPrompt = (isLoading == false) && totalActivityCounts > 0;
 
