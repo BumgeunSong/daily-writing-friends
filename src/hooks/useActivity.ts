@@ -13,6 +13,11 @@ export const useActivity = (fromUserId: string, fromDaysAgo: number) => {
     const { currentUser } = useAuth();
     const toUserId = currentUser?.uid;
 
+    // 본인의 글일 때는 보여주지 않는다
+    if (fromUserId === toUserId) {
+        return { data: null, isLoading: false, error: null };
+    }
+
     return useQuery({
         queryKey: ['activity', fromUserId, toUserId],
         queryFn: () => fetchActivityCounts(fromUserId, toUserId!, fromDaysAgo),
@@ -48,7 +53,6 @@ const fetchActivityCounts = async (fromUserId: string, toUserId: string, fromDay
         replyings: replyingsSnapshotForPosts.size + replyingsSnapshotForComments.size
     };
 };
-
 
 // 순수 함수: 3일 전 타임스탬프 생성
 const getDaysAgoTimestamp = (daysAgo: number): Timestamp => {
