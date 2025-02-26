@@ -8,8 +8,9 @@ import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
 import { PostBackButton } from './PostBackButton';
 import { useAutoSaveDrafts } from '@/hooks/useAutoSaveDrafts';
-import { Loader2 } from 'lucide-react';
+import { Loader2, FileText } from 'lucide-react';
 import { DraftStatusIndicator } from './DraftStatusIndicator';
+import { DraftsDrawer } from './DraftsDrawer';
 import { useQuery } from '@tanstack/react-query';
 
 export default function PostCreationPage() {
@@ -25,7 +26,7 @@ export default function PostCreationPage() {
   const queryParams = new URLSearchParams(location.search);
   const draftId = queryParams.get('draftId');
   
-  // useQuery를 사용하여 초안 로드
+  // useQuery를 사용하여 초안 로드 - draftId가 있을 때만 활성화
   const { isLoading: isDraftLoading } = useQuery({
     queryKey: ['draft', currentUser?.uid, draftId, boardId],
     queryFn: async () => {
@@ -44,7 +45,7 @@ export default function PostCreationPage() {
     retry: 1, // 실패 시 한 번만 재시도
   });
   
-  // 자동 저장 훅 사용
+  // 자동 저장 훅 사용 - draftId가 있을 때만 initialDraftId 전달
   const {
     draftId: autoDraftId,
     lastSavedAt,
@@ -56,7 +57,7 @@ export default function PostCreationPage() {
     userId: currentUser?.uid,
     title,
     content,
-    initialDraftId: draftId || undefined,
+    initialDraftId: draftId || undefined, // draftId가 없으면 undefined 전달
     autoSaveInterval: 10000
   });
   
@@ -84,9 +85,12 @@ export default function PostCreationPage() {
 
   return (
     <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
-      {boardId && <PostBackButton boardId={boardId} className='mb-6' />}
+      <div className="mb-6">
+        {boardId && <PostBackButton boardId={boardId} />}
+      </div>
       
-      {isDraftLoading ? (
+      {/* draftId가 있을 때만 로딩 상태 표시 */}
+      {draftId && isDraftLoading ? (
         <div className="flex justify-center items-center py-8">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <span className="ml-2 text-gray-600">초안을 불러오는 중...</span>
@@ -112,7 +116,16 @@ export default function PostCreationPage() {
             isSubmitting={isSubmitting}
           />
           
-          <div className='flex justify-end'>
+          <div className='flex justify-between items-center'>
+            {currentUser && (
+              <DraftsDrawer userId={currentUser.uid} boardId={boardId}>
+                <Button variant="outline" size="default" className="flex items-center">
+                  <FileText className="h-4 w-4 mr-2" />
+                  초안 목록
+                </Button>
+              </DraftsDrawer>
+            )}
+            
             <Button 
               type='submit' 
               className='px-6'
