@@ -41,7 +41,8 @@
     "react-router-dom": "^6.27.0",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
-    "tailwindcss-safe-area": "^0.6.0"
+    "tailwindcss-safe-area": "^0.6.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@rollup/plugin-replace": "^6.0.1",
