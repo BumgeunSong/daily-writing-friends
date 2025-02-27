@@ -11,6 +11,7 @@ interface UseDraftLoaderProps {
 
 interface UseDraftLoaderResult {
   draft: Draft | null;
+  draftId: string | null;
   isLoading: boolean;
   error: Error | null;
 }
@@ -21,6 +22,7 @@ export function useDraftLoader({
   draftId
 }: UseDraftLoaderProps): UseDraftLoaderResult {
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [loadedDraftId, setLoadedDraftId] = useState<string | null>(draftId);
   const queryClient = useQueryClient();
 
   const { isLoading, error, refetch } = useQuery({
@@ -47,6 +49,7 @@ export function useDraftLoader({
     onSuccess: (data: Draft | null) => {
       if (data) {
         setDraft(data);
+        setLoadedDraftId(data.id);
       }
     }
   });
@@ -58,5 +61,10 @@ export function useDraftLoader({
     }
   }, [draftId, userId, boardId, refetch]);
 
-  return { draft, isLoading, error: error as Error | null };
+  return { 
+    draft, 
+    draftId: loadedDraftId,
+    isLoading, 
+    error: error as Error | null 
+  };
 } 

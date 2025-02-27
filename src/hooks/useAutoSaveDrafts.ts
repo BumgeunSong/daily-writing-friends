@@ -26,6 +26,7 @@ export function useAutoSaveDrafts({
   initialDraftId,
   autoSaveInterval = 10000, // 기본값 10초
 }: UseAutoSaveDraftsProps): UseAutoSaveDraftsResult {
+  // initialDraftId가 있으면 그것을 사용, 없으면 null
   const [draftId, setDraftId] = useState<string | null>(initialDraftId || null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState<boolean>(false);
@@ -35,6 +36,13 @@ export function useAutoSaveDrafts({
   const prevTitleRef = useRef<string>(title);
   const prevContentRef = useRef<string>(content);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // initialDraftId가 변경되면 draftId 상태 업데이트
+  useEffect(() => {
+    if (initialDraftId) {
+      setDraftId(initialDraftId);
+    }
+  }, [initialDraftId]);
   
   // 초안 저장 함수
   const saveDraftData = async () => {
@@ -48,7 +56,7 @@ export function useAutoSaveDrafts({
       
       const savedDraft = await saveDraft(
         {
-          id: draftId || undefined,
+          id: draftId || undefined, // draftId가 있으면 사용, 없으면 undefined
           boardId,
           title,
           content,
@@ -56,7 +64,11 @@ export function useAutoSaveDrafts({
         userId
       );
       
-      setDraftId(savedDraft.id);
+      // 첫 저장 시에만 ID 업데이트
+      if (!draftId) {
+        setDraftId(savedDraft.id);
+      }
+      
       setLastSavedAt(savedDraft.savedAt.toDate());
       
       // 이전 값 업데이트

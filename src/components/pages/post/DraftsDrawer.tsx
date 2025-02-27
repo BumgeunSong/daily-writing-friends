@@ -140,7 +140,6 @@ export function DraftsDrawer({ userId, boardId, children }: DraftsDrawerProps) {
     
     fetchTitle();
   }, [boardId]);
-  
   // 초안 목록 가져오기
   const { data: drafts, isLoading } = useQuery({
     queryKey: ['drafts', userId, boardId],
@@ -151,9 +150,9 @@ export function DraftsDrawer({ userId, boardId, children }: DraftsDrawerProps) {
         : await getDrafts(userId);
     },
     enabled: !!userId,
-    staleTime: 1000 * 60, // 1분 동안 캐시 유지
+    cacheTime: 0, // 캐시 사용하지 않음
+    staleTime: 0, // 항상 최신 데이터 가져오기
   });
-  
   // 초안 선택 핸들러 - React Query 캐시에 미리 저장
   const handleSelectDraft = (draft: Draft) => {
     // 캐시에 초안 데이터 미리 저장

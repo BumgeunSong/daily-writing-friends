@@ -21,7 +21,7 @@ export default function PostCreationPage() {
   const draftId = searchParams.get('draftId');
   
   // 1. 초안 로드
-  const { draft, isLoading: isDraftLoading } = useDraftLoader({
+  const { draft, draftId: loadedDraftId, isLoading: isDraftLoading } = useDraftLoader({
     userId: currentUser?.uid,
     boardId,
     draftId
@@ -32,7 +32,7 @@ export default function PostCreationPage() {
     initialDraft: draft
   });
   
-  // 3. 자동 저장
+  // 3. 자동 저장 - 로드된 초안의 ID 사용
   const {
     draftId: autoDraftId,
     lastSavedAt,
@@ -44,7 +44,7 @@ export default function PostCreationPage() {
     userId: currentUser?.uid,
     title,
     content,
-    initialDraftId: draftId || undefined,
+    initialDraftId: loadedDraftId || undefined, // URL의 draftId가 아닌 로드된 초안의 ID 사용
     autoSaveInterval: 10000
   });
   
