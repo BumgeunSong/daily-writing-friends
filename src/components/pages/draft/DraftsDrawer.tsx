@@ -14,7 +14,8 @@ import { useDrafts } from '@/hooks/useDrafts';
 import { useDraftActions } from '@/hooks/useDraftActions';
 import { useDrawer } from '@/hooks/useDrawer';
 import { DraftsDrawerContent } from './DraftsDrawerContent';
-
+import { DeleteDraftDialog } from './DeleteDraftDialog';
+import { useDeleteDraft } from '@/hooks/useDeleteDraft';
 // 메인 드로어 컴포넌트
 interface DraftsDrawerProps {
   userId: string | undefined;
@@ -27,28 +28,46 @@ export function DraftsDrawer({ userId, boardId, children }: DraftsDrawerProps) {
   const { open, setOpen, handleClose } = useDrawer();
   const { boardTitle } = useBoardTitle(boardId);
   const { drafts, isLoading, refetch } = useDrafts(userId, boardId);
-  const { handleSelectDraft, handleDeleteDraft } = useDraftActions({
+  const { handleSelectDraft } = useDraftActions({ userId, onClose: handleClose });
+  // 삭제 로직 훅
+  const {
+    isDeleteDialogOpen,
+    draftToDelete,
+    isDeleting,
+    openDeleteDialog,
+    closeDeleteDialog,
+    confirmDelete
+  } = useDeleteDraft({
     userId,
-    onClose: handleClose,
-    refetchDrafts: refetch
+    onDeleteSuccess: refetch // 삭제 성공 시 목록 새로고침
   });
 
   return (
-    <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>
-        {children}
-      </DrawerTrigger>
-      <DrawerContent className="max-h-[85vh]">
-        <DraftsDrawerHeader boardId={boardId} boardTitle={boardTitle} />
-        <DraftsDrawerContent
-          isLoading={isLoading}
-          drafts={drafts}
-          handleSelectDraft={handleSelectDraft}
-          handleDeleteDraft={handleDeleteDraft}
-        />
-        <DraftsDrawerFooter />
-      </DrawerContent>
-    </Drawer>
+    <>
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerTrigger asChild>
+          {children}
+        </DrawerTrigger>
+        <DrawerContent className="max-h-[85vh]">
+          <DraftsDrawerHeader boardId={boardId} boardTitle={boardTitle} />
+          <DraftsDrawerContent
+            isLoading={isLoading}
+            drafts={drafts}
+            handleSelectDraft={handleSelectDraft}
+            handleDeleteDraft={openDeleteDialog}
+          />
+          <DraftsDrawerFooter />
+        </DrawerContent>
+      </Drawer>
+      {/* 삭제 확인 대화상자 */}
+      <DeleteDraftDialog
+        isOpen={isDeleteDialogOpen}
+        draft={draftToDelete}
+        isDeleting={isDeleting}
+        onClose={closeDeleteDialog}
+        onConfirm={confirmDelete}
+      />
+    </>
   );
 }
 
@@ -61,7 +80,7 @@ interface DraftsDrawerHeaderProps {
 const DraftsDrawerHeader: React.FC<DraftsDrawerHeaderProps> = ({ boardId, boardTitle }) => {
   const getDrawerTitle = () => {
     if (boardId && boardTitle) {
-      return `${boardTitle} - 임시 저장 글`;
+      return boardTitle;
     }
     return '모든 임시 저장 글';
   };
