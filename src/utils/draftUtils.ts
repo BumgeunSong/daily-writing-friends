@@ -52,3 +52,29 @@ export async function deleteDraft(userId: string, draftId: string): Promise<void
   const draftRef = doc(firestore, `users/${userId}/drafts`, draftId);
   return deleteDoc(draftRef);
 }
+
+
+// 임시 저장 글 날짜 포맷팅 - 사용자의 로케일 기반
+export const formatDraftDate = (timestamp: any) => {
+  const date = timestamp.toDate();
+  return new Intl.DateTimeFormat(navigator.language || 'ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+};
+
+// 임시 저장 글 제목 표시 (비어있으면 '제목 없음' 표시)
+export const getDraftTitle = (draft: Draft) => {
+  return draft.title.trim() ? draft.title : '(제목 없음)';
+};
+
+// 임시 저장 글 내용 미리보기 (최대 50자)
+export const getDraftPreview = (draft: Draft) => {
+  const plainText = draft.content.replace(/<[^>]*>/g, ''); // HTML 태그 제거
+  return plainText.length > 50 
+    ? plainText.substring(0, 50) + '...' 
+    : plainText || '(내용 없음)';
+};
