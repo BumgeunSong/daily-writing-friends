@@ -20,7 +20,7 @@ export default function PostCreationPage() {
   // URL 쿼리 파라미터에서 draftId 추출
   const draftId = searchParams.get('draftId');
   
-  // 1. 초안 로드
+  // 1. 임시 저장 글 로드
   const { draft, draftId: loadedDraftId, isLoading: isDraftLoading } = useDraftLoader({
     userId: currentUser?.uid,
     boardId,
@@ -32,7 +32,7 @@ export default function PostCreationPage() {
     initialDraft: draft
   });
   
-  // 3. 자동 저장 - 로드된 초안의 ID 사용
+  // 3. 자동 저장 - 로드된 임시 저장 글의 ID 사용
   const {
     draftId: autoDraftId,
     lastSavedAt,
@@ -44,7 +44,7 @@ export default function PostCreationPage() {
     userId: currentUser?.uid,
     title,
     content,
-    initialDraftId: loadedDraftId || undefined, // URL의 draftId가 아닌 로드된 초안의 ID 사용
+    initialDraftId: loadedDraftId || undefined, // URL의 draftId가 아닌 로드된 임시 저장 글의 ID 사용
     autoSaveInterval: 10000
   });
   
@@ -68,7 +68,7 @@ export default function PostCreationPage() {
       {draftId && isDraftLoading ? (
         <div className="flex justify-center items-center py-8">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2 text-gray-600">초안을 불러오는 중...</span>
+          <span className="ml-2 text-gray-600">임시 저장 글을 불러오는 중...</span>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className='space-y-6'>
@@ -82,7 +82,7 @@ export default function PostCreationPage() {
             onChange={setContent}
           />
           
-          {/* 초안 상태 표시 컴포넌트 */}
+          {/* 임시 저장 상태 표시 컴포넌트 */}
           <DraftStatusIndicator
             isSaving={isSaving}
             savingError={savingError}
@@ -96,7 +96,7 @@ export default function PostCreationPage() {
               <DraftsDrawer userId={currentUser.uid} boardId={boardId}>
                 <Button variant="outline" size="default" className="flex items-center">
                   <FileText className="h-4 w-4 mr-2" />
-                  초안 목록
+                  임시 저장 글 목록
                 </Button>
               </DraftsDrawer>
             )}

@@ -17,7 +17,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-// 초안 날짜 포맷팅 - 사용자의 로케일 기반
+// 임시 저장 글 날짜 포맷팅 - 사용자의 로케일 기반
 const formatDraftDate = (timestamp: any) => {
   const date = timestamp.toDate();
   return new Intl.DateTimeFormat(navigator.language || 'ko-KR', {
@@ -29,12 +29,12 @@ const formatDraftDate = (timestamp: any) => {
   }).format(date);
 };
 
-// 초안 제목 표시 (비어있으면 '제목 없음' 표시)
+// 임시 저장 글 제목 표시 (비어있으면 '제목 없음' 표시)
 const getDraftTitle = (draft: Draft) => {
   return draft.title.trim() ? draft.title : '(제목 없음)';
 };
 
-// 초안 내용 미리보기 (최대 50자)
+// 임시 저장 글 내용 미리보기 (최대 50자)
 const getDraftPreview = (draft: Draft) => {
   const plainText = draft.content.replace(/<[^>]*>/g, ''); // HTML 태그 제거
   return plainText.length > 50 
@@ -46,18 +46,18 @@ const getDraftPreview = (draft: Draft) => {
 const DraftsLoading = () => (
   <div className="flex justify-center items-center py-8">
     <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    <span className="ml-2 text-gray-600">초안을 불러오는 중...</span>
+    <span className="ml-2 text-gray-600">임시 저장 글을 불러오는 중...</span>
   </div>
 );
 
-// 초안 없음 컴포넌트
+// 임시 저장 글 없음 컴포넌트
 const EmptyDrafts = () => (
   <div className="py-8 text-center text-gray-500">
-    저장된 초안이 없습니다.
+    저장된 임시 저장 글이 없습니다.
   </div>
 );
 
-// 단일 초안 항목 컴포넌트
+// 단일 임시 저장 글 항목 컴포넌트
 interface DraftItemProps {
   draft: Draft;
   onClick: (draft: Draft) => void;
@@ -87,7 +87,7 @@ const DraftItem = ({ draft, onClick }: DraftItemProps) => (
   </div>
 );
 
-// 초안 목록 컴포넌트
+// 임시 저장 글 목록 컴포넌트
 interface DraftsListProps {
   drafts: Draft[];
   onSelectDraft: (draft: Draft) => void;
@@ -140,7 +140,7 @@ export function DraftsDrawer({ userId, boardId, children }: DraftsDrawerProps) {
     
     fetchTitle();
   }, [boardId]);
-  // 초안 목록 가져오기
+  // 임시 저장 글 목록 가져오기
   const { data: drafts, isLoading } = useQuery({
     queryKey: ['drafts', userId, boardId],
     queryFn: async () => {
@@ -153,9 +153,9 @@ export function DraftsDrawer({ userId, boardId, children }: DraftsDrawerProps) {
     cacheTime: 0, // 캐시 사용하지 않음
     staleTime: 0, // 항상 최신 데이터 가져오기
   });
-  // 초안 선택 핸들러 - React Query 캐시에 미리 저장
+  // 임시 저장 글 선택 핸들러 - React Query 캐시에 미리 저장
   const handleSelectDraft = (draft: Draft) => {
-    // 캐시에 초안 데이터 미리 저장
+    // 캐시에 임시 저장 글 데이터 미리 저장
     if (userId) {
       queryClient.setQueryData(['draft', userId, draft.id, draft.boardId], draft);
       
@@ -170,16 +170,16 @@ export function DraftsDrawer({ userId, boardId, children }: DraftsDrawerProps) {
     // 드로어 닫기
     setOpen(false);
     
-    // URL 파라미터로 초안 ID 전달
+    // URL 파라미터로 임시 저장 글 ID 전달
     navigate(`/create/${draft.boardId}?draftId=${draft.id}`);
   };
   
   // 드로어 제목 생성
   const getDrawerTitle = () => {
     if (boardId && boardTitle) {
-      return boardTitle;
+      return `${boardTitle} - 임시 저장 글`;
     }
-    return '모든 초안';
+    return '모든 임시 저장 글';
   };
 
   // 드로어 내용 렌더링

@@ -27,10 +27,10 @@ export function DraftStatusIndicator({
 
   // 상태 메시지 생성
   const getStatusMessage = () => {
-    if (isSaving) return "초안을 저장하는 중...";
-    if (savingError) return "초안 저장 중 오류가 발생했습니다.";
+    if (isSaving) return "임시 저장 중...";
+    if (savingError) return "임시 저장 중 오류가 발생했습니다.";
     if (formattedLastSavedAt) return `마지막 저장: ${formattedLastSavedAt}`;
-    return null; // 저장된 초안이 없을 때는 메시지를 표시하지 않음
+    return null; // 저장된 임시 저장 글이 없을 때는 메시지를 표시하지 않음
   };
 
   const statusMessage = getStatusMessage();
