@@ -18,7 +18,7 @@ export const DraftsDrawerContent: React.FC<DraftsDrawerContentProps> = ({
     handleDeleteDraft
 }) => {
     return (
-        <>
+        <div role="region" aria-label="임시 저장 글 목록">
             {isLoading ? (
                 <DraftsLoading />
             ) : !drafts || drafts.length === 0 ? (
@@ -30,7 +30,7 @@ export const DraftsDrawerContent: React.FC<DraftsDrawerContentProps> = ({
                     onDeleteDraft={handleDeleteDraft}
                 />
             )}
-        </>
+        </div>
     );
 };
 
@@ -48,14 +48,15 @@ const DraftsList: React.FC<DraftsListProps> = ({
     onDeleteDraft
 }) => (
     <ScrollArea className="h-[60vh] px-4">
-        <div className="space-y-2">
+        <div className="space-y-2" role="list">
             {drafts.map((draft) => (
-                <DraftItem
-                    key={draft.id}
-                    draft={draft}
-                    onClick={onSelectDraft}
-                    onDelete={onDeleteDraft}
-                />
+                <div key={draft.id} role="listitem">
+                    <DraftItem
+                        draft={draft}
+                        onClick={onSelectDraft}
+                        onDelete={onDeleteDraft}
+                    />
+                </div>
             ))}
         </div>
     </ScrollArea>
@@ -63,15 +64,15 @@ const DraftsList: React.FC<DraftsListProps> = ({
 
 // 로딩 컴포넌트
 const DraftsLoading: React.FC = () => (
-    <div className="flex justify-center items-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    <div className="flex justify-center items-center py-8" role="status" aria-live="polite">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
         <span className="ml-2 text-gray-600">임시 저장 글을 불러오는 중...</span>
     </div>
 );
 
 // 임시 저장 글 없음 컴포넌트
 const EmptyDrafts: React.FC = () => (
-    <div className="py-8 text-center text-gray-500">
+    <div className="py-8 text-center text-gray-500" role="status" aria-live="polite">
         저장된 임시 저장 글이 없습니다.
     </div>
 );

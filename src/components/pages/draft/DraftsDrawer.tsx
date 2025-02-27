@@ -16,7 +16,7 @@ import { useDrawer } from '@/hooks/useDrawer';
 import { DraftsDrawerContent } from './DraftsDrawerContent';
 import { DeleteDraftDialog } from './DeleteDraftDialog';
 import { useDeleteDraft } from '@/hooks/useDeleteDraft';
-// 메인 드로어 컴포넌트
+
 interface DraftsDrawerProps {
   userId: string | undefined;
   boardId: string | undefined;
@@ -59,7 +59,6 @@ export function DraftsDrawer({ userId, boardId, children }: DraftsDrawerProps) {
           <DraftsDrawerFooter />
         </DrawerContent>
       </Drawer>
-      {/* 삭제 확인 대화상자 */}
       <DeleteDraftDialog
         isOpen={isDeleteDialogOpen}
         draft={draftToDelete}
@@ -80,7 +79,7 @@ interface DraftsDrawerHeaderProps {
 const DraftsDrawerHeader: React.FC<DraftsDrawerHeaderProps> = ({ boardId, boardTitle }) => {
   const getDrawerTitle = () => {
     if (boardId && boardTitle) {
-      return boardTitle;
+      return `${boardTitle} - 임시 저장 글`;
     }
     return '모든 임시 저장 글';
   };
