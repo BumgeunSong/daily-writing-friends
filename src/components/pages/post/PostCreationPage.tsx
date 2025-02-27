@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../../../contexts/AuthContext';
 import { createPost } from '@/utils/postUtils';
@@ -11,7 +11,8 @@ import { useAutoSaveDrafts } from '@/hooks/useAutoSaveDrafts';
 import { Loader2, FileText } from 'lucide-react';
 import { DraftStatusIndicator } from './DraftStatusIndicator';
 import { DraftsDrawer } from './DraftsDrawer';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Draft } from '@/types/Draft';
 
 export default function PostCreationPage() {
   const [title, setTitle] = useState<string>('');
@@ -20,22 +21,34 @@ export default function PostCreationPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const queryClient = useQueryClient();
   
   // URL 쿼리 파라미터에서 draftId 추출
-  const queryParams = new URLSearchParams(location.search);
-  const draftId = queryParams.get('draftId');
+  const draftId = searchParams.get('draftId');
   
-  // useQuery를 사용하여 초안 로드 - draftId가 있을 때만 활성화
-  const { isLoading: isDraftLoading } = useQuery({
+  console.log("boardId:", boardId);
+  console.log("draftId from search params:", draftId);
+  
+  // useQuery를 사용하여 초안 로드 - 최적화된 방식
+  const { isLoading: isDraftLoading, refetch } = useQuery({
     queryKey: ['draft', currentUser?.uid, draftId, boardId],
     queryFn: async () => {
       if (!draftId || !currentUser?.uid || !boardId) return null;
       
+      // 캐시에서 먼저 확인 (DraftsDrawer에서 미리 저장한 데이터)
+      const cachedDraft = queryClient.getQueryData(['draft', currentUser.uid, draftId, boardId]);
+      console.log('Cached draft:', cachedDraft); // 디버깅용 로그 추가
+      
+      if (cachedDraft) {
+        return cachedDraft;
+      }
+      
+      // 캐시에 없으면 서버에서 가져오기
+      console.log('Fetching draft from server...'); // 디버깅용 로그 추가
       const draft = await getDraftById(currentUser.uid, draftId);
+      
       if (draft && draft.boardId === boardId) {
-        setTitle(draft.title);
-        setContent(draft.content);
         return draft;
       }
       return null;
@@ -43,7 +56,21 @@ export default function PostCreationPage() {
     enabled: !!draftId && !!currentUser?.uid && !!boardId,
     staleTime: Infinity, // 초안은 한 번 로드하면 다시 로드할 필요가 없음
     retry: 1, // 실패 시 한 번만 재시도
+    onSuccess: (data: Draft | null) => {
+      console.log('Query success, data:', data); // 디버깅용 로그 추가
+      if (data) {
+        setTitle(data.title);
+        setContent(data.content);
+      }
+    }
   });
+  
+  // 컴포넌트 마운트 시 쿼리 리페치
+  useEffect(() => {
+    if (draftId && currentUser?.uid && boardId) {
+      refetch();
+    }
+  }, [draftId, currentUser?.uid, boardId, refetch]);
   
   // 자동 저장 훅 사용 - draftId가 있을 때만 initialDraftId 전달
   const {
@@ -73,6 +100,17 @@ export default function PostCreationPage() {
       // 게시물 작성 성공 후 초안 삭제
       if (autoDraftId && currentUser?.uid) {
         await deleteDraft(currentUser.uid, autoDraftId);
+        
+        // 캐시에서도 삭제
+        queryClient.removeQueries({
+          queryKey: ['draft', currentUser.uid, autoDraftId, boardId],
+          exact: true
+        });
+        
+        // 초안 목록 캐시 무효화
+        queryClient.invalidateQueries({
+          queryKey: ['drafts', currentUser.uid],
+        });
       }
       
       navigate(`/board/${boardId}`);

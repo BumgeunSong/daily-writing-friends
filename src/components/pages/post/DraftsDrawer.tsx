@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getDrafts } from '@/utils/draftUtils';
 import { fetchBoardTitle } from '@/utils/boardUtils';
 import { Draft } from '@/types/Draft';
@@ -125,7 +125,9 @@ interface DraftsDrawerProps {
 
 export function DraftsDrawer({ userId, boardId, children }: DraftsDrawerProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [boardTitle, setBoardTitle] = useState<string>('');
+  const [open, setOpen] = useState(false);
   
   // 게시판 제목 가져오기
   useEffect(() => {
@@ -152,9 +154,25 @@ export function DraftsDrawer({ userId, boardId, children }: DraftsDrawerProps) {
     staleTime: 1000 * 60, // 1분 동안 캐시 유지
   });
   
-  // 초안 선택 핸들러
+  // 초안 선택 핸들러 - React Query 캐시에 미리 저장
   const handleSelectDraft = (draft: Draft) => {
-    navigate(`/board/${draft.boardId}/create?draftId=${draft.id}`);
+    // 캐시에 초안 데이터 미리 저장
+    if (userId) {
+      queryClient.setQueryData(['draft', userId, draft.id, draft.boardId], draft);
+      
+      // 쿼리 무효화하여 새 페이지에서 다시 실행되도록 함
+      queryClient.invalidateQueries({
+        queryKey: ['draft', userId, draft.id, draft.boardId],
+        exact: true,
+        refetchType: 'none' // 즉시 리페치하지 않고 다음 렌더링에서 실행되도록 함
+      });
+    }
+    
+    // 드로어 닫기
+    setOpen(false);
+    
+    // URL 파라미터로 초안 ID 전달
+    navigate(`/create/${draft.boardId}?draftId=${draft.id}`);
   };
   
   // 드로어 제목 생성
@@ -179,7 +197,7 @@ export function DraftsDrawer({ userId, boardId, children }: DraftsDrawerProps) {
   };
 
   return (
-    <Drawer>
+    <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
         {children}
       </DrawerTrigger>

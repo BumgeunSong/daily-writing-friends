@@ -11,7 +11,7 @@ interface DraftStatusIndicatorProps {
 export function DraftStatusIndicator({
   isSaving,
   savingError,
-  lastSavedAt
+  lastSavedAt,
 }: DraftStatusIndicatorProps) {
   // 마지막 저장 시간 포맷팅
   const formattedLastSavedAt = lastSavedAt 
@@ -35,12 +35,14 @@ export function DraftStatusIndicator({
 
   const statusMessage = getStatusMessage();
 
-  return statusMessage ? (
+  return (
     <div className="flex items-center justify-between mt-2 text-sm">
-      <div className={`${savingError ? 'text-red-500' : 'text-gray-500'} flex items-center`}>
-        {isSaving && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
-        {statusMessage}
-      </div>
+      {statusMessage && (
+        <div className={`${savingError ? 'text-red-500' : 'text-gray-500'} flex items-center`}>
+          {isSaving && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+          {statusMessage}
+        </div>
+      )}
     </div>
-  ) : null;
+  );
 } 
