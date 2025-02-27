@@ -16,8 +16,6 @@ export default function PostCreationPage() {
   const { currentUser } = useAuth();
   const { boardId } = useParams<{ boardId: string }>();
   const [searchParams] = useSearchParams();
-  
-  // URL 쿼리 파라미터에서 draftId 추출
   const draftId = searchParams.get('draftId');
   
   // 1. 임시 저장 글 로드
@@ -37,8 +35,7 @@ export default function PostCreationPage() {
     draftId: autoDraftId,
     lastSavedAt,
     isSaving,
-    savingError,
-    manualSave
+    savingError
   } = useAutoSaveDrafts({
     boardId: boardId || '',
     userId: currentUser?.uid,
@@ -87,8 +84,6 @@ export default function PostCreationPage() {
             isSaving={isSaving}
             savingError={savingError}
             lastSavedAt={lastSavedAt}
-            onManualSave={manualSave}
-            isSubmitting={isSubmitting}
           />
           
           <div className='flex justify-between items-center'>
@@ -96,7 +91,7 @@ export default function PostCreationPage() {
               <DraftsDrawer userId={currentUser.uid} boardId={boardId}>
                 <Button variant="outline" size="default" className="flex items-center">
                   <FileText className="h-4 w-4 mr-2" />
-                  임시 저장 글 목록
+                  임시 저장 글
                 </Button>
               </DraftsDrawer>
             )}

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getDrafts } from '@/utils/draftUtils';
+import { getDrafts, deleteDraft } from '@/utils/draftUtils';
 import { fetchBoardTitle } from '@/utils/boardUtils';
 import { Draft } from '@/types/Draft';
-import { Loader2, FileText, Clock, ChevronRight } from 'lucide-react';
+import { Loader2, FileText, Clock, X } from 'lucide-react';
 import {
   Drawer,
   DrawerClose,
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { toast } from '@/hooks/use-toast';
 
 // 임시 저장 글 날짜 포맷팅 - 사용자의 로케일 기반
 const formatDraftDate = (timestamp: any) => {
@@ -61,28 +62,42 @@ const EmptyDrafts = () => (
 interface DraftItemProps {
   draft: Draft;
   onClick: (draft: Draft) => void;
+  onDelete: (draft: Draft, e: React.MouseEvent) => void;
 }
 
-const DraftItem = ({ draft, onClick }: DraftItemProps) => (
+const DraftItem = ({ draft, onClick, onDelete }: DraftItemProps) => (
   <div 
-    onClick={() => onClick(draft)}
-    className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+    className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors relative"
   >
-    <div className="flex justify-between items-start">
-      <div className="flex-1">
-        <div className="font-medium flex items-center">
-          <FileText className="h-4 w-4 mr-1 text-gray-500" />
-          {getDraftTitle(draft)}
+    {/* 삭제 버튼 */}
+    <button
+      onClick={(e) => onDelete(draft, e)}
+      className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-200 transition-colors"
+      aria-label="임시 저장 글 삭제"
+    >
+      <X className="h-4 w-4 text-gray-500" />
+    </button>
+    
+    {/* 클릭 영역 */}
+    <div 
+      onClick={() => onClick(draft)}
+      className="pr-6" // 삭제 버튼을 위한 여백
+    >
+      <div className="flex justify-between items-start">
+        <div className="flex-1">
+          <div className="font-medium flex items-center">
+            <FileText className="h-4 w-4 mr-1 text-gray-500" />
+            {getDraftTitle(draft)}
+          </div>
+          <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+            {getDraftPreview(draft)}
+          </p>
         </div>
-        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-          {getDraftPreview(draft)}
-        </p>
       </div>
-      <ChevronRight className="h-5 w-5 text-gray-400" />
-    </div>
-    <div className="flex items-center mt-2 text-xs text-gray-500">
-      <Clock className="h-3 w-3 mr-1" />
-      {formatDraftDate(draft.savedAt)}
+      <div className="flex items-center mt-2 text-xs text-gray-500">
+        <Clock className="h-3 w-3 mr-1" />
+        {formatDraftDate(draft.savedAt)}
+      </div>
     </div>
   </div>
 );
@@ -91,16 +106,18 @@ const DraftItem = ({ draft, onClick }: DraftItemProps) => (
 interface DraftsListProps {
   drafts: Draft[];
   onSelectDraft: (draft: Draft) => void;
+  onDeleteDraft: (draft: Draft, e: React.MouseEvent) => void;
 }
 
-const DraftsList = ({ drafts, onSelectDraft }: DraftsListProps) => (
+const DraftsList = ({ drafts, onSelectDraft, onDeleteDraft }: DraftsListProps) => (
   <ScrollArea className="h-[60vh] px-4">
     <div className="space-y-2">
       {drafts.map((draft) => (
         <DraftItem 
           key={draft.id} 
           draft={draft} 
-          onClick={onSelectDraft} 
+          onClick={onSelectDraft}
+          onDelete={onDeleteDraft}
         />
       ))}
     </div>
@@ -140,8 +157,9 @@ export function DraftsDrawer({ userId, boardId, children }: DraftsDrawerProps) {
     
     fetchTitle();
   }, [boardId]);
+  
   // 임시 저장 글 목록 가져오기
-  const { data: drafts, isLoading } = useQuery({
+  const { data: drafts, isLoading, refetch } = useQuery({
     queryKey: ['drafts', userId, boardId],
     queryFn: async () => {
       if (!userId) return [];
@@ -153,6 +171,7 @@ export function DraftsDrawer({ userId, boardId, children }: DraftsDrawerProps) {
     cacheTime: 0, // 캐시 사용하지 않음
     staleTime: 0, // 항상 최신 데이터 가져오기
   });
+  
   // 임시 저장 글 선택 핸들러 - React Query 캐시에 미리 저장
   const handleSelectDraft = (draft: Draft) => {
     // 캐시에 임시 저장 글 데이터 미리 저장
@@ -174,6 +193,36 @@ export function DraftsDrawer({ userId, boardId, children }: DraftsDrawerProps) {
     navigate(`/create/${draft.boardId}?draftId=${draft.id}`);
   };
   
+  // 임시 저장 글 삭제 핸들러
+  const handleDeleteDraft = async (draft: Draft, e: React.MouseEvent) => {
+    e.stopPropagation(); // 부모 요소의 클릭 이벤트 전파 방지
+    
+    if (!userId) return;
+    
+    try {
+      // 임시 저장 글 삭제
+      await deleteDraft(userId, draft.id);
+      
+      // 캐시에서도 삭제
+      queryClient.removeQueries({
+        queryKey: ['draft', userId, draft.id, draft.boardId],
+        exact: true
+      });
+      
+      // 임시 저장 글 목록 다시 불러오기
+      refetch();
+    } catch (error) {
+      console.error('임시 저장 글 삭제 중 오류 발생:', error);
+      
+      // 오류 메시지 표시
+      toast({
+        title: "임시 저장 글 삭제 실패",
+        description: "임시 저장 글을 삭제하는 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
+  
   // 드로어 제목 생성
   const getDrawerTitle = () => {
     if (boardId && boardTitle) {
@@ -192,7 +241,13 @@ export function DraftsDrawer({ userId, boardId, children }: DraftsDrawerProps) {
       return <EmptyDrafts />;
     }
     
-    return <DraftsList drafts={drafts} onSelectDraft={handleSelectDraft} />;
+    return (
+      <DraftsList 
+        drafts={drafts} 
+        onSelectDraft={handleSelectDraft} 
+        onDeleteDraft={handleDeleteDraft}
+      />
+    );
   };
 
   return (
@@ -206,9 +261,7 @@ export function DraftsDrawer({ userId, boardId, children }: DraftsDrawerProps) {
             {getDrawerTitle()}
           </DrawerTitle>
         </DrawerHeader>
-        
         {renderDrawerContent()}
-        
         <DrawerFooterContent />
       </DrawerContent>
     </Drawer>

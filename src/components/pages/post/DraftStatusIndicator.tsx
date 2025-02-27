@@ -4,8 +4,6 @@ interface DraftStatusIndicatorProps {
   isSaving: boolean;
   savingError: Error | null;
   lastSavedAt: Date | null;
-  onManualSave: () => Promise<void>;
-  isSubmitting: boolean;
 }
 
 export function DraftStatusIndicator({
