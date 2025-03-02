@@ -6,21 +6,33 @@ import { StatsNoticeBanner } from "./StatsNoticeBanner"
 import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring"
 import { useQuery } from "@tanstack/react-query"
 import { fetchAllUserDataWithBoardPermission } from "@/utils/userUtils"
-
-const ACTIVE_BOARD_ID: string[] = ['Qs8RNvGqMBFLmIAkiLUS', 'AyvgJGwmf4MnOmAvz0xH']
+import { useRemoteConfig } from "@/hooks/useRemoteConfig"
 
 export default function StatsPage() {
     usePerformanceMonitoring('StatsPage');
+    
+    // Remote Config에서 활성 게시판 ID 가져오기 (문자열로 타입 변경)
+    const { 
+        value: activeBoardId, 
+        isLoading: isLoadingConfig,
+        error: configError
+    } = useRemoteConfig<string>(
+        'active_board_id', 
+        '5rfpfRBuhRFZB13dJVy8' // 기본값을 문자열로 변경
+    );
+    console.log("activeBoardId:", activeBoardId);
+    // 활성 게시판 권한이 있는 사용자 가져오기
     const { 
         data: activeUsers, 
         isLoading: isLoadingUsers, 
         error: usersError 
     } = useQuery({
-        queryKey: ['activeUsers', ACTIVE_BOARD_ID],
-        queryFn: () => fetchAllUserDataWithBoardPermission(ACTIVE_BOARD_ID),
+        queryKey: ['activeUsers', activeBoardId],
+        queryFn: () => fetchAllUserDataWithBoardPermission([activeBoardId]),
+        enabled: !isLoadingConfig && !configError, // Remote Config 로드 완료 후 실행
     });
 
-    // 2. 사용자 ID 배열로 통계 가져오기
+    // 사용자 ID 배열로 통계 가져오기
     const { 
         data: writingStats, 
         isLoading: isLoadingStats, 
@@ -29,15 +41,15 @@ export default function StatsPage() {
         activeUsers?.map(user => user.uid) || []
     );
     
-    const isLoading = isLoadingUsers || isLoadingStats;
-    const error = usersError || statsError;
+    const isLoading = isLoadingConfig || isLoadingUsers || isLoadingStats;
+    const error = configError || usersError || statsError;
     
     if (isLoading) {
         return <LoadingState />
     }
 
     if (error) {
-        return <ErrorState error={error instanceof Error ? error : new Error('Unknown error')} />
+        return <ErrorState error={error instanceof Error ? error : new Error('알 수 없는 오류')} />
     }
     
     return (
@@ -57,7 +69,7 @@ export default function StatsPage() {
     )
 }
 
-// LoadingState와 ErrorState 컴포넌트는 그대로 유지
+// LoadingState 컴포넌트 - 스켈레톤 UI 표시
 function LoadingState() {
     return (
         <div className="min-h-screen flex flex-col bg-background">
@@ -96,13 +108,14 @@ function LoadingState() {
     )
 }
 
+// ErrorState 컴포넌트 - 오류 메시지 표시
 function ErrorState({ error }: { error: Error }) {
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-background">
             <StatsHeader />
             <main className="container flex flex-col items-center justify-center py-8">
                 <h2 className="text-xl font-semibold text-red-600">
-                    Error: {error.message}
+                    오류: {error.message}
                 </h2>
                 <p className="text-muted-foreground">
                     데이터를 불러올 수 없습니다. 나중에 다시 시도해주세요.
