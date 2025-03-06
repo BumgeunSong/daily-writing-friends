@@ -91,10 +91,19 @@ const quillStyles = `
   color: hsl(var(--primary));
 }
 
-/* Placeholder styling */
+/* Placeholder styling - 모바일 환경에서도 작동하도록 수정 */
 .ql-editor.ql-blank::before {
   color: hsl(var(--muted-foreground));
   font-style: normal;
+  pointer-events: none; /* 플레이스홀더가 터치 이벤트를 방해하지 않도록 함 */
+  opacity: 0.7; /* 약간 투명하게 설정 */
+}
+
+/* 포커스 상태나 터치 시 플레이스홀더 숨기기 */
+.ql-container:focus-within .ql-editor.ql-blank::before,
+.ql-editor.ql-blank:focus::before {
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 /* Matching prose styles */
