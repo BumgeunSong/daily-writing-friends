@@ -21,14 +21,6 @@ const CommentListContent: React.FC<CommentListProps> = ({ boardId, postId }) => 
     suspense: true,
   });
 
-  if (comments.length === 0) {
-    return (
-      <div className="py-8 text-center">
-        <p className="text-muted-foreground">아직 댓글이 없습니다. 첫 댓글을 작성해보세요!</p>
-      </div>
-    );
-  }
-
   return (
     <div className='space-y-6'>
       {comments.map((comment) => (
