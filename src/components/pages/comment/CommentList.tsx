@@ -1,7 +1,6 @@
-import React, { Suspense } from 'react';
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import CommentRow from './CommentRow';
-import CommentSkeleton from './CommentSkeleton';
 import { Comment } from '@/types/Comment';
 import { useQuery } from '@tanstack/react-query';
 import { fetchCommentsOnce } from '@/utils/commentUtils';
@@ -21,6 +20,7 @@ const CommentListContent: React.FC<CommentListProps> = ({ boardId, postId }) => 
     suspense: true,
   });
 
+  // 댓글 목록 렌더링
   return (
     <div className='space-y-6'>
       {comments.map((comment) => (
@@ -36,23 +36,12 @@ const CommentListContent: React.FC<CommentListProps> = ({ boardId, postId }) => 
   );
 };
 
-// 스켈레톤 로딩 UI
-const CommentListFallback: React.FC = () => {
-  return (
-    <div className='space-y-6'>
-      {[...Array(3)].map((_, index) => (
-        <CommentSkeleton key={index} />
-      ))}
-    </div>
-  );
-};
-
 // 메인 컴포넌트
 const CommentList: React.FC<CommentListProps> = ({ boardId, postId }) => {
   return (
-    <Suspense fallback={<CommentListFallback />}>
+    <div className='space-y-6'>
       <CommentListContent boardId={boardId} postId={postId} />
-    </Suspense>
+    </div>
   );
 };
 
