@@ -1,14 +1,14 @@
 import { Edit, Trash2, X } from "lucide-react"
 import type React from "react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import type { Reply } from "@/types/Reply"
 import { deleteReplyToComment, updateReplyToComment } from "@/utils/commentUtils"
 import { sanitizeCommentContent } from "@/utils/contentUtils"
-import { fetchUserUserProfile } from "@/utils/userUtils"
 import ReplyInput from "./ReplyInput"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import type { UserProfile } from "@/types/UserProfile"
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { fetchUserProfileOnce } from '@/utils/userUtils'
 
 interface ReplyRowProps {
   reply: Reply
@@ -19,30 +19,36 @@ interface ReplyRowProps {
 }
 
 const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, isAuthor }) => {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isEditing, setIsEditing] = useState(false)
+  const queryClient = useQueryClient()
+  
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfile', reply.userId],
+    queryFn: () => fetchUserProfileOnce(reply.userId),
+    staleTime: 5 * 60 * 1000, // 5분 동안 캐시 유지
+  });
 
-  const handleEditToggle = async () => {
+  const handleEditToggle = () => {
     setIsEditing((prev) => !prev)
   }
 
   const handleDelete = async () => {
     if (window.confirm("답글을 삭제하시겠습니까?")) {
       await deleteReplyToComment(boardId, postId, commentId, reply.id)
+      // 답글 삭제 후 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: ['replies', boardId, postId, commentId] })
+      queryClient.invalidateQueries({ queryKey: ['replyCount', boardId, postId, commentId] })
     }
   }
 
   const handleEditSubmit = async (content: string) => {
     await updateReplyToComment(boardId, postId, commentId, reply.id, content)
     setIsEditing(false)
+    // 답글 수정 후 캐시 무효화
+    queryClient.invalidateQueries({ queryKey: ['replies', boardId, postId, commentId] })
   }
 
   const EditIcon = isEditing ? X : Edit
-
-  useEffect(() => {
-    fetchUserUserProfile(reply.userId).then(setUserProfile)
-  }, [reply.userId])
-
   const sanitizedContent = sanitizeCommentContent(reply.content)
 
   return (

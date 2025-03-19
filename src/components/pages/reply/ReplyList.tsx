@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Reply } from '@/types/Reply';
 import ReplyRow from './ReplyRow';
-import { fetchReplies } from '@/utils/replyUtils';
+import { useQuery } from '@tanstack/react-query';
+import { fetchRepliesOnce } from '@/utils/replyUtils';
+import ReplySkeleton from './ReplySkeleton';
 
 interface ReplyListProps {
   boardId: string;
@@ -10,13 +12,23 @@ interface ReplyListProps {
   commentId: string;
 }
 
-const ReplyList: React.FC<ReplyListProps> = ({ boardId, postId, commentId }) => {
-  const [replies, setReplies] = useState<Reply[]>([]);
+// 실제 답글 목록 컴포넌트
+const ReplyListContent: React.FC<ReplyListProps> = ({ boardId, postId, commentId }) => {
   const { currentUser } = useAuth();
-  useEffect(() => {
-    const unsubscribe = fetchReplies(boardId, postId, commentId, setReplies);
-    return () => unsubscribe();
-  }, [boardId, postId, commentId]);
+
+  const { data: replies = [] } = useQuery<Reply[]>({
+    queryKey: ['replies', boardId, postId, commentId],
+    queryFn: () => fetchRepliesOnce(boardId, postId, commentId),
+    suspense: true,
+  });
+
+  if (replies.length === 0) {
+    return (
+      <div className="py-2 text-center">
+        <p className="text-sm text-muted-foreground">아직 답글이 없습니다. 첫 답글을 작성해보세요!</p>
+      </div>
+    );
+  }
 
   return (
     <div className='space-y-4'>
@@ -24,13 +36,33 @@ const ReplyList: React.FC<ReplyListProps> = ({ boardId, postId, commentId }) => 
         <ReplyRow
           key={reply.id}
           boardId={boardId}
-          reply={reply}
-          isAuthor={currentUser?.uid === reply.userId}
-          commentId={commentId}
           postId={postId}
+          commentId={commentId}
+          reply={reply}
+          isAuthor={reply.userId === currentUser?.uid}
         />
       ))}
     </div>
+  );
+};
+
+// 스켈레톤 로딩 UI
+const ReplyListFallback: React.FC = () => {
+  return (
+    <div className='space-y-4'>
+      {[...Array(2)].map((_, index) => (
+        <ReplySkeleton key={index} />
+      ))}
+    </div>
+  );
+};
+
+// 메인 컴포넌트
+const ReplyList: React.FC<ReplyListProps> = (props) => {
+  return (
+    <Suspense fallback={<ReplyListFallback />}>
+      <ReplyListContent {...props} />
+    </Suspense>
   );
 };
 

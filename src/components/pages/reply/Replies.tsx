@@ -1,14 +1,14 @@
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
 import { addReplyToComment } from "@/utils/commentUtils"
 import ReplyInput from "./ReplyInput"
 import ReplyList from "./ReplyList"
-import { fetchReplyCount } from "@/utils/replyUtils"
 import { MessageCircle } from "lucide-react"
 import ReplyPrompt from "./ReplyPrompt"
-
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { fetchRepliesOnce, fetchReplyCountOnce } from '@/utils/replyUtils'
 
 interface RepliesProps {
   boardId: string
@@ -18,11 +18,19 @@ interface RepliesProps {
 
 const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [replyCount, setReplyCount] = useState<number>(0)
   const { currentUser } = useAuth()
+  const queryClient = useQueryClient()
+  
+  // 답글 개수 가져오기
+  const { data: replyCount = 0 } = useQuery({
+    queryKey: ['replyCount', boardId, postId, commentId],
+    queryFn: () => fetchReplyCountOnce(boardId, postId, commentId),
+    refetchOnWindowFocus: false,
+  });
 
   const handleSubmit = async (content: string) => {
     if (!currentUser) return
+    
     await addReplyToComment(
       boardId,
       postId,
@@ -32,15 +40,22 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
       currentUser.displayName,
       currentUser.photoURL,
     )
+    
+    // 답글 추가 후 캐시 무효화
+    queryClient.invalidateQueries({ queryKey: ['replies', boardId, postId, commentId] })
+    queryClient.invalidateQueries({ queryKey: ['replyCount', boardId, postId, commentId] })
   }
-
-  useEffect(() => {
-    const unsubscribe = fetchReplyCount(boardId, postId, commentId, setReplyCount)
-    return () => unsubscribe()
-  }, [boardId, postId, commentId])
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded)
+    
+    // 펼칠 때 데이터 미리 가져오기
+    if (!isExpanded) {
+      queryClient.prefetchQuery({
+        queryKey: ['replies', boardId, postId, commentId],
+        queryFn: () => fetchRepliesOnce(boardId, postId, commentId),
+      })
+    }
   }
 
   return (
