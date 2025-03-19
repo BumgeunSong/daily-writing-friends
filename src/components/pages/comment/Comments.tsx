@@ -4,6 +4,8 @@ import { addCommentToPost } from "@/utils/commentUtils"
 import CommentInput from "./CommentInput"
 import CommentList from "./CommentList"
 import CommentPrompt from "./CommentPrompt"
+import { useQueryClient } from "@tanstack/react-query"
+
 interface CommentsProps {
   boardId: string
   postId: string
@@ -13,6 +15,7 @@ interface CommentsProps {
 
 const Comments: React.FC<CommentsProps> = ({ boardId, postId, postAuthorId, postAuthorNickname }) => {
   const { currentUser } = useAuth()
+  const queryClient = useQueryClient()
 
   const handleSubmit = async (content: string) => {
     if (!postId || !currentUser) {
@@ -20,6 +23,9 @@ const Comments: React.FC<CommentsProps> = ({ boardId, postId, postAuthorId, post
     }
 
     await addCommentToPost(boardId, postId, content, currentUser.uid, currentUser.displayName, currentUser.photoURL)
+    
+    // 댓글 추가 후 캐시 무효화
+    queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] })
   }
 
   return (
