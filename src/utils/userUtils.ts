@@ -184,3 +184,19 @@ export async function createUserData(data: User): Promise<void> {
     throw error;
   }
 }
+
+// React Query용 한 번만 실행되는 사용자 프로필 가져오기 함수
+export const fetchUserProfileOnce = async (userId: string): Promise<UserProfile | null> => {
+  try {
+    const userDoc = await getDoc(doc(firestore, 'users', userId));
+    
+    if (userDoc.exists()) {
+      return userDoc.data() as UserProfile;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('사용자 프로필을 가져오는 중 오류 발생:', error);
+    return null;
+  }
+};
