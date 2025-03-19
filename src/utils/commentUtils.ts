@@ -117,3 +117,28 @@ export const deleteReplyToComment = async (boardId: string, postId: string, comm
     console.error('Error deleting reply:', error);
   }
 };
+
+// React Query용 한 번만 실행되는 댓글 가져오기 함수
+export const fetchCommentsOnce = async (boardId: string, postId: string): Promise<Comment[]> => {
+  try {
+    const commentsRef = collection(
+      firestore, 
+      'boards', 
+      boardId, 
+      'posts', 
+      postId, 
+      'comments'
+    );
+    
+    const q = query(commentsRef, orderBy('createdAt', 'asc'));
+    const snapshot = await getDocs(q);
+    
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as Comment));
+  } catch (error) {
+    console.error('댓글을 가져오는 중 오류 발생:', error);
+    throw new Error('댓글을 불러올 수 없습니다.');
+  }
+};
