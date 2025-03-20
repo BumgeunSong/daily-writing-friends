@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Reply } from '@/types/Reply';
 import ReplyRow from './ReplyRow';
-import { fetchReplies } from '@/utils/replyUtils';
+import { useQuery } from '@tanstack/react-query';
+import { fetchRepliesOnce } from '@/utils/replyUtils';
 
 interface ReplyListProps {
   boardId: string;
@@ -11,23 +12,24 @@ interface ReplyListProps {
 }
 
 const ReplyList: React.FC<ReplyListProps> = ({ boardId, postId, commentId }) => {
-  const [replies, setReplies] = useState<Reply[]>([]);
   const { currentUser } = useAuth();
-  useEffect(() => {
-    const unsubscribe = fetchReplies(boardId, postId, commentId, setReplies);
-    return () => unsubscribe();
-  }, [boardId, postId, commentId]);
 
+  const { data: replies = [] } = useQuery<Reply[]>({
+    queryKey: ['replies', boardId, postId, commentId],
+    queryFn: () => fetchRepliesOnce(boardId, postId, commentId),
+    suspense: true,
+  });
+  // 답글 목록 렌더링
   return (
     <div className='space-y-4'>
       {replies.map((reply) => (
         <ReplyRow
           key={reply.id}
           boardId={boardId}
-          reply={reply}
-          isAuthor={currentUser?.uid === reply.userId}
-          commentId={commentId}
           postId={postId}
+          commentId={commentId}
+          reply={reply}
+          isAuthor={reply.userId === currentUser?.uid}
         />
       ))}
     </div>

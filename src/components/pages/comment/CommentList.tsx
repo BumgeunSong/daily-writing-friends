@@ -1,22 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import CommentRow from './CommentRow';
-import { Comment } from '../../../types/Comment';
-import { fetchComments } from '@/utils/commentUtils';
+import { Comment } from '@/types/Comment';
+import { useQuery } from '@tanstack/react-query';
+import { fetchCommentsOnce } from '@/utils/commentUtils';
 
 interface CommentListProps {
   boardId: string;
   postId: string;
 }
 
-const CommentList: React.FC<CommentListProps> = ({ boardId, postId }) => {
-  const [comments, setComments] = useState<Comment[]>([]);
+// 실제 댓글 목록 컴포넌트
+const CommentListContent: React.FC<CommentListProps> = ({ boardId, postId }) => {
   const { currentUser } = useAuth();
-  useEffect(() => {
-    const unsubscribe = fetchComments(boardId, postId, setComments);
-    return () => unsubscribe();
-  }, [boardId, postId]);
 
+  const { data: comments = [] } = useQuery<Comment[]>({
+    queryKey: ['comments', boardId, postId],
+    queryFn: () => fetchCommentsOnce(boardId, postId),
+    suspense: true,
+  });
+
+  // 댓글 목록 렌더링
   return (
     <div className='space-y-6'>
       {comments.map((comment) => (
@@ -28,6 +32,15 @@ const CommentList: React.FC<CommentListProps> = ({ boardId, postId }) => {
           isAuthor={comment.userId === currentUser?.uid}
         />
       ))}
+    </div>
+  );
+};
+
+// 메인 컴포넌트
+const CommentList: React.FC<CommentListProps> = ({ boardId, postId }) => {
+  return (
+    <div className='space-y-6'>
+      <CommentListContent boardId={boardId} postId={postId} />
     </div>
   );
 };

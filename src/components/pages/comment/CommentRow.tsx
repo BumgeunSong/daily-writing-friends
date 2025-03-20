@@ -1,15 +1,15 @@
 import { Edit, Trash2, X } from "lucide-react"
 import type React from "react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { deleteCommentToPost, updateCommentToPost } from "@/utils/commentUtils"
 import { sanitizeCommentContent } from "@/utils/contentUtils"
 import CommentInput from "./CommentInput"
 import type { Comment } from "@/types/Comment"
-import { fetchUserUserProfile } from "@/utils/userUtils"
+import { fetchUserProfileOnce } from "@/utils/userUtils"
 import Replies from "../reply/Replies"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import type { UserProfile } from "@/types/UserProfile"
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 interface CommentRowProps {
   boardId: string
@@ -19,8 +19,14 @@ interface CommentRowProps {
 }
 
 const CommentRow: React.FC<CommentRowProps> = ({ boardId, postId, comment, isAuthor }) => {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isEditing, setIsEditing] = useState(false)
+  const queryClient = useQueryClient()
+
+  const { data: userProfile } = useQuery({
+    queryKey: ['userProfile', comment.userId],
+    queryFn: () => fetchUserProfileOnce(comment.userId),
+    staleTime: 5 * 60 * 1000, // 5분 동안 캐시 유지
+  });
 
   const handleEditToggle = async () => {
     setIsEditing((prev) => !prev)
@@ -29,17 +35,17 @@ const CommentRow: React.FC<CommentRowProps> = ({ boardId, postId, comment, isAut
   const handleDelete = async () => {
     if (window.confirm("댓글을 삭제하시겠습니까?")) {
       await deleteCommentToPost(boardId, postId, comment.id)
+      // 댓글 삭제 후 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] })
     }
   }
 
   const handleEditSubmit = async (content: string) => {
     await updateCommentToPost(boardId, postId, comment.id, content)
     setIsEditing(false)
+    // 댓글 수정 후 캐시 무효화
+    queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] })
   }
-
-  useEffect(() => {
-    fetchUserUserProfile(comment.userId).then(setUserProfile)
-  }, [comment.userId])
 
   const EditIcon = isEditing ? X : Edit
   const sanitizedContent = sanitizeCommentContent(comment.content)
