@@ -1,171 +1,222 @@
-import localforage from 'localforage';
-import { Post } from '@/types/Posts';
+import { openDB, IDBPDatabase } from 'idb';
+import { Post } from '../types/Posts';
+import { Comment } from '@/types/Comment';
 
-// 캐시 스토어 설정
-const postListStore = localforage.createInstance({
-  name: 'post-list-cache',
-  storeName: 'posts'
-});
+// IndexedDB 데이터베이스 이름과 버전
+const DB_NAME = 'offlineCache';
+const DB_VERSION = 1;
 
-const postDetailStore = localforage.createInstance({
-  name: 'post-detail-cache',
-  storeName: 'post-details'
-});
-
-// 캐시 메타데이터 스토어
-const cacheMetaStore = localforage.createInstance({
-  name: 'cache-metadata',
-  storeName: 'metadata'
-});
-
-// 게시물 목록 캐싱
-export const cachePostList = async (boardId: string, posts: Post[]): Promise<void> => {
-  try {
-    const cacheKey = `board-${boardId}`;
-    await postListStore.setItem(cacheKey, posts);
-    
-    // 메타데이터 저장
-    await cacheMetaStore.setItem(cacheKey, {
-      timestamp: Date.now(),
-      size: JSON.stringify(posts).length
-    });
-    
-    console.log(`게시물 목록 캐싱 완료: ${boardId}`);
-  } catch (error) {
-    console.error('게시물 목록 캐싱 실패:', error);
-  }
+// 데이터베이스 스토어 이름
+const STORES = {
+  POSTS: 'posts',
+  POST_DETAILS: 'postDetails',
+  COMMENTS: 'comments',
+  REPLIES: 'replies',
 };
 
-// 캐시된 게시물 목록 가져오기
-export const getCachedPostList = async (boardId: string): Promise<Post[] | null> => {
-  try {
-    const cacheKey = `board-${boardId}`;
-    const posts = await postListStore.getItem<Post[]>(cacheKey);
-    
-    if (!posts) return null;
-    
-    // 메타데이터 확인
-    const metadata = await cacheMetaStore.getItem<{timestamp: number}>(cacheKey);
-    if (metadata) {
-      // 24시간 이상 지난 캐시는 만료 처리
-      const isExpired = Date.now() - metadata.timestamp > 24 * 60 * 60 * 1000;
-      if (isExpired) {
-        console.log(`만료된 캐시: ${cacheKey}`);
-        return null;
+// 데이터베이스 연결 함수
+async function getDB(): Promise<IDBPDatabase> {
+  return openDB(DB_NAME, DB_VERSION, {
+    upgrade(db) {
+      // 게시물 목록 스토어
+      if (!db.objectStoreNames.contains(STORES.POSTS)) {
+        db.createObjectStore(STORES.POSTS, { keyPath: 'boardId' });
       }
-    }
-    
-    return posts;
-  } catch (error) {
-    console.error('캐시된 게시물 목록 가져오기 실패:', error);
-    return null;
-  }
-};
-
-// 게시물 상세 정보 캐싱
-export const cachePostDetail = async (boardId: string, postId: string, post: Post): Promise<void> => {
-  try {
-    const cacheKey = `${boardId}-${postId}`;
-    await postDetailStore.setItem(cacheKey, post);
-    
-    // 메타데이터 저장
-    await cacheMetaStore.setItem(cacheKey, {
-      timestamp: Date.now(),
-      size: JSON.stringify(post).length
-    });
-    
-    console.log(`게시물 상세 정보 캐싱 완료: ${cacheKey}`);
-  } catch (error) {
-    console.error('게시물 상세 정보 캐싱 실패:', error);
-  }
-};
-
-// 캐시된 게시물 상세 정보 가져오기
-export const getCachedPostDetail = async (boardId: string, postId: string): Promise<Post | null> => {
-  try {
-    const cacheKey = `${boardId}-${postId}`;
-    const post = await postDetailStore.getItem<Post>(cacheKey);
-    
-    if (!post) return null;
-    
-    // 메타데이터 확인
-    const metadata = await cacheMetaStore.getItem<{timestamp: number}>(cacheKey);
-    if (metadata) {
-      // 24시간 이상 지난 캐시는 만료 처리
-      const isExpired = Date.now() - metadata.timestamp > 24 * 60 * 60 * 1000;
-      if (isExpired) {
-        console.log(`만료된 캐시: ${cacheKey}`);
-        return null;
+      
+      // 게시물 상세 스토어
+      if (!db.objectStoreNames.contains(STORES.POST_DETAILS)) {
+        db.createObjectStore(STORES.POST_DETAILS, { keyPath: 'id' });
       }
-    }
-    
-    return post;
-  } catch (error) {
-    console.error('캐시된 게시물 상세 정보 가져오기 실패:', error);
-    return null;
-  }
-};
-
-// 캐시 크기 계산
-export const getCacheSize = async (): Promise<{ postList: number, postDetail: number }> => {
-  try {
-    let postListSize = 0;
-    let postDetailSize = 0;
-    
-    // 게시물 목록 캐시 크기 계산
-    const postListKeys = await postListStore.keys();
-    for (const key of postListKeys) {
-      const metadata = await cacheMetaStore.getItem<{size: number}>(`board-${key}`);
-      if (metadata?.size) {
-        postListSize += metadata.size;
+      
+      // 댓글 스토어
+      if (!db.objectStoreNames.contains(STORES.COMMENTS)) {
+        db.createObjectStore(STORES.COMMENTS, { keyPath: 'id' });
       }
-    }
-    
-    // 게시물 상세 캐시 크기 계산
-    const postDetailKeys = await postDetailStore.keys();
-    for (const key of postDetailKeys) {
-      const metadata = await cacheMetaStore.getItem<{size: number}>(key);
-      if (metadata?.size) {
-        postDetailSize += metadata.size;
+      
+      // 답글 스토어
+      if (!db.objectStoreNames.contains(STORES.REPLIES)) {
+        db.createObjectStore(STORES.REPLIES, { keyPath: 'id' });
       }
-    }
-    
-    return {
-      postList: Math.round(postListSize / 1024), // KB 단위
-      postDetail: Math.round(postDetailSize / 1024) // KB 단위
-    };
-  } catch (error) {
-    console.error('캐시 크기 계산 실패:', error);
-    return { postList: 0, postDetail: 0 };
-  }
-};
+    },
+  });
+}
 
-// 모든 캐시 삭제
-export const clearAllCache = async (): Promise<void> => {
-  try {
-    await postListStore.clear();
-    await postDetailStore.clear();
-    await cacheMetaStore.clear();
-    console.log('모든 캐시가 삭제되었습니다.');
-  } catch (error) {
-    console.error('캐시 삭제 실패:', error);
-    throw error;
-  }
-};
-
-// 특정 게시판의 캐시 무효화
-export const invalidateBoardCache = async (boardId: string): Promise<void> => {
-  try {
-    const cacheKey = `board-${boardId}`;
-    await postListStore.removeItem(cacheKey);
-    await cacheMetaStore.removeItem(cacheKey);
-    console.log(`게시판 캐시 무효화 완료: ${boardId}`);
-  } catch (error) {
-    console.error('게시판 캐시 무효화 실패:', error);
-  }
-};
-
-// 네트워크 상태 확인
-export const isOnline = (): boolean => {
+// 오프라인 상태 확인 함수
+export function isOnline(): boolean {
   return navigator.onLine;
-}; 
+}
+
+// 게시물 목록 캐싱 함수
+export async function cachePostList(boardId: string, posts: Post[]): Promise<void> {
+  try {
+    const db = await getDB();
+    await db.put(STORES.POSTS, { boardId, posts, timestamp: Date.now() });
+  } catch (error) {
+    console.error('게시물 목록 캐싱 오류:', error);
+  }
+}
+
+// 캐시된 게시물 목록 가져오기 함수
+export async function getCachedPostList(boardId: string): Promise<Post[] | null> {
+  try {
+    const db = await getDB();
+    const data = await db.get(STORES.POSTS, boardId);
+    
+    if (!data) return null;
+    
+    // 캐시가 24시간 이상 지났는지 확인
+    const isStale = Date.now() - data.timestamp > 24 * 60 * 60 * 1000;
+    if (isStale && isOnline()) return null;
+    
+    return data.posts;
+  } catch (error) {
+    console.error('캐시된 게시물 목록 가져오기 오류:', error);
+    return null;
+  }
+}
+
+// 게시물 상세 캐싱 함수
+export async function cachePostDetail(boardId: string, postId: string, post: Post): Promise<void> {
+  try {
+    const db = await getDB();
+    await db.put(STORES.POST_DETAILS, { 
+      id: `${boardId}_${postId}`, 
+      post, 
+      timestamp: Date.now() 
+    });
+  } catch (error) {
+    console.error('게시물 상세 캐싱 오류:', error);
+  }
+}
+
+// 캐시된 게시물 상세 가져오기 함수
+export async function getCachedPostDetail(boardId: string, postId: string): Promise<Post | null> {
+  try {
+    const db = await getDB();
+    const data = await db.get(STORES.POST_DETAILS, `${boardId}_${postId}`);
+    
+    if (!data) return null;
+    
+    // 캐시가 24시간 이상 지났는지 확인
+    const isStale = Date.now() - data.timestamp > 24 * 60 * 60 * 1000;
+    if (isStale && isOnline()) return null;
+    
+    return data.post;
+  } catch (error) {
+    console.error('캐시된 게시물 상세 가져오기 오류:', error);
+    return null;
+  }
+}
+
+// 댓글 목록 캐싱 함수
+export async function cacheComments(boardId: string, postId: string, comments: Comment[]): Promise<void> {
+  try {
+    const db = await getDB();
+    await db.put(STORES.COMMENTS, { 
+      id: `${boardId}_${postId}`, 
+      comments, 
+      timestamp: Date.now() 
+    });
+  } catch (error) {
+    console.error('댓글 캐싱 오류:', error);
+  }
+}
+
+// 캐시된 댓글 목록 가져오기 함수
+export async function getCachedComments(boardId: string, postId: string): Promise<Comment[] | null> {
+  try {
+    const db = await getDB();
+    const data = await db.get(STORES.COMMENTS, `${boardId}_${postId}`);
+    
+    if (!data) return null;
+    
+    // 캐시가 24시간 이상 지났는지 확인
+    const isStale = Date.now() - data.timestamp > 24 * 60 * 60 * 1000;
+    if (isStale && isOnline()) return null;
+    
+    return data.comments;
+  } catch (error) {
+    console.error('캐시된 댓글 가져오기 오류:', error);
+    return null;
+  }
+}
+
+// 답글 목록 캐싱 함수
+export async function cacheReplies(boardId: string, postId: string, commentId: string, replies: Comment[]): Promise<void> {
+  try {
+    const db = await getDB();
+    await db.put(STORES.REPLIES, { 
+      id: `${boardId}_${postId}_${commentId}`, 
+      replies, 
+      timestamp: Date.now() 
+    });
+  } catch (error) {
+    console.error('답글 캐싱 오류:', error);
+  }
+}
+
+// 캐시된 답글 목록 가져오기 함수
+export async function getCachedReplies(boardId: string, postId: string, commentId: string): Promise<Comment[] | null> {
+  try {
+    const db = await getDB();
+    const data = await db.get(STORES.REPLIES, `${boardId}_${postId}_${commentId}`);
+    
+    if (!data) return null;
+    
+    // 캐시가 24시간 이상 지났는지 확인
+    const isStale = Date.now() - data.timestamp > 24 * 60 * 60 * 1000;
+    if (isStale && isOnline()) return null;
+    
+    return data.replies;
+  } catch (error) {
+    console.error('캐시된 답글 가져오기 오류:', error);
+    return null;
+  }
+}
+
+// 캐시 데이터 정리 함수 (오래된 캐시 삭제)
+export async function cleanupCache(): Promise<void> {
+  try {
+    const db = await getDB();
+    const storeNames = [STORES.POSTS, STORES.POST_DETAILS, STORES.COMMENTS, STORES.REPLIES];
+    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7일
+    
+    for (const storeName of storeNames) {
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      const keys = await store.getAllKeys();
+      
+      for (const key of keys) {
+        const item = await store.get(key);
+        if (Date.now() - item.timestamp > maxAge) {
+          await store.delete(key);
+        }
+      }
+      
+      await tx.done;
+    }
+  } catch (error) {
+    console.error('캐시 정리 오류:', error);
+  }
+}
+
+// 네트워크 상태 변경 이벤트 리스너 설정
+export function setupNetworkListeners(onOnline: () => void, onOffline: () => void): () => void {
+  window.addEventListener('online', onOnline);
+  window.addEventListener('offline', onOffline);
+  
+  // 정리 함수 반환
+  return () => {
+    window.removeEventListener('online', onOnline);
+    window.removeEventListener('offline', onOffline);
+  };
+}
+
+// 주기적으로 캐시 정리 실행 (앱 시작 시 호출)
+export function startCacheCleanupSchedule(): void {
+  // 앱 시작 시 한 번 실행
+  cleanupCache();
+  
+  // 24시간마다 실행
+  setInterval(cleanupCache, 24 * 60 * 60 * 1000);
+} 
