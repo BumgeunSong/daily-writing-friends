@@ -49,7 +49,6 @@ const BoardHeader: React.FC<BoardHeaderProps> = React.memo(({ boardId }) => {
               <TooltipTrigger asChild>
                 <div className="flex items-center bg-primary-foreground/10 px-3 py-1.5 rounded-full">
                   <WifiOff className="size-4 mr-2" />
-                  <span className="text-sm font-medium">오프라인</span>
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom">

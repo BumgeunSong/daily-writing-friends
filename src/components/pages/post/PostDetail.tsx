@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchPost } from '@/utils/postUtils';
 import { sanitizePostContent } from '@/utils/contentUtils';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
-import OfflineBanner from '@/components/common/OfflineBanner';
 
 interface PostDetailProps {
   boardId: string;
@@ -33,13 +32,6 @@ const PostDetail: React.FC<PostDetailProps> = ({ boardId, postId }) => {
       <div className="prose prose-lg dark:prose-invert max-w-none">
         <div dangerouslySetInnerHTML={{ __html: sanitizePostContent(post.content) }} />
       </div>
-      
-      {!isOnline && (
-        <OfflineBanner 
-          message="오프라인 모드: 캐시된 게시물 내용만 표시됩니다" 
-          className="mt-6" 
-        />
-      )}
     </>
   );
 };

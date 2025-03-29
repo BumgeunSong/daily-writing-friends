@@ -1,20 +1,18 @@
-import React from 'react';
 import { WifiOff } from 'lucide-react';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
-interface OfflineBannerProps {
-  message: string;
-  className?: string;
-}
+const OfflineBanner = () => {
+  const isOnline = useOnlineStatus();
 
-const OfflineBanner: React.FC<OfflineBannerProps> = ({ message, className = '' }) => {
+  if (isOnline) {
+    return null;
+  }
   return (
-    <div className={`bg-amber-50 dark:bg-amber-900/20 p-3 rounded-md flex items-center ${className}`}>
-      <WifiOff className="size-4 text-amber-600 dark:text-amber-400 mr-2" />
-      <p className="text-amber-600 dark:text-amber-400 text-sm">
-        {message}
-      </p>
+    <div className='w-full bg-gray-100 dark:bg-gray-800 py-2 px-4 flex items-center justify-center sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700'>
+      <WifiOff className='size-4 text-gray-500 dark:text-gray-400 mr-2' />
+      <span className='text-sm font-medium text-gray-500 dark:text-gray-400'>오프라인 모드</span>
     </div>
-  );
+  )
 };
 
 export default OfflineBanner; 

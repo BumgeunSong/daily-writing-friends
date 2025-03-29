@@ -13,7 +13,6 @@ import PostErrorBoundary from '@/components/common/PostErrorBoundary';
 import { fetchUserNickname } from '@/utils/userUtils';
 import PostDetail from './PostDetail';
 import PostHeader from './PostHeader';
-import OfflineBanner from '@/components/common/OfflineBanner';
 
 // 로딩 중 표시 컴포넌트
 const PostDetailSkeleton = () => (
@@ -69,9 +68,6 @@ export default function PostDetailPage() {
   return (
     <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
       {boardId && <PostBackButton boardId={boardId} className='mb-6' />}
-      
-      {!isOnline && <OfflineBanner message="오프라인 모드: 저장된 게시물 내용만 표시됩니다" className="mb-6" />}
-      
       <article className='space-y-6'>
         <PostHeader 
           title={postInfo?.title} 

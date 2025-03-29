@@ -102,15 +102,6 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, selec
 
   return (
     <div className='space-y-6'>
-      {!isOnline && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-md mb-4 flex items-center">
-          <WifiOff className="size-4 text-amber-600 dark:text-amber-400 mr-2" />
-          <p className="text-amber-600 dark:text-amber-400 text-sm">
-            오프라인 모드: 캐시된 게시물만 표시됩니다
-          </p>
-        </div>
-      )}
-      
       {allPosts.map((post) => (
         <PostCard 
           key={post.id} 
