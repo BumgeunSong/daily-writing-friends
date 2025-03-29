@@ -1,47 +1,44 @@
-import { limit, query, collection, orderBy, where, getDocs, startAfter } from "firebase/firestore";
-import { firestore } from "@/firebase";
-import { Post } from "@/types/Posts";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import * as Sentry from '@sentry/react';
-import { mapDocToPost } from "@/utils/mapDocToPost";
+import { fetchPosts } from '@/utils/postUtils';
+import { cachePostList, getCachedPostList, isOnline } from '@/utils/offlineUtils';
+import { useEffect } from 'react';
 
-export const usePosts = (boardId: string, selectedAuthorId: string | null, limitCount: number) => {
-    return useInfiniteQuery<Post[]>(
-        ['posts', boardId, selectedAuthorId],
-        ({ pageParam = null }) => fetchPosts(boardId, selectedAuthorId, limitCount, pageParam),
-        {
-            enabled: !!boardId,
-            getNextPageParam: (lastPage) => {
-                const lastPost = lastPage[lastPage.length - 1];
-                return lastPost ? lastPost.createdAt : undefined;
-            },
-            onError: (error) => {
-                console.error("게시글 데이터를 불러오던 중 에러가 발생했습니다:", error);
-                Sentry.captureException(error);
-            },
-            staleTime: 1000 * 30, // 30 seconds
-            cacheTime: 1000 * 60 * 5, // 5 minutes
-            refetchOnWindowFocus: true, // Refetch when the window regains focus
+export const usePosts = (boardId: string, authorId: string | null, limitCount: number) => {
+    const query = useInfiniteQuery({
+        queryKey: ['posts', boardId, authorId],
+        queryFn: async ({ pageParam = null }) => {
+            // 오프라인 상태 확인
+            if (!isOnline()) {
+                // 첫 페이지만 요청하는 경우 캐시에서 데이터 가져오기
+                if (pageParam === null) {
+                    const cachedPosts = await getCachedPostList(boardId);
+                    if (cachedPosts) {
+                        return cachedPosts;
+                    }
+                }
+                throw new Error('오프라인 상태이며 캐시된 데이터가 없습니다.');
+            }
+
+            // 온라인 상태면 서버에서 데이터 가져오기
+            return fetchPosts(boardId, authorId, limitCount, pageParam);
+        },
+        getNextPageParam: (lastPage, allPages) => {
+            if (lastPage.length < limitCount) return undefined;
+            return lastPage[lastPage.length - 1]?.createdAt;
+        },
+        staleTime: 5 * 60 * 1000, // 5분
+        cacheTime: 24 * 60 * 60 * 1000, // 24시간
+        refetchOnWindowFocus: isOnline(), // 온라인 상태일 때만 창 포커스 시 새로고침
+        refetchOnReconnect: true, // 네트워크 재연결 시 새로고침
+    });
+
+    // 데이터가 로드되면 캐시에 저장
+    useEffect(() => {
+        if (query.data && isOnline()) {
+            const allPosts = query.data.pages.flatMap((page) => page);
+            cachePostList(boardId, allPosts);
         }
-    );
+    }, [query.data, boardId]);
+
+    return query;
 };
-
-async function fetchPosts(boardId: string, selectedAuthorId: string | null, limitCount: number, after?: Date): Promise<Post[]> {
-    let q = query(
-        collection(firestore, `boards/${boardId}/posts`),
-        orderBy('createdAt', 'desc'),
-        limit(limitCount)
-    );
-
-    if (selectedAuthorId) {
-        q = query(q, where('authorId', '==', selectedAuthorId));
-    }
-
-    if (after) {
-        q = query(q, startAfter(after));
-    }
-
-    const snapshot = await getDocs(q);
-    const postsData = await Promise.all(snapshot.docs.map((doc) => mapDocToPost(doc)));
-    return postsData;
-}

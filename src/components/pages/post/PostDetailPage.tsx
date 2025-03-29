@@ -1,166 +1,112 @@
-import { deleteDoc, doc } from 'firebase/firestore';
-import { AlertCircle, Edit, Trash2 } from 'lucide-react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import React, { Suspense } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { WifiOff } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { fetchUserNickname } from '@/utils/userUtils';
 import { useAuth } from '../../../contexts/AuthContext';
-import { firestore } from '../../../firebase';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchPost } from '../../../utils/postUtils';
 import Comments from '../comment/Comments';
 import { PostBackButton } from './PostBackButton';
 import { PostAdjacentButtons } from './PostAdjacentButtons';
-import { sanitizePostContent } from '@/utils/contentUtils';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import * as Sentry from '@sentry/react';
-const deletePost = async (boardId: string, id: string): Promise<void> => {
-  await deleteDoc(doc(firestore, `boards/${boardId}/posts`, id));
-};
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import PostErrorBoundary from '@/components/common/PostErrorBoundary';
+import { fetchUserNickname } from '@/utils/userUtils';
+import PostDetail from './PostDetail';
+import PostHeader from './PostHeader';
 
-const handleDelete = async (
-  postId: string,
-  boardId: string,
-  navigate: (path: string) => void,
-): Promise<void> => {
-  const confirmDelete = window.confirm('정말로 이 게시물을 삭제하시겠습니까?');
-  if (!confirmDelete) return;
-
-  try {
-    await deletePost(boardId, postId);
-    navigate(`/board/${boardId}`);
-  } catch (error) {
-    console.error('게시물 삭제 오류:', error);
-  }
-};
+// 로딩 중 표시 컴포넌트
+const PostDetailSkeleton = () => (
+  <div className="space-y-4">
+    <Skeleton className="h-6 w-3/4" />
+    <Skeleton className="h-6 w-1/2" />
+    <Skeleton className="h-6 w-5/6" />
+    <Skeleton className="h-6 w-2/3" />
+    <Skeleton className="h-6 w-4/5" />
+  </div>
+);
 
 export default function PostDetailPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const isOnline = useOnlineStatus();
+  const queryClient = useQueryClient();
 
-  const { data: post, isLoading, error } = useQuery(
-    ['post', boardId, postId],
-    () => fetchPost(boardId!, postId!),
-    {
-      enabled: !!boardId && !!postId,
+  // 게시물 기본 정보만 가져오기 (제목, 작성자 ID 등)
+  const { data: postInfo } = useQuery({
+    queryKey: ['postBasicInfo', boardId, postId],
+    queryFn: () => fetchPost(boardId!, postId!),
+    enabled: !!boardId && !!postId,
+    staleTime: 5 * 60 * 1000,
+    suspense: false, // 기본 정보는 Suspense 없이 가져옴
+  });
+
+  const { data: authorNickname } = useQuery({
+    queryKey: ['authorNickname', postInfo?.authorId],
+    queryFn: () => postInfo?.authorId ? fetchUserNickname(postInfo.authorId) : null,
+    enabled: !!postInfo?.authorId && isOnline,
+  });
+
+  const isAuthor = currentUser?.uid === postInfo?.authorId;
+
+  // 네트워크 상태가 변경될 때 데이터 새로고침
+  React.useEffect(() => {
+    if (isOnline && boardId && postId) {
+      queryClient.invalidateQueries({ queryKey: ['post', boardId, postId] });
+      queryClient.invalidateQueries({ queryKey: ['postBasicInfo', boardId, postId] });
     }
-  );
+  }, [isOnline, boardId, postId, queryClient]);
 
-  const { data: authorNickname } = useQuery(
-    ['authorNickname', post?.authorId],
-    () => fetchUserNickname(post!.authorId),
-    {
-      enabled: !!post?.authorId,
-    }
-  );
-
-  if (isLoading) {
+  if (!boardId || !postId) {
     return (
-      <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
-        <Skeleton className='mb-4 h-12 w-3/4' />
-        <Skeleton className='mb-2 h-4 w-full' />
-        <Skeleton className='mb-2 h-4 w-full' />
-        <Skeleton className='h-4 w-2/3' />
+      <div className="flex justify-center items-center h-screen">
+        <p>잘못된 URL입니다.</p>
       </div>
     );
   }
-
-  if (error || !post) {
-    return (
-      <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8 text-center'>
-        <h1 className='mb-4 text-2xl font-bold'>게시물을 찾을 수 없습니다.</h1>
-        {boardId && <PostBackButton boardId={boardId} />}
-      </div>
-    );
-  }
-
-  const isAuthor = currentUser?.uid === post.authorId;
-
-  const sanitizedContent = sanitizePostContent(post.content);
-  const renderContent = () => {
-    if (!post?.content) {
-      return <p>내용이 없습니다.</p>;
-    }
-
-    try {
-      return (
-        <div
-          dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-          className="prose prose-lg prose-slate dark:prose-invert max-w-none mt-6
-            prose-h1:text-3xl prose-h1:font-semibold 
-            prose-h2:text-2xl prose-h2:font-semibold
-            prose-p:my-4
-            prose-ul:my-4
-            prose-ol:my-4
-            "
-        />
-      );
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error('알 수 없는 렌더링 오류가 발생했습니다.');
-      
-      Sentry.captureException(err, {
-        extra: {
-          postId,
-          boardId,
-        },
-      });
-      
-      return (
-        <Alert variant="destructive" className="my-4">
-          <AlertCircle className="size-4" />
-          <AlertTitle>렌더링 오류</AlertTitle>
-          <AlertDescription className="mt-2">
-            <p>콘텐츠를 화면에 표시하는 중에 문제가 발생했습니다:</p>
-            <p className="mt-1 text-sm font-mono bg-red-50 p-2 rounded">
-              {err.message}
-            </p>
-            <p className="mt-2 text-sm">
-              페이지를 새로고침하거나 나중에 다시 시도해주세요.
-              문제가 계속되면 관리자에게 문의해주세요.
-            </p>
-          </AlertDescription>
-        </Alert>
-      );
-    }
-  };
 
   return (
     <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
       {boardId && <PostBackButton boardId={boardId} className='mb-6' />}
       <article className='space-y-6'>
-        <header className='space-y-4'>
-          <h1 className='text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl mb-4'>{post.title}</h1>
-          <div className='flex items-center justify-between text-sm text-gray-500 dark:text-gray-400'>
-            <p>
-              작성자: {authorNickname || '??'} | 작성일: {post.createdAt?.toLocaleString() || '?'}
-            </p>
-            {isAuthor && (
-              <div className='flex space-x-2'>
-                <Link to={`/board/${boardId}/edit/${postId}`}>
-                  <Button variant='outline' size='sm'>
-                    <Edit className='mr-2 size-4' /> 수정
-                  </Button>
-                </Link>
-                {boardId && postId && (
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={() => handleDelete(postId!, boardId!, (path) => navigate(path))}
-                  >
-                    <Trash2 className='mr-2 size-4' /> 삭제
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
-        </header>
-        {renderContent()}
+        <PostHeader 
+          title={postInfo?.title} 
+          authorName={authorNickname || postInfo?.authorName} 
+          createdAt={postInfo?.createdAt} 
+          isAuthor={isAuthor}
+          isOnline={isOnline}
+          boardId={boardId}
+          postId={postId}
+          onDelete={(path) => navigate(path)}
+        />
+        
+        <PostErrorBoundary>
+          <Suspense fallback={<PostDetailSkeleton />}>
+            <PostDetail boardId={boardId} postId={postId} />
+          </Suspense>
+        </PostErrorBoundary>
       </article>
-      <div className='mt-12 border-t border-gray-200'></div>
-      {boardId && postId && <PostAdjacentButtons boardId={boardId} postId={postId} />}
+      
+      <div className='mt-12 border-t border-gray-200 dark:border-gray-800'></div>
+      
+      {isOnline && <PostAdjacentButtons boardId={boardId} postId={postId} />}
+      
       <div className='mt-12'>
-        {boardId && postId && <Comments boardId={boardId} postId={postId} postAuthorId={post.authorId} postAuthorNickname={authorNickname || null} />}
+        {isOnline ? (
+          <Comments 
+            boardId={boardId} 
+            postId={postId} 
+            postAuthorId={postInfo?.authorId || ''} 
+            postAuthorNickname={authorNickname || postInfo?.authorName || null} 
+          />
+        ) : (
+          <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-md text-center">
+            <WifiOff className="size-5 mx-auto mb-2 text-gray-400" />
+            <p className="text-gray-500 dark:text-gray-400">
+              오프라인 모드에서는 댓글을 볼 수 없습니다
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
