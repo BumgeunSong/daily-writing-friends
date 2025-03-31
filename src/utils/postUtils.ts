@@ -7,31 +7,15 @@ import {
   updateDoc,
   getDocs,
   query,
-  orderBy,
-  startAfter,
-  where,
-  limit
+  orderBy
 } from 'firebase/firestore';
 
 import { firestore } from '../firebase';
 import { Post } from '../types/Posts';
 import { useQuery } from '@tanstack/react-query';
 import { mapDocToPost } from './mapDocToPost';
-import { cachePostDetail, getCachedPostDetail, isOnline } from './offlineUtils';
 
 export const fetchPost = async (boardId: string, postId: string): Promise<Post | null> => {
-  // 오프라인 상태 확인
-  if (!isOnline()) {
-    // 캐시에서 게시물 가져오기 시도
-    const cachedPost = await getCachedPostDetail(boardId, postId);
-    if (cachedPost) {
-      return cachedPost;
-    }
-    // 캐시된 데이터가 없으면 에러 발생
-    throw new Error('오프라인 상태이며 캐시된 게시물이 없습니다.');
-  }
-
-  // 온라인 상태면 서버에서 데이터 가져오기
   const docSnap = await getDoc(doc(firestore, `boards/${boardId}/posts/${postId}`));
 
   if (!docSnap.exists()) {
@@ -39,35 +23,8 @@ export const fetchPost = async (boardId: string, postId: string): Promise<Post |
     return null; 
   }
 
-  const post = await mapDocToPost(docSnap);
-  
-  // 가져온 게시물을 캐시에 저장
-  if (post) {
-    await cachePostDetail(boardId, postId, post);
-  }
-  
-  return post;
+  return mapDocToPost(docSnap);
 };
-
-export async function fetchPosts(boardId: string, selectedAuthorId: string | null, limitCount: number, after?: Date): Promise<Post[]> {
-  let q = query(
-      collection(firestore, `boards/${boardId}/posts`),
-      orderBy('createdAt', 'desc'),
-      limit(limitCount)
-  );
-
-  if (selectedAuthorId) {
-      q = query(q, where('authorId', '==', selectedAuthorId));
-  }
-
-  if (after) {
-      q = query(q, startAfter(after));
-  }
-
-  const snapshot = await getDocs(q);
-  const postsData = await Promise.all(snapshot.docs.map((doc) => mapDocToPost(doc)));
-  return postsData;
-}
 
 export const usePostTitle = (boardId: string, postId: string) => {
   return useQuery(['postTitle', boardId, postId], async () => {

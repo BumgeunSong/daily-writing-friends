@@ -7,10 +7,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { initSentry } from './centry';
 import queryClient from './lib/QueryClient';
-import { registerServiceWorker } from './utils/serviceWorkerRegistration';
 
 initSentry();
-registerServiceWorker();
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

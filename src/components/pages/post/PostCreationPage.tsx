@@ -1,33 +1,22 @@
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '../../../contexts/AuthContext';
 import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
 import { PostBackButton } from './PostBackButton';
-import { Loader2, FileText, WifiOff } from 'lucide-react';
+import { Loader2, FileText } from 'lucide-react';
 import { DraftStatusIndicator } from '../draft/DraftStatusIndicator';
 import { DraftsDrawer } from '../draft/DraftsDrawer';
 import { useDraftLoader } from '@/hooks/useDraftLoader';
 import { usePostEditor } from '@/hooks/usePostEditor';
 import { usePostSubmit } from '@/hooks/usePostSubmit';
 import { useAutoSaveDrafts } from '@/hooks/useAutoSaveDrafts';
-import { useOnlineStatus } from '@/hooks/useOnlineStatus';
-import { useEffect } from 'react';
 
 export default function PostCreationPage() {
   const { currentUser } = useAuth();
   const { boardId } = useParams<{ boardId: string }>();
   const [searchParams] = useSearchParams();
   const draftId = searchParams.get('draftId');
-  const navigate = useNavigate();
-  const isOnline = useOnlineStatus();
-  
-  // 오프라인 상태일 때 게시판 페이지로 리디렉션
-  useEffect(() => {
-    if (!isOnline && boardId) {
-      navigate(`/board/${boardId}`);
-    }
-  }, [isOnline, boardId, navigate]);
   
   // 1. 임시 저장 글 로드
   const { draft, draftId: loadedDraftId, isLoading: isDraftLoading } = useDraftLoader({
@@ -53,7 +42,7 @@ export default function PostCreationPage() {
     title,
     content,
     initialDraftId: loadedDraftId || undefined, // URL의 draftId가 아닌 로드된 임시 저장 글의 ID 사용
-    autoSaveInterval: 10000,
+    autoSaveInterval: 10000
   });
   
   // 4. 게시물 제출
@@ -65,25 +54,6 @@ export default function PostCreationPage() {
     title,
     content
   });
-
-  // 오프라인 상태 메시지
-  if (!isOnline) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 text-center">
-          <WifiOff className="size-12 mx-auto mb-4 text-amber-500" />
-          <h1 className="text-2xl font-bold mb-2">오프라인 상태입니다</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            오프라인 상태에서는 게시물을 작성할 수 없습니다.
-            인터넷에 연결된 후 다시 시도해주세요.
-          </p>
-          <Button onClick={() => navigate(`/board/${boardId}`)}>
-            게시판으로 돌아가기
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
@@ -129,7 +99,7 @@ export default function PostCreationPage() {
             <Button 
               type='submit' 
               className='px-6'
-              disabled={isSubmitting || !title.trim() || !content.trim() || !isOnline}
+              disabled={isSubmitting || !title.trim() || !content.trim()}
             >
               {isSubmitting ? (
                 <>

@@ -4,8 +4,6 @@ import { ProtectedRoute } from './components/route/ProtectedRoute';
 import { AfterLoginLayout } from './components/common/AfterLoginLayout';
 import { useAuth } from './contexts/AuthContext';
 import StatsPage from './components/pages/stats/StatsPage';
-import { useEffect } from 'react';
-import { startCacheCleanupSchedule } from './utils/offlineUtils';
 
 // 동적 임포트를 일반 임포트로 변경
 import RecentBoard from './components/pages/board/RecentBoard';
@@ -23,11 +21,6 @@ import BoardListPage from './components/pages/board/BoardListPage';
 export default function App() {
   const { currentUser } = useAuth();
   
-  useEffect(() => {
-    // 캐시 정리 스케줄 시작
-    startCacheCleanupSchedule();
-  }, []);
-
   return (
     <Routes>
       <Route path='/login' element={
