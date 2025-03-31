@@ -16,7 +16,7 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="fixed bottom-6 right-6">
+            <div className="fixed bottom-20 right-6">
               <Button 
                 size="lg" 
                 className="h-14 w-14 rounded-full bg-gray-400 text-white shadow-lg"
@@ -35,7 +35,7 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
   }
 
   return (
-    <div className="fixed bottom-6 right-6">
+    <div className="fixed bottom-20 right-6 z-50">
       <Link to={`/board/${boardId}/write`}>
         <Button size="lg" className="h-14 w-14 rounded-full shadow-lg">
           <Plus className="h-6 w-6" />
