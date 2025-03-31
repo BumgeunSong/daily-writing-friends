@@ -32,7 +32,6 @@
     "date-fns": "^4.1.0",
     "dompurify": "^3.1.7",
     "firebase": "^10.14.1",
-    "localforage": "^1.10.0",
     "lucide-react": "^0.453.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
@@ -45,12 +44,7 @@
     "tailwindcss-animate": "^1.0.7",
     "tailwindcss-safe-area": "^0.6.0",
     "uuid": "^11.1.0",
-    "vaul": "^1.1.2",
-    "workbox-core": "^7.3.0",
-    "workbox-expiration": "^7.3.0",
-    "workbox-routing": "^7.3.0",
-    "workbox-strategies": "^7.3.0",
-    "workbox-window": "^7.3.0"
+    "vaul": "^1.1.2"
   },
   "devDependencies": {
     "@rollup/plugin-replace": "^6.0.1",
