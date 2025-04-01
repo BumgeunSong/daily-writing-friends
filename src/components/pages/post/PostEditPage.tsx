@@ -6,38 +6,69 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { extractFirstImageUrl, fetchPost, updatePost } from '../../../utils/postUtils';
+import { fetchPost, updatePost } from '../../../utils/postUtils';
 import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
 import { PostBackButton } from './PostBackButton';
 import { toast } from '@/hooks/use-toast';
 
-
 export default function PostEditPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
-  const [title, setTitle] = useState<string>('');
-  const [content, setContent] = useState<string>('');
   const navigate = useNavigate();
+  
+  // 편집 상태를 관리하는 객체
+  const [editState, setEditState] = useState<{
+    initialized: boolean;
+    title: string;
+    content: string;
+  }>({
+    initialized: false,
+    title: '',
+    content: ''
+  });
 
+  // 데이터 가져오기
   const { data: post, isLoading, error } = useQuery(
     ['post', boardId, postId],
     () => fetchPost(boardId!, postId!),
     {
       enabled: !!boardId && !!postId,
+      refetchOnWindowFocus: false,
       onSuccess: (fetchedPost) => {
-        if (fetchedPost) {
-          setTitle(fetchedPost.title);
-          setContent(fetchedPost.content);
+        if (!editState.initialized && fetchedPost) {
+          setEditState({
+            initialized: true,
+            title: fetchedPost.title,
+            content: fetchedPost.content
+          });
         }
-      },
+      }
     }
   );
 
+  // 제목 변경 핸들러
+  const setTitle = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditState(prev => ({
+      ...prev,
+      title: e.target.value
+    }));
+  };
+
+  // 내용 변경 핸들러
+  const setContent = (content: string) => {
+    setEditState(prev => ({
+      ...prev,
+      content
+    }));
+  };
+
+  // 폼 제출 핸들러
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim() || !postId) return;
+    if (!editState.title.trim() || !editState.content.trim() || !postId) return;
+    
     try {
-      await updatePost(boardId!, postId!, title, content);
+      await updatePost(boardId!, postId!, editState.title, editState.content);
       navigate(`/board/${boardId}/post/${postId}`);
     } catch (error) {
       console.error('Error updating post:', error);
@@ -78,8 +109,8 @@ export default function PostEditPage() {
         <Card>
           <CardHeader className='flex flex-col space-y-2'>
             <PostTitleEditor
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              value={editState.title}
+              onChange={setTitle}
             />
             <div className='flex items-center justify-between text-sm text-muted-foreground'>
               <p>
@@ -89,7 +120,7 @@ export default function PostEditPage() {
           </CardHeader>
           <CardContent>
             <PostTextEditor
-              value={content}
+              value={editState.content}
               onChange={setContent}
               placeholder='내용을 수정하세요...'
             />
