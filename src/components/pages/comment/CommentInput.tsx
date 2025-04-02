@@ -1,9 +1,10 @@
-import { Send } from "lucide-react"
+import { Send, Loader2 } from "lucide-react"
 import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/contexts/AuthContext"
+import { useMutation } from "@tanstack/react-query"
 
 interface CommentInputProps {
   initialValue?: string
@@ -11,20 +12,24 @@ interface CommentInputProps {
   onSubmit: (content: string) => Promise<void>
 }
 
-const CommentInput: React.FC<CommentInputProps> = ({ initialValue = "", placeholder, onSubmit }) => {
+const CommentInput: React.FC<CommentInputProps> = ({ 
+  initialValue = "", 
+  placeholder, 
+  onSubmit 
+}) => {
   const [newComment, setNewComment] = useState(initialValue)
   const { currentUser } = useAuth()
+  
+  const mutation = useMutation({
+    mutationFn: (content: string) => onSubmit(content),
+    onSuccess: () => setNewComment("")
+  })
 
-  const handleAddComment = async (e: React.FormEvent) => {
+  const handleAddComment = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!currentUser || !newComment.trim()) return
-
-    try {
-      await onSubmit(newComment)
-      setNewComment("")
-    } catch (error) {
-      console.error("댓글 추가 오류:", error)
-    }
+    if (!currentUser || !newComment.trim() || mutation.isLoading) return
+    
+    mutation.mutate(newComment)
   }
 
   return (
@@ -36,8 +41,12 @@ const CommentInput: React.FC<CommentInputProps> = ({ initialValue = "", placehol
         rows={3}
         className="flex-1 resize-none text-base"
       />
-      <Button type="submit" size="icon">
-        <Send className="size-4" />
+      <Button type="submit" size="icon" disabled={mutation.isLoading}>
+        {mutation.isLoading ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <Send className="size-4" />
+        )}
       </Button>
     </form>
   )
