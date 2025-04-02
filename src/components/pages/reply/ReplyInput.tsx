@@ -1,32 +1,31 @@
-"use client"
-
-import { Send } from "lucide-react"
+import { Send, Loader2 } from "lucide-react"
 import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/contexts/AuthContext"
+import { useMutation } from "@tanstack/react-query"
 
 interface ReplyInputProps {
   placeholder?: string
   initialValue?: string
-  onSubmit: (content: string) => void
+  onSubmit: (content: string) => Promise<void>
 }
 
 const ReplyInput: React.FC<ReplyInputProps> = ({ placeholder, initialValue = "", onSubmit }) => {
   const [newReply, setNewReply] = useState(initialValue)
   const { currentUser } = useAuth()
 
-  const handleAddReply = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!currentUser || !newReply.trim()) return
+  const mutation = useMutation({
+    mutationFn: (content: string) => onSubmit(content),
+    onSuccess: () => setNewReply("")
+  })
 
-    try {
-      await onSubmit(newReply)
-      setNewReply("")
-    } catch (error) {
-      console.error("답글 추가 오류:", error)
-    }
+  const handleAddReply = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!currentUser || !newReply.trim() || mutation.isLoading) return
+    
+    mutation.mutate(newReply)
   }
 
   return (
@@ -37,9 +36,14 @@ const ReplyInput: React.FC<ReplyInputProps> = ({ placeholder, initialValue = "",
         onChange={(e) => setNewReply(e.target.value)}
         className="flex-1 resize-none text-base"
         rows={3}
+        disabled={mutation.isLoading}
       />
-      <Button type="submit" size="icon">
-        <Send className="size-4" />
+      <Button type="submit" size="icon" disabled={mutation.isLoading}>
+        {mutation.isLoading ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <Send className="size-4" />
+        )}
       </Button>
     </form>
   )
