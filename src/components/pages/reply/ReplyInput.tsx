@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/contexts/AuthContext"
 import { useMutation } from "@tanstack/react-query"
+import { useToast } from "@/hooks/use-toast"
 
 interface ReplyInputProps {
   placeholder?: string
@@ -15,10 +16,21 @@ interface ReplyInputProps {
 const ReplyInput: React.FC<ReplyInputProps> = ({ placeholder, initialValue = "", onSubmit }) => {
   const [newReply, setNewReply] = useState(initialValue)
   const { currentUser } = useAuth()
+  const { toast } = useToast()
 
   const mutation = useMutation({
     mutationFn: (content: string) => onSubmit(content),
-    onSuccess: () => setNewReply("")
+    onSuccess: () => {
+      setNewReply("")
+    },
+    onError: (error) => {
+      console.error("답글 추가 오류:", error)
+      toast({
+        title: "오류 발생",
+        description: "답글을 등록하는 중 문제가 발생했습니다. 다시 시도해 주세요.",
+        variant: "destructive",
+      })
+    }
   })
 
   const handleAddReply = (e: React.FormEvent) => {
@@ -50,4 +62,3 @@ const ReplyInput: React.FC<ReplyInputProps> = ({ placeholder, initialValue = "",
 }
 
 export default ReplyInput
-
