@@ -31,8 +31,18 @@ export default defineConfig(({ mode }) => {
       target: 'es2020'
     },
     test: {
-      global: true,
-      environment: 'jsdom'
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: ['./src/setupTest.ts'],
+      include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'json', 'html'],
+        exclude: ['node_modules/', 'src/setupTest.ts']
+      },
+      deps: {
+        inline: ['chai', '@testing-library/jest-dom']
+      }
     },
     optimizeDeps: {
       esbuildOptions: {
