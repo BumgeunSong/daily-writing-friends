@@ -10,6 +10,7 @@ import { fetchUserProfileOnce } from "@/utils/userUtils"
 import Replies from "../reply/Replies"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import ReactionList from "@/components/reaction/ReactionList"
 
 interface CommentRowProps {
   boardId: string
@@ -93,6 +94,9 @@ const CommentRow: React.FC<CommentRowProps> = ({ boardId, postId, comment, isAut
           <div className="prose whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
         )}
       </div>
+      
+      <ReactionList entityType="comment" entityId={comment.id} />
+      
       <Replies boardId={boardId} postId={postId} commentId={comment.id} />
     </div>
   )
