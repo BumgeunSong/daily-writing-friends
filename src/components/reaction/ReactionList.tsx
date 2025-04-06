@@ -4,6 +4,8 @@ import EmojiReaction from "@/components/reaction/EmojiReaction";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useReactions } from "@/hooks/useReactions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface ReactionListProps {
   entityType: "comment" | "reply";
@@ -13,23 +15,48 @@ interface ReactionListProps {
 // 실제 반응 데이터를 표시하는 컴포넌트
 const ReactionContent: React.FC<ReactionListProps> = ({ entityType, entityId }) => {
   const { currentUser } = useAuth();
-  const { reactions, createReaction, deleteReaction } = useReactions({ entityType, entityId });
+  const { 
+    reactions, 
+    isLoading, 
+    isError,  
+    createReaction, 
+    deleteReaction 
+  } = useReactions({ 
+    entityType, 
+    entityId 
+  });
 
-  if (!currentUser) return null;
+  // 로그인하지 않은 경우 반응 버튼만 표시
+  if (!currentUser) {
+    return null;
+  }
 
+  // 로딩 중인 경우
+  if (isLoading) {
+    return <ReactionFallback />;
+  }
+
+  // 오류가 발생한 경우
+  if (isError) {
+    return null;
+  }
+  
   return (
     <>
       <ReactWithEmoji onCreate={createReaction} />
       
-      {reactions.length > 0 && (
-        <div className="flex-1">
+      <div className="flex flex-wrap gap-1">
+        {reactions.map((reaction) => (
           <EmojiReaction
-            reactions={reactions}
-            onDelete={deleteReaction}
+            key={reaction.content}
+            content={reaction.content}
+            count={reaction.by.length}
+            users={reaction.by}
             currentUserId={currentUser.uid}
+            onDelete={deleteReaction}
           />
-        </div>
-      )}
+        ))}
+      </div>
     </>
   );
 };
@@ -37,16 +64,14 @@ const ReactionContent: React.FC<ReactionListProps> = ({ entityType, entityId }) 
 // 로딩 상태를 표시하는 컴포넌트
 const ReactionFallback: React.FC = () => {
   return (
-    <>
-      <ReactWithEmoji onCreate={() => {}} disabled />
-      <div className="flex-1">
-        <div className="flex gap-2 mt-2">
-          <Skeleton className="h-8 w-16 rounded-full" />
-          <Skeleton className="h-8 w-20 rounded-full" />
-          <Skeleton className="h-8 w-16 rounded-full" />
-        </div>
+    <div className="flex items-center gap-2">
+      <Skeleton className="h-8 w-16" />
+      <div className="flex gap-1">
+        <Skeleton className="h-8 w-8 rounded-full" />
+        <Skeleton className="h-8 w-8 rounded-full" />
+        <Skeleton className="h-8 w-8 rounded-full" />
       </div>
-    </>
+    </div>
   );
 };
 

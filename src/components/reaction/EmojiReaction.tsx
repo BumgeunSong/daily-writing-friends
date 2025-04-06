@@ -1,121 +1,86 @@
-import React, { useState, useEffect } from "react";
-import { ReactionDrawer } from "@/components/reaction/ReactionDrawer";
-import { ReactionTooltip } from "@/components/reaction/ReactionTooltip";
-import { LongPressEventType, useLongPress } from "use-long-press";
-
-interface ReactionUser {
-  userId: string;
-  userName: string;
-  userProfileImage: string;
-}
-
-interface Reaction {
-  content: string; // 이모지
-  by: ReactionUser[];
-}
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ReactionUser } from "@/types/Reaction";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Loader2 } from "lucide-react";
 
 interface EmojiReactionProps {
-  reactions: Reaction[];
-  onDelete: (emoji: string, userId: string) => void;
+  content: string;
+  count: number;
+  users: ReactionUser[];
   currentUserId: string;
+  onDelete: (emoji: string, userId: string) => Promise<void>;
 }
 
-const EmojiReaction: React.FC<EmojiReactionProps> = ({ 
-  reactions, 
-  onDelete,
-  currentUserId
+const EmojiReaction: React.FC<EmojiReactionProps> = ({
+  content,
+  count,
+  users,
+  currentUserId,
+  onDelete
 }) => {
-  const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-
-  // 화면 크기 변경 감지
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // 이모지별로 그룹화
-  const groupedReactions = reactions.reduce<Record<string, ReactionUser[]>>((acc, reaction) => {
-    acc[reaction.content] = reaction.by;
-    return acc;
-  }, {});
-
-  const handleEmojiClick = (emoji: string) => {
-    // 현재 사용자가 이 이모지에 반응했는지 확인
-    const users = groupedReactions[emoji];
-    const userReacted = users.some(user => user.userId === currentUserId);
-    
-    if (userReacted) {
-      onDelete(emoji, currentUserId);
-    }
-  };
-
-  const handleShowDrawer = (emoji: string) => {
-    setSelectedEmoji(emoji);
-    setIsDrawerOpen(true);
-  };
-
-
-  // use-long-press 라이브러리 사용
+  const [loading, setLoading] = useState(false);
   
-  const bind = useLongPress((_, { context }) => {
-    if (isMobile && context) {
-      handleShowDrawer(context as string);
+  // 현재 사용자가 이 이모지에 반응했는지 확인
+  const hasReacted = users.some(user => user.userId === currentUserId);
+  
+  // 이모지 클릭 핸들러
+  const handleClick = async () => {
+    if (hasReacted) {
+      try {
+        setLoading(true);
+        await onDelete(content, currentUserId);
+      } catch (error) {
+        console.error("반응 삭제 중 오류 발생:", error);
+      } finally {
+        setLoading(false);
+      }
     }
-  }, {
-    threshold: 500, // 500ms
-    captureEvent: true,
-    cancelOnMovement: 10, // 10px 이상 움직이면 취소
-    detect: LongPressEventType.Touch, // 모바일에서는 터치 이벤트만 감지
-  });
-
-  if (reactions.length === 0) return null;
-
-  return (
-    <div className="flex flex-wrap gap-2 mt-2">
-      {Object.entries(groupedReactions).map(([emoji, users]) => (
-        isMobile ? (
-          <div
-            key={emoji}
-            className={`
-              flex items-center gap-1 px-2 py-1 rounded-full text-sm
-              bg-muted hover:bg-muted/80 transition-colors cursor-pointer
-              ${users.some(user => user.userId === currentUserId) ? 'ring-1 ring-primary' : ''}
-            `}
-            onClick={() => handleEmojiClick(emoji)}
-            {...bind(emoji)}
-          >
-            <span>{emoji}</span>
-            <span className="text-xs text-muted-foreground">{users.length}</span>
-          </div>
-        ) : (
-          <ReactionTooltip
-            key={emoji}
-            emoji={emoji}
-            users={users}
-            currentUserId={currentUserId}
-            onClick={() => handleEmojiClick(emoji)}
-          />
-        )
+  };
+  
+  // 사용자 목록 표시를 위한 툴팁 내용
+  const tooltipContent = (
+    <div className="flex flex-col gap-2 p-2 max-h-60 overflow-y-auto">
+      <p className="text-sm font-semibold mb-1">반응한 사용자</p>
+      {users.map(user => (
+        <div key={user.userId} className="flex items-center gap-2">
+          <Avatar className="h-6 w-6">
+            <AvatarImage src={user.userProfileImage} alt={user.userName} />
+            <AvatarFallback>{user.userName.charAt(0)}</AvatarFallback>
+          </Avatar>
+          <span className="text-sm">{user.userName}</span>
+        </div>
       ))}
-
-      {/* 모바일용 Drawer */}
-      {selectedEmoji && (
-        <ReactionDrawer
-          emoji={selectedEmoji}
-          users={groupedReactions[selectedEmoji] || []}
-          currentUserId={currentUserId}
-          isOpen={isDrawerOpen && isMobile}
-          onOpenChange={setIsDrawerOpen}
-          onDelete={onDelete}
-        />
-      )}
     </div>
+  );
+  
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant={hasReacted ? "secondary" : "outline"}
+            size="sm"
+            className="rounded-full px-3 py-1 h-8"
+            onClick={handleClick}
+            disabled={loading}
+          >
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <span className="mr-1">{content}</span>
+                <span className="text-xs">{count}</span>
+              </>
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top" align="center">
+          {tooltipContent}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
 
