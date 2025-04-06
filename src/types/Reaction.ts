@@ -12,3 +12,14 @@ export interface Reaction {
         userProfileImage: string;
     };
 }
+
+export interface ReactionUser {
+    userId: string;
+    userName: string;
+    userProfileImage: string;
+}
+
+export interface GroupedReaction {
+    content: string; // 이모지
+    by: ReactionUser[];
+}
