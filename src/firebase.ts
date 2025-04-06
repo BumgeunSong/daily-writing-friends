@@ -7,14 +7,13 @@ import {
   signOut,
   UserCredential,
 } from 'firebase/auth';
-import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 import { getPerformance } from "firebase/performance";
 import { getStorage } from 'firebase/storage';
-import { getFunctions, connectFunctionsEmulator } from 'firebase/functions';
 import { getRemoteConfig } from "firebase/remote-config";
 
 const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY as string,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID as string,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string,
@@ -29,8 +28,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const firestore = getFirestore(app);
 const storage = getStorage(app);
-const functions = getFunctions(app);
-// Google Auth Provider
 const provider = new GoogleAuthProvider();
 const performance = getPerformance(app);
 const remoteConfig = getRemoteConfig(app);
@@ -55,12 +52,5 @@ const signOutUser = (): Promise<void> => {
       throw error;
     });
 };
-
-// 개발 환경에서 에뮬레이터 연결
-if (process.env.NODE_ENV === 'development') {
-  connectFirestoreEmulator(firestore, 'localhost', 8080);
-  connectFunctionsEmulator(functions, 'localhost', 5001);
-}
-
 
 export { auth, firestore, signInWithGoogle, signOutUser, storage, app, performance, remoteConfig };

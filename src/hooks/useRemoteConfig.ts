@@ -24,7 +24,7 @@ export function useRemoteConfig<T>(key: string, defaultValue: T): {
       setError(null);
       
       // 개발 환경에서 캐시 시간 설정 (0초)
-      remoteConfig.settings.minimumFetchIntervalMillis = process.env.NODE_ENV === 'development' ? 0 : 1800000;
+      remoteConfig.settings.minimumFetchIntervalMillis = import.meta.env.DEV ? 0 : 1800000;
       remoteConfig.defaultConfig = DEFAULT_CONFIG_VALUES;
       
       // Remote Config 가져오기 및 활성화
