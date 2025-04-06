@@ -11,25 +11,34 @@ import { GroupedReaction, ReactionUser } from '@/types/Reaction';
 import { useParams } from 'react-router-dom';
 import { fetchUserData } from '@/utils/userUtils';
 
+// 엔티티 타입 정의
+export type EntityType = 'comment' | 'reply';
+
+// 공통 파라미터 타입
+interface BaseEntityParams {
+  type: EntityType;
+  boardId: string;
+  postId: string;
+  commentId: string;
+}
+
+// 댓글 파라미터 타입
+export interface CommentParams extends BaseEntityParams {
+  type: 'comment';
+}
+
+// 답글 파라미터 타입
+export interface ReplyParams extends BaseEntityParams {
+  type: 'reply';
+  replyId: string;
+}
+
+// 훅 프롭스 타입
 interface UseReactionsProps {
   entity: CommentParams | ReplyParams;
 }
 
-export interface CommentParams {
-  type: 'comment';
-  boardId: string;
-  postId: string;
-  commentId: string;
-}
-
-export interface ReplyParams {
-  type: 'reply';
-  boardId: string;
-  postId: string;
-  commentId: string;
-  replyId: string;
-}
-
+// 훅 반환 타입
 interface UseReactionsReturn {
   reactions: GroupedReaction[];
   isLoading: boolean;
@@ -44,46 +53,38 @@ export const useReactions = ({ entity }: UseReactionsProps): UseReactionsReturn 
   const { boardId, postId } = useParams<{ boardId: string; postId: string }>();
   const queryClient = useQueryClient();
 
-  // 엔티티 ID 구성
+  // 엔티티 파라미터 구성
   const getEntityParams = (): GetReactionsParams => {
     if (!boardId || !postId) {
       throw new Error('게시판 ID 또는 게시글 ID가 없습니다.');
     }
 
-    if (entity.type === 'comment') {
-      return {
-        boardId,
-        postId,
-        commentId: entity.commentId
-      };
-    } 
-    
-    if (entity.type === 'reply') {
-      return {
-        boardId,
-        postId,
-        commentId: entity.commentId,
-        replyId: entity.replyId
-      };
-    }
+    const baseParams = {
+      boardId,
+      postId,
+      commentId: entity.commentId
+    };
 
-    throw new Error('유효하지 않은 엔티티 유형입니다.');
+    return entity.type === 'reply' 
+      ? { ...baseParams, replyId: entity.replyId } 
+      : baseParams;
   };
 
   // 쿼리 키 생성
-  const getReactionsQueryKey = () => {
+  const reactionsQueryKey = (() => {
     const params = getEntityParams();
-    return ['reactions', params.boardId, params.postId, params.commentId, params.replyId];
-  };
+    return ['reactions', params.boardId, params.postId, params.commentId, 
+            entity.type === 'reply' ? (entity as ReplyParams).replyId : undefined];
+  })();
 
-  // 반응 데이터 조회 (useQuery 사용)
+  // 반응 데이터 조회
   const {
     data: reactions = [],
     isLoading,
     isError,
     error
   } = useQuery({
-    queryKey: getReactionsQueryKey(),
+    queryKey: reactionsQueryKey,
     queryFn: async () => {
       const params = getEntityParams();
       const reactionsList = await getReactions(params);
@@ -93,75 +94,64 @@ export const useReactions = ({ entity }: UseReactionsProps): UseReactionsReturn 
     retry: 1, // 실패 시 1번 재시도
   });
 
-  // 반응 생성 뮤테이션 (useMutation 사용)
+  // 사용자 반응 객체 생성 함수
+  const createReactionUserObject = async (): Promise<ReactionUser> => {
+    if (!currentUser) {
+      throw new Error('로그인이 필요합니다.');
+    }
+
+    const userData = await fetchUserData(currentUser.uid);
+    
+    return {
+      userId: currentUser.uid,
+      userName: userData?.nickname || userData?.realName || currentUser.displayName || '익명 사용자',
+      userProfileImage: userData?.profilePhotoURL || currentUser.photoURL || ''
+    };
+  };
+
+  // 반응 생성 뮤테이션
   const createReactionMutation = useMutation({
     mutationFn: async (emoji: string) => {
-      if (!currentUser) {
-        throw new Error('로그인이 필요합니다.');
-      }
-
-      // fetchUserData를 사용하여 사용자 데이터 가져오기
-      const userData = await fetchUserData(currentUser.uid);
-      
-      // 사용자 데이터를 기반으로 reactionUser 객체 생성
-      const reactionUser: ReactionUser = {
-        userId: currentUser.uid,
-        userName: userData?.nickname || userData?.realName || currentUser.displayName || '익명 사용자',
-        userProfileImage: userData?.profilePhotoURL || currentUser.photoURL || ''
-      };
-
+      const reactionUser = await createReactionUserObject();
       const params = {
         ...getEntityParams(),
         content: emoji,
-        reactionUser: reactionUser
+        reactionUser
       };
 
       await createReactionApi(params);
     },
     onSuccess: () => {
-      // 성공 시 반응 목록 쿼리 무효화하여 데이터 다시 가져오기
-      queryClient.invalidateQueries({ queryKey: getReactionsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: reactionsQueryKey });
     },
     onError: (error) => {
       console.error('반응 생성 중 오류 발생:', error);
     }
   });
 
-  // 반응 삭제 뮤테이션 (useMutation 사용)
+  // 반응 삭제 뮤테이션
   const deleteReactionMutation = useMutation({
     mutationFn: async ({ emoji, userId }: { emoji: string; userId: string }) => {
       if (!currentUser || currentUser.uid !== userId) {
         throw new Error('자신의 반응만 삭제할 수 있습니다.');
       }
 
-      const params = getEntityParams();
-      await deleteUserReaction(params, userId, emoji);
+      await deleteUserReaction(getEntityParams(), userId, emoji);
     },
     onSuccess: () => {
-      // 성공 시 반응 목록 쿼리 무효화하여 데이터 다시 가져오기
-      queryClient.invalidateQueries({ queryKey: getReactionsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: reactionsQueryKey });
     },
     onError: (error) => {
       console.error('반응 삭제 중 오류 발생:', error);
     }
   });
 
-  // 반응 생성 핸들러
-  const handleCreateReaction = async (emoji: string): Promise<void> => {
-    await createReactionMutation.mutateAsync(emoji);
-  };
-
-  // 반응 삭제 핸들러
-  const handleDeleteReaction = async (emoji: string, userId: string): Promise<void> => {
-    await deleteReactionMutation.mutateAsync({ emoji, userId });
-  };
-
   return {
     reactions,
     isLoading,
     isError,
     error: error as Error | null,
-    createReaction: handleCreateReaction,
-    deleteReaction: handleDeleteReaction
+    createReaction: (emoji) => createReactionMutation.mutateAsync(emoji),
+    deleteReaction: (emoji, userId) => deleteReactionMutation.mutateAsync({ emoji, userId })
   };
 }; 
