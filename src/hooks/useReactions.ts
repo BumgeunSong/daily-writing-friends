@@ -9,6 +9,7 @@ import {
 } from '@/utils/reactionUtils';
 import { GroupedReaction, ReactionUser } from '@/types/Reaction';
 import { useParams } from 'react-router-dom';
+import { fetchUserData } from '@/utils/userUtils';
 
 interface UseReactionsProps {
   entity: CommentParams | ReplyParams;
@@ -99,11 +100,15 @@ export const useReactions = ({ entity }: UseReactionsProps): UseReactionsReturn 
         throw new Error('로그인이 필요합니다.');
       }
 
+      // fetchUserData를 사용하여 사용자 데이터 가져오기
+      const userData = await fetchUserData(currentUser.uid);
+      
+      // 사용자 데이터를 기반으로 reactionUser 객체 생성
       const reactionUser: ReactionUser = {
         userId: currentUser.uid,
-        userName: currentUser.displayName || '익명 사용자',
-        userProfileImage: currentUser.photoURL || ''
-      }
+        userName: userData?.nickname || userData?.realName || currentUser.displayName || '익명 사용자',
+        userProfileImage: userData?.profilePhotoURL || currentUser.photoURL || ''
+      };
 
       const params = {
         ...getEntityParams(),
