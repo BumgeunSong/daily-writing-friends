@@ -96,9 +96,8 @@ const CommentRow: React.FC<CommentRowProps> = ({ boardId, postId, comment, isAut
           <div className="prose whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
         )}
       </div>
-
+      <ReactionList entity={{ type: "comment", boardId, postId, commentId: comment.id }} />
       <div className="flex flex-col space-y-1">
-        <ReactionList entityType="comment" entityId={comment.id} />
         <Replies boardId={boardId} postId={postId} commentId={comment.id} />
       </div>
     </div>

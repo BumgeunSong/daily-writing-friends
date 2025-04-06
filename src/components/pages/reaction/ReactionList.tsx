@@ -6,20 +6,16 @@ import ReactWithEmoji from "@/components/pages/reaction/ReactWithEmoji"
 import EmojiReaction from "@/components/pages/reaction/EmojiReaction"
 import { useAuth } from "@/contexts/AuthContext"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useReactions } from "@/hooks/useReactions"
+import { CommentParams, ReplyParams, useReactions } from "@/hooks/useReactions"
 
 interface ReactionListProps {
-  entityType: "comment" | "reply"
-  entityId: string
+  entity: CommentParams | ReplyParams
 }
 
 // 실제 반응 데이터를 표시하는 컴포넌트
-const ReactionContent: React.FC<ReactionListProps> = ({ entityType, entityId }) => {
+const ReactionContent: React.FC<ReactionListProps> = ({ entity }) => {
   const { currentUser } = useAuth()
-  const { reactions, isLoading, isError, createReaction, deleteReaction } = useReactions({
-    entityType,
-    entityId,
-  })
+  const { reactions, isLoading, isError, createReaction, deleteReaction } = useReactions({ entity })
 
   // 로그인하지 않은 경우 반응 버튼만 표시
   if (!currentUser) {
@@ -73,11 +69,11 @@ const ReactionFallback: React.FC = () => {
 }
 
 // 메인 ReactionList 컴포넌트
-const ReactionList: React.FC<ReactionListProps> = ({ entityType, entityId }) => {
+const ReactionList: React.FC<ReactionListProps> = ({ entity }) => {
   return (
     <div className="mt-2 mb-3">
       <Suspense fallback={<ReactionFallback />}>
-        <ReactionContent entityType={entityType} entityId={entityId} />
+        <ReactionContent entity={entity} />
       </Suspense>
     </div>
   )

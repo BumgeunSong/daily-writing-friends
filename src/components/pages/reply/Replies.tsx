@@ -87,12 +87,11 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
       </div>
 
       {isExpanded && (
-        <div className="mt-6 space-y-4 border-l-2 border-gray-200 dark:border-gray-700 pl-4">
+        <div className="mt-6 border-l-2 border-gray-200 dark:border-gray-700 pl-4">
           <Suspense fallback={null}>
             <ReplyList boardId={boardId} postId={postId} commentId={commentId} />
           </Suspense>
           <div className="space-y-2">
-            <ReplyPrompt />
             <ReplyInput onSubmit={handleSubmit} />
           </div>
         </div>

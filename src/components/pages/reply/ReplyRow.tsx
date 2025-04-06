@@ -97,8 +97,9 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
           <div className="prose whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
         )}
       </div>
-
-      <ReactionList entityType="reply" entityId={reply.id} />
+      
+        <ReactionList entity={{ type: "reply", boardId, postId, commentId, replyId: reply.id }} />
+      
     </div>
   )
 }

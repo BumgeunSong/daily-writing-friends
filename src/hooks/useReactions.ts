@@ -11,8 +11,22 @@ import { GroupedReaction, ReactionUser } from '@/types/Reaction';
 import { useParams } from 'react-router-dom';
 
 interface UseReactionsProps {
-  entityType: "comment" | "reply";
-  entityId: string;
+  entity: CommentParams | ReplyParams;
+}
+
+export interface CommentParams {
+  type: 'comment';
+  boardId: string;
+  postId: string;
+  commentId: string;
+}
+
+export interface ReplyParams {
+  type: 'reply';
+  boardId: string;
+  postId: string;
+  commentId: string;
+  replyId: string;
 }
 
 interface UseReactionsReturn {
@@ -24,7 +38,7 @@ interface UseReactionsReturn {
   deleteReaction: (emoji: string, userId: string) => Promise<void>;
 }
 
-export const useReactions = ({ entityType, entityId }: UseReactionsProps): UseReactionsReturn => {
+export const useReactions = ({ entity }: UseReactionsProps): UseReactionsReturn => {
   const { currentUser } = useAuth();
   const { boardId, postId } = useParams<{ boardId: string; postId: string }>();
   const queryClient = useQueryClient();
@@ -35,30 +49,24 @@ export const useReactions = ({ entityType, entityId }: UseReactionsProps): UseRe
       throw new Error('게시판 ID 또는 게시글 ID가 없습니다.');
     }
 
-    if (entityType === 'comment') {
+    if (entity.type === 'comment') {
       return {
         boardId,
         postId,
-        commentId: entityId
+        commentId: entity.commentId
       };
-    } else {
-      // URL에서 commentId를 추출하거나 props로 전달받아야 함
-      // 여기서는 URL 경로에서 commentId를 추출한다고 가정
-      const commentId = window.location.pathname.split('/').find(
-        segment => segment.startsWith('comment-')
-      )?.replace('comment-', '') || '';
-
-      if (!commentId) {
-        throw new Error('댓글 ID를 찾을 수 없습니다.');
-      }
-
+    } 
+    
+    if (entity.type === 'reply') {
       return {
         boardId,
         postId,
-        commentId,
-        replyId: entityId
+        commentId: entity.commentId,
+        replyId: entity.replyId
       };
     }
+
+    throw new Error('유효하지 않은 엔티티 유형입니다.');
   };
 
   // 쿼리 키 생성
