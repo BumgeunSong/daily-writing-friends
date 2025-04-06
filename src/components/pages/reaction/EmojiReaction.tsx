@@ -1,12 +1,10 @@
-"use client"
-
 import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import type { ReactionUser } from "@/types/Reaction"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Loader2 } from "lucide-react"
+import { ReactionUsersTooltip } from "./ReactionUserTooltip"
 
 interface EmojiReactionProps {
   content: string
@@ -36,22 +34,6 @@ const EmojiReaction: React.FC<EmojiReactionProps> = ({ content, count, users, cu
     }
   }
 
-  // 사용자 목록 표시를 위한 툴팁 내용
-  const tooltipContent = (
-    <div className="flex flex-col gap-2 p-2 max-h-60 overflow-y-auto">
-      <p className="text-sm font-semibold mb-1">반응한 사용자</p>
-      {users.map((user) => (
-        <div key={user.userId} className="flex items-center gap-2">
-          <Avatar className="h-6 w-6">
-            <AvatarImage src={user.userProfileImage} alt={user.userName} />
-            <AvatarFallback>{user.userName.charAt(0)}</AvatarFallback>
-          </Avatar>
-          <span className="text-sm">{user.userName}</span>
-        </div>
-      ))}
-    </div>
-  )
-
   return (
     <TooltipProvider>
       <Tooltip>
@@ -77,7 +59,7 @@ const EmojiReaction: React.FC<EmojiReactionProps> = ({ content, count, users, cu
           </Button>
         </TooltipTrigger>
         <TooltipContent side="top" align="center" className="p-3">
-          {tooltipContent}
+          <ReactionUsersTooltip users={users} />
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
