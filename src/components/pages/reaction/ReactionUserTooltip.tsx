@@ -1,23 +1,26 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ReactionUser } from "@/types/Reaction";
+import type React from "react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import type { ReactionUser } from "@/types/Reaction"
 
-// 툴팁 내용을 위한 별도 컴포넌트
 interface ReactionUsersTooltipProps {
-    users: ReactionUser[];
-  }
-  
+  users: ReactionUser[]
+}
+
 export const ReactionUsersTooltip: React.FC<ReactionUsersTooltipProps> = ({ users }) => {
-    return (
-      <div className="flex flex-col gap-2 p-2 max-h-60 overflow-y-auto">
-        {users.map(user => (
-          <div key={user.userId} className="flex items-center gap-2">
-            <Avatar className="h-6 w-6">
+  return (
+    <div className="w-64 max-w-xs">
+      <div className="py-2 px-1 max-h-60 overflow-y-auto">
+        {users.map((user) => (
+          <div key={user.userId} className="flex items-center gap-2 px-2 py-1.5 hover:bg-muted/50 rounded-md">
+            <Avatar className="h-6 w-6 border border-border/30">
               <AvatarImage src={user.userProfileImage} alt={user.userName} />
-              <AvatarFallback>{user.userName.charAt(0)}</AvatarFallback>
+              <AvatarFallback className="text-xs">{user.userName.charAt(0)}</AvatarFallback>
             </Avatar>
-            <span className="text-sm">{user.userName}</span>
+            <span className="text-sm font-medium">{user.userName}</span>
           </div>
         ))}
       </div>
-    );
-  };
+    </div>
+  )
+}
+
