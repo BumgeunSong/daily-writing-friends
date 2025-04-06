@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import ReactionList from '@/components/reaction/ReactionList';
+import ReactionList from '@/components/pages/reaction/ReactionList';
 import { useAuth } from '@/contexts/AuthContext';
 import { useReactions } from '@/hooks/useReactions';
 import userEvent from '@testing-library/user-event';

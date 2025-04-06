@@ -1,6 +1,6 @@
 import React, { Suspense } from "react";
-import ReactWithEmoji from "@/components/reaction/ReactWithEmoji";
-import EmojiReaction from "@/components/reaction/EmojiReaction";
+import ReactWithEmoji from "@/components/pages/reaction/ReactWithEmoji";
+import EmojiReaction from "@/components/pages/reaction/EmojiReaction";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useReactions } from "@/hooks/useReactions";

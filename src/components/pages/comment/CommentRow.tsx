@@ -10,7 +10,7 @@ import { fetchUserProfileOnce } from "@/utils/userUtils"
 import Replies from "../reply/Replies"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import ReactionList from "@/components/reaction/ReactionList"
+import ReactionList from "@/components/pages/reaction/ReactionList"
 
 interface CommentRowProps {
   boardId: string

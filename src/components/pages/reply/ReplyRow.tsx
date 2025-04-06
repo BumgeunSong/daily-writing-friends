@@ -9,7 +9,7 @@ import ReplyInput from "./ReplyInput"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchUserProfileOnce } from '@/utils/userUtils'
-import ReactionList from "@/components/reaction/ReactionList"
+import ReactionList from "@/components/pages/reaction/ReactionList"
 
 interface ReplyRowProps {
   reply: Reply
