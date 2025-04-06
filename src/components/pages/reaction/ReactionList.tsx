@@ -33,23 +33,19 @@ const ReactionContent: React.FC<ReactionListProps> = ({ entity }) => {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap gap-1.5 max-w-full overflow-hidden">
       <ReactWithEmoji onCreate={createReaction} />
-
-      {reactions.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 max-w-full overflow-hidden">
-          {reactions.map((reaction) => (
-            <EmojiReaction
-              key={reaction.content}
-              content={reaction.content}
-              count={reaction.by.length}
-              users={reaction.by}
-              currentUserId={currentUser.uid}
-              onDelete={deleteReaction}
-            />
-          ))}
-        </div>
-      )}
+      
+      {reactions.map((reaction) => (
+        <EmojiReaction
+          key={reaction.content}
+          content={reaction.content}
+          count={reaction.by.length}
+          users={reaction.by}
+          currentUserId={currentUser.uid}
+          onDelete={deleteReaction}
+        />
+      ))}
     </div>
   )
 }
