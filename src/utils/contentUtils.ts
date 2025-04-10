@@ -3,34 +3,124 @@ import DOMPurify from 'dompurify';
 // 게시글 본문용 DOMPurify 설정
 const sanitizePostContent = (content: string): string => {
   // 가장 기본적인 설정만 유지
-  return DOMPurify.sanitize(content, {
+  const sanitizedContent = DOMPurify.sanitize(content, {
     USE_PROFILES: { html: true }
+  });
+
+  // HTML 문자열을 DOM 요소로 변환하고 글머리 기호 목록 변환 적용
+  return convertQuillBulletListsInHtml(sanitizedContent);
+};
+
+/**
+ * HTML 문자열에서 Quill 에디터의 글머리 기호 목록을 의미적으로 올바른 HTML로 변환
+ * 
+ * @param html - 변환할 HTML 문자열
+ * @returns 변환된 HTML 문자열
+ */
+const convertQuillBulletListsInHtml = (html: string): string => {
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  
+  convertQuillBulletLists(div);
+  
+  return div.innerHTML;
+};
+
+/**
+ * Quill 에디터의 글머리 기호 목록을 의미적으로 올바른 HTML로 변환
+ * 
+ * Quill 에디터는 글머리 기호 목록(bullet list)을 <ol> 태그와 data-list="bullet" 속성을 사용하여 표현합니다.
+ * 이는 시맨틱하지 않으며, 에디터 외부에서 렌더링할 때 번호 매기기 목록으로 표시되는 문제가 있습니다.
+ * 이 함수는 해당 마크업을 찾아 <ul> 태그로 변환하여 시맨틱하게 올바른 HTML을 생성합니다.
+ * 
+ * @param element - 변환할 DOM 요소
+ */
+const convertQuillBulletLists = (element: HTMLElement): void => {
+  // 모든 data-list="bullet" 속성을 가진 li 요소 찾기
+  const bulletLists = element.querySelectorAll('li[data-list="bullet"]');
+  
+  // 이미 처리된 ol 요소를 추적하기 위한 Set
+  const processedOls = new Set<Element>();
+
+  bulletLists.forEach(li => {
+    const parentOl = li.closest('ol');
+    
+    // 부모 ol이 존재하고 아직 처리되지 않았는지 확인
+    if (parentOl && !processedOls.has(parentOl)) {
+      // 해당 ol의 모든 자식이 bullet 타입인지 확인
+      const allBullets = isAllChildrenBulletType(parentOl);
+      
+      if (allBullets) {
+        // ol을 ul로 변환
+        const ul = createUlFromOl(parentOl);
+        
+        // ol을 ul로 교체
+        parentOl.replaceWith(ul);
+        
+        // 처리된 ol 추적
+        processedOls.add(parentOl);
+      }
+    }
   });
 };
 
-// Quill에서 bullet list를 사용하는 경우, ol 태그를 사용하기 때문에 직접 ul 태그로 바꿔준다.
+/**
+ * ol 요소의 모든 자식이 글머리 기호 타입(data-list="bullet")인지 확인
+ * 
+ * @param ol - 확인할 ol 요소
+ * @returns 모든 자식이 글머리 기호 타입이면 true, 아니면 false
+ */
+const isAllChildrenBulletType = (ol: Element): boolean => {
+  return Array.from(ol.children).every(
+    child => child.tagName === 'LI' && child.getAttribute('data-list') === 'bullet'
+  );
+};
+
+/**
+ * ol 요소로부터 동일한 속성과 내용을 가진 ul 요소 생성
+ * 순수 함수로 구현하여 원본 요소를 변경하지 않음
+ * 
+ * @param ol - 변환할 ol 요소
+ * @returns 생성된 ul 요소
+ */
+const createUlFromOl = (ol: Element): HTMLUListElement => {
+  // 새 ul 요소 생성
+  const ul = document.createElement('ul');
+  
+  // ol의 모든 속성을 ul로 복사
+  Array.from(ol.attributes).forEach(attr => {
+    ul.setAttribute(attr.name, attr.value);
+  });
+  
+  // ol의 내용을 ul로 복사
+  ul.innerHTML = ol.innerHTML;
+  
+  return ul;
+};
+
+/**
+ * HTML 문자열에서 Quill 에디터의 글머리 기호 목록을 ul 태그로 변환
+ * 
+ * @param html - 변환할 HTML 문자열
+ * @returns 변환된 HTML 문자열
+ */
 const convertBulletListToUl = (html: string): string => {
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = html;
-  const bulletLists = tempDiv.querySelectorAll('ol li[data-list="bullet"]');
-  bulletLists.forEach(item => {
-    const ul = document.createElement('ul');
-    const li = document.createElement('li');
-    li.innerHTML = item.innerHTML;
-    ul.appendChild(li);
-    const ol = item.closest('ol');
-    if (ol) {
-      ol.parentNode?.replaceChild(ul, ol);
-    }
-  });
+  
+  convertQuillBulletLists(tempDiv);
+  
   return tempDiv.innerHTML;
 };
 
 // 댓글/답글용 DOMPurify 설정 (게시글과 동일하게 적용)
 const sanitizeCommentContent = (content: string): string => {
-  return DOMPurify.sanitize(convertUrlsToLinks(content), {
+  const sanitized = DOMPurify.sanitize(convertUrlsToLinks(content), {
     USE_PROFILES: { html: true }
   });
+  
+  // 댓글에도 글머리 기호 목록 변환 적용
+  return convertQuillBulletListsInHtml(sanitized);
 };
 
 function convertUrlsToLinks(content: string): string {
