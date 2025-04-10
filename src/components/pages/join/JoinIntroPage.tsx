@@ -33,11 +33,11 @@ export default function JoinIntroPage() {
         </header>
 
         {/* Hero Image */}
-        <div className="w-full aspect-[16/9] relative bg-muted rounded-lg mx-auto my-4 overflow-hidden">
+        <div className="w-full aspect-[16/10] relative bg-muted mx-auto my-4 overflow-hidden">
           <img
-            src="https://placehold.co/800x400"
+            src="public/writing_girl.png"
             alt="매일 글쓰기 프렌즈"
-            className="w-full h-full object-cover rounded-lg"
+            className="w-full h-full object-cover"
           />
         </div>
 
