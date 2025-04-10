@@ -36,46 +36,32 @@ const convertQuillBulletListsInHtml = (html: string): string => {
  * @param element - 변환할 DOM 요소
  */
 const convertQuillBulletLists = (element: HTMLElement): void => {
-  console.log('convertQuillBulletLists 시작', element.innerHTML);
-  
   // 모든 data-list="bullet" 속성을 가진 li 요소 찾기
   const bulletLists = element.querySelectorAll('li[data-list="bullet"]');
-  console.log('찾은 bullet list 항목 수:', bulletLists.length);
   
   // 이미 처리된 ol 요소를 추적하기 위한 Set
   const processedOls = new Set<Element>();
 
-  bulletLists.forEach((li, index) => {
-    console.log(`처리 중인 li[${index}]:`, li.outerHTML);
-    
+  bulletLists.forEach(li => {
     const parentOl = li.closest('ol');
-    console.log(`부모 ol 존재 여부:`, !!parentOl);
     
     // 부모 ol이 존재하고 아직 처리되지 않았는지 확인
     if (parentOl && !processedOls.has(parentOl)) {
-      console.log(`부모 ol[${index}]:`, parentOl.outerHTML);
-      
       // 해당 ol의 모든 자식이 bullet 타입인지 확인
       const allBullets = isAllChildrenBulletType(parentOl);
-      console.log(`모든 자식이 bullet 타입인가:`, allBullets);
       
       if (allBullets) {
         // ol을 ul로 변환
         const ul = createUlFromOl(parentOl);
-        console.log(`생성된 ul:`, ul.outerHTML);
         
         // ol을 ul로 교체
         parentOl.replaceWith(ul);
-        console.log(`교체 후 부모 요소:`, element.innerHTML);
         
         // 처리된 ol 추적
         processedOls.add(parentOl);
-        console.log(`처리된 ol 수:`, processedOls.size);
       }
     }
   });
-  
-  console.log('convertQuillBulletLists 완료', element.innerHTML);
 };
 
 /**
