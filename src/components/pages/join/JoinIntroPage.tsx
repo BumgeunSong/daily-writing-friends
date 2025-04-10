@@ -50,7 +50,7 @@ export default function JoinIntroPage() {
       </div>
 
       {/* add space of height 48px here */}
-      <div className="h-4" />
+      <div className="h-12" />
 
       {/* Sticky CTA at bottom */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
