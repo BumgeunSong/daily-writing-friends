@@ -1,3 +1,5 @@
+"use client"
+
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
@@ -24,41 +26,50 @@ export default function JoinIntroPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background relative pb-24">
-      {/* Main content - scrollable */}
-      <div className="flex-1 overflow-auto">
-        {/* Header */}
-        <header className="p-6">
-          <h1 className="text-2xl font-bold">매글프 신청하기</h1>
-        </header>
+    <div className="flex justify-center min-h-screen bg-background">
+      {/* Center container with max-width */}
+      <div className="w-full max-w-3xl lg:max-w-4xl relative pb-24 flex flex-col">
+        {/* Main content - scrollable */}
+        <div className="flex-1 overflow-auto">
+          {/* Header */}
+          <header className="p-6">
+            <h1 className="text-2xl font-bold md:text-3xl">매글프 신청하기</h1>
+          </header>
 
-        {/* Hero Image */}
-        <div className="w-full aspect-[16/10] relative bg-muted mx-auto my-4 overflow-hidden">
-          <img
-            src="public/writing_girl.png"
-            alt="매일 글쓰기 프렌즈"
-            className="w-full h-full object-cover"
-          />
+          {/* Hero Image */}
+          <div className="w-full aspect-[16/10] relative bg-muted mx-auto mb-6 overflow-hidden">
+            <img src="public/writing_girl.png" alt="매일 글쓰기 프렌즈" className="w-full h-full object-cover" />
+          </div>
+
+          {/* Main content */}
+          <div className="px-6 space-y-8">
+            {/* Countdown Section */}
+            <div className="bg-muted/10 p-6 rounded-lg">
+              <CountdownSection daysRemaining={daysRemaining} />
+            </div>
+
+            {/* Cohort Details and Notice Section */}
+            <div className="md:grid md:grid-cols-2 md:gap-8 space-y-8 md:space-y-0">
+              <CohortDetailsCard />
+              <NoticeSection />
+            </div>
+
+          </div>
         </div>
 
-        {/* Main content */}
-        <div className="px-6 space-y-6">
-          <CountdownSection daysRemaining={daysRemaining} />
-          <CohortDetailsCard />
-          <NoticeSection />
-        </div>
-      </div>
+        {/* Spacer */}
+        <div className="h-12" />
 
-      {/* add space of height 48px here */}
-      <div className="h-12" />
-
-      {/* Sticky CTA at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
-        <div className="max-w-md mx-auto space-y-2">
-          <p className="text-center text-sm text-muted-foreground">구글 로그인이 필요해요</p>
-          <Button onClick={handleGoogleLogin} className="w-full" size="lg">
-            N기 신청하기
-          </Button>
+        {/* Sticky CTA at bottom */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
+          <div className="max-w-3xl lg:max-w-4xl mx-auto space-y-2 md:flex md:items-center md:justify-between md:space-y-0 md:space-x-4 px-6">
+            <p className="text-center text-sm text-muted-foreground md:text-left md:text-base md:flex-shrink-0">
+              구글 로그인이 필요해요
+            </p>
+            <Button onClick={handleGoogleLogin} className="w-full md:w-auto md:px-8" size="lg">
+              N기 신청하기
+            </Button>
+          </div>
         </div>
       </div>
     </div>
