@@ -17,7 +17,7 @@ import NotificationSettingPage from './components/pages/notification/Notificatio
 import PostCreationPage from './components/pages/post/PostCreationPage';
 import PostEditPage from './components/pages/post/PostEditPage';
 import BoardListPage from './components/pages/board/BoardListPage';
-
+import JoinIntroPage from './components/pages/join/JoinIntroPage';
 export default function App() {
   const { currentUser } = useAuth();
   
@@ -58,6 +58,7 @@ export default function App() {
       } />
       
       <Route path='*' element={<Navigate to='/' replace />} />
+      <Route path='/join' element={<JoinIntroPage />} />
     </Routes>
   );
 }
