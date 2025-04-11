@@ -4,6 +4,12 @@ import { Notification } from '@/types/Notification';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react';
 
+/**
+ * 사용자의 알림 목록을 가져오는 훅
+ * @param userId 사용자 ID
+ * @param limitCount 한 번에 가져올 알림 수
+ * @returns React Query의 useInfiniteQuery 결과 객체 (data, fetchNextPage, hasNextPage, refetch 등)
+ */
 export const useNotifications = (userId: string | null, limitCount: number) => {
     return useInfiniteQuery(
         ['notifications', userId],
