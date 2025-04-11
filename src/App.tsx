@@ -4,8 +4,6 @@ import { ProtectedRoute } from './components/route/ProtectedRoute';
 import { AfterLoginLayout } from './components/common/AfterLoginLayout';
 import { useAuth } from './contexts/AuthContext';
 import StatsPage from './components/pages/stats/StatsPage';
-
-// 동적 임포트를 일반 임포트로 변경
 import RecentBoard from './components/pages/board/RecentBoard';
 import LoginPage from './components/pages/login/LoginPage';
 import BoardPage from './components/pages/board/BoardPage';
