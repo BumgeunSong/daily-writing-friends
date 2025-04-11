@@ -29,12 +29,11 @@ export const BottomTabHandlerProvider: React.FC<{ children: ReactNode }> = ({ ch
   const [handlers, setHandlers] = useState<TabHandlers>({});
   const navigate = useNavigate();
 
-  const createDefaultHandlers = ((tab: TabName) => {
+  const createDefaultHandlers = useCallback((tab: TabName) => {
     return () => {
-      console.log(TAB_PATHS[tab], 'default handler');
       navigate(TAB_PATHS[tab]);
     }
-  })
+  }, [navigate]);
 
   const registerTabHandler = useCallback((tabName: TabName, handler: () => void) => {
     setHandlers(prev => ({ ...prev, [tabName]: handler }));
