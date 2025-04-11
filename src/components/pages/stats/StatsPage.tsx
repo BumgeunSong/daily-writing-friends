@@ -9,7 +9,6 @@ import { fetchAllUserDataWithBoardPermission } from "@/utils/userUtils"
 import { useRemoteConfig } from "@/hooks/useRemoteConfig"
 import { useCallback } from "react"
 import { useRegisterTabHandler } from "@/contexts/BottomTabHandlerContext"
-import { useScrollAreaControl } from "@/hooks/useScrollAreaControl"
 
 // 통계 페이지 스크롤 영역의 고유 ID
 const STATS_SCROLL_ID = 'stats-scroll';
@@ -17,9 +16,6 @@ const STATS_SCROLL_ID = 'stats-scroll';
 export default function StatsPage() {
     usePerformanceMonitoring('StatsPage');
     const queryClient = useQueryClient();
-    
-    // ScrollArea 제어 훅 사용
-    const { scrollAreaToTop } = useScrollAreaControl(`#${STATS_SCROLL_ID}`);
     
     // Remote Config에서 활성 게시판 ID 가져오기 (문자열로 타입 변경)
     const { 
@@ -53,14 +49,13 @@ export default function StatsPage() {
     
     // 통계 새로고침 핸들러
     const handleRefreshStats = useCallback(() => {
-        // 1. 스크롤 위치를 최상단으로 이동
-        scrollAreaToTop();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         
         // 2. 통계 관련 쿼리 캐시 무효화
         queryClient.invalidateQueries(['activeUsers', activeBoardId]);
         queryClient.invalidateQueries(['writingStatsV2']);
         
-    }, [scrollAreaToTop, queryClient, activeBoardId]);
+    }, [queryClient, activeBoardId]);
     
     // Stats 탭 핸들러 등록
     useRegisterTabHandler('Stats', handleRefreshStats);
