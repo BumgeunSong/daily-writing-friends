@@ -21,6 +21,11 @@ import { useUserData } from '@/hooks/useUserData';
 import { useClearCache } from '@/hooks/useClearCache';
 import { useQuery } from '@tanstack/react-query';
 import { getUserActivityCount } from '@/utils/activityUtils';
+import { useCallback } from 'react';
+import { useRegisterTabHandler } from '@/contexts/BottomTabHandlerContext';
+
+// 계정 페이지 스크롤 영역의 고유 ID
+const ACCOUNT_SCROLL_ID = 'account-scroll';
 
 export default function AccountPage() {
   const { currentUser } = useAuth();
@@ -28,6 +33,15 @@ export default function AccountPage() {
   const { userData, isLoading } = useUserData(currentUser?.uid);
   const { toast } = useToast();
   const clearCache = useClearCache();
+  
+  // 계정 페이지 스크롤 핸들러 - 데이터 새로고침 없이 스크롤만 최상단으로 이동
+  const handleAccountTabClick = useCallback(() => {
+    // 기본 window 스크롤은 최상단으로 이동
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+  
+  // Account 탭 핸들러 등록
+  useRegisterTabHandler('Account', handleAccountTabClick);
 
   const handleSignOut = async () => {
     try {
@@ -92,7 +106,7 @@ export default function AccountPage() {
   }
 
   return (
-    <div className='flex min-h-screen flex-col items-center bg-gray-50 p-4 pb-24 pt-8'>
+    <div className='flex min-h-screen flex-col items-center bg-gray-50 p-4 pb-24 pt-8' id={ACCOUNT_SCROLL_ID}>
       <Card className='w-full max-w-md overflow-hidden'>
         <div className='relative h-32 bg-gradient-to-r from-gray-900 to-black' />
         <div className='relative z-0 -mt-16 flex flex-col items-center'>
