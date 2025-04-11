@@ -4,12 +4,15 @@ import { useWritingStatsV2 } from "@/hooks/useWritingStatsV2"
 import StatsHeader from "./StatsHeader"
 import { StatsNoticeBanner } from "./StatsNoticeBanner"
 import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { fetchAllUserDataWithBoardPermission } from "@/utils/userUtils"
 import { useRemoteConfig } from "@/hooks/useRemoteConfig"
+import { useCallback } from "react"
+import { useRegisterTabHandler } from "@/contexts/BottomTabHandlerContext"
 
 export default function StatsPage() {
     usePerformanceMonitoring('StatsPage');
+    const queryClient = useQueryClient();
     
     // Remote Config에서 활성 게시판 ID 가져오기 (문자열로 타입 변경)
     const { 
@@ -20,7 +23,7 @@ export default function StatsPage() {
         'active_board_id', 
         '5rfpfRBuhRFZB13dJVy8' // 기본값을 문자열로 변경
     );
-    console.log("activeBoardId:", activeBoardId);
+    
     // 활성 게시판 권한이 있는 사용자 가져오기
     const { 
         data: activeUsers, 
@@ -40,6 +43,20 @@ export default function StatsPage() {
     } = useWritingStatsV2(
         activeUsers?.map(user => user.uid) || []
     );
+    
+    // 통계 새로고침 핸들러
+    const handleRefreshStats = useCallback(() => {
+        // 1. 스크롤 위치를 최상단으로 이동
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // 2. 통계 관련 쿼리 캐시 무효화
+        queryClient.invalidateQueries(['activeUsers', activeBoardId]);
+        queryClient.invalidateQueries(['writingStatsV2']);
+        
+    }, [queryClient, activeBoardId]);
+    
+    // Stats 탭 핸들러 등록
+    useRegisterTabHandler('Stats', handleRefreshStats);
     
     const isLoading = isLoadingConfig || isLoadingUsers || isLoadingStats;
     const error = configError || usersError || statsError;
