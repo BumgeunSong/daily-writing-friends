@@ -46,17 +46,17 @@ export const BottomTabHandlerProvider: React.FC<{ children: ReactNode }> = ({ ch
   );
 };
 
-export const useTabHandler = () => {
+export const useBottomTabHandler = () => {
   const context = useContext(BottomTabHandlerContext);
   if (context === undefined) {
-    throw new Error('useTabHandler must be used within a TabHandlerProvider');
+    throw new Error('useBottomTabHandler must be used within a BottomTabHandlerProvider');
   }
   return context;
 };
 
 // 편의를 위한 커스텀 훅 생성
 export const useRegisterTabHandler = (tabName: TabName, handler: () => void) => {
-  const { registerTabHandler, unregisterTabHandler } = useTabHandler();
+  const { registerTabHandler, unregisterTabHandler } = useBottomTabHandler();
 
   React.useEffect(() => {
     registerTabHandler(tabName, handler);
