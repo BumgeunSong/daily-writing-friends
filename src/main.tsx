@@ -7,6 +7,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { initSentry } from './centry';
 import queryClient from './lib/QueryClient';
+import { BottomTabHandlerProvider } from './contexts/BottomTabHandlerContext';
+import { NavigationProvider } from './contexts/NavigationContext';
 
 initSentry();
 
@@ -15,7 +17,11 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <App />
+          <BottomTabHandlerProvider>
+            <NavigationProvider debounceTime={500}>
+              <App />
+            </NavigationProvider>
+          </BottomTabHandlerProvider>
         </AuthProvider>
       </QueryClientProvider>
     </BrowserRouter>

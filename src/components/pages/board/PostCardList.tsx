@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import PostCard from '../post/PostCard';
 import StatusMessage from '../../common/StatusMessage';
 import { usePosts } from '@/hooks/usePosts';
@@ -6,6 +6,9 @@ import { useInView } from 'react-intersection-observer';
 import PostCardSkeleton from '@/components/ui/PostCardSkeleton';
 import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 import { usePerformanceMonitoring } from '@/hooks/usePerformanceMonitoring';
+import { useRegisterTabHandler } from '@/contexts/BottomTabHandlerContext';
+import { useQueryClient } from '@tanstack/react-query';
+
 interface PostCardListProps {
   boardId: string;
   onPostClick: (postId: string) => void;
@@ -16,6 +19,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, selec
   const [inViewRef, inView] = useInView();
   const [limitCount] = useState(7);
   usePerformanceMonitoring('PostCardList')
+  const queryClient = useQueryClient();
 
   const {
     data: postPages,
@@ -23,12 +27,20 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, selec
     isError,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage,
+    isFetchingNextPage
   } = usePosts(boardId, selectedAuthorId, limitCount);
 
   const allPosts = postPages?.pages.flatMap((page) => page) || [];
 
   const { saveScrollPosition, restoreScrollPosition } = useScrollRestoration(`${boardId}-posts`);
+
+  const handleRefreshPosts = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    queryClient.invalidateQueries(['posts', boardId, selectedAuthorId]);
+  }, [boardId, queryClient, selectedAuthorId]);
+
+  // 홈 탭 핸들러 등록
+  useRegisterTabHandler('Home', handleRefreshPosts);
 
   const handlePostClick = (postId: string) => {
     onPostClick(postId);

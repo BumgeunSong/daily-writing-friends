@@ -4,12 +4,22 @@ import { useWritingStatsV2 } from "@/hooks/useWritingStatsV2"
 import StatsHeader from "./StatsHeader"
 import { StatsNoticeBanner } from "./StatsNoticeBanner"
 import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { fetchAllUserDataWithBoardPermission } from "@/utils/userUtils"
 import { useRemoteConfig } from "@/hooks/useRemoteConfig"
+import { useCallback } from "react"
+import { useRegisterTabHandler } from "@/contexts/BottomTabHandlerContext"
+import { useScrollAreaControl } from "@/hooks/useScrollAreaControl"
+
+// 통계 페이지 스크롤 영역의 고유 ID
+const STATS_SCROLL_ID = 'stats-scroll';
 
 export default function StatsPage() {
     usePerformanceMonitoring('StatsPage');
+    const queryClient = useQueryClient();
+    
+    // ScrollArea 제어 훅 사용
+    const { scrollAreaToTop } = useScrollAreaControl(`#${STATS_SCROLL_ID}`);
     
     // Remote Config에서 활성 게시판 ID 가져오기 (문자열로 타입 변경)
     const { 
@@ -20,7 +30,7 @@ export default function StatsPage() {
         'active_board_id', 
         '5rfpfRBuhRFZB13dJVy8' // 기본값을 문자열로 변경
     );
-    console.log("activeBoardId:", activeBoardId);
+    
     // 활성 게시판 권한이 있는 사용자 가져오기
     const { 
         data: activeUsers, 
@@ -41,6 +51,20 @@ export default function StatsPage() {
         activeUsers?.map(user => user.uid) || []
     );
     
+    // 통계 새로고침 핸들러
+    const handleRefreshStats = useCallback(() => {
+        // 1. 스크롤 위치를 최상단으로 이동
+        scrollAreaToTop();
+        
+        // 2. 통계 관련 쿼리 캐시 무효화
+        queryClient.invalidateQueries(['activeUsers', activeBoardId]);
+        queryClient.invalidateQueries(['writingStatsV2']);
+        
+    }, [scrollAreaToTop, queryClient, activeBoardId]);
+    
+    // Stats 탭 핸들러 등록
+    useRegisterTabHandler('Stats', handleRefreshStats);
+    
     const isLoading = isLoadingConfig || isLoadingUsers || isLoadingStats;
     const error = configError || usersError || statsError;
     
@@ -56,7 +80,7 @@ export default function StatsPage() {
         <div className="min-h-screen flex flex-col bg-background">
             <StatsHeader />
             <main className="flex-1 container px-4 py-4">
-                <ScrollArea className="h-full">
+                <ScrollArea className="h-full" id={STATS_SCROLL_ID}>
                     <StatsNoticeBanner />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
                         {writingStats?.map((stats) => (
@@ -75,7 +99,7 @@ function LoadingState() {
         <div className="min-h-screen flex flex-col bg-background">
             <StatsHeader />
             <main className="flex-1 container px-4 py-4">
-                <ScrollArea className="h-full">
+                <ScrollArea className="h-full" id={STATS_SCROLL_ID}>
                     <StatsNoticeBanner />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
                         {[...Array(5)].map((_, index) => (
