@@ -19,6 +19,13 @@ export default function BottomTabsNavigator() {
           <Link
             key={tab.name}
             to={tab.path}
+            onClick={(e) => {
+              console.log(location.pathname, tab.path);
+              if (location.pathname === tab.path) {
+                e.preventDefault();
+                console.log('do nothing');
+              }
+            }}
             className={`flex flex-col items-center p-4 ${
               location.pathname === tab.path ? 'text-primary' : 'text-muted-foreground'
             }`}
