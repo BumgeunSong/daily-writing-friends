@@ -1,6 +1,14 @@
 import React, { createContext, useContext, useCallback, useState, ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export type TabName = 'Home' | 'Stats' | 'Notifications' | 'Account';
+// 각 탭의 기본 경로
+export const TAB_PATHS: Record<TabName, string> = {
+    Home: '/boards',
+    Stats: '/stats',
+    Notifications: '/notifications',
+    Account: '/account'
+  };
 
 export interface TabHandlers {
   Home?: () => void;
@@ -19,6 +27,14 @@ const BottomTabHandlerContext = createContext<BottomTabHandlerContextType | unde
 
 export const BottomTabHandlerProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [handlers, setHandlers] = useState<TabHandlers>({});
+  const navigate = useNavigate();
+
+  const createDefaultHandlers = ((tab: TabName) => {
+    return () => {
+      console.log(TAB_PATHS[tab], 'default handler');
+      navigate(TAB_PATHS[tab]);
+    }
+  })
 
   const registerTabHandler = useCallback((tabName: TabName, handler: () => void) => {
     setHandlers(prev => ({ ...prev, [tabName]: handler }));
@@ -33,11 +49,11 @@ export const BottomTabHandlerProvider: React.FC<{ children: ReactNode }> = ({ ch
   }, []);
 
   const handleTabAction = useCallback((tabName: TabName) => {
-    const handler = handlers[tabName];
+    const handler = handlers[tabName] || createDefaultHandlers(tabName);
     if (handler) {
       handler();
     }
-  }, [handlers]);
+  }, [handlers, createDefaultHandlers]);
 
   return (
     <BottomTabHandlerContext.Provider value={{ registerTabHandler, unregisterTabHandler, handleTabAction }}>

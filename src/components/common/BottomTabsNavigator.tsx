@@ -1,4 +1,4 @@
-import { TabName, useBottomTabHandler, useRegisterTabHandler } from '@/contexts/BottomTabHandlerContext';
+import { TabName, useBottomTabHandler } from '@/contexts/BottomTabHandlerContext';
 import { Home, Bell, User, ChartNoAxesColumnIncreasing } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
