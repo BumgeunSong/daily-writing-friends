@@ -26,7 +26,7 @@ export default function BottomTabsNavigator() {
   return (
     <nav 
       className={cn(
-        "fixed inset-x-0 bottom-0 border-t border-border bg-background z-50 transition-transform duration-300 ease-in-out",
+        "fixed inset-x-0 bottom-0 border-t border-border bg-background z-50 transition-transform duration-200 ease-out",
         isIOS && "pb-2",
         isNavVisible ? "translate-y-0" : "translate-y-full"
       )}
