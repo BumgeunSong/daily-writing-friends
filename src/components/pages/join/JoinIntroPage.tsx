@@ -30,9 +30,15 @@ export default function JoinIntroPage() {
       <div className="w-full max-w-3xl lg:max-w-4xl relative pb-24 flex flex-col">
         {/* Main content - scrollable */}
         <div className="flex-1 overflow-auto">
-          {/* Header */}
-          <header className="p-6">
+          {/* Header with Login Button */}
+          <header className="p-6 flex items-center justify-between">
             <h1 className="text-2xl font-bold md:text-3xl">매일 글쓰기 프렌즈</h1>
+            <Button 
+              onClick={handleGoogleLogin}
+              className="bg-black text-white hover:bg-black/90"
+            >
+              로그인
+            </Button>
           </header>
 
           {/* Hero Image */}
