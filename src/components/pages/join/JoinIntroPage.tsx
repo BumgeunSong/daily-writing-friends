@@ -1,5 +1,3 @@
-"use client"
-
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
@@ -38,7 +36,7 @@ export default function JoinIntroPage() {
 
           {/* Hero Image */}
           <div className="w-full aspect-[16/10] relative bg-muted mx-auto mb-6 overflow-hidden">
-            <img src="public/writing_girl.png" alt="매일 글쓰기 프렌즈" className="w-full h-full object-cover" />
+            <img src="/writing_girl.png" alt="매일 글쓰기 프렌즈" className="w-full h-full object-cover" />
           </div>
 
           {/* Main content */}
