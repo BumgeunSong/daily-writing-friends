@@ -9,7 +9,7 @@ const NoticeSection: React.FC = () => (
     </h3>
     <ul className="space-y-2 pl-5 list-disc md:space-y-3 md:text-lg">
       <li>매글프의 글 내용은 당사자의 허락 없이 외부에 공유할 수 없어요.</li>
-      <li>매 기수마다 오프라인 모임이 있어요.</li>
+      <li>매 기수마다 오프라인 모임이 있어요. 참석은 자유입니다.</li>
     </ul>
   </div>
 )
