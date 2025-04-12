@@ -1,6 +1,7 @@
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { UserStatsCard } from "@/components/pages/stats/UserStatsCard"
 import { mockUserStats } from "./mockUserStats"
+import MockCommentRow from "./MockCommentRow"
 
 export default function GoalSection() {
   return (
@@ -54,6 +55,7 @@ export default function GoalSection() {
             다른 사람들의 댓글을 읽는 맛도 쏠쏠합니다.
           </p>
         </CardContent>
+        <MockCommentRow />
       </Card>
     </div>
   )
