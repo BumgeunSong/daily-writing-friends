@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import CountdownSection from "./CountdownSection"
 import CohortDetailsCard from "./CohortDetailsCard"
 import NoticeSection from "./NoticeSection"
+import GoalSection from "./GoalSection"
 
 export default function JoinIntroPage() {
   const navigate = useNavigate()
@@ -40,18 +41,26 @@ export default function JoinIntroPage() {
           </div>
 
           {/* Main content */}
-          <div className="px-6 space-y-8">
+          <div className="px-2 md:px-6 space-y-8">
+            {/* Goal Section */}
+            <div className="px-0 md:px-4">
+              <GoalSection />
+            </div>
+
             {/* Countdown Section */}
-            <div className="bg-muted/10 p-6 rounded-lg">
-              <CountdownSection daysRemaining={daysRemaining} />
+            <div className="px-0 md:px-4">
+              <div className="bg-muted/10 p-6 rounded-lg">
+                <CountdownSection daysRemaining={daysRemaining} />
+              </div>
             </div>
 
             {/* Cohort Details and Notice Section */}
-            <div className="md:grid md:grid-cols-2 md:gap-8 space-y-8 md:space-y-0">
-              <CohortDetailsCard />
-              <NoticeSection />
+            <div className="px-4 md:px-4">
+              <div className="md:grid md:grid-cols-2 md:gap-8 space-y-8 md:space-y-0">
+                <CohortDetailsCard />
+                <NoticeSection />
+              </div>
             </div>
-
           </div>
         </div>
 
