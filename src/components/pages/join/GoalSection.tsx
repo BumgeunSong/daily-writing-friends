@@ -1,4 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { UserStatsCard } from "@/components/pages/stats/UserStatsCard"
+import { mockUserStats } from "./mockUserStats"
 
 export default function GoalSection() {
   return (
@@ -13,7 +15,7 @@ export default function GoalSection() {
             건강해지려면 일단 헬스장에 꾸준히 가야하잖아요? 
           </p>
           <p className="text-muted-foreground">
-            글도 마찬가지입니다. 일단 자주 써야 잘 써지고 생각이 깊어집니다.
+            글도 마찬가지입니다. 일단 꾸준히 써야 잘 써지고 생각이 깊어집니다.
           </p>
           <p className="text-muted-foreground">
             우리는 주 5회 꾸준히 쓰는 습관을 만듭니다.
@@ -25,6 +27,9 @@ export default function GoalSection() {
             딱 3줄만 쓰셔도 됩니다. 핵심은 매일 쓰는 습관을 만드는 것!
           </p>
         </CardContent>
+        <CardFooter>
+          <UserStatsCard stats={mockUserStats} />
+        </CardFooter>
       </Card>
 
       {/* 두 번째 목표 섹션 */}
