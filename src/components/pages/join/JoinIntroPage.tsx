@@ -32,7 +32,7 @@ export default function JoinIntroPage() {
         <div className="flex-1 overflow-auto">
           {/* Header */}
           <header className="p-6">
-            <h1 className="text-2xl font-bold md:text-3xl">매글프 신청하기</h1>
+            <h1 className="text-2xl font-bold md:text-3xl">매일 글쓰기 프렌즈</h1>
           </header>
 
           {/* Hero Image */}

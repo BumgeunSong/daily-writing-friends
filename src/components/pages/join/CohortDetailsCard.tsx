@@ -1,5 +1,5 @@
 import type React from "react"
-import { CalendarDays, Clock, PenLine, AlignLeft, Sparkles } from "lucide-react"
+import { CalendarDays, Clock, PenLine, AlignLeft, Sparkles, MessageCircle } from "lucide-react"
 import { Card } from "@/components/ui/card"
 
 const CohortDetailsCard: React.FC = () => (
@@ -33,7 +33,11 @@ const CohortDetailsCard: React.FC = () => (
 
       <div className="flex items-center gap-2">
         <AlignLeft className="h-5 w-5 text-muted-foreground" />
-        <p className="md:text-lg">최소 분량 3줄</p>
+        <p className="md:text-lg">글 최소 분량 3줄</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <MessageCircle className="h-5 w-5 text-muted-foreground" />
+        <p className="md:text-lg">하루에 댓글 1개 달기</p>
       </div>
     </div>
   </Card>
