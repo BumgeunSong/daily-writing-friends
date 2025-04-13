@@ -8,7 +8,7 @@ import CommentPrompt from "./CommentPrompt"
 import { useQueryClient, useQuery } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
 import { fetchCommentsOnce } from "@/utils/commentUtils"
-
+import { sendAnalyticsEvent, AnalyticsEvent } from "@/utils/analyticsUtils"
 interface CommentsProps {
   boardId: string
   postId: string
@@ -47,6 +47,12 @@ const Comments: React.FC<CommentsProps> = ({ boardId, postId, postAuthorId, post
     }
 
     await addCommentToPost(boardId, postId, content, currentUser.uid, currentUser.displayName, currentUser.photoURL)
+    sendAnalyticsEvent(AnalyticsEvent.CREATE_COMMENT, {
+      boardId,
+      postId,
+      userId: currentUser.uid,
+      userName: currentUser.displayName
+    });
     
     // 댓글 추가 후 캐시 무효화
     queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] })
