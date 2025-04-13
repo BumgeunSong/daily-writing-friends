@@ -7,6 +7,7 @@ export interface Board {
   description: string;
   createdAt: Date;
   firstDay?: Timestamp;
+  lastDay?: Timestamp;
   cohort?: number;
   waitingUsersIds: string[];
 }

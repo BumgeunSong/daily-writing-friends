@@ -6,20 +6,22 @@ import IntroCTA from "./IntroCTA"
 import GoalWrapper from "./GoalWrapper"
 import CountdownWrapper from "./CountdownWrapper"
 import CohortDetailsWrapper from "./CohortDetailsWrapper"
-
+import { useUpcomingBoard } from "@/hooks/useUpcomingBoard"
 export default function JoinIntroPage() {
   const navigate = useNavigate()
   const [daysRemaining, setDaysRemaining] = useState<number>(0)
-
+  const { data: upcomingBoard } = useUpcomingBoard()
+  
   // Calculate days remaining until cohort starts
   useEffect(() => {
-    // Set cohort start date (May 1, 2025)
-    const cohortStartDate = new Date(2025, 4, 1) // Month is 0-indexed
-    const today = new Date()
-    const timeDiff = cohortStartDate.getTime() - today.getTime()
-    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24))
-    setDaysRemaining(daysDiff)
-  }, [])
+    if (upcomingBoard && upcomingBoard.firstDay) {
+      const cohortStartDate = upcomingBoard.firstDay.toDate()
+      const today = new Date()
+      const timeDiff = cohortStartDate.getTime() - today.getTime()
+      const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24))
+      setDaysRemaining(daysDiff)
+    }
+  }, [upcomingBoard])
 
   const handleLogin = () => {
     navigate("/login")
@@ -36,7 +38,7 @@ export default function JoinIntroPage() {
           <div className="px-2 md:px-6 space-y-8">
             <GoalWrapper />
             <CountdownWrapper daysRemaining={daysRemaining} />
-            <CohortDetailsWrapper />
+            <CohortDetailsWrapper upcomingBoard={upcomingBoard} />
           </div>
         </div>
 
@@ -44,7 +46,7 @@ export default function JoinIntroPage() {
         <div className="h-12" />
 
         {/* Sticky CTA at bottom */}
-        <IntroCTA onLogin={handleLogin} />
+        <IntroCTA onLogin={handleLogin} cohort={upcomingBoard?.cohort} />
       </div>
     </div>
   )
