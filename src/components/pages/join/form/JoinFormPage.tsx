@@ -1,10 +1,14 @@
 import type { JoinFormData } from "@/types/join"
 import FormHeader from "./JoinFormHeader"
 import JoinFormCard from "./JoinFormCard"
+import { useAuth } from "@/contexts/AuthContext"
+import { updateUserData } from "@/utils/userUtils"
 
 export default function JoinFormPage() {
-  const handleSubmit = (data: JoinFormData) => {
-    console.log(data)
+  const { currentUser } = useAuth()
+  
+  const handleSubmit = async (data: JoinFormData) => {
+    updateUserDataByForm(currentUser?.uid, data)
   }
 
   return (
@@ -16,4 +20,23 @@ export default function JoinFormPage() {
       </div>
     </div>
   )
+}
+
+const updateUserDataByForm = async (uid: string | null, data: JoinFormData) => {
+  if (!uid) {
+    console.error("Error updating user data by form: User is not logged in")
+    return
+  }
+
+  try {
+    await updateUserData(uid, {
+      realName: data.name,
+      phoneNumber: data.phoneNumber,
+      nickname: data.nickname,
+      referrer: data.referrer
+    })
+
+  } catch (error) {
+    console.error("Error updating user data by form:", error)
+  }
 }
