@@ -16,8 +16,9 @@ import PostCreationPage from './components/pages/post/PostCreationPage';
 import PostEditPage from './components/pages/post/PostEditPage';
 import BoardListPage from './components/pages/board/BoardListPage';
 import JoinIntroPage from './components/pages/join/intro/JoinIntroPage';
-import JoinFormPage from './components/pages/join/form/JoinFormPage';
+import ProtectedJoinFormPage from './components/pages/join/form/ProtectedJoinFormPage';
 import JoinCompletePage from './components/pages/join/complete/JoinCompletePage';
+
 export default function App() {
   const { currentUser } = useAuth();
 
@@ -50,9 +51,7 @@ export default function App() {
       </Route>
 
       <Route path='/join/form' element={
-        <ProtectedRoute>
-          <JoinFormPage />
-        </ProtectedRoute>
+          <ProtectedJoinFormPage />
       } />
       <Route path='/join/complete' element={
         <ProtectedRoute>

@@ -61,7 +61,10 @@ export async function fetchBoardsWithUserPermissions(userId: string): Promise<Bo
 export async function fetchBoardById(boardId: string): Promise<Board> {
   const boardDocRef = doc(firestore, 'boards', boardId);
   const boardDoc = await getDoc(boardDocRef);
-  return boardDoc.data() as Board;
+  if (!boardDoc.exists()) { 
+    throw new Error(`Board with id ${boardId} does not exist`);
+  }
+  return { ...boardDoc.data(), id: boardDoc.id } as Board;
 }
 
 // function to add user to board's waitingUsersIds by arrayUnion
