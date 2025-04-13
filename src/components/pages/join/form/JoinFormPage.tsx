@@ -30,10 +30,11 @@ export default function JoinFormPage() {
     }
   }
 
+  const subtitle = upcomingBoard ? `매일 글쓰기 프렌즈 ${upcomingBoard?.cohort}기` : "매일 글쓰기 프렌즈"
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-slate-50 flex flex-col">
       <div className="max-w-3xl lg:max-w-4xl mx-auto w-full px-4 py-8 flex-1">
-        <FormHeader title="신청하기" subtitle="매일 글쓰기 프렌즈 N기" />
+        <FormHeader title="신청하기" subtitle={subtitle} />
         <JoinFormCard onSubmit={handleSubmit} />
       </div>
     </div>
