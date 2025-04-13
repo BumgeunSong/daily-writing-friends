@@ -8,4 +8,5 @@ export interface Board {
   createdAt: Date;
   firstDay?: Timestamp;
   cohort?: number;
+  waitingUsersIds: string[];
 }
