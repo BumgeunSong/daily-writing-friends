@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 import { useState, Suspense } from "react"
 import { Button } from "@/components/ui/button"
@@ -8,9 +6,10 @@ import { addReplyToComment } from "@/utils/commentUtils"
 import ReplyInput from "./ReplyInput"
 import ReplyList from "./ReplyList"
 import { Loader2, MessageCircle } from "lucide-react"
-import ReplyPrompt from "./ReplyPrompt"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { fetchRepliesOnce, fetchReplyCountOnce } from "@/utils/replyUtils"
+import { AnalyticsEvent } from "@/utils/analyticsUtils"
+import { sendAnalyticsEvent } from "@/utils/analyticsUtils"
 
 interface RepliesProps {
   boardId: string
@@ -45,7 +44,13 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
       currentUser.displayName,
       currentUser.photoURL,
     )
-
+    sendAnalyticsEvent(AnalyticsEvent.CREATE_REPLY, {
+      boardId,
+      postId,
+      commentId,
+      userId: currentUser.uid,
+      userName: currentUser.displayName,
+    })
     // 답글 추가 후 캐시 무효화
     queryClient.invalidateQueries({ queryKey: ["replies", boardId, postId, commentId] })
     queryClient.invalidateQueries({ queryKey: ["replyCount", boardId, postId, commentId] })

@@ -11,6 +11,7 @@ import { getFirestore } from 'firebase/firestore';
 import { getPerformance } from "firebase/performance";
 import { getStorage } from 'firebase/storage';
 import { getRemoteConfig } from "firebase/remote-config";
+import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string,
@@ -19,6 +20,7 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET as string,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID as string,
   appId: import.meta.env.VITE_FIREBASE_APP_ID as string,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID as string,
 };
 
 // Initialize Firebase
@@ -31,6 +33,7 @@ const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 const performance = getPerformance(app);
 const remoteConfig = getRemoteConfig(app);
+const analytics = getAnalytics(app);
 
 // Auth functions
 const signInWithGoogle = async (): Promise<UserCredential> => {
@@ -53,4 +56,4 @@ const signOutUser = (): Promise<void> => {
     });
 };
 
-export { auth, firestore, signInWithGoogle, signOutUser, storage, app, performance, remoteConfig };
+export { auth, firestore, signInWithGoogle, signOutUser, storage, app, performance, remoteConfig, analytics };

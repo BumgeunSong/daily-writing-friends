@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { createPost } from '@/utils/postUtils';
 import { deleteDraft } from '@/utils/draftUtils';
-
+import { sendAnalyticsEvent, AnalyticsEvent } from '@/utils/analyticsUtils';
 interface UsePostSubmitProps {
   userId: string | undefined;
   userName: string;
@@ -38,7 +38,12 @@ export function usePostSubmit({
     try {
       setIsSubmitting(true);
       await createPost(boardId, title, content, userId, userName);
-      
+      sendAnalyticsEvent(AnalyticsEvent.CREATE_POST, {
+        boardId,
+        title,
+        userId,
+        userName
+      });
       // 게시물 작성 성공 후 초안 삭제
       if (draftId) {
         await deleteDraft(userId, draftId);
