@@ -21,11 +21,7 @@ export default function JoinFormPage() {
     try {
       updateUserDataByForm(currentUser?.uid, data)
       addUserToBoardWaitingList(upcomingBoardId, currentUser?.uid)
-      toast({
-        title: "신청이 완료되었습니다.",
-        variant: "default"
-      })
-      navigate('/')
+      navigate('/join/complete')
     } catch (error) {
       Sentry.captureException(error)
       toast({
