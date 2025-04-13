@@ -1,7 +1,12 @@
 import { isWorkingDay } from '@/utils/dateUtils';
 import { Posting } from '@/types/Posting';
 
-export function getDateKey(date: Date, timeZone?: string): string {
+// Types
+type DateKey = string;
+type PostingDays = Set<DateKey>;
+
+// Date Utils
+export function getDateKey(date: Date, timeZone?: string): DateKey {
     const userTimeZone = timeZone || getUserTimeZone();
     
     const formatter = new Intl.DateTimeFormat('en-US', {
@@ -15,35 +20,47 @@ export function getDateKey(date: Date, timeZone?: string): string {
     return `${parts[2]}-${parts[0]}-${parts[1]}`;
 }
 
-// Helper: Build a set of date keys that represent days when at least one posting occurred.
-function buildPostingDaysSet(postings: Posting[], timeZone: string): Set<string> {
-    const postingDays = new Set<string>();
-    for (const posting of postings) {
-        const postingDate = posting.createdAt.toDate();
-        const key = getDateKey(postingDate, timeZone);
-        postingDays.add(key);
-    }
-    return postingDays;
+export function getPreviousDate(date: Date, days: number = 1): Date {
+    const newDate = new Date(date);
+    newDate.setDate(newDate.getDate() - days);
+    return newDate;
 }
 
-// Pure function to check if a date has posting activity.
-function hasPostingOnDate(date: Date, postingDays: Set<string>, timeZone: string): boolean {
+// Posting Utils
+export function buildPostingDaysSet(postings: Posting[], timeZone: string): PostingDays {
+    return new Set(
+        postings.map(posting => {
+            const postingDate = posting.createdAt.toDate();
+            return getDateKey(postingDate, timeZone);
+        })
+    );
+}
+
+export function hasPostingOnDate(date: Date, postingDays: PostingDays, timeZone: string): boolean {
     const key = getDateKey(date, timeZone);
     return postingDays.has(key);
 }
 
-// Pure function that calculates the current streak given today's date, a postingDays set, 
-// and an isWorkingDay predicate.
-export function calculateStreakFromDate(
+// Streak Calculation
+export function calculateStreakForDate(
+    date: Date,
+    postingDays: PostingDays,
+    timeZone: string,
+    isWorkingDayFn: (date: Date, timeZone: string) => boolean
+): number {
+    if (!isWorkingDayFn(date, timeZone)) return 0;
+    return hasPostingOnDate(date, postingDays, timeZone) ? 1 : 0;
+}
+
+export function calculatePreviousDaysStreak(
     startDate: Date,
-    postingDays: Set<string>,
+    postingDays: PostingDays,
     timeZone: string,
     isWorkingDayFn: (date: Date, timeZone: string) => boolean
 ): number {
     let streak = 0;
-    let currentDate = new Date(startDate.getTime());
+    let currentDate = new Date(startDate);
 
-    // Loop backwards until a working day is missing posting.
     while (true) {
         if (isWorkingDayFn(currentDate, timeZone)) {
             if (hasPostingOnDate(currentDate, postingDays, timeZone)) {
@@ -52,29 +69,48 @@ export function calculateStreakFromDate(
                 break;
             }
         }
-        // Move one day back
-        currentDate = new Date(currentDate.getTime() - 86400000);
+        currentDate = getPreviousDate(currentDate);
     }
 
     return streak;
 }
 
-// Main function that calculates the current streak.
+export function calculateStreakFromDate(
+    startDate: Date,
+    postingDays: PostingDays,
+    timeZone: string,
+    isWorkingDayFn: (date: Date, timeZone: string) => boolean
+): number {
+    const today = new Date(startDate);
+    const yesterday = getPreviousDate(today);
+
+    // Check today and yesterday first
+    const todayStreak = calculateStreakForDate(today, postingDays, timeZone, isWorkingDayFn);
+    const yesterdayStreak = calculateStreakForDate(yesterday, postingDays, timeZone, isWorkingDayFn);
+
+    // If posted today or yesterday, return 1 + previous streak
+    if (todayStreak > 0 || yesterdayStreak > 0) {
+        return 1 + calculatePreviousDaysStreak(getPreviousDate(yesterday), postingDays, timeZone, isWorkingDayFn);
+    }
+
+    // If no posting today or yesterday, calculate streak from previous days
+    return calculatePreviousDaysStreak(yesterday, postingDays, timeZone, isWorkingDayFn);
+}
+
+// Main function
 export function calculateCurrentStreak(postings: Posting[]): number {
-    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const userTimeZone = getUserTimeZone();
     const postingDays = buildPostingDaysSet(postings, userTimeZone);
     const today = new Date();
     return calculateStreakFromDate(today, postingDays, userTimeZone, isWorkingDay);
 }
 
-// 사용자의 타임존을 가져오는 함수
+// Timezone Utils
 export function getUserTimeZone(): string {
     try {
-        // 1. 브라우저의 타임존 정보 가져오기
-        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        return timeZone;
+        return Intl.DateTimeFormat().resolvedOptions().timeZone;
     } catch (error) {
         console.warn('Failed to get user timezone:', error);
-        return 'Asia/Seoul'; // 기본값으로 KST 사용
+        return 'Asia/Seoul';
     }
 }
