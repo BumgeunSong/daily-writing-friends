@@ -47,6 +47,7 @@ export default function App() {
           <Route path='/account' element={<AccountPage />} />
           <Route path='/account/edit' element={<EditAccountPage />} />
           <Route path='/stats' element={<StatsPage />} />
+          <Route path='/join/form' element={<JoinFormPage />} />
         </Route>
 
         <Route path='/' element={
@@ -59,7 +60,6 @@ export default function App() {
 
         <Route path='*' element={<Navigate to='/' replace />} />
         <Route path='/join' element={<JoinIntroPage />} />
-        <Route path='/join/form' element={<JoinFormPage />} />
       </Routes>
   );
 }
