@@ -1,21 +1,23 @@
 import { Button } from "@/components/ui/button"
-import { useNavigate, useSearchParams } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 
-export default function JoinCompletePage() {
+interface JoinCompletePageProps {
+  name: string
+  cohort: number
+}
+
+export default function JoinCompletePage({ name, cohort }: JoinCompletePageProps) {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const name = searchParams.get('name')
-  const cohort = searchParams.get('cohort')
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <main className="flex-1 flex flex-col items-center justify-center px-6">
         <div className="text-center space-y-4 max-w-md">
           <h1 className="text-2xl lg:text-3xl font-bold">
-            {`${name ? `${name}님, ` : ''}신청이 완료되었습니다`}
+            {`${name}님, 신청이 완료되었습니다`}
           </h1>
           <p className="text-muted-foreground lg:text-lg">
-            {`${cohort ? `${cohort}기가 ` : ''}시작하기 하루 전 연락을 드려요.`}
+            {`${cohort}기가 시작하기 하루 전 연락을 드려요.`}
             <br />
             {`조금만 기다려주세요!`}
           </p>

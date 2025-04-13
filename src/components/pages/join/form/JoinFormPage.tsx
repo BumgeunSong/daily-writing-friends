@@ -1,25 +1,31 @@
+import { useState } from "react"
 import type { JoinFormData } from "@/types/join"
 import FormHeader from "./JoinFormHeader"
 import JoinFormCard from "./JoinFormCard"
 import { useAuth } from "@/contexts/AuthContext"
 import { updateUserData } from "@/utils/userUtils"
 import { addUserToBoardWaitingList } from "@/utils/boardUtils"
-import { useNavigate } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
 import * as Sentry from '@sentry/react'
 import { useUpcomingBoard } from "@/hooks/useUpcomingBoard"
+import JoinCompletePage from "../complete/JoinCompletePage"
 
 export default function JoinFormPage() {
   const { currentUser } = useAuth()
-  const navigate = useNavigate()
   const { toast } = useToast()
   const { data: upcomingBoard } = useUpcomingBoard()
-
+  const [isComplete, setIsComplete] = useState(false)
+  const [completeInfo, setCompleteInfo] = useState<{name: string, cohort: number} | null>(null)
+  
   const handleSubmit = async (data: JoinFormData) => {
     try {
-      updateUserDataByForm(currentUser?.uid, data)
-      addUserToBoardWaitingListByForm(upcomingBoard?.id, currentUser?.uid)
-      navigate(`/join/complete?name=${data.name}&cohort=${upcomingBoard?.cohort}`)
+      await updateUserDataByForm(currentUser?.uid, data)
+      await addUserToBoardWaitingListByForm(upcomingBoard?.id, currentUser?.uid)
+      setCompleteInfo({
+        name: data.name,
+        cohort: upcomingBoard?.cohort || 0
+      })
+      setIsComplete(true)
     } catch (error) {
       Sentry.captureException(error)
       toast({
@@ -28,6 +34,10 @@ export default function JoinFormPage() {
         variant: "destructive"
       })
     }
+  }
+
+  if (isComplete && completeInfo) {
+    return <JoinCompletePage name={completeInfo.name} cohort={completeInfo.cohort} />
   }
 
   const joinNotice = upcomingBoard ? `매글프 ${upcomingBoard?.cohort}기 신청하기` : "매일 글쓰기 프렌즈"
