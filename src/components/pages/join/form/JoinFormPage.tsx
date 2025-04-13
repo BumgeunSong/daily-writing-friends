@@ -3,25 +3,23 @@ import FormHeader from "./JoinFormHeader"
 import JoinFormCard from "./JoinFormCard"
 import { useAuth } from "@/contexts/AuthContext"
 import { updateUserData } from "@/utils/userUtils"
-import { useRemoteConfig } from "@/hooks/useRemoteConfig"
 import { addUserToBoardWaitingList } from "@/utils/boardUtils"
 import { useNavigate } from "react-router-dom"
 import { useToast } from "@/hooks/use-toast"
 import * as Sentry from '@sentry/react'
-
-const DEFAULT_BOARD_ID: string = ''
+import { useUpcomingBoard } from "@/hooks/useUpcomingBoard"
 
 export default function JoinFormPage() {
   const { currentUser } = useAuth()
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { value: upcomingBoardId } = useRemoteConfig('upcoming_board_id', DEFAULT_BOARD_ID)
+  const { data: upcomingBoard } = useUpcomingBoard()
 
   const handleSubmit = async (data: JoinFormData) => {
     try {
       updateUserDataByForm(currentUser?.uid, data)
-      addUserToBoardWaitingList(upcomingBoardId, currentUser?.uid)
-      navigate('/join/complete')
+      addUserToBoardWaitingListByForm(upcomingBoard?.id, currentUser?.uid)
+      navigate(`/join/complete?name=${data.name}&cohort=${upcomingBoard?.cohort}`)
     } catch (error) {
       Sentry.captureException(error)
       toast({
@@ -40,6 +38,14 @@ export default function JoinFormPage() {
       </div>
     </div>
   )
+}
+
+const addUserToBoardWaitingListByForm = async (boardId: string | undefined, userId: string | undefined) => {
+  if (!boardId || !userId) {
+    throw new Error("Error adding user to board waiting list: Board ID or User ID is not provided")
+  }
+
+  await addUserToBoardWaitingList(boardId, userId)
 }
 
 const updateUserDataByForm = async (uid: string | null, data: JoinFormData) => {

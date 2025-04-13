@@ -57,6 +57,12 @@ export async function fetchBoardsWithUserPermissions(userId: string): Promise<Bo
   }
 }
 
+// fetch board by id
+export async function fetchBoardById(boardId: string): Promise<Board> {
+  const boardDocRef = doc(firestore, 'boards', boardId);
+  const boardDoc = await getDoc(boardDocRef);
+  return boardDoc.data() as Board;
+}
 
 // function to add user to board's waitingUsersIds by arrayUnion
 export async function addUserToBoardWaitingList(boardId: string, userId: string) {
