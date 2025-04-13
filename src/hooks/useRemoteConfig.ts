@@ -3,9 +3,11 @@ import { getRemoteConfig, fetchAndActivate, getValue } from 'firebase/remote-con
 import { remoteConfig } from '@/firebase';
 
 // Remote Config 기본값 설정
-const 매글프_10기 = '5rfpfRBuhRFZB13dJVy8';
+const 매글프_팁_게시판 = 'rW3Y3E2aEbpB0KqGiigd';
+
 export const DEFAULT_CONFIG_VALUES = {
-    active_board_id: 매글프_10기
+    active_board_id: 매글프_팁_게시판,
+    upcoming_board_id: 매글프_팁_게시판
 };
 
 export function useRemoteConfig<T>(key: string, defaultValue: T): {

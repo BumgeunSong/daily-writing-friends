@@ -1,8 +1,13 @@
 import type React from "react"
 import { CalendarDays, Clock, PenLine, AlignLeft, Sparkles, MessageCircle } from "lucide-react"
 import { Card } from "@/components/ui/card"
+import { Board } from "@/types/Board"
 
-const CohortDetailsCard: React.FC = () => (
+interface CohortDetailsCardProps {
+  upcomingBoard?: Board | null
+}
+
+const CohortDetailsCard: React.FC<CohortDetailsCardProps> = ({ upcomingBoard }) => (
   <Card className="p-6 space-y-4 bg-muted/30 relative md:h-full">
     <div className="absolute -top-3 left-6">
       <div className="flex items-center gap-1 bg-black text-white px-3 py-1 rounded-full shadow-md">
@@ -12,14 +17,16 @@ const CohortDetailsCard: React.FC = () => (
     </div>
 
     <div className="mt-4 mb-2">
-      <h3 className="text-lg font-bold md:text-xl">매일 글쓰기 프렌즈 N기</h3>
+      <h3 className="text-lg font-bold md:text-xl">매일 글쓰기 프렌즈 {upcomingBoard?.cohort || "N"}기</h3>
     </div>
 
     <div className="space-y-3 md:space-y-4">
-      <div className="flex items-center gap-2">
-        <CalendarDays className="h-5 w-5 text-muted-foreground" />
-        <p className="md:text-lg">2025년 5월 1일 - 2025년 5월 28일</p>
-      </div>
+      {upcomingBoard && upcomingBoard.firstDay && upcomingBoard.lastDay && (
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-5 w-5 text-muted-foreground" />
+          <p className="md:text-lg">{upcomingBoard.firstDay.toDate().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })} - {upcomingBoard.lastDay.toDate().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}</p>
+        </div>
+      )}
 
       <div className="flex items-center gap-2">
         <Clock className="h-5 w-5 text-muted-foreground" />

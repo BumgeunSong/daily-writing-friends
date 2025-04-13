@@ -1,4 +1,4 @@
-import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 
 import { firestore } from '../firebase';
 import { Board } from '../types/Board';
@@ -55,4 +55,26 @@ export async function fetchBoardsWithUserPermissions(userId: string): Promise<Bo
     console.error('Error fetching boards:', error);
     return [];
   }
+}
+
+// fetch board by id
+export async function fetchBoardById(boardId: string): Promise<Board> {
+  const boardDocRef = doc(firestore, 'boards', boardId);
+  const boardDoc = await getDoc(boardDocRef);
+  if (!boardDoc.exists()) { 
+    throw new Error(`Board with id ${boardId} does not exist`);
+  }
+  return { ...boardDoc.data(), id: boardDoc.id } as Board;
+}
+
+// function to add user to board's waitingUsersIds by arrayUnion
+export async function addUserToBoardWaitingList(boardId: string, userId: string) {
+  const boardDocRef = doc(firestore, 'boards', boardId);
+  await updateDoc(boardDocRef, { waitingUsersIds: arrayUnion(userId) })
+}
+
+// function to remove user from board's waitingUsersIds
+export async function removeUserFromBoardWaitingList(boardId: string, userId: string) {
+  const boardDocRef = doc(firestore, 'boards', boardId);
+  await updateDoc(boardDocRef, { waitingUsersIds: arrayRemove(userId) })
 }

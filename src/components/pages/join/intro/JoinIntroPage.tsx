@@ -6,23 +6,42 @@ import IntroCTA from "./IntroCTA"
 import GoalWrapper from "./GoalWrapper"
 import CountdownWrapper from "./CountdownWrapper"
 import CohortDetailsWrapper from "./CohortDetailsWrapper"
+import { useUpcomingBoard } from "@/hooks/useUpcomingBoard"
+import { useToast } from "@/hooks/use-toast"
+import { signInWithGoogle } from "@/firebase"
 
 export default function JoinIntroPage() {
   const navigate = useNavigate()
+  const { toast } = useToast()
   const [daysRemaining, setDaysRemaining] = useState<number>(0)
-
+  const { data: upcomingBoard } = useUpcomingBoard()
+  
   // Calculate days remaining until cohort starts
   useEffect(() => {
-    // Set cohort start date (May 1, 2025)
-    const cohortStartDate = new Date(2025, 4, 1) // Month is 0-indexed
-    const today = new Date()
-    const timeDiff = cohortStartDate.getTime() - today.getTime()
-    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24))
-    setDaysRemaining(daysDiff)
-  }, [])
+    if (upcomingBoard && upcomingBoard.firstDay) {
+      const cohortStartDate = upcomingBoard.firstDay.toDate()
+      const today = new Date()
+      const timeDiff = cohortStartDate.getTime() - today.getTime()
+      const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24))
+      setDaysRemaining(daysDiff)
+    }
+  }, [upcomingBoard])
 
   const handleLogin = () => {
     navigate("/login")
+  }
+
+  const handleJoin = async () => {
+    try {
+      await signInWithGoogle()
+      navigate("/join/form")
+    } catch (error) {
+      toast({
+        title: "로그인 실패",
+        description: "다시 시도해주세요.",
+        variant: "destructive"
+      })
+    }
   }
 
   return (
@@ -36,7 +55,7 @@ export default function JoinIntroPage() {
           <div className="px-2 md:px-6 space-y-8">
             <GoalWrapper />
             <CountdownWrapper daysRemaining={daysRemaining} />
-            <CohortDetailsWrapper />
+            <CohortDetailsWrapper upcomingBoard={upcomingBoard} />
           </div>
         </div>
 
@@ -44,7 +63,7 @@ export default function JoinIntroPage() {
         <div className="h-12" />
 
         {/* Sticky CTA at bottom */}
-        <IntroCTA onLogin={handleLogin} />
+        <IntroCTA onLogin={handleJoin} cohort={upcomingBoard?.cohort} />
       </div>
     </div>
   )

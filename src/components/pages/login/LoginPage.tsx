@@ -38,6 +38,8 @@ export default function LoginPage() {
         email: userCredential.user.email,
         profilePhotoURL: userCredential.user.photoURL,
         bio: null,
+        phoneNumber: null,
+        referrer: null,
         boardPermissions: {
           'rW3Y3E2aEbpB0KqGiigd': 'read', // default board id
         },
