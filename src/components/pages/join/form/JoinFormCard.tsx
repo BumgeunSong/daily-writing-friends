@@ -2,15 +2,15 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { ArrowRight } from "lucide-react"
-import type { JoinFormData } from "@/types/join"
+import { Card, CardContent } from "@/components/ui/card"
 import FormField from "./JoinFormField"
+import { JoinFormData } from "@/types/join"
 
 const formSchema = z.object({
   name: z.string().min(2, "이름은 2글자 이상이어야 합니다."),
   phoneNumber: z.string().regex(/^01[0-9]{8,9}$/, "올바른 전화번호 형식이 아닙니다."),
-  referrer: z.string().optional(),
+  nickname: z.string().optional(),
+  referrer: z.string(),
 })
 
 interface JoinFormCardProps {
@@ -27,7 +27,7 @@ export default function JoinFormCard({ onSubmit }: JoinFormCardProps) {
   })
 
   return (
-    <Card className="shadow-lg border-slate-200 overflow-hidden mb-8">
+    <Card className="bg-background">
       <CardContent className="p-8">
         <form id="join-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <FormField
@@ -38,6 +38,17 @@ export default function JoinFormCard({ onSubmit }: JoinFormCardProps) {
             placeholder="이름을 입력해주세요"
             register={register}
             error={errors.name}
+          />
+
+          <FormField
+            id="nickname"
+            label="필명"
+            type="text"
+            inputMode="text"
+            placeholder="매글프에서 사용할 이름을 입력해주세요"
+            register={register}
+            error={errors.nickname}
+            optional
           />
 
           <FormField
@@ -59,18 +70,16 @@ export default function JoinFormCard({ onSubmit }: JoinFormCardProps) {
             register={register}
             error={errors.referrer}
           />
+
+          <Button
+            type="submit"
+            className="w-full lg:w-64 lg:mx-auto"
+            size="lg"
+          >
+            신청하기
+          </Button>
         </form>
       </CardContent>
-      <CardFooter className="px-8 py-6 bg-slate-50 border-t border-slate-100">
-        <Button
-          type="submit"
-          form="join-form"
-          className="w-full lg:w-64 h-14 text-base font-medium flex items-center justify-center gap-2 rounded-md transition-all hover:translate-y-[-2px]"
-          size="lg"
-        >
-          신청하기 <ArrowRight className="h-5 w-5 ml-1" />
-        </Button>
-      </CardFooter>
     </Card>
   )
 }

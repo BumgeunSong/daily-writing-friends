@@ -1,5 +1,6 @@
 export interface JoinFormData {
   name: string
   phoneNumber: string
-  referrer?: string
+  nickname?: string
+  referrer: string
 } 
