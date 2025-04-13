@@ -30,11 +30,13 @@ export default function JoinFormPage() {
     }
   }
 
-  const subtitle = upcomingBoard ? `매일 글쓰기 프렌즈 ${upcomingBoard?.cohort}기` : "매일 글쓰기 프렌즈"
+  const joinNotice = upcomingBoard ? `매글프 ${upcomingBoard?.cohort}기 신청하기` : "매일 글쓰기 프렌즈"
+  const firstDayNotice = upcomingBoard ? `${upcomingBoard?.firstDay?.toDate().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}에 시작합니다.` : ""
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-slate-50 flex flex-col">
       <div className="max-w-3xl lg:max-w-4xl mx-auto w-full px-4 py-8 flex-1">
-        <FormHeader title="신청하기" subtitle={subtitle} />
+        <FormHeader title={joinNotice} subtitle={firstDayNotice} />
         <JoinFormCard onSubmit={handleSubmit} />
       </div>
     </div>

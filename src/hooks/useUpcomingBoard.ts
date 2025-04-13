@@ -1,15 +1,18 @@
 import { useRemoteConfig } from "./useRemoteConfig";
 import { fetchBoardById } from "@/utils/boardUtils";
 import { useQuery } from "@tanstack/react-query";
-const DEFAULT_BOARD_ID = ''
+
+const DEFAULT_BOARD_ID = '';
 
 export function useUpcomingBoard() {
+    const { value: upcomingBoardId } = useRemoteConfig('upcoming_board_id', DEFAULT_BOARD_ID);
+
     return useQuery({
-        queryKey: ['upcomingBoard'],
+        queryKey: ['upcomingBoard', upcomingBoardId],
         queryFn: async () => {
-            const { value: upcomingBoardId } = await useRemoteConfig('upcoming_board_id', DEFAULT_BOARD_ID);
-            const upcomingBoard = await fetchBoardById(upcomingBoardId);
-            return upcomingBoard;
-        }
+            if (!upcomingBoardId) return null;
+            return await fetchBoardById(upcomingBoardId);
+        },
+        enabled: !!upcomingBoardId
     });
 }

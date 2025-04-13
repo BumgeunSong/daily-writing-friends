@@ -21,65 +21,73 @@ export default function JoinFormCard({ onSubmit }: JoinFormCardProps) {
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<JoinFormData>({
     resolver: zodResolver(formSchema),
   })
 
   return (
-    <Card className="bg-background">
-      <CardContent className="p-8">
-        <form id="join-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <FormField
-            id="name"
-            label="이름"
-            type="text"
-            inputMode="text"
-            placeholder="이름을 입력해주세요"
-            register={register}
-            error={errors.name}
-          />
+    <div className="flex flex-col min-h-[calc(100vh-12rem)]">
+      <Card className="bg-background flex-1">
+        <CardContent className="p-8">
+          <form id="join-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              id="name"
+              label="이름"
+              type="text"
+              inputMode="text"
+              placeholder="이름을 입력해주세요"
+              register={register}
+              error={errors.name}
+            />
 
-          <FormField
-            id="nickname"
-            label="필명"
-            type="text"
-            inputMode="text"
-            placeholder="매글프에서 사용할 이름을 입력해주세요"
-            register={register}
-            error={errors.nickname}
-            optional
-          />
+            <FormField
+              id="nickname"
+              label="필명"
+              type="text"
+              inputMode="text"
+              placeholder="매글프에서 사용할 이름을 입력해주세요"
+              register={register}
+              error={errors.nickname}
+              optional
+            />
 
-          <FormField
-            id="phoneNumber"
-            label="전화번호"
-            type="tel"
-            inputMode="numeric"
-            placeholder="ex. 01043219876"
-            register={register}
-            error={errors.phoneNumber}
-          />
+            <FormField
+              id="phoneNumber"
+              label="전화번호"
+              type="tel"
+              inputMode="numeric"
+              placeholder="ex. 01043219876"
+              register={register}
+              error={errors.phoneNumber}
+            />
 
-          <FormField
-            id="referrer"
-            label="추천인"
-            type="text"
-            inputMode="text"
-            placeholder="매글프를 소개해준 지인 이름을 입력해주세요"
-            register={register}
-            error={errors.referrer}
-          />
+            <FormField
+              id="referrer"
+              label="추천인"
+              type="text"
+              inputMode="text"
+              placeholder="매글프를 소개해준 지인 이름을 입력해주세요"
+              register={register}
+              error={errors.referrer}
+            />
+          </form>
+        </CardContent>
+      </Card>
 
+      <div className="sticky bottom-0 left-0 right-0 p-4 bg-background border-t">
+        <div className="max-w-3xl lg:max-w-4xl mx-auto">
           <Button
             type="submit"
+            form="join-form"
             className="w-full lg:w-64 lg:mx-auto"
             size="lg"
+            disabled={isSubmitting}
           >
-            신청하기
+            {isSubmitting ? "신청 중..." : "신청하기"}
           </Button>
-        </form>
-      </CardContent>
-    </Card>
+        </div>
+      </div>
+    </div>
   )
 }
