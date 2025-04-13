@@ -3,7 +3,7 @@ import CohortDetailsCard from "./CohortDetailsCard"
 import NoticeSection from "./NoticeSection"
 
 interface CohortDetailsWrapperProps {
-  upcomingBoard?: Board
+  upcomingBoard?: Board | null
 }
 
 export default function CohortDetailsWrapper({ upcomingBoard }: CohortDetailsWrapperProps) {
