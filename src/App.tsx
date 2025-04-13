@@ -48,10 +48,9 @@ export default function App() {
         <Route path='/account/edit' element={<EditAccountPage />} />
         <Route path='/stats' element={<StatsPage />} />
       </Route>
-
-      <Route path='/join/form' element={
-        <ProtectedJoinFormPage />
-      } />
+      
+      <Route path='/join' element={<JoinIntroPage />} />
+      <Route path='/join/form' element={<ProtectedJoinFormPage />} />
 
       <Route path='/' element={
         currentUser ? (
@@ -62,7 +61,7 @@ export default function App() {
       } />
 
       <Route path='*' element={<Navigate to='/' replace />} />
-      <Route path='/join' element={<JoinIntroPage />} />
+      
     </Routes>
   );
 }
