@@ -82,19 +82,14 @@ export function calculateStreakFromDate(
     isWorkingDayFn: (date: Date, timeZone: string) => boolean
 ): number {
     const today = new Date(startDate);
-    const yesterday = getPreviousDate(today);
 
-    // Check today and yesterday first
-    const todayStreak = calculateStreakForDate(today, postingDays, timeZone, isWorkingDayFn);
-    const yesterdayStreak = calculateStreakForDate(yesterday, postingDays, timeZone, isWorkingDayFn);
-
-    // If posted today or yesterday, return 1 + previous streak
-    if (todayStreak > 0 || yesterdayStreak > 0) {
-        return 1 + calculatePreviousDaysStreak(getPreviousDate(yesterday), postingDays, timeZone, isWorkingDayFn);
+    // 오늘 글을 쓴 경우 바로 streak 1 증가
+    if (hasPostingOnDate(today, postingDays, timeZone)) {
+        return 1 + calculatePreviousDaysStreak(getPreviousDate(today), postingDays, timeZone, isWorkingDayFn);
+    } else {
+        // 오늘 글을 쓰지 않은 경우 오늘 전날부터 streak 계산
+        return calculatePreviousDaysStreak(getPreviousDate(today), postingDays, timeZone, isWorkingDayFn);
     }
-
-    // If no posting today or yesterday, calculate streak from previous days
-    return calculatePreviousDaysStreak(yesterday, postingDays, timeZone, isWorkingDayFn);
 }
 
 // Main function
