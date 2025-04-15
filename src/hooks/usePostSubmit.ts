@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createPost } from '@/utils/postUtils';
 import { deleteDraft } from '@/utils/draftUtils';
 import { sendAnalyticsEvent, AnalyticsEvent } from '@/utils/analyticsUtils';
+
 interface UsePostSubmitProps {
   userId: string | undefined;
   userName: string;
@@ -59,6 +60,11 @@ export function usePostSubmit({
           queryKey: ['drafts', userId],
         });
       }
+      
+      // 게시물 목록 캐시 무효화
+      queryClient.invalidateQueries({
+        queryKey: ['posts', boardId],
+      });
       
       navigate(`/board/${boardId}`);
     } catch (error) {
