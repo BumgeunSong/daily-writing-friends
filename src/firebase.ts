@@ -35,9 +35,20 @@ const performance = getPerformance(app);
 const remoteConfig = getRemoteConfig(app);
 const analytics = getAnalytics(app);
 
+const isInKakaoInAppBrowser = () => {
+  const userAgent = navigator.userAgent;
+  return /KAKAOTALK/i.test(userAgent);
+};
+
 // Auth functions
 const signInWithGoogle = async (): Promise<UserCredential> => {
   try {
+    if (isInKakaoInAppBrowser()) {
+      const currentUrl = window.location.href;
+      window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(currentUrl)}`;
+      throw new Error('카카오톡 인앱 브라우저에서는 구글 로그인을 할 수 없어요');
+    }
+    
     return await signInWithPopup(auth, provider);
   } catch (error) {
     console.error('Error during sign-in:', error);
