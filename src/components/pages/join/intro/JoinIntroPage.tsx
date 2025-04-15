@@ -27,12 +27,23 @@ export default function JoinIntroPage() {
     }
   }, [upcomingBoard])
 
+  const isInKakaoInAppBrowser = () => {
+    const userAgent = navigator.userAgent;
+    return /KAKAOTALK/i.test(userAgent);
+  };
+
   const handleLogin = () => {
     navigate("/login")
   }
 
   const handleJoin = async () => {
     try {
+      if (isInKakaoInAppBrowser()) {
+        const currentUrl = window.location.href;
+        window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(currentUrl)}`;
+        return;
+      }
+      
       await signInWithGoogle()
       navigate("/join/form")
     } catch (error) {
