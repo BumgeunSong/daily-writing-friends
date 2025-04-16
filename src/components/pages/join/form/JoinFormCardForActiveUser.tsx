@@ -19,9 +19,9 @@ const formSchema = z.object({
 })
 
 interface JoinFormDataForActiveUser {
-  positiveExperience?: string
-  negativeExperience?: string
-  suggestions?: string
+  keep?: string
+  problem?: string
+  try?: string
   nps: number
   willContinue: "yes" | "no"
 }
@@ -65,7 +65,7 @@ export default function JoinFormCardForActiveUser({
                 inputMode="text"
                 placeholder="마음에 들었던 점"
                 register={register}
-                error={errors.positiveExperience}
+                error={errors.keep}
                 optional
               />
             </div>
@@ -79,7 +79,7 @@ export default function JoinFormCardForActiveUser({
                 inputMode="text"
                 placeholder="어려웠던 점과 아쉬운 점"
                 register={register}
-                error={errors.negativeExperience}
+                error={errors.problem}
                 optional
               />
             </div>
@@ -93,7 +93,7 @@ export default function JoinFormCardForActiveUser({
                 inputMode="text"
                 placeholder="개선 아이디어"
                 register={register}
-                error={errors.suggestions}
+                error={errors.try}
                 optional
               />
             </div>

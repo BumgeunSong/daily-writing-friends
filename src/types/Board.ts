@@ -11,3 +11,18 @@ export interface Board {
   cohort?: number;
   waitingUsersIds: string[];
 }
+
+export interface Review {
+  reviewer: {
+    uid: string;
+    nickName: string;
+    realName: string;
+  };
+  keep?: string;
+  problem?: string;
+  try?: string;
+  nps: number;
+  willContinue: "yes" | "no";
+  createdAt: Date;
+  updatedAt: Date;
+}

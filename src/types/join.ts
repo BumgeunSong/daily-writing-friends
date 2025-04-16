@@ -6,13 +6,9 @@ export interface JoinFormDataForNewUser {
 }
 
 export interface JoinFormDataForActiveUser {
-  name?: string
-  phoneNumber?: string
-  nickname?: string
-  referrer?: string
-  positiveExperience?: string
-  negativeExperience?: string
-  suggestions?: string
+  keep?: string
+  problem?: string
+  try?: string
   nps: number
   willContinue: "yes" | "no"
-} 
+}
