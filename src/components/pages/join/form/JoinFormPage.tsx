@@ -1,10 +1,10 @@
 import { useState } from "react"
-import type { JoinFormDataForNewUser, JoinFormDataForActiveUser } from "@/types/join"
+import { JoinFormDataForActiveUser, JoinFormDataForNewUser } from "@/types/join"
 import FormHeader from "./JoinFormHeader"
 import JoinFormCardForNewUser from "./JoinFormCardForNewUser"
 import JoinFormCardForActiveUser from "./JoinFormCardForActiveUser"
 import { updateUserData } from "@/utils/userUtils"
-import { addUserToBoardWaitingList } from "@/utils/boardUtils"  
+import { addUserToBoardWaitingList, formatStartDate } from "@/utils/boardUtils"  
 import { useToast } from "@/hooks/use-toast"
 import * as Sentry from '@sentry/react'
 import { useUpcomingBoard } from "@/hooks/useUpcomingBoard"
@@ -70,7 +70,7 @@ export default function JoinFormPage() {
       <div className="max-w-3xl lg:max-w-4xl mx-auto w-full px-4 py-8 flex-1">
         <FormHeader title={title} subtitle={subtitle} />
         {isCurrentUserActive ? (
-          <JoinFormCardForActiveUser onSubmit={handleSubmitForActiveUser} />
+          <JoinFormCardForActiveUser upcomingBoard={upcomingBoard ?? null} onSubmit={handleSubmitForActiveUser} />
         ) : (
           <JoinFormCardForNewUser onSubmit={handleSubmitForNewUser} />
         )}
@@ -86,8 +86,7 @@ function titleAndSubtitle(upcomingBoard: Board | null | undefined, isCurrentUser
   let subtitle = ""
   if (isCurrentUserActive) {
     const currentCohort = upcomingBoard?.cohort ? upcomingBoard.cohort - 1 : 0
-    const nextCohortStartDate = upcomingBoard?.firstDay?.toDate().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
-    subtitle = `매글프 ${currentCohort}기를 하셨군요! 매글프를 하면서 느꼈던 점을 알려주시면 매글프에 큰 도움이 됩니다. ${upcomingBoard?.cohort}기는 '${nextCohortStartDate}'에 시작합니다.`
+    subtitle = `매글프 ${currentCohort}기를 하셨군요! 하면서 느꼈던 점을 알려주시면 매글프에 큰 도움이 됩니다.`
   } else {
     subtitle = upcomingBoard ? `${upcomingBoard?.firstDay?.toDate().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}에 시작합니다.` : ""
   }

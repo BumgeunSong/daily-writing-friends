@@ -25,10 +25,12 @@ interface JoinFormDataForActiveUser {
 }
 
 interface JoinFormCardForActiveUserProps {
-  onSubmit: (data: JoinFormDataForActiveUser) => void
+  upcomingBoard: Board | null
+  onSubmit: (data: JoinFormDataForActiveUser) => Promise<void>
 }
 
 export default function JoinFormCardForActiveUser({ 
+  upcomingBoard,
   onSubmit
 }: JoinFormCardForActiveUserProps) {
   const {
@@ -117,6 +119,9 @@ export default function JoinFormCardForActiveUser({
 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">다음 기수도 계속하실 건가요?</h3>
+              <p className="text-sm text-muted-foreground">
+                {`${upcomingBoard?.cohort ?? '?'}기는 '${formatStartDate(upcomingBoard)}'에 시작합니다.`}
+              </p>
               <RadioGroup
                 defaultValue="yes"
                 onValueChange={(value: "yes" | "no") => setValue("willContinue", value)}

@@ -78,3 +78,10 @@ export async function removeUserFromBoardWaitingList(boardId: string, userId: st
   const boardDocRef = doc(firestore, 'boards', boardId);
   await updateDoc(boardDocRef, { waitingUsersIds: arrayRemove(userId) })
 }
+
+export function formatStartDate(board: Board | null | undefined) {
+  if (!board) {
+    return '?'
+  }
+  return board.firstDay?.toDate().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
+}
