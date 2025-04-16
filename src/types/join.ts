@@ -13,6 +13,6 @@ export interface JoinFormDataForActiveUser {
   positiveExperience?: string
   negativeExperience?: string
   suggestions?: string
-  recommendationScore: number
+  nps: number
   willContinue: "yes" | "no"
 } 

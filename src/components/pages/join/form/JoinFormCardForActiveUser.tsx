@@ -7,12 +7,14 @@ import FormField from "./JoinFormField"
 import { Slider } from "@/components/ui/slider"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
+import { Board } from "@/types/Board"
+import { formatStartDate } from "@/utils/boardUtils"
 
 const formSchema = z.object({
   positiveExperience: z.string().optional(),
   negativeExperience: z.string().optional(),
   suggestions: z.string().optional(),
-  recommendationScore: z.number().min(1).max(10),
+  nps: z.number().min(1).max(10),
   willContinue: z.enum(["yes", "no"]),
 })
 
@@ -20,7 +22,7 @@ interface JoinFormDataForActiveUser {
   positiveExperience?: string
   negativeExperience?: string
   suggestions?: string
-  recommendationScore: number
+  nps: number
   willContinue: "yes" | "no"
 }
 
@@ -42,12 +44,12 @@ export default function JoinFormCardForActiveUser({
   } = useForm<JoinFormDataForActiveUser>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      recommendationScore: 5,
+      nps: 5,
       willContinue: "yes"
     }
   })
 
-  const recommendationScore = watch("recommendationScore")
+  const nps = watch("nps")
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-12rem)]">
@@ -55,13 +57,13 @@ export default function JoinFormCardForActiveUser({
         <CardContent className="p-8">
           <form id="join-form" onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold">매일 글쓰기 프렌즈를 하면서 마음에 들었던 점은 무엇인가요? <span className="text-muted-foreground text-sm">(선택)</span></h3>
+              <h3 className="text-lg font-semibold">매글프를 하면서 마음에 들었던 점은 무엇인가요?</h3>
               <FormField
                 id="positiveExperience"
                 label=""
                 type="textarea"
                 inputMode="text"
-                placeholder="마음에 들었던 점을 자세히 입력해주세요"
+                placeholder="마음에 들었던 점"
                 register={register}
                 error={errors.positiveExperience}
                 optional
@@ -69,13 +71,13 @@ export default function JoinFormCardForActiveUser({
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold">매일 글쓰기 프렌즈를 하면서 어려웠던 점, 아쉬운 점은 무엇인가요? <span className="text-muted-foreground text-sm">(선택)</span></h3>
+              <h3 className="text-lg font-semibold">매글프를 하면서 어려웠던 점, 아쉬운 점은 무엇인가요?</h3>
               <FormField
                 id="negativeExperience"
                 label=""
                 type="textarea"
                 inputMode="text"
-                placeholder="어려웠던 점과 아쉬운 점을 자세히 입력해주세요"
+                placeholder="어려웠던 점과 아쉬운 점"
                 register={register}
                 error={errors.negativeExperience}
                 optional
@@ -83,13 +85,13 @@ export default function JoinFormCardForActiveUser({
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold">매일 글쓰기 프렌즈 이렇게 하면 좋겠다! 하는 아이디어가 있으신가요? <span className="text-muted-foreground text-sm">(선택)</span></h3>
+              <h3 className="text-lg font-semibold">매글프 이렇게 하면 좋겠다! 하는 아이디어가 있으신가요?</h3>
               <FormField
                 id="suggestions"
                 label=""
                 type="textarea"
                 inputMode="text"
-                placeholder="개선 아이디어를 자세히 입력해주세요"
+                placeholder="개선 아이디어"
                 register={register}
                 error={errors.suggestions}
                 optional
@@ -103,16 +105,17 @@ export default function JoinFormCardForActiveUser({
                   min={1}
                   max={10}
                   step={1}
-                  value={[recommendationScore]}
-                  onValueChange={(value: number[]) => setValue("recommendationScore", value[0])}
+                  value={[nps]}
+                  onValueChange={(value: number[]) => setValue("nps", value[0])}
                   className="w-full"
                 />
                 <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                  <span>1 - 전혀 추천하고 싶지 않다</span>
-                  <span>10 - 매우 추천하고 싶다</span>
+                  <span>1 - 매우 비추천</span>
+                  <br />
+                  <span>10 - 매우 추천</span>
                 </div>
                 <div className="text-center mt-2">
-                  <span className="text-lg font-semibold">{recommendationScore}점</span>
+                  <span className="text-lg font-semibold">{nps}점</span>
                 </div>
               </div>
             </div>
