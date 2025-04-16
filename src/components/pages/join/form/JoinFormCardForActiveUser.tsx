@@ -4,26 +4,37 @@ import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import FormField from "./JoinFormField"
-import { JoinFormData } from "@/types/join"
 
 const formSchema = z.object({
-  name: z.string().min(2, "이름은 2글자 이상이어야 합니다."),
-  phoneNumber: z.string().regex(/^01[0-9]{8,9}$/, "올바른 전화번호 형식이 아닙니다."),
-  nickname: z.string().optional(),
-  referrer: z.string(),
+  nickname: z.string().min(2, "필명은 2글자 이상이어야 합니다."),
+  motivation: z.string().min(10, "참여 동기를 10글자 이상 입력해주세요."),
+  goal: z.string().min(10, "목표를 10글자 이상 입력해주세요."),
 })
 
-interface JoinFormCardProps {
-  onSubmit: (data: JoinFormData) => void
+interface JoinFormDataForActiveUser {
+  nickname: string
+  motivation: string
+  goal: string
 }
 
-export default function JoinFormCard({ onSubmit }: JoinFormCardProps) {
+interface JoinFormCardForActiveUserProps {
+  onSubmit: (data: JoinFormDataForActiveUser) => void
+  defaultNickname?: string
+}
+
+export default function JoinFormCardForActiveUser({ 
+  onSubmit,
+  defaultNickname = ""
+}: JoinFormCardForActiveUserProps) {
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<JoinFormData>({
+  } = useForm<JoinFormDataForActiveUser>({
     resolver: zodResolver(formSchema),
+    defaultValues: {
+      nickname: defaultNickname
+    }
   })
 
   return (
@@ -32,16 +43,6 @@ export default function JoinFormCard({ onSubmit }: JoinFormCardProps) {
         <CardContent className="p-8">
           <form id="join-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <FormField
-              id="name"
-              label="이름"
-              type="text"
-              inputMode="text"
-              placeholder="이름을 입력해주세요"
-              register={register}
-              error={errors.name}
-            />
-
-            <FormField
               id="nickname"
               label="필명"
               type="text"
@@ -49,27 +50,26 @@ export default function JoinFormCard({ onSubmit }: JoinFormCardProps) {
               placeholder="매글프에서 사용할 이름을 입력해주세요"
               register={register}
               error={errors.nickname}
-              optional
             />
 
             <FormField
-              id="phoneNumber"
-              label="전화번호"
-              type="tel"
-              inputMode="numeric"
-              placeholder="ex. 01043219876"
-              register={register}
-              error={errors.phoneNumber}
-            />
-
-            <FormField
-              id="referrer"
-              label="추천인"
-              type="text"
+              id="motivation"
+              label="참여 동기"
+              type="textarea"
               inputMode="text"
-              placeholder="매글프를 소개해준 지인 이름을 입력해주세요"
+              placeholder="매글프에 참여하고 싶은 이유를 입력해주세요"
               register={register}
-              error={errors.referrer}
+              error={errors.motivation}
+            />
+
+            <FormField
+              id="goal"
+              label="목표"
+              type="textarea"
+              inputMode="text"
+              placeholder="매글프에서 이루고 싶은 목표를 입력해주세요"
+              register={register}
+              error={errors.goal}
             />
           </form>
         </CardContent>
@@ -90,4 +90,4 @@ export default function JoinFormCard({ onSubmit }: JoinFormCardProps) {
       </div>
     </div>
   )
-}
+} 
