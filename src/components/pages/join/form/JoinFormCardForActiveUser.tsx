@@ -9,22 +9,15 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Board } from "@/types/Board"
 import { formatStartDate } from "@/utils/boardUtils"
+import { JoinFormDataForActiveUser } from "@/types/join"
 
 const formSchema = z.object({
-  positiveExperience: z.string().optional(),
-  negativeExperience: z.string().optional(),
-  suggestions: z.string().optional(),
+  keep: z.string().optional(),
+  problem: z.string().optional(),
+  try: z.string().optional(),
   nps: z.number().min(1).max(10),
   willContinue: z.enum(["yes", "no"]),
 })
-
-interface JoinFormDataForActiveUser {
-  keep?: string
-  problem?: string
-  try?: string
-  nps: number
-  willContinue: "yes" | "no"
-}
 
 interface JoinFormCardForActiveUserProps {
   upcomingBoard: Board | null
@@ -59,7 +52,7 @@ export default function JoinFormCardForActiveUser({
             <div className="space-y-2">
               <h3 className="text-lg font-semibold">매글프를 하면서 마음에 들었던 점은 무엇인가요?</h3>
               <FormField
-                id="positiveExperience"
+                id="keep"
                 label=""
                 type="textarea"
                 inputMode="text"
@@ -73,7 +66,7 @@ export default function JoinFormCardForActiveUser({
             <div className="space-y-2">
               <h3 className="text-lg font-semibold">매글프를 하면서 어려웠던 점, 아쉬운 점은 무엇인가요?</h3>
               <FormField
-                id="negativeExperience"
+                id="problem"
                 label=""
                 type="textarea"
                 inputMode="text"
@@ -87,7 +80,7 @@ export default function JoinFormCardForActiveUser({
             <div className="space-y-2">
               <h3 className="text-lg font-semibold">매글프 이렇게 하면 좋겠다! 하는 아이디어가 있으신가요?</h3>
               <FormField
-                id="suggestions"
+                id="try"
                 label=""
                 type="textarea"
                 inputMode="text"

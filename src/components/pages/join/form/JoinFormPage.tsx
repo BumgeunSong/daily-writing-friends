@@ -3,8 +3,8 @@ import { JoinFormDataForActiveUser, JoinFormDataForNewUser } from "@/types/join"
 import FormHeader from "./JoinFormHeader"
 import JoinFormCardForNewUser from "./JoinFormCardForNewUser"
 import JoinFormCardForActiveUser from "./JoinFormCardForActiveUser"
-import { updateUserData } from "@/utils/userUtils"
-import { addUserToBoardWaitingList, formatStartDate } from "@/utils/boardUtils"  
+import { updateUserData, useUserNickname } from "@/utils/userUtils"
+import { addUserToBoardWaitingList } from "@/utils/boardUtils"  
 import { useToast } from "@/hooks/use-toast"
 import * as Sentry from '@sentry/react'
 import { useUpcomingBoard } from "@/hooks/useUpcomingBoard"
@@ -12,9 +12,11 @@ import JoinCompletePage from "../complete/JoinCompletePage"
 import { useIsCurrentUserActive } from "@/hooks/useIsCurrentUserActive"
 import { useAuth } from "@/contexts/AuthContext"
 import { Board } from "@/types/Board"
+import { addReviewToBoard } from "@/utils/reviewUtils"
 
 export default function JoinFormPage() {
   const { currentUser } = useAuth()
+  const { data: userNickname } = useUserNickname(currentUser?.uid)
   const { toast } = useToast()
   const { data: upcomingBoard } = useUpcomingBoard()
   const { isCurrentUserActive } = useIsCurrentUserActive()
@@ -43,10 +45,14 @@ export default function JoinFormPage() {
 
   const handleSubmitForActiveUser = async (data: JoinFormDataForActiveUser) => {
     try {
-      await updateUserDataByForm(currentUser?.uid, data)
+      if (!upcomingBoard?.id || !currentUser?.uid) {
+        throw new Error("Error adding review to board: Board ID or User ID is not provided")
+      }
+
+      await addReviewToBoard(upcomingBoard?.id, currentUser?.uid, userNickname ?? undefined, data)
       await addUserToBoardWaitingListByForm(upcomingBoard?.id, currentUser?.uid)
       setCompleteInfo({
-        name: data.name || "",
+        name: userNickname || "",
         cohort: upcomingBoard?.cohort || 0
       })
       setIsComplete(true)
@@ -101,7 +107,7 @@ const addUserToBoardWaitingListByForm = async (boardId: string | undefined, user
   await addUserToBoardWaitingList(boardId, userId)
 }
 
-const updateUserDataByForm = async (uid: string | null, data: JoinFormDataForNewUser | JoinFormDataForActiveUser) => {
+const updateUserDataByForm = async (uid: string | null, data: JoinFormDataForNewUser) => {
   if (!uid) {
     throw new Error("Error updating user data by form: User is not logged in")
   }
