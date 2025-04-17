@@ -4,7 +4,6 @@ import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import FormField from "./JoinFormField"
-import { JoinFormData } from "@/types/join"
 
 const formSchema = z.object({
   name: z.string().min(2, "이름은 2글자 이상이어야 합니다."),
@@ -13,16 +12,23 @@ const formSchema = z.object({
   referrer: z.string(),
 })
 
-interface JoinFormCardProps {
-  onSubmit: (data: JoinFormData) => void
+interface JoinFormDataForNewUser {
+  name: string
+  phoneNumber: string
+  nickname?: string
+  referrer: string
 }
 
-export default function JoinFormCard({ onSubmit }: JoinFormCardProps) {
+interface JoinFormCardForNewUserProps {
+  onSubmit: (data: JoinFormDataForNewUser) => void
+}
+
+export default function JoinFormCardForNewUser({ onSubmit }: JoinFormCardForNewUserProps) {
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<JoinFormData>({
+  } = useForm<JoinFormDataForNewUser>({
     resolver: zodResolver(formSchema),
   })
 
