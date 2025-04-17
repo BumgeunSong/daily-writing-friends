@@ -13,29 +13,7 @@ import { useIsCurrentUserActive } from "@/hooks/useIsCurrentUserActive"
 import { useAuth } from "@/contexts/AuthContext"
 import { Board } from "@/types/Board"
 import { addReviewToBoard } from "@/utils/reviewUtils"
-
-/**
- * 에러 발생 시 토스트 메시지를 표시하는 함수
- * @param toast toast 함수
- * @param error 발생한 에러
- */
-const showErrorToast = (toast: any, error: unknown) => {
-  Sentry.captureException(error);
-  
-  let errorMessage = "알 수 없는 오류가 발생했습니다. 다시 시도해주세요.";
-  
-  if (error instanceof Error) {
-    errorMessage = error.message;
-  }
-  
-  toast({
-    title: "신청 중 오류가 발생했습니다",
-    description: errorMessage,
-    variant: "destructive",
-    duration: 5000, // 5초 동안 표시
-  });
-};
-
+import { showErrorToast } from "@/components/common/showErrorToast"
 /**
  * 매글프 신청 폼 페이지 컴포넌트
  * 신규 사용자와 기존 사용자에 따라 다른 폼을 표시합니다.
