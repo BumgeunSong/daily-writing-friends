@@ -14,6 +14,10 @@ import { useAuth } from "@/contexts/AuthContext"
 import { Board } from "@/types/Board"
 import { addReviewToBoard } from "@/utils/reviewUtils"
 
+/**
+ * 매글프 신청 폼 페이지 컴포넌트
+ * 신규 사용자와 기존 사용자에 따라 다른 폼을 표시합니다.
+ */
 export default function JoinFormPage() {
   const { currentUser } = useAuth()
   const { data: userNickname } = useUserNickname(currentUser?.uid)
@@ -24,13 +28,25 @@ export default function JoinFormPage() {
   const [completeInfo, setCompleteInfo] = useState<{name: string, cohort: number} | null>(null)
   const { title, subtitle } = titleAndSubtitle(upcomingBoard, isCurrentUserActive)
   
+  /**
+   * 신규 사용자 폼 제출 처리
+   */
   const handleSubmitForNewUser = async (data: JoinFormDataForNewUser) => {
     try {
-      await updateUserDataByForm(currentUser?.uid, data)
-      await addUserToBoardWaitingListByForm(upcomingBoard?.id, currentUser?.uid)
+      // 필수 값 검증
+      if (!currentUser?.uid) {
+        throw new Error("사용자 정보를 찾을 수 없습니다");
+      }
+
+      await updateUserDataByForm(currentUser.uid, data)
+      
+      if (upcomingBoard?.id) {
+        await addUserToBoardWaitingList(upcomingBoard.id, currentUser.uid)
+      }
+      
       setCompleteInfo({
         name: data.name,
-        cohort: upcomingBoard?.cohort || 0
+        cohort: upcomingBoard?.cohort ?? 0
       })
       setIsComplete(true)
     } catch (error) {
@@ -43,17 +59,26 @@ export default function JoinFormPage() {
     }
   }
 
+  /**
+   * 기존 사용자 폼 제출 처리
+   */
   const handleSubmitForActiveUser = async (data: JoinFormDataForActiveUser) => {
     try {
+      // 필수 값 검증
       if (!upcomingBoard?.id || !currentUser?.uid) {
-        throw new Error("Error adding review to board: Board ID or User ID is not provided")
+        throw new Error("보드 정보 또는 사용자 정보를 찾을 수 없습니다")
       }
 
-      await addReviewToBoard(upcomingBoard?.id, currentUser?.uid, userNickname ?? undefined, data)
-      await addUserToBoardWaitingListByForm(upcomingBoard?.id, currentUser?.uid)
+      const result = await addReviewToBoard(upcomingBoard.id, currentUser.uid, userNickname ?? undefined, data);
+      if (!result) {
+        throw new Error("리뷰 추가 실패");
+      }
+      
+      await addUserToBoardWaitingList(upcomingBoard.id, currentUser.uid);
+      
       setCompleteInfo({
-        name: userNickname || "",
-        cohort: upcomingBoard?.cohort || 0
+        name: userNickname ?? "",
+        cohort: upcomingBoard.cohort ?? 0
       })
       setIsComplete(true)
     } catch (error) {
@@ -69,7 +94,6 @@ export default function JoinFormPage() {
   if (isComplete && completeInfo) {
     return <JoinCompletePage name={completeInfo.name} cohort={completeInfo.cohort} />
   }
-
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-slate-50 flex flex-col">
@@ -85,33 +109,33 @@ export default function JoinFormPage() {
   )
 }
 
-function titleAndSubtitle(upcomingBoard: Board | null | undefined, isCurrentUserActive: boolean | undefined) {
-
-  const joinNotice = upcomingBoard ? `매글프 ${upcomingBoard?.cohort}기 신청하기` : "매일 글쓰기 프렌즈"
+/**
+ * 상황에 맞는 제목과 부제목을 생성합니다
+ * @param upcomingBoard 다가오는 보드 정보
+ * @param isCurrentUserActive 현재 사용자가 활성 사용자인지 여부
+ * @returns {title: string, subtitle: string} 제목과 부제목
+ */
+function titleAndSubtitle(upcomingBoard: Board | null | undefined, isCurrentUserActive: boolean | undefined): {title: string, subtitle: string} {
+  const joinNotice = upcomingBoard ? `매글프 ${upcomingBoard.cohort}기 신청하기` : "매일 글쓰기 프렌즈"
   
   let subtitle = ""
   if (isCurrentUserActive) {
     const currentCohort = upcomingBoard?.cohort ? upcomingBoard.cohort - 1 : 0
     subtitle = `매글프 ${currentCohort}기를 하셨군요! 하면서 느꼈던 점을 알려주시면 매글프에 큰 도움이 됩니다.`
   } else {
-    subtitle = upcomingBoard ? `${upcomingBoard?.firstDay?.toDate().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}에 시작합니다.` : ""
+    subtitle = upcomingBoard && upcomingBoard.firstDay 
+      ? `${upcomingBoard.firstDay.toDate().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}에 시작합니다.` 
+      : ""
   }
-  return { title: joinNotice, subtitle: subtitle }
+  return { title: joinNotice, subtitle }
 }
 
-const addUserToBoardWaitingListByForm = async (boardId: string | undefined, userId: string | undefined) => {
-  if (!boardId || !userId) {
-    throw new Error("Error adding user to board waiting list: Board ID or User ID is not provided")
-  }
-
-  await addUserToBoardWaitingList(boardId, userId)
-}
-
-const updateUserDataByForm = async (uid: string | null, data: JoinFormDataForNewUser) => {
-  if (!uid) {
-    throw new Error("Error updating user data by form: User is not logged in")
-  }
-
+/**
+ * 폼 데이터로 사용자 정보를 업데이트합니다
+ * @param uid 사용자 ID
+ * @param data 신규 사용자 폼 데이터
+ */
+const updateUserDataByForm = async (uid: string, data: JoinFormDataForNewUser) => {
   await updateUserData(uid, {
     realName: data.name,
     phoneNumber: data.phoneNumber,
