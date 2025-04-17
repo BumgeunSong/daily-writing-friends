@@ -15,6 +15,28 @@ import { Board } from "@/types/Board"
 import { addReviewToBoard } from "@/utils/reviewUtils"
 
 /**
+ * 에러 발생 시 토스트 메시지를 표시하는 함수
+ * @param toast toast 함수
+ * @param error 발생한 에러
+ */
+const showErrorToast = (toast: any, error: unknown) => {
+  Sentry.captureException(error);
+  
+  let errorMessage = "알 수 없는 오류가 발생했습니다. 다시 시도해주세요.";
+  
+  if (error instanceof Error) {
+    errorMessage = error.message;
+  }
+  
+  toast({
+    title: "신청 중 오류가 발생했습니다",
+    description: errorMessage,
+    variant: "destructive",
+    duration: 5000, // 5초 동안 표시
+  });
+};
+
+/**
  * 매글프 신청 폼 페이지 컴포넌트
  * 신규 사용자와 기존 사용자에 따라 다른 폼을 표시합니다.
  */
@@ -35,13 +57,18 @@ export default function JoinFormPage() {
     try {
       // 필수 값 검증
       if (!currentUser?.uid) {
-        throw new Error("사용자 정보를 찾을 수 없습니다");
+        throw new Error("사용자 정보를 찾을 수 없습니다. 로그인 상태를 확인해주세요.");
       }
 
       await updateUserDataByForm(currentUser.uid, data)
       
       if (upcomingBoard?.id) {
-        await addUserToBoardWaitingList(upcomingBoard.id, currentUser.uid)
+        const result = await addUserToBoardWaitingList(upcomingBoard.id, currentUser.uid);
+        if (!result) {
+          throw new Error("대기자 명단에 추가하는 중 오류가 발생했습니다.");
+        }
+      } else {
+        throw new Error("신청 가능한 기수 정보를 찾을 수 없습니다.");
       }
       
       setCompleteInfo({
@@ -49,13 +76,9 @@ export default function JoinFormPage() {
         cohort: upcomingBoard?.cohort ?? 0
       })
       setIsComplete(true)
+      
     } catch (error) {
-      Sentry.captureException(error)
-      toast({
-        title: "오류가 발생했습니다.",
-        description: "다시 시도해주세요.",
-        variant: "destructive"
-      })
+      showErrorToast(toast, error);
     }
   }
 
@@ -65,29 +88,32 @@ export default function JoinFormPage() {
   const handleSubmitForActiveUser = async (data: JoinFormDataForActiveUser) => {
     try {
       // 필수 값 검증
-      if (!upcomingBoard?.id || !currentUser?.uid) {
-        throw new Error("보드 정보 또는 사용자 정보를 찾을 수 없습니다")
+      if (!upcomingBoard?.id) {
+        throw new Error("신청 가능한 기수 정보를 찾을 수 없습니다.");
+      }
+      
+      if (!currentUser?.uid) {
+        throw new Error("사용자 정보를 찾을 수 없습니다. 로그인 상태를 확인해주세요.");
       }
 
       const result = await addReviewToBoard(upcomingBoard.id, currentUser.uid, userNickname ?? undefined, data);
       if (!result) {
-        throw new Error("리뷰 추가 실패");
+        throw new Error("리뷰 등록 중 오류가 발생했습니다. 다시 시도해주세요.");
       }
       
-      await addUserToBoardWaitingList(upcomingBoard.id, currentUser.uid);
+      const waitlistResult = await addUserToBoardWaitingList(upcomingBoard.id, currentUser.uid);
+      if (!waitlistResult) {
+        throw new Error("대기자 명단에 추가하는 중 오류가 발생했습니다.");
+      }
       
       setCompleteInfo({
         name: userNickname ?? "",
         cohort: upcomingBoard.cohort ?? 0
       })
       setIsComplete(true)
+      
     } catch (error) {
-      Sentry.captureException(error)
-      toast({
-        title: "오류가 발생했습니다.",
-        description: "다시 시도해주세요.",
-        variant: "destructive"
-      })
+      showErrorToast(toast, error);
     }
   }
 
