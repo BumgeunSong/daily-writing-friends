@@ -2,7 +2,7 @@ import { useState } from "react"
 import { JoinFormDataForNewUser } from "@/types/join"
 import FormHeader from "./JoinFormHeader"
 import JoinFormCardForNewUser from "./JoinFormCardForNewUser"
-import { updateUserData } from "@/utils/userUtils"
+import { updateUserData, fetchUserData, createUserData } from "@/utils/userUtils"
 import { addUserToBoardWaitingList } from "@/utils/boardUtils"
 import { useToast } from "@/hooks/use-toast"
 import { useUpcomingBoard } from "@/hooks/useUpcomingBoard"
@@ -10,6 +10,7 @@ import JoinCompletePage from "../complete/JoinCompletePage"
 import { useAuth } from "@/contexts/AuthContext"
 import { Board } from "@/types/Board"
 import { showErrorToast } from "@/components/common/showErrorToast"
+import { User } from "@/types/User"
 
 /**
  * 신규 사용자를 위한 매글프 신청 폼 페이지 컴포넌트
@@ -21,7 +22,7 @@ export default function JoinFormPageForNewUser() {
     const [isComplete, setIsComplete] = useState(false)
     const [completeInfo, setCompleteInfo] = useState<{ name: string, cohort: number } | null>(null)
     const { title, subtitle } = titleAndSubtitle(upcomingBoard)
-
+    
     /**
      * 폼 제출 핸들러
      */
@@ -34,7 +35,7 @@ export default function JoinFormPageForNewUser() {
         const result = await submitNewUserJoin({
             data,
             upcomingBoard: upcomingBoard,
-            userId: currentUser.uid
+            currentUser: currentUser
         });
 
         if (result.success) {
@@ -70,9 +71,9 @@ export default function JoinFormPageForNewUser() {
 export async function submitNewUserJoin(params: {
     data: JoinFormDataForNewUser;
     upcomingBoard: Board;
-    userId: string;
+    currentUser: any;
 }): Promise<{ success: true; name: string; cohort: number } | { success: false; error: Error }> {
-    const { data, upcomingBoard, userId } = params;
+    const { data, upcomingBoard, currentUser } = params;
 
     try {
         // 필수 값 검증
@@ -80,20 +81,41 @@ export async function submitNewUserJoin(params: {
             throw new Error("신청 가능한 기수 정보를 찾을 수 없습니다.");
         }
 
-        if (!userId) {
+        if (!currentUser.uid) {
             throw new Error("사용자 정보를 찾을 수 없습니다. 로그인 상태를 확인해주세요.");
         }
 
-        // 사용자 정보 업데이트
-        await updateUserData(userId, {
+        // 사용자 정보 작성을 위한 데이터
+        const userData = {
             realName: data.name,
             phoneNumber: data.phoneNumber,
-            nickname: data.nickname,
-            referrer: data.referrer
-        });
+            nickname: data.nickname || null,
+            referrer: data.referrer || null
+        };
+
+        // Firestore에서 사용자 문서 확인
+        const existingUser = await fetchUserData(currentUser.uid);
+        
+        if (existingUser) {
+            // 기존 사용자가 있으면 업데이트
+            await updateUserData(currentUser.uid, userData);
+        } else {
+            // 기존 사용자가 없으면 새로 생성
+            const newUser: User = {
+                uid: currentUser.uid,
+                email: currentUser.email || null,
+                profilePhotoURL: currentUser.photoURL || null,
+                bio: null,
+                boardPermissions: {
+                    'rW3Y3E2aEbpB0KqGiigd': 'read', // default board id
+                },
+                ...userData
+            };
+            await createUserData(newUser);
+        }
 
         // 대기자 명단에 추가
-        const result = await addUserToBoardWaitingList(upcomingBoard.id, userId);
+        const result = await addUserToBoardWaitingList(upcomingBoard.id, currentUser.uid);
         if (!result) {
             throw new Error("대기자 명단에 추가하는 중 오류가 발생했습니다.");
         }
