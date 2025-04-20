@@ -19,7 +19,7 @@ import JoinIntroPage from './components/pages/join/intro/JoinIntroPage';
 import ProtectedJoinFormPage from './components/pages/join/form/ProtectedJoinFormPage';
 import JoinFormPageForNewUser from './components/pages/join/form/JoinFormPageForNewUser';
 import JoinFormPageForActiveUser from './components/pages/join/form/JoinFormPageForActiveUser';
-import PostFreewritingPage from './components/pages/post/PostCountupCreationPage';
+import PostFreewritingPage from './components/pages/post/PostFreewritingPage';
 
 export default function App() {
   const { currentUser } = useAuth();
