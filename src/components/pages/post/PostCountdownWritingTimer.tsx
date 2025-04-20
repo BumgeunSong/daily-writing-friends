@@ -28,7 +28,6 @@ export default function CountdownWritingTimer({
   totalTime = 5 * 60, // 5 minutes in seconds
 }: CountdownWritingTimerProps) {
   const [timeLeft, setTimeLeft] = useState(totalTime)
-  const [lastUpdateTime, setLastUpdateTime] = useState<number | null>(null)
 
   // Calculate progress percentage
   const progress = (timeLeft / totalTime) * 100
@@ -39,44 +38,39 @@ export default function CountdownWritingTimer({
     const secs = seconds % 60
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
+  
+  // 컴포넌트가 마운트되거나 totalTime이 변경될 때 타이머를 초기화
+  useEffect(() => {
+    setTimeLeft(totalTime);
+  }, [totalTime]);
 
   useEffect(() => {
-    // Reset timer if stop is toggled to true
-    if (status === WritingStatus.Paused) {
-      setTimeLeft(totalTime)
-      setLastUpdateTime(null)
-      return
+    // 이미 만료된 경우 타이머를 실행하지 않음
+    if (expired) {
+      return;
     }
 
-    // Don't run the timer if not in "writing" state or already expired
-    if (status === WritingStatus.Writing || expired) {
-      setLastUpdateTime(null)
-      return
-    }
-
-    // Set the initial update time when starting
-    if (lastUpdateTime === null) {
-      setLastUpdateTime(Date.now())
-    }
-
-    const timer = setInterval(() => {
-      if (status === WritingStatus.Writing) {
+    // Writing 상태일 때만 타이머 실행
+    if (status === WritingStatus.Writing) {
+      const timer = setInterval(() => {
         setTimeLeft((prevTime) => {
-          const newTime = Math.max(0, prevTime - 1)
-
-          // Check if timer has expired
+          const newTime = Math.max(0, prevTime - 1);
+          
+          // 타이머가 0에 도달했을 때 만료 콜백 호출
           if (newTime === 0 && prevTime !== 0) {
-            onExpire()
+            onExpire();
           }
-
-          return newTime
-        })
-        setLastUpdateTime(Date.now())
-      }
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [status, expired, onExpire, totalTime, lastUpdateTime])
+          
+          return newTime;
+        });
+      }, 1000);
+      
+      // 클린업 함수
+      return () => clearInterval(timer);
+    }
+    
+    // Paused 상태일 때는 타이머 실행하지 않음 (일시 정지)
+  }, [status, expired, onExpire, totalTime]);
 
   const getColorClass = () => {
     return expired ? "bg-green-500" : "bg-blue-500"

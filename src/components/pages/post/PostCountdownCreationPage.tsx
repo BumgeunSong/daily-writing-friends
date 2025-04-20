@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
@@ -24,6 +23,9 @@ export default function PostCountdownCreationPage() {
   const [timerStatus, setTimerStatus] = useState<WritingStatus>(WritingStatus.Writing);
   const [isExpired, setIsExpired] = useState(false);
   
+  // 타이핑 감지를 위한 타임아웃 ref
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
   // 타이머 만료 처리
   const handleTimerExpire = () => {
     setIsExpired(true);
@@ -34,11 +36,51 @@ export default function PostCountdownCreationPage() {
     });
   };
   
-  // 타이머 상태 전환
-  const toggleTimerStatus = () => {
-    setTimerStatus((prev: WritingStatus) => 
-      prev === WritingStatus.Writing ? WritingStatus.Paused : WritingStatus.Writing
-    );
+  // 텍스트 변경 시 타이핑 감지
+  const handleContentChange = (newContent: string) => {
+    setContent(newContent);
+    
+    // 타이핑 중이면 WritingStatus를 Writing으로 설정
+    setTimerStatus(WritingStatus.Writing);
+    
+    // 이전 타임아웃이 있으면 제거
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    // 2초 동안 타이핑이 없으면 Paused로 설정
+    typingTimeoutRef.current = setTimeout(() => {
+      // 만료되지 않았을 때만 일시 정지 상태로 변경
+      if (!isExpired) {
+        setTimerStatus(WritingStatus.Paused);
+      }
+    }, 2000);
+  };
+
+  // 컴포넌트 언마운트 시 타임아웃 정리
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
+  
+  // 제목 변경 시도 같은 패턴 적용
+  const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setTitle(e.target.value);
+    setTimerStatus(WritingStatus.Writing);
+    
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    typingTimeoutRef.current = setTimeout(() => {
+      // 만료되지 않았을 때만 일시 정지 상태로 변경
+      if (!isExpired) {
+        setTimerStatus(WritingStatus.Paused);
+      }
+    }, 2000);
   };
   
   // 게시물 제출
@@ -103,28 +145,20 @@ export default function PostCountdownCreationPage() {
         <form onSubmit={handleSubmit} className='space-y-6'>
           <PostTitleEditor
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={handleTitleChange}
             className='mb-4'
           />
           
           <PostTextEditor 
             value={content}
-            onChange={setContent}
+            onChange={handleContentChange}
           />
           
           <div className='flex justify-between items-center'>
-            <Button 
-              type='button' 
-              variant="outline"
-              onClick={toggleTimerStatus}
-            >
-              {timerStatus === WritingStatus.Writing ? '일시정지' : '계속 쓰기'}
-            </Button>
-            
             <PostSubmitButton 
               isSubmitting={isSubmitting}
-              disabled={!title.trim() || !content.trim()}
-              label="업로드하기"
+              disabled={!isExpired || !title.trim() || !content.trim()}
+              label={isExpired ? "업로드하기" : "아직 시간이 남았어요"}
               submittingLabel="업로드 중..."
             />
           </div>
