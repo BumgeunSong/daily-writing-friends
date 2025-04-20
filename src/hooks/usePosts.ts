@@ -3,6 +3,7 @@ import { firestore } from "@/firebase";
 import { Post } from "@/types/Posts";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import * as Sentry from '@sentry/react';
+import { mapDocumentToPost } from "@/utils/postUtils";
 
 export const usePosts = (boardId: string, selectedAuthorId: string | null, limitCount: number) => {
     return useInfiniteQuery<Post[]>(
@@ -41,6 +42,6 @@ async function fetchPosts(boardId: string, selectedAuthorId: string | null, limi
     }
 
     const snapshot = await getDocs(q);
-    const postsData = await Promise.all(snapshot.docs.map((doc) => doc.data() as Post));
+    const postsData = snapshot.docs.map(doc => mapDocumentToPost(doc));
     return postsData;
 }

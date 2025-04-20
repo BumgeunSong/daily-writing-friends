@@ -7,12 +7,58 @@ import {
   getDocs,
   query,
   orderBy,
-  Timestamp
+  Timestamp,
+  DocumentSnapshot,
+  QueryDocumentSnapshot
 } from 'firebase/firestore';
 
 import { firestore } from '../firebase';
 import { Post } from '../types/Posts';
 import { useQuery } from '@tanstack/react-query';
+import { Posting } from '@/types/Posting';
+
+/**
+ * Firebase 문서를 Post 객체로 변환하는 유틸리티 함수
+ * 문서 데이터에 ID가 없거나 스냅샷 ID와 다를 경우 스냅샷 ID로 덮어씀
+ */
+export function mapDocumentToPost(snapshot: DocumentSnapshot | QueryDocumentSnapshot): Post {
+  const data = snapshot.data() as Omit<Post, 'id'>;
+  return {
+    ...data,
+    id: snapshot.id // 스냅샷 ID를 항상 사용
+  };
+}
+
+/**
+ * Firebase 문서를 Posting 객체로 변환하는 유틸리티 함수
+ */
+export function mapDocumentToPosting(doc: QueryDocumentSnapshot): Posting {
+  const data = doc.data() as Posting;
+  // Timestamp 보장
+  data.createdAt = ensureTimestamp(data.createdAt);
+  
+  // post.id가 없을 경우 Firebase 문서 ID 할당
+  if (!data.post.id) {
+      data.post.id = doc.id;
+  }
+  
+  return data;
+}
+
+
+function ensureTimestamp(value: any): Timestamp {
+  if (value instanceof Timestamp) {
+      return value;
+  }
+
+  if (value && 
+      typeof value.seconds === "number" && 
+      typeof value.nanoseconds === "number") {
+      return new Timestamp(value.seconds, value.nanoseconds);
+  }
+
+  return Timestamp.now();
+}
 
 export const fetchPost = async (boardId: string, postId: string): Promise<Post | null> => {
   const docSnap = await getDoc(doc(firestore, `boards/${boardId}/posts/${postId}`));
@@ -22,7 +68,7 @@ export const fetchPost = async (boardId: string, postId: string): Promise<Post |
     return null; 
   }
 
-  return docSnap.data() as Post;
+  return mapDocumentToPost(docSnap);
 };
 
 export const usePostTitle = (boardId: string, postId: string) => {

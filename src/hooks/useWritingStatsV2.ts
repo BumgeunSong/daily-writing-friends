@@ -4,7 +4,7 @@
 // 3. return stats
 
 import { useQuery } from '@tanstack/react-query';
-import { collection, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { WritingStats, Contribution, WritingBadge } from '@/types/WritingStats';
 import { Posting } from '@/types/Posting';
@@ -13,7 +13,7 @@ import { fetchUserData } from '@/utils/userUtils';
 import { getRecentWorkingDays } from '@/utils/dateUtils';
 import { calculateCurrentStreak } from '@/utils/streakUtils';
 import { getDateKey, getUserTimeZone } from '@/utils/streakUtils';
-
+import { mapDocumentToPosting } from '@/utils/postUtils';
 export function useWritingStatsV2(userIds: string[]) {
     return useQuery({
         queryKey: ['writingStatsV2', userIds],
@@ -70,29 +70,12 @@ async function fetchPostingData(userId: string): Promise<Posting[]> {
         const q = query(postingsRef, orderBy('createdAt', 'desc'));
         const querySnapshot = await getDocs(q);
         
-        return querySnapshot.docs.map(doc => {
-            const data = doc.data() as Posting;
-            data.createdAt = ensureTimestamp(data.createdAt);
-            return data;
-        });
+        return querySnapshot.docs.map(doc => mapDocumentToPosting(doc));
     } catch (error) {
         throw error;
     }
 }
 
-function ensureTimestamp(value: any): Timestamp {
-    if (value instanceof Timestamp) {
-        return value;
-    }
-
-    if (value && 
-        typeof value.seconds === "number" && 
-        typeof value.nanoseconds === "number") {
-        return new Timestamp(value.seconds, value.nanoseconds);
-    }
-
-    return Timestamp.now();
-}
 
 function createContributions(postings: Posting[], workingDays: Date[]): Contribution[] {
     const userTimeZone = getUserTimeZone();
