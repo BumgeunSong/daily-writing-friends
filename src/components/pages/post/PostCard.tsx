@@ -8,6 +8,7 @@ import { User as Author } from '@/types/User';
 import { fetchUserData } from '@/utils/userUtils';
 import { Badge } from '@/components/ui/badge';
 import { getContentPreview } from '@/utils/contentUtils';
+import { formatDateToKorean } from '@/utils/dateUtils';
 
 interface PostCardProps {
   post: Post;
@@ -53,7 +54,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
           <div className='ml-2'>
             <p className='text-sm font-medium'>{authorData?.nickname}</p>
             <p className='text-xs text-muted-foreground'>
-              {post.createdAt?.toLocaleString() || '?'}
+              {post.createdAt ? formatDateToKorean(post.createdAt.toDate()) : '?'}
             </p>
           </div>
         </div>

@@ -3,7 +3,7 @@ import { firestore } from "@/firebase";
 import { Post } from "@/types/Posts";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import * as Sentry from '@sentry/react';
-import { mapDocToPost } from "@/utils/mapDocToPost";
+import { mapDocumentToPost } from "@/utils/postUtils";
 
 export const usePosts = (boardId: string, selectedAuthorId: string | null, limitCount: number) => {
     return useInfiniteQuery<Post[]>(
@@ -13,7 +13,7 @@ export const usePosts = (boardId: string, selectedAuthorId: string | null, limit
             enabled: !!boardId,
             getNextPageParam: (lastPage) => {
                 const lastPost = lastPage[lastPage.length - 1];
-                return lastPost ? lastPost.createdAt : undefined;
+                return lastPost ? lastPost.createdAt?.toDate() : undefined;
             },
             onError: (error) => {
                 console.error("게시글 데이터를 불러오던 중 에러가 발생했습니다:", error);
@@ -42,6 +42,6 @@ async function fetchPosts(boardId: string, selectedAuthorId: string | null, limi
     }
 
     const snapshot = await getDocs(q);
-    const postsData = await Promise.all(snapshot.docs.map((doc) => mapDocToPost(doc)));
+    const postsData = snapshot.docs.map(doc => mapDocumentToPost(doc));
     return postsData;
 }
