@@ -1,3 +1,5 @@
+import { Timestamp } from "firebase/firestore";
+
 export interface Post {
   id: string;
   boardId: string;
@@ -6,10 +8,10 @@ export interface Post {
   thumbnailImageURL: string | null;
   authorId: string;
   authorName: string;
-  createdAt?: Date;
+  createdAt?: Timestamp;
   countOfComments: number;
   countOfReplies: number;
-  updatedAt?: Date;
+  updatedAt?: Timestamp;
   weekDaysFromFirstDay?: number;
   visibility?: PostVisibility;
 }

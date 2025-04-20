@@ -13,7 +13,7 @@ export const usePosts = (boardId: string, selectedAuthorId: string | null, limit
             enabled: !!boardId,
             getNextPageParam: (lastPage) => {
                 const lastPost = lastPage[lastPage.length - 1];
-                return lastPost ? lastPost.createdAt : undefined;
+                return lastPost ? lastPost.createdAt?.toDate() : undefined;
             },
             onError: (error) => {
                 console.error("게시글 데이터를 불러오던 중 에러가 발생했습니다:", error);

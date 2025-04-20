@@ -125,7 +125,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
             />
             <div className='flex items-center justify-between text-sm text-muted-foreground'>
               <p>
-                작성자: {post?.authorName || '?'} | 작성일: {post?.createdAt?.toLocaleString() || '?'}
+                작성자: {post?.authorName || '?'} | 작성일: {post?.createdAt?.toDate().toLocaleString() || '?'}
               </p>
             </div>
           </CardHeader>

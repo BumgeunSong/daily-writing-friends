@@ -41,6 +41,7 @@ export default function PostDetailPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
+
   const { data: post, isLoading, error } = useQuery(
     ['post', boardId, postId],
     () => fetchPost(boardId!, postId!),
@@ -56,6 +57,8 @@ export default function PostDetailPage() {
       enabled: !!post?.authorId,
     }
   );
+
+  console.log('post', post);
 
   if (isLoading) {
     return (
@@ -158,7 +161,7 @@ export default function PostDetailPage() {
           </div>
           <div className='flex items-center justify-between text-sm text-gray-500 dark:text-gray-400'>
             <p>
-              작성자: {authorNickname || '??'} | 작성일: {post.createdAt?.toLocaleString() || '?'}
+              작성자: {authorNickname || '??'} | 작성일: {post.createdAt?.toDate().toLocaleString() || '?'}
             </p>
             {isAuthor && (
               <div className='flex space-x-2'>

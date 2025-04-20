@@ -3,11 +3,11 @@ import {
   doc,
   getDoc,
   setDoc,
-  serverTimestamp,
   updateDoc,
   getDocs,
   query,
-  orderBy
+  orderBy,
+  Timestamp
 } from 'firebase/firestore';
 
 import { firestore } from '../firebase';
@@ -45,7 +45,7 @@ export async function createPost(boardId: string, title: string, content: string
     authorName,
     countOfComments: 0,
     countOfReplies: 0,
-    createdAt: new Date(),
+    createdAt: Timestamp.now(),
   };
   return setDoc(postRef, post);
 }
@@ -61,7 +61,7 @@ export const updatePost = async (
     title,
     content,  
     thumbnailImageURL: extractFirstImageUrl(content),
-    updatedAt: serverTimestamp(),
+    updatedAt: Timestamp.now(),
   });
 };
 

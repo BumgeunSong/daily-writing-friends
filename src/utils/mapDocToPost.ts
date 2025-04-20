@@ -13,8 +13,8 @@ export async function mapDocToPost(docSnap: QueryDocumentSnapshot<DocumentData>)
         authorName: data.authorName,
         countOfComments: data.countOfComments,
         countOfReplies: data.countOfReplies,
-        createdAt: data.createdAt?.toDate(),
-        updatedAt: data.updatedAt?.toDate(),
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
         weekDaysFromFirstDay: data.weekDaysFromFirstDay,
         thumbnailImageURL: data.thumbnailImageURL,
     };

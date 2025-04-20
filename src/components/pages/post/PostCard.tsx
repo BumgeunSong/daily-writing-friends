@@ -53,7 +53,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
           <div className='ml-2'>
             <p className='text-sm font-medium'>{authorData?.nickname}</p>
             <p className='text-xs text-muted-foreground'>
-              {post.createdAt?.toLocaleString() || '?'}
+              {post.createdAt?.toDate().toLocaleString() || '?'}
             </p>
           </div>
         </div>
