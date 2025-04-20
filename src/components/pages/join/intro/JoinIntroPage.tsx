@@ -14,6 +14,7 @@ export default function JoinIntroPage() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const [daysRemaining, setDaysRemaining] = useState<number>(0)
+  const [isLoading, setIsLoading] = useState<boolean>(false)
   const { data: upcomingBoard } = useUpcomingBoard()
   
   // Calculate days remaining until cohort starts
@@ -33,6 +34,7 @@ export default function JoinIntroPage() {
 
   const handleJoin = async () => {
     try {
+      setIsLoading(true)
       await signInWithGoogle()
       navigate("/join/form")
     } catch (error) {
@@ -41,6 +43,8 @@ export default function JoinIntroPage() {
         description: "다시 시도해주세요.",
         variant: "destructive"
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -63,7 +67,7 @@ export default function JoinIntroPage() {
         <div className="h-12" />
 
         {/* Sticky CTA at bottom */}
-        <IntroCTA onLogin={handleJoin} cohort={upcomingBoard?.cohort} />
+        <IntroCTA onLogin={handleJoin} cohort={upcomingBoard?.cohort} isLoading={isLoading} />
       </div>
     </div>
   )
