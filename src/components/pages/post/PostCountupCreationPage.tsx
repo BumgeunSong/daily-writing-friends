@@ -9,23 +9,25 @@ import { useToast } from '@/hooks/use-toast';
 import { PostSubmitButton } from './PostSubmitButton';
 import { fetchUserNickname } from '@/utils/userUtils';
 
+const TARGET_TIME = 5;
+
 export default function PostFreewritingPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
   const { toast } = useToast();
   const userNickname = fetchUserNickname(currentUser?.uid);
-  
+
   // 상태 관리
   const POST_TITLE = userNickname ? `${userNickname}님의 프리라이팅` : '프리라이팅';
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timerStatus, setTimerStatus] = useState<WritingStatus>(WritingStatus.Paused);
   const [isReached, setIsReached] = useState(false);
-  
+
   // 타이핑 감지를 위한 타임아웃 ref
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // 타이머 목표 시간 도달 처리
   const handleTimerReach = useCallback(() => {
     setIsReached(true);
@@ -35,25 +37,22 @@ export default function PostFreewritingPage() {
       variant: "default"
     });
   }, [toast]);
-  
+
   // 텍스트 변경 시 타이핑 감지
   const handleContentChange = (newContent: string) => {
     setContent(newContent);
-    
+
     // 타이핑 중이면 WritingStatus를 Writing으로 설정
     setTimerStatus(WritingStatus.Writing);
-    
+
     // 이전 타임아웃이 있으면 제거
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
-    
+
     // 2초 동안 타이핑이 없으면 Paused로 설정
     typingTimeoutRef.current = setTimeout(() => {
-      // 목표에 도달하지 않았을 때만 일시 정지 상태로 변경
-      if (!isReached) {
-        setTimerStatus(WritingStatus.Paused);
-      }
+      setTimerStatus(WritingStatus.Paused);
     }, 2000);
   };
 
@@ -65,13 +64,13 @@ export default function PostFreewritingPage() {
       }
     };
   }, []);
-  
+
   // 게시물 제출
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!currentUser || !boardId) return;
-    
+
     if (!POST_TITLE.trim() || !content.trim()) {
       toast({
         title: "입력 오류",
@@ -80,9 +79,9 @@ export default function PostFreewritingPage() {
       });
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       await createPost(
         boardId,
@@ -91,12 +90,12 @@ export default function PostFreewritingPage() {
         currentUser.uid,
         currentUser.displayName || '익명'
       );
-      
+
       toast({
         title: "업로드 완료",
         description: "프리라이팅으로 쓴 글은 다른 사람에게 보이지 않아요."
       });
-      
+
       navigate(`/boards/${boardId}`);
     } catch (error) {
       console.error('게시 중 오류:', error);
@@ -117,19 +116,19 @@ export default function PostFreewritingPage() {
         status={timerStatus}
         reached={isReached}
         onReach={handleTimerReach}
-        targetTime={5 * 60} // 5분
+        targetTime={TARGET_TIME}
       />
-      
+
       <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 pb-8 pt-6'>
         <form onSubmit={handleSubmit} className='space-y-6'>
-          
-          <PostTextEditor 
+
+          <PostTextEditor
             value={content}
             onChange={handleContentChange}
           />
-          
+
           <div className='flex justify-end items-center'>
-            <PostSubmitButton 
+            <PostSubmitButton
               isSubmitting={isSubmitting}
               disabled={!isReached || !POST_TITLE.trim() || !content.trim()}
               label={isReached ? "업로드하기" : "아직 시간이 남았어요"}
