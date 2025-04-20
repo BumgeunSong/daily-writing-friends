@@ -20,6 +20,7 @@ import ProtectedJoinFormPage from './components/pages/join/form/ProtectedJoinFor
 import JoinFormPageForNewUser from './components/pages/join/form/JoinFormPageForNewUser';
 import JoinFormPageForActiveUser from './components/pages/join/form/JoinFormPageForActiveUser';
 import PostFreewritingPage from './components/pages/post/PostFreewritingPage';
+import PostFreewritingIntro from './components/pages/post/PostFreewritingIntro';
 
 export default function App() {
   const { currentUser } = useAuth();
@@ -52,6 +53,8 @@ export default function App() {
         <Route path='/account/edit' element={<EditAccountPage />} />
         <Route path='/stats' element={<StatsPage />} />
       </Route>
+      
+      <Route path='/board/:boardId/free-writing/intro' element={<PostFreewritingIntro />} />
       
       <Route path='/join' element={<JoinIntroPage />} />
       <Route path='/join/form' element={<ProtectedJoinFormPage />} />
