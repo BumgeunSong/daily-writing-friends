@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { PostTextEditor } from './PostTextEditor';
@@ -20,21 +20,21 @@ export default function PostCountdownCreationPage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [timerStatus, setTimerStatus] = useState<WritingStatus>(WritingStatus.Writing);
+  const [timerStatus, setTimerStatus] = useState<WritingStatus>(WritingStatus.Paused);
   const [isExpired, setIsExpired] = useState(false);
   
   // 타이핑 감지를 위한 타임아웃 ref
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // 타이머 만료 처리
-  const handleTimerExpire = () => {
+  const handleTimerExpire = useCallback(() => {
     setIsExpired(true);
     toast({
       title: "프리라이팅 성공!",
       description: "목표 시간을 달성했습니다. 이제 글을 업로드할 수 있어요.",
       variant: "default"
     });
-  };
+  }, [toast]);
   
   // 텍스트 변경 시 타이핑 감지
   const handleContentChange = (newContent: string) => {

@@ -45,11 +45,6 @@ export default function CountdownWritingTimer({
   }, [totalTime]);
 
   useEffect(() => {
-    // 이미 만료된 경우 타이머를 실행하지 않음
-    if (expired) {
-      return;
-    }
-
     // Writing 상태일 때만 타이머 실행
     if (status === WritingStatus.Writing) {
       const timer = setInterval(() => {
@@ -70,7 +65,7 @@ export default function CountdownWritingTimer({
     }
     
     // Paused 상태일 때는 타이머 실행하지 않음 (일시 정지)
-  }, [status, expired, onExpire, totalTime]);
+  }, [status, expired, totalTime]);
 
   const getColorClass = () => {
     return expired ? "bg-green-500" : "bg-blue-500"
