@@ -12,6 +12,7 @@ interface PostContentProps {
 
 export function PostContent({ post, isAuthor }: PostContentProps) {
     const isPrivateAndNotAuthor = post.visibility === PostVisibility.PRIVATE && !isAuthor;
+    const isPrivateAndAuthor = post.visibility === PostVisibility.PRIVATE && isAuthor;
 
     if (!post?.content) {
         return <p>내용이 없습니다.</p>;
@@ -33,16 +34,25 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
     try {
         const sanitizedContent = sanitizePostContent(post.content);
         return (
-            <div
-                dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-                className="prose prose-lg prose-slate dark:prose-invert max-w-none mt-6
-            prose-h1:text-3xl prose-h1:font-semibold 
-            prose-h2:text-2xl prose-h2:font-semibold
-            prose-p:my-4
-            prose-ul:my-4
-            prose-ol:my-4
-            "
-            />
+            <div className="relative">
+                {isPrivateAndAuthor && (
+                    <div className="flex items-center mb-4">
+                        <span className="inline-flex items-center rounded-md bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600 ring-1 ring-inset ring-gray-300">
+                            <Lock className="size-3 mr-1" /> 비공개 글
+                        </span>
+                    </div>
+                )}
+                <div
+                    dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+                    className="prose prose-lg prose-slate dark:prose-invert max-w-none mt-6
+                        prose-h1:text-3xl prose-h1:font-semibold 
+                        prose-h2:text-2xl prose-h2:font-semibold
+                        prose-p:my-4
+                        prose-ul:my-4
+                        prose-ol:my-4
+                    "
+                />
+            </div>
         );
     } catch (error) {
         const err = error instanceof Error ? error : new Error('알 수 없는 렌더링 오류가 발생했습니다.');
