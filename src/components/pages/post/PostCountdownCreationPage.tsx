@@ -2,22 +2,22 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { PostTextEditor } from './PostTextEditor';
-import { PostTitleEditor } from './PostTitleEditor';
-import { PostBackButton } from './PostBackButton';
 import CountupWritingTimer from './PostCountdownWritingTimer';
 import { WritingStatus } from '@/types/WritingStatus';
 import { createPost } from '@/utils/postUtils';
 import { useToast } from '@/hooks/use-toast';
 import { PostSubmitButton } from './PostSubmitButton';
+import { fetchUserNickname } from '@/utils/userUtils';
 
 export default function PostCountupCreationPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
   const { toast } = useToast();
+  const userNickname = fetchUserNickname(currentUser?.uid);
   
   // 상태 관리
-  const [title, setTitle] = useState('');
+  const POST_TITLE = userNickname ? `${userNickname}님의 프리라이팅` : '프리라이팅';
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timerStatus, setTimerStatus] = useState<WritingStatus>(WritingStatus.Paused);
@@ -66,30 +66,13 @@ export default function PostCountupCreationPage() {
     };
   }, []);
   
-  // 제목 변경 시도 같은 패턴 적용
-  const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setTitle(e.target.value);
-    setTimerStatus(WritingStatus.Writing);
-    
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-    
-    typingTimeoutRef.current = setTimeout(() => {
-      // 목표에 도달하지 않았을 때만 일시 정지 상태로 변경
-      if (!isReached) {
-        setTimerStatus(WritingStatus.Paused);
-      }
-    }, 2000);
-  };
-  
   // 게시물 제출
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!currentUser || !boardId) return;
     
-    if (!title.trim() || !content.trim()) {
+    if (!POST_TITLE.trim() || !content.trim()) {
       toast({
         title: "입력 오류",
         description: "제목과 내용을 모두 입력해주세요.",
@@ -103,7 +86,7 @@ export default function PostCountupCreationPage() {
     try {
       await createPost(
         boardId,
-        title,
+        POST_TITLE,
         content,
         currentUser.uid,
         currentUser.displayName || '익명'
@@ -138,16 +121,7 @@ export default function PostCountupCreationPage() {
       />
       
       <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 pb-8 pt-6'>
-        <div className="mb-6">
-          {boardId && <PostBackButton boardId={boardId} />}
-        </div>
-        
         <form onSubmit={handleSubmit} className='space-y-6'>
-          <PostTitleEditor
-            value={title}
-            onChange={handleTitleChange}
-            className='mb-4'
-          />
           
           <PostTextEditor 
             value={content}
