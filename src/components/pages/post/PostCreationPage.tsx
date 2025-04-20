@@ -11,6 +11,7 @@ import { useDraftLoader } from '@/hooks/useDraftLoader';
 import { usePostEditor } from '@/hooks/usePostEditor';
 import { usePostSubmit } from '@/hooks/usePostSubmit';
 import { useAutoSaveDrafts } from '@/hooks/useAutoSaveDrafts';
+import { PostSubmitButton } from './PostSubmitButton';
 
 export default function PostCreationPage() {
   const { currentUser } = useAuth();
@@ -96,20 +97,10 @@ export default function PostCreationPage() {
               </DraftsDrawer>
             )}
             
-            <Button 
-              type='submit' 
-              className='px-6'
-              disabled={isSubmitting || !title.trim() || !content.trim()}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  게시 중...
-                </>
-              ) : (
-                '게시하기'
-              )}
-            </Button>
+            <PostSubmitButton 
+              isSubmitting={isSubmitting}
+              disabled={!title.trim() || !content.trim()}
+            />
           </div>
         </form>
       )}
