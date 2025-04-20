@@ -13,7 +13,6 @@ import {
 import { firestore } from '../firebase';
 import { Post } from '../types/Posts';
 import { useQuery } from '@tanstack/react-query';
-import { mapDocToPost } from './mapDocToPost';
 
 export const fetchPost = async (boardId: string, postId: string): Promise<Post | null> => {
   const docSnap = await getDoc(doc(firestore, `boards/${boardId}/posts/${postId}`));
@@ -23,7 +22,7 @@ export const fetchPost = async (boardId: string, postId: string): Promise<Post |
     return null; 
   }
 
-  return mapDocToPost(docSnap);
+  return docSnap.data() as Post;
 };
 
 export const usePostTitle = (boardId: string, postId: string) => {
