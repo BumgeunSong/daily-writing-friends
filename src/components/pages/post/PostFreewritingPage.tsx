@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { PostTextEditor } from './PostTextEditor';
-import CountupWritingTimer from './PostCountupWritingTimer';
+import CountupWritingTimer from './CountupWritingTimer';
 import { WritingStatus } from '@/types/WritingStatus';
 import { createPost } from '@/utils/postUtils';
 import { useToast } from '@/hooks/use-toast';
