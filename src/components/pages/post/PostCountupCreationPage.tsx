@@ -128,7 +128,7 @@ export default function PostFreewritingPage() {
             onChange={handleContentChange}
           />
           
-          <div className='flex justify-between items-center'>
+          <div className='flex justify-end items-center'>
             <PostSubmitButton 
               isSubmitting={isSubmitting}
               disabled={!isReached || !POST_TITLE.trim() || !content.trim()}
