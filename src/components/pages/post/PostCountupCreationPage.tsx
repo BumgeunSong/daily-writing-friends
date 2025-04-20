@@ -9,7 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { PostSubmitButton } from './PostSubmitButton';
 import { fetchUserNickname } from '@/utils/userUtils';
 
-const TARGET_TIME = 5;
+// 목표 시간 5 minutes
+const TARGET_TIME = 5 * 60;
 
 export default function PostFreewritingPage() {
   const { currentUser } = useAuth();
