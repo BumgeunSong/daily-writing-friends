@@ -77,7 +77,6 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, selec
     return <StatusMessage error errorMessage="글이 하나도 없어요." />;
   }
 
-  console.log('key of all posts', allPosts.map((post) => post.id));
   return (
     <div className='space-y-6'>
       {allPosts.map((post) => (
