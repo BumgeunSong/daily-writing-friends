@@ -1,5 +1,5 @@
 import { deleteDoc, doc } from 'firebase/firestore';
-import { AlertCircle, Edit, Trash2 } from 'lucide-react';
+import { AlertCircle, Edit, Trash2, Lock } from 'lucide-react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,6 +14,8 @@ import { PostAdjacentButtons } from './PostAdjacentButtons';
 import { sanitizePostContent } from '@/utils/contentUtils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import * as Sentry from '@sentry/react';
+import { PostVisibility } from '@/types/Posts';
+
 const deletePost = async (boardId: string, id: string): Promise<void> => {
   await deleteDoc(doc(firestore, `boards/${boardId}/posts`, id));
 };
@@ -77,6 +79,22 @@ export default function PostDetailPage() {
 
   const isAuthor = currentUser?.uid === post.authorId;
 
+  // Private 포스트는 작성자만 볼 수 있음
+  if (post.visibility === PostVisibility.PRIVATE && !isAuthor) {
+    return (
+      <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8 text-center'>
+        <Alert className="mb-6 border-yellow-500 bg-yellow-50">
+          <Lock className="size-4 text-yellow-800" />
+          <AlertTitle className="text-yellow-800">비공개 게시글</AlertTitle>
+          <AlertDescription className="text-yellow-700">
+            이 게시글은 작성자만 볼 수 있습니다.
+          </AlertDescription>
+        </Alert>
+        {boardId && <PostBackButton boardId={boardId} />}
+      </div>
+    );
+  }
+
   const sanitizedContent = sanitizePostContent(post.content);
   const renderContent = () => {
     if (!post?.content) {
@@ -130,7 +148,14 @@ export default function PostDetailPage() {
       {boardId && <PostBackButton boardId={boardId} className='mb-6' />}
       <article className='space-y-6'>
         <header className='space-y-4'>
-          <h1 className='text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl mb-4'>{post.title}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className='text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl mb-4'>{post.title}</h1>
+            {post.visibility === PostVisibility.PRIVATE && (
+              <span className="inline-flex items-center rounded-md bg-yellow-50 px-2 py-1 text-xs font-medium text-yellow-800 ring-1 ring-inset ring-yellow-600/20">
+                <Lock className="size-3 mr-1" /> 이 글은 작성자만 볼 수 있어요
+              </span>
+            )}
+          </div>
           <div className='flex items-center justify-between text-sm text-gray-500 dark:text-gray-400'>
             <p>
               작성자: {authorNickname || '??'} | 작성일: {post.createdAt?.toLocaleString() || '?'}

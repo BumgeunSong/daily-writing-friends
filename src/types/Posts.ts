@@ -1,4 +1,3 @@
-
 export interface Post {
   id: string;
   boardId: string;
@@ -12,4 +11,10 @@ export interface Post {
   countOfReplies: number;
   updatedAt?: Date;
   weekDaysFromFirstDay?: number;
+  visibility?: PostVisibility;
+}
+
+export enum PostVisibility {
+  PUBLIC = 'public',
+  PRIVATE = 'private'
 }
