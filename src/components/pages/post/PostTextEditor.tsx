@@ -182,15 +182,7 @@ export function PostTextEditor({
   }, []);
 
   return (
-    <div className='space-y-2'>
-      {isUploading && (
-        <div className='relative w-full'>
-          <Progress value={uploadProgress} className="h-1" />
-          <p className='text-sm text-muted-foreground mt-1 text-center'>
-            이미지 업로드 중... {uploadProgress}%
-          </p>
-        </div>
-      )}
+    <div className='space-y-2 relative'>
       <div className='rounded-lg border border-border bg-background'>
         <ReactQuill
           ref={quillRef}
@@ -203,6 +195,17 @@ export function PostTextEditor({
           className="prose prose-lg prose-slate dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold"
         />
       </div>
+      
+      {isUploading && (
+        <div className='absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg z-10'>
+          <div className='w-4/5 max-w-md'>
+            <Progress value={uploadProgress} className="h-2" />
+            <p className='text-sm font-medium text-center mt-3'>
+              이미지 업로드 중... {uploadProgress}%
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
