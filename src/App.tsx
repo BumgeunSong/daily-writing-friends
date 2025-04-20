@@ -19,7 +19,7 @@ import JoinIntroPage from './components/pages/join/intro/JoinIntroPage';
 import ProtectedJoinFormPage from './components/pages/join/form/ProtectedJoinFormPage';
 import JoinFormPageForNewUser from './components/pages/join/form/JoinFormPageForNewUser';
 import JoinFormPageForActiveUser from './components/pages/join/form/JoinFormPageForActiveUser';
-import PostCountdownCreationPage from './components/pages/post/PostCountdownCreationPage';
+import PostFreewritingPage from './components/pages/post/PostCountupCreationPage';
 
 export default function App() {
   const { currentUser } = useAuth();
@@ -43,7 +43,7 @@ export default function App() {
         <Route path='/boards/list' element={<BoardListPage />} />
         <Route path='/board/:boardId' element={<BoardPage />} />
         <Route path='/create/:boardId' element={<PostCreationPage />} />
-        <Route path='/create/:boardId/countdown' element={<PostCountdownCreationPage />} />
+        <Route path='/create/:boardId/free-writing' element={<PostFreewritingPage />} />
         <Route path='/board/:boardId/post/:postId' element={<PostDetailPage />} />
         <Route path='/board/:boardId/edit/:postId' element={<PostEditPage />} />
         <Route path='/notifications' element={<NotificationsPage />} />

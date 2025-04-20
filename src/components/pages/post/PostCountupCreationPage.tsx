@@ -2,14 +2,14 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { PostTextEditor } from './PostTextEditor';
-import CountupWritingTimer from './PostCountdownWritingTimer';
+import CountupWritingTimer from './PostCountupWritingTimer';
 import { WritingStatus } from '@/types/WritingStatus';
 import { createPost } from '@/utils/postUtils';
 import { useToast } from '@/hooks/use-toast';
 import { PostSubmitButton } from './PostSubmitButton';
 import { fetchUserNickname } from '@/utils/userUtils';
 
-export default function PostCountupCreationPage() {
+export default function PostFreewritingPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
@@ -131,7 +131,7 @@ export default function PostCountupCreationPage() {
           <div className='flex justify-between items-center'>
             <PostSubmitButton 
               isSubmitting={isSubmitting}
-              disabled={!isReached || !title.trim() || !content.trim()}
+              disabled={!isReached || !POST_TITLE.trim() || !content.trim()}
               label={isReached ? "업로드하기" : "아직 시간이 남았어요"}
               submittingLabel="업로드 중..."
             />
