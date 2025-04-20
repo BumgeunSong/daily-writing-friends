@@ -12,6 +12,7 @@ import { PostTitleEditor } from './PostTitleEditor';
 import { PostBackButton } from './PostBackButton';
 import { toast } from '@/hooks/use-toast';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { formatDateToKorean } from '@/utils/dateUtils';
 
 // 메인 컴포넌트
 export default function PostEditPage() {
@@ -125,7 +126,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
             />
             <div className='flex items-center justify-between text-sm text-muted-foreground'>
               <p>
-                작성자: {post?.authorName || '?'} | 작성일: {post?.createdAt?.toDate().toLocaleString() || '?'}
+                작성자: {post?.authorName || '?'} | 작성일: {post?.createdAt ? formatDateToKorean(post.createdAt.toDate()) : '?'}
               </p>
             </div>
           </CardHeader>

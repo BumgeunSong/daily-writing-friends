@@ -15,6 +15,7 @@ import { sanitizePostContent } from '@/utils/contentUtils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import * as Sentry from '@sentry/react';
 import { PostVisibility } from '@/types/Posts';
+import { formatDateToKorean } from '@/utils/dateUtils';
 
 const deletePost = async (boardId: string, id: string): Promise<void> => {
   await deleteDoc(doc(firestore, `boards/${boardId}/posts`, id));
@@ -161,7 +162,7 @@ export default function PostDetailPage() {
           </div>
           <div className='flex items-center justify-between text-sm text-gray-500 dark:text-gray-400'>
             <p>
-              작성자: {authorNickname || '??'} | 작성일: {post.createdAt?.toDate().toLocaleString() || '?'}
+              작성자: {authorNickname || '??'} | 작성일: {post.createdAt ? formatDateToKorean(post.createdAt.toDate()) : '?'}
             </p>
             {isAuthor && (
               <div className='flex space-x-2'>
