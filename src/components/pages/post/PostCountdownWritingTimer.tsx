@@ -79,23 +79,27 @@ export default function CountdownWritingTimer({
   }, [status, expired, onExpire, totalTime, lastUpdateTime])
 
   const getColorClass = () => {
-    return "bg-blue-500"
+    return expired ? "bg-green-500" : "bg-blue-500"
   }
 
   return (
-    <div className="sticky top-0 z-10 w-full bg-white border-b shadow-sm dark:bg-gray-900 dark:border-gray-800">
-      <div className="container px-4 py-2 mx-auto">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Clock className="w-5 h-5 text-gray-500" />
-            <span className="font-medium">{`${formatTime(timeLeft)}`}</span>
+    <div className="sticky top-0 z-50 w-full bg-white border-b shadow-md dark:bg-gray-900 dark:border-gray-800">
+      <div className="w-full px-4 py-3 mx-auto max-w-7xl">
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center space-x-3">
+            <Clock className="w-5 h-5 text-blue-500" />
+            <span className="text-lg font-medium">{formatTime(timeLeft)}</span>
           </div>
-          <div className="text-xs text-gray-500">
-            {expired ? "성공" : status === WritingStatus.Writing ? "쓰는 중..." : "일시정지"}
+          <div className={`px-2 py-1 text-xs font-medium rounded-full ${
+            expired 
+              ? "text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-300" 
+              : "text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-300"
+          }`}>
+            {expired ? "프리라이팅 성공!" : status === WritingStatus.Writing ? "쓰는 중..." : "일시정지"}
           </div>
         </div>
 
-        <div className="w-full h-2 mt-2 bg-gray-200 rounded-full dark:bg-gray-700">
+        <div className="w-full h-2 bg-gray-100 rounded-full dark:bg-gray-800">
           <div
             className={`h-2 rounded-full transition-all duration-1000 ${getColorClass()}`}
             style={{ width: `${progress}%` }}

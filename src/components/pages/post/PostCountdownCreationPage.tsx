@@ -86,8 +86,8 @@ export default function PostCountdownCreationPage() {
   };
 
   return (
-    <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 pb-8'>
-      {/* 카운트다운 타이머 */}
+    <>
+      {/* 카운트다운 타이머 - 컨테이너 외부에 배치 */}
       <CountdownWritingTimer
         status={timerStatus}
         expired={isExpired}
@@ -95,39 +95,41 @@ export default function PostCountdownCreationPage() {
         totalTime={5 * 60} // 5분 (테스트용, 필요에 따라 조정)
       />
       
-      <div className="my-6">
-        {boardId && <PostBackButton boardId={boardId} />}
-      </div>
-      
-      <form onSubmit={handleSubmit} className='space-y-6'>
-        <PostTitleEditor
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className='mb-4'
-        />
-        
-        <PostTextEditor 
-          value={content}
-          onChange={setContent}
-        />
-        
-        <div className='flex justify-between items-center'>
-          <Button 
-            type='button' 
-            variant="outline"
-            onClick={toggleTimerStatus}
-          >
-            {timerStatus === WritingStatus.Writing ? '일시정지' : '계속 쓰기'}
-          </Button>
-          
-          <PostSubmitButton 
-            isSubmitting={isSubmitting}
-            disabled={!title.trim() || !content.trim()}
-            label="업로드하기"
-            submittingLabel="업로드 중..."
-          />
+      <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 pb-8 pt-6'>
+        <div className="mb-6">
+          {boardId && <PostBackButton boardId={boardId} />}
         </div>
-      </form>
-    </div>
+        
+        <form onSubmit={handleSubmit} className='space-y-6'>
+          <PostTitleEditor
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className='mb-4'
+          />
+          
+          <PostTextEditor 
+            value={content}
+            onChange={setContent}
+          />
+          
+          <div className='flex justify-between items-center'>
+            <Button 
+              type='button' 
+              variant="outline"
+              onClick={toggleTimerStatus}
+            >
+              {timerStatus === WritingStatus.Writing ? '일시정지' : '계속 쓰기'}
+            </Button>
+            
+            <PostSubmitButton 
+              isSubmitting={isSubmitting}
+              disabled={!title.trim() || !content.trim()}
+              label="업로드하기"
+              submittingLabel="업로드 중..."
+            />
+          </div>
+        </form>
+      </div>
+    </>
   );
 }
