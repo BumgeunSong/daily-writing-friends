@@ -4,13 +4,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
 import { PostBackButton } from './PostBackButton';
-import CountdownWritingTimer from './PostCountdownWritingTimer';
+import CountupWritingTimer from './PostCountdownWritingTimer';
 import { WritingStatus } from '@/types/WritingStatus';
 import { createPost } from '@/utils/postUtils';
 import { useToast } from '@/hooks/use-toast';
 import { PostSubmitButton } from './PostSubmitButton';
 
-export default function PostCountdownCreationPage() {
+export default function PostCountupCreationPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { boardId } = useParams<{ boardId: string }>();
@@ -21,14 +21,14 @@ export default function PostCountdownCreationPage() {
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [timerStatus, setTimerStatus] = useState<WritingStatus>(WritingStatus.Paused);
-  const [isExpired, setIsExpired] = useState(false);
+  const [isReached, setIsReached] = useState(false);
   
   // 타이핑 감지를 위한 타임아웃 ref
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // 타이머 만료 처리
-  const handleTimerExpire = useCallback(() => {
-    setIsExpired(true);
+  // 타이머 목표 시간 도달 처리
+  const handleTimerReach = useCallback(() => {
+    setIsReached(true);
     toast({
       title: "프리라이팅 성공!",
       description: "목표 시간을 달성했습니다. 이제 글을 업로드할 수 있어요.",
@@ -50,8 +50,8 @@ export default function PostCountdownCreationPage() {
     
     // 2초 동안 타이핑이 없으면 Paused로 설정
     typingTimeoutRef.current = setTimeout(() => {
-      // 만료되지 않았을 때만 일시 정지 상태로 변경
-      if (!isExpired) {
+      // 목표에 도달하지 않았을 때만 일시 정지 상태로 변경
+      if (!isReached) {
         setTimerStatus(WritingStatus.Paused);
       }
     }, 2000);
@@ -76,8 +76,8 @@ export default function PostCountdownCreationPage() {
     }
     
     typingTimeoutRef.current = setTimeout(() => {
-      // 만료되지 않았을 때만 일시 정지 상태로 변경
-      if (!isExpired) {
+      // 목표에 도달하지 않았을 때만 일시 정지 상태로 변경
+      if (!isReached) {
         setTimerStatus(WritingStatus.Paused);
       }
     }, 2000);
@@ -129,12 +129,12 @@ export default function PostCountdownCreationPage() {
 
   return (
     <>
-      {/* 카운트다운 타이머 - 컨테이너 외부에 배치 */}
-      <CountdownWritingTimer
+      {/* 카운트업 타이머 - 컨테이너 외부에 배치 */}
+      <CountupWritingTimer
         status={timerStatus}
-        expired={isExpired}
-        onExpire={handleTimerExpire}
-        totalTime={5 * 60} // 5분 (테스트용, 필요에 따라 조정)
+        reached={isReached}
+        onReach={handleTimerReach}
+        targetTime={5 * 60} // 5분
       />
       
       <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 pb-8 pt-6'>
@@ -157,8 +157,8 @@ export default function PostCountdownCreationPage() {
           <div className='flex justify-between items-center'>
             <PostSubmitButton 
               isSubmitting={isSubmitting}
-              disabled={!isExpired || !title.trim() || !content.trim()}
-              label={isExpired ? "업로드하기" : "아직 시간이 남았어요"}
+              disabled={!isReached || !title.trim() || !content.trim()}
+              label={isReached ? "업로드하기" : "아직 시간이 남았어요"}
               submittingLabel="업로드 중..."
             />
           </div>

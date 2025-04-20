@@ -1,36 +1,34 @@
 import { useEffect, useState } from "react"
 import { Clock } from "lucide-react"
 import { WritingStatus } from "@/types/WritingStatus"
+import { useInterval } from "@/hooks/useInterval"
 
-interface CountdownWritingTimerProps {
+interface CountupWritingTimerProps {
   /**
-   * Whether the countdown is currently active
+   * Whether the timer is currently active
    */
   status: WritingStatus
   /**
-   * Whether the countdown has expired
+   * Whether the target time has been reached
    */
-  expired: boolean
+  reached: boolean
   /**
-   * Callback function when the countdown expires
+   * Callback function when target time is reached
    */
-  onExpire: () => void
+  onReach: () => void
   /**
-   * Total time in seconds (default: 5 minutes)
+   * Target time in seconds (default: 5 minutes)
    */
-  totalTime?: number
+  targetTime?: number
 }
 
-export default function CountdownWritingTimer({
-    status,
-  expired,
-  onExpire,
-  totalTime = 5 * 60, // 5 minutes in seconds
-}: CountdownWritingTimerProps) {
-  const [timeLeft, setTimeLeft] = useState(totalTime)
-
-  // Calculate progress percentage
-  const progress = (timeLeft / totalTime) * 100
+export default function CountupWritingTimer({
+  status,
+  reached,
+  onReach,
+  targetTime = 5 * 60, // 5 minutes in seconds
+}: CountupWritingTimerProps) {
+  const [elapsedTime, setElapsedTime] = useState(0)
 
   // Format time as MM:SS
   const formatTime = (seconds: number) => {
@@ -39,60 +37,48 @@ export default function CountdownWritingTimer({
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
   
-  // 컴포넌트가 마운트되거나 totalTime이 변경될 때 타이머를 초기화
+  // 컴포넌트가 마운트될 때 타이머를 초기화
   useEffect(() => {
-    setTimeLeft(totalTime);
-  }, [totalTime]);
+    setElapsedTime(0);
+  }, []);
 
-  useEffect(() => {
-    // Writing 상태일 때만 타이머 실행
-    if (status === WritingStatus.Writing) {
-      const timer = setInterval(() => {
-        setTimeLeft((prevTime) => {
-          const newTime = Math.max(0, prevTime - 1);
-          
-          // 타이머가 0에 도달했을 때 만료 콜백 호출
-          if (newTime === 0 && prevTime !== 0) {
-            onExpire();
-          }
-          
-          return newTime;
-        });
-      }, 1000);
-      
-      // 클린업 함수
-      return () => clearInterval(timer);
-    }
-    
-    // Paused 상태일 때는 타이머 실행하지 않음 (일시 정지)
-  }, [status, expired, totalTime]);
+  const delay = status === WritingStatus.Writing ? 1000 : null;
 
-  const getColorClass = () => {
-    return expired ? "bg-green-500" : "bg-blue-500"
-  }
+  useInterval(() => {
+    setElapsedTime((prevTime) => {
+      const newTime = prevTime + 1;
+      // 목표 시간에 도달했을 때 콜백 호출
+      if (newTime >= targetTime && !reached) {
+        onReach();
+      }
+      return newTime;
+    });
+  }, delay);
 
   return (
     <div className="sticky top-0 z-50 w-full bg-white border-b shadow-md dark:bg-gray-900 dark:border-gray-800">
       <div className="w-full px-4 py-3 mx-auto max-w-7xl">
+        {/* 프리라이팅 모드 제목과 부제목 */}
+        <div className="mb-3">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">프리라이팅 모드</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            이 글은 다른 사람에게 보여지지 않아요. 자유롭게 떠오르는 생각들을 써내려가보세요.
+          </p>
+        </div>
+        
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center space-x-3">
             <Clock className="w-5 h-5 text-blue-500" />
-            <span className="text-lg font-medium">{formatTime(timeLeft)}</span>
+            <span className="text-lg font-medium">{formatTime(elapsedTime)}</span>
+            <span className="text-sm text-gray-500">/ {formatTime(targetTime)}</span>
           </div>
           <div className={`px-2 py-1 text-xs font-medium rounded-full ${
-            expired 
+            reached 
               ? "text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-300" 
               : "text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-300"
           }`}>
-            {expired ? "프리라이팅 성공!" : status === WritingStatus.Writing ? "쓰는 중..." : "일시정지"}
+            {reached ? "프리라이팅 성공!" : status === WritingStatus.Writing ? "쓰는 중..." : "일시정지"}
           </div>
-        </div>
-
-        <div className="w-full h-2 bg-gray-100 rounded-full dark:bg-gray-800">
-          <div
-            className={`h-2 rounded-full transition-all duration-1000 ${getColorClass()}`}
-            style={{ width: `${progress}%` }}
-          />
         </div>
       </div>
     </div>
