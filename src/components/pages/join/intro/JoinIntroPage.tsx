@@ -7,12 +7,10 @@ import GoalWrapper from "./GoalWrapper"
 import CountdownWrapper from "./CountdownWrapper"
 import CohortDetailsWrapper from "./CohortDetailsWrapper"
 import { useUpcomingBoard } from "@/hooks/useUpcomingBoard"
-import { useToast } from "@/hooks/use-toast"
 import { signInWithGoogle } from "@/firebase"
 
 export default function JoinIntroPage() {
   const navigate = useNavigate()
-  const { toast } = useToast()
   const [daysRemaining, setDaysRemaining] = useState<number>(0)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const { data: upcomingBoard } = useUpcomingBoard()
@@ -38,11 +36,7 @@ export default function JoinIntroPage() {
       await signInWithGoogle()
       navigate("/join/form")
     } catch (error) {
-      toast({
-        title: "로그인 실패",
-        description: "다시 시도해주세요.",
-        variant: "destructive"
-      })
+      console.error("Error during sign-in:", error)
     } finally {
       setIsLoading(false)
     }
