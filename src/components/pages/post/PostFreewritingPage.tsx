@@ -123,7 +123,7 @@ export default function PostFreewritingPage() {
 
       <div className="flex-grow container mx-auto max-w-3xl px-4 sm:px-6 py-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
+          <div className="bg-card rounded-xl border overflow-hidden">
             <PostTextEditor value={content} onChange={handleContentChange} />
           </div>
 
