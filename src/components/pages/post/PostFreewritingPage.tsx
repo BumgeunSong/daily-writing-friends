@@ -10,6 +10,7 @@ import { createPost } from "@/utils/postUtils"
 import { useToast } from "@/hooks/use-toast"
 import { PostSubmitButton } from "./PostSubmitButton"
 import { fetchUserNickname } from "@/utils/userUtils"
+import { useQuery } from "@tanstack/react-query"
 
 // 목표 시간 5 minutes
 const TARGET_TIME = 5 * 60
@@ -19,7 +20,10 @@ export default function PostFreewritingPage() {
   const navigate = useNavigate()
   const { boardId } = useParams<{ boardId: string }>()
   const { toast } = useToast()
-  const userNickname = fetchUserNickname(currentUser?.uid)
+  const { data: userNickname } = useQuery({
+    queryKey: ["userNickname", currentUser?.uid],
+    queryFn: () => fetchUserNickname(currentUser?.uid),
+  })
 
   // 상태 관리
   const POST_TITLE = userNickname ? `${userNickname}님의 프리라이팅` : "프리라이팅"
