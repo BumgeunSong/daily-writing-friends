@@ -36,47 +36,51 @@ export default function CountupWritingTimer({
     const secs = seconds % 60
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
-  
+
   // 컴포넌트가 마운트될 때 타이머를 초기화
   useEffect(() => {
-    setElapsedTime(0);
-  }, []);
+    setElapsedTime(0)
+  }, [])
 
-  const delay = status === WritingStatus.Writing ? 1000 : null;
+  const delay = status === WritingStatus.Writing ? 1000 : null
 
   useInterval(() => {
     setElapsedTime((prevTime) => {
-      const newTime = prevTime + 1;
+      const newTime = prevTime + 1
       // 목표 시간에 도달했을 때 콜백 호출
       if (newTime >= targetTime && !reached) {
-        onReach();
+        onReach()
       }
-      return newTime;
-    });
-  }, delay);
+      return newTime
+    })
+  }, delay)
 
   return (
-    <div className="sticky top-0 z-50 w-full bg-white border-b shadow-md dark:bg-gray-900 dark:border-gray-800">
-      <div className="w-full px-4 py-3 mx-auto max-w-7xl">
+    <div className="sticky top-0 z-50 w-full bg-background border-b shadow-sm">
+      <div className="container mx-auto max-w-3xl px-4 py-4">
         {/* 프리라이팅 모드 제목과 부제목 */}
         <div className="mb-3">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">프리라이팅 모드</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <h2 className="text-xl font-bold text-primary">프리라이팅 모드</h2>
+          <p className="text-sm text-muted-foreground">
             이 글은 다른 사람에게 보여지지 않아요. 자유롭게 떠오르는 생각들을 써내려가보세요.
           </p>
         </div>
-        
-        <div className="flex items-center justify-between mb-1">
+
+        <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Clock className="w-5 h-5 text-blue-500" />
+            <Clock className="w-5 h-5 text-primary" />
             <span className="text-lg font-medium">{formatTime(elapsedTime)}</span>
-            <span className="text-sm text-gray-500">/ {formatTime(targetTime)}</span>
+            <span className="text-sm text-muted-foreground">/ {formatTime(targetTime)}</span>
           </div>
-          <div className={`px-2 py-1 text-xs font-medium rounded-full ${
-            reached 
-              ? "text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-300" 
-              : "text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-300"
-          }`}>
+          <div
+            className={`px-3 py-1 text-xs font-medium rounded-full ${
+              reached
+                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                : status === WritingStatus.Writing
+                  ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                  : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+            }`}
+          >
             {reached ? "프리라이팅 성공!" : status === WritingStatus.Writing ? "쓰는 중..." : "일시정지"}
           </div>
         </div>
