@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 import { PostSubmitButton } from "./PostSubmitButton"
 import { fetchUserNickname } from "@/utils/userUtils"
 import { useQuery } from "@tanstack/react-query"
+import { PostVisibility } from "@/types/Posts"
 
 // 목표 시간 5 minutes
 const TARGET_TIME = 5 * 60
@@ -90,7 +91,7 @@ export default function PostFreewritingPage() {
     setIsSubmitting(true)
 
     try {
-      await createPost(boardId, POST_TITLE, content, currentUser.uid, currentUser.displayName || "익명")
+      await createPost(boardId, POST_TITLE, content, currentUser.uid, userNickname ?? '', PostVisibility.PRIVATE)
 
       toast({
         title: "업로드 완료",

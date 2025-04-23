@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 
 import { firestore } from '../firebase';
-import { Post } from '../types/Posts';
+import { Post, PostVisibility } from '../types/Posts';
 import { useQuery } from '@tanstack/react-query';
 import { Posting } from '@/types/Posting';
 
@@ -78,7 +78,7 @@ export const usePostTitle = (boardId: string, postId: string) => {
   });
 };
 
-export async function createPost(boardId: string, title: string, content: string, authorId: string, authorName: string) {
+export async function createPost(boardId: string, title: string, content: string, authorId: string, authorName: string, visibility?: PostVisibility) {
   const postRef = doc(collection(firestore, `boards/${boardId}/posts`));
   const post: Post = {
     id: postRef.id,
@@ -91,6 +91,7 @@ export async function createPost(boardId: string, title: string, content: string
     countOfComments: 0,
     countOfReplies: 0,
     createdAt: Timestamp.now(),
+    visibility: visibility || PostVisibility.PUBLIC,
   };
   return setDoc(postRef, post);
 }
