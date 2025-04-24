@@ -1,105 +1,98 @@
-import { MessageCircle, User, Lock } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Post, PostVisibility } from '@/types/Post';
-import { Badge } from '@/components/ui/badge';
-import { getContentPreview } from '@/utils/contentUtils';
-import { formatDateToKorean } from '@/utils/dateUtils';
-import { useAuthorData } from '@/hooks/useAuthorData';
-import { Skeleton } from '@/components/ui/skeleton';
+"use client"
+
+import type React from "react"
+
+import { MessageCircle, User, Lock } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { type Post, PostVisibility } from "@/types/Post"
+import { Badge } from "@/components/ui/badge"
+import { getContentPreview } from "@/utils/contentUtils"
+import { useAuthorData } from "@/hooks/useAuthorData"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface PostCardProps {
-  post: Post;
-  onClick: (postId: string) => void;
+  post: Post
+  onClick: (postId: string) => void
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
-  const { authorData, isLoading: isAuthorLoading } = useAuthorData(post.authorId);
+  const { authorData, isLoading: isAuthorLoading } = useAuthorData(post.authorId)
 
-  const isPrivate = post.visibility === PostVisibility.PRIVATE;
-  const contentPreview = !isPrivate ? getContentPreview(post.content) : null;
+  const isPrivate = post.visibility === PostVisibility.PRIVATE
+  const contentPreview = !isPrivate ? getContentPreview(post.content) : null
 
   const handleCardClick = () => {
-    onClick(post.id);
-  };
+    onClick(post.id)
+  }
 
   return (
-    <Card 
-      onClick={handleCardClick} 
-      className="cursor-pointer transition-colors duration-200 hover:bg-muted/50"
+    <Card
+      onClick={handleCardClick}
+      className="cursor-pointer transition-all duration-200 hover:bg-muted/50 hover:shadow-sm hover:border-border/80"
     >
-      <CardHeader>
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center'>
-            {post.weekDaysFromFirstDay !== undefined && (
-              <Badge variant="secondary" className="text-xs font-semibold px-2 py-1 rounded-full mr-2">
-                {post.weekDaysFromFirstDay + 1}일차
-              </Badge>
-            )}
-          </div>
-        </div>
-        <h2 className='text-2xl font-bold mt-2 flex items-center'>
-            {isPrivate && (
-              <Lock className="size-5 text-muted-foreground mr-2 flex-shrink-0" aria-label="비공개 글" />
-            )}
-            {post.title}
-        </h2>
-        <div className='mt-2 flex items-center'>
+      <CardHeader className="pb-2 pt-3 px-4">
+        <div className="flex items-center mb-2">
           {isAuthorLoading ? (
-             <Skeleton className="size-8 rounded-full" />
+            <Skeleton className="size-7 rounded-full" />
           ) : (
-            <Avatar className='size-8'>
-              <AvatarImage
-                src={authorData?.profilePhotoURL || ''}
-                alt={authorData?.realName || 'User'}
-              />
+            <Avatar className="size-7">
+              <AvatarImage src={authorData?.profilePhotoURL || ""} alt={authorData?.realName || "User"} />
               <AvatarFallback>
-                <User className='size-4' />
+                <User className="size-3.5" />
               </AvatarFallback>
             </Avatar>
           )}
-          <div className='ml-2'>
+          <div className="ml-2">
             {isAuthorLoading ? (
-               <Skeleton className="h-4 w-20 mb-1" />
+              <Skeleton className="h-4 w-20" />
             ) : (
-              <p className='text-sm font-medium'>{authorData?.nickname || '알 수 없음'}</p>
+              <p className="text-sm font-medium text-foreground/90">{authorData?.nickname || "알 수 없음"}</p>
             )}
-            <p className='text-xs text-muted-foreground'>
-              {post.createdAt ? formatDateToKorean(post.createdAt.toDate()) : '날짜 없음'}
-            </p>
           </div>
         </div>
+
+        <h2 className="text-xl font-semibold flex items-center text-foreground/90">
+          {isPrivate && <Lock className="size-4 text-muted-foreground mr-1.5 flex-shrink-0" aria-label="비공개 글" />}
+          {post.title}
+        </h2>
       </CardHeader>
-      <CardContent className='px-6 pt-0 pb-4'>
+      <CardContent className="px-4 pt-1 pb-3">
         {!isPrivate && contentPreview && (
           <div
-            className='
+            className="
             prose prose-sm dark:prose-invert 
-            text-muted-foreground
-            prose-p:my-2
-            prose-ul:my-2
-            prose-ol:my-2
-            line-clamp-3'
+            text-foreground/80
+            prose-p:my-1
+            prose-ul:my-1
+            prose-ol:my-1
+            line-clamp-3
+            leading-relaxed"
             dangerouslySetInnerHTML={{ __html: contentPreview }}
           />
         )}
         {!isPrivate && post.thumbnailImageURL && (
-          <div className='mt-3 aspect-video w-full overflow-hidden rounded-md bg-muted'>
-            <img
-              src={post.thumbnailImageURL}
-              alt="게시글 썸네일"
-            />
+          <div className="mt-2 aspect-video w-full overflow-hidden rounded-md bg-muted">
+            <img src={post.thumbnailImageURL || "/placeholder.svg"} alt="게시글 썸네일" />
           </div>
         )}
       </CardContent>
-      <CardFooter className='pt-0 pb-4 px-6'>
-        <div className='flex items-center text-muted-foreground'>
-          <MessageCircle className='mr-1.5 size-4' />
-          <p className='text-xs font-medium'>{post.countOfComments + post.countOfReplies}</p>
+      <CardFooter className="pt-2 pb-3 px-4 border-t border-border/30 flex justify-between">
+        <div className="flex items-center text-muted-foreground">
+          <MessageCircle className="mr-1 size-4" />
+          <p className="text-xs font-medium">{post.countOfComments + post.countOfReplies}</p>
         </div>
+        {post.weekDaysFromFirstDay !== undefined && (
+          <Badge
+            variant="outline"
+            className="text-xs px-1.5 py-0.5 h-5 font-medium text-muted-foreground border-muted-foreground/30"
+          >
+            {post.weekDaysFromFirstDay + 1}일차
+          </Badge>
+        )}
       </CardFooter>
     </Card>
-  );
-};
+  )
+}
 
-export default PostCard;
+export default PostCard
