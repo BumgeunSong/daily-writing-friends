@@ -13,6 +13,7 @@ import { PostBackButton } from './PostBackButton';
 import { PostAdjacentButtons } from './PostAdjacentButtons';
 import { formatDateToKorean } from '@/utils/dateUtils';
 import { PostContent } from './PostContent';
+import { PostVisibility } from '@/types/Post';
 
 export default function PostDetailPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();

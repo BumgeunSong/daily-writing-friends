@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 import { PostSubmitButton } from "./PostSubmitButton"
 import { fetchUserNickname } from "@/utils/userUtils"
 import { useQuery } from "@tanstack/react-query"
-import { PostVisibility } from "@/types/Posts"
+import { PostVisibility } from "@/types/Post"
 
 // 목표 시간 5 minutes
 const TARGET_TIME = 5 * 60

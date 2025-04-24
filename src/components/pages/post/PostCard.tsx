@@ -1,7 +1,7 @@
 import { MessageCircle, User, Lock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Post, PostVisibility } from '@/types/Posts';
+import { Post, PostVisibility } from '@/types/Post';
 import { Badge } from '@/components/ui/badge';
 import { getContentPreview } from '@/utils/contentUtils';
 import { formatDateToKorean } from '@/utils/dateUtils';

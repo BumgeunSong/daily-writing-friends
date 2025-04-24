@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore';
 
 import { firestore } from '../firebase';
-import { Post, PostVisibility } from '../types/Posts';
+import { Post, PostVisibility } from '../types/Post';
 import { useQuery } from '@tanstack/react-query';
 import { Posting } from '@/types/Posting';
 
