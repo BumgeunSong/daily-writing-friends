@@ -12,9 +12,10 @@ import { PostSubmitButton } from "./PostSubmitButton"
 import { fetchUserNickname } from "@/utils/userUtils"
 import { useQuery } from "@tanstack/react-query"
 import { PostVisibility } from "@/types/Post"
+import { useRemoteConfig } from "@/hooks/useRemoteConfig"
 
 // 목표 시간 5 minutes
-const TARGET_TIME = 5 * 60
+const DEFAULT_TARGET_TIME = 300
 
 export default function PostFreewritingPage() {
   const { currentUser } = useAuth()
@@ -24,7 +25,8 @@ export default function PostFreewritingPage() {
   const { data: userNickname } = useQuery({
     queryKey: ["userNickname", currentUser?.uid],
     queryFn: () => fetchUserNickname(currentUser?.uid),
-  })
+  }) 
+  const { value: freeWritingTargetTime } = useRemoteConfig("free_writing_target_time", DEFAULT_TARGET_TIME)
 
   // 상태 관리
   const POST_TITLE = userNickname ? `${userNickname}님의 프리라이팅` : "프리라이팅"
@@ -118,7 +120,7 @@ export default function PostFreewritingPage() {
         status={timerStatus}
         reached={isReached}
         onReach={handleTimerReach}
-        targetTime={TARGET_TIME}
+        targetTime={freeWritingTargetTime}
       />
 
       <div className="flex-grow container mx-auto max-w-3xl px-4 sm:px-6 py-6">
