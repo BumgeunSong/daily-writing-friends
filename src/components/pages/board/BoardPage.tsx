@@ -13,7 +13,7 @@ export default function BoardPage() {
   const [selectedAuthorId, setSelectedAuthorId] = useState<string | null>(null);
 
   const handlePostClick = (postId: string) => {
-    navigate(`/post/${postId}`);
+    navigate(`/board/${boardId}/post/${postId}`);
   };
 
   const handleAuthorSelect = (authorId: string) => {
