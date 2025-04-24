@@ -7,7 +7,6 @@ import { getContentPreview } from '@/utils/contentUtils';
 import { formatDateToKorean } from '@/utils/dateUtils';
 import { useAuthorData } from '@/hooks/useAuthorData';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
 
 interface PostCardProps {
   post: Post;
@@ -37,15 +36,12 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
                 {post.weekDaysFromFirstDay + 1}일차
               </Badge>
             )}
-            {isPrivate && (
-              <Lock className="size-4 text-muted-foreground" aria-label="비공개 글" />
-            )}
           </div>
         </div>
-        <h2 className={cn(
-            'text-2xl font-bold mt-2',
-            isPrivate && 'flex items-center'
-        )}>
+        <h2 className='text-2xl font-bold mt-2 flex items-center'>
+            {isPrivate && (
+              <Lock className="size-5 text-muted-foreground mr-2 flex-shrink-0" aria-label="비공개 글" />
+            )}
             {post.title}
         </h2>
         <div className='mt-2 flex items-center'>
