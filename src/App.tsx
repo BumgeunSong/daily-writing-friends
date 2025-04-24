@@ -20,6 +20,7 @@ import ProtectedJoinFormPage from './components/pages/join/form/ProtectedJoinFor
 import JoinFormPageForNewUser from './components/pages/join/form/JoinFormPageForNewUser';
 import JoinFormPageForActiveUser from './components/pages/join/form/JoinFormPageForActiveUser';
 import PostFreewritingPage from './components/pages/post/PostFreewritingPage';
+import PostFreewritingIntro from './components/pages/post/PostFreewritingIntro';
 
 export default function App() {
   const { currentUser } = useAuth();
@@ -43,7 +44,7 @@ export default function App() {
         <Route path='/boards/list' element={<BoardListPage />} />
         <Route path='/board/:boardId' element={<BoardPage />} />
         <Route path='/create/:boardId' element={<PostCreationPage />} />
-        <Route path='/create/:boardId/free-writing' element={<PostFreewritingPage />} />
+
         <Route path='/board/:boardId/post/:postId' element={<PostDetailPage />} />
         <Route path='/board/:boardId/edit/:postId' element={<PostEditPage />} />
         <Route path='/notifications' element={<NotificationsPage />} />
@@ -52,7 +53,14 @@ export default function App() {
         <Route path='/account/edit' element={<EditAccountPage />} />
         <Route path='/stats' element={<StatsPage />} />
       </Route>
-      
+
+      <Route path='/board/:boardId/free-writing/intro' element={<PostFreewritingIntro />} />
+      <Route path='/create/:boardId/free-writing' element={
+        <ProtectedRoute>
+          <PostFreewritingPage />
+        </ProtectedRoute>
+      } />
+
       <Route path='/join' element={<JoinIntroPage />} />
       <Route path='/join/form' element={<ProtectedJoinFormPage />} />
       <Route path='/join/form/new-user' element={
@@ -75,7 +83,7 @@ export default function App() {
       } />
 
       <Route path='*' element={<Navigate to='/' replace />} />
-      
+
     </Routes>
   );
 }

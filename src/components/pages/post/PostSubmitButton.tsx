@@ -1,40 +1,40 @@
-import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Button } from "@/components/ui/button"
+import { Loader2 } from "lucide-react"
 
 interface PostSubmitButtonProps {
   /**
    * 제출 중 여부
    */
-  isSubmitting: boolean;
+  isSubmitting: boolean
   /**
    * 제출 비활성화 여부
    */
-  disabled?: boolean;
+  disabled?: boolean
   /**
    * 제출 버튼 문구 (기본값: 게시하기)
    */
-  label?: string;
+  label?: string
   /**
    * 제출 중 문구 (기본값: 게시 중...)
    */
-  submittingLabel?: string;
+  submittingLabel?: string
   /**
    * 추가 CSS 클래스
    */
-  className?: string;
+  className?: string
 }
 
 export function PostSubmitButton({
   isSubmitting,
   disabled = false,
-  label = '게시하기',
-  submittingLabel = '게시 중...',
-  className = 'px-6',
+  label = "게시하기",
+  submittingLabel = "게시 중...",
+  className = "px-6",
 }: PostSubmitButtonProps) {
   return (
-    <Button 
-      type='submit' 
-      className={className}
+    <Button
+      type="submit"
+      className={`rounded-xl shadow-sm hover:shadow-md transition-all ${className}`}
       disabled={isSubmitting || disabled}
     >
       {isSubmitting ? (
@@ -46,5 +46,5 @@ export function PostSubmitButton({
         label
       )}
     </Button>
-  );
-} 
+  )
+}
