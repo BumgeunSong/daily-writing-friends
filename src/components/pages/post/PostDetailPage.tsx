@@ -73,7 +73,7 @@ export default function PostDetailPage() {
             <p>
               작성자: {authorNickname || '??'} | 작성일: {post.createdAt ? formatDateToKorean(post.createdAt.toDate()) : '?'}
             </p>
-            {isAuthor && (
+            {isAuthor && post.visibility !== PostVisibility.PRIVATE && (
               <div className='flex space-x-2'>
                 <Link to={`/board/${boardId}/edit/${postId}`}>
                   <Button variant='outline' size='sm'>
