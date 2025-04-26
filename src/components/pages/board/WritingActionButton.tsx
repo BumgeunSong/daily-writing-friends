@@ -37,7 +37,10 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
           className="flex items-center group"
           onClick={() => setIsExpanded(false)}
         >
-          <span className="mr-2 px-2 py-1 bg-card text-card-foreground rounded text-sm shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <span className={cn(
+            "mr-2 px-2 py-1 bg-card text-card-foreground rounded text-sm shadow-sm transition-opacity duration-200",
+            isExpanded ? "opacity-100" : "opacity-0 md:group-hover:opacity-100"
+          )}>
             프리라이팅
           </span>
           <Button
@@ -54,7 +57,10 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
           className="flex items-center group"
           onClick={() => setIsExpanded(false)}
         >
-          <span className="mr-2 px-2 py-1 bg-card text-card-foreground rounded text-sm shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <span className={cn(
+            "mr-2 px-2 py-1 bg-card text-card-foreground rounded text-sm shadow-sm transition-opacity duration-200",
+            isExpanded ? "opacity-100" : "opacity-0 md:group-hover:opacity-100"
+          )}>
             일반 글쓰기
           </span>
           <Button

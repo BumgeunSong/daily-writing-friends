@@ -3,25 +3,29 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { initSentry } from './centry';
-import queryClient from './lib/QueryClient';
 import { BottomTabHandlerProvider } from './contexts/BottomTabHandlerContext';
 import { NavigationProvider } from './contexts/NavigationContext';
+import { initSentry } from './centry';
 
 initSentry();
+const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <BottomTabHandlerProvider>
-            <NavigationProvider debounceTime={500}>
+          <NavigationProvider 
+            debounceTime={500} 
+            topThreshold={30} 
+            ignoreSmallChanges={10}
+          >
+            <BottomTabHandlerProvider>
               <App />
-            </NavigationProvider>
-          </BottomTabHandlerProvider>
+            </BottomTabHandlerProvider>
+          </NavigationProvider>
         </AuthProvider>
       </QueryClientProvider>
     </BrowserRouter>
