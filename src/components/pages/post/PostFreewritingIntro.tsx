@@ -4,10 +4,12 @@ import { useNavigate, useParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 import { motion } from "framer-motion"
+import { cn } from "@/lib/utils"
 
 const PostFreewritingIntro: React.FC = () => {
   const navigate = useNavigate()
   const { boardId } = useParams<{ boardId: string }>()
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
 
   const handleStartFreewriting = () => {
     navigate(`/create/${boardId}/free-writing`)
@@ -64,7 +66,10 @@ const PostFreewritingIntro: React.FC = () => {
       </div>
 
       {/* 하단 고정 CTA */}
-      <div className="sticky bottom-0 left-0 right-0 bg-background border-t p-4 z-10">
+      <div className={cn(
+        "sticky bottom-0 left-0 right-0 bg-background border-t p-4 z-10",
+        isIOS && "pb-2"
+      )}>
         <div className="container mx-auto max-w-3xl">
           <Button
             className="w-full md:w-auto md:px-12 text-lg py-6 rounded-xl shadow-sm hover:shadow-md transition-all"
