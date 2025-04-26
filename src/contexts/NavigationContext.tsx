@@ -16,17 +16,25 @@ const NavigationContext = createContext<NavigationContextType>(defaultContextVal
 interface NavigationProviderProps {
   children: ReactNode;
   debounceTime?: number;
+  topThreshold?: number;
+  ignoreSmallChanges?: number;
 }
 
 export const NavigationProvider: React.FC<NavigationProviderProps> = ({ 
   children, 
-  debounceTime = 500 
+  debounceTime = 500,
+  topThreshold = 10,
+  ignoreSmallChanges = 5
 }) => {
   // 네비게이션 바 표시 상태
   const [isNavVisible, setIsNavVisible] = useState<boolean>(true);
   
-  // 스크롤 방향 감지 훅 사용
-  const scrollDirection = useScrollDirection(debounceTime);
+  // 스크롤 방향 감지 훅 사용 - 업데이트된 옵션 패턴 사용
+  const scrollDirection = useScrollDirection({
+    throttleTime: debounceTime,
+    topThreshold,
+    ignoreSmallChanges
+  });
   
   useEffect(() => {
     // 스크롤 방향에 따라 네비게이션 바 표시 여부 결정
