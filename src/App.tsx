@@ -21,6 +21,7 @@ import JoinFormPageForNewUser from './components/pages/join/form/JoinFormPageFor
 import JoinFormPageForActiveUser from './components/pages/join/form/JoinFormPageForActiveUser';
 import PostFreewritingPage from './components/pages/post/PostFreewritingPage';
 import PostFreewritingIntro from './components/pages/post/PostFreewritingIntro';
+import UserPage from './components/pages/user/UserPage';
 
 export default function App() {
   const { currentUser } = useAuth();
@@ -52,6 +53,7 @@ export default function App() {
         <Route path='/account' element={<LegacyAccountPage />} />
         <Route path='/account/edit' element={<EditAccountPage />} />
         <Route path='/stats' element={<StatsPage />} />
+        <Route path='/user/:userId' element={<UserPage />} />
       </Route>
 
       <Route path='/board/:boardId/free-writing/intro' element={<PostFreewritingIntro />} />
