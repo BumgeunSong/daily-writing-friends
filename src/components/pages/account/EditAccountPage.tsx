@@ -6,25 +6,46 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { User } from '../../../types/User';
 import { useNickname } from '../../../hooks/useNickName';
 import { useProfilePhoto } from '../../../hooks/useProfilePhoto';
 import { useUpdateUserData } from '../../../hooks/useUpdateUserData';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 export default function EditAccountPage() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { userData } = location.state as { userData: User };
-  const { nickname, handleNicknameChange } = useNickname(userData.nickname || '');
-  const { profilePhotoFile, currentProfilePhotoURL, handleProfilePhotoChange } = useProfilePhoto(userData.profilePhotoURL);
+  const userData = location.state?.userData as User;
+  const { nickname, handleNicknameChange } = useNickname(userData?.nickname || '');
+  const { profilePhotoFile, currentProfilePhotoURL, handleProfilePhotoChange } = useProfilePhoto(userData?.profilePhotoURL);
+  const [bio, setBio] = useState(userData?.bio || '');
   const profilePhotoFileRef = useRef<HTMLInputElement>(null);
-  const { onSubmit, isLoading } = useUpdateUserData(userData.uid, nickname, profilePhotoFile);
+  
+  const { onSubmit, isLoading } = useUpdateUserData(userData?.uid, nickname, profilePhotoFile, bio);
 
   const showProfilePhotoChangeButton = () => {
     !isLoading && profilePhotoFileRef.current?.click();
   }
+  
+  const handleBioChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (e.target.value.length <= 150) {
+      setBio(e.target.value);
+    }
+  };
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    onSubmit(e);
+    
+    if (location.state?.from === 'userProfile') {
+      navigate(`/user/${userData?.uid}`);
+    } else {
+      navigate('/account');
+    }
+  };
 
   return (
     <div className='flex min-h-screen items-start justify-center bg-gray-50 p-4 relative'>
@@ -37,7 +58,7 @@ export default function EditAccountPage() {
         <CardHeader>
           <CardTitle className='text-center text-2xl font-bold'>내 정보 수정하기</CardTitle>
         </CardHeader>
-        <form onSubmit={onSubmit}>
+        <form onSubmit={handleSubmit}>
           <CardContent className='space-y-6'>
             <div className='flex flex-col items-center space-y-4'>
               <Avatar
@@ -79,13 +100,31 @@ export default function EditAccountPage() {
                 disabled={isLoading}
               />
             </div>
+            <div className='space-y-2'>
+              <div className='flex justify-between'>
+                <Label htmlFor='bio'>소개글</Label>
+                <span className='text-xs text-muted-foreground'>{bio.length}/150</span>
+              </div>
+              <Textarea
+                id='bio'
+                value={bio}
+                onChange={handleBioChange}
+                placeholder='자신을 간단히 소개해 주세요'
+                className='min-h-24 resize-none'
+                disabled={isLoading}
+              />
+            </div>
           </CardContent>
           <CardFooter className='flex justify-between gap-4'>
             <Button
               type='button'
               variant='outline'
               className='w-full'
-              onClick={() => navigate('/account')}
+              onClick={() => 
+                location.state?.from === 'userProfile' 
+                  ? navigate(`/user/${userData?.uid}`) 
+                  : navigate('/account')
+              }
               disabled={isLoading}
             >
               취소

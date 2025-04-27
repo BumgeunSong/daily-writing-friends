@@ -9,7 +9,8 @@ import { ToastAction } from '@/components/ui/toast';
 export function useUpdateUserData(
   userId: string,
   nickname: string,
-  profilePhoto: File | null
+  profilePhoto: File | null,
+  bio: string
 ) {
   const navigate = useNavigate();
   const [isLoading, setLoading] = useState<boolean>(false);

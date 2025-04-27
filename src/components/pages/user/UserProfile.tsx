@@ -1,5 +1,9 @@
+import { Link, useNavigate } from 'react-router-dom';
+import { MoreVertical } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UserProfileProps {
   userId: string;
@@ -16,6 +20,10 @@ export default function UserProfile({
 }: UserProfileProps) {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  
+  const isCurrentUser = currentUser?.uid === userId;
 
   // 사용자 데이터 가져오기 (임시로 더미 데이터 사용)
   useEffect(() => {
@@ -37,6 +45,20 @@ export default function UserProfile({
       fetchUserData();
     }
   }, [userId]);
+  
+  const handleEditProfile = () => {
+    navigate('/account/edit', { 
+      state: { 
+        userData: {
+          uid: userId,
+          nickname: userData?.nickname,
+          profilePhotoURL: userData?.profileImage,
+          bio: userData?.bio
+        },
+        from: 'userProfile'
+      } 
+    });
+  };
 
   if (loading) {
     return (
@@ -113,16 +135,17 @@ export default function UserProfile({
           )}
         </div>
       </div>
-
-      {/* 프로필 수정 버튼 - 이 기능은 나중에 추가할 예정 */}
-      {/* <Link to="/account/edit">
+      
+      {/* 프로필 수정 버튼 - 현재 사용자인 경우에만 표시 */}
+      {isCurrentUser && (
         <Button
           variant="outline"
           className="w-full mt-2 border-border"
+          onClick={handleEditProfile}
         >
           프로필 수정
         </Button>
-      </Link> */}
+      )}
     </div>
   );
 } 
