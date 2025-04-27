@@ -4,7 +4,6 @@ import { updateUserData } from '../utils/userUtils';
 import { storage } from '../firebase';
 import { useState } from 'react';
 import { useToast } from './use-toast';
-import { ToastAction } from '@/components/ui/toast';
 
 export function useUpdateUserData(
   userId: string,
@@ -36,12 +35,7 @@ export function useUpdateUserData(
 
       toast({
         title: '정보가 성공적으로 업데이트되었습니다.',
-        description: '정보가 바뀌지 않으면 새로고침을 해주세요.',
-        action: (
-          <ToastAction altText='새로고침' onClick={() => window.location.reload()}>
-            새로고침
-          </ToastAction>
-        ),
+        description: '정보가 바뀌지 않으면 새로고침을 해주세요.'
       });
 
       navigate('/account');
