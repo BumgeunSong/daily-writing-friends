@@ -68,7 +68,7 @@ const PostFreewritingIntro: React.FC = () => {
       {/* 하단 고정 CTA */}
       <div className={cn(
         "sticky bottom-0 left-0 right-0 bg-background border-t p-4 z-10",
-        isIOS && "pb-2"
+        isIOS && "pb-6"
       )}>
         <div className="container mx-auto max-w-3xl">
           <Button
