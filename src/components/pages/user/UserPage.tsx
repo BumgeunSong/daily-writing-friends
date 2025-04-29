@@ -1,9 +1,19 @@
 import { useParams } from 'react-router-dom';
 import UserProfile from './UserProfile';
 import UserActivityTab from './UserActivityTab';
+import { useRemoteConfig } from '@/hooks/useRemoteConfig';
 
 export default function UserPage() {
+  const userPageEnabled = useRemoteConfig('user_page_enabled', false);
   const { userId } = useParams<{ userId: string }>();
+
+  if (!userPageEnabled) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <p className="text-muted-foreground">사용자 페이지가 비활성화되었습니다.</p>
+      </div>
+    );
+  }
 
   if (!userId) {
     return (
