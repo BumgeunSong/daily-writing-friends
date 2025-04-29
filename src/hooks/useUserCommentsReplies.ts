@@ -2,18 +2,16 @@ import { limit, query, collection, orderBy, where, getDocs, startAfter } from "f
 import { firestore } from "@/firebase";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import * as Sentry from '@sentry/react';
+import { Timestamp } from "firebase/firestore";
 
 const LIMIT_COUNT = 10;
 
-export interface UserComment {
-  id: string;
+export interface UserCommentReply {
+  type: 'comment' | 'reply';
   content: string;
-  createdAt: Date;
-  postId: string;
   postTitle: string;
-  boardId: string;
-  boardTitle: string;
-  isReply: boolean;
+  url: string;
+  createdAt: Timestamp;
 }
 
 /**
@@ -22,7 +20,7 @@ export interface UserComment {
  * @returns InfiniteQuery 객체
  */
 export const useUserCommentsReplies = (userId: string) => {
-    return useInfiniteQuery<UserComment[]>(
+    return useInfiniteQuery<UserCommentReply[]>(
         ['userComments', userId],
         ({ pageParam = null }) => fetchUserCommentsReplies(userId, pageParam),
         {
@@ -47,105 +45,82 @@ export const useUserCommentsReplies = (userId: string) => {
  * 사용자의 댓글과 답글을 페이지 단위로 가져오는 함수
  * @param userId 사용자 ID
  * @param after 마지막 문서의 timestamp (페이지네이션 용)
- * @returns 댓글 배열
+ * @returns 댓글/답글 배열
  */
-async function fetchUserCommentsReplies(userId: string, after?: Date): Promise<UserComment[]> {
+async function fetchUserCommentsReplies(userId: string, after?: Timestamp): Promise<UserCommentReply[]> {
     try {
-        // 모든 게시판 가져오기
-        const boardsRef = collection(firestore, "boards");
-        const boardsSnapshot = await getDocs(boardsRef);
+        // 사용자의 댓글 내역 가져오기
+        const commentingsRef = collection(firestore, `users/${userId}/commentings`);
+        let commentingsQuery = query(
+            commentingsRef,
+            orderBy('createdAt', 'desc'),
+            limit(LIMIT_COUNT)
+        );
         
-        let allComments: UserComment[] = [];
+        if (after) {
+            commentingsQuery = query(commentingsQuery, startAfter(after));
+        }
         
-        // 각 게시판에서 사용자의 댓글 가져오기
-        for (const boardDoc of boardsSnapshot.docs) {
-            const boardId = boardDoc.id;
-            const boardTitle = boardDoc.data().title || '게시판';
+        const commentingsSnapshot = await getDocs(commentingsQuery);
+        
+        // 사용자의 답글 내역 가져오기
+        const replyingsRef = collection(firestore, `users/${userId}/replyings`);
+        let replyingsQuery = query(
+            replyingsRef,
+            orderBy('createdAt', 'desc'),
+            limit(LIMIT_COUNT)
+        );
+        
+        if (after) {
+            replyingsQuery = query(replyingsQuery, startAfter(after));
+        }
+        
+        const replyingsSnapshot = await getDocs(replyingsQuery);
+        
+        const results: UserCommentReply[] = [];
+        
+        // 댓글 처리
+        for (const doc of commentingsSnapshot.docs) {
+            const data = doc.data();
+            const commentRef = collection(firestore, 
+                `boards/${data.board.id}/posts/${data.post.id}/comments`);
+            const commentDoc = await getDocs(query(commentRef, where('id', '==', data.comment.id)));
             
-            // 게시글 가져오기
-            const postsRef = collection(firestore, `boards/${boardId}/posts`);
-            const postsSnapshot = await getDocs(postsRef);
-            
-            // 각 게시글에서 사용자의 댓글 및 답글 가져오기
-            for (const postDoc of postsSnapshot.docs) {
-                const postId = postDoc.id;
-                const postTitle = postDoc.data().title || '제목 없음';
-                
-                // 댓글 가져오기
-                let commentsQuery = query(
-                    collection(firestore, `boards/${boardId}/posts/${postId}/comments`),
-                    where('authorId', '==', userId),
-                    orderBy('createdAt', 'desc'),
-                    limit(LIMIT_COUNT)
-                );
-                
-                if (after) {
-                    commentsQuery = query(commentsQuery, startAfter(after));
-                }
-                
-                const commentsSnapshot = await getDocs(commentsQuery);
-                
-                // 댓글 데이터 매핑
-                const postComments = commentsSnapshot.docs.map(doc => {
-                    const data = doc.data();
-                    return {
-                        id: doc.id,
-                        content: data.content || '',
-                        createdAt: data.createdAt?.toDate() || new Date(),
-                        postId,
-                        postTitle,
-                        boardId,
-                        boardTitle,
-                        isReply: false
-                    } as UserComment;
+            if (!commentDoc.empty) {
+                const commentData = commentDoc.docs[0].data();
+                results.push({
+                    type: 'comment',
+                    content: commentData.content,
+                    postTitle: data.post.title,
+                    url: `/board/${data.board.id}/post/${data.post.id}`,
+                    createdAt: data.createdAt
                 });
-                
-                allComments = [...allComments, ...postComments];
-                
-                // 댓글에 달린 답글 가져오기
-                for (const commentDoc of commentsSnapshot.docs) {
-                    const commentId = commentDoc.id;
-                    
-                    let repliesQuery = query(
-                        collection(firestore, `boards/${boardId}/posts/${postId}/comments/${commentId}/replies`),
-                        where('authorId', '==', userId),
-                        orderBy('createdAt', 'desc'),
-                        limit(LIMIT_COUNT)
-                    );
-                    
-                    if (after) {
-                        repliesQuery = query(repliesQuery, startAfter(after));
-                    }
-                    
-                    const repliesSnapshot = await getDocs(repliesQuery);
-                    
-                    // 답글 데이터 매핑
-                    const commentReplies = repliesSnapshot.docs.map(doc => {
-                        const data = doc.data();
-                        return {
-                            id: doc.id,
-                            content: data.content || '',
-                            createdAt: data.createdAt?.toDate() || new Date(),
-                            postId,
-                            postTitle,
-                            boardId,
-                            boardTitle,
-                            isReply: true
-                        } as UserComment;
-                    });
-                    
-                    allComments = [...allComments, ...commentReplies];
-                }
             }
         }
         
-        // 전체 결과를 날짜 순으로 정렬
-        allComments.sort((a, b) => {
-            return b.createdAt.getTime() - a.createdAt.getTime();
-        });
+        // 답글 처리
+        for (const doc of replyingsSnapshot.docs) {
+            const data = doc.data();
+            const replyRef = collection(firestore, 
+                `boards/${data.board.id}/posts/${data.post.id}/comments/${data.comment.id}/replies`);
+            const replyDoc = await getDocs(query(replyRef, where('id', '==', data.reply.id)));
+            
+            if (!replyDoc.empty) {
+                const replyData = replyDoc.docs[0].data();
+                results.push({
+                    type: 'reply',
+                    content: replyData.content,
+                    postTitle: data.post.title,
+                    url: `/board/${data.board.id}/post/${data.post.id}`,
+                    createdAt: data.createdAt
+                });
+            }
+        }
         
-        // 요청된 개수만큼 자르기
-        return allComments.slice(0, LIMIT_COUNT);
+        // 날짜순 정렬
+        results.sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
+        
+        return results;
     } catch (error) {
         console.error("Error fetching user comments and replies:", error);
         Sentry.captureException(error);

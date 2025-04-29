@@ -1,5 +1,5 @@
 import { useInView } from 'react-intersection-observer';
-import { useUserCommentsReplies, UserComment } from '@/hooks/useUserCommentsReplies';
+import { useUserCommentsReplies, UserCommentReply } from '@/hooks/useUserCommentsReplies';
 import { formatDate } from '@/utils/dateUtils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Link } from 'react-router-dom';
@@ -32,24 +32,24 @@ export default function UserCommentsRepliesTab({ userId }: UserCommentsRepliesTa
   }, [inView, fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   // 댓글 카드 렌더링
-  const renderCommentCard = (comment: UserComment, index: number) => {
+  const renderCommentCard = (comment: UserCommentReply, index: number) => {
     const isLastItem = index === allComments.length - 1;
 
     return (
       <div 
-        key={comment.id} 
+        key={`${comment.type}-${comment.createdAt.toMillis()}`} 
         className="p-4 border rounded-md hover:border-primary transition-colors"
         ref={isLastItem ? ref : undefined}
       >
-        <Link to={`/board/${comment.boardId}/post/${comment.postId}`}>
+        <Link to={comment.url}>
           <h3 className="font-medium text-sm">{comment.postTitle}</h3>
           <p className="text-sm mt-2 line-clamp-2">
-            {comment.isReply && <span className="text-primary">↳ </span>}
+            {comment.type === 'reply' && <span className="text-primary">↳ </span>}
             {comment.content}
           </p>
           <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
-            <span>{comment.boardTitle}</span>
-            <span>{formatDate(comment.createdAt)}</span>
+            <span>{comment.type === 'comment' ? '댓글' : '답글'}</span>
+            <span>{formatDate(comment.createdAt.toDate())}</span>
           </div>
         </Link>
       </div>
