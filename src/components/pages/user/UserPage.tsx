@@ -1,11 +1,9 @@
 import { useParams } from 'react-router-dom';
 import UserProfile from './UserProfile';
 import UserActivityTab from './UserActivityTab';
-import { useAuth } from '@/contexts/AuthContext';
 
 export default function UserPage() {
   const { userId } = useParams<{ userId: string }>();
-  const { currentUser } = useAuth();
 
   if (!userId) {
     return (
