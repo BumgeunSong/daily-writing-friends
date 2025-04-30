@@ -27,7 +27,7 @@ import { useRegisterTabHandler } from '@/contexts/BottomTabHandlerContext';
 // 계정 페이지 스크롤 영역의 고유 ID
 const ACCOUNT_SCROLL_ID = 'account-scroll';
 
-export default function AccountPage() {
+export default function LegacyAccountPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { userData, isLoading } = useUserData(currentUser?.uid);

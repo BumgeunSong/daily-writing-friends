@@ -8,7 +8,7 @@ import RecentBoard from './components/pages/board/RecentBoard';
 import LoginPage from './components/pages/login/LoginPage';
 import BoardPage from './components/pages/board/BoardPage';
 import PostDetailPage from './components/pages/post/PostDetailPage';
-import AccountPage from './components/pages/account/AccountPage';
+import LegacyAccountPage from './components/pages/account/LegacyAccountPage';
 import EditAccountPage from './components/pages/account/EditAccountPage';
 import NotificationsPage from './components/pages/notification/NotificationsPage';
 import NotificationSettingPage from './components/pages/notification/NotificationSettingPage';
@@ -21,6 +21,7 @@ import JoinFormPageForNewUser from './components/pages/join/form/JoinFormPageFor
 import JoinFormPageForActiveUser from './components/pages/join/form/JoinFormPageForActiveUser';
 import PostFreewritingPage from './components/pages/post/PostFreewritingPage';
 import PostFreewritingIntro from './components/pages/post/PostFreewritingIntro';
+import UserPage from './components/pages/user/UserPage';
 
 export default function App() {
   const { currentUser } = useAuth();
@@ -49,9 +50,10 @@ export default function App() {
         <Route path='/board/:boardId/edit/:postId' element={<PostEditPage />} />
         <Route path='/notifications' element={<NotificationsPage />} />
         <Route path='/notifications/settings' element={<NotificationSettingPage />} />
-        <Route path='/account' element={<AccountPage />} />
+        <Route path='/account' element={<LegacyAccountPage />} />
         <Route path='/account/edit' element={<EditAccountPage />} />
         <Route path='/stats' element={<StatsPage />} />
+        <Route path='/user/:userId' element={<UserPage />} />
       </Route>
 
       <Route path='/board/:boardId/free-writing/intro' element={<PostFreewritingIntro />} />
