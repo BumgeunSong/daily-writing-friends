@@ -1,5 +1,4 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useCallback } from 'react';
 
 interface ClearCacheOptions {
     clearReactQuery?: boolean;

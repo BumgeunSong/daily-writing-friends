@@ -13,15 +13,12 @@ export const useActivity = (fromUserId: string, fromDaysAgo: number) => {
     const { currentUser } = useAuth();
     const toUserId = currentUser?.uid;
 
-    // 본인의 글일 때는 보여주지 않는다
-    if (fromUserId === toUserId) {
-        return { data: null, isLoading: false, error: null };
-    }
+    const isEnabled = Boolean(fromUserId && toUserId && fromUserId !== toUserId);
 
     return useQuery({
         queryKey: ['activity', fromUserId, toUserId],
         queryFn: () => fetchActivityCounts(fromUserId, toUserId!, fromDaysAgo),
-        enabled: Boolean(fromUserId && toUserId),
+        enabled: isEnabled,
         staleTime: 1000 * 60 * 1, // 1분
         cacheTime: 1000 * 60 * 30, // 30분
     });
