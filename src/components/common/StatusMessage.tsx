@@ -1,5 +1,5 @@
-import React from 'react';
 import { Loader2, AlertCircle } from 'lucide-react';
+import React from 'react';
 
 interface StatusMessageProps {
   isLoading?: boolean;
@@ -18,13 +18,13 @@ const StatusMessage: React.FC<StatusMessageProps> = ({
     <div className="flex flex-col items-center justify-center p-8 text-center">
       {isLoading && (
         <>
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <Loader2 className="size-12 animate-spin text-primary" />
           <p className="mt-4 text-lg font-medium text-gray-600">{loadingMessage}</p>
         </>
       )}
       {error && (
         <>
-          <AlertCircle className="h-12 w-12 text-red-500" />
+          <AlertCircle className="size-12 text-red-500" />
           <p className="mt-4 text-lg font-medium text-gray-600">{errorMessage}</p>
         </>
       )}

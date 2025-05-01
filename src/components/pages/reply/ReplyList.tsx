@@ -1,9 +1,9 @@
+import { useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Reply } from '@/types/Reply';
-import ReplyRow from './ReplyRow';
-import { useQuery } from '@tanstack/react-query';
 import { fetchRepliesOnce } from '@/utils/replyUtils';
+import ReplyRow from './ReplyRow';
 
 interface ReplyListProps {
   boardId: string;

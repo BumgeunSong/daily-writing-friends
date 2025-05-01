@@ -1,15 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
-import { getDrafts } from '@/utils/draftUtils';
+import { useQuery, QueryObserverResult } from '@tanstack/react-query';
 import { Draft } from '@/types/Draft';
+import { getDrafts } from '@/utils/draftUtils';
 
 interface UseDraftsResult {
   drafts: Draft[] | undefined;
   isLoading: boolean;
-  refetch: () => Promise<any>;
+  refetch: () => Promise<QueryObserverResult<Draft[], unknown>>;
 }
 
 export function useDrafts(userId: string | undefined, boardId: string | undefined): UseDraftsResult {
-  const { data: drafts, isLoading, refetch } = useQuery({
+  const { data: drafts, isLoading, refetch } = useQuery<Draft[]>({
     queryKey: ['drafts', userId, boardId],
     queryFn: async () => {
       if (!userId) return [];

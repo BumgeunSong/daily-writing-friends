@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react"
 import { Clock } from "lucide-react"
-import { WritingStatus } from "@/types/WritingStatus"
+import { useEffect, useState } from "react"
 import { useInterval } from "@/hooks/useInterval"
+import { WritingStatus } from "@/types/WritingStatus"
 
 interface CountupWritingTimerProps {
   /**
@@ -56,8 +56,8 @@ export default function CountupWritingTimer({
   }, delay)
 
   return (
-    <div className="sticky top-0 z-50 w-full bg-background border-b shadow-sm">
-      <div className="container mx-auto max-w-3xl px-4 py-4">
+    <div className="sticky top-0 z-50 w-full border-b bg-background shadow-sm">
+      <div className="container mx-auto max-w-3xl p-4">
         {/* 프리라이팅 모드 제목과 부제목 */}
         <div className="mb-3">
           <h2 className="text-xl font-bold text-primary">프리라이팅 모드</h2>
@@ -68,12 +68,12 @@ export default function CountupWritingTimer({
 
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Clock className="w-5 h-5 text-primary" />
+            <Clock className="size-5 text-primary" />
             <span className="text-lg font-medium">{formatTime(elapsedTime)}</span>
             <span className="text-sm text-muted-foreground">/ {formatTime(targetTime)}</span>
           </div>
           <div
-            className={`px-3 py-1 text-xs font-medium rounded-full ${
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
               reached
                 ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
                 : status === WritingStatus.Writing

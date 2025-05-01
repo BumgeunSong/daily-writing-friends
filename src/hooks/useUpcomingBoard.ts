@@ -1,7 +1,7 @@
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { useRemoteConfig } from "@/hooks/useRemoteConfig";
-import { fetchBoardById } from "@/utils/boardUtils";
 import { Board } from "@/types/Board";
+import { fetchBoardById } from "@/utils/boardUtils";
 
 /**
  * 캐시 키를 생성하는 헬퍼 함수

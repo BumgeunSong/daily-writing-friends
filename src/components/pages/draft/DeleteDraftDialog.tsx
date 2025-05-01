@@ -1,4 +1,3 @@
-import { Draft } from '@/types/Draft';
 import { Loader2 } from 'lucide-react';
 import {
   AlertDialog,
@@ -10,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Draft } from '@/types/Draft';
 
 interface DeleteDraftDialogProps {
   isOpen: boolean;
@@ -52,7 +52,7 @@ export function DeleteDraftDialog({
           >
             {isDeleting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 size-4 animate-spin" />
                 삭제 중...
               </>
             ) : (

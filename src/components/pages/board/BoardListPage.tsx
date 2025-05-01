@@ -1,10 +1,10 @@
 // src/components/Pages/BoardListPage.tsx
+import { useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { Board } from '../../../types/Board';
 import { fetchBoardsWithUserPermissions } from '../../../utils/boardUtils';
-import { useQuery } from '@tanstack/react-query';
 import StatusMessage from '../../common/StatusMessage';
 
 const BoardListPage: React.FC = () => {

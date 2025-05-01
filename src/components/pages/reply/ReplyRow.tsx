@@ -1,17 +1,17 @@
 "use client"
 
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Edit, Trash2, X } from "lucide-react"
-import type React from "react"
 import { useState } from "react"
+import ReactionList from "@/components/pages/reaction/ReactionList"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import type { Reply } from "@/types/Reply"
 import { deleteReplyToComment, updateReplyToComment } from "@/utils/commentUtils"
 import { sanitizeCommentContent } from "@/utils/contentUtils"
-import ReplyInput from "./ReplyInput"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { fetchUserProfileOnce } from "@/utils/userUtils"
-import ReactionList from "@/components/pages/reaction/ReactionList"
+import ReplyInput from "./ReplyInput"
+import type { Reply } from "@/types/Reply"
+import type React from "react"
 
 interface ReplyRowProps {
   reply: Reply
@@ -55,7 +55,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
   const sanitizedContent = sanitizeCommentContent(reply.content)
 
   return (
-    <div className="flex flex-col space-y-3 pb-4 group">
+    <div className="group flex flex-col space-y-3 pb-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <Avatar className="size-6">
@@ -75,7 +75,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
               variant="ghost"
               size="sm"
               onClick={handleEditToggle}
-              className="h-6 px-2 text-muted-foreground hover:text-primary hover:bg-transparent"
+              className="h-6 px-2 text-muted-foreground hover:bg-transparent hover:text-primary"
             >
               <EditIcon className="size-4" />
             </Button>
@@ -83,7 +83,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
               variant="ghost"
               size="sm"
               onClick={handleDelete}
-              className="h-6 px-2 text-muted-foreground hover:text-destructive hover:bg-transparent"
+              className="h-6 px-2 text-muted-foreground hover:bg-transparent hover:text-destructive"
             >
               <Trash2 className="size-4" />
             </Button>

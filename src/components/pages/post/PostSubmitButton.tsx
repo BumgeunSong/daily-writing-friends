@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface PostSubmitButtonProps {
   /**
@@ -34,12 +34,12 @@ export function PostSubmitButton({
   return (
     <Button
       type="submit"
-      className={`rounded-xl shadow-sm hover:shadow-md transition-all ${className}`}
+      className={`rounded-xl shadow-sm transition-all hover:shadow-md ${className}`}
       disabled={isSubmitting || disabled}
     >
       {isSubmitting ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <Loader2 className="mr-2 size-4 animate-spin" />
           {submittingLabel}
         </>
       ) : (

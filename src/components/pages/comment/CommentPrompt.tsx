@@ -1,5 +1,5 @@
-import type React from "react"
 import { useActivity } from "@/hooks/useActivity"
+import type React from "react"
 
 interface CommentPromptProps {
     postAuthorId: string;

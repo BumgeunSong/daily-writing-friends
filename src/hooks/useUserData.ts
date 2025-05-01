@@ -1,22 +1,22 @@
 import * as Sentry from '@sentry/react';
-import { User } from '@/types/User';
-import { firestore } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
+import { doc, getDoc } from 'firebase/firestore';
+import { firestore } from '@/firebase';
+import { User } from '@/types/User';
 
 export const useUserData = (userId: string | null) => {
-    if (userId === null) {
-        const noUserIdError = new Error('유저 ID가 존재하지 않아 유저 데이터를 불러올 수 없습니다.');
-        console.error(noUserIdError);
-        Sentry.captureException(noUserIdError);
-        return { userData: null, isLoading: false, error: noUserIdError };
-    }
+    const noUserIdError = userId === null ? new Error('유저 ID가 존재하지 않아 유저 데이터를 불러올 수 없습니다.') : null;
 
     const { data: userData, isLoading, error } = useQuery<User | null>(
         ['userData', userId],
-        () => fetchUserData(userId!),
+        () => {
+            if (userId === null) {
+                throw noUserIdError;
+            }
+            return fetchUserData(userId);
+        },
         {
-            enabled: !!userId, // Only run the query if userId is not null
+            enabled: userId !== null, // Only run the query if userId is not null
             onError: (error) => {
                 console.error('유저 데이터를 불러오던 중 에러가 발생했습니다:', error);
                 Sentry.captureException(error);
@@ -26,7 +26,7 @@ export const useUserData = (userId: string | null) => {
         }
     );
 
-    return { userData, isLoading, error };
+    return { userData, isLoading, error: error || noUserIdError };
 };
 
 // Function to fetch user data from Firestore

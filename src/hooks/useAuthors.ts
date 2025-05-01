@@ -1,8 +1,8 @@
-import { useCallback, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useCallback, useState, useEffect } from 'react';
 import { User } from '@/types/User';
-import { fetchAllUserDataWithBoardPermission } from '@/utils/userUtils';
 import { getHourBasedSeed, shuffleArray } from '@/utils/shuffleUtils';
+import { fetchAllUserDataWithBoardPermission } from '@/utils/userUtils';
 
 /**
  * 매 시간마다 작성자 목록을 섞어서 반환하는 커스텀 훅

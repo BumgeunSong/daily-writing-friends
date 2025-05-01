@@ -1,7 +1,7 @@
-import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ContributionGraph } from "./ContributionGraph"
+import { Card, CardContent } from "@/components/ui/card"
 import { WritingStats } from "@/types/WritingStats"
+import { ContributionGraph } from "./ContributionGraph"
 import { WritingBadgeComponent } from "./WritingBadgeComponent"
 
 interface UserStatsCardProps {
@@ -15,12 +15,12 @@ export function UserStatsCard({ stats }: UserStatsCardProps) {
       <Card className="w-full">
         <CardContent className="flex items-start gap-4 p-4">
           <div className="flex flex-1 items-start gap-4">
-            <Avatar className="h-12 w-12 shrink-0">
+            <Avatar className="size-12 shrink-0">
               <AvatarImage src={user.profilePhotoURL || undefined} alt={user.nickname || "User"} />
               <AvatarFallback>{user.nickname?.[0] || user.realname?.[0] || "U"}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col gap-1.5 min-w-0">
-              <h3 className="font-semibold truncate">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <h3 className="truncate font-semibold">
                 {user.nickname || user.realname || "Anonymous"}
               </h3>
               <div className="flex flex-wrap gap-1">
@@ -30,7 +30,7 @@ export function UserStatsCard({ stats }: UserStatsCardProps) {
               </div>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-2 shrink-0">
+          <div className="flex shrink-0 flex-col items-end gap-2">
             <ContributionGraph 
               contributions={contributions} 
               className="w-24"

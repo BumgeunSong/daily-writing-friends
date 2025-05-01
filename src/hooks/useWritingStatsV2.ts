@@ -6,14 +6,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { firestore } from '@/firebase';
-import { WritingStats, Contribution, WritingBadge } from '@/types/WritingStats';
 import { Posting } from '@/types/Posting';
 import { User } from '@/types/User';
-import { fetchUserData } from '@/utils/userUtils';
+import { WritingStats, Contribution, WritingBadge } from '@/types/WritingStats';
 import { getRecentWorkingDays } from '@/utils/dateUtils';
-import { calculateCurrentStreak } from '@/utils/streakUtils';
-import { getDateKey, getUserTimeZone } from '@/utils/streakUtils';
 import { mapDocumentToPosting } from '@/utils/postUtils';
+import { getDateKey, getUserTimeZone } from '@/utils/streakUtils';
+import { calculateCurrentStreak } from '@/utils/streakUtils';
+import { fetchUserData } from '@/utils/userUtils';
 export function useWritingStatsV2(userIds: string[]) {
     return useQuery({
         queryKey: ['writingStatsV2', userIds],
@@ -31,13 +31,9 @@ export function useWritingStatsV2(userIds: string[]) {
 async function fetchMultipleUserStats(userIds: string[]): Promise<WritingStats[]> {
     if (!userIds.length) return [];
 
-    try {
-        const statsPromises = userIds.map(fetchSingleUserStats);
-        const results = await Promise.all(statsPromises);
-        return sort(results.filter((result): result is WritingStats => result !== null));
-    } catch (error) {
-        throw error;
-    }
+    const statsPromises = userIds.map(fetchSingleUserStats);
+    const results = await Promise.all(statsPromises);
+    return sort(results.filter((result): result is WritingStats => result !== null));
 }
 
 function sort(writingStats: WritingStats[]): WritingStats[] {
@@ -65,15 +61,11 @@ async function fetchSingleUserStats(userId: string): Promise<WritingStats | null
 }
 
 async function fetchPostingData(userId: string): Promise<Posting[]> {
-    try {
-        const postingsRef = collection(firestore, 'users', userId, 'postings');
-        const q = query(postingsRef, orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
-        
-        return querySnapshot.docs.map(doc => mapDocumentToPosting(doc));
-    } catch (error) {
-        throw error;
-    }
+    const postingsRef = collection(firestore, 'users', userId, 'postings');
+    const q = query(postingsRef, orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map(doc => mapDocumentToPosting(doc));
 }
 
 

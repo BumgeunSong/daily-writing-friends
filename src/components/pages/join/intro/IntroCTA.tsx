@@ -8,9 +8,9 @@ interface IntroCTAProps {
 
 export default function IntroCTA({ onLogin, cohort, isLoading = false }: IntroCTAProps) {
   return (
-    <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
-      <div className="max-w-3xl lg:max-w-4xl mx-auto space-y-2 md:flex md:items-center md:justify-between md:space-y-0 md:space-x-4 px-6">
-        <p className="text-center text-sm text-muted-foreground md:text-left md:text-base md:flex-shrink-0">
+    <div className="fixed inset-x-0 bottom-0 border-t bg-background p-4">
+      <div className="mx-auto max-w-3xl space-y-2 px-6 md:flex md:items-center md:justify-between md:space-x-4 md:space-y-0 lg:max-w-4xl">
+        <p className="text-center text-sm text-muted-foreground md:shrink-0 md:text-left md:text-base">
           구글 로그인이 필요해요
         </p>
         <Button 

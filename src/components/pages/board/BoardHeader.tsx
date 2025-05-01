@@ -1,7 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
 import { ChevronDown } from 'lucide-react';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { fetchBoardTitle } from '../../../utils/boardUtils';
 import StatusMessage from '../../common/StatusMessage';
 
@@ -9,7 +9,7 @@ interface BoardHeaderProps {
   boardId?: string;
 }
 
-const BoardHeader: React.FC<BoardHeaderProps> = React.memo(({ boardId }) => {
+const BoardHeader: React.FC<BoardHeaderProps> = ({ boardId }) => {
   const { data: title, isLoading, error } = useQuery(
     ['boardTitle', boardId],
     () => fetchBoardTitle(boardId || ''),
@@ -39,6 +39,6 @@ const BoardHeader: React.FC<BoardHeaderProps> = React.memo(({ boardId }) => {
       </div>
     </header>
   );
-});
+};
 
 export default BoardHeader;

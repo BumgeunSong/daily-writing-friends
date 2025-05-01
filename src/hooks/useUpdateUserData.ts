@@ -1,9 +1,15 @@
-import { useState, FormEvent } from 'react';
 import { updateProfile } from 'firebase/auth';
+import { doc, DocumentData, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { doc, updateDoc } from 'firebase/firestore';
-import { firestore, storage, auth } from '../firebase';
+import { useState, FormEvent } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { firestore, storage, auth } from '../firebase';
+
+interface UserUpdates extends DocumentData {
+  nickname: string;
+  bio?: string;
+  profilePhotoURL?: string;
+}
 
 export const useUpdateUserData = (
   userId: string, 
@@ -11,7 +17,7 @@ export const useUpdateUserData = (
   profilePhotoFile: File | null,
   bio?: string
 ) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const { toast } = useToast();
 
   const onSubmit = async (e: FormEvent) => {
@@ -29,7 +35,7 @@ export const useUpdateUserData = (
     setIsLoading(true);
 
     try {
-      const updates: Record<string, any> = { nickname };
+      const updates: UserUpdates = { nickname };
       
       // bio가 제공된 경우 업데이트에 추가
       if (bio !== undefined) {

@@ -1,11 +1,11 @@
 
-import { Card, CardContent } from "@/components/ui/card"
-import { AvatarFallback, AvatarImage, Avatar } from "@/components/ui/avatar"
-import { sanitizeCommentContent } from "@/utils/contentUtils"
-import { MessageCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Comment } from "@/types/Comment"
 import { Timestamp } from "firebase/firestore"
+import { MessageCircle } from "lucide-react"
+import { AvatarFallback, AvatarImage, Avatar } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Comment } from "@/types/Comment"
+import { sanitizeCommentContent } from "@/utils/contentUtils"
 
 export const mockComment: Comment = {
   id: "mock-comment-1",
@@ -26,15 +26,15 @@ export const mockUserProfile = {
 
 export default function MockCommentRow() {
     return (
-        <Card className="bg-white rounded-lg m-4">
+        <Card className="m-4 rounded-lg bg-white">
             <CardContent>
-                <div className="w-full space-y-2 mt-4">
+                <div className="mt-4 w-full space-y-2">
                     <div className="flex items-center space-x-4">
                         <Avatar className="size-6">
                             <AvatarImage
                                 src={mockUserProfile.profilePhotoURL || undefined}
                                 alt={mockUserProfile.nickname || "User"}
-                                className="object-cover rounded-full"
+                                className="rounded-full object-cover"
                             />
                             <AvatarFallback className="text-sm">{mockUserProfile.nickname?.[0] || "?"}</AvatarFallback>
                         </Avatar>
@@ -50,7 +50,7 @@ export default function MockCommentRow() {
                         />
                     </div>
                 </div>
-                <div className="flex items-center space-x-2 mt-2">
+                <div className="mt-2 flex items-center space-x-2">
                     <MessageCircle className="size-4 text-muted-foreground" />
                     <div className="flex items-center space-x-1">
                         <Button

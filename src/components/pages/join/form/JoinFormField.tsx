@@ -24,8 +24,8 @@ export default function FormField({
 }: FormFieldProps) {
   return (
     <div className="space-y-2">
-      <label htmlFor={id} className="text-sm lg:text-base font-medium block">
-        {label} {optional && <span className="text-muted-foreground text-sm">(선택)</span>}
+      <label htmlFor={id} className="block text-sm font-medium lg:text-base">
+        {label} {optional && <span className="text-sm text-muted-foreground">(선택)</span>}
       </label>
       <Input
         id={id}
@@ -33,9 +33,9 @@ export default function FormField({
         inputMode={inputMode}
         {...register(id)}
         placeholder={placeholder}
-        className="h-12 lg:h-14 text-base rounded-md transition-all focus-visible:ring-slate-400"
+        className="h-12 rounded-md text-base transition-all focus-visible:ring-slate-400 lg:h-14"
       />
-      {error && <p className="text-sm text-red-500 mt-1">{error.message}</p>}
+      {error && <p className="mt-1 text-sm text-red-500">{error.message}</p>}
     </div>
   )
 }

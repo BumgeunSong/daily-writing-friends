@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import {
   collection,
   doc,
@@ -12,10 +13,9 @@ import {
   QueryDocumentSnapshot
 } from 'firebase/firestore';
 
+import { Posting } from '@/types/Posting';
 import { firestore } from '../firebase';
 import { Post, PostVisibility } from '../types/Post';
-import { useQuery } from '@tanstack/react-query';
-import { Posting } from '@/types/Posting';
 
 /**
  * Firebase 문서를 Post 객체로 변환하는 유틸리티 함수

@@ -1,7 +1,7 @@
+import { doc, setDoc, getDoc, collection, getDocs, Timestamp } from "firebase/firestore";
 import { firestore } from "@/firebase";
 import { JoinFormDataForActiveUser } from "@/types/join";
 import { Review } from "@/types/Review";
-import { doc, setDoc, getDoc, collection, getDocs, Timestamp } from "firebase/firestore";
 
 /**
  * 보드에 리뷰를 추가합니다.

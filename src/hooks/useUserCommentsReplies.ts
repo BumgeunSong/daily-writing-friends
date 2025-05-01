@@ -1,8 +1,8 @@
-import { limit, query, collection, orderBy, where, getDocs, startAfter } from "firebase/firestore";
-import { firestore } from "@/firebase";
-import { useInfiniteQuery } from "@tanstack/react-query";
 import * as Sentry from '@sentry/react';
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { limit, query, collection, orderBy, where, getDocs, startAfter } from "firebase/firestore";
 import { Timestamp } from "firebase/firestore";
+import { firestore } from "@/firebase";
 
 const LIMIT_COUNT = 10;
 

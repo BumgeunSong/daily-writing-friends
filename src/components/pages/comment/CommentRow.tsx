@@ -1,18 +1,18 @@
 "use client"
 
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Edit, Trash2, X } from "lucide-react"
-import type React from "react"
 import { useState } from "react"
+import ReactionList from "@/components/pages/reaction/ReactionList"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { deleteCommentToPost, updateCommentToPost } from "@/utils/commentUtils"
 import { sanitizeCommentContent } from "@/utils/contentUtils"
-import CommentInput from "./CommentInput"
-import type { Comment } from "@/types/Comment"
 import { fetchUserProfileOnce } from "@/utils/userUtils"
+import CommentInput from "./CommentInput"
 import Replies from "../reply/Replies"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
-import ReactionList from "@/components/pages/reaction/ReactionList"
+import type { Comment } from "@/types/Comment"
+import type React from "react"
 
 interface CommentRowProps {
   boardId: string
@@ -74,7 +74,7 @@ const CommentRow: React.FC<CommentRowProps> = ({ boardId, postId, comment, isAut
               variant="ghost"
               size="sm"
               onClick={handleEditToggle}
-              className="h-6 px-2 text-muted-foreground hover:text-primary hover:bg-transparent"
+              className="h-6 px-2 text-muted-foreground hover:bg-transparent hover:text-primary"
             >
               <EditIcon className="size-4" />
             </Button>
@@ -82,7 +82,7 @@ const CommentRow: React.FC<CommentRowProps> = ({ boardId, postId, comment, isAut
               variant="ghost"
               size="sm"
               onClick={handleDelete}
-              className="h-6 px-2 text-muted-foreground hover:text-destructive hover:bg-transparent"
+              className="h-6 px-2 text-muted-foreground hover:bg-transparent hover:text-destructive"
             >
               <Trash2 className="size-4" />
             </Button>

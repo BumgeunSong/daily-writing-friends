@@ -1,15 +1,15 @@
-import type React from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { Loader2, MessageCircle } from "lucide-react"
 import { useState, Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/contexts/AuthContext"
-import { addReplyToComment } from "@/utils/commentUtils"
-import ReplyInput from "./ReplyInput"
-import ReplyList from "./ReplyList"
-import { Loader2, MessageCircle } from "lucide-react"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchRepliesOnce, fetchReplyCountOnce } from "@/utils/replyUtils"
 import { AnalyticsEvent } from "@/utils/analyticsUtils"
 import { sendAnalyticsEvent } from "@/utils/analyticsUtils"
+import { addReplyToComment } from "@/utils/commentUtils"
+import { fetchRepliesOnce, fetchReplyCountOnce } from "@/utils/replyUtils"
+import ReplyInput from "./ReplyInput"
+import ReplyList from "./ReplyList"
+import type React from "react"
 
 interface RepliesProps {
   boardId: string
@@ -18,7 +18,7 @@ interface RepliesProps {
 }
 
 // 로딩 인디케이터 컴포넌트
-const LoadingIndicator: React.FC = () => <Loader2 className="size-4 text-muted-foreground animate-spin ml-1" />
+const LoadingIndicator: React.FC = () => <Loader2 className="ml-1 size-4 animate-spin text-muted-foreground" />
 
 const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -92,7 +92,7 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
       </div>
 
       {isExpanded && (
-        <div className="mt-6 border-l-2 border-gray-200 dark:border-gray-700 pl-4">
+        <div className="mt-6 border-l-2 border-gray-200 pl-4 dark:border-gray-700">
           <Suspense fallback={null}>
             <ReplyList boardId={boardId} postId={postId} commentId={commentId} />
           </Suspense>

@@ -1,15 +1,15 @@
-import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import FormField from "./JoinFormField"
-import { Slider } from "@/components/ui/slider"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Slider } from "@/components/ui/slider"
 import { Board } from "@/types/Board"
-import { formatStartDate } from "@/utils/boardUtils"
 import { JoinFormDataForActiveUser } from "@/types/join"
+import { formatStartDate } from "@/utils/boardUtils"
+import FormField from "./JoinFormField"
 
 const formSchema = z.object({
   keep: z.string().optional(),
@@ -45,8 +45,8 @@ export default function JoinFormCardForActiveUser({
   const nps = watch("nps")
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-12rem)]">
-      <Card className="bg-background flex-1">
+    <div className="flex min-h-[calc(100vh-12rem)] flex-col">
+      <Card className="flex-1 bg-background">
         <CardContent className="p-8">
           <form id="join-form" onSubmit={handleSubmit(onSubmit)} className="space-y-8">
             <div className="space-y-2">
@@ -102,12 +102,12 @@ export default function JoinFormCardForActiveUser({
                   onValueChange={(value: number[]) => setValue("nps", value[0])}
                   className="w-full"
                 />
-                <div className="flex justify-between text-sm text-muted-foreground mt-2">
+                <div className="mt-2 flex justify-between text-sm text-muted-foreground">
                   <span>1 - 매우 비추천</span>
                   <br />
                   <span>10 - 매우 추천</span>
                 </div>
-                <div className="text-center mt-2">
+                <div className="mt-2 text-center">
                   <span className="text-lg font-semibold">{nps}점</span>
                 </div>
               </div>
@@ -137,12 +137,12 @@ export default function JoinFormCardForActiveUser({
         </CardContent>
       </Card>
 
-      <div className="sticky bottom-0 left-0 right-0 p-4 bg-background border-t">
-        <div className="max-w-3xl lg:max-w-4xl mx-auto">
+      <div className="sticky inset-x-0 bottom-0 border-t bg-background p-4">
+        <div className="mx-auto max-w-3xl lg:max-w-4xl">
           <Button
             type="submit"
             form="join-form"
-            className="w-full lg:w-64 lg:mx-auto"
+            className="w-full lg:mx-auto lg:w-64"
             size="lg"
             disabled={isSubmitting}
           >

@@ -1,18 +1,18 @@
-import type React from "react"
 
+import { useQuery } from "@tanstack/react-query"
 import { useState, useRef, useEffect, useCallback } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useAuth } from "@/contexts/AuthContext"
-import { PostTextEditor } from "./PostTextEditor"
-import CountupWritingTimer from "./CountupWritingTimer"
+import { useToast } from "@/hooks/use-toast"
+import { useRemoteConfig } from "@/hooks/useRemoteConfig"
+import { PostVisibility } from "@/types/Post"
 import { WritingStatus } from "@/types/WritingStatus"
 import { createPost } from "@/utils/postUtils"
-import { useToast } from "@/hooks/use-toast"
-import { PostSubmitButton } from "./PostSubmitButton"
 import { fetchUserNickname } from "@/utils/userUtils"
-import { useQuery } from "@tanstack/react-query"
-import { PostVisibility } from "@/types/Post"
-import { useRemoteConfig } from "@/hooks/useRemoteConfig"
+import CountupWritingTimer from "./CountupWritingTimer"
+import { PostSubmitButton } from "./PostSubmitButton"
+import { PostTextEditor } from "./PostTextEditor"
+import type React from "react"
 
 // 목표 시간 5 minutes
 const DEFAULT_TARGET_TIME = 300
@@ -114,7 +114,7 @@ export default function PostFreewritingPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       {/* 카운트업 타이머 */}
       <CountupWritingTimer
         status={timerStatus}
@@ -123,13 +123,13 @@ export default function PostFreewritingPage() {
         targetTime={freeWritingTargetTime}
       />
 
-      <div className="flex-grow container mx-auto max-w-3xl px-4 sm:px-6 py-6">
+      <div className="container mx-auto max-w-3xl grow px-4 py-6 sm:px-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-card rounded-xl border overflow-hidden">
+          <div className="overflow-hidden rounded-xl border bg-card">
             <PostTextEditor value={content} onChange={handleContentChange} />
           </div>
 
-          <div className="flex justify-end items-center pt-2">
+          <div className="flex items-center justify-end pt-2">
             <PostSubmitButton
               isSubmitting={isSubmitting}
               disabled={!isReached || !POST_TITLE.trim() || !content.trim()}

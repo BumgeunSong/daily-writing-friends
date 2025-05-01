@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
-import { expect, vi } from 'vitest';
 import * as matchers from '@testing-library/jest-dom/matchers';
+import { expect, vi } from 'vitest';
 
 // React Testing Library의 DOM 매처 확장
 expect.extend(matchers);

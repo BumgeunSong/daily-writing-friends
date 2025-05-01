@@ -1,8 +1,8 @@
-import type React from "react"
-import { Drawer, DrawerContent } from "@/components/ui/drawer"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Trash2 } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import { Drawer, DrawerContent } from "@/components/ui/drawer"
+import type React from "react"
 
 interface ReactionUser {
   userId: string
@@ -30,19 +30,19 @@ export const ReactionUserDrawer: React.FC<ReactionUserDrawerProps> = ({
   return (
     <Drawer open={isOpen} onOpenChange={onOpenChange}>
       <DrawerContent className="max-h-[85vh]">
-        <div className="p-4 overflow-y-auto">
+        <div className="overflow-y-auto p-4">
           {users.map((user) => (
-            <div key={user.userId} className="flex items-center gap-3 py-3 border-b last:border-0">
+            <div key={user.userId} className="flex items-center gap-3 border-b py-3 last:border-0">
               <Avatar className="size-9 border border-border/30">
                 <AvatarImage src={user.userProfileImage} alt={user.userName} />
                 <AvatarFallback>{user.userName[0]}</AvatarFallback>
               </Avatar>
-              <span className="font-medium flex-1">{user.userName}</span>
+              <span className="flex-1 font-medium">{user.userName}</span>
               {user.userId === currentUserId && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  className="size-8 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                   onClick={() => onDelete(emoji, currentUserId)}
                   aria-label="내 반응 삭제"
                 >

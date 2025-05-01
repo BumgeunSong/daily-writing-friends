@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { signInWithGoogle } from '@/firebase';
-import { useIsCurrentUserActive } from '@/hooks/useIsCurrentUserActive';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,6 +10,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { useAuth } from '@/contexts/AuthContext';
+import { signInWithGoogle } from '@/firebase';
+import { useIsCurrentUserActive } from '@/hooks/useIsCurrentUserActive';
 
 export default function ProtectedJoinFormPage() {
   const { currentUser } = useAuth();
@@ -69,8 +69,8 @@ export default function ProtectedJoinFormPage() {
   // 로딩 중인 경우 로딩 표시
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="size-12 animate-spin rounded-full border-y-2 border-primary"></div>
       </div>
     );
   }

@@ -1,13 +1,13 @@
 import { UserCredential } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
 
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { User } from '@/types/User';
 import { createUserData, fetchUserData } from '@/utils/userUtils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { signInWithGoogle } from '../../../firebase';
-import { useNavigate } from 'react-router-dom';
 
 export default function LoginPage() {
   const { loading, redirectPathAfterLogin, setRedirectPathAfterLogin } = useAuth();

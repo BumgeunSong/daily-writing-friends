@@ -1,5 +1,5 @@
-import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
+import { Button } from "@/components/ui/button"
 
 interface JoinCompletePageProps {
   name: string
@@ -10,10 +10,10 @@ export default function JoinCompletePage({ name, cohort }: JoinCompletePageProps
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <main className="flex-1 flex flex-col items-center justify-center px-6">
-        <div className="text-center space-y-4 max-w-md">
-          <h1 className="text-2xl lg:text-3xl font-bold">
+    <div className="flex min-h-screen flex-col bg-background">
+      <main className="flex flex-1 flex-col items-center justify-center px-6">
+        <div className="max-w-md space-y-4 text-center">
+          <h1 className="text-2xl font-bold lg:text-3xl">
             {`${name}님, 신청이 완료되었습니다`}
           </h1>
           <p className="text-muted-foreground lg:text-lg">
@@ -24,11 +24,11 @@ export default function JoinCompletePage({ name, cohort }: JoinCompletePageProps
         </div>
       </main>
 
-      <div className="p-6 border-t">
-        <div className="max-w-3xl lg:max-w-4xl mx-auto">
+      <div className="border-t p-6">
+        <div className="mx-auto max-w-3xl lg:max-w-4xl">
           <Button
             onClick={() => navigate("/")}
-            className="w-full lg:w-64 lg:mx-auto"
+            className="w-full lg:mx-auto lg:w-64"
             size="lg"
           >
             홈으로

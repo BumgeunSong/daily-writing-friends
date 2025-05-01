@@ -1,6 +1,6 @@
+import { FileText, Clock, X } from 'lucide-react';
 import { Draft } from '@/types/Draft';
 import { getDraftTitle, getDraftPreview, formatDraftDate } from '@/utils/draftUtils';
-import { FileText, Clock, X } from 'lucide-react';
 
 // 단일 임시 저장 글 항목 컴포넌트
 interface DraftItemProps {
@@ -11,15 +11,15 @@ interface DraftItemProps {
 
 export const DraftItem: React.FC<DraftItemProps> = ({ draft, onClick, onDelete }) => (
     <div
-        className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors relative"
+        className="relative cursor-pointer rounded-lg border p-3 transition-colors hover:bg-gray-50"
         role="article"
     >
         <button
             onClick={(e) => onDelete(draft, e)}
-            className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-200 transition-colors"
+            className="absolute right-2 top-2 rounded-full p-1 transition-colors hover:bg-gray-200"
             aria-label={`${getDraftTitle(draft)} 임시 저장 글 삭제`}
         >
-            <X className="h-4 w-4 text-gray-500" />
+            <X className="size-4 text-gray-500" />
         </button>
 
         <div
@@ -34,19 +34,19 @@ export const DraftItem: React.FC<DraftItemProps> = ({ draft, onClick, onDelete }
                 }
             }}
         >
-            <div className="flex justify-between items-start">
+            <div className="flex items-start justify-between">
                 <div className="flex-1">
-                    <div className="font-medium flex items-center">
-                        <FileText className="h-4 w-4 mr-1 text-gray-500" aria-hidden="true" />
+                    <div className="flex items-center font-medium">
+                        <FileText className="mr-1 size-4 text-gray-500" aria-hidden="true" />
                         {getDraftTitle(draft)}
                     </div>
-                    <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                    <p className="mt-1 line-clamp-2 text-sm text-gray-500">
                         {getDraftPreview(draft)}
                     </p>
                 </div>
             </div>
-            <div className="flex items-center mt-2 text-xs text-gray-500">
-                <Clock className="h-3 w-3 mr-1" aria-hidden="true" />
+            <div className="mt-2 flex items-center text-xs text-gray-500">
+                <Clock className="mr-1 size-3" aria-hidden="true" />
                 <span>{formatDraftDate(draft.savedAt)}</span>
             </div>
         </div>

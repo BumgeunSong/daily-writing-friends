@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import { getToken } from "firebase/messaging";
-import { app, firestore } from "../firebase";
 import { addDoc } from 'firebase/firestore';
-import { FirebaseMessagingToken } from '@/messaging/FirebaseMessagingToken';
 import { collection, getDocs, query, where, updateDoc, deleteDoc } from 'firebase/firestore';
 import { Timestamp } from 'firebase/firestore';
+import { getToken } from "firebase/messaging";
+import { useState, useEffect } from 'react';
 import { initializeMessaging } from '@/messaging';
+import { FirebaseMessagingToken } from '@/messaging/FirebaseMessagingToken';
+import { app, firestore } from "../firebase";
 import { toast } from './use-toast';
 
 export function usePushPermission(userId: string) {

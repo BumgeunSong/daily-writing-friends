@@ -1,14 +1,14 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useCallback } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { UserStatsCard } from "./UserStatsCard"
+import { useRegisterTabHandler } from "@/contexts/BottomTabHandlerContext"
+import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring"
+import { useRemoteConfig } from "@/hooks/useRemoteConfig"
 import { useWritingStatsV2 } from "@/hooks/useWritingStatsV2"
+import { fetchAllUserDataWithBoardPermission } from "@/utils/userUtils"
 import StatsHeader from "./StatsHeader"
 import { StatsNoticeBanner } from "./StatsNoticeBanner"
-import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { fetchAllUserDataWithBoardPermission } from "@/utils/userUtils"
-import { useRemoteConfig } from "@/hooks/useRemoteConfig"
-import { useCallback } from "react"
-import { useRegisterTabHandler } from "@/contexts/BottomTabHandlerContext"
+import { UserStatsCard } from "./UserStatsCard"
 
 // 통계 페이지 스크롤 영역의 고유 ID
 const STATS_SCROLL_ID = 'stats-scroll';
@@ -72,12 +72,12 @@ export default function StatsPage() {
     }
     
     return (
-        <div className="min-h-screen flex flex-col bg-background">
+        <div className="flex min-h-screen flex-col bg-background">
             <StatsHeader />
-            <main className="flex-1 container px-4 py-4">
+            <main className="container flex-1 p-4">
                 <ScrollArea className="h-full" id={STATS_SCROLL_ID}>
                     <StatsNoticeBanner />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
+                    <div className="grid grid-cols-1 gap-4 pb-20 md:grid-cols-2">
                         {writingStats?.map((stats) => (
                             <UserStatsCard key={stats.user.id} stats={stats} />
                         ))}
@@ -91,28 +91,28 @@ export default function StatsPage() {
 // LoadingState 컴포넌트 - 스켈레톤 UI 표시
 function LoadingState() {
     return (
-        <div className="min-h-screen flex flex-col bg-background">
+        <div className="flex min-h-screen flex-col bg-background">
             <StatsHeader />
-            <main className="flex-1 container px-4 py-4">
+            <main className="container flex-1 p-4">
                 <ScrollArea className="h-full" id={STATS_SCROLL_ID}>
                     <StatsNoticeBanner />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
+                    <div className="grid grid-cols-1 gap-4 pb-20 md:grid-cols-2">
                         {[...Array(5)].map((_, index) => (
-                            <div key={index} className="w-full bg-card rounded-lg">
+                            <div key={index} className="w-full rounded-lg bg-card">
                                 <div className="flex items-start gap-4 p-4">
                                     <div className="flex flex-1 items-start gap-4">
-                                        <div className="h-12 w-12 bg-muted rounded-full" />
+                                        <div className="size-12 rounded-full bg-muted" />
                                         <div className="flex flex-col gap-2">
-                                            <div className="h-5 w-24 bg-muted rounded" />
-                                            <div className="h-4 w-32 bg-muted rounded" />
+                                            <div className="h-5 w-24 rounded bg-muted" />
+                                            <div className="h-4 w-32 rounded bg-muted" />
                                         </div>
                                     </div>
                                     <div className="flex flex-col items-end gap-2">
-                                        <div className="w-24 grid grid-rows-4 grid-flow-col gap-1">
+                                        <div className="grid w-24 grid-flow-col grid-rows-4 gap-1">
                                             {[...Array(20)].map((_, i) => (
                                                 <div 
                                                     key={i} 
-                                                    className="aspect-square w-full bg-muted rounded-sm"
+                                                    className="aspect-square w-full rounded-sm bg-muted"
                                                 />
                                             ))}
                                         </div>
@@ -130,7 +130,7 @@ function LoadingState() {
 // ErrorState 컴포넌트 - 오류 메시지 표시
 function ErrorState({ error }: { error: Error }) {
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-background">
             <StatsHeader />
             <main className="container flex flex-col items-center justify-center py-8">
                 <h2 className="text-xl font-semibold text-red-600">

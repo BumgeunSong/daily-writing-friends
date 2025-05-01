@@ -1,9 +1,9 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
-import { createPost } from '@/utils/postUtils';
-import { deleteDraft } from '@/utils/draftUtils';
 import { sendAnalyticsEvent, AnalyticsEvent } from '@/utils/analyticsUtils';
+import { deleteDraft } from '@/utils/draftUtils';
+import { createPost } from '@/utils/postUtils';
 
 interface UsePostSubmitProps {
   userId: string | undefined;
