@@ -10,6 +10,7 @@ import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { NotificationsLoading } from './NotificationsLoading';
 import { NotificationsContent } from './NotificationsContent';
 import NotificationsHeader from './NotificationsHeader';
+import { NotificationsErrorBoundary } from './NotificationsErrorBoundary';
 
 // DATA - Constants
 const NOTIFICATIONS_CONFIG = {
@@ -21,7 +22,7 @@ const NOTIFICATIONS_CONFIG = {
 /**
  * 알림 목록 페이지 컴포넌트
  */
-const NotificationsPage: React.FC = () => {
+const NotificationsPage = () => {
   // ACTION - Performance monitoring
   usePerformanceMonitoring('NotificationsPage');
   
@@ -73,16 +74,18 @@ const NotificationsPage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
-      <NotificationsHeader />
-      <NotificationsContent
-        scrollAreaId={NOTIFICATIONS_CONFIG.SCROLL_ID}
-        notifications={allNotifications}
-        scrollRef={scrollRef}
-        observerRef={observerRef}
-        isLoadingMore={isLoadingMore}
-      />
-    </div>
+    <NotificationsErrorBoundary>
+      <div className="flex flex-col h-[calc(100vh-4rem)]">
+        <NotificationsHeader />
+        <NotificationsContent
+          scrollAreaId={NOTIFICATIONS_CONFIG.SCROLL_ID}
+          notifications={allNotifications}
+          scrollRef={scrollRef}
+          observerRef={observerRef}
+          isLoadingMore={isLoadingMore}
+        />
+      </div>
+    </NotificationsErrorBoundary>
   );
 };
 
