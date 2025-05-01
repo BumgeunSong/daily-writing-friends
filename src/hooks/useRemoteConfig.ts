@@ -1,4 +1,4 @@
-import { getRemoteConfig, fetchAndActivate, getValue } from 'firebase/remote-config';
+import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { useState, useEffect } from 'react';
 import { remoteConfig } from '@/firebase';
 

@@ -26,7 +26,7 @@ export function useMediaQuery(query: string): boolean {
     }
     
     // 기본값은 false (서버 사이드 렌더링 시)
-    return () => {}
+    return undefined
   }, [query])
   
   return matches
