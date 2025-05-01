@@ -61,14 +61,8 @@ export function calculatePreviousDaysStreak(
     let streak = 0;
     let currentDate = new Date(startDate);
 
-    while (true) {
-        if (isWorkingDayFn(currentDate, timeZone)) {
-            if (hasPostingOnDate(currentDate, postingDays, timeZone)) {
-                streak++;
-            } else {
-                break;
-            }
-        }
+    while (isWorkingDayFn(currentDate, timeZone) && hasPostingOnDate(currentDate, postingDays, timeZone)) {
+        streak++;
         currentDate = getPreviousDate(currentDate);
     }
 
