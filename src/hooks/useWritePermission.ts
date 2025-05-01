@@ -5,23 +5,30 @@ import { firestore } from "@/firebase";
 import { User } from "@/types/User";
 
 export default function useWritePermission(userId: string | null, boardId: string) {
-    if (userId === null) {
-        const noUserIdError = new Error('유저 ID가 존재하지 않아 유저 데이터를 불러올 수 없습니다.');
-        console.error(noUserIdError);
-        captureException(noUserIdError);
-        return { writePermission: false, isLoading: false, error: noUserIdError };
-    }
+    const noUserIdError = userId === null ? new Error('유저 ID가 존재하지 않아 유저 데이터를 불러올 수 없습니다.') : null;
 
-    const { data: writePermission, isLoading, error } = useQuery<boolean>(['writePermission', userId, boardId], async () => {
-        // get user document
-        const userDocRef = doc(firestore, 'users', userId);
-        const userDoc = await getDoc(userDocRef);
-        const user = userDoc.data() as User;
-        return user.boardPermissions[boardId] === 'write';
-    }, {
-        staleTime: 1000 * 60 * 5, // 5 minutes
-        cacheTime: 1000 * 60 * 10, // 10 minutes
-    });
+    const { data: writePermission, isLoading, error } = useQuery<boolean>(
+        ['writePermission', userId, boardId],
+        async () => {
+            if (userId === null) {
+                throw noUserIdError;
+            }
+            // get user document
+            const userDocRef = doc(firestore, 'users', userId);
+            const userDoc = await getDoc(userDocRef);
+            const user = userDoc.data() as User;
+            return user.boardPermissions[boardId] === 'write';
+        },
+        {
+            enabled: userId !== null,
+            staleTime: 1000 * 60 * 5, // 5 minutes
+            cacheTime: 1000 * 60 * 10, // 10 minutes
+            onError: (error) => {
+                console.error(error);
+                captureException(error);
+            }
+        }
+    );
 
-    return { writePermission, isLoading, error };
+    return { writePermission, isLoading, error: error || noUserIdError };
 }
