@@ -13,21 +13,29 @@ import { usePerformanceMonitoring } from '@/hooks/usePerformanceMonitoring';
 import { useRegisterTabHandler } from '@/contexts/BottomTabHandlerContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { useScrollAreaControl } from '@/hooks/useScrollAreaControl';
+import { flattenNotificationPages, shouldFetchNextPage, createNotificationQueryKey } from '@/utils/notificationUtils';
 
-// 알림 목록을 위한 ScrollArea의 고유 ID
-const NOTIFICATIONS_SCROLL_ID = 'notifications-scroll';
+// DATA - Constants
+const NOTIFICATIONS_CONFIG = {
+  SCROLL_ID: 'notifications-scroll',
+  LIMIT_COUNT: 10,
+  SKELETON_COUNT: 10,
+} as const;
 
 const NotificationsPage: React.FC = () => {
+  // ACTION - Performance monitoring
   usePerformanceMonitoring('NotificationsPage');
+  
+  // DATA - State and refs
   const { currentUser } = useAuth();
   const [inViewRef, inView] = useInView();
-  const [limitCount] = useState(10);
   const queryClient = useQueryClient();
   const scrollRef = useRef<HTMLDivElement>(null);
   
-  // ScrollArea 제어 훅 사용
-  const { scrollAreaToTop } = useScrollAreaControl(`#${NOTIFICATIONS_SCROLL_ID}`);
+  // ACTION - ScrollArea control
+  const { scrollAreaToTop } = useScrollAreaControl(`#${NOTIFICATIONS_CONFIG.SCROLL_ID}`);
 
+  // ACTION - Fetch notifications
   const {
     data: notifications,
     isLoading,
@@ -35,38 +43,38 @@ const NotificationsPage: React.FC = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage
-  } = useNotifications(currentUser?.uid, limitCount);
+  } = useNotifications(currentUser?.uid, NOTIFICATIONS_CONFIG.LIMIT_COUNT);
 
-  // 알림 새로고침 핸들러
+  // ACTION - Refresh handler
   const handleRefreshNotifications = useCallback(() => {
-    // 1. ScrollArea의 스크롤 위치를 최상단으로 이동
     scrollAreaToTop();
-    
-    // 2. 알림 관련 쿼리 캐시 무효화
     if (currentUser?.uid) {
-      queryClient.invalidateQueries(['notifications', currentUser.uid]);
+      queryClient.invalidateQueries(createNotificationQueryKey(currentUser.uid));
     }
-    
-    console.log('알림 데이터 새로고침 및 스크롤 위치 초기화');
   }, [scrollAreaToTop, queryClient, currentUser]);
   
-  // Notifications 탭 핸들러 등록
+  // ACTION - Register tab handler
   useRegisterTabHandler('Notifications', handleRefreshNotifications);
 
+  // ACTION - Infinite scroll effect
   useEffect(() => {
-    if (inView && hasNextPage) {
+    if (shouldFetchNextPage(inView, hasNextPage)) {
       fetchNextPage();
     }
   }, [inView, hasNextPage, fetchNextPage]);
 
+  // CALCULATION - Transform data for rendering
+  const allNotifications = flattenNotificationPages(notifications?.pages);
+
+  // CALCULATION - Render loading skeleton
   if (isLoading) {
     return (
       <div className="flex flex-col h-[calc(100vh-4rem)]">
         <NotificationsHeader />
         <Card className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full" id={NOTIFICATIONS_SCROLL_ID}>
+          <ScrollArea className="h-full" id={NOTIFICATIONS_CONFIG.SCROLL_ID}>
             <div ref={scrollRef}>
-              {Array.from({ length: 10 }).map((_, index) => (
+              {Array.from({ length: NOTIFICATIONS_CONFIG.SKELETON_COUNT }).map((_, index) => (
                 <Skeleton key={index} className="h-10 w-full mb-4" />
               ))}
             </div>
@@ -75,15 +83,15 @@ const NotificationsPage: React.FC = () => {
       </div>
     );
   }
-  if (isError) return <StatusMessage error={isError} />;
 
-  const allNotifications = notifications?.pages.flatMap((page) => page) || [];
+  // CALCULATION - Render error state
+  if (isError) return <StatusMessage error={isError} />;
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       <NotificationsHeader />
       <Card className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full" id={NOTIFICATIONS_SCROLL_ID}>
+        <ScrollArea className="h-full" id={NOTIFICATIONS_CONFIG.SCROLL_ID}>
           <div ref={scrollRef}>
             <NotificationsList notifications={allNotifications} />
             <div ref={inViewRef} />
