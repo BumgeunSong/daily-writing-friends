@@ -1,18 +1,15 @@
 import React, { useRef } from 'react';
-import { Card } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import NotificationsHeader from './NotificationsHeader';
-import NotificationsList from './NotificationsList';
 import { useAuth } from '@/contexts/AuthContext';
 import StatusMessage from '@/components/common/StatusMessage';
-import { Loader2 } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
-import { Skeleton } from '@/components/ui/skeleton';
 import { usePerformanceMonitoring } from '@/hooks/usePerformanceMonitoring';
 import { useRegisterTabHandler } from '@/contexts/BottomTabHandlerContext';
 import { flattenNotificationPages } from '@/utils/notificationUtils';
 import { useNotificationRefresh } from '@/hooks/useNotificationRefresh';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { NotificationsLoading } from './NotificationsLoading';
+import { NotificationsContent } from './NotificationsContent';
+import NotificationsHeader from './NotificationsHeader';
 
 // DATA - Constants
 const NOTIFICATIONS_CONFIG = {
@@ -21,6 +18,9 @@ const NOTIFICATIONS_CONFIG = {
   SKELETON_COUNT: 10,
 } as const;
 
+/**
+ * 알림 목록 페이지 컴포넌트
+ */
 const NotificationsPage: React.FC = () => {
   // ACTION - Performance monitoring
   usePerformanceMonitoring('NotificationsPage');
@@ -58,43 +58,30 @@ const NotificationsPage: React.FC = () => {
   // CALCULATION - Transform data for rendering
   const allNotifications = flattenNotificationPages(notifications?.pages);
 
-  // CALCULATION - Render loading skeleton
+  // CALCULATION - Render states
   if (isLoading) {
     return (
-      <div className="flex flex-col h-[calc(100vh-4rem)]">
-        <NotificationsHeader />
-        <Card className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full" id={NOTIFICATIONS_CONFIG.SCROLL_ID}>
-            <div ref={scrollRef}>
-              {Array.from({ length: NOTIFICATIONS_CONFIG.SKELETON_COUNT }).map((_, index) => (
-                <Skeleton key={index} className="h-10 w-full mb-4" />
-              ))}
-            </div>
-          </ScrollArea>
-        </Card>
-      </div>
+      <NotificationsLoading 
+        scrollAreaId={NOTIFICATIONS_CONFIG.SCROLL_ID}
+        skeletonCount={NOTIFICATIONS_CONFIG.SKELETON_COUNT}
+      />
     );
   }
 
-  // CALCULATION - Render error state
-  if (isError) return <StatusMessage error={isError} />;
+  if (isError) {
+    return <StatusMessage error={isError} />;
+  }
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
       <NotificationsHeader />
-      <Card className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full" id={NOTIFICATIONS_CONFIG.SCROLL_ID}>
-          <div ref={scrollRef}>
-            <NotificationsList notifications={allNotifications} />
-            <div ref={observerRef} />
-            {isLoadingMore && (
-              <div className="flex justify-center items-center p-4">
-                <Loader2 className="w-4 h-4 animate-spin" />
-              </div>
-            )}
-          </div>
-        </ScrollArea>
-      </Card>
+      <NotificationsContent
+        scrollAreaId={NOTIFICATIONS_CONFIG.SCROLL_ID}
+        notifications={allNotifications}
+        scrollRef={scrollRef}
+        observerRef={observerRef}
+        isLoadingMore={isLoadingMore}
+      />
     </div>
   );
 };
