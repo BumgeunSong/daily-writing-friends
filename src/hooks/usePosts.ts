@@ -1,8 +1,8 @@
+import * as Sentry from '@sentry/react';
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { limit, query, collection, orderBy, where, getDocs, startAfter } from "firebase/firestore";
 import { firestore } from "@/firebase";
 import { Post } from "@/types/Post";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import * as Sentry from '@sentry/react';
 import { mapDocumentToPost } from "@/utils/postUtils";
 
 export const usePosts = (boardId: string, selectedAuthorId: string | null, limitCount: number) => {

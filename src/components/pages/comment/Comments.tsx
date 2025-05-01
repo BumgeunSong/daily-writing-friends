@@ -1,14 +1,14 @@
-import type React from "react"
+import { useQueryClient, useQuery } from "@tanstack/react-query"
+import { Loader2 } from "lucide-react"
 import { Suspense } from "react"
 import { useAuth } from "@/contexts/AuthContext"
+import { sendAnalyticsEvent, AnalyticsEvent } from "@/utils/analyticsUtils"
 import { addCommentToPost } from "@/utils/commentUtils"
+import { fetchCommentsOnce } from "@/utils/commentUtils"
 import CommentInput from "./CommentInput"
 import CommentList from "./CommentList"
 import CommentPrompt from "./CommentPrompt"
-import { useQueryClient, useQuery } from "@tanstack/react-query"
-import { Loader2 } from "lucide-react"
-import { fetchCommentsOnce } from "@/utils/commentUtils"
-import { sendAnalyticsEvent, AnalyticsEvent } from "@/utils/analyticsUtils"
+import type React from "react"
 interface CommentsProps {
   boardId: string
   postId: string
@@ -18,7 +18,7 @@ interface CommentsProps {
 
 // 로딩 인디케이터 컴포넌트
 const LoadingIndicator: React.FC = () => (
-  <Loader2 className="size-4 text-muted-foreground animate-spin ml-2" />
+  <Loader2 className="ml-2 size-4 animate-spin text-muted-foreground" />
 );
 
 // 이 컴포넌트는 Suspense와 함께 사용하기 위한 것입니다
@@ -69,7 +69,7 @@ const Comments: React.FC<CommentsProps> = ({ boardId, postId, postAuthorId, post
       <Suspense fallback={null}>
         <CommentList boardId={boardId} postId={postId} />
       </Suspense>
-      <div className="mt-6 space-y-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+      <div className="mt-6 space-y-4 border-t border-gray-200 pt-6 dark:border-gray-700">
         <CommentPrompt postAuthorId={postAuthorId} postAuthorNickname={postAuthorNickname} />
         <CommentInput onSubmit={handleSubmit} />
       </div>

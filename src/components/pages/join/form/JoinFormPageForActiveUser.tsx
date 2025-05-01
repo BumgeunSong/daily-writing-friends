@@ -1,16 +1,16 @@
 import { useState } from "react"
-import { JoinFormDataForActiveUser } from "@/types/join"
-import FormHeader from "./JoinFormHeader"
-import JoinFormCardForActiveUser from "./JoinFormCardForActiveUser"
-import { useUserNickname } from "@/utils/userUtils"
-import { addUserToBoardWaitingList } from "@/utils/boardUtils"  
+import { showErrorToast } from "@/components/common/showErrorToast"
+import { useAuth } from "@/contexts/AuthContext"
 import { useToast } from "@/hooks/use-toast"
 import { useUpcomingBoard } from "@/hooks/useUpcomingBoard"
-import JoinCompletePage from "../complete/JoinCompletePage"
-import { useAuth } from "@/contexts/AuthContext"
 import { Board } from "@/types/Board"
+import { JoinFormDataForActiveUser } from "@/types/join"
+import { addUserToBoardWaitingList } from "@/utils/boardUtils"  
 import { addReviewToBoard } from "@/utils/reviewUtils"
-import { showErrorToast } from "@/components/common/showErrorToast"
+import { useUserNickname } from "@/utils/userUtils"
+import JoinFormCardForActiveUser from "./JoinFormCardForActiveUser"
+import FormHeader from "./JoinFormHeader"
+import JoinCompletePage from "../complete/JoinCompletePage"
 
 /**
  * 기존 사용자를 위한 매글프 신청 폼 페이지 컴포넌트
@@ -56,8 +56,8 @@ export default function JoinFormPageForActiveUser() {
     }
     
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-slate-50 flex flex-col">
-        <div className="max-w-3xl lg:max-w-4xl mx-auto w-full px-4 py-8 flex-1">
+      <div className="flex min-h-screen flex-col bg-gradient-to-b from-background to-slate-50">
+        <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 lg:max-w-4xl">
           <FormHeader title={title} subtitle={subtitle} />
           <JoinFormCardForActiveUser upcomingBoard={upcomingBoard ?? null} onSubmit={handleSubmit} />
         </div>

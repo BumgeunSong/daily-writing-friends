@@ -1,15 +1,15 @@
 "use client"
 
-import type React from "react"
 
 import { MessageCircle, User, Lock } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { type Post, PostVisibility } from "@/types/Post"
 import { Badge } from "@/components/ui/badge"
-import { getContentPreview } from "@/utils/contentUtils"
-import { useAuthorData } from "@/hooks/useAuthorData"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useAuthorData } from "@/hooks/useAuthorData"
+import { type Post, PostVisibility } from "@/types/Post"
+import { getContentPreview } from "@/utils/contentUtils"
+import type React from "react"
 
 interface PostCardProps {
   post: Post
@@ -29,10 +29,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
   return (
     <Card
       onClick={handleCardClick}
-      className="cursor-pointer transition-all duration-200 hover:bg-muted/50 hover:shadow-sm hover:border-border/80"
+      className="cursor-pointer transition-all duration-200 hover:border-border/80 hover:bg-muted/50 hover:shadow-sm"
     >
-      <CardHeader className="pb-2 pt-3 px-4">
-        <div className="flex items-center mb-2">
+      <CardHeader className="px-4 pb-2 pt-3">
+        <div className="mb-2 flex items-center">
           {isAuthorLoading ? (
             <Skeleton className="size-7 rounded-full" />
           ) : (
@@ -52,22 +52,22 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
           </div>
         </div>
 
-        <h2 className="text-xl font-semibold flex items-center text-foreground/90">
-          {isPrivate && <Lock className="size-4 text-muted-foreground mr-1.5 flex-shrink-0" aria-label="비공개 글" />}
+        <h2 className="flex items-center text-xl font-semibold text-foreground/90">
+          {isPrivate && <Lock className="mr-1.5 size-4 shrink-0 text-muted-foreground" aria-label="비공개 글" />}
           {post.title}
         </h2>
       </CardHeader>
-      <CardContent className="px-4 pt-1 pb-3">
+      <CardContent className="px-4 pb-3 pt-1">
         {!isPrivate && contentPreview && (
           <div
             className="
-            prose prose-sm dark:prose-invert 
+            prose prose-sm line-clamp-3 
+            leading-relaxed
             text-foreground/80
+            dark:prose-invert
             prose-p:my-1
-            prose-ul:my-1
             prose-ol:my-1
-            line-clamp-3
-            leading-relaxed"
+            prose-ul:my-1"
             dangerouslySetInnerHTML={{ __html: contentPreview }}
           />
         )}
@@ -77,7 +77,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
           </div>
         )}
       </CardContent>
-      <CardFooter className="pt-2 pb-3 px-4 border-t border-border/30 flex justify-between">
+      <CardFooter className="flex justify-between border-t border-border/30 px-4 pb-3 pt-2">
         <div className="flex items-center text-muted-foreground">
           <MessageCircle className="mr-1 size-4" />
           <p className="text-xs font-medium">{post.countOfComments + post.countOfReplies}</p>
@@ -85,7 +85,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
         {post.weekDaysFromFirstDay !== undefined && (
           <Badge
             variant="outline"
-            className="text-xs px-1.5 py-0.5 h-5 font-medium text-muted-foreground border-muted-foreground/30"
+            className="h-5 border-muted-foreground/30 px-1.5 py-0.5 text-xs font-medium text-muted-foreground"
           >
             {post.weekDaysFromFirstDay + 1}일차
           </Badge>

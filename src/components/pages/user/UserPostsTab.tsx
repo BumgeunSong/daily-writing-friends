@@ -1,9 +1,9 @@
+import { useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
+import { Link } from 'react-router-dom';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useUserPosts } from '@/hooks/useUserPosts';
 import { formatDate } from '@/utils/dateUtils';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Link } from 'react-router-dom';
-import { useEffect } from 'react';
 
 interface UserPostsTabProps {
   userId: string;
@@ -38,12 +38,12 @@ export default function UserPostsTab({ userId }: UserPostsTabProps) {
     return (
       <div 
         key={post.id} 
-        className="p-4 border rounded-md hover:border-primary transition-colors"
+        className="rounded-md border p-4 transition-colors hover:border-primary"
         ref={isLastItem ? ref : undefined}
       >
         <Link to={`/board/${post.boardId}/post/${post.id}`}>
           <h3 className="font-medium">{post.title}</h3>
-          <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
+          <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
             <span>{post.boardTitle}</span>
             <span>{formatDate(post.createdAt?.toDate())}</span>
           </div>
@@ -55,9 +55,9 @@ export default function UserPostsTab({ userId }: UserPostsTabProps) {
   // 로딩 스켈레톤 렌더링
   const renderSkeletons = () => {
     return Array(3).fill(null).map((_, i) => (
-      <div key={i} className="p-4 border rounded-md">
-        <Skeleton className="h-5 w-3/4 mb-2" />
-        <div className="flex justify-between items-center mt-2">
+      <div key={i} className="rounded-md border p-4">
+        <Skeleton className="mb-2 h-5 w-3/4" />
+        <div className="mt-2 flex items-center justify-between">
           <Skeleton className="h-3 w-20" />
           <Skeleton className="h-3 w-20" />
         </div>
@@ -84,7 +84,7 @@ export default function UserPostsTab({ userId }: UserPostsTabProps) {
           )}
         </>
       ) : (
-        <div className="text-center py-10">
+        <div className="py-10 text-center">
           <p className="text-muted-foreground">작성한 글이 없습니다.</p>
         </div>
       )}

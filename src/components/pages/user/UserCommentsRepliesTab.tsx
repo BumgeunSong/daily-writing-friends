@@ -1,9 +1,9 @@
+import { useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
+import { Link } from 'react-router-dom';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useUserCommentsReplies, UserCommentReply } from '@/hooks/useUserCommentsReplies';
 import { formatDate } from '@/utils/dateUtils';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Link } from 'react-router-dom';
-import { useEffect } from 'react';
 
 interface UserCommentsRepliesTabProps {
   userId: string;
@@ -38,16 +38,16 @@ export default function UserCommentsRepliesTab({ userId }: UserCommentsRepliesTa
     return (
       <div 
         key={`${comment.type}-${comment.createdAt.toMillis()}`} 
-        className="p-4 border rounded-md hover:border-primary transition-colors"
+        className="rounded-md border p-4 transition-colors hover:border-primary"
         ref={isLastItem ? ref : undefined}
       >
         <Link to={comment.url}>
-          <h3 className="font-medium text-sm">{comment.postTitle}</h3>
-          <p className="text-sm mt-2 line-clamp-2">
+          <h3 className="text-sm font-medium">{comment.postTitle}</h3>
+          <p className="mt-2 line-clamp-2 text-sm">
             {comment.type === 'reply' && <span className="text-primary">↳ </span>}
             {comment.content}
           </p>
-          <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground">
+          <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
             <span>{comment.type === 'comment' ? '댓글' : '답글'}</span>
             <span>{formatDate(comment.createdAt.toDate())}</span>
           </div>
@@ -59,11 +59,11 @@ export default function UserCommentsRepliesTab({ userId }: UserCommentsRepliesTa
   // 로딩 스켈레톤 렌더링
   const renderSkeletons = () => {
     return Array(3).fill(null).map((_, i) => (
-      <div key={i} className="p-4 border rounded-md">
-        <Skeleton className="h-4 w-1/2 mb-2" />
-        <Skeleton className="h-4 w-full mb-1" />
-        <Skeleton className="h-4 w-2/3 mb-2" />
-        <div className="flex justify-between items-center mt-2">
+      <div key={i} className="rounded-md border p-4">
+        <Skeleton className="mb-2 h-4 w-1/2" />
+        <Skeleton className="mb-1 h-4 w-full" />
+        <Skeleton className="mb-2 h-4 w-2/3" />
+        <div className="mt-2 flex items-center justify-between">
           <Skeleton className="h-3 w-20" />
           <Skeleton className="h-3 w-20" />
         </div>
@@ -90,7 +90,7 @@ export default function UserCommentsRepliesTab({ userId }: UserCommentsRepliesTa
           )}
         </>
       ) : (
-        <div className="text-center py-10">
+        <div className="py-10 text-center">
           <p className="text-muted-foreground">작성한 댓글이 없습니다.</p>
         </div>
       )}

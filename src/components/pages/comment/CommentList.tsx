@@ -1,9 +1,9 @@
+import { useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import CommentRow from './CommentRow';
 import { Comment } from '@/types/Comment';
-import { useQuery } from '@tanstack/react-query';
 import { fetchCommentsOnce } from '@/utils/commentUtils';
+import CommentRow from './CommentRow';
 
 interface CommentListProps {
   boardId: string;

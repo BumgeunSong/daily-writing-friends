@@ -1,4 +1,5 @@
 // src/firebase.ts
+import { getAnalytics } from "firebase/analytics";
 import { initializeApp } from 'firebase/app';
 import {
   getAuth,
@@ -9,9 +10,8 @@ import {
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getPerformance } from "firebase/performance";
-import { getStorage } from 'firebase/storage';
 import { getRemoteConfig } from "firebase/remote-config";
-import { getAnalytics } from "firebase/analytics";
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string,

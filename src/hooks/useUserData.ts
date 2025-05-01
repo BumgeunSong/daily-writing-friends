@@ -1,8 +1,8 @@
 import * as Sentry from '@sentry/react';
-import { User } from '@/types/User';
-import { firestore } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
 import { useQuery } from '@tanstack/react-query';
+import { doc, getDoc } from 'firebase/firestore';
+import { firestore } from '@/firebase';
+import { User } from '@/types/User';
 
 export const useUserData = (userId: string | null) => {
     if (userId === null) {

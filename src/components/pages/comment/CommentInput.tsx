@@ -1,10 +1,10 @@
+import { useMutation } from "@tanstack/react-query"
 import { Send, Loader2 } from "lucide-react"
-import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/contexts/AuthContext"
-import { useMutation } from "@tanstack/react-query"
+import type React from "react"
 
 interface CommentInputProps {
   initialValue?: string

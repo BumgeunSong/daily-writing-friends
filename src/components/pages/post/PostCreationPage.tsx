@@ -1,17 +1,17 @@
+import { Loader2, FileText } from 'lucide-react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '../../../contexts/AuthContext';
-import { PostTextEditor } from './PostTextEditor';
-import { PostTitleEditor } from './PostTitleEditor';
-import { PostBackButton } from './PostBackButton';
-import { Loader2, FileText } from 'lucide-react';
-import { DraftStatusIndicator } from '../draft/DraftStatusIndicator';
-import { DraftsDrawer } from '../draft/DraftsDrawer';
+import { useAutoSaveDrafts } from '@/hooks/useAutoSaveDrafts';
 import { useDraftLoader } from '@/hooks/useDraftLoader';
 import { usePostEditor } from '@/hooks/usePostEditor';
 import { usePostSubmit } from '@/hooks/usePostSubmit';
-import { useAutoSaveDrafts } from '@/hooks/useAutoSaveDrafts';
+import { PostBackButton } from './PostBackButton';
 import { PostSubmitButton } from './PostSubmitButton';
+import { PostTextEditor } from './PostTextEditor';
+import { PostTitleEditor } from './PostTitleEditor';
+import { useAuth } from '../../../contexts/AuthContext';
+import { DraftsDrawer } from '../draft/DraftsDrawer';
+import { DraftStatusIndicator } from '../draft/DraftStatusIndicator';
 
 export default function PostCreationPage() {
   const { currentUser } = useAuth();
@@ -57,15 +57,15 @@ export default function PostCreationPage() {
   });
 
   return (
-    <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
+    <div className='mx-auto max-w-4xl px-6 py-8 sm:px-8 lg:px-12'>
       <div className="mb-6">
         {boardId && <PostBackButton boardId={boardId} />}
       </div>
       
       {/* draftId가 있을 때만 로딩 상태 표시 */}
       {draftId && isDraftLoading ? (
-        <div className="flex justify-center items-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="size-8 animate-spin text-primary" />
           <span className="ml-2 text-gray-600">임시 저장 글을 불러오는 중...</span>
         </div>
       ) : (
@@ -87,11 +87,11 @@ export default function PostCreationPage() {
             lastSavedAt={lastSavedAt}
           />
           
-          <div className='flex justify-between items-center'>
+          <div className='flex items-center justify-between'>
             {currentUser && (
               <DraftsDrawer userId={currentUser.uid} boardId={boardId}>
                 <Button variant="outline" size="default" className="flex items-center">
-                  <FileText className="h-4 w-4 mr-2" />
+                  <FileText className="mr-2 size-4" />
                   임시 저장 글
                 </Button>
               </DraftsDrawer>

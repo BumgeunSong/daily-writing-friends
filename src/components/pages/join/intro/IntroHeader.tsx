@@ -6,7 +6,7 @@ interface IntroHeaderProps {
 
 export default function IntroHeader({ onLogin }: IntroHeaderProps) {
   return (
-    <header className="p-6 flex items-center justify-between">
+    <header className="flex items-center justify-between p-6">
       <h1 className="text-2xl font-bold md:text-3xl">매일 글쓰기 프렌즈</h1>
       <Button 
         onClick={onLogin}

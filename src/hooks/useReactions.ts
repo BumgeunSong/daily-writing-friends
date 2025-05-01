@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { GroupedReaction, ReactionUser } from '@/types/Reaction';
 import {
   getReactions,
   createReaction as createReactionApi,
@@ -7,8 +9,6 @@ import {
   groupReactionsByEmoji,
   GetReactionsParams
 } from '@/utils/reactionUtils';
-import { GroupedReaction, ReactionUser } from '@/types/Reaction';
-import { useParams } from 'react-router-dom';
 import { fetchUserData } from '@/utils/userUtils';
 
 // 엔티티 타입 정의

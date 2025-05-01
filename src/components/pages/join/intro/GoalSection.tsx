@@ -1,13 +1,13 @@
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { UserStatsCard } from "@/components/pages/stats/UserStatsCard"
-import { mockUserStats } from "./mockUserStats"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import MockCommentRow from "./MockCommentRow"
+import { mockUserStats } from "./mockUserStats"
 
 export default function GoalSection() {
   return (
     <div className="space-y-8">
       {/* 첫 번째 목표 섹션 */}
-      <Card className="bg-muted/10 border-none">
+      <Card className="border-none bg-muted/10">
         <CardHeader>
           <CardTitle className="text-xl font-bold">매일 쓰기</CardTitle>
         </CardHeader>
@@ -24,7 +24,7 @@ export default function GoalSection() {
           <p className="text-muted-foreground">
             내용과 형식은 자유이며 완성된 글이 아니어도 괜찮습니다.
           </p>
-          <p className="text-muted-foreground font-medium">
+          <p className="font-medium text-muted-foreground">
             딱 3줄만 쓰셔도 됩니다. 핵심은 매일 쓰는 습관을 만드는 것!
           </p>
         </CardContent>
@@ -34,7 +34,7 @@ export default function GoalSection() {
       </Card>
 
       {/* 두 번째 목표 섹션 */}
-      <Card className="bg-muted/10 border-none">
+      <Card className="border-none bg-muted/10">
         <CardHeader>
           <CardTitle className="text-xl font-bold">같이 쓰기</CardTitle>
         </CardHeader>
@@ -48,10 +48,10 @@ export default function GoalSection() {
           <p className="text-muted-foreground">
             매글프는 비공개 소그룹에서 다같이 매일 글을 씁니다.
           </p>
-          <p className="text-muted-foreground font-medium">
+          <p className="font-medium text-muted-foreground">
             다른 프렌즈와 약속을 했기 때문에 꾸준히 하는 동기가 생겨요.
           </p>
-          <p className="text-muted-foreground font-medium">
+          <p className="font-medium text-muted-foreground">
             다른 사람들의 댓글을 읽는 맛도 쏠쏠합니다.
           </p>
         </CardContent>
@@ -59,7 +59,7 @@ export default function GoalSection() {
       </Card>
 
       {/* 3번째 목표 섹션 */}
-      <Card className="bg-muted/10 border-none">
+      <Card className="border-none bg-muted/10">
         <CardHeader>
           <CardTitle className="text-xl font-bold">생각의 깊이</CardTitle>
         </CardHeader>
@@ -73,10 +73,10 @@ export default function GoalSection() {
           <p className="text-muted-foreground">
             매일 글쓰기는 머릿속에서 하고 싶은 말을 캐내는 일입니다.
           </p>
-          <p className="text-muted-foreground font-medium">
+          <p className="font-medium text-muted-foreground">
             그걸 골라서 다듬으면, 깊이 있는 생각으로 거듭나는 거죠.
           </p>
-          <p className="text-muted-foreground font-medium">
+          <p className="font-medium text-muted-foreground">
             쓰는 습관은 남들과는 다른 생각의 깊이를 만들어줍니다.
           </p>
         </CardContent>

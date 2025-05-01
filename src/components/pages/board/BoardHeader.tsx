@@ -1,7 +1,7 @@
+import { useQuery } from '@tanstack/react-query';
 import { ChevronDown } from 'lucide-react';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { fetchBoardTitle } from '../../../utils/boardUtils';
 import StatusMessage from '../../common/StatusMessage';
 

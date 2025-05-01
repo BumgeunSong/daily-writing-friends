@@ -1,7 +1,7 @@
-import { useRemoteConfig } from "./useRemoteConfig";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchAllUserDataWithBoardPermission } from "@/utils/userUtils";
-import { useQuery } from "@tanstack/react-query";
+import { useRemoteConfig } from "./useRemoteConfig";
 
 export function useIsCurrentUserActive() {
     const { value: activeBoardId } = useRemoteConfig('active_board_id', '');

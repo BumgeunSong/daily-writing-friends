@@ -4,8 +4,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import UserPostsTab from './UserPostsTab';
 import UserCommentsRepliesTab from './UserCommentsRepliesTab';
+import UserPostsTab from './UserPostsTab';
 
 interface UserActivityTabProps {
   userId: string;

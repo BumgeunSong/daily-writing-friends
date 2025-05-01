@@ -1,5 +1,5 @@
-import { analytics } from '@/firebase';
 import { logEvent } from 'firebase/analytics';
+import { analytics } from '@/firebase';
 
 export enum AnalyticsEvent {
     // Create comment

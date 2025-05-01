@@ -1,7 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import { signOut } from 'firebase/auth';
 import { BarChart3, Edit, LogOut, MessageCircle, Trash2 } from 'lucide-react';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,14 +16,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useRegisterTabHandler } from '@/contexts/BottomTabHandlerContext';
+import { useToast } from '@/hooks/use-toast';
+import { useClearCache } from '@/hooks/useClearCache';
+import { useUserData } from '@/hooks/useUserData';
+import { getUserActivityCount } from '@/utils/activityUtils';
 import { useAuth } from '../../../contexts/AuthContext';
 import { auth } from '../../../firebase';
-import { useUserData } from '@/hooks/useUserData';
-import { useClearCache } from '@/hooks/useClearCache';
-import { useQuery } from '@tanstack/react-query';
-import { getUserActivityCount } from '@/utils/activityUtils';
-import { useCallback } from 'react';
-import { useRegisterTabHandler } from '@/contexts/BottomTabHandlerContext';
 
 // 계정 페이지 스크롤 영역의 고유 ID
 const ACCOUNT_SCROLL_ID = 'account-scroll';

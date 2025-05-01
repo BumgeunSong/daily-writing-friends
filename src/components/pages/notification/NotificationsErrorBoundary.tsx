@@ -1,5 +1,5 @@
-import React from 'react';
 import { ErrorBoundary } from '@sentry/react';
+import React from 'react';
 import StatusMessage from '@/components/common/StatusMessage';
 
 const NotificationsFallback = () => {

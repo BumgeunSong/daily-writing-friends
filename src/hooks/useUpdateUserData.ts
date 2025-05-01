@@ -1,9 +1,9 @@
-import { useState, FormEvent } from 'react';
 import { updateProfile } from 'firebase/auth';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { doc, updateDoc } from 'firebase/firestore';
-import { firestore, storage, auth } from '../firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useState, FormEvent } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { firestore, storage, auth } from '../firebase';
 
 export const useUpdateUserData = (
   userId: string, 

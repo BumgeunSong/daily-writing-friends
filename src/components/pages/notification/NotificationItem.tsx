@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Notification, NotificationType } from '@/types/Notification';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Notification, NotificationType } from '@/types/Notification';
 import { usePostTitle } from '@/utils/postUtils';
 import { useUserNickname } from '@/utils/userUtils';
 

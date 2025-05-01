@@ -1,7 +1,7 @@
-import React from 'react';
-import { Draft } from '@/types/Draft';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
+import React from 'react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Draft } from '@/types/Draft';
 import { DraftItem } from './DraftItem';
 
 interface DraftsDrawerContentProps {
@@ -64,8 +64,8 @@ const DraftsList: React.FC<DraftsListProps> = ({
 
 // 로딩 컴포넌트
 const DraftsLoading: React.FC = () => (
-    <div className="flex justify-center items-center py-8" role="status" aria-live="polite">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
+    <div className="flex items-center justify-center py-8" role="status" aria-live="polite">
+        <Loader2 className="size-8 animate-spin text-primary" aria-hidden="true" />
         <span className="ml-2 text-gray-600">임시 저장 글을 불러오는 중...</span>
     </div>
 );

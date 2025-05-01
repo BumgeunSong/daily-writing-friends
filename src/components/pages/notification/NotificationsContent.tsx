@@ -1,9 +1,9 @@
+import { Loader2 } from 'lucide-react';
+import { RefObject } from 'react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2 } from 'lucide-react';
-import NotificationsList from './NotificationsList';
 import { Notification } from '@/types/Notification';
-import { RefObject } from 'react';
+import NotificationsList from './NotificationsList';
 
 interface NotificationsContentProps {
   scrollAreaId: string;
@@ -30,9 +30,9 @@ export const NotificationsContent = ({
           <NotificationsList notifications={notifications} />
           <div ref={observerRef} />
           {isLoadingMore && (
-            <div className="flex justify-center items-center p-4">
+            <div className="flex items-center justify-center p-4">
               <Loader2 
-                className="w-4 h-4 animate-spin"
+                className="size-4 animate-spin"
                 data-testid="loading-more-indicator"
               />
             </div>

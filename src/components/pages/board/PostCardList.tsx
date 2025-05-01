@@ -1,13 +1,13 @@
+import { useQueryClient } from '@tanstack/react-query';
 import React, { useEffect, useState, useCallback } from 'react';
-import PostCard from '../post/PostCard';
-import StatusMessage from '../../common/StatusMessage';
-import { usePosts } from '@/hooks/usePosts';
 import { useInView } from 'react-intersection-observer';
 import PostCardSkeleton from '@/components/ui/PostCardSkeleton';
-import { useScrollRestoration } from '@/hooks/useScrollRestoration';
-import { usePerformanceMonitoring } from '@/hooks/usePerformanceMonitoring';
 import { useRegisterTabHandler } from '@/contexts/BottomTabHandlerContext';
-import { useQueryClient } from '@tanstack/react-query';
+import { usePerformanceMonitoring } from '@/hooks/usePerformanceMonitoring';
+import { usePosts } from '@/hooks/usePosts';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
+import StatusMessage from '../../common/StatusMessage';
+import PostCard from '../post/PostCard';
 
 interface PostCardListProps {
   boardId: string;
@@ -88,7 +88,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, selec
       ))}
       <div ref={inViewRef} />
       {isFetchingNextPage && (
-        <div className="flex justify-center items-center p-4">
+        <div className="flex items-center justify-center p-4">
           <span>글을 불러오는 중...</span>
         </div>
       )}

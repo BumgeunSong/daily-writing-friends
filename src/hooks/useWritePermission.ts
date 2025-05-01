@@ -1,8 +1,8 @@
+import { captureException } from '@sentry/react';
+import { useQuery } from '@tanstack/react-query';
+import { doc, getDoc } from "firebase/firestore";
 import { firestore } from "@/firebase";
 import { User } from "@/types/User";
-import { doc, getDoc } from "firebase/firestore";
-import { useQuery } from '@tanstack/react-query';
-import { captureException } from '@sentry/react';
 
 export default function useWritePermission(userId: string | null, boardId: string) {
     if (userId === null) {

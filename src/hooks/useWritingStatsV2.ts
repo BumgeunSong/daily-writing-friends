@@ -6,14 +6,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { firestore } from '@/firebase';
-import { WritingStats, Contribution, WritingBadge } from '@/types/WritingStats';
 import { Posting } from '@/types/Posting';
 import { User } from '@/types/User';
-import { fetchUserData } from '@/utils/userUtils';
+import { WritingStats, Contribution, WritingBadge } from '@/types/WritingStats';
 import { getRecentWorkingDays } from '@/utils/dateUtils';
-import { calculateCurrentStreak } from '@/utils/streakUtils';
-import { getDateKey, getUserTimeZone } from '@/utils/streakUtils';
 import { mapDocumentToPosting } from '@/utils/postUtils';
+import { getDateKey, getUserTimeZone } from '@/utils/streakUtils';
+import { calculateCurrentStreak } from '@/utils/streakUtils';
+import { fetchUserData } from '@/utils/userUtils';
 export function useWritingStatsV2(userIds: string[]) {
     return useQuery({
         queryKey: ['writingStatsV2', userIds],

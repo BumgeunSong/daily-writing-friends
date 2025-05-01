@@ -1,7 +1,7 @@
-import { Link, useNavigate } from 'react-router-dom';
 import { MoreVertical } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -62,17 +62,17 @@ export default function UserProfile({
 
   if (loading) {
     return (
-      <div className="p-4 bg-background border-b">
-        <div className="relative flex items-start mb-4">
+      <div className="border-b bg-background p-4">
+        <div className="relative mb-4 flex items-start">
           {/* 사용자 정보 스켈레톤 */}
           <div className="flex-1">
-            <Skeleton className="h-6 w-32 mb-2" />
-            <Skeleton className="h-4 w-full mb-1" />
+            <Skeleton className="mb-2 h-6 w-32" />
+            <Skeleton className="mb-1 h-4 w-full" />
             <Skeleton className="h-4 w-2/3" />
           </div>
           
           {/* 프로필 이미지 스켈레톤 */}
-          <Skeleton className="w-16 h-16 rounded-full" />
+          <Skeleton className="size-16 rounded-full" />
         </div>
       </div>
     );
@@ -80,8 +80,8 @@ export default function UserProfile({
 
   if (!userData) {
     return (
-      <div className="p-4 bg-background border-b">
-        <div className="flex justify-center items-center py-2">
+      <div className="border-b bg-background p-4">
+        <div className="flex items-center justify-center py-2">
           <p className="text-sm text-muted-foreground">사용자 정보를 찾을 수 없습니다.</p>
         </div>
       </div>
@@ -91,18 +91,18 @@ export default function UserProfile({
   const { nickname, bio, profileImage } = userData;
 
   return (
-    <div className="p-4 bg-background border-b">
-      <div className="relative flex items-start mb-4">
+    <div className="border-b bg-background p-4">
+      <div className="relative mb-4 flex items-start">
         {/* 프로필 이미지 - 모바일에서는 왼쪽, 데스크탑에서는 오른쪽에 배치 */}
         <div className="mr-4 sm:hidden">
           {profileImage ? (
             <img
               src={profileImage}
               alt={`${nickname}의 프로필 사진`}
-              className="w-16 h-16 rounded-full object-cover border border-border"
+              className="size-16 rounded-full border border-border object-cover"
             />
           ) : (
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center border border-border">
+            <div className="flex size-16 items-center justify-center rounded-full border border-border bg-muted">
               <span className="text-lg font-medium text-muted-foreground">
                 {nickname.charAt(0)}
               </span>
@@ -113,7 +113,7 @@ export default function UserProfile({
         {/* 사용자 정보 */}
         <div className="flex-1">
           <h1 className="text-xl font-bold">{nickname}</h1>
-          <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+          <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
             {bio || '소개글이 없습니다.'}
           </p>
         </div>
@@ -124,10 +124,10 @@ export default function UserProfile({
             <img
               src={profileImage}
               alt={`${nickname}의 프로필 사진`}
-              className="w-16 h-16 rounded-full object-cover border border-border"
+              className="size-16 rounded-full border border-border object-cover"
             />
           ) : (
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center border border-border">
+            <div className="flex size-16 items-center justify-center rounded-full border border-border bg-muted">
               <span className="text-lg font-medium text-muted-foreground">
                 {nickname.charAt(0)}
               </span>
@@ -140,7 +140,7 @@ export default function UserProfile({
       {isCurrentUser && (
         <Button
           variant="outline"
-          className="w-full mt-2 border-border"
+          className="mt-2 w-full border-border"
           onClick={handleEditProfile}
         >
           프로필 수정

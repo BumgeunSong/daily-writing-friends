@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import {
   doc,
   getDoc,
@@ -13,7 +14,6 @@ import {
 
 import { firestore } from '../firebase';
 import { User } from '../types/User';
-import { useQuery } from '@tanstack/react-query';
 import { UserProfile } from '../types/UserProfile';
 
 // Helper function to get user data from localStorage

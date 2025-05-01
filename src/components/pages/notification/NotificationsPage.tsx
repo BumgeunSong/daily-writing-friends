@@ -1,16 +1,16 @@
 import { useRef } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import StatusMessage from '@/components/common/StatusMessage';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRegisterTabHandler } from '@/contexts/BottomTabHandlerContext';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { useNotificationRefresh } from '@/hooks/useNotificationRefresh';
 import { useNotifications } from '@/hooks/useNotifications';
 import { usePerformanceMonitoring } from '@/hooks/usePerformanceMonitoring';
-import { useRegisterTabHandler } from '@/contexts/BottomTabHandlerContext';
 import { flattenNotificationPages } from '@/utils/notificationUtils';
-import { useNotificationRefresh } from '@/hooks/useNotificationRefresh';
-import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { NotificationsLoading } from './NotificationsLoading';
 import { NotificationsContent } from './NotificationsContent';
-import NotificationsHeader from './NotificationsHeader';
 import { NotificationsErrorBoundary } from './NotificationsErrorBoundary';
+import NotificationsHeader from './NotificationsHeader';
+import { NotificationsLoading } from './NotificationsLoading';
 
 // DATA - Constants
 const NOTIFICATIONS_CONFIG = {
@@ -75,7 +75,7 @@ const NotificationsPage = () => {
 
   return (
     <NotificationsErrorBoundary>
-      <div className="flex flex-col h-[calc(100vh-4rem)]">
+      <div className="flex h-[calc(100vh-4rem)] flex-col">
         <NotificationsHeader />
         <NotificationsContent
           scrollAreaId={NOTIFICATIONS_CONFIG.SCROLL_ID}

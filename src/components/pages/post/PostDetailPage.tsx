@@ -1,19 +1,19 @@
+import { useQuery } from '@tanstack/react-query';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { Edit, Trash2 } from 'lucide-react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PostVisibility } from '@/types/Post';
+import { formatDateToKorean } from '@/utils/dateUtils';
 import { fetchUserNickname } from '@/utils/userUtils';
+import { PostAdjacentButtons } from './PostAdjacentButtons';
+import { PostBackButton } from './PostBackButton';
+import { PostContent } from './PostContent';
 import { useAuth } from '../../../contexts/AuthContext';
 import { firestore } from '../../../firebase';
-import { useQuery } from '@tanstack/react-query';
 import { fetchPost } from '../../../utils/postUtils';
 import Comments from '../comment/Comments';
-import { PostBackButton } from './PostBackButton';
-import { PostAdjacentButtons } from './PostAdjacentButtons';
-import { formatDateToKorean } from '@/utils/dateUtils';
-import { PostContent } from './PostContent';
-import { PostVisibility } from '@/types/Post';
 
 export default function PostDetailPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
@@ -41,7 +41,7 @@ export default function PostDetailPage() {
 
   if (isLoading) {
     return (
-      <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
+      <div className='mx-auto max-w-4xl px-6 py-8 sm:px-8 lg:px-12'>
         <Skeleton className='mb-4 h-12 w-3/4' />
         <Skeleton className='mb-2 h-4 w-full' />
         <Skeleton className='mb-2 h-4 w-full' />
@@ -52,7 +52,7 @@ export default function PostDetailPage() {
 
   if (error || !post) {
     return (
-      <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8 text-center'>
+      <div className='mx-auto max-w-4xl px-6 py-8 text-center sm:px-8 lg:px-12'>
         <h1 className='mb-4 text-2xl font-bold'>게시물을 찾을 수 없습니다.</h1>
         {boardId && <PostBackButton boardId={boardId} />}
       </div>
@@ -62,12 +62,12 @@ export default function PostDetailPage() {
   const isAuthor = currentUser?.uid === post.authorId;
 
   return (
-    <div className='mx-auto max-w-4xl px-6 sm:px-8 lg:px-12 py-8'>
+    <div className='mx-auto max-w-4xl px-6 py-8 sm:px-8 lg:px-12'>
       {boardId && <PostBackButton boardId={boardId} className='mb-6' />}
       <article className='space-y-6'>
         <header className='space-y-4'>
           <div className="flex items-center gap-2">
-            <h1 className='text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl mb-4'>{post.title}</h1>
+            <h1 className='mb-4 text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl'>{post.title}</h1>
           </div>
           <div className='flex items-center justify-between text-sm text-gray-500 dark:text-gray-400'>
             <p>

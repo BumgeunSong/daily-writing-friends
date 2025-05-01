@@ -1,5 +1,5 @@
-import { Notification } from '@/types/Notification';
 import { CardContent } from '@/components/ui/card';
+import { Notification } from '@/types/Notification';
 import { NotificationItem } from './NotificationItem';
 
 interface NotificationsListProps {
@@ -12,7 +12,7 @@ interface NotificationsListProps {
 const NotificationsList = ({ notifications }: NotificationsListProps) => {
   if (notifications.length === 0) {
     return (
-      <div className="text-center py-10">
+      <div className="py-10 text-center">
         <p className="text-muted-foreground">알림이 없습니다.</p>
       </div>
     );

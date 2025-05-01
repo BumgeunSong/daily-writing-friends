@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
 import { trace } from 'firebase/performance';
+import { useEffect } from 'react';
 import { performance } from '@/firebase';
 
 export function usePerformanceMonitoring(pageName: string) {

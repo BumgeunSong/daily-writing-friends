@@ -1,9 +1,9 @@
 import { Outlet } from 'react-router-dom';
-import { Toaster } from '../ui/toaster';
 import BottomTabsNavigator from './BottomTabsNavigator';
+import { Toaster } from '../ui/toaster';
 
 export const BottomNavigatorLayout = () => (
-    <div className='flex min-h-screen flex-col pb-16 safe-top safe-right safe-bottom safe-left'>
+    <div className='safe-top safe-right safe-bottom safe-left flex min-h-screen flex-col pb-16'>
         <div className='grow'>
             <Outlet />
         </div>

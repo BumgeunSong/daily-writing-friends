@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { Plus, X, PenSquare, Sparkles } from 'lucide-react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,7 +34,7 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
       >
         <Link
           to={`/board/${boardId}/free-writing/intro`}
-          className="flex items-center group"
+          className="group flex items-center"
           onClick={() => setIsExpanded(false)}
         >
           <span className={cn(
@@ -54,7 +54,7 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
 
         <Link
           to={`/create/${boardId}`}
-          className="flex items-center group"
+          className="group flex items-center"
           onClick={() => setIsExpanded(false)}
         >
           <span className={cn(
@@ -75,7 +75,7 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
 
       <Button
         size="icon"
-        className="size-12 rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110 z-50"
+        className="z-50 size-12 rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110"
         aria-label={isExpanded ? "Close Writing Options" : "Open Writing Options"}
         onClick={toggleExpand}
       >

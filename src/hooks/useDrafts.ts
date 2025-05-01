@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { getDrafts } from '@/utils/draftUtils';
 import { Draft } from '@/types/Draft';
+import { getDrafts } from '@/utils/draftUtils';
 
 interface UseDraftsResult {
   drafts: Draft[] | undefined;

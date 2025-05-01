@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
+import { Button } from '@/components/ui/button';
 import AuthorList from './AuthorList';
 import BoardHeader from './BoardHeader';
 import PostCardList from './PostCardList';
 import { WritingActionButton } from './WritingActionButton';
-import { Button } from '@/components/ui/button';
 
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
@@ -28,7 +28,7 @@ export default function BoardPage() {
           <p className="mt-4 text-lg text-muted-foreground">존재하지 않는 게시판이거나 잘못된 경로입니다.</p>
           <Button
             onClick={() => navigate('/')}
-            className="mt-6 px-4 py-2 bg-primary text-primary-foreground rounded-lg"
+            className="mt-6 rounded-lg bg-primary px-4 py-2 text-primary-foreground"
           >
             홈으로 돌아가기
           </Button>

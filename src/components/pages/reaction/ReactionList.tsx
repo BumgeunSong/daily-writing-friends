@@ -1,12 +1,12 @@
 "use client"
 
-import type React from "react"
 import { Suspense } from "react"
-import ReactWithEmoji from "@/components/pages/reaction/ReactWithEmoji"
 import EmojiReaction from "@/components/pages/reaction/EmojiReaction"
-import { useAuth } from "@/contexts/AuthContext"
+import ReactWithEmoji from "@/components/pages/reaction/ReactWithEmoji"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useAuth } from "@/contexts/AuthContext"
 import { CommentParams, ReplyParams, useReactions } from "@/hooks/useReactions"
+import type React from "react"
 
 interface ReactionListProps {
   entity: CommentParams | ReplyParams
@@ -33,7 +33,7 @@ const ReactionContent: React.FC<ReactionListProps> = ({ entity }) => {
   }
 
   return (
-    <div className="flex flex-wrap gap-1.5 max-w-full overflow-hidden">
+    <div className="flex max-w-full flex-wrap gap-1.5 overflow-hidden">
       <ReactWithEmoji onCreate={createReaction} />
       
       {reactions.map((reaction) => (
@@ -54,7 +54,7 @@ const ReactionContent: React.FC<ReactionListProps> = ({ entity }) => {
 const ReactionFallback: React.FC = () => {
   return (
     <div className="flex items-center gap-2">
-      <Skeleton className="h-7 w-7 rounded-full" />
+      <Skeleton className="size-7 rounded-full" />
       <div className="flex gap-1.5">
         <Skeleton className="h-7 w-12 rounded-full" />
         <Skeleton className="h-7 w-12 rounded-full" />
@@ -67,7 +67,7 @@ const ReactionFallback: React.FC = () => {
 // 메인 ReactionList 컴포넌트
 const ReactionList: React.FC<ReactionListProps> = ({ entity }) => {
   return (
-    <div className="mt-2 mb-3">
+    <div className="mb-3 mt-2">
       <Suspense fallback={<ReactionFallback />}>
         <ReactionContent entity={entity} />
       </Suspense>

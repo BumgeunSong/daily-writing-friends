@@ -1,9 +1,9 @@
-import { useNavigate } from 'react-router-dom';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { updateUserData } from '../utils/userUtils';
-import { storage } from '../firebase';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { storage } from '../firebase';
 import { useToast } from './use-toast';
+import { updateUserData } from '../utils/userUtils';
 
 export function useUpdateUserData(
   userId: string,

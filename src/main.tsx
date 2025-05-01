@@ -1,13 +1,13 @@
 // src/main.tsx
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { initSentry } from './centry';
 import { AuthProvider } from './contexts/AuthContext';
 import { BottomTabHandlerProvider } from './contexts/BottomTabHandlerContext';
 import { NavigationProvider } from './contexts/NavigationContext';
-import { initSentry } from './centry';
 
 initSentry();
 const queryClient = new QueryClient();

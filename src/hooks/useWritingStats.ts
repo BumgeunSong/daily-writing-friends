@@ -1,8 +1,8 @@
 // call api to get writing stats
 // return writing stats
+import * as Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query'
 import { WritingStats } from "@/types/WritingStats"
-import * as Sentry from '@sentry/react';
 interface WritingStatsResponse {
     status: 'success' | 'error';
     data: {

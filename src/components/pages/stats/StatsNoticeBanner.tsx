@@ -1,7 +1,7 @@
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Info } from "lucide-react"
-import { useRemoteConfig } from "@/hooks/useRemoteConfig"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useRemoteConfig } from "@/hooks/useRemoteConfig"
 
 export function StatsNoticeBanner() {
     // Remote Config에서 배너 텍스트 가져오기
@@ -25,7 +25,7 @@ export function StatsNoticeBanner() {
     return (
         <Alert className="mb-4 bg-muted/50">
             <div className="flex items-center gap-2"> 
-                <Info className="h-4 w-4 flex-shrink-0" />
+                <Info className="size-4 shrink-0" />
                 <AlertDescription className="text-sm text-muted-foreground">
                     {isLoading ? (
                         <Skeleton className="h-4 w-full" />

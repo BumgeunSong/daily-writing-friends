@@ -1,12 +1,12 @@
 "use client"
 
-import type React from "react"
+import data from "@emoji-mart/data"
+import Picker from "@emoji-mart/react"
+import { Loader2, SmilePlus } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import Picker from "@emoji-mart/react"
-import data from "@emoji-mart/data"
-import { Loader2, SmilePlus } from "lucide-react"
+import type React from "react"
 
 interface ReactWithEmojiProps {
   onCreate: (emoji: string) => Promise<void>
@@ -36,11 +36,11 @@ const ReactWithEmoji: React.FC<ReactWithEmojiProps> = ({ onCreate, disabled = fa
         <Button
           variant="outline"
           size="sm"
-          className="rounded-full h-7 w-7 p-0 border border-border bg-background hover:bg-muted"
+          className="size-7 rounded-full border border-border bg-background p-0 hover:bg-muted"
           disabled={disabled || loading}
           data-testid="reaction-button"
         >
-          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <SmilePlus className="h-3.5 w-3.5" />}
+          {loading ? <Loader2 className="size-3.5 animate-spin" /> : <SmilePlus className="size-3.5" />}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0" align="start" sideOffset={5}>

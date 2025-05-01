@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { signInWithGoogle } from "@/firebase"
+import { useUpcomingBoard } from "@/hooks/useUpcomingBoard"
+import CohortDetailsWrapper from "./CohortDetailsWrapper"
+import CountdownWrapper from "./CountdownWrapper"
+import GoalWrapper from "./GoalWrapper"
+import IntroCTA from "./IntroCTA"
 import IntroHeader from "./IntroHeader"
 import IntroHero from "./IntroHero"
-import IntroCTA from "./IntroCTA"
-import GoalWrapper from "./GoalWrapper"
-import CountdownWrapper from "./CountdownWrapper"
-import CohortDetailsWrapper from "./CohortDetailsWrapper"
-import { useUpcomingBoard } from "@/hooks/useUpcomingBoard"
-import { signInWithGoogle } from "@/firebase"
 
 export default function JoinIntroPage() {
   const navigate = useNavigate()
@@ -43,14 +43,14 @@ export default function JoinIntroPage() {
   }
 
   return (
-    <div className="flex justify-center min-h-screen bg-background">
+    <div className="flex min-h-screen justify-center bg-background">
       {/* Center container with max-width */}
-      <div className="w-full max-w-3xl lg:max-w-4xl relative pb-24 flex flex-col">
+      <div className="relative flex w-full max-w-3xl flex-col pb-24 lg:max-w-4xl">
         {/* Main content - scrollable */}
         <div className="flex-1 overflow-auto">
           <IntroHeader onLogin={handleLogin} />
           <IntroHero />
-          <div className="px-2 md:px-6 space-y-8">
+          <div className="space-y-8 px-2 md:px-6">
             <GoalWrapper />
             <CountdownWrapper daysRemaining={daysRemaining} />
             <CohortDetailsWrapper upcomingBoard={upcomingBoard} />

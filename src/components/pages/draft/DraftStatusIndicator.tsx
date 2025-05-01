@@ -34,10 +34,10 @@ export function DraftStatusIndicator({
   const statusMessage = getStatusMessage();
 
   return (
-    <div className="flex items-center justify-between mt-2 text-sm">
+    <div className="mt-2 flex items-center justify-between text-sm">
       {statusMessage && (
         <div className={`${savingError ? 'text-red-500' : 'text-gray-500'} flex items-center`}>
-          {isSaving && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+          {isSaving && <Loader2 className="mr-1 size-3 animate-spin" />}
           {statusMessage}
         </div>
       )}

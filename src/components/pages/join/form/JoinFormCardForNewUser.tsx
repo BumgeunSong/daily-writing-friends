@@ -1,5 +1,5 @@
-import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -33,8 +33,8 @@ export default function JoinFormCardForNewUser({ onSubmit }: JoinFormCardForNewU
   })
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-12rem)]">
-      <Card className="bg-background flex-1">
+    <div className="flex min-h-[calc(100vh-12rem)] flex-col">
+      <Card className="flex-1 bg-background">
         <CardContent className="p-8">
           <form id="join-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -81,12 +81,12 @@ export default function JoinFormCardForNewUser({ onSubmit }: JoinFormCardForNewU
         </CardContent>
       </Card>
 
-      <div className="sticky bottom-0 left-0 right-0 p-4 bg-background border-t">
-        <div className="max-w-3xl lg:max-w-4xl mx-auto">
+      <div className="sticky inset-x-0 bottom-0 border-t bg-background p-4">
+        <div className="mx-auto max-w-3xl lg:max-w-4xl">
           <Button
             type="submit"
             form="join-form"
-            className="w-full lg:w-64 lg:mx-auto"
+            className="w-full lg:mx-auto lg:w-64"
             size="lg"
             disabled={isSubmitting}
           >

@@ -1,13 +1,13 @@
-import type React from "react"
+import { Loader2 } from "lucide-react"
 import { useState } from "react"
+import { useLongPress } from "use-long-press"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import type { ReactionUser } from "@/types/Reaction"
-import { Loader2 } from "lucide-react"
-import { ReactionUsersTooltip } from "./ReactionUserTooltip"
-import { useLongPress } from "use-long-press"
-import { ReactionUserDrawer } from "./ReactionUserDrawer"
 import { useMediaQuery } from "@/hooks/useMediaQuery"
+import { ReactionUserDrawer } from "./ReactionUserDrawer"
+import { ReactionUsersTooltip } from "./ReactionUserTooltip"
+import type { ReactionUser } from "@/types/Reaction"
+import type React from "react"
 
 interface EmojiReactionProps {
   content: string
@@ -75,11 +75,11 @@ const EmojiReaction: React.FC<EmojiReactionProps> = ({ content, count, users, cu
               variant={hasReacted ? "secondary" : "outline"}
               size="sm"
               className={`
-                rounded-full h-7 px-2.5 py-0 text-sm transition-all
+                h-7 rounded-full px-2.5 py-0 text-sm transition-all
                 ${
                   hasReacted
-                    ? "bg-secondary/80 hover:bg-secondary border-transparent shadow-sm"
-                    : "bg-background hover:bg-muted border border-muted-foreground/20"
+                    ? "border-transparent bg-secondary/80 shadow-sm hover:bg-secondary"
+                    : "border border-muted-foreground/20 bg-background hover:bg-muted"
                 }
                 ${loading ? "opacity-70" : ""}
               `}
@@ -88,7 +88,7 @@ const EmojiReaction: React.FC<EmojiReactionProps> = ({ content, count, users, cu
               {...bind()}
             >
               {loading ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="size-3.5 animate-spin" />
               ) : (
                 <span className="flex items-center gap-1">
                   <span>{content}</span>
@@ -102,7 +102,7 @@ const EmojiReaction: React.FC<EmojiReactionProps> = ({ content, count, users, cu
             <TooltipContent
               side="top"
               align="center"
-              className="p-0 rounded-lg border border-border shadow-md"
+              className="rounded-lg border border-border p-0 shadow-md"
               sideOffset={5}
             >
               <ReactionUsersTooltip users={users} />

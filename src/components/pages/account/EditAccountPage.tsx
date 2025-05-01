@@ -1,4 +1,5 @@
 import { Camera, Loader2 } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -7,11 +8,10 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { User } from '../../../types/User';
 import { useNickname } from '../../../hooks/useNickName';
 import { useProfilePhoto } from '../../../hooks/useProfilePhoto';
 import { useUpdateUserData } from '../../../hooks/useUpdateUserData';
-import { useRef, useState } from 'react';
+import { User } from '../../../types/User';
 
 export default function EditAccountPage() {
   const location = useLocation();
@@ -48,13 +48,13 @@ export default function EditAccountPage() {
   };
 
   return (
-    <div className='flex min-h-screen items-start justify-center bg-gray-50 p-4 relative'>
+    <div className='relative flex min-h-screen items-start justify-center bg-gray-50 p-4'>
       {isLoading && (
-        <div className='absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50'>
+        <div className='absolute inset-0 z-50 flex items-center justify-center bg-white bg-opacity-75'>
           <Loader2 className='size-8 animate-spin text-gray-600' />
         </div>
       )}
-      <Card className={`w-full max-w-md ${isLoading ? 'opacity-50 pointer-events-none' : ''}`}>
+      <Card className={`w-full max-w-md ${isLoading ? 'pointer-events-none opacity-50' : ''}`}>
         <CardHeader>
           <CardTitle className='text-center text-2xl font-bold'>내 정보 수정하기</CardTitle>
         </CardHeader>

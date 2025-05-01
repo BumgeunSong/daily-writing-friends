@@ -16,7 +16,7 @@ export const NotificationsLoading = ({
   skeletonCount 
 }: NotificationsLoadingProps) => {
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
+    <div className="flex h-[calc(100vh-4rem)] flex-col">
       <NotificationsHeader />
       <Card className="flex-1 overflow-hidden">
         <ScrollArea className="h-full" id={scrollAreaId}>
@@ -24,7 +24,7 @@ export const NotificationsLoading = ({
             {Array.from({ length: skeletonCount }).map((_, index) => (
               <Skeleton 
                 key={index} 
-                className="h-10 w-full mb-4" 
+                className="mb-4 h-10 w-full" 
                 data-testid="notification-skeleton"
               />
             ))}

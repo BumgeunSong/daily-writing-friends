@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import ReactQuill from 'react-quill-new';
-import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { useToast } from '@/hooks/use-toast';
 import 'react-quill-new/dist/quill.snow.css';
 import { useImageUpload } from '@/hooks/useImageUpload';
 
@@ -182,7 +182,7 @@ export function PostTextEditor({
   }, []);
 
   return (
-    <div className='space-y-2 relative'>
+    <div className='relative space-y-2'>
       <div className='rounded-lg border border-border bg-background'>
         <ReactQuill
           ref={quillRef}
@@ -197,10 +197,10 @@ export function PostTextEditor({
       </div>
       
       {isUploading && (
-        <div className='absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg z-10'>
+        <div className='absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm'>
           <div className='w-4/5 max-w-md'>
             <Progress value={uploadProgress} className="h-2" />
-            <p className='text-sm font-medium text-center mt-3'>
+            <p className='mt-3 text-center text-sm font-medium'>
               이미지 업로드 중... {uploadProgress}%
             </p>
           </div>
