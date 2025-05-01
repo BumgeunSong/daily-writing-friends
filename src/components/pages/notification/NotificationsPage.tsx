@@ -1,19 +1,18 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import NotificationsHeader from './NotificationsHeader';
 import NotificationsList from './NotificationsList';
 import { useAuth } from '@/contexts/AuthContext';
 import StatusMessage from '@/components/common/StatusMessage';
-import { useInView } from 'react-intersection-observer';
 import { Loader2 } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePerformanceMonitoring } from '@/hooks/usePerformanceMonitoring';
 import { useRegisterTabHandler } from '@/contexts/BottomTabHandlerContext';
-import { useQueryClient } from '@tanstack/react-query';
-import { useScrollAreaControl } from '@/hooks/useScrollAreaControl';
-import { flattenNotificationPages, shouldFetchNextPage, createNotificationQueryKey } from '@/utils/notificationUtils';
+import { flattenNotificationPages } from '@/utils/notificationUtils';
+import { useNotificationRefresh } from '@/hooks/useNotificationRefresh';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 // DATA - Constants
 const NOTIFICATIONS_CONFIG = {
@@ -28,13 +27,8 @@ const NotificationsPage: React.FC = () => {
   
   // DATA - State and refs
   const { currentUser } = useAuth();
-  const [inViewRef, inView] = useInView();
-  const queryClient = useQueryClient();
   const scrollRef = useRef<HTMLDivElement>(null);
   
-  // ACTION - ScrollArea control
-  const { scrollAreaToTop } = useScrollAreaControl(`#${NOTIFICATIONS_CONFIG.SCROLL_ID}`);
-
   // ACTION - Fetch notifications
   const {
     data: notifications,
@@ -45,23 +39,21 @@ const NotificationsPage: React.FC = () => {
     isFetchingNextPage
   } = useNotifications(currentUser?.uid, NOTIFICATIONS_CONFIG.LIMIT_COUNT);
 
-  // ACTION - Refresh handler
-  const handleRefreshNotifications = useCallback(() => {
-    scrollAreaToTop();
-    if (currentUser?.uid) {
-      queryClient.invalidateQueries(createNotificationQueryKey(currentUser.uid));
-    }
-  }, [scrollAreaToTop, queryClient, currentUser]);
+  // ACTION - Notification refresh handler
+  const { refresh: handleRefreshNotifications } = useNotificationRefresh({
+    scrollAreaId: NOTIFICATIONS_CONFIG.SCROLL_ID,
+    userId: currentUser?.uid
+  });
+
+  // ACTION - Infinite scroll handler
+  const { observerRef, isLoading: isLoadingMore } = useInfiniteScroll({
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage
+  });
   
   // ACTION - Register tab handler
   useRegisterTabHandler('Notifications', handleRefreshNotifications);
-
-  // ACTION - Infinite scroll effect
-  useEffect(() => {
-    if (shouldFetchNextPage(inView, hasNextPage)) {
-      fetchNextPage();
-    }
-  }, [inView, hasNextPage, fetchNextPage]);
 
   // CALCULATION - Transform data for rendering
   const allNotifications = flattenNotificationPages(notifications?.pages);
@@ -94,8 +86,8 @@ const NotificationsPage: React.FC = () => {
         <ScrollArea className="h-full" id={NOTIFICATIONS_CONFIG.SCROLL_ID}>
           <div ref={scrollRef}>
             <NotificationsList notifications={allNotifications} />
-            <div ref={inViewRef} />
-            {isFetchingNextPage && (
+            <div ref={observerRef} />
+            {isLoadingMore && (
               <div className="flex justify-center items-center p-4">
                 <Loader2 className="w-4 h-4 animate-spin" />
               </div>
