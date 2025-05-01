@@ -8,8 +8,7 @@ import { updateUserData } from '../utils/userUtils';
 export function useUpdateUserData(
   userId: string,
   nickname: string,
-  profilePhoto: File | null,
-  bio: string
+  profilePhoto: File | null
 ) {
   const navigate = useNavigate();
   const [isLoading, setLoading] = useState<boolean>(false);
