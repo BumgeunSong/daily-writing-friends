@@ -2,12 +2,12 @@ importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
 
 const firebaseConfig = {
-    apiKey: 'process.env.VITE_FIREBASE_API_KEY',
-    authDomain: 'process.env.VITE_FIREBASE_AUTH_DOMAIN',
-    projectId: 'process.env.VITE_FIREBASE_PROJECT_ID',
-    storageBucket: 'process.env.VITE_FIREBASE_STORAGE_BUCKET',
-    messagingSenderId: 'process.env.VITE_FIREBASE_MESSAGING_SENDER_ID',
-    appId: 'process.env.VITE_FIREBASE_APP_ID',
+    apiKey: 'AIzaSyC_tJDlVtclbporH2LaBOGEtnf-W0swZTY',
+    authDomain: 'dailywritingfriends.com',
+    projectId: 'artico-app-4f9d4',
+    storageBucket: 'artico-app-4f9d4.firebasestorage.app',
+    messagingSenderId: '710428954454',
+    appId: '1:710428954454:web:849a684a92a5fb22ea90f7',
 };
 
 firebase.initializeApp(firebaseConfig);
