@@ -171,7 +171,7 @@ export default function LegacyAccountPage() {
                     className='w-full text-red-500 hover:bg-red-50 hover:text-red-600'
                   >
                     <Trash2 className='mr-2 size-4' />
-                    캐시 삭제
+                    강력 새로고침
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
