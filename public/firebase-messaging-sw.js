@@ -11,15 +11,20 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-if (typeof window !== "undefined" && typeof window.navigator !== "undefined") {
-    try {
-        const messaging = firebase.messaging();
-        messaging.onBackgroundMessage((payload) => {
-            console.log('[firebase-messaging-sw.js] Received background message', payload);
+
+try {
+    const messaging = firebase.messaging();
+    console.log('[firebase-messaging-sw.js] FCM messaging initialized');
+    messaging.onBackgroundMessage((payload) => {
+        console.log('[firebase-messaging-sw.js] Received background message', payload);
+        if (payload && payload.notification) {
             const { title, body, icon } = payload.notification;
+            console.log('[firebase-messaging-sw.js] Showing notification:', { title, body, icon });
             self.registration.showNotification(title, { body, icon });
-        });
-    } catch (error) {
-        console.error('Firebase messaging is not supported in this browser in sw');
-    }
+        } else {
+            console.warn('[firebase-messaging-sw.js] No notification payload found:', payload);
+        }
+    });
+} catch (error) {
+    console.error('[firebase-messaging-sw.js] Error initializing FCM messaging:', error);
 }
