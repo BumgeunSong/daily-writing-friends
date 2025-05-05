@@ -137,7 +137,7 @@ function PostHeader({
         <div className='flex space-x-2'>
           {/* Share 버튼: 비공개글이 아닐 때만 노출 */}
           {post.visibility !== PostVisibility.PRIVATE && (
-            <Button variant='outline' size='sm' onClick={handleShare} aria-label='공유'>
+            <Button variant='ghost' size='sm' onClick={handleShare} aria-label='공유'>
               <Share className='size-4' />
             </Button>
           )}
@@ -145,13 +145,13 @@ function PostHeader({
           {isAuthor && post.visibility !== PostVisibility.PRIVATE && (
             <>
               <Link to={`/board/${boardId}/edit/${postId}`}>
-                <Button variant='outline' size='sm' aria-label='수정'>
+                <Button variant='ghost' size='sm' aria-label='수정'>
                   <Edit className='size-4' />
                 </Button>
               </Link>
               {boardId && postId && (
                 <Button
-                  variant='outline'
+                  variant='ghost'
                   size='sm'
                   onClick={() => onDelete(boardId, postId, navigate)}
                   aria-label='삭제'
