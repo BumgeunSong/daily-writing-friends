@@ -1,10 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { Edit, Trash2 } from 'lucide-react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PostVisibility } from '@/types/Post';
-import { formatDateToKorean } from '@/utils/dateUtils';
 import { fetchUserNickname } from '@/utils/userUtils';
 import { PostAdjacentButtons } from './PostAdjacentButtons';
 import { PostBackButton } from './PostBackButton';
@@ -14,6 +10,8 @@ import { fetchPost } from '../../../utils/postUtils';
 import Comments from '../comment/Comments';
 import { PostMetaHelmet } from './PostMetaHelmet';
 import { usePostDelete } from '@/hooks/usePostDelete';
+import { PostDetailHeader } from './PostDetailHeader';
+
 export default function PostDetailPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
   const { currentUser } = useAuth();
@@ -42,7 +40,7 @@ export default function PostDetailPage() {
       <PostMetaHelmet post={post} boardId={boardId} postId={postId} />
       {boardId && <PostBackButton boardId={boardId} className='mb-6' />}
       <article className='space-y-6'>
-        <PostHeader
+        <PostDetailHeader
           post={post}
           authorNickname={authorNickname ?? undefined}
           isAuthor={isAuthor}
@@ -88,57 +86,5 @@ function PostDetailError({ boardId }: { boardId?: string }) {
       <h1 className='mb-4 text-2xl font-bold'>게시물을 찾을 수 없습니다.</h1>
       {boardId && <PostBackButton boardId={boardId} />}
     </div>
-  );
-}
-
-// 헤더 UI
-function PostHeader({
-  post,
-  authorNickname,
-  isAuthor,
-  boardId,
-  postId,
-  onDelete,
-  navigate,
-}: {
-  post: any;
-  authorNickname: string | undefined;
-  isAuthor: boolean;
-  boardId?: string;
-  postId?: string;
-  onDelete: (boardId: string, postId: string, navigate: (path: string) => void) => void;
-  navigate: (path: string) => void;
-}) {
-  return (
-    <header className='space-y-4'>
-      <div className="flex items-center gap-2">
-        <h1 className='mb-4 text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl'>
-          {post.title}
-        </h1>
-      </div>
-      <div className='flex items-center justify-between text-sm text-gray-500 dark:text-gray-400'>
-        <p>
-          작성자: {authorNickname || '??'} | 작성일: {post.createdAt ? formatDateToKorean(post.createdAt.toDate()) : '?'}
-        </p>
-        {isAuthor && post.visibility !== PostVisibility.PRIVATE && (
-          <div className='flex space-x-2'>
-            <Link to={`/board/${boardId}/edit/${postId}`}>
-              <Button variant='outline' size='sm'>
-                <Edit className='mr-2 size-4' /> 수정
-              </Button>
-            </Link>
-            {boardId && postId && (
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => onDelete(boardId, postId, navigate)}
-              >
-                <Trash2 className='mr-2 size-4' /> 삭제
-              </Button>
-            )}
-          </div>
-        )}
-      </div>
-    </header>
   );
 }
