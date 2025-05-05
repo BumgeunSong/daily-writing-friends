@@ -14,6 +14,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { firestore } from '../../../firebase';
 import { fetchPost } from '../../../utils/postUtils';
 import Comments from '../comment/Comments';
+import { Helmet } from 'react-helmet-async';
 
 export default function PostDetailPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
@@ -59,10 +60,23 @@ export default function PostDetailPage() {
     );
   }
 
+  const ogMetaData = {
+    image: post?.thumbnailImageURL ?? 'public/writing_girl.webp',  
+    title: post?.title ?? '매일 글쓰기 프렌즈',
+    url: `https://dailywritingfriends.com/board/${boardId}/post/${postId}`,
+    description: post?.content?.slice(0, 45) + (post?.content?.length > 45 ? '...' : ''),
+  }
+
   const isAuthor = currentUser?.uid === post.authorId;
 
   return (
     <div className='mx-auto max-w-4xl px-6 py-8 sm:px-8 lg:px-12'>
+      <Helmet>
+        <meta property="og:image" content={ogMetaData.image} />
+        <meta property="og:title" content={ogMetaData.title} />
+        <meta property="og:url" content={ogMetaData.url} />
+        <meta property="og:description" content={ogMetaData.description} />
+      </Helmet>
       {boardId && <PostBackButton boardId={boardId} className='mb-6' />}
       <article className='space-y-6'>
         <header className='space-y-4'>
