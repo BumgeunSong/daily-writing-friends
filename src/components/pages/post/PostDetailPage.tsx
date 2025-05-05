@@ -10,7 +10,7 @@ import { fetchPost } from '../../../utils/postUtils';
 import Comments from '../comment/Comments';
 import { PostMetaHelmet } from './PostMetaHelmet';
 import { usePostDelete } from '@/hooks/usePostDelete';
-import { PostDetailHeader } from './PostHeader';
+import { PostDetailHeader } from './PostDetailHeader';
 
 export default function PostDetailPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
