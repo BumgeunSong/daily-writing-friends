@@ -8,15 +8,16 @@ import { initSentry } from './centry';
 import { AuthProvider } from './contexts/AuthContext';
 import { BottomTabHandlerProvider } from './contexts/BottomTabHandlerContext';
 import { NavigationProvider } from './contexts/NavigationContext';
-
+import { HelmetProvider } from 'react-helmet-async';
 initSentry();
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
+    <HelmetProvider>
+      <BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
           <NavigationProvider 
             debounceTime={500} 
             topThreshold={30} 
@@ -29,5 +30,6 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
         </AuthProvider>
       </QueryClientProvider>
     </BrowserRouter>
+    </HelmetProvider>
   </React.StrictMode>,
 );
