@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Share } from 'lucide-react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -109,6 +109,20 @@ function PostHeader({
   onDelete: (boardId: string, postId: string, navigate: (path: string) => void) => void;
   navigate: (path: string) => void;
 }) {
+  // Web Share API 핸들러
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: post.title,
+        text: post.title,
+        url: window.location.href,
+      });
+    } else {
+      // fallback: 클립보드 복사 등
+      window.navigator.clipboard.writeText(window.location.href);
+      alert('링크가 클립보드에 복사되었습니다.');
+    }
+  };
   return (
     <header className='space-y-4'>
       <div className="flex items-center gap-2">
@@ -120,24 +134,34 @@ function PostHeader({
         <p>
           작성자: {authorNickname || '??'} | 작성일: {post.createdAt ? formatDateToKorean(post.createdAt.toDate()) : '?'}
         </p>
-        {isAuthor && post.visibility !== PostVisibility.PRIVATE && (
-          <div className='flex space-x-2'>
-            <Link to={`/board/${boardId}/edit/${postId}`}>
-              <Button variant='outline' size='sm'>
-                <Edit className='mr-2 size-4' /> 수정
-              </Button>
-            </Link>
-            {boardId && postId && (
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={() => onDelete(boardId, postId, navigate)}
-              >
-                <Trash2 className='mr-2 size-4' /> 삭제
-              </Button>
-            )}
-          </div>
-        )}
+        <div className='flex space-x-2'>
+          {/* Share 버튼: 비공개글이 아닐 때만 노출 */}
+          {post.visibility !== PostVisibility.PRIVATE && (
+            <Button variant='outline' size='sm' onClick={handleShare} aria-label='공유'>
+              <Share className='size-4' />
+            </Button>
+          )}
+          {/* 수정/삭제 버튼: 작성자만 노출, 비공개글은 제외 */}
+          {isAuthor && post.visibility !== PostVisibility.PRIVATE && (
+            <>
+              <Link to={`/board/${boardId}/edit/${postId}`}>
+                <Button variant='outline' size='sm' aria-label='수정'>
+                  <Edit className='size-4' />
+                </Button>
+              </Link>
+              {boardId && postId && (
+                <Button
+                  variant='outline'
+                  size='sm'
+                  onClick={() => onDelete(boardId, postId, navigate)}
+                  aria-label='삭제'
+                >
+                  <Trash2 className='size-4' />
+                </Button>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </header>
   );
