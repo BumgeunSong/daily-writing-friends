@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { deleteDoc, doc } from 'firebase/firestore';
 import { Edit, Trash2 } from 'lucide-react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -11,129 +10,135 @@ import { PostAdjacentButtons } from './PostAdjacentButtons';
 import { PostBackButton } from './PostBackButton';
 import { PostContent } from './PostContent';
 import { useAuth } from '../../../contexts/AuthContext';
-import { firestore } from '../../../firebase';
 import { fetchPost } from '../../../utils/postUtils';
 import Comments from '../comment/Comments';
-import { Helmet } from 'react-helmet-async';
-
+import { PostMetaHelmet } from './PostMetaHelmet';
+import { usePostDelete } from '@/hooks/usePostDelete';
 export default function PostDetailPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
-
+  const handleDelete = usePostDelete();
 
   const { data: post, isLoading, error } = useQuery(
     ['post', boardId, postId],
     () => fetchPost(boardId!, postId!),
-    {
-      enabled: !!boardId && !!postId,
-    }
+    { enabled: !!boardId && !!postId }
   );
 
   const { data: authorNickname } = useQuery(
     ['authorNickname', post?.authorId],
     () => fetchUserNickname(post!.authorId),
-    {
-      enabled: !!post?.authorId,
-    }
+    { enabled: !!post?.authorId }
   );
 
-  console.log('post', post);
-
-  if (isLoading) {
-    return (
-      <div className='mx-auto max-w-4xl px-6 py-8 sm:px-8 lg:px-12'>
-        <Skeleton className='mb-4 h-12 w-3/4' />
-        <Skeleton className='mb-2 h-4 w-full' />
-        <Skeleton className='mb-2 h-4 w-full' />
-        <Skeleton className='h-4 w-2/3' />
-      </div>
-    );
-  }
-
-  if (error || !post) {
-    return (
-      <div className='mx-auto max-w-4xl px-6 py-8 text-center sm:px-8 lg:px-12'>
-        <h1 className='mb-4 text-2xl font-bold'>게시물을 찾을 수 없습니다.</h1>
-        {boardId && <PostBackButton boardId={boardId} />}
-      </div>
-    );
-  }
-
-  const ogMetaData = {
-    image: post?.thumbnailImageURL ?? 'public/writing_girl.webp',  
-    title: post?.title ?? '매일 글쓰기 프렌즈',
-    url: `https://dailywritingfriends.com/board/${boardId}/post/${postId}`,
-    description: post?.content?.slice(0, 45) + (post?.content?.length > 45 ? '...' : ''),
-  }
+  if (isLoading) return <PostDetailSkeleton />;
+  if (error || !post) return <PostDetailError boardId={boardId} />;
 
   const isAuthor = currentUser?.uid === post.authorId;
 
   return (
     <div className='mx-auto max-w-4xl px-6 py-8 sm:px-8 lg:px-12'>
-      <Helmet>
-        <meta property="og:image" content={ogMetaData.image} />
-        <meta property="og:title" content={ogMetaData.title} />
-        <meta property="og:url" content={ogMetaData.url} />
-        <meta property="og:description" content={ogMetaData.description} />
-      </Helmet>
+      <PostMetaHelmet post={post} boardId={boardId} postId={postId} />
       {boardId && <PostBackButton boardId={boardId} className='mb-6' />}
       <article className='space-y-6'>
-        <header className='space-y-4'>
-          <div className="flex items-center gap-2">
-            <h1 className='mb-4 text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl'>{post.title}</h1>
-          </div>
-          <div className='flex items-center justify-between text-sm text-gray-500 dark:text-gray-400'>
-            <p>
-              작성자: {authorNickname || '??'} | 작성일: {post.createdAt ? formatDateToKorean(post.createdAt.toDate()) : '?'}
-            </p>
-            {isAuthor && post.visibility !== PostVisibility.PRIVATE && (
-              <div className='flex space-x-2'>
-                <Link to={`/board/${boardId}/edit/${postId}`}>
-                  <Button variant='outline' size='sm'>
-                    <Edit className='mr-2 size-4' /> 수정
-                  </Button>
-                </Link>
-                {boardId && postId && (
-                  <Button
-                    variant='outline'
-                    size='sm'
-                    onClick={() => handleDelete(postId!, boardId!, (path) => navigate(path))}
-                  >
-                    <Trash2 className='mr-2 size-4' /> 삭제
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
-        </header>
+        <PostHeader
+          post={post}
+          authorNickname={authorNickname ?? undefined}
+          isAuthor={isAuthor}
+          boardId={boardId}
+          postId={postId}
+          onDelete={handleDelete}
+          navigate={navigate}
+        />
         <PostContent post={post} isAuthor={isAuthor} />
       </article>
       <div className='mt-12 border-t border-gray-200'></div>
       {boardId && postId && <PostAdjacentButtons boardId={boardId} postId={postId} />}
       <div className='mt-12'>
-        {boardId && postId && <Comments boardId={boardId} postId={postId} postAuthorId={post.authorId} postAuthorNickname={authorNickname || null} />}
+        {boardId && postId && (
+          <Comments
+            boardId={boardId}
+            postId={postId}
+            postAuthorId={post.authorId}
+            postAuthorNickname={typeof authorNickname === 'string' ? authorNickname : null}
+          />
+        )}
       </div>
     </div>
   );
 }
 
-const deletePost = async (boardId: string, id: string): Promise<void> => {
-  await deleteDoc(doc(firestore, `boards/${boardId}/posts`, id));
-};
+// 로딩 UI
+function PostDetailSkeleton() {
+  return (
+    <div className='mx-auto max-w-4xl px-6 py-8 sm:px-8 lg:px-12'>
+      <Skeleton className='mb-4 h-12 w-3/4' />
+      <Skeleton className='mb-2 h-4 w-full' />
+      <Skeleton className='mb-2 h-4 w-full' />
+      <Skeleton className='h-4 w-2/3' />
+    </div>
+  );
+}
 
-const handleDelete = async (
-  postId: string,
-  boardId: string,
-  navigate: (path: string) => void,
-): Promise<void> => {
-  const confirmDelete = window.confirm('정말로 이 게시물을 삭제하시겠습니까?');
-  if (!confirmDelete) return;
+// 에러 UI
+function PostDetailError({ boardId }: { boardId?: string }) {
+  return (
+    <div className='mx-auto max-w-4xl px-6 py-8 text-center sm:px-8 lg:px-12'>
+      <h1 className='mb-4 text-2xl font-bold'>게시물을 찾을 수 없습니다.</h1>
+      {boardId && <PostBackButton boardId={boardId} />}
+    </div>
+  );
+}
 
-  try {
-    await deletePost(boardId, postId);
-    navigate(`/board/${boardId}`);
-  } catch (error) {
-    console.error('게시물 삭제 오류:', error);
-  }
-};
+// 헤더 UI
+function PostHeader({
+  post,
+  authorNickname,
+  isAuthor,
+  boardId,
+  postId,
+  onDelete,
+  navigate,
+}: {
+  post: any;
+  authorNickname: string | undefined;
+  isAuthor: boolean;
+  boardId?: string;
+  postId?: string;
+  onDelete: (boardId: string, postId: string, navigate: (path: string) => void) => void;
+  navigate: (path: string) => void;
+}) {
+  return (
+    <header className='space-y-4'>
+      <div className="flex items-center gap-2">
+        <h1 className='mb-4 text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl'>
+          {post.title}
+        </h1>
+      </div>
+      <div className='flex items-center justify-between text-sm text-gray-500 dark:text-gray-400'>
+        <p>
+          작성자: {authorNickname || '??'} | 작성일: {post.createdAt ? formatDateToKorean(post.createdAt.toDate()) : '?'}
+        </p>
+        {isAuthor && post.visibility !== PostVisibility.PRIVATE && (
+          <div className='flex space-x-2'>
+            <Link to={`/board/${boardId}/edit/${postId}`}>
+              <Button variant='outline' size='sm'>
+                <Edit className='mr-2 size-4' /> 수정
+              </Button>
+            </Link>
+            {boardId && postId && (
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => onDelete(boardId, postId, navigate)}
+              >
+                <Trash2 className='mr-2 size-4' /> 삭제
+              </Button>
+            )}
+          </div>
+        )}
+      </div>
+    </header>
+  );
+}
