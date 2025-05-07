@@ -28,6 +28,7 @@ export default function PostCompletionPage() {
       highlightUnit={showStreakMessage ? "일" : "개"}
       highlightColor={showStreakMessage ? "yellow" : "purple"}
       iconType={showStreakMessage ? "trophy" : "sparkles"}
+      isLoading={false}
       onConfirm={handleConfirm}
     />
   )

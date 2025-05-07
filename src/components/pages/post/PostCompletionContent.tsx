@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, Sparkles, Trophy } from "lucide-react"
+import { PostCreationLoading } from "./PostCreationLoading"
 
 // 타입 선언: 추상적인 것부터
 export interface PostCompletionPageProps {
@@ -11,6 +12,7 @@ export interface PostCompletionPageProps {
   highlightUnit: string
   highlightColor: "yellow" | "purple" | string
   iconType: "trophy" | "sparkles"
+  isLoading: boolean
   onConfirm: () => void
 }
 
@@ -158,20 +160,44 @@ export function PostCompletionContent({
   highlightUnit,
   highlightColor,
   iconType,
+  isLoading,
   onConfirm,
 }: PostCompletionPageProps) {
   const [isClient, setIsClient] = useState(false)
+  const [showLoading, setShowLoading] = useState(true)
 
   useEffect(() => {
     setIsClient(true)
-
-    // Trigger haptic feedback if available
-    if (navigator.vibrate) {
-      navigator.vibrate([100, 50, 200])
-    }
   }, [])
 
+  // 최소 1초 로딩 보장
+  useEffect(() => {
+    let timer: NodeJS.Timeout | null = null
+    if (!isLoading) {
+      timer = setTimeout(() => {
+        setShowLoading(false)
+        // 로딩이 끝난 후 햅틱 피드백
+        if (navigator.vibrate) {
+          navigator.vibrate([100, 50, 200])
+        }
+      }, 1000)
+    } else {
+      setShowLoading(true)
+    }
+    return () => {
+      if (timer) clearTimeout(timer)
+    }
+  }, [isLoading])
+
   if (!isClient) return null // Prevent hydration errors
+
+  if (showLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4">
+        <PostCreationLoading />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4">
