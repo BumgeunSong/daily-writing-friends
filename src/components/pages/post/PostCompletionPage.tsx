@@ -1,20 +1,19 @@
-
 import { useNavigate } from "react-router-dom"
 import { PostCompletionContent } from "./PostCompletionContent"
+import { useCompletionMessage } from "@/hooks/useCompletionMessage"
 
 export default function PostCompletionPage() {
   const navigate = useNavigate()
+  const { titleMessage, contentMessage, isLoading } = useCompletionMessage()
 
-  // Example data - in a real app, these would come from your state management or API
-  const consecutiveDays = 5
-  const totalPosts = 12
-  const showStreakMessage = Math.random() > 0.5 // Randomly choose which message to show
-
-  // Determine which message to show
-  const titleMessage = showStreakMessage ? "훌륭합니다!" : "멋져요!"
-  const contentMessage = showStreakMessage
-    ? `연속 글쓰기 ${consecutiveDays}일을 달성했어요`
-    : `벌써 ${totalPosts}개의 글을 썼어요`
+  // highlightValue, highlightUnit, highlightColor, iconType 결정
+  // streak 메시지면 streak, 아니면 boardPostCount 사용
+  // useCompletionMessage에서 streak, boardPostCount를 반환하도록 확장해도 됨
+  // 여기서는 contentMessage에서 숫자 추출(간단하게)
+  const highlightValue = Number(contentMessage.replace(/[^0-9]/g, "")) || 0
+  const highlightUnit = contentMessage.includes("일") ? "일" : "개"
+  const highlightColor = contentMessage.includes("일") ? "yellow" : "purple"
+  const iconType = contentMessage.includes("일") ? "trophy" : "sparkles"
 
   const handleConfirm = () => {
     navigate("/") // Navigate back to board page
@@ -24,11 +23,11 @@ export default function PostCompletionPage() {
     <PostCompletionContent
       titleMessage={titleMessage}
       contentMessage={contentMessage}
-      highlightValue={showStreakMessage ? consecutiveDays : totalPosts}
-      highlightUnit={showStreakMessage ? "일" : "개"}
-      highlightColor={showStreakMessage ? "yellow" : "purple"}
-      iconType={showStreakMessage ? "trophy" : "sparkles"}
-      isLoading={false}
+      highlightValue={highlightValue}
+      highlightUnit={highlightUnit}
+      highlightColor={highlightColor}
+      iconType={iconType}
+      isLoading={isLoading}
       onConfirm={handleConfirm}
     />
   )
