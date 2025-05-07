@@ -5,7 +5,21 @@ import { fetchPostingData } from "@/utils/postingUtils";
 import { calculateCurrentStreak } from "@/utils/streakUtils";
 import { useMemo } from "react";
 
-export function useCompletionMessage() {
+export interface CompletionHighlight {
+  keywords: string[];
+  color: string;
+}
+
+export interface CompletionMessageResult {
+  titleMessage: string;
+  contentMessage: string;
+  highlight: CompletionHighlight;
+  iconType: "trophy" | "sparkles";
+  isLoading: boolean;
+  error?: unknown;
+}
+
+export function useCompletionMessage(): CompletionMessageResult {
   const { currentUser } = useAuth();
   const userId = currentUser?.uid;
   const {
@@ -35,12 +49,19 @@ export function useCompletionMessage() {
 
   let titleMessage = "";
   let contentMessage = "";
+  let highlight: CompletionHighlight = { keywords: [], color: "" };
+  let iconType: "trophy" | "sparkles" = "trophy";
+
   if (streak > 3) {
     titleMessage = "훌륭합니다!";
     contentMessage = `연속 글쓰기 ${streak}일을 달성했어요`;
+    highlight = { keywords: ["연속 글쓰기", `${streak}일`], color: "yellow" };
+    iconType = "trophy";
   } else {
     titleMessage = "훌륭합니다.";
     contentMessage = `이번 기수에 ${boardPostCount}개의 글을 썼어요`;
+    highlight = { keywords: ["이번 기수", `${boardPostCount}개`], color: "purple" };
+    iconType = "sparkles";
   }
 
   const isLoading = isConfigLoading || isPostingsLoading;
@@ -48,6 +69,8 @@ export function useCompletionMessage() {
   return {
     titleMessage,
     contentMessage,
+    highlight,
+    iconType,
     isLoading,
     error: configError || postingsError,
   };

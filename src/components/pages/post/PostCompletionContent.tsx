@@ -4,13 +4,12 @@ import { Button } from "@/components/ui/button"
 import { CheckCircle, Sparkles, Trophy } from "lucide-react"
 import { PostCreationLoading } from "./PostCreationLoading"
 import { ConfettiEffect } from "@/components/common/ConfettiEffect"
+import type { CompletionHighlight } from "@/hooks/useCompletionMessage"
 // 타입 선언: 추상적인 것부터
 export interface PostCompletionPageProps {
     titleMessage: string
     contentMessage: string
-    highlightValue: number
-    highlightUnit: string
-    highlightColor: "yellow" | "purple" | string
+    highlight: CompletionHighlight
     iconType: "trophy" | "sparkles"
     isLoading: boolean
     onConfirm: () => void
@@ -19,9 +18,7 @@ export interface PostCompletionPageProps {
 export function PostCompletionContent({
     titleMessage,
     contentMessage,
-    highlightValue,
-    highlightUnit,
-    highlightColor,
+    highlight,
     iconType,
     isLoading,
     onConfirm,
@@ -72,14 +69,12 @@ export function PostCompletionContent({
                 transition={{ duration: 0.5 }}
                 className="flex flex-col items-center text-center max-w-md"
             >
-                <CelebrationIcon iconType={iconType} color={highlightColor} />
+                <CelebrationIcon iconType={iconType} color={highlight.color} />
 
                 <CelebrationMessage
                     titleMessage={titleMessage}
                     contentMessage={contentMessage}
-                    highlightValue={highlightValue}
-                    highlightUnit={highlightUnit}
-                    highlightColor={highlightColor}
+                    highlight={highlight}
                 />
 
                 <ConfirmButton onConfirm={onConfirm} />
@@ -87,7 +82,6 @@ export function PostCompletionContent({
         </div>
     )
 }
-
 
 interface ConfirmButtonProps {
     onConfirm: () => void
@@ -127,29 +121,30 @@ export function CelebrationIcon({ iconType, color }: CelebrationIconProps) {
 interface CelebrationMessageProps {
     titleMessage: string
     contentMessage: string
-    highlightValue: number
-    highlightUnit: string
-    highlightColor: string
+    highlight: CompletionHighlight
+}
+
+function highlightMessageParts(message: string, highlight: CompletionHighlight) {
+    if (!highlight.keywords.length) return [message]
+    // 여러 키워드가 있을 때, 중복/포함관계 방지 위해 길이순 정렬
+    const sortedKeywords = [...highlight.keywords].sort((a, b) => b.length - a.length)
+    // 정규식 패턴 생성 (키워드 모두 OR)
+    const pattern = new RegExp(`(${sortedKeywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "g")
+    const parts = message.split(pattern)
+    return parts.map((part, i) =>
+        sortedKeywords.includes(part) ? (
+            <span key={i} className={`font-bold text-${highlight.color}-500`}>{part}</span>
+        ) : (
+            <span key={i}>{part}</span>
+        )
+    )
 }
 
 export function CelebrationMessage({
     titleMessage,
     contentMessage,
-    highlightValue,
-    highlightUnit,
-    highlightColor,
+    highlight,
 }: CelebrationMessageProps) {
-    // Map color string to Tailwind color class
-    const colorClass =
-        highlightColor === "yellow"
-            ? "text-yellow-500"
-            : highlightColor === "purple"
-                ? "text-purple-500"
-                : `text-${highlightColor}-500`
-
-    // Split the content message to insert the highlighted value
-    const messageParts = contentMessage.split(highlightValue.toString())
-
     return (
         <>
             <motion.h1
@@ -167,23 +162,16 @@ export function CelebrationMessage({
                 transition={{ delay: 0.7, duration: 0.5 }}
                 className="text-xl mb-8"
             >
-                {messageParts[0]}
-                <span className={`font-bold ${colorClass}`}>
-                    {highlightValue}
-                    {highlightUnit}
-                </span>
-                {messageParts[1]}
+                {highlightMessageParts(contentMessage, highlight)}
             </motion.p>
         </>
     )
 }
 
-
 interface CelebrationIconProps {
     iconType: "trophy" | "sparkles"
     color: string
 }
-
 
 export function ConfirmButton({ onConfirm }: ConfirmButtonProps) {
     return (
