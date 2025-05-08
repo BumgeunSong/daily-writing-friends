@@ -22,6 +22,7 @@ import StatsPage from './components/pages/stats/StatsPage';
 import UserPage from './components/pages/user/UserPage';
 import { ProtectedRoute } from './components/route/ProtectedRoute';
 import { useAuth } from './contexts/AuthContext';
+import PostCompletionPage from './components/pages/post/PostCompletionPage';
 
 export default function App() {
   const { currentUser } = useAuth();
@@ -45,7 +46,7 @@ export default function App() {
         <Route path='/boards/list' element={<BoardListPage />} />
         <Route path='/board/:boardId' element={<BoardPage />} />
         <Route path='/create/:boardId' element={<PostCreationPage />} />
-
+        <Route path='/create/:boardId/completion' element={<PostCompletionPage />} />
         <Route path='/board/:boardId/post/:postId' element={<PostDetailPage />} />
         <Route path='/board/:boardId/edit/:postId' element={<PostEditPage />} />
         <Route path='/notifications' element={<NotificationsPage />} />

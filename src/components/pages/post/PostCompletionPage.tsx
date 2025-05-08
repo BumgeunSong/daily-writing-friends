@@ -1,13 +1,14 @@
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { PostCompletionContent } from "./PostCompletionContent"
 import { useCompletionMessage } from "@/hooks/useCompletionMessage"
 
 export default function PostCompletionPage() {
   const navigate = useNavigate()
+  const { boardId } = useParams()
   const { titleMessage, contentMessage, highlight, iconType, isLoading } = useCompletionMessage()
 
   const handleConfirm = () => {
-    navigate("/") // Navigate back to board page
+    navigate(`/board/${boardId}`) // Navigate back to board page
   }
 
   return (
