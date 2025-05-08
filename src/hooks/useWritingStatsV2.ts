@@ -10,7 +10,7 @@ import { Posting } from '@/types/Posting';
 import { User } from '@/types/User';
 import { WritingStats, Contribution, WritingBadge } from '@/types/WritingStats';
 import { getRecentWorkingDays } from '@/utils/dateUtils';
-import { mapDocumentToPosting } from '@/utils/postUtils';
+import { mapDocumentToPosting } from '@/utils/postingUtils';
 import { getDateKey, getUserTimeZone } from '@/utils/streakUtils';
 import { calculateCurrentStreak } from '@/utils/streakUtils';
 import { fetchUserData } from '@/utils/userUtils';

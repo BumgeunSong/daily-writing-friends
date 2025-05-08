@@ -41,6 +41,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
+    "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -68,6 +69,7 @@
   "devDependencies": {
     "@rollup/plugin-replace": "^6.0.1",
     "@tanstack/eslint-plugin-query": "^4.38.0",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/dompurify": "^3.0.5",
     "@types/node": "^22.7.7",
     "@types/prettier": "^3.0.0",
