@@ -183,7 +183,7 @@ export function ConfirmButton({ onConfirm }: ConfirmButtonProps) {
         >
             <Button onClick={onConfirm} className="w-full py-6 text-lg bg-black hover:bg-gray-800 text-white rounded-full">
                 <CheckCircle className="mr-2 h-5 w-5" />
-                확인
+                다른 글 보러 가기
             </Button>
         </motion.div>
     )

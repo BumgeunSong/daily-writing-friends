@@ -53,13 +53,13 @@ export function useCompletionMessage(): CompletionMessageResult {
   let iconType: "trophy" | "sparkles" = "trophy";
 
   if (streak > 3) {
-    titleMessage = "훌륭합니다!";
-    contentMessage = `연속 글쓰기 ${streak}일을 달성했어요`;
+    titleMessage = `연속 글쓰기 ${streak}일`;
+    contentMessage = `꾸준하게 글쓰는 모습 멋있어요!`;
     highlight = { keywords: [`${streak}일`], color: "yellow" };
     iconType = "trophy";
   } else {
-    titleMessage = "훌륭합니다.";
-    contentMessage = `이번 기수에 ${boardPostCount}개의 글을 썼어요`;
+    titleMessage = `${boardPostCount}번째 글`;
+    contentMessage = `글 정말 재미있어요! 계속 써주세요.`;
     highlight = { keywords: [`${boardPostCount}개`], color: "purple" };
     iconType = "sparkles";
   }
