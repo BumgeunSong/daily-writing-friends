@@ -55,12 +55,12 @@ export function useCompletionMessage(): CompletionMessageResult {
   if (streak > 3) {
     titleMessage = "훌륭합니다!";
     contentMessage = `연속 글쓰기 ${streak}일을 달성했어요`;
-    highlight = { keywords: ["연속 글쓰기", `${streak}일`], color: "yellow" };
+    highlight = { keywords: [`${streak}일`], color: "yellow" };
     iconType = "trophy";
   } else {
     titleMessage = "훌륭합니다.";
     contentMessage = `이번 기수에 ${boardPostCount}개의 글을 썼어요`;
-    highlight = { keywords: ["이번 기수", `${boardPostCount}개`], color: "purple" };
+    highlight = { keywords: [`${boardPostCount}개`], color: "purple" };
     iconType = "sparkles";
   }
 
