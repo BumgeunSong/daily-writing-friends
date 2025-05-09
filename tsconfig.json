@@ -2,10 +2,17 @@
   "files": [],
   "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }],
   "compilerOptions": {
-    "baseUrl": ".",
+    "baseUrl": "./src",
     "paths": {
-      "@/*": ["src/*"],
-      "@/components/*": ["src/components/*"]
+      "@/*": ["*"],
+      "@/components/*": ["components/*"],
+      "@common/*": ["common/*"],
+      "@board/*": ["board/*"],
+      "@post/*": ["post/*"],
+      "@comment/*": ["comment/*"],
+      "@draft/*": ["draft/*"],
+      "@notification/*": ["notification/*"],
+      "@user/*": ["user/*"]
     }
   }
 }
