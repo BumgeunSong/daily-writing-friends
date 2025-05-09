@@ -12,7 +12,10 @@
       "@comment/*": ["comment/*"],
       "@draft/*": ["draft/*"],
       "@notification/*": ["notification/*"],
-      "@user/*": ["user/*"]
+      "@user/*": ["user/*"],
+      "@shared/*": ["shared/*"],
+      "@login/*": ["login/*"],
+      "@stats/*": ["stats/*"]
     }
   }
 }
