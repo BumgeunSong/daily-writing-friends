@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { showErrorToast } from "@/components/common/showErrorToast"
-import { useAuth } from "@/contexts/AuthContext"
+import { useAuth } from '@shared/hooks/useAuth'
 import { useToast } from "@/hooks/use-toast"
 import { useUpcomingBoard } from "@/hooks/useUpcomingBoard"
 import { Board } from "@/types/Board"

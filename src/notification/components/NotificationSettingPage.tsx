@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@shared/hooks/useAuth';
 import PushNotificationSwitch from './PushNotificationSwitch';
 
 const NotificationSettingPage: React.FC = () => {

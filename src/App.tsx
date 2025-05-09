@@ -13,7 +13,7 @@ import JoinIntroPage from '@login/components/JoinIntroPage';
 import LoginPage from '@login/components/LoginPage';
 import StatsPage from '@stats/components/StatsPage';
 import UserPage from '@user/components/UserPage';
-import { useAuth } from './contexts/AuthContext';
+import { useAuth } from '@shared/hooks/useAuth';
 import { PrivateRoutes } from './components/route/PrivateRoutes';
 import { PublicRoutes } from './components/route/PublicRoutes';
 import { useBoards } from '@board/hooks/useBoards';

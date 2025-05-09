@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { User } from '@/types/User';
 import { createUserData, fetchUserData } from '@/utils/userUtils';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '@shared/hooks/useAuth';
 import { signInWithGoogle } from '../../../firebase';
 
 export default function LoginPage() {

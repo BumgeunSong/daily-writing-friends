@@ -9,7 +9,7 @@ import { PostBackButton } from './PostBackButton';
 import { PostSubmitButton } from './PostSubmitButton';
 import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '@shared/hooks/useAuth';
 import { DraftsDrawer } from '../draft/DraftsDrawer';
 import { DraftStatusIndicator } from '../draft/DraftStatusIndicator';
 

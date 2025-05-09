@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useClearCache } from '@/hooks/useClearCache';
 import { useUserData } from '@/hooks/useUserData';
 import { getUserActivityCount } from '@/utils/activityUtils';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '@shared/hooks/useAuth';
 import { auth } from '../../../firebase';
 
 // 계정 페이지 스크롤 영역의 고유 ID

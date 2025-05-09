@@ -1,8 +1,7 @@
-
 import { useQuery } from "@tanstack/react-query"
 import { useState, useRef, useEffect, useCallback } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { useAuth } from "@/contexts/AuthContext"
+import { useAuth } from '@shared/hooks/useAuth'
 import { useToast } from "@/hooks/use-toast"
 import { useRemoteConfig } from "@/hooks/useRemoteConfig"
 import { PostVisibility } from "@/types/Post"

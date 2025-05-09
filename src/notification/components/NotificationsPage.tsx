@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import StatusMessage from '@/components/common/StatusMessage';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@shared/hooks/useAuth';
 import { useRegisterTabHandler } from '@/contexts/BottomTabHandlerContext';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useNotificationRefresh } from '@/hooks/useNotificationRefresh';

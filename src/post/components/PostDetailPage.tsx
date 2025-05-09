@@ -5,7 +5,7 @@ import { fetchUserNickname } from '@/utils/userUtils';
 import { PostAdjacentButtons } from './PostAdjacentButtons';
 import { PostBackButton } from './PostBackButton';
 import { PostContent } from './PostContent';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '@shared/hooks/useAuth';
 import { fetchPost } from '../../../utils/postUtils';
 import Comments from '../comment/Comments';
 import { PostMetaHelmet } from './PostMetaHelmet';

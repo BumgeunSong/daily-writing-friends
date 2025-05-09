@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useAuth } from '@shared/hooks/useAuth';
 import { Board } from '../../../types/Board';
 import { fetchBoardsWithUserPermissions } from '../../../utils/boardUtils';
 import StatusMessage from '../../common/StatusMessage';

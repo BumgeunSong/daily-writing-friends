@@ -5,7 +5,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { initSentry } from './centry';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider } from '@shared/hooks/useAuth';
 import { BottomTabHandlerProvider } from './contexts/BottomTabHandlerContext';
 import { NavigationProvider } from './contexts/NavigationContext';
 import { HelmetProvider } from 'react-helmet-async';
