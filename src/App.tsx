@@ -8,7 +8,7 @@ import BoardPage from './components/pages/board/BoardPage';
 import RecentBoard from './components/pages/board/RecentBoard';
 import JoinFormPageForActiveUser from './components/pages/join/form/JoinFormPageForActiveUser';
 import JoinFormPageForNewUser from './components/pages/join/form/JoinFormPageForNewUser';
-import ProtectedJoinFormPage, { JoinFormPageForActiveOrNewUser } from './components/pages/join/form/ProtectedJoinFormPage';
+import { JoinFormPageForActiveOrNewUser } from './components/pages/join/form/ProtectedJoinFormPage';
 import JoinIntroPage from './components/pages/join/intro/JoinIntroPage';
 import LoginPage from './components/pages/login/LoginPage';
 import NotificationSettingPage from './components/pages/notification/NotificationSettingPage';
@@ -75,7 +75,11 @@ export default function App() {
       } />
 
       {/* 회원가입/온보딩 관련 라우트 */}
-      <Route path="/join" element={<JoinIntroPage />} />
+      <Route path="/join" element={
+        <PublicRoutes>
+          <JoinIntroPage />
+        </PublicRoutes>
+      } />
       <Route path="/join/form" element={
         <PrivateRoutes fallback="join" redirectAfterLogin="predefined" predefinedPath="/login">
           <JoinFormPageForActiveOrNewUser />
