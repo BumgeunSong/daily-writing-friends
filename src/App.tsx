@@ -81,7 +81,7 @@ export default function App() {
         </PublicRoutes>
       } />
       <Route path="/join/form" element={
-        <PrivateRoutes fallback="join" redirectAfterLogin="predefined" predefinedPath="/login">
+        <PrivateRoutes fallback="join" redirectAfterLogin="originalFromUser">
           <JoinFormPageForActiveOrNewUser />
         </PrivateRoutes>
       } />
