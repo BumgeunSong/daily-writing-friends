@@ -20,9 +20,11 @@ import PostFreewritingIntro from './components/pages/post/PostFreewritingIntro';
 import PostFreewritingPage from './components/pages/post/PostFreewritingPage';
 import StatsPage from './components/pages/stats/StatsPage';
 import UserPage from './components/pages/user/UserPage';
-import { ProtectedRoute } from './components/route/ProtectedRoute';
 import { useAuth } from './contexts/AuthContext';
 import PostCompletionPage from './components/pages/post/PostCompletionPage';
+import { PrivateRoutes, PrivateFallback, RedirectAfterLogin } from './components/route/PrivateRoutes';
+// PublicRoutes는 별도 구현 필요 (예시)
+// import { PublicRoutes } from './components/route/PublicRoutes';
 
 export default function App() {
   const { currentUser } = useAuth();
@@ -38,9 +40,12 @@ export default function App() {
       } />
 
       <Route element={
-        <ProtectedRoute>
+        <PrivateRoutes
+          fallback={"login"}
+          redirectAfterLogin={"originalFromUser"}
+        >
           <BottomNavigatorLayout />
-        </ProtectedRoute>
+        </PrivateRoutes>
       }>
         <Route path='/boards' element={<RecentBoard />} />
         <Route path='/boards/list' element={<BoardListPage />} />
@@ -57,24 +62,38 @@ export default function App() {
         <Route path='/user/:userId' element={<UserPage />} />
       </Route>
 
+      {/* PublicRoutes 예시 (구현 필요) */}
+      {/* <Route element={<PublicRoutes>...</PublicRoutes>}> ... </Route> */}
       <Route path='/board/:boardId/free-writing/intro' element={<PostFreewritingIntro />} />
       <Route path='/create/:boardId/free-writing' element={
-        <ProtectedRoute>
+        <PrivateRoutes
+          fallback={"login"}
+          redirectAfterLogin={"predefined"}
+          predefinedPath="/boards"
+        >
           <PostFreewritingPage />
-        </ProtectedRoute>
+        </PrivateRoutes>
       } />
 
       <Route path='/join' element={<JoinIntroPage />} />
       <Route path='/join/form' element={<ProtectedJoinFormPage />} />
       <Route path='/join/form/new-user' element={
-        <ProtectedRoute>
+        <PrivateRoutes
+          fallback={"join"}
+          redirectAfterLogin={"predefined"}
+          predefinedPath="/join/form/new-user"
+        >
           <JoinFormPageForNewUser />
-        </ProtectedRoute>
+        </PrivateRoutes>
       } />
       <Route path='/join/form/active-user' element={
-        <ProtectedRoute>
+        <PrivateRoutes
+          fallback={"join"}
+          redirectAfterLogin={"predefined"}
+          predefinedPath="/join/form/active-user"
+        >
           <JoinFormPageForActiveUser />
-        </ProtectedRoute>
+        </PrivateRoutes>
       } />
 
       <Route path='/' element={
