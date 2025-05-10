@@ -126,6 +126,15 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src'),
+        '@board': path.resolve(__dirname, './src/board'),
+        '@post': path.resolve(__dirname, './src/post'),
+        '@comment': path.resolve(__dirname, './src/comment'),
+        '@draft': path.resolve(__dirname, './src/draft'),
+        '@notification': path.resolve(__dirname, './src/notification'),
+        '@user': path.resolve(__dirname, './src/user'),
+        '@/shared': path.resolve(__dirname, './src/shared'),
+        '@login': path.resolve(__dirname, './src/login'),
+        '@stats': path.resolve(__dirname, './src/stats'),
         '#minpath': path.resolve(__dirname, 'node_modules/vfile/lib/minpath.browser.js'),
         '#minproc': path.resolve(__dirname, 'node_modules/vfile/lib/minproc.browser.js'),
         '#minurl': path.resolve(__dirname, 'node_modules/vfile/lib/minurl.browser.js'),

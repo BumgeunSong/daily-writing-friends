@@ -1,32 +1,34 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
-import { BottomNavigatorLayout } from './components/common/BottomNavigatorLayout';
-import EditAccountPage from './components/pages/account/EditAccountPage';
-import LegacyAccountPage from './components/pages/account/LegacyAccountPage';
-import BoardListPage from './components/pages/board/BoardListPage';
-import BoardPage from './components/pages/board/BoardPage';
-import RecentBoard from './components/pages/board/RecentBoard';
-import JoinFormPageForActiveUser from './components/pages/join/form/JoinFormPageForActiveUser';
-import JoinFormPageForNewUser from './components/pages/join/form/JoinFormPageForNewUser';
-import { JoinFormPageForActiveOrNewUser } from './components/pages/join/form/ProtectedJoinFormPage';
-import JoinIntroPage from './components/pages/join/intro/JoinIntroPage';
-import LoginPage from './components/pages/login/LoginPage';
-import NotificationSettingPage from './components/pages/notification/NotificationSettingPage';
-import NotificationsPage from './components/pages/notification/NotificationsPage';
-import PostCreationPage from './components/pages/post/PostCreationPage';
-import PostDetailPage from './components/pages/post/PostDetailPage';
-import PostEditPage from './components/pages/post/PostEditPage';
-import PostFreewritingIntro from './components/pages/post/PostFreewritingIntro';
-import PostFreewritingPage from './components/pages/post/PostFreewritingPage';
-import StatsPage from './components/pages/stats/StatsPage';
-import UserPage from './components/pages/user/UserPage';
-import { useAuth } from './contexts/AuthContext';
-import PostCompletionPage from './components/pages/post/PostCompletionPage';
-import { PrivateRoutes } from './components/route/PrivateRoutes';
-import { PublicRoutes } from './components/route/PublicRoutes';
+import BoardListPage from '@/board/components/BoardListPage';
+import BoardPage from '@/board/components/BoardPage';
+import RecentBoard from '@/board/components/RecentBoard';
+import { useBoards } from '@/board/hooks/useBoards';
+import { JoinFormPageForActiveOrNewUser } from '@/login/components/JoinFormPageForActiveOrNewUser';
+import JoinFormPageForActiveUser from '@/login/components/JoinFormPageForActiveUser';
+import JoinFormPageForNewUser from '@/login/components/JoinFormPageForNewUser';
+import JoinIntroPage from '@/login/components/JoinIntroPage';
+import LoginPage from '@/login/components/LoginPage';
+import PostCreationPage from '@/post/components/PostCreationPage';
+import { BottomNavigatorLayout } from '@/shared/components/BottomNavigatorLayout';
+import EditAccountPage from '@/user/components/EditAccountPage';
+import LegacyAccountPage from '@/user/components/LegacyAccountPage';
+import StatsPage from '@/stats/components/StatsPage';
+import UserPage from '@/user/components/UserPage';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { PrivateRoutes } from './shared/components/route/PrivateRoutes';
+import { PublicRoutes } from './shared/components/route/PublicRoutes';
+import PostDetailPage from '@/post/components/PostDetailPage';
+import PostEditPage from '@/post/components/PostEditPage';
+import PostFreewritingIntro from '@/post/components/PostFreewritingIntro';
+import PostFreewritingPage from '@/post/components/PostFreewritingPage';
+import PostCompletionPage from '@/post/components/PostCompletionPage';
+import NotificationSettingPage from '@/notification/components/NotificationSettingPage';
+import NotificationsPage from '@/notification/components/NotificationsPage';
 
 export default function App() {
   const { currentUser } = useAuth();
+  useBoards();
 
   return (
     <Routes>
@@ -75,11 +77,7 @@ export default function App() {
       } />
 
       {/* 회원가입/온보딩 관련 라우트 */}
-      <Route path="/join" element={
-        <PublicRoutes>
-          <JoinIntroPage />
-        </PublicRoutes>
-      } />
+      <Route path="/join" element={<JoinIntroPage />} />
       <Route path="/join/form" element={
         <PrivateRoutes fallback="join" redirectAfterLogin="originalFromUser">
           <JoinFormPageForActiveOrNewUser />
