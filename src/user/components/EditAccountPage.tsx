@@ -2,12 +2,12 @@ import { Camera, Loader2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui//avatar';
-import { Button } from '@/shared/ui//button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui//card';
-import { Input } from '@/shared/ui//input';
-import { Label } from '@/shared/ui//label';
-import { Textarea } from '@/shared/ui//textarea';
+import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
+import { Button } from '@/shared/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
+import { Input } from '@/shared/ui/input';
+import { Label } from '@/shared/ui/label';
+import { Textarea } from '@/shared/ui/textarea';
 import { useNickname } from '@/user/hooks/useNickName';
 import { useProfilePhoto } from '@/user/hooks/useProfilePhoto';
 import { useUpdateUserData } from '@/user/hooks/useUpdateUserData';

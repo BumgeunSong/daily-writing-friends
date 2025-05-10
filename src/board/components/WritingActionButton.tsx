@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
 import useWritePermission from '@/shared/hooks/useWritePermission';
-import { Button } from '@/shared/ui//button';
+import { Button } from '@/shared/ui/button';
 import { cn } from "@/shared/utils/cn";
 
 interface WritingActionButtonProps {

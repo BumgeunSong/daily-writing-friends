@@ -2,7 +2,7 @@ import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
 import { useNavigate, useParams } from "react-router-dom"
 
-import { Button } from '@/shared/ui//button'
+import { Button } from '@/shared/ui/button'
 import { cn } from "@/shared/utils/cn"
 import type React from "react"
 

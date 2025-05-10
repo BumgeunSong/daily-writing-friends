@@ -1,4 +1,4 @@
-import { Button } from '@/shared/ui//button'
+import { Button } from '@/shared/ui/button'
 
 interface IntroHeaderProps {
   onLogin: () => void

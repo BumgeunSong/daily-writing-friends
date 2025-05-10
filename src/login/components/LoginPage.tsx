@@ -4,8 +4,8 @@ import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithGoogle } from '@/firebase';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { Button } from '@/shared/ui//button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui//card';
+import { Button } from '@/shared/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
 import { User } from '@/user/model/User';
 import { createUserData, fetchUserData } from '@/user/utils/userUtils';
 

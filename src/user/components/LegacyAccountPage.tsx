@@ -17,10 +17,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/shared/ui//alert-dialog';
-import { Button } from '@/shared/ui//button';
-import { Card, CardContent } from '@/shared/ui//card';
-import { Skeleton } from '@/shared/ui//skeleton';
+} from '@/shared/ui/alert-dialog';
+import { Button } from '@/shared/ui/button';
+import { Card, CardContent } from '@/shared/ui/card';
+import { Skeleton } from '@/shared/ui/skeleton';
 import { useUserData } from '@/user/hooks/useUserData';
 import { getUserActivityCount } from '@/user/utils/activityUtils';
 

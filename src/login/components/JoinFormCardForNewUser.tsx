@@ -1,8 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { Button } from '@/shared/ui//button'
-import { Card, CardContent } from '@/shared/ui//card'
+import { Button } from '@/shared/ui/button'
+import { Card, CardContent } from '@/shared/ui/card'
 import FormField from "./JoinFormField"
 
 const formSchema = z.object({

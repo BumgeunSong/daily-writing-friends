@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { Button } from '@/shared/ui//button';
-import { Skeleton } from '@/shared/ui//skeleton';
+import { Button } from '@/shared/ui/button';
+import { Skeleton } from '@/shared/ui/skeleton';
 
 interface UserProfileProps {
   userId: string;

@@ -5,7 +5,7 @@ import { useScrollRestoration } from '@/post/hooks/useScrollRestoration';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
 import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
-import PostCardSkeleton from '@/shared/ui//PostCardSkeleton';
+import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
 import PostCard from '@post/components/PostCard';
 import { usePosts } from '@post/hooks/usePosts';
 

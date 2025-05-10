@@ -1,6 +1,6 @@
 import { ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/shared/ui//button';
+import { Button } from '@/shared/ui/button';
 
 interface PostBackButtonProps {
   boardId: string;

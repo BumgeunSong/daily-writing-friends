@@ -1,7 +1,7 @@
 import { Loader2, FileText } from 'lucide-react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { Button } from '@/shared/ui//button';
+import { Button } from '@/shared/ui/button';
 import { DraftsDrawer } from '@draft/components/DraftsDrawer';
 import { DraftStatusIndicator } from '@draft/components/DraftStatusIndicator';
 import { useAutoSaveDrafts } from '@draft/hooks/useAutoSaveDrafts';

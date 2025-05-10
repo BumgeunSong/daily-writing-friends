@@ -78,7 +78,11 @@ export default function App() {
 
       {/* 회원가입/온보딩 관련 라우트 */}
       <Route path="/join" element={<JoinIntroPage />} />
-      <Route path="/join/form" element={<JoinFormPageForActiveOrNewUser />} />
+      <Route path="/join/form" element={
+        <PrivateRoutes fallback="join" redirectAfterLogin="originalFromUser">
+          <JoinFormPageForActiveOrNewUser />
+        </PrivateRoutes>
+      } />
       <Route path="/join/form/new-user" element={
         <PrivateRoutes fallback="join" redirectAfterLogin="predefined" predefinedPath="/join/form/new-user">
           <JoinFormPageForNewUser />

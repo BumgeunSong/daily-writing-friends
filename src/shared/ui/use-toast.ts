@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import {
   ToastActionElement,
   ToastProps,
-} from '@/shared/ui//toast'
+} from '@/shared/ui/toast'
 
 const TOAST_LIMIT = 3
 const TOAST_REMOVE_DELAY = 1000

@@ -4,7 +4,7 @@ import Comments from '@/comment/components/Comments';
 import { usePostDelete } from '@/post/hooks/usePostDelete';
 import { fetchPost } from '@/post/utils/postUtils';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { Skeleton } from '@/shared/ui//skeleton';
+import { Skeleton } from '@/shared/ui/skeleton';
 import { fetchUserNickname } from '@/user/utils/userUtils';
 import { PostAdjacentButtons } from './PostAdjacentButtons';
 import { PostBackButton } from './PostBackButton';
