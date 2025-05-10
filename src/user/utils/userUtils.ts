@@ -12,9 +12,9 @@ import {
   query,
 } from 'firebase/firestore';
 
-import { firestore } from '../firebase';
-import { User } from '../types/User';
-import { UserProfile } from '../types/UserProfile';
+import { firestore } from '@/firebase';
+import { User } from '@/user/model/User';
+import { UserProfile } from '@/user/model/UserProfile';
 
 // Helper function to get user data from localStorage
 function getCachedUserData(uid: string): User | null {

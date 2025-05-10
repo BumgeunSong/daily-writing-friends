@@ -1,4 +1,4 @@
-import { CardContent } from '@/components/ui/card';
+import { CardContent } from '@/shared/ui/card';
 import { Notification } from '@/types/Notification';
 import { NotificationItem } from './NotificationItem';
 

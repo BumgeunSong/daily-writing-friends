@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
-import { Draft } from '@/types/Draft';
-import { getDraftById } from '@/utils/draftUtils';
+import { Draft } from '@/draft/model/Draft';
+import { getDraftById } from '@/draft/utils/draftUtils';
 
 interface UseDraftLoaderProps {
   userId: string | undefined;

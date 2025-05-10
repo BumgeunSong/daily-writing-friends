@@ -1,8 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { toast } from '@/hooks/use-toast';
-import { Draft } from '@/types/Draft';
-import { deleteDraft } from '@/utils/draftUtils';
+import { toast } from '@/shared/hooks/use-toast';
+import { Draft } from '@/draft/model/Draft';
+import { deleteDraft } from '@/draft/utils/draftUtils';
 
 interface UseDeleteDraftProps {
   userId: string | undefined;

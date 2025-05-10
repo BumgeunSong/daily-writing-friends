@@ -1,11 +1,11 @@
 import { Settings, X } from 'lucide-react';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Card } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Switch } from '@/components/ui/switch';
-import { useAuth } from '@shared/hooks/useAuth';
+import { Card } from '@/shared/ui//card';
+import { Label } from '@/shared/ui//label';
+import { ScrollArea } from '@/shared/ui//scroll-area';
+import { Switch } from '@/shared/ui//switch';
+import { useAuth } from '@/shared/hooks/useAuth';
 import PushNotificationSwitch from './PushNotificationSwitch';
 
 const NotificationSettingPage: React.FC = () => {

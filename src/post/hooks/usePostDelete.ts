@@ -1,5 +1,5 @@
 import { deleteDoc, doc } from 'firebase/firestore';
-import { firestore } from '../firebase';
+import { firestore } from '@/firebase';
 
 export function usePostDelete() {
   return async (boardId: string, postId: string, navigate: (path: string) => void) => {

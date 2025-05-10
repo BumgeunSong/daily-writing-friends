@@ -1,14 +1,14 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback } from "react"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { useRegisterTabHandler } from "@/contexts/BottomTabHandlerContext"
-import { usePerformanceMonitoring } from "@/hooks/usePerformanceMonitoring"
-import { useRemoteConfig } from "@/hooks/useRemoteConfig"
-import { useWritingStatsV2 } from "@/hooks/useWritingStatsV2"
-import { fetchAllUserDataWithBoardPermission } from "@/utils/userUtils"
-import StatsHeader from "./StatsHeader"
-import { StatsNoticeBanner } from "./StatsNoticeBanner"
-import { UserStatsCard } from "./UserStatsCard"
+import { ScrollArea } from "@/shared/ui//scroll-area"
+import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
+import { usePerformanceMonitoring } from "@/shared/hooks/usePerformanceMonitoring"
+import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig"
+import { useWritingStatsV2 } from "@/stats/hooks/useWritingStatsV2"
+import { fetchAllUserDataWithBoardPermission } from "@/user/utils/userUtils"
+import StatsHeader from "@/stats/components/StatsHeader"
+import { StatsNoticeBanner } from "@/stats/components/StatsNoticeBanner"
+import { UserStatsCard } from "@/stats/components/UserStatsCard"
 
 // 통계 페이지 스크롤 영역의 고유 ID
 const STATS_SCROLL_ID = 'stats-scroll';

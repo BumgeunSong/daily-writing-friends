@@ -1,16 +1,16 @@
 import { useState } from "react"
-import { showErrorToast } from "@/components/common/showErrorToast"
-import { useAuth } from '@shared/hooks/useAuth'
-import { useToast } from "@/hooks/use-toast"
-import { useUpcomingBoard } from "@/hooks/useUpcomingBoard"
+import { showErrorToast } from "@/login/components/showErrorToast"
+import { useAuth } from '@/shared/hooks/useAuth'
+import { useToast } from "@/shared/hooks/use-toast"
+import { useUpcomingBoard } from "@/login/hooks/useUpcomingBoard"
 import { Board } from "@/types/Board"
-import { JoinFormDataForActiveUser } from "@/types/join"
-import { addUserToBoardWaitingList } from "@/utils/boardUtils"  
-import { addReviewToBoard } from "@/utils/reviewUtils"
-import { useUserNickname } from "@/utils/userUtils"
+import { JoinFormDataForActiveUser } from "@/login/model/join"
+import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"  
+import { addReviewToBoard } from "@/shared/utils/reviewUtils"
+import { useUserNickname } from "@/shared/utils/userUtils"
 import JoinFormCardForActiveUser from "./JoinFormCardForActiveUser"
 import FormHeader from "./JoinFormHeader"
-import JoinCompletePage from "../complete/JoinCompletePage"
+import JoinCompletePage from "./JoinCompletePage"
 
 /**
  * 기존 사용자를 위한 매글프 신청 폼 페이지 컴포넌트

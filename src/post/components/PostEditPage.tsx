@@ -3,16 +3,16 @@ import { ChevronLeft, Save } from 'lucide-react';
 import React, { useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from '@/hooks/use-toast';
-import { formatDateToKorean } from '@/utils/dateUtils';
+import { ErrorBoundary } from '@/post/components/ErrorBoundary';
+import { Button } from '@/shared/ui//button';
+import { Card, CardHeader, CardContent, CardFooter } from '@/shared/ui//card';
+import { Skeleton } from '@/shared/ui//skeleton';
+import { toast } from '@/shared/hooks/use-toast';
+import { formatDate } from '@/shared/utils/dateUtils';
 import { PostBackButton } from './PostBackButton';
 import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
-import { fetchPost, updatePost } from '../../../utils/postUtils';
+import { fetchPost, updatePost } from '@/shared/utils/postUtils';
 
 // 메인 컴포넌트
 export default function PostEditPage() {
@@ -126,7 +126,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
             />
             <div className='flex items-center justify-between text-sm text-muted-foreground'>
               <p>
-                작성자: {post?.authorName || '?'} | 작성일: {post?.createdAt ? formatDateToKorean(post.createdAt.toDate()) : '?'}
+                작성자: {post?.authorName || '?'} | 작성일: {post?.createdAt ? formatDate(post.createdAt.toDate()) : '?'}
               </p>
             </div>
           </CardHeader>

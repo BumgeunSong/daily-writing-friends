@@ -1,16 +1,16 @@
 import { useRef } from 'react';
-import StatusMessage from '@/components/common/StatusMessage';
-import { useAuth } from '@shared/hooks/useAuth';
-import { useRegisterTabHandler } from '@/contexts/BottomTabHandlerContext';
-import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { useNotificationRefresh } from '@/hooks/useNotificationRefresh';
-import { useNotifications } from '@/hooks/useNotifications';
-import { usePerformanceMonitoring } from '@/hooks/usePerformanceMonitoring';
-import { flattenNotificationPages } from '@/utils/notificationUtils';
-import { NotificationsContent } from './NotificationsContent';
-import { NotificationsErrorBoundary } from './NotificationsErrorBoundary';
-import NotificationsHeader from './NotificationsHeader';
-import { NotificationsLoading } from './NotificationsLoading';
+import StatusMessage from '@/shared/components/StatusMessage';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
+import { useInfiniteScroll } from '@/notification/hooks/useInfiniteScroll';
+import { useNotificationRefresh } from '@/notification/hooks/useNotificationRefresh';
+import { useNotifications } from '@/notification/hooks/useNotifications';
+import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
+import { flattenNotificationPages } from '@/notification/utils/notificationUtils';
+import { NotificationsContent } from '@/notification/components/NotificationsContent';
+import { NotificationsErrorBoundary } from '@/notification/components/NotificationsErrorBoundary';
+import NotificationsHeader from '@/notification/components/NotificationsHeader';
+import { NotificationsLoading } from '@/notification/components/NotificationsLoading';
 
 // DATA - Constants
 const NOTIFICATIONS_CONFIG = {

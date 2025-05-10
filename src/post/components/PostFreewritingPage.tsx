@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
 import { useState, useRef, useEffect, useCallback } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { useAuth } from '@shared/hooks/useAuth'
-import { useToast } from "@/hooks/use-toast"
-import { useRemoteConfig } from "@/hooks/useRemoteConfig"
-import { PostVisibility } from "@/types/Post"
-import { WritingStatus } from "@/types/WritingStatus"
-import { createPost } from "@/utils/postUtils"
-import { fetchUserNickname } from "@/utils/userUtils"
+import { useAuth } from '@/shared/hooks/useAuth'
+import { useToast } from "@/shared/hooks/use-toast"
+import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig"
+import { PostVisibility } from '@/post/model/Post'
+import { WritingStatus } from "@/stats/model/WritingStatus"
+import { createPost } from '@/post/utils/postUtils'
+import { fetchUserNickname } from "@/user/utils/userUtils"
 import CountupWritingTimer from "./CountupWritingTimer"
 import { PostSubmitButton } from "./PostSubmitButton"
 import { PostTextEditor } from "./PostTextEditor"

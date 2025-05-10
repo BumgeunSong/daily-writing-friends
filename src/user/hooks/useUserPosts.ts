@@ -2,8 +2,8 @@ import * as Sentry from '@sentry/react';
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { limit, query, collection, orderBy, where, getDocs, startAfter } from "firebase/firestore";
 import { firestore } from "@/firebase";
-import { Post } from "@/types/Post";
-import { mapDocumentToPost } from "@/utils/postUtils";
+import { Post } from "@/post/model/Post";
+import { mapDocumentToPost } from "@/post/utils/postUtils";
 
 const LIMIT_COUNT = 10;
 

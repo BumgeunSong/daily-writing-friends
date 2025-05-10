@@ -1,7 +1,7 @@
 import { Edit, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { PostVisibility } from "@/types/Post";
-import { formatDateToKorean } from "@/utils/dateUtils";
+import { Button } from '@/shared/ui//button';
+import { PostVisibility } from '@post/model/Post';
+import { formatDateToKorean } from '@/shared/utils/dateUtils';
 import { Share } from "lucide-react";
 import { Link } from "react-router-dom";
 

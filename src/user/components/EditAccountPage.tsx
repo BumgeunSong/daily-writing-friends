@@ -2,16 +2,16 @@ import { Camera, Loader2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { useNickname } from '../../../hooks/useNickName';
-import { useProfilePhoto } from '../../../hooks/useProfilePhoto';
-import { useUpdateUserData } from '../../../hooks/useUpdateUserData';
-import { User } from '../../../types/User';
+import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui//avatar';
+import { Button } from '@/shared/ui//button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui//card';
+import { Input } from '@/shared/ui//input';
+import { Label } from '@/shared/ui//label';
+import { Textarea } from '@/shared/ui//textarea';
+import { useNickname } from '@/user/hooks/useNickName';
+import { useProfilePhoto } from '@/user/hooks/useProfilePhoto';
+import { useUpdateUserData } from '@/user/hooks/useUpdateUserData';
+import { User } from '@/user/model/User';
 
 export default function EditAccountPage() {
   const location = useLocation();

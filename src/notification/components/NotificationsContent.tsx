@@ -1,7 +1,7 @@
 import { Loader2 } from 'lucide-react';
 import { RefObject } from 'react';
-import { Card } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card } from '@/shared/ui/card';
+import { ScrollArea } from '@/shared/ui/scroll-area';
 import { Notification } from '@/types/Notification';
 import NotificationsList from './NotificationsList';
 

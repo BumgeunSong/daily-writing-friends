@@ -1,8 +1,8 @@
 import * as Sentry from '@sentry/react';
 import { AlertCircle, Lock } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Post, PostVisibility } from '@/types/Post';
-import { sanitizePostContent } from '@/utils/contentUtils';
+import { Alert, AlertDescription, AlertTitle } from '@/shared/ui//alert';
+import { Post, PostVisibility } from '@post/model/Post';
+import { sanitizePostContent } from '@/post/utils/contentUtils';
 
 // PostContent 컴포넌트
 interface PostContentProps {

@@ -1,4 +1,4 @@
-import { useActivity } from "@/hooks/useActivity"
+import { useActivity } from "@/comment/hooks/useActivity"
 import type React from "react"
 
 interface CommentPromptProps {

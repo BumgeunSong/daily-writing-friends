@@ -1,30 +1,30 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
-import { BottomNavigatorLayout } from '@shared/components/BottomNavigatorLayout';
-import EditAccountPage from '@user/components/EditAccountPage';
-import LegacyAccountPage from '@user/components/LegacyAccountPage';
-import BoardListPage from '@board/components/BoardListPage';
-import BoardPage from '@board/components/BoardPage';
-import RecentBoard from '@board/components/RecentBoard';
-import JoinFormPageForActiveUser from '@login/components/JoinFormPageForActiveUser';
-import JoinFormPageForNewUser from '@login/components/JoinFormPageForNewUser';
-import ProtectedJoinFormPage from '@login/components/ProtectedJoinFormPage';
-import JoinIntroPage from '@login/components/JoinIntroPage';
-import LoginPage from '@login/components/LoginPage';
-import StatsPage from '@stats/components/StatsPage';
-import UserPage from '@user/components/UserPage';
-import { useAuth } from '@shared/hooks/useAuth';
-import { PrivateRoutes } from './components/route/PrivateRoutes';
-import { PublicRoutes } from './components/route/PublicRoutes';
-import { useBoards } from '@board/hooks/useBoards';
-import PostCreationPage from '@post/components/PostCreationPage';
-import PostDetailPage from '@post/components/PostDetailPage';
-import PostEditPage from '@post/components/PostEditPage';
-import PostFreewritingIntro from '@post/components/PostFreewritingIntro';
-import PostFreewritingPage from '@post/components/PostFreewritingPage';
-import PostCompletionPage from '@post/components/PostCompletionPage';
-import NotificationSettingPage from '@notification/components/NotificationSettingPage';
-import NotificationsPage from '@notification/components/NotificationsPage';
+import { BottomNavigatorLayout } from '@/shared/components/BottomNavigatorLayout';
+import EditAccountPage from '@/user/components/EditAccountPage';
+import LegacyAccountPage from '@/user/components/LegacyAccountPage';
+import BoardListPage from '@/board/components/BoardListPage';
+import BoardPage from '@/board/components/BoardPage';
+import RecentBoard from '@/board/components/RecentBoard';
+import JoinFormPageForActiveUser from '@/login/components/JoinFormPageForActiveUser';
+import JoinFormPageForNewUser from '@/login/components/JoinFormPageForNewUser';
+import { JoinFormPageForActiveOrNewUser } from '@/login/components/JoinFormPageForActiveOrNewUser';
+import JoinIntroPage from '@/login/components/JoinIntroPage';
+import LoginPage from '@/login/components/LoginPage';
+import StatsPage from '@/stats/components/StatsPage';
+import UserPage from '@/user/components/UserPage';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { PrivateRoutes } from './shared/components/route/PrivateRoutes';
+import { PublicRoutes } from './shared/components/route/PublicRoutes';
+import { useBoards } from '@/board/hooks/useBoards';
+import PostCreationPage from '@/post/components/PostCreationPage';
+import PostDetailPage from '@/post/components/PostDetailPage';
+import PostEditPage from '@/post/components/PostEditPage';
+import PostFreewritingIntro from '@/post/components/PostFreewritingIntro';
+import PostFreewritingPage from '@/post/components/PostFreewritingPage';
+import PostCompletionPage from '@/post/components/PostCompletionPage';
+import NotificationSettingPage from '@/notification/components/NotificationSettingPage';
+import NotificationsPage from '@/notification/components/NotificationsPage';
 
 export default function App() {
   const { currentUser } = useAuth();
@@ -78,7 +78,7 @@ export default function App() {
 
       {/* 회원가입/온보딩 관련 라우트 */}
       <Route path="/join" element={<JoinIntroPage />} />
-      <Route path="/join/form" element={<ProtectedJoinFormPage />} />
+      <Route path="/join/form" element={<JoinFormPageForActiveOrNewUser />} />
       <Route path="/join/form/new-user" element={
         <PrivateRoutes fallback="join" redirectAfterLogin="predefined" predefinedPath="/join/form/new-user">
           <JoinFormPageForNewUser />

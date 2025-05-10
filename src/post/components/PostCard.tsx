@@ -1,14 +1,12 @@
-"use client"
-
-
 import { MessageCircle, User, Lock } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { useAuthorData } from "@/hooks/useAuthorData"
-import { type Post, PostVisibility } from "@/types/Post"
-import { getContentPreview } from "@/utils/contentUtils"
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
+import { Badge } from "@/shared/ui/badge"
+import { Card, CardContent, CardFooter, CardHeader } from "@/shared/ui/card"
+import { Skeleton } from "@/shared/ui/skeleton"
+import { useAuthorData } from "@/post/hooks/useAuthorData"
+import { type Post, PostVisibility } from "@/post/model/Post"
+import { getContentPreview } from "@/post/utils/contentUtils"
+
 import type React from "react"
 
 interface PostCardProps {

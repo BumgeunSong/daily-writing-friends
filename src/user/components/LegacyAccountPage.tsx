@@ -12,17 +12,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useRegisterTabHandler } from '@/contexts/BottomTabHandlerContext';
-import { useToast } from '@/hooks/use-toast';
-import { useClearCache } from '@/hooks/useClearCache';
-import { useUserData } from '@/hooks/useUserData';
-import { getUserActivityCount } from '@/utils/activityUtils';
-import { useAuth } from '@shared/hooks/useAuth';
-import { auth } from '../../../firebase';
+} from '@/shared/ui//alert-dialog';
+import { Button } from '@/shared/ui//button';
+import { Card, CardContent } from '@/shared/ui//card';
+import { Skeleton } from '@/shared/ui//skeleton';
+import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
+import { useToast } from '@/shared/hooks/use-toast';
+import { useClearCache } from '@/shared/hooks/useClearCache';
+import { useUserData } from '@/user/hooks/useUserData';
+import { getUserActivityCount } from '@/user/utils/activityUtils';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { auth } from '@/firebase';
 
 // 계정 페이지 스크롤 영역의 고유 ID
 const ACCOUNT_SCROLL_ID = 'account-scroll';

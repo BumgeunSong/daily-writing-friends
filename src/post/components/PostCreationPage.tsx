@@ -1,17 +1,17 @@
 import { Loader2, FileText } from 'lucide-react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { useAutoSaveDrafts } from '@/hooks/useAutoSaveDrafts';
-import { useDraftLoader } from '@/hooks/useDraftLoader';
-import { usePostEditor } from '@/hooks/usePostEditor';
-import { usePostSubmit } from '@/hooks/usePostSubmit';
+import { Button } from '@/shared/ui//button';
+import { useAutoSaveDrafts } from '@draft/hooks/useAutoSaveDrafts';
+import { useDraftLoader } from '@draft/hooks/useDraftLoader';
+import { usePostEditor } from '@post/hooks/usePostEditor';
+import { usePostSubmit } from '@post/hooks/usePostSubmit';
 import { PostBackButton } from './PostBackButton';
 import { PostSubmitButton } from './PostSubmitButton';
 import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
-import { useAuth } from '@shared/hooks/useAuth';
-import { DraftsDrawer } from '../draft/DraftsDrawer';
-import { DraftStatusIndicator } from '../draft/DraftStatusIndicator';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { DraftsDrawer } from '@draft/components/DraftsDrawer';
+import { DraftStatusIndicator } from '@draft/components/DraftStatusIndicator';
 
 export default function PostCreationPage() {
   const { currentUser } = useAuth();

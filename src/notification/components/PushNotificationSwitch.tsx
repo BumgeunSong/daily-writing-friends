@@ -1,9 +1,9 @@
 import { LoaderIcon } from 'lucide-react';
 import React from 'react';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { usePushPermission } from '@/hooks/usePushPermission';
-import { usePushSupport } from '@/hooks/usePushSupport';
+import { Label } from '@/shared/ui/label';
+import { Switch } from '@/shared/ui/switch';
+import { usePushPermission } from '@/notification/hooks/usePushPermission';
+import { usePushSupport } from '@/notification/hooks/usePushSupport';
 
 interface PushNotificationSwitchProps {
     userId: string;

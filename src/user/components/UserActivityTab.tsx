@@ -3,7 +3,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "@/components/ui/tabs"
+} from '@/shared/ui//tabs'
 import UserCommentsRepliesTab from './UserCommentsRepliesTab';
 import UserPostsTab from './UserPostsTab';
 

@@ -12,7 +12,7 @@
       "@draft/*": ["draft/*"],
       "@notification/*": ["notification/*"],
       "@user/*": ["user/*"],
-      "@shared/*": ["shared/*"],
+      "@/shared/*": ["shared/*"],
       "@login/*": ["login/*"],
       "@stats/*": ["stats/*"]
     }

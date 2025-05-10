@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/shared/ui/button"
 import { CheckCircle, Sparkles, Trophy } from "lucide-react"
 import { PostCreationLoading } from "./PostCreationLoading"
-import { ConfettiEffect } from "@/components/common/ConfettiEffect"
-import type { CompletionHighlight } from "@/hooks/useCompletionMessage"
+import { ConfettiEffect } from "@/shared/components/ConfettiEffect"
+import type { CompletionHighlight } from "@/post/hooks/useCompletionMessage"
 // 타입 선언: 추상적인 것부터
 export interface PostCompletionPageProps {
     titleMessage: string

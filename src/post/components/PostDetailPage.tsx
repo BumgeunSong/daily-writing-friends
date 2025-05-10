@@ -1,15 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Skeleton } from '@/components/ui/skeleton';
-import { fetchUserNickname } from '@/utils/userUtils';
+import { Skeleton } from '@/shared/ui//skeleton';
+import { fetchUserNickname } from '@/user/utils/userUtils';
 import { PostAdjacentButtons } from './PostAdjacentButtons';
 import { PostBackButton } from './PostBackButton';
 import { PostContent } from './PostContent';
-import { useAuth } from '@shared/hooks/useAuth';
-import { fetchPost } from '../../../utils/postUtils';
-import Comments from '../comment/Comments';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { fetchPost } from '@/post/utils/postUtils';
+import Comments from '@/comment/components/Comments';
 import { PostMetaHelmet } from './PostMetaHelmet';
-import { usePostDelete } from '@/hooks/usePostDelete';
+import { usePostDelete } from '@/post/hooks/usePostDelete';
 import { PostDetailHeader } from './PostDetailHeader';
 
 export default function PostDetailPage() {

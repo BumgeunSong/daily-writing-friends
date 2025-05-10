@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/ui//button';
 import AuthorList from './AuthorList';
-import BoardHeader from './BoardHeader';
-import PostCardList from './PostCardList';
-import { WritingActionButton } from './WritingActionButton';
+import BoardHeader from '@board/components/BoardHeader';
+import PostCardList from '@board/components/PostCardList';
+import { WritingActionButton } from '@board/components/WritingActionButton';
 
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();

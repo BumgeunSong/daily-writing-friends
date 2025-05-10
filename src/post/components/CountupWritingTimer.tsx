@@ -1,7 +1,7 @@
 import { Clock } from "lucide-react"
 import { useEffect, useState } from "react"
-import { useInterval } from "@/hooks/useInterval"
-import { WritingStatus } from "@/types/WritingStatus"
+import { useInterval } from "@/post/hooks/useInterval"
+import { WritingStatus } from "@/stats/model/WritingStatus"
 
 interface CountupWritingTimerProps {
   /**

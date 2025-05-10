@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { saveDraft } from '@/utils/draftUtils';
+import { saveDraft } from '@/draft/utils/draftUtils';
 
 interface UseAutoSaveDraftsProps {
   boardId: string;

@@ -1,6 +1,6 @@
 import { FirebaseApp } from "firebase/app";
-import { getMessaging, Messaging, onMessage } from "firebase/messaging";
-import onMessageInForeground from "./messaging/foregroundMessage";
+import { getMessaging, MessagePayload, Messaging, onMessage } from "firebase/messaging";
+import { toast } from "./shared/hooks/use-toast";
 
 // handle error if browser doesn't support firebase messaging  
 export function initializeMessaging(app: FirebaseApp): Messaging | null {
@@ -17,4 +17,12 @@ export function initializeMessaging(app: FirebaseApp): Messaging | null {
         messaging = null;
     }
     return messaging;
+}
+
+export default function onMessageInForeground(payload: MessagePayload) {
+    console.log('Message received in foreground: ', payload);
+    toast({
+        title: payload.notification?.title || "Notification",
+        description: payload.notification?.body || "You have a new message",
+    });
 }

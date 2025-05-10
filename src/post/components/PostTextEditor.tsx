@@ -1,9 +1,9 @@
 import { useEffect, useRef, useMemo } from 'react';
 import ReactQuill from 'react-quill-new';
-import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
+import { Progress } from '@/shared/ui//progress';
+import { useToast } from '@/shared/hooks/use-toast';
 import 'react-quill-new/dist/quill.snow.css';
-import { useImageUpload } from '@/hooks/useImageUpload';
+import { useImageUpload } from '@/post/hooks/useImageUpload';
 
 interface PostTextEditorProps {
   value: string;

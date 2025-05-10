@@ -1,6 +1,6 @@
 import { FileText, Clock, X } from 'lucide-react';
-import { Draft } from '@/types/Draft';
-import { getDraftTitle, getDraftPreview, formatDraftDate } from '@/utils/draftUtils';
+import { Draft } from '@/draft/model/Draft';
+import { getDraftTitle, getDraftPreview, formatDraftDate } from '@/draft/utils/draftUtils';
 
 // 단일 임시 저장 글 항목 컴포넌트
 interface DraftItemProps {

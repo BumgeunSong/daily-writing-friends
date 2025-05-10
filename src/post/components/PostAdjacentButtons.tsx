@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { fetchAdjacentPosts } from '@/utils/postUtils';
+import { Button } from '@/shared/ui//button';
+import { fetchAdjacentPosts } from '@/shared/utils/postUtils';
 
 interface PostAdjacentButtonsProps {
   boardId: string;

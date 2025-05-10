@@ -13,8 +13,8 @@ import {
   QueryDocumentSnapshot
 } from 'firebase/firestore';
 
-import { firestore } from '../firebase';
-import { Post, PostVisibility } from '../types/Post';
+import { firestore } from '@/firebase';
+import { Post, PostVisibility } from '@/post/model/Post';
 
 /**
  * Firebase 문서를 Post 객체로 변환하는 유틸리티 함수

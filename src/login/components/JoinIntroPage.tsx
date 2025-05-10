@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { signInWithGoogle } from "@/firebase"
-import { useUpcomingBoard } from "@/hooks/useUpcomingBoard"
+import { useUpcomingBoard } from "@/login/hooks/useUpcomingBoard"
 import CohortDetailsWrapper from "./CohortDetailsWrapper"
 import CountdownWrapper from "./CountdownWrapper"
 import GoalWrapper from "./GoalWrapper"

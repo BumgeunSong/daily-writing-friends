@@ -1,8 +1,8 @@
 import React from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useAuthors } from '@/hooks/useAuthors';
-import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
-import { ScrollArea, ScrollBar } from '../../ui/scroll-area';
+import { Skeleton } from '@/shared/ui//skeleton';
+import { useAuthors } from '@/post/hooks/useAuthors';
+import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui//avatar';
+import { ScrollArea, ScrollBar } from '@/shared/ui//scroll-area';
 
 interface AuthorListProps {
   boardId: string;

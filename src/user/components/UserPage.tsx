@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { useRemoteConfig } from '@/hooks/useRemoteConfig';
+import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
 import UserActivityTab from './UserActivityTab';
 import UserProfile from './UserProfile';
 

@@ -1,9 +1,8 @@
-import { MoreVertical } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useAuth } from '@shared/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/shared/ui//button';
+import { Skeleton } from '@/shared/ui//skeleton';
+import { useAuth } from '@/shared/hooks/useAuth';
 
 interface UserProfileProps {
   userId: string;
