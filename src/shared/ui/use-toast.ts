@@ -4,18 +4,6 @@ import { useEffect, useState } from "react"
 import {
   ToastActionElement,
   ToastProps,
-  toast,
-  ToasterToast,
-  ToastAction,
-  ToastType,
-  ToastActionProps,
-  ToastOptions,
-  ToastPosition,
-  ToastViewportProps,
-  ToastProviderProps,
-  ToastProvider,
-  ToastViewport,
-  useToast,
 } from '@/shared/ui//toast'
 
 const TOAST_LIMIT = 3
@@ -186,4 +174,4 @@ function useToast() {
   }
 }
 
-export { useToast, toast } 
+export { toast } 
