@@ -6,7 +6,6 @@
     "paths": {
       "@/*": ["*"],
       "@/components/*": ["components/*"],
-      "@common/*": ["common/*"],
       "@board/*": ["board/*"],
       "@post/*": ["post/*"],
       "@comment/*": ["comment/*"],
