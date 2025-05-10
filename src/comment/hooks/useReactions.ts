@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
-import { useAuth } from '@/shared/hooks/useAuth';
 import { GroupedReaction, ReactionUser } from '@/comment/model/Reaction';
 import {
   getReactions,
@@ -9,6 +8,7 @@ import {
   groupReactionsByEmoji,
   GetReactionsParams
 } from '@/comment/utils/reactionUtils';
+import { useAuth } from '@/shared/hooks/useAuth';
 import { fetchUserData } from '@/shared/utils/userUtils';
 
 // 엔티티 타입 정의

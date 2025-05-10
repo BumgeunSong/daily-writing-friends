@@ -1,13 +1,13 @@
 import { useQueryClient, useQuery } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
 import { Suspense } from "react"
-import { useAuth } from "@/shared/hooks/useAuth"
-import { sendAnalyticsEvent, AnalyticsEvent } from "@/shared/utils/analyticsUtils"
-import { addCommentToPost } from "@/comment/utils/commentUtils"
-import { fetchCommentsOnce } from "@/comment/utils/commentUtils"
 import CommentInput from "@/comment/components/CommentInput"
 import CommentList from "@/comment/components/CommentList"
 import CommentPrompt from "@/comment/components/CommentPrompt"
+import { fetchCommentsOnce } from "@/comment/utils/commentUtils"
+import { addCommentToPost } from "@/comment/utils/commentUtils"
+import { useAuth } from "@/shared/hooks/useAuth"
+import { sendAnalyticsEvent, AnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import type React from "react"
 interface CommentsProps {
   boardId: string

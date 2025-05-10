@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Button } from "@/shared/ui/button"
 import { CheckCircle, Sparkles, Trophy } from "lucide-react"
-import { PostCreationLoading } from "./PostCreationLoading"
+import { useState, useEffect } from "react"
 import { ConfettiEffect } from "@/shared/components/ConfettiEffect"
+import { Button } from "@/shared/ui/button"
+import { PostCreationLoading } from "./PostCreationLoading"
 import type { CompletionHighlight } from "@/post/hooks/useCompletionMessage"
 // 타입 선언: 추상적인 것부터
 export interface PostCompletionPageProps {
@@ -53,21 +53,21 @@ export function PostCompletionContent({
 
     if (showLoading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4">
+            <div className="flex min-h-screen flex-col items-center justify-center bg-white px-4">
                 <PostCreationLoading />
             </div>
         )
     }
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-white px-4">
             <ConfettiEffect />
 
             <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.5 }}
-                className="flex flex-col items-center text-center max-w-md"
+                className="flex max-w-md flex-col items-center text-center"
             >
                 <CelebrationIcon iconType={iconType} color={highlight.color} />
 
@@ -110,9 +110,9 @@ export function CelebrationIcon({ iconType, color }: CelebrationIconProps) {
             className="mb-6"
         >
             {iconType === "trophy" ? (
-                <Trophy className={`w-16 h-16 ${colorClass} mb-2`} />
+                <Trophy className={`size-16 ${colorClass} mb-2`} />
             ) : (
-                <Sparkles className={`w-16 h-16 ${colorClass} mb-2`} />
+                <Sparkles className={`size-16 ${colorClass} mb-2`} />
             )}
         </motion.div>
     )
@@ -133,7 +133,7 @@ function highlightMessageParts(message: string, highlight: CompletionHighlight) 
     const parts = message.split(pattern)
     return parts.map((part, i) =>
         sortedKeywords.includes(part) ? (
-            <span key={i} className={`font-bold text-${highlight.color}-500`}>{part}</span>
+            <span key={i} className={`text- font-bold${highlight.color}-500`}>{part}</span>
         ) : (
             <span key={i}>{part}</span>
         )
@@ -151,7 +151,7 @@ export function CelebrationMessage({
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5, duration: 0.5 }}
-                className="text-3xl font-bold mb-3"
+                className="mb-3 text-3xl font-bold"
             >
                 {titleMessage}
             </motion.h1>
@@ -160,7 +160,7 @@ export function CelebrationMessage({
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.7, duration: 0.5 }}
-                className="text-xl mb-8"
+                className="mb-8 text-xl"
             >
                 {highlightMessageParts(contentMessage, highlight)}
             </motion.p>
@@ -181,8 +181,8 @@ export function ConfirmButton({ onConfirm }: ConfirmButtonProps) {
             transition={{ delay: 0.9, duration: 0.5 }}
             className="w-full"
         >
-            <Button onClick={onConfirm} className="w-full py-6 text-lg bg-black hover:bg-gray-800 text-white rounded-full">
-                <CheckCircle className="mr-2 h-5 w-5" />
+            <Button onClick={onConfirm} className="w-full rounded-full bg-black py-6 text-lg text-white hover:bg-gray-800">
+                <CheckCircle className="mr-2 size-5" />
                 다른 글 보러 가기
             </Button>
         </motion.div>

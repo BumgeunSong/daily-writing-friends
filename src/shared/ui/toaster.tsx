@@ -1,3 +1,4 @@
+import { useToast } from "@/shared/hooks/use-toast"
 import {
   Toast,
   ToastClose,
@@ -6,7 +7,6 @@ import {
   ToastTitle,
   ToastViewport,
 } from "@/shared/ui//toast"
-import { useToast } from "@/shared/hooks/use-toast"
 import { toast } from '@/shared/ui//toast'
 
 export function Toaster() {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import ReactQuill from 'react-quill-new';
-import { Progress } from '@/shared/ui//progress';
 import { useToast } from '@/shared/hooks/use-toast';
+import { Progress } from '@/shared/ui//progress';
 import 'react-quill-new/dist/quill.snow.css';
 import { useImageUpload } from '@/post/hooks/useImageUpload';
 

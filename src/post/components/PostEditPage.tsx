@@ -4,15 +4,15 @@ import React, { useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 import { ErrorBoundary } from '@/post/components/ErrorBoundary';
+import { toast } from '@/shared/hooks/use-toast';
 import { Button } from '@/shared/ui//button';
 import { Card, CardHeader, CardContent, CardFooter } from '@/shared/ui//card';
 import { Skeleton } from '@/shared/ui//skeleton';
-import { toast } from '@/shared/hooks/use-toast';
 import { formatDate } from '@/shared/utils/dateUtils';
+import { fetchPost, updatePost } from '@/shared/utils/postUtils';
 import { PostBackButton } from './PostBackButton';
 import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
-import { fetchPost, updatePost } from '@/shared/utils/postUtils';
 
 // 메인 컴포넌트
 export default function PostEditPage() {

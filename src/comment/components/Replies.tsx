@@ -1,12 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Loader2, MessageCircle } from "lucide-react"
 import { useState, Suspense } from "react"
-import { Button } from "@/shared/ui/button"
-import { useAuth } from '@/shared/hooks/useAuth'
-import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
-import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { addReplyToComment } from "@/comment/utils/commentUtils"
 import { fetchRepliesOnce, fetchReplyCountOnce } from "@/comment/utils/replyUtils"
+import { useAuth } from '@/shared/hooks/useAuth'
+import { Button } from "@/shared/ui/button"
+import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
+import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import ReplyInput from "./ReplyInput"
 import ReplyList from "./ReplyList"
 import type React from "react"

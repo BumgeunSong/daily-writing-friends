@@ -1,6 +1,6 @@
-import { Board } from "@/types/Board"
-import CohortDetailsCard from "./CohortDetailsCard"
 import NoticeSection from '@/shared/components/NoticeSection'
+import CohortDetailsCard from "./CohortDetailsCard"
+import { Board } from "@/types/Board"
 
 interface CohortDetailsWrapperProps {
   upcomingBoard?: Board | null

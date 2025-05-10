@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import React from 'react';
-import { useAuth } from '@/shared/hooks/useAuth';
 import { Reply } from '@/comment/model/Reply';
 import { fetchRepliesOnce } from '@/comment/utils/replyUtils';
+import { useAuth } from '@/shared/hooks/useAuth';
 import ReplyRow from './ReplyRow';
 
 interface ReplyListProps {

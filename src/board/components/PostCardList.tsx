@@ -1,13 +1,13 @@
 import { useQueryClient } from '@tanstack/react-query';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
-import PostCardSkeleton from '@/shared/ui//PostCardSkeleton';
-import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
-import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
-import { usePosts } from '@post/hooks/usePosts';
 import { useScrollRestoration } from '@/post/hooks/useScrollRestoration';
 import StatusMessage from '@/shared/components/StatusMessage';
+import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
+import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
+import PostCardSkeleton from '@/shared/ui//PostCardSkeleton';
 import PostCard from '@post/components/PostCard';
+import { usePosts } from '@post/hooks/usePosts';
 
 interface PostCardListProps {
   boardId: string;

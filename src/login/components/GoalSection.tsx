@@ -1,7 +1,7 @@
-import { UserStatsCard } from '../../stats/components/UserStatsCard'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../shared/ui/card'
 import MockCommentRow from '../../shared/components/MockCommentRow'
 import { mockUserStats } from '../../shared/components/mockUserStats'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../shared/ui/card'
+import { UserStatsCard } from '../../stats/components/UserStatsCard'
 
 export default function GoalSection() {
   return (

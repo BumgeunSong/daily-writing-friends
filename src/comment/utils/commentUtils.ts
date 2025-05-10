@@ -1,6 +1,6 @@
 import { collection, addDoc, doc, serverTimestamp, updateDoc, deleteDoc, getDocs, query, orderBy, onSnapshot, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
-import { firestore } from '@/firebase';
 import { Comment } from '@/comment/model/Comment';
+import { firestore } from '@/firebase';
 
 export function fetchComments(
   boardId: string,

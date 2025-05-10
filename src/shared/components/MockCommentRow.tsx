@@ -1,10 +1,10 @@
 import { Timestamp } from "firebase/firestore"
 import { MessageCircle } from "lucide-react"
+import { sanitizeCommentContent } from "@/post/utils/contentUtils"
 import { AvatarFallback, AvatarImage, Avatar } from '@/shared/ui//avatar'
 import { Button } from '@/shared/ui//button'
 import { Card, CardContent } from '@/shared/ui//card'
 import { Comment } from "@/types/Comment"
-import { sanitizeCommentContent } from "@/post/utils/contentUtils"
 
 export const mockComment: Comment = {
   id: "mock-comment-1",

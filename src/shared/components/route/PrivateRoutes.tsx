@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from '@/shared/hooks/useAuth';
-import React from "react";
 
 export type PrivateFallback = "login" | "join";
 export type RedirectAfterLogin = "originalFromUser" | "predefined";
@@ -19,8 +19,8 @@ function getFallbackPath(fallback: PrivateFallback) {
 
 function FullScreenSpinner() {
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-white z-50">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+      <div className="size-12 animate-spin rounded-full border-b-2 border-gray-900" />
     </div>
   );
 }

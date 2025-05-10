@@ -9,8 +9,8 @@ import {
     serverTimestamp,
     DocumentReference
 } from 'firebase/firestore';
-import { firestore } from '@/firebase';
 import { Reaction } from '@/comment/model/Reaction';
+import { firestore } from '@/firebase';
 
 /**
  * 리액션 생성에 필요한 파라미터 인터페이스

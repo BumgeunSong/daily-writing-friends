@@ -2,8 +2,8 @@ import * as Sentry from '@sentry/react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { collection, query, orderBy, limit, startAfter, getDocs, Timestamp } from 'firebase/firestore';
 import { firestore } from '@/firebase';
-import { Notification } from '@/types/Notification';
 import { createNotificationQueryKey, getLastNotificationTimestamp } from '@/notification/utils/notificationUtils';
+import { Notification } from '@/types/Notification';
 
 // DATA - Query configuration
 const NOTIFICATIONS_CONFIG = {

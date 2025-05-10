@@ -1,4 +1,9 @@
 import React from 'react';
+import { useBoardTitle } from '@/board/hooks/useBoardTitle';
+import { useDrawer } from '@/comment/hooks/useDrawer';
+import { useDeleteDraft } from '@/draft/hooks/useDeleteDraft';
+import { useDraftActions } from '@/draft/hooks/useDraftActions';
+import { useDrafts } from '@/draft/hooks/useDrafts';
 import { Button } from '@/shared/ui/button';
 import {
   Drawer,
@@ -9,11 +14,6 @@ import {
   DrawerTitle,
   DrawerTrigger
 } from "@/shared/ui/drawer";
-import { useBoardTitle } from '@/board/hooks/useBoardTitle';
-import { useDeleteDraft } from '@/draft/hooks/useDeleteDraft';
-import { useDraftActions } from '@/draft/hooks/useDraftActions';
-import { useDrafts } from '@/draft/hooks/useDrafts';
-import { useDrawer } from '@/comment/hooks/useDrawer';
 import { DeleteDraftDialog } from './DeleteDraftDialog';
 import { DraftsDrawerContent } from './DraftsDrawerContent';
 

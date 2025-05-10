@@ -1,16 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
+import Comments from '@/comment/components/Comments';
+import { usePostDelete } from '@/post/hooks/usePostDelete';
+import { fetchPost } from '@/post/utils/postUtils';
+import { useAuth } from '@/shared/hooks/useAuth';
 import { Skeleton } from '@/shared/ui//skeleton';
 import { fetchUserNickname } from '@/user/utils/userUtils';
 import { PostAdjacentButtons } from './PostAdjacentButtons';
 import { PostBackButton } from './PostBackButton';
 import { PostContent } from './PostContent';
-import { useAuth } from '@/shared/hooks/useAuth';
-import { fetchPost } from '@/post/utils/postUtils';
-import Comments from '@/comment/components/Comments';
-import { PostMetaHelmet } from './PostMetaHelmet';
-import { usePostDelete } from '@/post/hooks/usePostDelete';
 import { PostDetailHeader } from './PostDetailHeader';
+import { PostMetaHelmet } from './PostMetaHelmet';
 
 export default function PostDetailPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();

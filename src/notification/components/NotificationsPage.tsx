@@ -1,16 +1,16 @@
 import { useRef } from 'react';
-import StatusMessage from '@/shared/components/StatusMessage';
-import { useAuth } from '@/shared/hooks/useAuth';
-import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
-import { useInfiniteScroll } from '@/notification/hooks/useInfiniteScroll';
-import { useNotificationRefresh } from '@/notification/hooks/useNotificationRefresh';
-import { useNotifications } from '@/notification/hooks/useNotifications';
-import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
-import { flattenNotificationPages } from '@/notification/utils/notificationUtils';
 import { NotificationsContent } from '@/notification/components/NotificationsContent';
 import { NotificationsErrorBoundary } from '@/notification/components/NotificationsErrorBoundary';
 import NotificationsHeader from '@/notification/components/NotificationsHeader';
 import { NotificationsLoading } from '@/notification/components/NotificationsLoading';
+import { useInfiniteScroll } from '@/notification/hooks/useInfiniteScroll';
+import { useNotificationRefresh } from '@/notification/hooks/useNotificationRefresh';
+import { useNotifications } from '@/notification/hooks/useNotifications';
+import { flattenNotificationPages } from '@/notification/utils/notificationUtils';
+import StatusMessage from '@/shared/components/StatusMessage';
+import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
 
 // DATA - Constants
 const NOTIFICATIONS_CONFIG = {

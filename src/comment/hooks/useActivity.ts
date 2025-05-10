@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { collection, query, where, getDocs, Timestamp, Query, CollectionReference } from 'firebase/firestore';
-import { useAuth } from '@/shared/hooks/useAuth';
 import { firestore } from '@/firebase';
+import { useAuth } from '@/shared/hooks/useAuth';
 
 interface ActivityCounts {
     commentings: number;

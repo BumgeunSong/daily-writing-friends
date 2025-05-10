@@ -1,7 +1,7 @@
 import { CalendarDays, Clock, PenLine, AlignLeft, Sparkles, MessageCircle } from "lucide-react"
 import { Card } from "@/shared/ui/card"
-import { Board } from "@/types/Board"
 import type React from "react"
+import { Board } from "@/types/Board"
 
 interface CohortDetailsCardProps {
   upcomingBoard?: Board | null

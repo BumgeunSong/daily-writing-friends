@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/shared/hooks/useAuth';
 import { useIsCurrentUserActive } from '@/login/hooks/useIsCurrentUserActive';
+import { useAuth } from '@/shared/hooks/useAuth';
  
 export function JoinFormPageForActiveOrNewUser() {
   const { currentUser } = useAuth();

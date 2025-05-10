@@ -1,6 +1,6 @@
 import { collection, onSnapshot, query, orderBy, getDocs, getCountFromServer } from 'firebase/firestore';
-import { firestore } from '@/firebase';
 import { Reply } from '@/comment/model/Reply';
+import { firestore } from '@/firebase';
 
 export function fetchReplies(boardId: string, postId: string, commentId: string, setReplies: (replies: Reply[]) => void) {
   const repliesRef = collection(firestore, `boards/${boardId}/posts/${postId}/comments/${commentId}/replies`);

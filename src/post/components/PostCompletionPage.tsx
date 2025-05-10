@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "react-router-dom"
-import { PostCompletionContent } from "./PostCompletionContent"
 import { useCompletionMessage } from "@/post/hooks/useCompletionMessage"
+import { PostCompletionContent } from "./PostCompletionContent"
 
 export default function PostCompletionPage() {
   const navigate = useNavigate()
