@@ -2,7 +2,7 @@ import { collection, getDocs, query, where, doc, getDoc, updateDoc, arrayUnion, 
 
 import { firestore } from '@/firebase';
 import { Board } from '../model/Board';
-import { User } from '@/types/User';
+import { User } from '@/user/model/User';
 
 export async function fetchBoardTitle(boardId: string): Promise<string> {
   try {
