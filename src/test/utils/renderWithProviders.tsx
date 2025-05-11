@@ -7,18 +7,17 @@ import { HelmetProvider } from 'react-helmet-async';
 import { NavigationProvider } from '@/shared/contexts/NavigationContext';
 import { BottomTabHandlerProvider } from '@/shared/contexts/BottomTabHandlerContext';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: false, // 테스트에서 자동 재시도 방지
-    },
-  },
-});
-
 export function renderWithProviders(
     ui: React.ReactElement,
     { route = '/' }: { route?: string } = {}
   ) {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false, // 테스트에서 자동 재시도 방지
+        },
+      },
+    });
     window.history.pushState({}, 'Test page', route);
     return render(
       <HelmetProvider>
