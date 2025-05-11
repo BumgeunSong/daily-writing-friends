@@ -21,17 +21,32 @@ import { render } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from 'YOUR_AUTH_CONTEXT_PATH';
+import { HelmetProvider } from 'react-helmet-async';
+import { NavigationProvider } from '@/shared/contexts/NavigationContext';
+import { BottomTabHandlerProvider } from '@/shared/contexts/BottomTabHandlerContext';
 
-const queryClient = new QueryClient({ defaultOptions: {/* no retries */} });
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: false },
+  },
+});
 
 export function renderWithProviders(ui, { route = '/' } = {}) {
   window.history.pushState({}, 'Test page', route);
   return render(
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <MemoryRouter>{ui}</MemoryRouter>
-      </QueryClientProvider>
-    </AuthProvider>
+    <HelmetProvider>
+      <MemoryRouter initialEntries={[route]}>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <NavigationProvider debounceTime={500} topThreshold={30} ignoreSmallChanges={10}>
+              <BottomTabHandlerProvider>
+                {ui}
+              </BottomTabHandlerProvider>
+            </NavigationProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </MemoryRouter>
+    </HelmetProvider>
   );
 }
 
@@ -46,7 +61,7 @@ You are a Vitest + React Testing Library expert. Generate a test file for the gi
 - Imports via project path aliases.
 - Wraps rendering in `renderWithProviders` from `src/test/utils/renderWithProviders`.
 - Mocks unsupported dependencies (e.g. Sentry, analytics) so that all such imports return void or empty.
-- Connects to Firebase Local Emulator Suite or production based on the `USE_FIREBASE_EMULATOR` flag. (Firebase Storage, Realtime Database, Cloud Functions는 테스트하지 않음)
+- Connects to Firebase Local Emulator Suite based on the `USE_FIREBASE_EMULATOR` flag. (Firebase Storage, Realtime Database, Cloud Functions는 테스트하지 않음)
 - Focuses on:
   1. React Query data-fetching states (loading, success, error)
   2. Edge cases and prop variations
@@ -63,7 +78,7 @@ You are a Vitest + React Testing Library expert. Generate a test file for the gi
 ---
 
 4. Firebase Emulator Suite 연동 가이드
-	1. 아직 Firebase Emulator Suite를 사용하지 않는 경우, 아래 절차를 따라 설정하세요.
+	1. Firebase Emulator Suite만 사용합니다. Production 모드는 지원하지 않습니다.
 	2. Firebase Emulator Suite 설치 및 실행:
 	   - `npm install -g firebase-tools`
 	   - `firebase init emulators`
@@ -78,7 +93,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-if (process.env.USE_FIREBASE_EMULATOR === 'true') {
+if (process.env.USE_FIREBASE_EMULATOR !== 'false') {
   connectFirestoreEmulator(db, 'localhost', 8080);
   connectAuthEmulator(auth, 'http://localhost:9099');
 }
@@ -88,10 +103,9 @@ export { db, auth };
 ⸻
 
 5. 자동 테스트 생성 스크립트
-	1. 파일: scripts/ai-testgen.js
+	1. 파일: scripts/ai-testgen.mjs (ESM)
 	2. 주요 기능:
-	   - OpenAI API Key를 환경변수 또는 입력값으로 받아 사용 (API Key는 직접 입력 또는 .env에 저장)
-	   - AI 모델(gpt-4o-mini 등)은 옵션으로 지정 가능
+	   - OpenAI API Key, 모델명, 대상 파일을 환경변수/옵션으로 지정
 	   - 기본적으로 최근 변경된 컴포넌트만 대상으로 하며, 옵션으로 특정 파일 지정 가능
 	   - 관련 hooks, utils도 자동 탐지하여 테스트 생성
 	   - 기존 테스트 파일이 있으면, 새 테스트와 병합 (중복 테스트 방지)
@@ -99,18 +113,17 @@ export { db, auth };
 	   - CLI에 생성된 테스트 수 요약 출력
 	3. 예시 코드 (pseudo):
 
-// scripts/ai-testgen.js
-const fs = require('fs');
-const { execSync } = require('child_process');
-const openai = require('openai'); // configure with your API key
+import fs from 'fs';
+import { execSync } from 'child_process';
+import OpenAI from 'openai';
+import path from 'path';
+import process from 'process';
 
-// 1. 환경변수/옵션으로 모델, API Key, 파일 지정
-const apiKey = process.env.OPENAI_API_KEY || 'YOUR_API_KEY';
+const apiKey = process.env.OPENAI_API_KEY;
 const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-const targetFile = process.argv[2]; // 옵션으로 파일 지정 가능
-const useEmulator = process.env.USE_FIREBASE_EMULATOR === 'true';
+const targetFile = process.argv[2];
+const useEmulator = process.env.USE_FIREBASE_EMULATOR !== 'false';
 
-// 2. 변경된 파일 또는 지정 파일 탐색
 let files = [];
 if (targetFile) {
   files = [targetFile];
@@ -123,7 +136,11 @@ if (!files.length) {
   process.exit(0);
 }
 
-files.forEach(async (file) => {
+let totalTestCount = 0;
+
+const openai = new OpenAI({ apiKey });
+
+for (const file of files) {
   const componentCode = fs.readFileSync(file, 'utf-8');
   let prompt = fs.readFileSync('testgen-template.md', 'utf-8');
   prompt = prompt.replace('[PASTE COMPONENT CODE HERE]', componentCode);
@@ -132,25 +149,24 @@ files.forEach(async (file) => {
   const response = await openai.chat.completions.create({
     model,
     messages: [{ role: 'user', content: prompt }],
-    apiKey,
   });
 
   const testContent = response.choices[0].message.content;
-  const testDir = file.replace(/\/[^/]+\.tsx$/, '/test');
+  const testDir = path.join(path.dirname(file), 'test');
   if (!fs.existsSync(testDir)) fs.mkdirSync(testDir);
-  const testPath = testDir + '/' + file.split('/').pop().replace('.tsx', '.test.tsx');
+  const testPath = path.join(testDir, path.basename(file).replace('.tsx', '.test.tsx'));
 
-  // 기존 테스트 파일 병합 로직 (pseudo)
-  if (fs.existsSync(testPath)) {
-    // 기존 테스트와 새 테스트를 병합 (중복 제거)
-    // ...
-  }
+  // 병합 로직 생략
   fs.writeFileSync(testPath, testContent);
-  console.log(`Generated test for: ${file}`);
-});
 
-// 마지막에 전체 생성 테스트 수 요약 출력
-console.log(`총 ${files.length}개의 테스트가 생성되었습니다.`);
+  const match = testContent.match(/총 (\\d+)개의 테스트가 생성되었습니다\\./);
+  if (match) totalTestCount += Number(match[1]);
+  else totalTestCount += 1;
+
+  console.log(`Generated test for: ${file}`);
+}
+
+console.log(`총 ${totalTestCount}개의 테스트가 생성되었습니다.`);
 
 ⸻
 
@@ -158,22 +174,18 @@ console.log(`총 ${files.length}개의 테스트가 생성되었습니다.`);
 	1. package.json에 스크립트 추가:
 
 "scripts": {
-  "generate:tests": "node scripts/ai-testgen.js",
-  "test:emulator": "USE_FIREBASE_EMULATOR=true npm run generate:tests",
-  "test:prod": "USE_FIREBASE_EMULATOR=false npm run generate:tests"
+  "generate:tests": "USE_FIREBASE_EMULATOR=true node scripts/ai-testgen.mjs"
 }
 
 	2. 사용 예시:
-	   - 특정 파일 테스트 생성: `npm run generate:tests src/features/MyFeature/MyComponent.tsx`
-	   - 변경된 컴포넌트 전체: `npm run generate:tests`
-	   - Firebase Emulator 모드: `npm run test:emulator`
-	   - Production 모드: `npm run test:prod`
+	   - 변경된 컴포넌트 전체 테스트 생성: `npm run generate:tests`
+	   - 특정 파일만 테스트 생성: `npm run generate:tests src/features/board/BoardList.tsx`
 
 ⸻
 
 7. 워크플로우 요약
 	1. 개발자가 컴포넌트/훅/유틸을 수정
-	2. `npm run generate:tests` 실행
+	2. `npm run generate:tests` 실행 (항상 Emulator 환경)
 	3. 각 feature module의 test 디렉토리에 테스트 파일 생성/병합
 	4. 각 테스트에는 "이 테스트가 필요한 이유" 주석 포함
 	5. CLI에 전체 생성 테스트 수 요약 출력

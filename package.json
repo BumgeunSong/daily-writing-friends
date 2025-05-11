@@ -14,7 +14,10 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "generate:tests": "node scripts/ai-testgen.js",
+    "test:emulator": "USE_FIREBASE_EMULATOR=true npm run generate:tests",
+    "test:prod": "USE_FIREBASE_EMULATOR=false npm run generate:tests"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
@@ -49,6 +52,7 @@
     "firebase": "^10.14.1",
     "framer-motion": "^12.7.4",
     "lucide-react": "^0.453.0",
+    "openai": "^4.98.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-helmet-async": "^2.0.5",

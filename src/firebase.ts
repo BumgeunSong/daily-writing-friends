@@ -7,8 +7,9 @@ import {
   signInWithPopup,
   signOut,
   UserCredential,
+  connectAuthEmulator
 } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { getPerformance } from "firebase/performance";
 import { getRemoteConfig } from "firebase/remote-config";
 import { getStorage } from 'firebase/storage';
@@ -34,6 +35,11 @@ const provider = new GoogleAuthProvider();
 const performance = getPerformance(app);
 const remoteConfig = getRemoteConfig(app);
 const analytics = getAnalytics(app);
+
+if (process.env.USE_FIREBASE_EMULATOR === 'true') {
+  connectFirestoreEmulator(firestore, 'localhost', 8080);
+  connectAuthEmulator(auth, 'http://localhost:9099');
+}
 
 const isInKakaoInAppBrowser = () => {
   const userAgent = navigator.userAgent;
