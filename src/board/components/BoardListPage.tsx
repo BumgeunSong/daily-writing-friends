@@ -4,8 +4,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { fetchBoardsWithUserPermissions } from '@board/utils/boardUtils';
-import { Board } from '@/types/Board';
+import { fetchBoardsWithUserPermissions } from '@/board/utils/boardUtils';
+import { Board } from '@/board/model/Board';
 
 const BoardListPage: React.FC = () => {
   const { currentUser } = useAuth();
