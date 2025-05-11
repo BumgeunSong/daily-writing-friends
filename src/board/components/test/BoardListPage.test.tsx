@@ -48,10 +48,10 @@ vi.mock('@/board/utils/boardUtils', () => ({
 }));
 
 
+import { vi, describe, it, expect, Mock, beforeEach } from 'vitest';
+import BoardListPage from '@/board/components/BoardListPage';
 import { fetchBoardsWithUserPermissions } from '@/board/utils/boardUtils';
 import { renderWithProviders } from '@/test/utils/renderWithProviders';
-import BoardListPage from '@/board/components/BoardListPage';
-import { vi, describe, it, expect, Mock, beforeEach } from 'vitest';
 import type { Board } from '@/board/model/Board';
 
 

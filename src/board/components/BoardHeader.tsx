@@ -2,8 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { ChevronDown } from 'lucide-react';
 import React from 'react';
 import { Link } from 'react-router-dom';
-import StatusMessage from '@/shared/components/StatusMessage';
 import { fetchBoardTitle } from '@/board/utils/boardUtils';
+import StatusMessage from '@/shared/components/StatusMessage';
 
 interface BoardHeaderProps {
   boardId?: string;

@@ -9,22 +9,22 @@ import JoinFormPageForActiveUser from '@/login/components/JoinFormPageForActiveU
 import JoinFormPageForNewUser from '@/login/components/JoinFormPageForNewUser';
 import JoinIntroPage from '@/login/components/JoinIntroPage';
 import LoginPage from '@/login/components/LoginPage';
+import NotificationSettingPage from '@/notification/components/NotificationSettingPage';
+import NotificationsPage from '@/notification/components/NotificationsPage';
+import PostCompletionPage from '@/post/components/PostCompletionPage';
 import PostCreationPage from '@/post/components/PostCreationPage';
-import { BottomNavigatorLayout } from '@/shared/components/BottomNavigatorLayout';
-import EditAccountPage from '@/user/components/EditAccountPage';
-import LegacyAccountPage from '@/user/components/LegacyAccountPage';
-import StatsPage from '@/stats/components/StatsPage';
-import UserPage from '@/user/components/UserPage';
-import { useAuth } from '@/shared/hooks/useAuth';
-import { PrivateRoutes } from './shared/components/route/PrivateRoutes';
-import { PublicRoutes } from './shared/components/route/PublicRoutes';
 import PostDetailPage from '@/post/components/PostDetailPage';
 import PostEditPage from '@/post/components/PostEditPage';
 import PostFreewritingIntro from '@/post/components/PostFreewritingIntro';
 import PostFreewritingPage from '@/post/components/PostFreewritingPage';
-import PostCompletionPage from '@/post/components/PostCompletionPage';
-import NotificationSettingPage from '@/notification/components/NotificationSettingPage';
-import NotificationsPage from '@/notification/components/NotificationsPage';
+import { BottomNavigatorLayout } from '@/shared/components/BottomNavigatorLayout';
+import { useAuth } from '@/shared/hooks/useAuth';
+import StatsPage from '@/stats/components/StatsPage';
+import EditAccountPage from '@/user/components/EditAccountPage';
+import LegacyAccountPage from '@/user/components/LegacyAccountPage';
+import UserPage from '@/user/components/UserPage';
+import { PrivateRoutes } from './shared/components/route/PrivateRoutes';
+import { PublicRoutes } from './shared/components/route/PublicRoutes';
 
 export default function App() {
   const { currentUser } = useAuth();

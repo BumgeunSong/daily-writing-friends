@@ -1,11 +1,11 @@
-import React from 'react';
-import { render } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router-dom';
-import { AuthProvider } from '@/shared/hooks/useAuth';
+import { render } from '@testing-library/react';
+import React from 'react';
 import { HelmetProvider } from 'react-helmet-async';
-import { NavigationProvider } from '@/shared/contexts/NavigationContext';
+import { MemoryRouter } from 'react-router-dom';
 import { BottomTabHandlerProvider } from '@/shared/contexts/BottomTabHandlerContext';
+import { NavigationProvider } from '@/shared/contexts/NavigationContext';
+import { AuthProvider } from '@/shared/hooks/useAuth';
 
 export function renderWithProviders(
     ui: React.ReactElement,
