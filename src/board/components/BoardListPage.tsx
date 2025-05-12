@@ -2,10 +2,10 @@
 import { useQuery } from '@tanstack/react-query';
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Board } from '@/board/model/Board';
+import { fetchBoardsWithUserPermissions } from '@/board/utils/boardUtils';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { fetchBoardsWithUserPermissions } from '@board/utils/boardUtils';
-import { Board } from '@/types/Board';
 
 const BoardListPage: React.FC = () => {
   const { currentUser } = useAuth();

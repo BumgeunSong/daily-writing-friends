@@ -1,8 +1,8 @@
 import { collection, getDocs, query, where, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 
 import { firestore } from '@/firebase';
+import { User } from '@/user/model/User';
 import { Board } from '../model/Board';
-import { User } from '@/types/User';
 
 export async function fetchBoardTitle(boardId: string): Promise<string> {
   try {
