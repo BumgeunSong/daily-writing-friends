@@ -2,10 +2,10 @@ import { useState } from "react"
 import { showErrorToast } from "@/login/components/showErrorToast"
 import { useUpcomingBoard } from "@/login/hooks/useUpcomingBoard"
 import { JoinFormDataForNewUser } from "@/login/model/join"
-import { useToast } from "@/shared/hooks/use-toast"
-import { useAuth } from '@/shared/hooks/useAuth'
-import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"
-import { updateUserData, fetchUserData, createUserData } from "@/shared/utils/userUtils"
+import { useToast } from "@shared/hooks/use-toast"
+import { useAuth } from '@shared/hooks/useAuth'
+import { addUserToBoardWaitingList } from "@shared/utils/boardUtils"
+import { updateUserData, fetchUserData, createUserData } from "@shared/utils/userUtils"
 import JoinCompletePage from "./JoinCompletePage"
 import JoinFormCardForNewUser from './JoinFormCardForNewUser'
 import FormHeader from "./JoinFormHeader"

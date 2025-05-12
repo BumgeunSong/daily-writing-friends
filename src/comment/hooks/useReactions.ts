@@ -8,8 +8,8 @@ import {
   groupReactionsByEmoji,
   GetReactionsParams
 } from '@/comment/utils/reactionUtils';
-import { useAuth } from '@/shared/hooks/useAuth';
-import { fetchUserData } from '@/shared/utils/userUtils';
+import { useAuth } from '@shared/hooks/useAuth';
+import { fetchUserData } from '@shared/utils/userUtils';
 
 // 엔티티 타입 정의
 export type EntityType = 'comment' | 'reply';

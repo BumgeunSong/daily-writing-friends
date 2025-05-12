@@ -132,7 +132,7 @@ export default defineConfig(({ mode }) => {
         '@draft': path.resolve(__dirname, './src/draft'),
         '@notification': path.resolve(__dirname, './src/notification'),
         '@user': path.resolve(__dirname, './src/user'),
-        '@/shared': path.resolve(__dirname, './src/shared'),
+        '@shared': path.resolve(__dirname, './src/shared'),
         '@login': path.resolve(__dirname, './src/login'),
         '@stats': path.resolve(__dirname, './src/stats'),
         '#minpath': path.resolve(__dirname, 'node_modules/vfile/lib/minpath.browser.js'),

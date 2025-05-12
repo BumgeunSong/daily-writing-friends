@@ -1,5 +1,5 @@
 import { CalendarDays, Clock, PenLine, AlignLeft, Sparkles, MessageCircle } from "lucide-react"
-import { Card } from "@/shared/ui/card"
+import { Card } from "@shared/ui/card"
 import type React from "react"
 import { Board } from "@/types/Board"
 

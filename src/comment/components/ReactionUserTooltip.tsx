@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@shared/ui/avatar"
 import type { ReactionUser } from "@/comment/model/Reaction"
 import type React from "react"
 

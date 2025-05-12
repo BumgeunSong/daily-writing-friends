@@ -2,7 +2,7 @@ import { updateProfile } from 'firebase/auth';
 import { doc, DocumentData, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useState, FormEvent } from 'react';
-import { useToast } from '@/shared/hooks/use-toast';
+import { useToast } from '@shared/hooks/use-toast';
 import { firestore, storage, auth } from '../../firebase';
 
 interface UserUpdates extends DocumentData {

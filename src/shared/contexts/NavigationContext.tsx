@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useScrollDirection } from '@/shared/hooks/useScrollDirection';
+import { useScrollDirection } from '@shared/hooks/useScrollDirection';
 
 interface NavigationContextType {
   isNavVisible: boolean;

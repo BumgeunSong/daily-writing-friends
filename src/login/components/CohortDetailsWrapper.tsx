@@ -1,4 +1,4 @@
-import NoticeSection from '@/shared/components/NoticeSection'
+import NoticeSection from '@shared/components/NoticeSection'
 import CohortDetailsCard from "./CohortDetailsCard"
 import { Board } from "@/types/Board"
 
