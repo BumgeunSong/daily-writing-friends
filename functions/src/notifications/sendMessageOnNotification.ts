@@ -60,7 +60,9 @@ export const onNotificationCreated = onDocumentCreated(
                 postTitle: post.title,
                 fromUserNickName: fromUser.nickname ?? fromUser.realName ?? '',
                 notificationType: notification.type,
-            });
+            })
+
+            const notificationLink = `/board/${notification.boardId}/post/${notification.postId}`;
 
             const uniqueTokens = [...new Set(fcmTokens.map(token => token.token))];
             
@@ -74,20 +76,16 @@ export const onNotificationCreated = onDocumentCreated(
 
                     const message: Message = {
                         token,
-                        notification: {
-                            title: notificationTitle,
-                            body: notificationMessage,
-                        },
                         data: {
                             boardId: notification.boardId,
                             postId: notification.postId,
-                            notificationType: notification.type,
+                            link: notificationLink,
+                            icon: notification.fromUserProfileImage ?? '',
+                            title: notificationTitle,
+                            body: notificationMessage,
                         },
                         android: {
                             priority: "high",
-                            notification: {
-                                channelId: "default"
-                            }
                         },
                         apns: {
                             headers: {
