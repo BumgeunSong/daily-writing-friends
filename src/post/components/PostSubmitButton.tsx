@@ -1,5 +1,5 @@
 import { Loader2 } from "lucide-react"
-import { Button } from "@/shared/ui/button"
+import { Button } from "@shared/ui/button"
 
 interface PostSubmitButtonProps {
   /**

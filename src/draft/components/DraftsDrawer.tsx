@@ -4,7 +4,7 @@ import { useDrawer } from '@/comment/hooks/useDrawer';
 import { useDeleteDraft } from '@/draft/hooks/useDeleteDraft';
 import { useDraftActions } from '@/draft/hooks/useDraftActions';
 import { useDrafts } from '@/draft/hooks/useDrafts';
-import { Button } from '@/shared/ui/button';
+import { Button } from '@shared/ui/button';
 import {
   Drawer,
   DrawerClose,
@@ -13,7 +13,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger
-} from "@/shared/ui/drawer";
+} from "@shared/ui/drawer";
 import { DeleteDraftDialog } from './DeleteDraftDialog';
 import { DraftsDrawerContent } from './DraftsDrawerContent';
 

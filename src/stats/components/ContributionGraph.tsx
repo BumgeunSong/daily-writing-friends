@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { cn } from "@/shared/utils/cn"
+import { cn } from "@shared/utils/cn"
 import { ContributionItem } from "@/stats/components/ContributionItem"
 import { Contribution } from "@/stats/model/WritingStats"
 import processContributions from "@/stats/utils/contributionUtils"

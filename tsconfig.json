@@ -5,14 +5,13 @@
     "baseUrl": "./src",
     "paths": {
       "@/*": ["*"],
-      "@/components/*": ["components/*"],
       "@board/*": ["board/*"],
       "@post/*": ["post/*"],
       "@comment/*": ["comment/*"],
       "@draft/*": ["draft/*"],
       "@notification/*": ["notification/*"],
       "@user/*": ["user/*"],
-      "@/shared/*": ["shared/*"],
+      "@shared/*": ["shared/*"],
       "@login/*": ["login/*"],
       "@stats/*": ["stats/*"]
     }

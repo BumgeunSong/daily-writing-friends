@@ -3,9 +3,9 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { PostVisibility } from '@/post/model/Post'
 import { createPost } from '@/post/utils/postUtils'
-import { useToast } from "@/shared/hooks/use-toast"
-import { useAuth } from '@/shared/hooks/useAuth'
-import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig"
+import { useToast } from "@shared/hooks/use-toast"
+import { useAuth } from '@shared/hooks/useAuth'
+import { useRemoteConfig } from "@shared/hooks/useRemoteConfig"
 import { WritingStatus } from "@/stats/model/WritingStatus"
 import { fetchUserNickname } from "@/user/utils/userUtils"
 import CountupWritingTimer from "./CountupWritingTimer"

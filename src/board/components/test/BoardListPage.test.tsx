@@ -7,7 +7,7 @@ vi.mock('@/firebase', () => ({
   },  
 }));
 
-vi.mock('@/shared/hooks/useRemoteConfig', () => ({
+vi.mock('@shared/hooks/useRemoteConfig', () => ({
   useRemoteConfig: <T,>(key: string, defaultValue: T) => ({
     value: defaultValue,
     isLoading: false,
@@ -32,8 +32,8 @@ vi.mock('react-router-dom', async () => {
 });
 
 // useAuth만 mock, AuthProvider 등 나머지는 실제 export
-vi.mock('@/shared/hooks/useAuth', async () => {
-  const actual = await vi.importActual<typeof import('@/shared/hooks/useAuth')>('@/shared/hooks/useAuth');
+vi.mock('@shared/hooks/useAuth', async () => {
+  const actual = await vi.importActual<typeof import('@shared/hooks/useAuth')>('@shared/hooks/useAuth');
   return {
     ...actual,
     useAuth: () => ({

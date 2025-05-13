@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { Link } from 'react-router-dom';
-import { Skeleton } from '@/shared/ui/skeleton';
-import { formatDate } from '@/shared/utils/dateUtils';
+import { Skeleton } from '@shared/ui/skeleton';
+import { formatDate } from '@shared/utils/dateUtils';
 import { useUserPosts } from '@/user/hooks/useUserPosts';
 
 interface UserPostsTabProps {

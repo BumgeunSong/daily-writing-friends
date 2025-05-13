@@ -1,7 +1,7 @@
 import { Info } from "lucide-react"
-import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig"
-import { Alert, AlertDescription } from '@/shared/ui/alert'
-import { Skeleton } from '@/shared/ui/skeleton'
+import { useRemoteConfig } from "@shared/hooks/useRemoteConfig"
+import { Alert, AlertDescription } from '@shared/ui/alert'
+import { Skeleton } from '@shared/ui/skeleton'
 
 export function StatsNoticeBanner() {
     // Remote Config에서 배너 텍스트 가져오기
