@@ -19,10 +19,9 @@ export function getRecentWorkingDays(): Date[] {
     return workingDays.reverse();
 }
 
-export function isWorkingDay(date: Date): boolean {
-    // if it's weekend or holiday based on user's timezone, return false 
-    const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    if (isWeekend(date, userTimeZone) || isHoliday(date, userTimeZone)) {
+export function isWorkingDay(date: Date, timeZone: string = 'Asia/Seoul'): boolean {
+    // if it's weekend or holiday based on 'Asia/Seoul' timezone, return false 
+    if (isWeekend(date, timeZone) || isHoliday(date, timeZone)) {
         return false;
     }
     return true;
