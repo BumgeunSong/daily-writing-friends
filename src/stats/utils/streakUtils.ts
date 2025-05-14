@@ -48,7 +48,7 @@ export function calculateStreakForDate(
     timeZone: string,
     isWorkingDayFn: (date: Date, timeZone: string) => boolean
 ): number {
-    if (!isWorkingDayFn(date, timeZone)) return 0;
+    if (!isWorkingDay(date)) return 0;
     return hasPostingOnDate(date, postingDays, timeZone) ? 1 : 0;
 }
 
@@ -88,10 +88,52 @@ export function calculateStreakFromDate(
 
 // Main function
 export function calculateCurrentStreak(postings: Posting[]): number {
-    const userTimeZone = getUserTimeZone();
-    const postingDays = buildPostingDaysSet(postings, userTimeZone);
+    const timeZone = 'Asia/Seoul';
+    const postingDays = buildPostingDaysSet(postings, timeZone);
+
     const today = new Date();
-    return calculateStreakFromDate(today, postingDays, userTimeZone, isWorkingDay);
+    const todayKey = getDateKey(today, timeZone);
+    const todayIsWorkingDay = isWorkingDay(today);
+
+    // 1. recent days 시작점 결정
+    let d = new Date(today);
+    if (!(todayIsWorkingDay && postingDays.has(todayKey))) {
+        d = getPreviousDate(d, 1);
+    }
+
+    let streak = 0;
+    let shouldContinue = true;
+
+    while (shouldContinue) {
+        // 2. recent working days 30개 구하기
+        const workingDays: Date[] = [];
+        let temp = new Date(d);
+        while (workingDays.length < 30) {
+            if (isWorkingDay(temp)) {
+                workingDays.push(new Date(temp));
+            }
+            temp = getPreviousDate(temp, 1);
+        }
+
+        // 3. streak 카운트 (이번 30개 구간)
+        for (const date of workingDays) {
+            const key = getDateKey(date, timeZone);
+            if (postingDays.has(key)) {
+                streak++;
+            } else {
+                shouldContinue = false;
+                break;
+            }
+        }
+
+        // 4. 만약 이번 30개 모두 posting이 있으면, 30개 더 확장
+        if (shouldContinue) {
+            // 다음 구간의 시작점은 마지막 working day의 하루 전
+            d = getPreviousDate(workingDays[workingDays.length - 1], 1);
+        }
+    }
+
+    return streak;
 }
 
 // Timezone Utils
