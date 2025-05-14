@@ -6,16 +6,13 @@ type DateKey = string;
 type PostingDays = Set<DateKey>;
 
 // Date Utils
-export function getDateKey(date: Date, timeZone?: string): DateKey {
-    const userTimeZone = timeZone || getUserTimeZone();
-    
+export function getDateKey(date: Date): string {
     const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: userTimeZone,
+        timeZone: getUserTimeZone(),
         year: 'numeric',
         month: '2-digit',
-        day: '2-digit'
+        day: '2-digit',
     });
-
     const parts = formatter.format(date).split('/');
     return `${parts[2]}-${parts[0]}-${parts[1]}`;
 }
@@ -27,121 +24,76 @@ export function getPreviousDate(date: Date, days: number = 1): Date {
 }
 
 // Posting Utils
-export function buildPostingDaysSet(postings: Posting[], timeZone: string): PostingDays {
+export function buildPostingDaysSet(postings: Posting[]): PostingDays {
     return new Set(
         postings.map(posting => {
             const postingDate = posting.createdAt.toDate();
-            return getDateKey(postingDate, timeZone);
+            return getDateKey(postingDate);
         })
     );
 }
 
-export function hasPostingOnDate(date: Date, postingDays: PostingDays, timeZone: string): boolean {
-    const key = getDateKey(date, timeZone);
+export function hasPostingOnDate(date: Date, postingDays: PostingDays): boolean {
+    const key = getDateKey(date);
     return postingDays.has(key);
 }
 
-// Streak Calculation
-export function calculateStreakForDate(
-    date: Date,
-    postingDays: PostingDays,
-    timeZone: string,
-    isWorkingDayFn: (date: Date, timeZone: string) => boolean
-): number {
-    if (!isWorkingDay(date)) return 0;
-    return hasPostingOnDate(date, postingDays, timeZone) ? 1 : 0;
-}
-
-export function calculatePreviousDaysStreak(
-    startDate: Date,
-    postingDays: PostingDays,
-    timeZone: string,
-    isWorkingDayFn: (date: Date, timeZone: string) => boolean
-): number {
-    let streak = 0;
-    let currentDate = new Date(startDate);
-
-    while (isWorkingDayFn(currentDate, timeZone) && hasPostingOnDate(currentDate, postingDays, timeZone)) {
-        streak++;
-        currentDate = getPreviousDate(currentDate);
-    }
-
-    return streak;
-}
-
-export function calculateStreakFromDate(
-    startDate: Date,
-    postingDays: PostingDays,
-    timeZone: string,
-    isWorkingDayFn: (date: Date, timeZone: string) => boolean
-): number {
-    const today = new Date(startDate);
-
-    // 오늘 글을 쓴 경우 바로 streak 1 증가
-    if (hasPostingOnDate(today, postingDays, timeZone)) {
-        return 1 + calculatePreviousDaysStreak(getPreviousDate(today), postingDays, timeZone, isWorkingDayFn);
-    } else {
-        // 오늘 글을 쓰지 않은 경우 오늘 전날부터 streak 계산
-        return calculatePreviousDaysStreak(getPreviousDate(today), postingDays, timeZone, isWorkingDayFn);
+// A. 과거로 working day만 순회하는 제너레이터
+function* workingDaysBackward(
+    start: Date,
+    isWorkingDayFn: (d: Date) => boolean,
+): Generator<Date> {
+    let cur = new Date(start)
+    while (true) {
+        if (isWorkingDayFn(cur)) {
+            yield new Date(cur)
+        }
+        cur = getPreviousDate(cur)
     }
 }
 
-// Main function
+// B. 조건이 true인 동안만 iterable에서 값을 수집하는 함수
+function takeWhile<T>(
+    iterable: Iterable<T>,
+    pred: (item: T) => boolean,
+): T[] {
+    const out: T[] = []
+    for (const x of iterable) {
+        if (!pred(x)) break
+        out.push(x)
+    }
+    return out
+}
+
+/**
+ * 현재 streak(연속 작성일)를 계산합니다. (while 없이 함수형/제너레이터 방식)
+ * - 오늘이 working day이고 글이 있으면 오늘부터, 아니면 어제부터 시작
+ * - working day만 과거로 순회하며 posting이 있는 날만 streak로 카운트
+ * - posting 없는 working day를 만나면 streak 종료
+ */
 export function calculateCurrentStreak(postings: Posting[]): number {
-    const timeZone = 'Asia/Seoul';
-    const postingDays = buildPostingDaysSet(postings, timeZone);
+    const postingDays = buildPostingDaysSet(postings)
+    const today = new Date()
 
-    const today = new Date();
-    const todayKey = getDateKey(today, timeZone);
-    const todayIsWorkingDay = isWorkingDay(today);
+    // 오늘이 working day이고 글이 있으면 today, 아니면 어제부터 시작
+    const startDay =
+        isWorkingDay(today) && postingDays.has(getDateKey(today))
+            ? today
+            : getPreviousDate(today)
 
-    // 1. recent days 시작점 결정
-    let d = new Date(today);
-    if (!(todayIsWorkingDay && postingDays.has(todayKey))) {
-        d = getPreviousDate(d, 1);
-    }
+    // working day를 과거로 순회하며 posting이 있는 날만 streak로 카운트
+    const streakDays = takeWhile(
+        workingDaysBackward(
+            startDay,
+            date => isWorkingDay(date),
+        ),
+        date => postingDays.has(getDateKey(date)),
+    )
 
-    let streak = 0;
-    let shouldContinue = true;
-
-    while (shouldContinue) {
-        // 2. recent working days 30개 구하기
-        const workingDays: Date[] = [];
-        let temp = new Date(d);
-        while (workingDays.length < 30) {
-            if (isWorkingDay(temp)) {
-                workingDays.push(new Date(temp));
-            }
-            temp = getPreviousDate(temp, 1);
-        }
-
-        // 3. streak 카운트 (이번 30개 구간)
-        for (const date of workingDays) {
-            const key = getDateKey(date, timeZone);
-            if (postingDays.has(key)) {
-                streak++;
-            } else {
-                shouldContinue = false;
-                break;
-            }
-        }
-
-        // 4. 만약 이번 30개 모두 posting이 있으면, 30개 더 확장
-        if (shouldContinue) {
-            // 다음 구간의 시작점은 마지막 working day의 하루 전
-            d = getPreviousDate(workingDays[workingDays.length - 1], 1);
-        }
-    }
-
-    return streak;
+    return streakDays.length
 }
 
-// Timezone Utils
+// 현재는 KST로 고정하지만 나중에는 해당 User의 timezone을 반환하도록 해야 함
 export function getUserTimeZone(): string {
-    try {
-        return Intl.DateTimeFormat().resolvedOptions().timeZone;
-    } catch (error) {
-        console.warn('Failed to get user timezone:', error);
-        return 'Asia/Seoul';
-    }
+    return 'Asia/Seoul';
 }
