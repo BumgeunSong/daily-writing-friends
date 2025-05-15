@@ -1,7 +1,8 @@
 import { useParams } from 'react-router-dom';
 import { useRemoteConfig } from '@shared/hooks/useRemoteConfig';
-import UserActivityTab from './UserActivityTab';
 import UserProfile from './UserProfile';
+import UserPostsTab from './UserPostsTab';
+import UserPageHeader from './UserPageHeader';
 
 export default function UserPage() {
   const userPageEnabled = useRemoteConfig('user_page_enabled', false);
@@ -27,12 +28,13 @@ export default function UserPage() {
     <div className="flex min-h-screen flex-col bg-background pb-16">
       {/* 헤더 섹션 */}
       <header className="sticky top-0 z-10 bg-background shadow-sm">
+        <UserPageHeader userId={userId} />
         <UserProfile userId={userId} />
       </header>
 
       {/* 메인 콘텐츠 */}
       <main className="container mx-auto flex-1 px-4">
-        <UserActivityTab userId={userId} />
+        <UserPostsTab userId={userId} />
       </main>
     </div>
   );
