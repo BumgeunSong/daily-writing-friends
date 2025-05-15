@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { Link } from 'react-router-dom';
+import { useUserCommentsReplies, UserCommentReply } from '@/user/hooks/useUserCommentsReplies';
 import { Skeleton } from '@shared/ui/skeleton';
 import { formatDate } from '@shared/utils/dateUtils';
-import { useUserCommentsReplies, UserCommentReply } from '@/user/hooks/useUserCommentsReplies';
 
 interface UserCommentsRepliesTabProps {
   userId: string;
