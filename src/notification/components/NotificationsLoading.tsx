@@ -1,7 +1,7 @@
 import { Card } from '@/shared/ui/card';
 import { ScrollArea } from '@/shared/ui/scroll-area';
 import { Skeleton } from '@/shared/ui/skeleton';
-import NotificationsHeader from './NotificationsHeader';
+import NotificationsHeader from '@/notification/components/NotificationsHeader';
 
 interface NotificationsLoadingProps {
   scrollAreaId: string;

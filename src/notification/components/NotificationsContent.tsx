@@ -2,8 +2,8 @@ import { Loader2 } from 'lucide-react';
 import { RefObject } from 'react';
 import { Card } from '@/shared/ui/card';
 import { ScrollArea } from '@/shared/ui/scroll-area';
-import NotificationsList from './NotificationsList';
-import { Notification } from '@/types/Notification';
+import NotificationsList from '@/notification/components/NotificationsList';
+import { Notification } from '@/notification/model/Notification';
 
 interface NotificationsContentProps {
   scrollAreaId: string;
