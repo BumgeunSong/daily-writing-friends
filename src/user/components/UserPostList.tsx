@@ -1,19 +1,14 @@
-"use client"
-
-import { useEffect, useState } from "react"
-import { useInView } from "react-intersection-observer"
-import PostItem from "@/user/components/UserPostItem"
-import { Skeleton } from "@shared/ui/skeleton"
-import type { Post } from "@/post/model/Post"
 import { useUserPosts } from "../hooks/useUserPosts"
+import PostItem from "@/user/components/UserPostItem"
+import { Skeleton } from "@/shared/ui/skeleton"
+import type { Post } from "@/post/model/Post"
+import { useInfiniteScroll } from "@/notification/hooks/useInfiniteScroll"
 
 interface UserPostsListProps {
   userId: string
 }
 
 export default function UserPostsList({ userId }: UserPostsListProps) {
-  const { ref, inView } = useInView()
-
   // 사용자의 게시글 가져오기
   const {
     data: postsPages,
@@ -26,12 +21,12 @@ export default function UserPostsList({ userId }: UserPostsListProps) {
   // 모든 페이지의 게시글을 하나의 배열로 합치기
   const allPosts: Post[] = postsPages?.pages.flatMap((page: Post[]) => page) || [];
 
-  // 마지막 항목이 보일 때 다음 페이지 로드
-  useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [inView, fetchNextPage, hasNextPage, isFetchingNextPage]);
+  // 무한 스크롤 커스텀 훅 사용
+  const { observerRef } = useInfiniteScroll({
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  });
 
   if (isLoading && allPosts.length === 0) {
     return (
@@ -54,7 +49,7 @@ export default function UserPostsList({ userId }: UserPostsListProps) {
   return (
     <div>
       {allPosts.map((post, index) => (
-        <PostItem key={post.id} post={post} ref={index === allPosts.length - 1 ? ref : undefined} />
+        <PostItem key={post.id} post={post} ref={index === allPosts.length - 1 ? observerRef : undefined} />
       ))}
 
       {isLoading && allPosts.length > 0 && (

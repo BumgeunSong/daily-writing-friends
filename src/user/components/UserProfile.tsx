@@ -1,43 +1,21 @@
-import { useEffect, useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@shared/ui/avatar"
 import { Skeleton } from "@shared/ui/skeleton"
+import { useQuery } from "@tanstack/react-query"
+import { fetchUserData } from "@/user/utils/userUtils"
 
 interface UserProfileProps {
   userId: string
 }
 
-interface UserData {
-  nickname: string
-  bio: string
-  profileImage: string | null
-}
-
 export default function UserProfile({ userId }: UserProfileProps) {
-  const [userData, setUserData] = useState<UserData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { data: userData, isLoading } = useQuery({
+    queryKey: ["user-profile", userId],
+    queryFn: () => fetchUserData(userId),
+    enabled: !!userId,
+    staleTime: 1000 * 60, // 1분 캐싱
+  })
 
-  // Simulate fetching user data
-  useEffect(() => {
-    const fetchUserData = async () => {
-      setLoading(true)
-
-      // Simulate API call
-      setTimeout(() => {
-        setUserData({
-          nickname: "user_nickname",
-          bio: "Hi, This is bio",
-          profileImage: null,
-        })
-        setLoading(false)
-      }, 1000)
-    }
-
-    if (userId) {
-      fetchUserData()
-    }
-  }, [userId])
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center gap-4">
         <Skeleton className="h-16 w-16 rounded-full" />
@@ -60,15 +38,15 @@ export default function UserProfile({ userId }: UserProfileProps) {
   return (
     <div className="flex items-center gap-4">
       <Avatar className="h-16 w-16">
-        {userData.profileImage ? (
-          <AvatarImage src={userData.profileImage || "/placeholder.svg"} alt={`${userData.nickname}'s profile`} />
+        {userData.profilePhotoURL ? (
+          <AvatarImage src={userData.profilePhotoURL} alt={`${userData.nickname}'s profile`} />
         ) : (
-          <AvatarFallback>{userData.nickname.charAt(0).toUpperCase()}</AvatarFallback>
+          <AvatarFallback>{userData.nickname?.charAt(0).toUpperCase()}</AvatarFallback>
         )}
       </Avatar>
       <div>
         <h2 className="text-lg font-medium">{userData.nickname}</h2>
-        <p className="text-sm text-muted-foreground line-clamp-2">{userData.bio}</p>
+        <p className="text-sm text-muted-foreground line-clamp-2">{userData.bio || '아직 자기소개가 없어요.'}</p>
       </div>
     </div>
   )
