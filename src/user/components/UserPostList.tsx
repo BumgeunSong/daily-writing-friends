@@ -30,8 +30,8 @@ export default function UserPostsList({ userId }: UserPostsListProps) {
   
   if (isLoading && allPosts.length === 0) {
     return (
-      <div className="space-y-4">
-        {Array.from({ length: 3 }).map((_, i) => (
+      <div>
+        {Array.from({ length: 5 }).map((_, i) => (
           <PostItemSkeleton key={i} />
         ))}
       </div>
@@ -54,12 +54,12 @@ export default function UserPostsList({ userId }: UserPostsListProps) {
       <div ref={observerRef} />
       {isLoadingMore && allPosts.length > 0 && (
         <div className="py-4 text-center">
-          <p className="text-sm text-muted-foreground">Loading more posts...</p>
+          <p className="text-sm text-muted-foreground">더 불러오는 중...</p>
         </div>
       )}
       {!hasNextPage && allPosts.length > 0 && (
         <div className="py-4 text-center">
-          <p className="text-sm text-muted-foreground">No more posts</p>
+          <p className="text-sm text-muted-foreground">더 이상 게시글이 없습니다.</p>
         </div>
       )}
     </div>
