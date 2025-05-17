@@ -5,10 +5,10 @@ import { StatsNoticeBanner } from "@/stats/components/StatsNoticeBanner"
 import { UserStatsCard } from "@/stats/components/UserStatsCard"
 import { useWritingStatsV2 } from "@/stats/hooks/useWritingStatsV2"
 import { fetchAllUserDataWithBoardPermission } from "@/user/utils/userUtils"
-import { useRegisterTabHandler } from "@shared/contexts/BottomTabHandlerContext"
-import { usePerformanceMonitoring } from "@shared/hooks/usePerformanceMonitoring"
-import { useRemoteConfig } from "@shared/hooks/useRemoteConfig"
-import { ScrollArea } from "@shared/ui/scroll-area"
+import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
+import { usePerformanceMonitoring } from "@/shared/hooks/usePerformanceMonitoring"
+import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig"
+import { ScrollArea } from "@/shared/ui/scroll-area"
 
 // 통계 페이지 스크롤 영역의 고유 ID
 const STATS_SCROLL_ID = 'stats-scroll';

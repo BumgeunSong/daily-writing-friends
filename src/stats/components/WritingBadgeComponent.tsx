@@ -1,5 +1,5 @@
 import { WritingBadge } from "@/stats/model/WritingStats"
-import { Badge } from "@shared/ui/badge"
+import { Badge } from "@/shared/ui/badge"
 
 export interface WritingBadgeComponentProps {
     badge: WritingBadge

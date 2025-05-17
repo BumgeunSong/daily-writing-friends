@@ -26,7 +26,7 @@ You are a Vitest + React Testing Library expert. Generate a test file for the gi
 vi.mock('@/firebase', () => ({
   remoteConfig: { settings: {}, defaultConfig: {} },
 }));
-vi.mock('@shared/hooks/useRemoteConfig', () => ({
+vi.mock('@/shared/hooks/useRemoteConfig', () => ({
   useRemoteConfig: <T,>(key: string, defaultValue: T) => ({
     value: defaultValue,
     isLoading: false,

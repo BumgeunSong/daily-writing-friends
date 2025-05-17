@@ -21,8 +21,8 @@ import StatsPage from '@/stats/components/StatsPage';
 import EditAccountPage from '@/user/components/EditAccountPage';
 import LegacyAccountPage from '@/user/components/LegacyAccountPage';
 import UserPage from '@/user/components/UserPage';
-import { BottomNavigatorLayout } from '@shared/components/BottomNavigatorLayout';
-import { useAuth } from '@shared/hooks/useAuth';
+import { BottomNavigatorLayout } from '@/shared/components/BottomNavigatorLayout';
+import { useAuth } from '@/shared/hooks/useAuth';
 import { PrivateRoutes } from './shared/components/route/PrivateRoutes';
 import { PublicRoutes } from './shared/components/route/PublicRoutes';
 

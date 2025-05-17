@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { calculateCurrentStreak } from "@/stats/utils/streakUtils";
-import { useAuth } from '@shared/hooks/useAuth';
-import { useRemoteConfig } from "@shared/hooks/useRemoteConfig";
-import { fetchPostingData } from "@shared/utils/postingUtils";
+import { useAuth } from '@/shared/hooks/useAuth';
+import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig";
+import { fetchPostingData } from "@/shared/utils/postingUtils";
 
 export interface CompletionHighlight {
   keywords: string[];

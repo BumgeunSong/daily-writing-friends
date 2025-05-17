@@ -1,6 +1,6 @@
 import React from "react"
-import { Avatar, AvatarFallback } from "@shared/ui/avatar"
-import { Skeleton } from "@shared/ui/skeleton"
+import { Avatar, AvatarFallback } from "@/shared/ui/avatar"
+import { Skeleton } from "@/shared/ui/skeleton"
 
 const ReplySkeleton: React.FC = () => {
   return (

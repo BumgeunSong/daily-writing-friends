@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import BoardHeader from '@board/components/BoardHeader';
 import PostCardList from '@board/components/PostCardList';
 import { WritingActionButton } from '@board/components/WritingActionButton';
-import { Button } from '@shared/ui/button';
+import { Button } from '@/shared/ui/button';
 import AuthorList from './AuthorList';
 
 export default function BoardPage() {

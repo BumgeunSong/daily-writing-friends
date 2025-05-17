@@ -2,8 +2,8 @@ import { Edit, Trash2 } from "lucide-react";
 import { Share } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PostVisibility } from '@post/model/Post';
-import { Button } from '@shared/ui/button';
-import { formatDateToKorean } from '@shared/utils/dateUtils';
+import { Button } from '@/shared/ui/button';
+import { formatDateToKorean } from '@/shared/utils/dateUtils';
 
 // 헤더 UI
 export function PostDetailHeader({

@@ -1,6 +1,6 @@
 import { Contribution } from "@/stats/model/WritingStats"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@shared/ui/tooltip"
-import { cn } from "@shared/utils/cn"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip"
+import { cn } from "@/shared/utils/cn"
 
 interface ContributionItemProps {
     contribution?: Contribution

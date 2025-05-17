@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import { Toaster } from '@shared/ui/toaster';
+import { Toaster } from '@/shared/ui/toaster';
 import BottomTabsNavigator from './BottomTabsNavigator';
 
 export const BottomNavigatorLayout = () => (

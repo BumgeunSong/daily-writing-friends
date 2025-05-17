@@ -1,5 +1,5 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@shared/ui/avatar"
-import { Skeleton } from "@shared/ui/skeleton"
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
+import { Skeleton } from "@/shared/ui/skeleton"
 import { useQuery } from "@tanstack/react-query"
 import { fetchUserData } from "@/user/utils/userUtils"
 

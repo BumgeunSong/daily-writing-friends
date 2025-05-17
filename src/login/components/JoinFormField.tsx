@@ -1,4 +1,4 @@
-import { Input } from "@shared/ui/input"
+import { Input } from "@/shared/ui/input"
 import type { FieldError, UseFormRegister } from "react-hook-form"
 
 interface FormFieldProps {

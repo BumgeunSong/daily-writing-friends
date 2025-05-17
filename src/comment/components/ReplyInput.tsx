@@ -1,10 +1,10 @@
 import { useMutation } from "@tanstack/react-query"
 import { Send, Loader2 } from "lucide-react"
 import { useState } from "react"
-import { useToast } from "@shared/hooks/use-toast"
-import { useAuth } from '@shared/hooks/useAuth'
-import { Button } from "@shared/ui/button"
-import { Textarea } from "@shared/ui/textarea"
+import { useToast } from "@/shared/hooks/use-toast"
+import { useAuth } from '@/shared/hooks/useAuth'
+import { Button } from "@/shared/ui/button"
+import { Textarea } from "@/shared/ui/textarea"
 import type React from "react"
 
 interface ReplyInputProps {

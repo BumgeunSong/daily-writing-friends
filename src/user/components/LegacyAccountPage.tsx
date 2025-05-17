@@ -6,10 +6,10 @@ import { useNavigate } from 'react-router-dom';
 import { auth } from '@/firebase';
 import { useUserData } from '@/user/hooks/useUserData';
 import { getUserActivityCount } from '@/user/utils/activityUtils';
-import { useRegisterTabHandler } from '@shared/contexts/BottomTabHandlerContext';
-import { useToast } from '@shared/hooks/use-toast';
-import { useAuth } from '@shared/hooks/useAuth';
-import { useClearCache } from '@shared/hooks/useClearCache';
+import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
+import { useToast } from '@/shared/hooks/use-toast';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { useClearCache } from '@/shared/hooks/useClearCache';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,10 +19,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@shared/ui/alert-dialog';
-import { Button } from '@shared/ui/button';
-import { Card, CardContent } from '@shared/ui/card';
-import { Skeleton } from '@shared/ui/skeleton';
+} from '@/shared/ui/alert-dialog';
+import { Button } from '@/shared/ui/button';
+import { Card, CardContent } from '@/shared/ui/card';
+import { Skeleton } from '@/shared/ui/skeleton';
 
 // 계정 페이지 스크롤 영역의 고유 ID
 const ACCOUNT_SCROLL_ID = 'account-scroll';

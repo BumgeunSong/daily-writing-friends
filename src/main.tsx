@@ -4,7 +4,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
 import { BrowserRouter } from 'react-router-dom';
-import { AuthProvider } from '@shared/hooks/useAuth';
+import { AuthProvider } from '@/shared/hooks/useAuth';
 import App from './App';
 import { initSentry } from './centry';
 import { BottomTabHandlerProvider } from './shared/contexts/BottomTabHandlerContext';
