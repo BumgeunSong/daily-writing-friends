@@ -11,6 +11,7 @@ interface PostItemProps {
 }
 
 export const PostItem: React.FC<PostItemProps> = ({ post }) => {
+    const isPrivate = post.visibility === 'private';
     const contentPreview = getContentPreview(post.content)
     return (
         <Card className="hover:border-primary transition-colors">
@@ -19,10 +20,12 @@ export const PostItem: React.FC<PostItemProps> = ({ post }) => {
                 <div className="flex-1 min-w-0">
                     <CardContent className="p-4 pb-2">
                         <h3 className="font-medium text-base truncate">{post.title}</h3>
-                        <div
+                        {!isPrivate && (
+                          <div
                             className="prose prose-sm line-clamp-1 leading-relaxed text-xs text-foreground/80 dark:prose-invert prose-p:my-1 prose-ol:my-1 prose-ul:my-1"
                             dangerouslySetInnerHTML={{ __html: contentPreview }}
-                        />
+                          />
+                        )}
                     </CardContent>
                     <CardFooter className="flex items-center justify-between px-4 pt-0 pb-3 text-[11px] text-muted-foreground">
                         <span>{formatDate(post.createdAt?.toDate())}</span>
