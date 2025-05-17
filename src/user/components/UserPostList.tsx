@@ -1,7 +1,6 @@
 import { useRef } from "react"
 import { useInfiniteScroll } from "@/notification/hooks/useInfiniteScroll"
-import PostItem from "@/user/components/UserPostItem"
-import { Skeleton } from "@/shared/ui/skeleton"
+import { PostItem, PostItemSkeleton } from "@/user/components/UserPostItem"
 import type { Post } from "@/post/model/Post"
 import { useUserPosts } from "../hooks/useUserPosts"
 
@@ -63,23 +62,6 @@ export default function UserPostsList({ userId }: UserPostsListProps) {
           <p className="text-sm text-muted-foreground">No more posts</p>
         </div>
       )}
-    </div>
-  )
-}
-
-function PostItemSkeleton() {
-  return (
-    <div className="flex border rounded-md p-4 gap-4">
-      <div className="flex-1 space-y-2">
-        <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-1/2" />
-        <div className="flex items-center gap-2 mt-2">
-          <Skeleton className="h-3 w-24" />
-          <Skeleton className="h-3 w-10" />
-        </div>
-      </div>
-      <Skeleton className="h-20 w-36 rounded-md" />
     </div>
   )
 }
