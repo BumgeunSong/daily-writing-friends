@@ -1,4 +1,3 @@
-import { forwardRef } from "react"
 import { Link } from "react-router-dom"
 import { MessageCircle } from "lucide-react"
 import { formatDate } from "@/shared/utils/dateUtils"
@@ -8,9 +7,9 @@ interface PostItemProps {
     post: Post
 }
 
-const PostItem = forwardRef<HTMLDivElement, PostItemProps>(({ post }, ref) => {
+const PostItem: React.FC<PostItemProps> = ({ post }) => {
     return (
-        <div ref={ref} className="border rounded-md hover:border-primary transition-colors">
+        <div className="border rounded-md hover:border-primary transition-colors">
             <Link to={`/board/${post.boardId}/post/${post.id}`} className="flex p-4 gap-4">
                 <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-base truncate">{post.title}</h3>
@@ -38,8 +37,6 @@ const PostItem = forwardRef<HTMLDivElement, PostItemProps>(({ post }, ref) => {
             </Link>
         </div>
     )
-})
-
-PostItem.displayName = "PostItem"
+}
 
 export default PostItem
