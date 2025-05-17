@@ -19,7 +19,7 @@ export default function UserPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background pb-16 max-w-2xl mx-auto">
+    <div className="flex min-h-screen flex-col bg-background pb-16 w-full max-w-full mx-auto">
       {/* Header section with settings button */}
       <header className="sticky top-0 z-10 bg-background border-b">
         <UserPageHeader onClick={handleGoToSettings} />
