@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useUserPosts } from '@/user/hooks/useUserPosts';
 import { Skeleton } from '@shared/ui/skeleton';
 import { formatDate } from '@shared/utils/dateUtils';
+import type { Post } from '@/post/model/Post';
 
 interface UserPostsTabProps {
   userId: string;
@@ -22,7 +23,7 @@ export default function UserPostsTab({ userId }: UserPostsTabProps) {
   } = useUserPosts(userId);
 
   // 모든 페이지의 게시글을 하나의 배열로 합치기
-  const allPosts = postsPages?.pages.flatMap(page => page) || [];
+  const allPosts: Post[] = postsPages?.pages.flatMap((page: Post[]) => page) || [];
 
   // 마지막 항목이 보일 때 다음 페이지 로드
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function UserPostsTab({ userId }: UserPostsTabProps) {
   }, [inView, fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   // 게시글 카드 렌더링
-  const renderPostCard = (post: any, index: number) => {
+  const renderPostCard = (post: Post, index: number) => {
     const isLastItem = index === allPosts.length - 1;
 
     return (
@@ -44,7 +45,6 @@ export default function UserPostsTab({ userId }: UserPostsTabProps) {
         <Link to={`/board/${post.boardId}/post/${post.id}`}>
           <h3 className="font-medium">{post.title}</h3>
           <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-            <span>{post.boardTitle}</span>
             <span>{formatDate(post.createdAt?.toDate())}</span>
           </div>
         </Link>
