@@ -1,39 +1,39 @@
-import { useParams } from 'react-router-dom';
-import { useRemoteConfig } from '@shared/hooks/useRemoteConfig';
-import UserActivityTab from './UserActivityTab';
-import UserProfile from './UserProfile';
+import UserProfile from "@/user/components/UserProfile"
+import UserPostsList from "@/user/components/UserPostList"
+import { UserPageHeader } from "@/user/components/UserPageHeader"
+import { useNavigate, useParams } from "react-router-dom"
+import StatusMessage from "@/shared/components/StatusMessage"
 
 export default function UserPage() {
-  const userPageEnabled = useRemoteConfig('user_page_enabled', false);
-  const { userId } = useParams<{ userId: string }>();
+  const navigate = useNavigate()
+  const { userId } = useParams()
 
-  if (!userPageEnabled) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-muted-foreground">사용자 페이지가 비활성화되었습니다.</p>
-      </div>
-    );
+  const handleGoToSettings = () => {
+    navigate("/account/edit")
   }
 
   if (!userId) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-muted-foreground">사용자를 찾을 수 없습니다.</p>
-      </div>
-    );
+      <StatusMessage error errorMessage="유저 정보를 찾을 수 없습니다." />
+    )
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background pb-16">
-      {/* 헤더 섹션 */}
-      <header className="sticky top-0 z-10 bg-background shadow-sm">
-        <UserProfile userId={userId} />
+    <div className="flex min-h-screen flex-col bg-background pb-16 w-full max-w-full mx-auto">
+      {/* Header section with settings button */}
+      <header className="sticky top-0 z-10 bg-background border-b">
+        <UserPageHeader onClick={handleGoToSettings} />
+
+        {/* User profile section */}
+        <div className="p-4">
+          <UserProfile userId={userId} />
+        </div>
       </header>
 
-      {/* 메인 콘텐츠 */}
-      <main className="container mx-auto flex-1 px-4">
-        <UserActivityTab userId={userId} />
+      {/* Main content */}
+      <main className="flex-1 p-4">
+        <UserPostsList userId={userId} />
       </main>
     </div>
-  );
-} 
+  )
+}

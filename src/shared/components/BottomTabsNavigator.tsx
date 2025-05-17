@@ -1,8 +1,8 @@
 import { Home, Bell, User, ChartNoAxesColumnIncreasing } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { TabName, useBottomTabHandler } from '@shared/contexts/BottomTabHandlerContext';
-import { useNavigation } from '@shared/contexts/NavigationContext';
-import { cn } from "@shared/utils/cn";
+import { TabName, useBottomTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
+import { useNavigation } from '@/shared/contexts/NavigationContext';
+import { cn } from "@/shared/utils/cn";
 
 interface Tab {
   name: TabName;

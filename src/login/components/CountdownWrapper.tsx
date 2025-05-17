@@ -1,4 +1,4 @@
-import CountdownSection from '@shared/components/CountdownSection'
+import CountdownSection from '@/shared/components/CountdownSection'
 
 interface CountdownWrapperProps {
   daysRemaining: number

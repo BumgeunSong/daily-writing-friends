@@ -22,8 +22,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from 'YOUR_AUTH_CONTEXT_PATH';
 import { HelmetProvider } from 'react-helmet-async';
-import { NavigationProvider } from '@shared/contexts/NavigationContext';
-import { BottomTabHandlerProvider } from '@shared/contexts/BottomTabHandlerContext';
+import { NavigationProvider } from '@/shared/contexts/NavigationContext';
+import { BottomTabHandlerProvider } from '@/shared/contexts/BottomTabHandlerContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {

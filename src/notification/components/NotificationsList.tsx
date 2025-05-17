@@ -1,6 +1,6 @@
-import { CardContent } from '@shared/ui/card';
+import { CardContent } from '@/shared/ui/card';
 import { NotificationItem } from './NotificationItem';
-import { Notification } from '@/types/Notification';
+import { Notification } from '@/notification/model/Notification';
 
 interface NotificationsListProps {
   notifications: Notification[];

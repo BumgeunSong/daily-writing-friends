@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { cn } from "@shared/utils/cn";
+import { cn } from "@/shared/utils/cn";
 
 interface PostTitleEditorProps
   extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {

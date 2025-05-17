@@ -1,7 +1,7 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useState } from 'react';
 import { storage } from '@/firebase';
-import { useToast } from '@shared/hooks/use-toast';
+import { useToast } from '@/shared/hooks/use-toast';
 
 interface UseImageUploadProps {
     insertImage: (url: string) => void;

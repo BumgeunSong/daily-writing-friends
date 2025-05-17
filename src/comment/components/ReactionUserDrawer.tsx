@@ -1,7 +1,7 @@
 import { Trash2 } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@shared/ui/avatar"
-import { Button } from "@shared/ui/button"
-import { Drawer, DrawerContent } from "@shared/ui/drawer"
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
+import { Button } from "@/shared/ui/button"
+import { Drawer, DrawerContent } from "@/shared/ui/drawer"
 import type React from "react"
 
 interface ReactionUser {

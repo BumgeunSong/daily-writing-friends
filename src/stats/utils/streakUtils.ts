@@ -1,5 +1,5 @@
 import { Posting } from '@/post/model/Posting';
-import { isWorkingDay } from '@shared/utils/dateUtils';
+import { isWorkingDay } from '@/shared/utils/dateUtils';
 
 // Types
 type DateKey = string;

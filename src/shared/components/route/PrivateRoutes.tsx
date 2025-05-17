@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from '@shared/hooks/useAuth';
+import { useAuth } from '@/shared/hooks/useAuth';
 
 export type PrivateFallback = "login" | "join";
 export type RedirectAfterLogin = "originalFromUser" | "predefined";

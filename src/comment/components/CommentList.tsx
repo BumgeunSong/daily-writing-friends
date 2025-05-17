@@ -3,7 +3,7 @@ import React from 'react';
 import CommentRow from '@/comment/components/CommentRow';
 import { Comment } from '@/comment/model/Comment';
 import { fetchCommentsOnce } from '@/comment/utils/commentUtils';
-import { useAuth } from '@shared/hooks/useAuth';
+import { useAuth } from '@/shared/hooks/useAuth';
 
 interface CommentListProps {
   boardId: string;

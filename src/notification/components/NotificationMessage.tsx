@@ -1,4 +1,4 @@
-import { NotificationType } from "@/types/Notification";
+import { NotificationType } from "@/notification/model/Notification";
 
 interface NotificationMessageProps {
     userNickName: string;

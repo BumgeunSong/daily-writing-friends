@@ -1,9 +1,9 @@
 import { useMutation } from "@tanstack/react-query"
 import { Send, Loader2 } from "lucide-react"
 import { useState } from "react"
-import { useAuth } from "@shared/hooks/useAuth"
-import { Button } from "@shared/ui/button"
-import { Textarea } from "@shared/ui/textarea"
+import { useAuth } from "@/shared/hooks/useAuth"
+import { Button } from "@/shared/ui/button"
+import { Textarea } from "@/shared/ui/textarea"
 import type React from "react"
 
 interface CommentInputProps {

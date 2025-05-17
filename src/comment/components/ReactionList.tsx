@@ -2,8 +2,8 @@ import { Suspense } from "react"
 import EmojiReaction from "@/comment/components/EmojiReaction"
 import ReactWithEmoji from "@/comment/components/ReactWithEmoji"
 import { CommentParams, ReplyParams, useReactions } from "@/comment/hooks/useReactions"
-import { useAuth } from "@shared/hooks/useAuth"
-import { Skeleton } from "@shared/ui/skeleton"
+import { useAuth } from "@/shared/hooks/useAuth"
+import { Skeleton } from "@/shared/ui/skeleton"
 import type React from "react"
 
 interface ReactionListProps {

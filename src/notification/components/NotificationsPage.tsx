@@ -7,10 +7,10 @@ import { useInfiniteScroll } from '@/notification/hooks/useInfiniteScroll';
 import { useNotificationRefresh } from '@/notification/hooks/useNotificationRefresh';
 import { useNotifications } from '@/notification/hooks/useNotifications';
 import { flattenNotificationPages } from '@/notification/utils/notificationUtils';
-import StatusMessage from '@shared/components/StatusMessage';
-import { useRegisterTabHandler } from '@shared/contexts/BottomTabHandlerContext';
-import { useAuth } from '@shared/hooks/useAuth';
-import { usePerformanceMonitoring } from '@shared/hooks/usePerformanceMonitoring';
+import StatusMessage from '@/shared/components/StatusMessage';
+import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
 
 // DATA - Constants
 const NOTIFICATIONS_CONFIG = {
