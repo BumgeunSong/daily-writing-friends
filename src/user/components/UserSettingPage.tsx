@@ -60,35 +60,48 @@ export default function UserSettingPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-background p-4">
-      <div className="w-full max-w-md">
-        <h2 className="mb-6 text-2xl font-bold text-center">설정</h2>
-        <div className="flex flex-col gap-2">
-          <Button variant="ghost" className="w-full flex items-center justify-start gap-2" onClick={handleSignOut}>
-            <LogOut className="size-5" /> 로그아웃
-          </Button>
-          <Button variant="ghost" className="w-full flex items-center justify-start gap-2" onClick={handleFeedback}>
-            <MessageCircle className="size-5" /> 피드백 보내기
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" className="w-full flex items-center justify-start gap-2 text-red-500">
-                <Trash2 className="size-5" /> 캐시 삭제
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>캐시를 삭제하시겠습니까?</AlertDialogTitle>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>취소</AlertDialogCancel>
-                <AlertDialogAction onClick={handleClearCache} className="bg-red-500 hover:bg-red-600">
-                  삭제
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+    <div className="min-h-screen w-full bg-background flex flex-col items-center justify-start">
+      <header className="w-full bg-black py-4 text-white">
+        <div className="px-4">
+          <h2 className="text-xl font-bold text-left">설정</h2>
         </div>
+      </header>
+      <div className="w-full flex flex-col gap-0">
+        <Button
+          variant="ghost"
+          className="w-full flex items-center justify-start gap-2 rounded-none border-b border-border text-base h-14"
+          onClick={handleSignOut}
+        >
+          <LogOut className="size-5" /> 로그아웃
+        </Button>
+        <Button
+          variant="ghost"
+          className="w-full flex items-center justify-start gap-2 rounded-none border-b border-border text-base h-14"
+          onClick={handleFeedback}
+        >
+          <MessageCircle className="size-5" /> 피드백 보내기
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              className="w-full flex items-center justify-start gap-2 rounded-none text-red-500 border-b border-border text-base h-14"
+            >
+              <Trash2 className="size-5" /> 캐시 삭제
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>캐시를 삭제하시겠습니까?</AlertDialogTitle>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction onClick={handleClearCache} className="bg-red-500 hover:bg-red-600">
+                삭제
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
