@@ -13,7 +13,7 @@ import { WritingStats, Contribution, WritingBadge } from '@/stats/model/WritingS
 import { getDateKey } from '@/stats/utils/streakUtils';
 import { calculateCurrentStreak } from '@/stats/utils/streakUtils';
 import { User } from '@/user/model/User';
-import { fetchUserFromFirestore } from '@/user/api/user';
+import { fetchUser } from '@/user/api/user';
 
 export function useWritingStatsV2(userIds: string[]) {
     return useQuery({
@@ -51,7 +51,7 @@ function sort(writingStats: WritingStats[]): WritingStats[] {
 
 async function fetchSingleUserStats(userId: string): Promise<WritingStats | null> {
     try {
-        const userData = await fetchUserFromFirestore(userId);
+        const userData = await fetchUser(userId);
         if (!userData) return null;
 
         const postings = await fetchPostingData(userId);

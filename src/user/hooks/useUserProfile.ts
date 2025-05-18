@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchUserFromFirestore } from '@/user/api/user';
+import { fetchUser } from '@/user/api/user';
 
 export interface UserProfile {
   nickname: string | null;
@@ -11,7 +11,7 @@ export function useUserProfile(uid: string | null) {
     ['userProfile', uid],
     async () => {
       if (!uid) return null;
-      const user = await fetchUserFromFirestore(uid);
+      const user = await fetchUser(uid);
       if (!user) return null;
       return {
         nickname: user.nickname ?? null,

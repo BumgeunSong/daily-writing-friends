@@ -1,5 +1,5 @@
 import { getCachedUserData } from "../cache/userCache";
-import { fetchUserFromFirestore } from "../api/user";
+import { fetchUser } from "../api/user";
 import { cacheUserData } from "../cache/userCache";
 import { useQuery } from "@tanstack/react-query";
 import * as Sentry from '@sentry/react';
@@ -14,7 +14,7 @@ export function useUserNickname(uid: string | null) {
         if (uid === null) throw noUserIdError;
         const cached = getCachedUserData(uid);
         if (cached?.nickname) return cached.nickname;
-        const user = await fetchUserFromFirestore(uid);
+        const user = await fetchUser(uid);
         if (user) cacheUserData(uid, user);
         return user?.nickname || null;
       },

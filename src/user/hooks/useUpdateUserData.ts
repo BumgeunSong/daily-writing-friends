@@ -2,7 +2,7 @@ import { updateProfile } from 'firebase/auth';
 import { useMutation } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react';
 import { useToast } from '@/shared/hooks/use-toast';
-import { updateUserInFirestore, uploadUserProfilePhoto } from '@/user/api/user';
+import { updateUser, uploadUserProfilePhoto } from '@/user/api/user';
 import { User } from '../model/User';
 import { useAuth } from '@/shared/hooks/useAuth';
 
@@ -31,7 +31,7 @@ export function useUpdateUserData() {
         }
       }
 
-      await updateUserInFirestore(userId, updates);
+      await updateUser(userId, updates);
 
       if (currentUser && currentUser.uid === userId) {
         await updateProfile(currentUser, { displayName: nickname });

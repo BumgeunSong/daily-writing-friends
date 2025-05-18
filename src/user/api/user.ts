@@ -9,7 +9,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/firebase';
 
 // Firestore에서 User 데이터 읽기
-export async function fetchUserFromFirestore(uid: string): Promise<User | null> {
+export async function fetchUser(uid: string): Promise<User | null> {
   const userDocRef = doc(firestore, 'users', uid);
   const userDoc = await getDoc(userDocRef);
   if (!userDoc.exists()) return null;
@@ -17,7 +17,7 @@ export async function fetchUserFromFirestore(uid: string): Promise<User | null> 
 }
 
 // Firestore에 User 데이터 생성
-export async function createUserInFirestore(data: User): Promise<void> {
+export async function createUser(data: User): Promise<void> {
   const userDocRef = doc(firestore, 'users', data.uid);
   await setDoc(userDocRef, {
     ...data,
@@ -26,7 +26,7 @@ export async function createUserInFirestore(data: User): Promise<void> {
 }
 
 // Firestore의 User 데이터 수정
-export async function updateUserInFirestore(uid: string, data: Partial<User>): Promise<void> {
+export async function updateUser(uid: string, data: Partial<User>): Promise<void> {
   const userDocRef = doc(firestore, 'users', uid);
   await updateDoc(userDocRef, {
     ...data,
@@ -35,7 +35,7 @@ export async function updateUserInFirestore(uid: string, data: Partial<User>): P
 }
 
 // Firestore의 User 데이터 삭제
-export async function deleteUserFromFirestore(uid: string): Promise<void> {
+export async function deleteUser(uid: string): Promise<void> {
   const userDocRef = doc(firestore, 'users', uid);
   await deleteDoc(userDocRef);
 }

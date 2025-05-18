@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithGoogle } from '@/firebase';
 import { User } from '@/user/model/User';
-import { createUserInFirestore, fetchUserFromFirestore } from '@/user/api/user';
+import { createUser, fetchUser } from '@/user/api/user';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
@@ -28,7 +28,7 @@ export default function LoginPage() {
   };
   const ensureUserDataInFirestore = async (userCredential: UserCredential) => {
     // Fetch user data from Firestore
-    const userData = await fetchUserFromFirestore(userCredential.user.uid);
+    const userData = await fetchUser(userCredential.user.uid);
     if (!userData) {
       // Create user data in Firestore
       const newUser: User = {
@@ -45,7 +45,7 @@ export default function LoginPage() {
         },
         updatedAt: null,
       };
-      await createUserInFirestore(newUser);
+      await createUser(newUser);
     }
   };
 
