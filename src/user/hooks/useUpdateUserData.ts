@@ -1,10 +1,11 @@
 import * as Sentry from '@sentry/react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateProfile } from 'firebase/auth';
-import { useToast } from '@/shared/hooks/use-toast';
+import { toast } from "sonner"
 import { useAuth } from '@/shared/hooks/useAuth';
 import { updateUser, uploadUserProfilePhoto } from '@/user/api/user';
 import { User } from '../model/User';
+import { removeCachedUserData } from '@/user/cache/userCache';
 
 interface UpdateUserDataParams {
   userId: string;
@@ -14,8 +15,8 @@ interface UpdateUserDataParams {
 }
 
 export function useUpdateUserData() {
-  const { toast } = useToast();
   const { currentUser } = useAuth();
+  const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: async ({ userId, nickname, profilePhotoFile, bio }: UpdateUserDataParams) => {
@@ -36,19 +37,20 @@ export function useUpdateUserData() {
       if (currentUser && currentUser.uid === userId) {
         await updateProfile(currentUser, { displayName: nickname });
       }
+
+      // 캐시 무효화: localStorage에서 해당 유저 캐시 삭제
+      removeCachedUserData(userId);
     },
-    onSuccess: () => {
-      toast({
-        title: '성공',
-        description: '프로필이 업데이트되었습니다.',
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['user', variables.userId] });
+      toast.success('프로필이 업데이트되었습니다.', {
+        position: 'bottom-center',
       });
     },
     onError: (err: unknown) => {
       Sentry.captureException(err);
-      toast({
-        title: '오류',
-        description: '프로필 업데이트 중 문제가 발생했습니다.',
-        variant: 'destructive',
+      toast.error('프로필 업데이트 중 문제가 발생했습니다.', {
+        position: 'bottom-center',
       });
     },
   });
