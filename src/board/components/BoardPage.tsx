@@ -1,23 +1,16 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 
+import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/shared/ui/button';
 import { BoardPageHeader } from '@/board/components/BoardPageHeader';
 import PostCardList from '@/board/components/PostCardList';
 import { WritingActionButton } from '@/board/components/WritingActionButton';
-import AuthorList from './AuthorList';
 
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const navigate = useNavigate();
-  const [selectedAuthorId, setSelectedAuthorId] = useState<string | null>(null);
 
   const handlePostClick = (postId: string) => {
     navigate(`/board/${boardId}/post/${postId}`);
-  };
-
-  const handleAuthorSelect = (authorId: string) => {
-    setSelectedAuthorId(authorId === selectedAuthorId ? null : authorId);
   };
 
   if (!boardId) {
@@ -40,14 +33,10 @@ export default function BoardPage() {
   return (
     <div className='min-h-screen bg-background'>
       <BoardPageHeader boardId={boardId} />
-      <main className='container mx-auto px-4 py-8 pb-24'>
-        <div className='mb-6'>
-          {boardId && <AuthorList boardId={boardId} onAuthorSelect={handleAuthorSelect} />}
-        </div>
+      <main className='container mx-auto px-4 py-4 pb-24'>
         <PostCardList
           boardId={boardId!}
           onPostClick={handlePostClick}
-          selectedAuthorId={selectedAuthorId}
         />
       </main>
       <WritingActionButton boardId={boardId} />
