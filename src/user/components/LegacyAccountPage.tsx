@@ -4,8 +4,6 @@ import { BarChart3, Edit, LogOut, MessageCircle, Trash2 } from 'lucide-react';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '@/firebase';
-import { useUserData } from '@/user/hooks/useUserData';
-import { getUserActivityCount } from '@/user/utils/activityUtils';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
 import { useToast } from '@/shared/hooks/use-toast';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -23,6 +21,8 @@ import {
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Skeleton } from '@/shared/ui/skeleton';
+import { useUser } from '@/user/hooks/useUser';
+import { getUserActivityCount } from '@/user/utils/activityUtils';
 
 // 계정 페이지 스크롤 영역의 고유 ID
 const ACCOUNT_SCROLL_ID = 'account-scroll';
@@ -30,7 +30,7 @@ const ACCOUNT_SCROLL_ID = 'account-scroll';
 export default function LegacyAccountPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
-  const { userData, isLoading } = useUserData(currentUser?.uid);
+  const { userData, isLoading } = useUser(currentUser?.uid);
   const { toast } = useToast();
   const clearCache = useClearCache();
   

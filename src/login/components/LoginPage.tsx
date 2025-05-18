@@ -1,13 +1,10 @@
-import { UserCredential } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
-
 import { useNavigate } from 'react-router-dom';
 import { signInWithGoogle } from '@/firebase';
-import { User } from '@/user/model/User';
-import { createUserData, fetchUserData } from '@/user/utils/userUtils';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
+import { createUserIfNotExists } from '@/user/api/user';
 
 export default function LoginPage() {
   const { loading, redirectPathAfterLogin, setRedirectPathAfterLogin } = useAuth();
@@ -16,7 +13,7 @@ export default function LoginPage() {
   const handleLogin = async () => {
     try {
       const userCredential = await signInWithGoogle();
-      await ensureUserDataInFirestore(userCredential);
+      await createUserIfNotExists(userCredential.user);
 
       // Redirect to the stored path or a default path after successful login
       const redirectTo = redirectPathAfterLogin || '/boards';
@@ -24,27 +21,6 @@ export default function LoginPage() {
       navigate(redirectTo, { replace: true });
     } catch (error) {
       console.error('Error signing in with Google:', error);
-    }
-  };
-  const ensureUserDataInFirestore = async (userCredential: UserCredential) => {
-    // Fetch user data from Firestore
-    const userData = await fetchUserData(userCredential.user.uid);
-    if (!userData) {
-      // Create user data in Firestore
-      const newUser: User = {
-        uid: userCredential.user.uid,
-        realName: userCredential.user.displayName,
-        nickname: userCredential.user.displayName,
-        email: userCredential.user.email,
-        profilePhotoURL: userCredential.user.photoURL,
-        bio: null,
-        phoneNumber: null,
-        referrer: null,
-        boardPermissions: {
-          'rW3Y3E2aEbpB0KqGiigd': 'read', // default board id
-        },
-      };
-      await createUserData(newUser);
     }
   };
 

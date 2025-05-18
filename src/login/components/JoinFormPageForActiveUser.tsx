@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { Board } from "@/board/model/Board"
 import { showErrorToast } from "@/login/components/showErrorToast"
 import { useUpcomingBoard } from "@/login/hooks/useUpcomingBoard"
 import { JoinFormDataForActiveUser } from "@/login/model/join"
@@ -6,18 +7,17 @@ import { useToast } from "@/shared/hooks/use-toast"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"  
 import { addReviewToBoard } from "@/shared/utils/reviewUtils"
-import { useUserNickname } from "@/shared/utils/userUtils"
+import { useUserNickname } from "@/user/hooks/useUserNickname"
 import JoinCompletePage from "./JoinCompletePage"
 import JoinFormCardForActiveUser from "./JoinFormCardForActiveUser"
 import FormHeader from "./JoinFormHeader"
-import { Board } from "@/types/Board"
 
 /**
  * 기존 사용자를 위한 매글프 신청 폼 페이지 컴포넌트
  */
 export default function JoinFormPageForActiveUser() {
     const { currentUser } = useAuth()
-    const { data: userNickname } = useUserNickname(currentUser?.uid)
+    const { nickname: userNickname } = useUserNickname(currentUser?.uid)
     const { toast } = useToast()
     const { data: upcomingBoard } = useUpcomingBoard()
     const [isComplete, setIsComplete] = useState(false)

@@ -1,24 +1,18 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
 import { Skeleton } from "@/shared/ui/skeleton"
-import { useQuery } from "@tanstack/react-query"
-import { fetchUserData } from "@/user/utils/userUtils"
+import { useUser } from "@/user/hooks/useUser"
 
 interface UserProfileProps {
-  userId: string
+  uid: string
 }
 
-export default function UserProfile({ userId }: UserProfileProps) {
-  const { data: userData, isLoading } = useQuery({
-    queryKey: ["user-profile", userId],
-    queryFn: () => fetchUserData(userId),
-    enabled: !!userId,
-    staleTime: 1000 * 60, // 1분 캐싱
-  })
+export default function UserProfile({ uid }: UserProfileProps) {
+  const { userData, isLoading } = useUser(uid)
 
   if (isLoading) {
     return (
       <div className="flex items-center gap-4">
-        <Skeleton className="h-16 w-16 rounded-full" />
+        <Skeleton className="size-16 rounded-full" />
         <div className="space-y-2">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-3 w-40" />
@@ -37,7 +31,7 @@ export default function UserProfile({ userId }: UserProfileProps) {
 
   return (
     <div className="flex items-center gap-4">
-      <Avatar className="h-16 w-16">
+      <Avatar className="size-16">
         {userData.profilePhotoURL ? (
           <AvatarImage src={userData.profilePhotoURL} alt={`${userData.nickname}'s profile`} />
         ) : (
@@ -46,7 +40,7 @@ export default function UserProfile({ userId }: UserProfileProps) {
       </Avatar>
       <div>
         <h2 className="text-lg font-medium">{userData.nickname}</h2>
-        <p className="text-sm text-muted-foreground line-clamp-2">{userData.bio || '아직 자기소개가 없어요.'}</p>
+        <p className="line-clamp-2 text-sm text-muted-foreground">{userData.bio || '아직 자기소개가 없어요.'}</p>
       </div>
     </div>
   )

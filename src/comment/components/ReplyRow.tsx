@@ -1,13 +1,13 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { Edit, Trash2, X } from "lucide-react"
 import { useState } from "react"
 import ReactionList from "@/comment/components/ReactionList"
 import ReplyInput from "@/comment/components/ReplyInput"
 import { deleteReplyToComment, updateReplyToComment } from "@/comment/utils/commentUtils"
 import { sanitizeCommentContent } from "@/post/utils/contentUtils"
-import { fetchUserProfileOnce } from "@/user/utils/userUtils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
 import { Button } from "@/shared/ui/button"
+import { useUserProfile } from "@/user/hooks/useUserProfile"
 import type { Reply } from "@/comment/model/Reply"
 import type React from "react"
 
@@ -23,11 +23,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
   const [isEditing, setIsEditing] = useState(false)
   const queryClient = useQueryClient()
 
-  const { data: userProfile } = useQuery({
-    queryKey: ["userProfile", reply.userId],
-    queryFn: () => fetchUserProfileOnce(reply.userId),
-    staleTime: 5 * 60 * 1000, // 5분 동안 캐시 유지
-  })
+  const { data: userProfile } = useUserProfile(reply.userId);
 
   const handleEditToggle = () => {
     setIsEditing((prev) => !prev)

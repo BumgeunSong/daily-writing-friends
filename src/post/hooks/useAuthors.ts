@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useState, useEffect } from 'react';
-import { User } from '@/user/model/User';
-import { fetchAllUserDataWithBoardPermission } from '@/user/utils/userUtils';
 import { getHourBasedSeed, shuffleArray } from '@/shared/utils/shuffleUtils';
+import { fetchUsersWithBoardPermission } from '@/user/api/user';
+import { User } from '@/user/model/User';
 
 /**
  * 매 시간마다 작성자 목록을 섞어서 반환하는 커스텀 훅
@@ -24,7 +24,7 @@ export const useAuthors = (boardId: string) => {
   const { data: authors, isLoading, error } = useQuery<User[], Error>({
     queryKey: ['authors', boardId, currentHour],
     queryFn: async () => {
-      const authorData = await fetchAllUserDataWithBoardPermission([boardId]);
+      const authorData = await fetchUsersWithBoardPermission([boardId]);
       const seed = getHourBasedSeed();
       return shuffleArray(authorData, seed);
     },

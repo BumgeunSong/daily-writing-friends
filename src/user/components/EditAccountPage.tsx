@@ -2,16 +2,16 @@ import { Camera, Loader2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-import { useNickname } from '@/user/hooks/useNickName';
-import { useProfilePhoto } from '@/user/hooks/useProfilePhoto';
-import { useUpdateUserData } from '@/user/hooks/useUpdateUserData';
-import { User } from '@/user/model/User';
 import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Textarea } from '@/shared/ui/textarea';
+import { useNickname } from '@/user/hooks/useNickName';
+import { useProfilePhoto } from '@/user/hooks/useProfilePhoto';
+import { useUpdateUserData } from '@/user/hooks/useUpdateUserData';
+import { User } from '@/user/model/User';
 
 export default function EditAccountPage() {
   const location = useLocation();
@@ -22,8 +22,7 @@ export default function EditAccountPage() {
   const { profilePhotoFile, currentProfilePhotoURL, handleProfilePhotoChange } = useProfilePhoto(userData?.profilePhotoURL);
   const [bio, setBio] = useState(userData?.bio || '');
   const profilePhotoFileRef = useRef<HTMLInputElement>(null);
-  
-  const { onSubmit, isLoading } = useUpdateUserData(userData?.uid, nickname, profilePhotoFile, bio);
+  const { mutateAsync, isLoading } = useUpdateUserData();
 
   const showProfilePhotoChangeButton = () => {
     !isLoading && profilePhotoFileRef.current?.click();
@@ -35,15 +34,22 @@ export default function EditAccountPage() {
     }
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    onSubmit(e);
-    
-    if (location.state?.from === 'userProfile') {
-      navigate(`/user/${userData?.uid}`);
-    } else {
-      navigate('/account');
+    try {
+      await mutateAsync({
+        userId: userData?.uid,
+        nickname,
+        profilePhotoFile,
+        bio,
+      });
+      if (location.state?.from === 'userProfile') {
+        navigate(`/user/${userData?.uid}`);
+      } else {
+        navigate('/account');
+      }
+    } catch (err) {
+      // 에러는 useUpdateUserData에서 처리됨
     }
   };
 

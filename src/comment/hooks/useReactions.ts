@@ -9,7 +9,7 @@ import {
   GetReactionsParams
 } from '@/comment/utils/reactionUtils';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { fetchUserData } from '@/shared/utils/userUtils';
+import { fetchUser } from '@/user/api/user';
 
 // 엔티티 타입 정의
 export type EntityType = 'comment' | 'reply';
@@ -100,7 +100,7 @@ export const useReactions = ({ entity }: UseReactionsProps): UseReactionsReturn 
       throw new Error('로그인이 필요합니다.');
     }
 
-    const userData = await fetchUserData(currentUser.uid);
+    const userData = await fetchUser(currentUser.uid);
     
     return {
       userId: currentUser.uid,

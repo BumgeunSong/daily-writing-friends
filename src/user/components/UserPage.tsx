@@ -1,8 +1,8 @@
-import UserProfile from "@/user/components/UserProfile"
-import UserPostsList from "@/user/components/UserPostList"
-import { UserPageHeader } from "@/user/components/UserPageHeader"
 import { useNavigate, useParams } from "react-router-dom"
 import StatusMessage from "@/shared/components/StatusMessage"
+import { UserPageHeader } from "@/user/components/UserPageHeader"
+import UserPostsList from "@/user/components/UserPostList"
+import UserProfile from "@/user/components/UserProfile"
 
 export default function UserPage() {
   const navigate = useNavigate()
@@ -19,9 +19,9 @@ export default function UserPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background pb-16 w-full max-w-full mx-auto">
+    <div className="mx-auto flex min-h-screen w-full max-w-full flex-col bg-background pb-16">
       {/* Header section with settings button */}
-      <header className="sticky top-0 z-10 bg-background border-b">
+      <header className="sticky top-0 z-10 border-b bg-background">
         <UserPageHeader onClick={handleGoToSettings} />
 
         {/* User profile section */}

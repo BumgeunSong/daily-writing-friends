@@ -1,11 +1,11 @@
 import { MessageCircle, User, Lock } from "lucide-react"
-import { useAuthorData } from "@/post/hooks/useAuthorData"
 import { type Post, PostVisibility } from "@/post/model/Post"
 import { getContentPreview } from "@/post/utils/contentUtils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
 import { Badge } from "@/shared/ui/badge"
 import { Card, CardContent, CardFooter, CardHeader } from "@/shared/ui/card"
 import { Skeleton } from "@/shared/ui/skeleton"
+import { useUser } from "@/user/hooks/useUser"
 
 import type React from "react"
 
@@ -15,7 +15,7 @@ interface PostCardProps {
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
-  const { authorData, isLoading: isAuthorLoading } = useAuthorData(post.authorId)
+  const { userData: authorData, isLoading: isAuthorLoading } = useUser(post.authorId)
 
   const isPrivate = post.visibility === PostVisibility.PRIVATE
   const contentPreview = !isPrivate ? getContentPreview(post.content) : null
