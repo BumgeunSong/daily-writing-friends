@@ -6,16 +6,16 @@ import StatusMessage from '@/shared/components/StatusMessage';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
 import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
 import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
-import PostCard from '@post/components/PostCard';
-import { usePosts } from '@post/hooks/usePosts';
+import PostCard from '@/post/components/PostCard';
+import { usePosts } from '@/post/hooks/usePosts';
 
 interface PostCardListProps {
   boardId: string;
   onPostClick: (postId: string) => void;
-  selectedAuthorId: string | null;
+  onClickProfile?: (userId: string) => void;
 }
 
-const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, selectedAuthorId }) => {
+const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onClickProfile }) => {
   const [inViewRef, inView] = useInView();
   const [limitCount] = useState(7);
   usePerformanceMonitoring('PostCardList')
@@ -28,7 +28,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, selec
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage
-  } = usePosts(boardId, selectedAuthorId, limitCount);
+  } = usePosts(boardId, limitCount);
 
   const allPosts = postPages?.pages.flatMap((page) => page) || [];
 
@@ -36,8 +36,8 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, selec
 
   const handleRefreshPosts = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    queryClient.invalidateQueries(['posts', boardId, selectedAuthorId]);
-  }, [boardId, queryClient, selectedAuthorId]);
+    queryClient.invalidateQueries(['posts', boardId]);
+  }, [boardId, queryClient]);
 
   // 홈 탭 핸들러 등록
   useRegisterTabHandler('Home', handleRefreshPosts);
@@ -80,10 +80,11 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, selec
   return (
     <div className='space-y-6'>
       {allPosts.map((post) => (
-        <PostCard 
-          key={post.id} 
-          post={post} 
-          onClick={() => handlePostClick(post.id)} 
+        <PostCard
+          key={post.id}
+          post={post}
+          onClick={() => handlePostClick(post.id)}
+          onClickProfile={onClickProfile}
         />
       ))}
       <div ref={inViewRef} />

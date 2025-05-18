@@ -1,14 +1,14 @@
 import * as Sentry from '@sentry/react';
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { limit, query, collection, orderBy, where, getDocs, startAfter } from "firebase/firestore";
+import { limit, query, collection, orderBy, getDocs, startAfter } from "firebase/firestore";
 import { firestore } from "@/firebase";
 import { Post } from '@/post/model/Post';
 import { mapDocumentToPost } from '@/post/utils/postUtils';
 
-export const usePosts = (boardId: string, selectedAuthorId: string | null, limitCount: number) => {
+export const usePosts = (boardId: string, limitCount: number) => {
     return useInfiniteQuery<Post[]>(
-        ['posts', boardId, selectedAuthorId],
-        ({ pageParam = null }) => fetchPosts(boardId, selectedAuthorId, limitCount, pageParam),
+        ['posts', boardId],
+        ({ pageParam = null }) => fetchPosts(boardId, limitCount, pageParam),
         {
             enabled: !!boardId,
             getNextPageParam: (lastPage) => {
@@ -26,16 +26,12 @@ export const usePosts = (boardId: string, selectedAuthorId: string | null, limit
     );
 };
 
-async function fetchPosts(boardId: string, selectedAuthorId: string | null, limitCount: number, after?: Date): Promise<Post[]> {
+async function fetchPosts(boardId: string, limitCount: number, after?: Date): Promise<Post[]> {
     let q = query(
         collection(firestore, `boards/${boardId}/posts`),
         orderBy('createdAt', 'desc'),
         limit(limitCount)
     );
-
-    if (selectedAuthorId) {
-        q = query(q, where('authorId', '==', selectedAuthorId));
-    }
 
     if (after) {
         q = query(q, startAfter(after));

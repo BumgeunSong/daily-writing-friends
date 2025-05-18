@@ -1,20 +1,20 @@
 import React, { createContext, useContext, useCallback, useState, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-export type TabName = 'Home' | 'Stats' | 'Notifications' | 'Account';
+export type TabName = 'Home' | 'Stats' | 'Notifications' | 'User';
 // 각 탭의 기본 경로
 export const TAB_PATHS: Record<TabName, string> = {
     Home: '/boards',
     Stats: '/stats',
     Notifications: '/notifications',
-    Account: '/account'
+    User: '/user'
   };
 
 export interface TabHandlers {
   Home?: () => void;
   Stats?: () => void;
   Notifications?: () => void;
-  Account?: () => void;
+  User?: () => void;
 }
 
 interface BottomTabHandlerContextType {

@@ -21,8 +21,8 @@ import { BottomNavigatorLayout } from '@/shared/components/BottomNavigatorLayout
 import { useAuth } from '@/shared/hooks/useAuth';
 import StatsPage from '@/stats/components/StatsPage';
 import EditAccountPage from '@/user/components/EditAccountPage';
-import LegacyAccountPage from '@/user/components/LegacyAccountPage';
 import UserPage from '@/user/components/UserPage';
+import UserSettingPage from '@/user/components/UserSettingPage';
 import { PrivateRoutes } from './shared/components/route/PrivateRoutes';
 import { PublicRoutes } from './shared/components/route/PublicRoutes';
 
@@ -63,10 +63,11 @@ export default function App() {
         <Route path="/board/:boardId/edit/:postId" element={<PostEditPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/notifications/settings" element={<NotificationSettingPage />} />
-        <Route path="/account" element={<LegacyAccountPage />} />
-        <Route path="/account/edit" element={<EditAccountPage />} />
+        <Route path="/account/edit/:userId" element={<EditAccountPage />} />
         <Route path="/stats" element={<StatsPage />} />
+        <Route path="/user" element={<UserPage />} />
         <Route path="/user/:userId" element={<UserPage />} />
+        <Route path="/user/settings" element={<UserSettingPage />} />
       </Route>
 
       {/* 인증 필요, BottomNavigatorLayout 미적용 (개별 페이지) */}
