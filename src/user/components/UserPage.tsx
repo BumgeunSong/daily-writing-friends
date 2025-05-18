@@ -5,12 +5,7 @@ import UserPostsList from "@/user/components/UserPostList"
 import UserProfile from "@/user/components/UserProfile"
 
 export default function UserPage() {
-  const navigate = useNavigate()
   const { userId } = useParams()
-
-  const handleGoToSettings = () => {
-    navigate("/user/settings")
-  }
 
   if (!userId) {
     return (
@@ -22,7 +17,7 @@ export default function UserPage() {
     <div className="mx-auto flex min-h-screen w-full max-w-full flex-col bg-background pb-16">
       {/* Header section with settings button */}
       <header className="sticky top-0 z-10 border-b bg-background">
-        <UserPageHeader onClick={handleGoToSettings} />
+        <UserPageHeader />
 
         {/* User profile section */}
         <div className="p-4">

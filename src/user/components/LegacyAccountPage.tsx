@@ -1,28 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import { signOut } from 'firebase/auth';
-import { BarChart3, Edit, LogOut, MessageCircle, Trash2 } from 'lucide-react';
+import { Edit, BarChart3, MessageCircle } from 'lucide-react';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '@/firebase';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
-import { useToast } from '@/shared/hooks/use-toast';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { useClearCache } from '@/shared/hooks/useClearCache';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/shared/ui/alert-dialog';
-import { Button } from '@/shared/ui/button';
-import { Card, CardContent } from '@/shared/ui/card';
-import { Skeleton } from '@/shared/ui/skeleton';
 import { useUser } from '@/user/hooks/useUser';
 import { getUserActivityCount } from '@/user/utils/activityUtils';
+import { Card, CardContent } from '@/shared/ui/card';
+import { Skeleton } from '@/shared/ui/skeleton';
+import { Button } from '@/shared/ui/button';
 
 // 계정 페이지 스크롤 영역의 고유 ID
 const ACCOUNT_SCROLL_ID = 'account-scroll';
@@ -31,8 +17,6 @@ export default function LegacyAccountPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { userData, isLoading } = useUser(currentUser?.uid);
-  const { toast } = useToast();
-  const clearCache = useClearCache();
   
   // 계정 페이지 스크롤 핸들러 - 데이터 새로고침 없이 스크롤만 최상단으로 이동
   const handleAccountTabClick = useCallback(() => {
@@ -43,48 +27,9 @@ export default function LegacyAccountPage() {
   // Account 탭 핸들러 등록
   useRegisterTabHandler('Account', handleAccountTabClick);
 
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      navigate('/login'); // 로그아웃 후 로그인 페이지로 이동
-    } catch (error) {
-      console.error('로그아웃 오류:', error);
-      toast({
-        variant: 'destructive',
-        description: '로그아웃에 실패했습니다. 다시 시도해주세요.',
-      });
-    }
-  };
-
   const handleEditProfile = () => {
     if (userData) {
       navigate('/account/edit', { state: { userData } }); // Pass userData to EditAccountPage
-    }
-  };
-
-  const handleFeedback = () => {
-    window.open(
-      'https://docs.google.com/forms/d/e/1FAIpQLSfujE9OSO58OZ6qFe9qw1vimWEcuPCX6jyDNCRZKOdCVWB5UQ/viewform?usp=sf_link',
-      '_blank',
-    );
-  };
-
-  const handleClearCache = async () => {
-    const result = await clearCache({
-      clearReactQuery: true,
-      clearBrowserCache: true,
-      clearLocalStorage: true,
-    });
-
-    if (result.success) {
-      toast({
-        description: '캐시가 성공적으로 삭제되었습니다.',
-      });
-    } else {
-      toast({
-        variant: 'destructive',
-        description: '캐시 삭제에 실패했습니다. 다시 시도해주세요.',
-      });
     }
   };
 
@@ -136,59 +81,6 @@ export default function LegacyAccountPage() {
                 <Edit className='mr-2 size-4' />
                 내 정보 수정하기
               </Button>
-
-              <Button
-                variant="secondary"
-                className='w-full'
-                onClick={handleFeedback}
-              >
-                <MessageCircle className='mr-2 size-4' />
-                의견 보내기
-              </Button>
-
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant='outline' className='w-full'>
-                    <LogOut className='mr-2 size-4' />
-                    로그아웃
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>로그아웃 하시겠습니까?</AlertDialogTitle>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>취소</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleSignOut}>확인</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant='outline'
-                    className='w-full text-red-500 hover:bg-red-50 hover:text-red-600'
-                  >
-                    <Trash2 className='mr-2 size-4' />
-                    강력 새로고침
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>캐시를 삭제하시겠습니까?</AlertDialogTitle>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>취소</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleClearCache}
-                      className='bg-red-500 hover:bg-red-600'
-                    >
-                      삭제
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
             </div>
           </CardContent>
         </div>
