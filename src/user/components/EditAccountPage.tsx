@@ -22,7 +22,7 @@ export default function EditAccountPage() {
   const { profilePhotoFile, currentProfilePhotoURL, handleProfilePhotoChange } = useProfilePhoto(userData?.profilePhotoURL);
   const [bio, setBio] = useState(userData?.bio || '');
   const profilePhotoFileRef = useRef<HTMLInputElement>(null);
-  const { mutate, isLoading } = useUpdateUserData();
+  const { mutateAsync, isLoading } = useUpdateUserData();
 
   const showProfilePhotoChangeButton = () => {
     !isLoading && profilePhotoFileRef.current?.click();
@@ -34,20 +34,22 @@ export default function EditAccountPage() {
     }
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    mutate({
-      userId: userData?.uid,
-      nickname,
-      profilePhotoFile,
-      bio,
-    });
-    
-    if (location.state?.from === 'userProfile') {
-      navigate(`/user/${userData?.uid}`);
-    } else {
-      navigate('/account');
+    try {
+      await mutateAsync({
+        userId: userData?.uid,
+        nickname,
+        profilePhotoFile,
+        bio,
+      });
+      if (location.state?.from === 'userProfile') {
+        navigate(`/user/${userData?.uid}`);
+      } else {
+        navigate('/account');
+      }
+    } catch (err) {
+      // 에러는 useUpdateUserData에서 처리됨
     }
   };
 
