@@ -72,6 +72,7 @@ export async function uploadUserProfilePhoto(userId: string, file: File): Promis
 }
 
 // User가 없으면 생성하는 함수 (존재하면 아무것도 안 함)
+// Auth에서 로그인된 유저가 Firestore에도 존재해야할 때 사용
 export async function createUserIfNotExists(user: FirebaseUser): Promise<void> {
     const existing = await fetchUser(user.uid);
     if (!existing) {
