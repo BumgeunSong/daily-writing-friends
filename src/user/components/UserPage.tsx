@@ -4,6 +4,7 @@ import { UserPageHeader } from "@/user/components/UserPageHeader"
 import UserPostsList from "@/user/components/UserPostList"
 import UserProfile from "@/user/components/UserProfile"
 import { useAuth } from "@/shared/hooks/useAuth"
+import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
 
 export default function UserPage() {
   const { userId: paramUserId } = useParams()
@@ -13,6 +14,8 @@ export default function UserPage() {
   if (!userId) {
     return <StatusMessage errorMessage="유저 정보를 찾을 수 없습니다." />
   }
+
+  useRegisterTabHandler('User', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-full flex-col bg-background pb-16">
