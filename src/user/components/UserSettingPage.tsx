@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { auth } from '@/firebase';
 import { useToast } from '@/shared/hooks/use-toast';
 import { useClearCache } from '@/shared/hooks/useClearCache';
-import { LogOut, MessageCircle, Trash2 } from 'lucide-react';
+import { LogOut, MessageCircle, Trash2, SquareArrowRight } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import {
   AlertDialog,
@@ -102,6 +102,13 @@ export default function UserSettingPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        <Button
+          variant="ghost"
+          className="w-full flex items-center justify-start gap-2 rounded-none text-primary border-b border-border text-base h-14"
+          onClick={() => navigate('/join/form')}
+        >
+          <SquareArrowRight className="size-5" /> 다음 기수 신청하기
+        </Button>
       </div>
     </div>
   );

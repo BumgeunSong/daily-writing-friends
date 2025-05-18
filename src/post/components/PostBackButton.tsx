@@ -1,18 +1,21 @@
 import { ChevronLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/shared/ui/button';
 
 interface PostBackButtonProps {
-  boardId: string;
   className?: string;
 }
 
-export function PostBackButton({ boardId, className }: PostBackButtonProps) {
+export function PostBackButton({ className }: PostBackButtonProps) {
+  const navigate = useNavigate();
   return (
-    <Link to={`/board/${boardId}`}>
-      <Button variant='ghost' className={className}>
-        <ChevronLeft className='mr-2 size-4' /> 피드로 돌아가기
-      </Button>
-    </Link>
+    <Button
+      variant='ghost'
+      className={className}
+      onClick={() => navigate(-1)}
+      aria-label="뒤로가기"
+    >
+      <ChevronLeft className='size-4' />
+    </Button>
   );
 }

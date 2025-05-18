@@ -22,6 +22,8 @@ export function getCachedUserData(uid: string): User | null {
 
 // localStorage에 User 데이터 저장
 export function cacheUserData(uid: string, data: User): void {
+  // 닉네임과 프로필 사진이 모두 있어야만 캐시 저장
+  if (!data.nickname || !data.profilePhotoURL) return;
   localStorage.setItem(
     `user-${uid}`,
     JSON.stringify({

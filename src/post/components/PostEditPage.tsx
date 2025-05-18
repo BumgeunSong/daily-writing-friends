@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, Save } from 'lucide-react';
+import { Save } from 'lucide-react';
 import React, { useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -23,7 +23,7 @@ export default function PostEditPage() {
   }
 
   return (
-    <ErrorBoundary fallback={(error) => <ErrorState error={error} boardId={boardId} />}>
+    <ErrorBoundary fallback={(error) => <ErrorState error={error} />}>
       <Suspense fallback={<LoadingState />}>
         <PostEditForm boardId={boardId} postId={postId} />
       </Suspense>
@@ -45,16 +45,12 @@ function LoadingState() {
 }
 
 // 에러 상태 컴포넌트
-function ErrorState({ error, boardId }: { error: Error; boardId?: string }) {
-  const navigate = useNavigate();
+function ErrorState({ error }: { error: Error }) {
   
   return (
     <div className='mx-auto max-w-4xl px-6 py-8 text-center sm:px-8 lg:px-12'>
       <h1 className='mb-4 text-2xl font-bold'>게시물을 찾을 수 없습니다.</h1>
       <p className='mb-4 text-red-500'>{error.message}</p>
-      <Button onClick={() => navigate(`/board/${boardId}`)}>
-        <ChevronLeft className='mr-2 size-4' /> 피드로 돌아가기
-      </Button>
     </div>
   );
 }
@@ -116,7 +112,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
 
   return (
     <div className='mx-auto max-w-4xl px-6 py-8 sm:px-8 lg:px-12'>
-      {boardId && <PostBackButton boardId={boardId} className='mb-6' />}
+      <PostBackButton className='mb-6' />
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader className='flex flex-col space-y-2'>

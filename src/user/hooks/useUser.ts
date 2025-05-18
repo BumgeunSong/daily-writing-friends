@@ -8,7 +8,6 @@ import { User } from '@/user/model/User';
 export function useUser(uid: string | null) {
   const noUserIdError = uid === null ? new Error('유저 ID가 존재하지 않아 유저 데이터를 불러올 수 없습니다.') : null;
 
-  const cached = uid ? getCachedUserData(uid) : null;
   const { data, isLoading, error } = useQuery<User | null>(
     ['user', uid],
     async () => {
@@ -33,7 +32,6 @@ export function useUser(uid: string | null) {
     },
     {
       enabled: uid !== null,
-      initialData: cached ?? undefined,
       onError: (error) => {
         console.error('유저 데이터를 불러오던 중 에러가 발생했습니다:', error);
         Sentry.captureException(error);
