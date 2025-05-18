@@ -4,7 +4,7 @@ import StatsHeader from "@/stats/components/StatsHeader"
 import { StatsNoticeBanner } from "@/stats/components/StatsNoticeBanner"
 import { UserStatsCard } from "@/stats/components/UserStatsCard"
 import { useWritingStatsV2 } from "@/stats/hooks/useWritingStatsV2"
-import { fetchAllUserDataWithBoardPermission } from "@/user/utils/userUtils"
+import { useUserInBoard } from "@/user/hooks/useUserInBoard"
 import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
 import { usePerformanceMonitoring } from "@/shared/hooks/usePerformanceMonitoring"
 import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig"
@@ -28,15 +28,9 @@ export default function StatsPage() {
     );
     
     // 활성 게시판 권한이 있는 사용자 가져오기
-    const { 
-        data: activeUsers, 
-        isLoading: isLoadingUsers, 
-        error: usersError 
-    } = useQuery({
-        queryKey: ['activeUsers', activeBoardId],
-        queryFn: () => fetchAllUserDataWithBoardPermission([activeBoardId]),
-        enabled: !isLoadingConfig && !configError, // Remote Config 로드 완료 후 실행
-    });
+    const { users: activeUsers, isLoading: isLoadingUsers, error: usersError } = useUserInBoard(
+      activeBoardId ? [activeBoardId] : []
+    );
 
     // 사용자 ID 배열로 통계 가져오기
     const { 
@@ -44,7 +38,7 @@ export default function StatsPage() {
         isLoading: isLoadingStats, 
         error: statsError 
     } = useWritingStatsV2(
-        activeUsers?.map(user => user.uid) || []
+        activeUsers.map((user: any) => user.uid)
     );
     
     // 통계 새로고침 핸들러

@@ -39,7 +39,7 @@ export async function deleteUserFromFirestore(uid: string): Promise<void> {
 }
 
 // 특정 boardIds에 write 권한이 있는 모든 사용자 데이터 가져오기
-export async function fetchAllUserDataWithBoardPermission(boardIds: string[]): Promise<User[]> {
+export async function fetchUsersWithBoardPermission(boardIds: string[]): Promise<User[]> {
   try {
     const queries = boardIds.map(boardId => 
       query(
