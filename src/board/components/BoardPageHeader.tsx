@@ -33,7 +33,7 @@ export const BoardPageHeader: React.FC<BoardHeaderProps> = ({ boardId }) => {
           to='/boards/list'
           className='flex items-center space-x-2 rounded p-2 transition hover:bg-primary-foreground/10'
         >
-          <span className='text-xl font-bold'>{title || '타이틀 없음'}</span>
+          <span className='text-2xl font-bold'>{title || '타이틀 없음'}</span>
           <ChevronDown className='size-5' />
         </Link>
       </div>
