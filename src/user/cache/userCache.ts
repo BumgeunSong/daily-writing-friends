@@ -22,6 +22,7 @@ export function getCachedUserData(uid: string): User | null {
 
 // localStorage에 User 데이터 저장
 export function cacheUserData(uid: string, data: User): void {
+  if (!data) return;
   localStorage.setItem(
     `user-${uid}`,
     JSON.stringify({
