@@ -1,10 +1,9 @@
-import { useQuery } from "@tanstack/react-query"
 import { useState, useRef, useEffect, useCallback } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { PostVisibility } from '@/post/model/Post'
 import { createPost } from '@/post/utils/postUtils'
 import { WritingStatus } from "@/stats/model/WritingStatus"
-import { fetchUserNickname } from "@/user/utils/userUtils"
+import { useUserNickname } from '@/user/hooks/useUserNickname'
 import { useToast } from "@/shared/hooks/use-toast"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig"
@@ -21,10 +20,7 @@ export default function PostFreewritingPage() {
   const navigate = useNavigate()
   const { boardId } = useParams<{ boardId: string }>()
   const { toast } = useToast()
-  const { data: userNickname } = useQuery({
-    queryKey: ["userNickname", currentUser?.uid],
-    queryFn: () => fetchUserNickname(currentUser?.uid),
-  }) 
+  const { nickname: userNickname } = useUserNickname(currentUser?.uid);
   const { value: freeWritingTargetTime } = useRemoteConfig("free_writing_target_time", DEFAULT_TARGET_TIME)
 
   // 상태 관리

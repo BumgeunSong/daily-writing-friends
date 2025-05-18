@@ -6,7 +6,7 @@ import { useToast } from "@/shared/hooks/use-toast"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"  
 import { addReviewToBoard } from "@/shared/utils/reviewUtils"
-import { useUserNickname } from "@/user/utils/userUtils"
+import { useUserNickname } from "@/user/hooks/useUserNickname"
 import JoinCompletePage from "./JoinCompletePage"
 import JoinFormCardForActiveUser from "./JoinFormCardForActiveUser"
 import FormHeader from "./JoinFormHeader"
@@ -17,7 +17,7 @@ import { Board } from "@/board/model/Board"
  */
 export default function JoinFormPageForActiveUser() {
     const { currentUser } = useAuth()
-    const { data: userNickname } = useUserNickname(currentUser?.uid)
+    const { nickname: userNickname } = useUserNickname(currentUser?.uid)
     const { toast } = useToast()
     const { data: upcomingBoard } = useUpcomingBoard()
     const [isComplete, setIsComplete] = useState(false)

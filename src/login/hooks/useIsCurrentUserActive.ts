@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchAllUserDataWithBoardPermission } from "@/user/utils/userUtils";
+import { fetchAllUserDataWithBoardPermission } from "@/user/api/user";
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useRemoteConfig } from "../../shared/hooks/useRemoteConfig";
 

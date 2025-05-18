@@ -5,7 +5,7 @@ import { JoinFormDataForNewUser } from "@/login/model/join"
 import { useToast } from "@/shared/hooks/use-toast"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"
-import { updateUserData, fetchUserData, createUserData } from "@/user/utils/userUtils"
+import { fetchUserFromFirestore, createUserInFirestore, updateUserInFirestore } from "@/user/api/user"
 import JoinCompletePage from "./JoinCompletePage"
 import JoinFormCardForNewUser from './JoinFormCardForNewUser'
 import FormHeader from "./JoinFormHeader"
@@ -94,11 +94,11 @@ export async function submitNewUserJoin(params: {
         };
 
         // Firestore에서 사용자 문서 확인
-        const existingUser = await fetchUserData(currentUser.uid);
+        const existingUser = await fetchUserFromFirestore(currentUser.uid);
         
         if (existingUser) {
             // 기존 사용자가 있으면 업데이트
-            await updateUserData(currentUser.uid, userData);
+            await updateUserInFirestore(currentUser.uid, userData);
         } else {
             // 기존 사용자가 없으면 새로 생성
             const newUser: User = {
@@ -109,9 +109,10 @@ export async function submitNewUserJoin(params: {
                 boardPermissions: {
                     'rW3Y3E2aEbpB0KqGiigd': 'read', // default board id
                 },
-                ...userData
+                ...userData,
+                updatedAt: null,
             };
-            await createUserData(newUser);
+            await createUserInFirestore(newUser);
         }
 
         // 대기자 명단에 추가

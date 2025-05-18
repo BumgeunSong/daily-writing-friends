@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Comments from '@/comment/components/Comments';
 import { usePostDelete } from '@/post/hooks/usePostDelete';
 import { fetchPost } from '@/post/utils/postUtils';
-import { fetchUserNickname } from '@/user/utils/userUtils';
+import { useUserNickname } from '@/user/hooks/useUserNickname';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { PostAdjacentButtons } from './PostAdjacentButtons';
@@ -24,11 +24,7 @@ export default function PostDetailPage() {
     { enabled: !!boardId && !!postId }
   );
 
-  const { data: authorNickname } = useQuery(
-    ['authorNickname', post?.authorId],
-    () => fetchUserNickname(post!.authorId),
-    { enabled: !!post?.authorId }
-  );
+  const { nickname: authorNickname } = useUserNickname(post?.authorId ?? null);
 
   if (isLoading) return <PostDetailSkeleton />;
   if (error || !post) return <PostDetailError boardId={boardId} />;
