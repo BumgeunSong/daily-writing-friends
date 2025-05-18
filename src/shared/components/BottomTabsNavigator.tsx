@@ -14,7 +14,7 @@ const tabs: Tab[] = [
   { name: 'Home', icon: Home, path: '/boards' },
   { name: 'Stats', icon: ChartNoAxesColumnIncreasing, path: '/stats' },
   { name: 'Notifications', icon: Bell, path: '/notifications' },
-  { name: 'Account', icon: User, path: '/account' },
+  { name: 'User', icon: User, path: '/user' },
 ];
 
 export default function BottomTabsNavigator() {

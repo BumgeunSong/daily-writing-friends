@@ -67,6 +67,7 @@ export default function App() {
         <Route path="/account" element={<LegacyAccountPage />} />
         <Route path="/account/edit/:userId" element={<EditAccountPage />} />
         <Route path="/stats" element={<StatsPage />} />
+        <Route path="/user" element={<UserPage />} />
         <Route path="/user/:userId" element={<UserPage />} />
         <Route path="/user/settings" element={<UserSettingPage />} />
       </Route>

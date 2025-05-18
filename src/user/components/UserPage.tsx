@@ -1,16 +1,17 @@
-import { useNavigate, useParams } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import StatusMessage from "@/shared/components/StatusMessage"
 import { UserPageHeader } from "@/user/components/UserPageHeader"
 import UserPostsList from "@/user/components/UserPostList"
 import UserProfile from "@/user/components/UserProfile"
+import { useAuth } from "@/shared/hooks/useAuth"
 
 export default function UserPage() {
-  const { userId } = useParams()
+  const { userId: paramUserId } = useParams()
+  const { currentUser } = useAuth()
+  const userId = paramUserId || currentUser?.uid
 
   if (!userId) {
-    return (
-      <StatusMessage error errorMessage="유저 정보를 찾을 수 없습니다." />
-    )
+    return <StatusMessage errorMessage="유저 정보를 찾을 수 없습니다." />
   }
 
   return (
