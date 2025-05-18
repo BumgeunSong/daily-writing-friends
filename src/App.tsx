@@ -21,7 +21,6 @@ import { BottomNavigatorLayout } from '@/shared/components/BottomNavigatorLayout
 import { useAuth } from '@/shared/hooks/useAuth';
 import StatsPage from '@/stats/components/StatsPage';
 import EditAccountPage from '@/user/components/EditAccountPage';
-import LegacyAccountPage from '@/user/components/LegacyAccountPage';
 import UserPage from '@/user/components/UserPage';
 import UserSettingPage from '@/user/components/UserSettingPage';
 import { PrivateRoutes } from './shared/components/route/PrivateRoutes';
@@ -64,7 +63,6 @@ export default function App() {
         <Route path="/board/:boardId/edit/:postId" element={<PostEditPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/notifications/settings" element={<NotificationSettingPage />} />
-        <Route path="/account" element={<LegacyAccountPage />} />
         <Route path="/account/edit/:userId" element={<EditAccountPage />} />
         <Route path="/stats" element={<StatsPage />} />
         <Route path="/user" element={<UserPage />} />
