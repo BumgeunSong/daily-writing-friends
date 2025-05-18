@@ -17,7 +17,7 @@ export default function UserPage() {
     <div className="mx-auto flex min-h-screen w-full max-w-full flex-col bg-background pb-16">
       {/* Header section with settings button */}
       <header className="sticky top-0 z-10 border-b bg-background">
-        <UserPageHeader />
+        <UserPageHeader userId={userId} />
 
         {/* User profile section */}
         <div className="p-4">

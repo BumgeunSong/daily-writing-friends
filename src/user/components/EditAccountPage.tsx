@@ -1,6 +1,7 @@
 import { Camera, Loader2 } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query'
 
 import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
@@ -17,18 +18,23 @@ import StatusMessage from '@/shared/components/StatusMessage';
 export default function EditAccountPage() {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   if (!userId) {
     return <StatusMessage errorMessage="유저 정보를 찾을 수 없습니다." />
   }
 
+  // 2. userId로 userData 패칭
   const { userData, isLoading: isLoadingUser } = useUser(userId);
-  const { nickname, handleNicknameChange } = userData ? useNickname(userData.nickname || '') : { nickname: '', handleNicknameChange: () => {} };
-  const { profilePhotoFile, currentProfilePhotoURL, handleProfilePhotoChange } = userData ? useProfilePhoto(userData.profilePhotoURL || null) : { profilePhotoFile: null, currentProfilePhotoURL: '', handleProfilePhotoChange: () => {} };
+
+  // 3. 훅은 항상 호출 (userData가 undefined일 때도 안전하게 초기값 처리)
+  const { nickname, handleNicknameChange } = useNickname(userData?.nickname || '');
+  const { profilePhotoFile, currentProfilePhotoURL, handleProfilePhotoChange } = useProfilePhoto(userData?.profilePhotoURL || null);
   const [bio, setBio] = useState(userData?.bio || '');
   const profilePhotoFileRef = useRef<HTMLInputElement>(null);
   const { mutateAsync, isLoading: isLoadingUpdate } = useUpdateUserData();
 
+  // bio 상태는 userData가 바뀔 때 동기화
   useEffect(() => {
     setBio(userData?.bio || '');
   }, [userData?.bio]);
@@ -52,6 +58,7 @@ export default function EditAccountPage() {
         profilePhotoFile,
         bio,
       });
+      queryClient.invalidateQueries({ queryKey: ['user', userId] });
       navigate(-1)
     } catch (err) {
       // 에러는 useUpdateUserData에서 처리됨

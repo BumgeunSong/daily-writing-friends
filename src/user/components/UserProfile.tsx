@@ -6,8 +6,6 @@ import { useNavigate } from "react-router-dom"
 import { Edit } from "lucide-react"
 import { Button } from "@/shared/ui/button"
 
-
-
 interface UserProfileProps {
   uid: string
 }
