@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
 import { Button } from '@/shared/ui/button';
-import BoardHeader from '@board/components/BoardHeader';
-import PostCardList from '@board/components/PostCardList';
-import { WritingActionButton } from '@board/components/WritingActionButton';
+import { BoardPageHeader } from '@/board/components/BoardPageHeader';
+import PostCardList from '@/board/components/PostCardList';
+import { WritingActionButton } from '@/board/components/WritingActionButton';
 import AuthorList from './AuthorList';
 
 export default function BoardPage() {
@@ -39,7 +39,7 @@ export default function BoardPage() {
 
   return (
     <div className='min-h-screen bg-background'>
-      <BoardHeader boardId={boardId} />
+      <BoardPageHeader boardId={boardId} />
       <main className='container mx-auto px-4 py-8 pb-24'>
         <div className='mb-6'>
           {boardId && <AuthorList boardId={boardId} onAuthorSelect={handleAuthorSelect} />}
