@@ -34,7 +34,7 @@ export default function PostDetailPage() {
   return (
     <div className='mx-auto max-w-4xl px-6 py-8 sm:px-8 lg:px-12'>
       <PostMetaHelmet post={post} boardId={boardId} postId={postId} />
-      {boardId && <PostBackButton boardId={boardId} className='mb-6' />}
+      <PostBackButton className='mb-6' />
       <article className='space-y-6'>
         <PostDetailHeader
           post={post}
@@ -80,7 +80,7 @@ function PostDetailError({ boardId }: { boardId?: string }) {
   return (
     <div className='mx-auto max-w-4xl px-6 py-8 text-center sm:px-8 lg:px-12'>
       <h1 className='mb-4 text-2xl font-bold'>게시물을 찾을 수 없습니다.</h1>
-      {boardId && <PostBackButton boardId={boardId} />}
+      {boardId && <PostBackButton />}
     </div>
   );
 }
