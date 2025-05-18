@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { useCallback } from "react"
 import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
 import { usePerformanceMonitoring } from "@/shared/hooks/usePerformanceMonitoring"
