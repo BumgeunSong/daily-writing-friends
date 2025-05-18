@@ -9,7 +9,7 @@ export default function UserPage() {
   const { userId } = useParams()
 
   const handleGoToSettings = () => {
-    navigate("/account/edit")
+    navigate("/user/settings")
   }
 
   if (!userId) {
@@ -26,7 +26,7 @@ export default function UserPage() {
 
         {/* User profile section */}
         <div className="p-4">
-          <UserProfile userId={userId} />
+          <UserProfile uid={userId} />
         </div>
       </header>
 
