@@ -1,6 +1,10 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
 import { Skeleton } from "@/shared/ui/skeleton"
 import { useUser } from "@/user/hooks/useUser"
+import { useAuth } from "@/shared/hooks/useAuth"
+import { useNavigate } from "react-router-dom"
+import { Edit } from "lucide-react"
+import { Button } from "@/shared/ui/button"
 
 interface UserProfileProps {
   uid: string
@@ -8,6 +12,9 @@ interface UserProfileProps {
 
 export default function UserProfile({ uid }: UserProfileProps) {
   const { userData, isLoading } = useUser(uid)
+  const { currentUser } = useAuth()
+  const navigate = useNavigate()
+  const isCurrentUser = currentUser?.uid === uid
 
   if (isLoading) {
     return (
@@ -30,17 +37,33 @@ export default function UserProfile({ uid }: UserProfileProps) {
   }
 
   return (
-    <div className="flex items-center gap-4">
-      <Avatar className="size-16">
+    <div className="flex items-start gap-4 w-full">
+      <Avatar className="size-20 md:size-24 shrink-0 mt-1">
         {userData.profilePhotoURL ? (
-          <AvatarImage src={userData.profilePhotoURL} alt={`${userData.nickname}'s profile`} />
+          <AvatarImage src={userData.profilePhotoURL || "/placeholder.svg"} alt={`${userData.nickname}'s profile`} />
         ) : (
           <AvatarFallback>{userData.nickname?.charAt(0).toUpperCase()}</AvatarFallback>
         )}
       </Avatar>
-      <div>
-        <h2 className="text-lg font-medium">{userData.nickname}</h2>
-        <p className="line-clamp-2 text-sm text-muted-foreground">{userData.bio || '아직 자기소개가 없어요.'}</p>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-medium">{userData.nickname}</h2>
+          {isCurrentUser && (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="설정"
+              className="ml-2 shrink-0"
+              onClick={() => navigate("/user/settings")}
+            >
+              <Edit className="size-5 text-muted-foreground" />
+            </Button>
+          )}
+        </div>
+        <p className="line-clamp-2 text-sm text-muted-foreground mt-1">
+          {userData.bio ||
+            "아직 자기소개가 없어요. 아직 자기소개가 없어요. 아직 자기소개가 없어요. 아직 자기소개가 없어요."}
+        </p>
       </div>
     </div>
   )
