@@ -1,13 +1,13 @@
 import { Loader2, FileText } from 'lucide-react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@shared/hooks/useAuth';
-import { Button } from '@shared/ui/button';
 import { DraftsDrawer } from '@draft/components/DraftsDrawer';
 import { DraftStatusIndicator } from '@draft/components/DraftStatusIndicator';
 import { useAutoSaveDrafts } from '@draft/hooks/useAutoSaveDrafts';
 import { useDraftLoader } from '@draft/hooks/useDraftLoader';
 import { usePostEditor } from '@post/hooks/usePostEditor';
 import { usePostSubmit } from '@post/hooks/usePostSubmit';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { Button } from '@/shared/ui/button';
 import { PostBackButton } from './PostBackButton';
 import { PostSubmitButton } from './PostSubmitButton';
 import { PostTextEditor } from './PostTextEditor';

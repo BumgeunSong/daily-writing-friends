@@ -1,8 +1,8 @@
 import { motion } from "framer-motion"
 import { CheckCircle, Sparkles, Trophy } from "lucide-react"
 import { useState, useEffect } from "react"
-import { ConfettiEffect } from "@shared/components/ConfettiEffect"
-import { Button } from "@shared/ui/button"
+import { ConfettiEffect } from "@/shared/components/ConfettiEffect"
+import { Button } from "@/shared/ui/button"
 import { PostCreationLoading } from "./PostCreationLoading"
 import type { CompletionHighlight } from "@/post/hooks/useCompletionMessage"
 // 타입 선언: 추상적인 것부터

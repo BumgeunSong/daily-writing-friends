@@ -4,8 +4,8 @@ import data from "@emoji-mart/data"
 import Picker from "@emoji-mart/react"
 import { Loader2, SmilePlus } from "lucide-react"
 import { useState } from "react"
-import { Button } from "@shared/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@shared/ui/popover"
+import { Button } from "@/shared/ui/button"
+import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover"
 import type React from "react"
 
 interface ReactWithEmojiProps {
