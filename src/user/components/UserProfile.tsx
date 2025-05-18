@@ -1,19 +1,13 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
 import { Skeleton } from "@/shared/ui/skeleton"
-import { useQuery } from "@tanstack/react-query"
-import { fetchUserData } from "@/user/utils/userUtils"
+import { useUser } from "@/user/hooks/useUser"
 
 interface UserProfileProps {
-  userId: string
+  uid: string
 }
 
-export default function UserProfile({ userId }: UserProfileProps) {
-  const { data: userData, isLoading } = useQuery({
-    queryKey: ["user-profile", userId],
-    queryFn: () => fetchUserData(userId),
-    enabled: !!userId,
-    staleTime: 1000 * 60, // 1분 캐싱
-  })
+export default function UserProfile({ uid }: UserProfileProps) {
+  const { userData, isLoading } = useUser(uid)
 
   if (isLoading) {
     return (

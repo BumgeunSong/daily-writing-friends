@@ -10,10 +10,10 @@ import { Posting } from '@/post/model/Posting';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { mapDocumentToPosting } from '@/shared/utils/postingUtils';
 import { WritingStats, Contribution, WritingBadge } from '@/stats/model/WritingStats';
-import { getDateKey, getUserTimeZone } from '@/stats/utils/streakUtils';
+import { getDateKey } from '@/stats/utils/streakUtils';
 import { calculateCurrentStreak } from '@/stats/utils/streakUtils';
 import { User } from '@/user/model/User';
-import { fetchUserData } from '@/user/utils/userUtils';
+import { fetchUserFromFirestore } from '@/user/api/user';
 
 export function useWritingStatsV2(userIds: string[]) {
     return useQuery({
@@ -51,7 +51,7 @@ function sort(writingStats: WritingStats[]): WritingStats[] {
 
 async function fetchSingleUserStats(userId: string): Promise<WritingStats | null> {
     try {
-        const userData = await fetchUserData(userId);
+        const userData = await fetchUserFromFirestore(userId);
         if (!userData) return null;
 
         const postings = await fetchPostingData(userId);
@@ -71,20 +71,19 @@ async function fetchPostingData(userId: string): Promise<Posting[]> {
 
 
 function createContributions(postings: Posting[], workingDays: Date[]): Contribution[] {
-    const userTimeZone = getUserTimeZone();
     const postingMap = new Map<string, number>();
     
     for (const posting of postings) {
         const postingDate = posting.createdAt.toDate();
-        const key = getDateKey(postingDate, userTimeZone);
+        const key = getDateKey(postingDate);
         const currentSum = postingMap.get(key) || 0;
         postingMap.set(key, currentSum + posting.post.contentLength);
     }
 
     return workingDays.map(day => ({
-        createdAt: getDateKey(day, userTimeZone),
-        contentLength: postingMap.has(getDateKey(day, userTimeZone)) 
-            ? postingMap.get(getDateKey(day, userTimeZone))! 
+        createdAt: getDateKey(day),
+        contentLength: postingMap.has(getDateKey(day)) 
+            ? postingMap.get(getDateKey(day))! 
             : null
     }));
 }
