@@ -10,6 +10,7 @@ import {
   collection,
   where,
   query,
+  serverTimestamp,
 } from 'firebase/firestore';
 
 import { firestore } from '@/firebase';
@@ -18,37 +19,68 @@ import { UserProfile } from '@/user/model/UserProfile';
 
 // Helper function to get user data from localStorage
 function getCachedUserData(uid: string): User | null {
-  const cachedUserData = localStorage.getItem(`user-${uid}`);
-  return cachedUserData ? (JSON.parse(cachedUserData) as User) : null;
+  const cached = localStorage.getItem(`user-${uid}`);
+  if (!cached) return null;
+  try {
+    const parsed = JSON.parse(cached);
+    if (parsed && parsed.data && parsed.updatedAt) {
+      // updatedAt은 string(ISO)로 저장되어 있으므로 Timestamp로 복원
+      return {
+        ...parsed.data,
+        updatedAt: parsed.updatedAt ? new Date(parsed.updatedAt) : null,
+      };
+    }
+    // 구버전 캐시 호환
+    return parsed as User;
+  } catch {
+    return null;
+  }
 }
 
 // Helper function to cache user data in localStorage
 function cacheUserData(uid: string, data: User): void {
-  localStorage.setItem(`user-${uid}`, JSON.stringify(data));
+  localStorage.setItem(
+    `user-${uid}`,
+    JSON.stringify({
+      data: { ...data, updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : null },
+      updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : null,
+    })
+  );
 }
 
 // Function to fetch user data from Firestore with caching
 export async function fetchUserData(uid: string): Promise<User | null> {
   try {
-    // Attempt to retrieve user data from cache
-    const cachedUserData = getCachedUserData(uid);
-    if (cachedUserData) {
-      return cachedUserData;
-    }
-
-    // Fetch from Firestore if not in cache
+    const cached = getCachedUserData(uid);
     const userDocRef = doc(firestore, 'users', uid);
     const userDoc = await getDoc(userDocRef);
 
-    if (userDoc.exists()) {
-      const userData = userDoc.data() as User;
-      cacheUserData(uid, userData); // Cache the user data
-      return userData;
-    } else {
+    if (!userDoc.exists()) {
       console.log(`No such user document called ${uid}!`);
       return null;
     }
+
+    const firestoreUser = userDoc.data() as User;
+    const firestoreUpdatedAt = firestoreUser.updatedAt;
+    const cachedUpdatedAt = cached?.updatedAt instanceof Date ? cached.updatedAt : null;
+
+    // 캐시가 있고, updatedAt이 같으면 캐시 사용
+    if (
+      cached &&
+      firestoreUpdatedAt &&
+      cachedUpdatedAt &&
+      firestoreUpdatedAt.toMillis() === cachedUpdatedAt.getTime()
+    ) {
+      return cached;
+    }
+
+    // Firestore 데이터가 더 최신이거나 캐시가 없으면 캐시 갱신
+    cacheUserData(uid, firestoreUser);
+    return firestoreUser;
   } catch (error) {
+    // 에러 시 캐시라도 반환
+    const cached = getCachedUserData(uid);
+    if (cached) return cached;
     console.error('Error fetching user data:', error);
     throw error;
   }
@@ -143,13 +175,17 @@ export const useUserNickname = (uid: string) => {
 export async function updateUserData(uid: string, data: Partial<User>): Promise<void> {
   try {
     const userDocRef = doc(firestore, 'users', uid);
-    await updateDoc(userDocRef, data);
+    const userData = {
+      ...data,
+      updatedAt: serverTimestamp(),
+    }
+    await updateDoc(userDocRef, userData);
 
     // Update the cache with the new data
     const cachedUserData = getCachedUserData(uid);
     if (cachedUserData) {
-      const updatedUserData = { ...cachedUserData, ...data };
-      cacheUserData(uid, updatedUserData);
+      const updatedUserData = { ...cachedUserData, ...userData };
+      cacheUserData(uid, updatedUserData as User);
     }
   } catch (error) {
     console.error('Error updating user data:', error);
@@ -175,7 +211,11 @@ export async function deleteUserData(uid: string): Promise<void> {
 export async function createUserData(data: User): Promise<void> {
   try {
     const userDocRef = doc(firestore, 'users', data.uid);
-    await setDoc(userDocRef, data);
+    const userData = {
+      ...data,
+      updatedAt: serverTimestamp(),
+    }
+    await setDoc(userDocRef, userData);
 
     // Cache the new user data
     cacheUserData(data.uid, data);
