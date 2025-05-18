@@ -13,6 +13,10 @@ export default function BoardPage() {
     navigate(`/board/${boardId}/post/${postId}`);
   };
 
+  const handleProfileClick = (userId: string) => {
+    navigate(`/user/${userId}`);
+  };
+
   if (!boardId) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -37,6 +41,7 @@ export default function BoardPage() {
         <PostCardList
           boardId={boardId!}
           onPostClick={handlePostClick}
+          onClickProfile={handleProfileClick}
         />
       </main>
       <WritingActionButton boardId={boardId} />

@@ -12,9 +12,10 @@ import { usePosts } from '@/post/hooks/usePosts';
 interface PostCardListProps {
   boardId: string;
   onPostClick: (postId: string) => void;
+  onClickProfile?: (userId: string) => void;
 }
 
-const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick }) => {
+const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onClickProfile }) => {
   const [inViewRef, inView] = useInView();
   const [limitCount] = useState(7);
   usePerformanceMonitoring('PostCardList')
@@ -79,10 +80,11 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick }) => 
   return (
     <div className='space-y-6'>
       {allPosts.map((post) => (
-        <PostCard 
-          key={post.id} 
-          post={post} 
-          onClick={() => handlePostClick(post.id)} 
+        <PostCard
+          key={post.id}
+          post={post}
+          onClick={() => handlePostClick(post.id)}
+          onClickProfile={onClickProfile}
         />
       ))}
       <div ref={inViewRef} />

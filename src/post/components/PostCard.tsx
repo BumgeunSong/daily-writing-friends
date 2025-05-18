@@ -12,9 +12,52 @@ import type React from "react"
 interface PostCardProps {
   post: Post
   onClick: (postId: string) => void
+  onClickProfile?: (userId: string) => void
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
+interface UserPostProfileProps {
+  authorData: any;
+  isLoading: boolean;
+  onClickProfile: (e: React.MouseEvent) => void;
+}
+
+const UserPostProfile: React.FC<UserPostProfileProps> = ({ authorData, isLoading, onClickProfile }) => (
+  <div className="flex items-center">
+    {isLoading ? (
+      <Skeleton className="size-7 rounded-full" />
+    ) : (
+      <Avatar
+        className="size-7 cursor-pointer transition-all duration-150 group/profile min-w-[44px] min-h-[44px] active:scale-95 active:bg-accent/20"
+        onClick={onClickProfile}
+        role="button"
+        tabIndex={0}
+        aria-label="작성자 프로필로 이동"
+      >
+        <AvatarImage src={authorData?.profilePhotoURL || ""} alt={authorData?.realName || "User"} />
+        <AvatarFallback>
+          <User className="size-3.5" />
+        </AvatarFallback>
+      </Avatar>
+    )}
+    <div className="ml-2">
+      {isLoading ? (
+        <Skeleton className="h-4 w-20" />
+      ) : (
+        <p
+          className="text-sm font-medium text-foreground/90 cursor-pointer transition-colors duration-150 group-hover/profile:text-primary group-hover/profile:underline min-h-[44px] flex items-center active:text-primary"
+          onClick={onClickProfile}
+          role="button"
+          tabIndex={0}
+          aria-label="작성자 프로필로 이동"
+        >
+          {authorData?.nickname || "알 수 없음"}
+        </p>
+      )}
+    </div>
+  </div>
+);
+
+const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) => {
   const { userData: authorData, isLoading: isAuthorLoading } = useUser(post.authorId)
 
   const isPrivate = post.visibility === PostVisibility.PRIVATE
@@ -24,30 +67,24 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
     onClick(post.id)
   }
 
+  const handleProfileClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onClickProfile && post.authorId) {
+      onClickProfile(post.authorId);
+    }
+  }
+
   return (
     <Card
-      onClick={handleCardClick}
-      className="cursor-pointer transition-all duration-200 hover:border-border/80 hover:bg-muted/50 hover:shadow-sm"
+      className="transition-all duration-200 hover:border-border/80 hover:bg-muted/50 hover:shadow-sm"
     >
       <CardHeader className="px-4 pb-2 pt-3">
         <div className="mb-2 flex items-center">
-          {isAuthorLoading ? (
-            <Skeleton className="size-7 rounded-full" />
-          ) : (
-            <Avatar className="size-7">
-              <AvatarImage src={authorData?.profilePhotoURL || ""} alt={authorData?.realName || "User"} />
-              <AvatarFallback>
-                <User className="size-3.5" />
-              </AvatarFallback>
-            </Avatar>
-          )}
-          <div className="ml-2">
-            {isAuthorLoading ? (
-              <Skeleton className="h-4 w-20" />
-            ) : (
-              <p className="text-sm font-medium text-foreground/90">{authorData?.nickname || "알 수 없음"}</p>
-            )}
-          </div>
+          <UserPostProfile
+            authorData={authorData}
+            isLoading={isAuthorLoading}
+            onClickProfile={handleProfileClick}
+          />
         </div>
 
         <h2 className="flex items-center text-xl font-semibold text-foreground/90">
@@ -55,7 +92,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
           {post.title}
         </h2>
       </CardHeader>
-      <CardContent className="px-4 pb-3 pt-1">
+      <CardContent
+        className="px-4 pb-3 pt-1 cursor-pointer min-h-[44px] active:bg-primary/10 active:scale-[0.98] transition-all duration-150"
+        onClick={handleCardClick}
+        role="button"
+        tabIndex={0}
+        aria-label="게시글 상세로 이동"
+      >
         {!isPrivate && contentPreview && (
           <div
             className="
@@ -75,7 +118,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick }) => {
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex justify-between border-t border-border/30 px-4 pb-3 pt-2">
+      <CardFooter
+        className="flex justify-between border-t border-border/30 px-4 pb-3 pt-2 cursor-pointer min-h-[44px] active:bg-primary/10 active:scale-[0.98] transition-all duration-150"
+        onClick={handleCardClick}
+        role="button"
+        tabIndex={0}
+        aria-label="게시글 상세로 이동"
+      >
         <div className="flex items-center text-muted-foreground">
           <MessageCircle className="mr-1 size-4" />
           <p className="text-xs font-medium">{post.countOfComments + post.countOfReplies}</p>
