@@ -1,7 +1,6 @@
 import { Camera, Loader2 } from 'lucide-react';
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query'
 
 import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
@@ -16,39 +15,27 @@ import { useUser } from '@/user/hooks/useUser';
 import StatusMessage from '@/shared/components/StatusMessage';
 
 export default function EditAccountPage() {
+  // 1. 상태/훅 선언
   const { userId } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  if (!userId) {
-    return <StatusMessage errorMessage="유저 정보를 찾을 수 없습니다." />
-  }
-
-  // 2. userId로 userData 패칭
-  const { userData, isLoading: isLoadingUser } = useUser(userId);
-
-  // 3. 훅은 항상 호출 (userData가 undefined일 때도 안전하게 초기값 처리)
+  const { userData, isLoading: isLoadingUser } = useUser(userId ?? null);
   const { nickname, handleNicknameChange } = useNickname(userData?.nickname || '');
   const { profilePhotoFile, currentProfilePhotoURL, handleProfilePhotoChange } = useProfilePhoto(userData?.profilePhotoURL || null);
   const [bio, setBio] = useState(userData?.bio || '');
   const profilePhotoFileRef = useRef<HTMLInputElement>(null);
   const { mutateAsync, isLoading: isLoadingUpdate } = useUpdateUserData();
+  const isLoading = isLoadingUser || isLoadingUpdate;
 
   // bio 상태는 userData가 바뀔 때 동기화
   useEffect(() => {
     setBio(userData?.bio || '');
   }, [userData?.bio]);
 
-  const showProfilePhotoChangeButton = () => {
-    !isLoadingUser && profilePhotoFileRef.current?.click();
-  }
-  
-  const handleBioChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (e.target.value.length <= 150) {
-      setBio(e.target.value);
-    }
-  };
-  
+  // 2. 빠른 분기 처리
+  if (!userId) return <StatusMessage errorMessage="유저 정보를 찾을 수 없습니다." />;
+  if (isLoadingUser) return <LoadingSkeleton />;
+
+  // 3. 핸들러 함수
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -58,57 +45,42 @@ export default function EditAccountPage() {
         profilePhotoFile,
         bio,
       });
-      queryClient.invalidateQueries({ queryKey: ['user', userId] });
       navigate(-1)
     } catch (err) {
       // 에러는 useUpdateUserData에서 처리됨
     }
   };
 
-  const isLoading = isLoadingUser || isLoadingUpdate;
+  const handleBioChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (e.target.value.length <= 150) {
+      setBio(e.target.value);
+    }
+  };
 
+  const showProfilePhotoChangeButton = () => {
+    if (!isLoadingUser && profilePhotoFileRef.current) {
+      profilePhotoFileRef.current.click();
+    }
+  };
+
+  // 4. UI 렌더
   return (
     <div className='relative flex min-h-screen items-start justify-center bg-gray-50 p-4'>
-      {isLoading && (
-        <div className='absolute inset-0 z-50 flex items-center justify-center bg-white bg-opacity-75'>
-          <Loader2 className='size-8 animate-spin text-gray-600' />
-        </div>
-      )}
+      {isLoading && <LoadingOverlay />}
       <Card className={`w-full max-w-md ${isLoading ? 'pointer-events-none opacity-50' : ''}`}>
         <CardHeader>
           <CardTitle className='text-center text-2xl font-bold'>내 정보 수정하기</CardTitle>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className='space-y-6'>
-            <div className='flex flex-col items-center space-y-4'>
-              <Avatar
-                className='size-32 cursor-pointer'
-                onClick={showProfilePhotoChangeButton}
-              >
-                <AvatarImage src={currentProfilePhotoURL} alt={nickname} />
-                <AvatarFallback className='flex items-center justify-center bg-gray-200 text-4xl text-gray-600'>
-                  {nickname ? nickname[0].toUpperCase() : <Camera className='size-8' />}
-                </AvatarFallback>
-              </Avatar>
-              <Button
-                type='button'
-                variant='outline'
-                size='sm'
-                className='mt-2'
-                onClick={showProfilePhotoChangeButton}
-                disabled={isLoading}
-              >
-                프로필 사진 변경
-              </Button>
-              <Input
-                type='file'
-                accept='image/*'
-                onChange={handleProfilePhotoChange}
-                className='hidden'
-                ref={profilePhotoFileRef}
-                disabled={isLoading}
-              />
-            </div>
+            <ProfilePhotoUploader
+              currentProfilePhotoURL={currentProfilePhotoURL}
+              nickname={nickname}
+              showProfilePhotoChangeButton={showProfilePhotoChangeButton}
+              handleProfilePhotoChange={handleProfilePhotoChange}
+              profilePhotoFileRef={profilePhotoFileRef}
+              isLoading={isLoading}
+            />
             <div className='space-y-2'>
               <Label htmlFor='nickname'>닉네임</Label>
               <Input
@@ -151,6 +123,75 @@ export default function EditAccountPage() {
           </CardFooter>
         </form>
       </Card>
+    </div>
+  );
+}
+
+function ProfilePhotoUploader({
+  currentProfilePhotoURL,
+  nickname,
+  showProfilePhotoChangeButton,
+  handleProfilePhotoChange,
+  profilePhotoFileRef,
+  isLoading,
+}: {
+  currentProfilePhotoURL: string;
+  nickname: string;
+  showProfilePhotoChangeButton: () => void;
+  handleProfilePhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  profilePhotoFileRef: React.RefObject<HTMLInputElement>;
+  isLoading: boolean;
+}) {
+  return (
+    <div className='flex flex-col items-center space-y-4'>
+      <Avatar
+        className='size-32 cursor-pointer'
+        onClick={showProfilePhotoChangeButton}
+      >
+        <AvatarImage src={currentProfilePhotoURL} alt={nickname} />
+        <AvatarFallback className='flex items-center justify-center bg-gray-200 text-4xl text-gray-600'>
+          {nickname ? nickname[0].toUpperCase() : <Camera className='size-8' />}
+        </AvatarFallback>
+      </Avatar>
+      <Button
+        type='button'
+        variant='outline'
+        size='sm'
+        className='mt-2'
+        onClick={showProfilePhotoChangeButton}
+        disabled={isLoading}
+      >
+        프로필 사진 변경
+      </Button>
+      <Input
+        type='file'
+        accept='image/*'
+        onChange={handleProfilePhotoChange}
+        className='hidden'
+        ref={profilePhotoFileRef}
+        disabled={isLoading}
+      />
+    </div>
+  );
+}
+
+function LoadingOverlay() {
+  return (
+    <div className='absolute inset-0 z-50 flex items-center justify-center bg-white bg-opacity-75'>
+      <Loader2 className='size-8 animate-spin text-gray-600' />
+    </div>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className='flex flex-col items-center p-4 pt-8'>
+      <div className='mb-4 size-32 rounded-full bg-gray-200' />
+      <div className='mb-2 h-4 w-[250px] rounded bg-gray-200' />
+      <div className='mb-4 h-4 w-[200px] rounded bg-gray-200' />
+      <div className='mb-2 h-4 w-[300px] rounded bg-gray-200' />
+      <div className='mb-4 h-4 w-[250px] rounded bg-gray-200' />
+      <div className='h-10 w-[200px] rounded bg-gray-200' />
     </div>
   );
 }
