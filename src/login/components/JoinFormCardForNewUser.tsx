@@ -86,7 +86,7 @@ export default function JoinFormCardForNewUser({ onSubmit }: JoinFormCardForNewU
           <Button
             type="submit"
             form="join-form"
-            className="w-full lg:mx-auto lg:w-64"
+            className="w-full"
             size="lg"
             disabled={isSubmitting}
           >
