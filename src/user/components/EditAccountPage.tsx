@@ -1,41 +1,37 @@
 import { Camera, Loader2 } from 'lucide-react';
-import { useRef, useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-
 import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Textarea } from '@/shared/ui/textarea';
-import { useNickname } from '@/user/hooks/useNickName';
-import { useProfilePhoto } from '@/user/hooks/useProfilePhoto';
-import { useUpdateUserData } from '@/user/hooks/useUpdateUserData';
-import { useUser } from '@/user/hooks/useUser';
 import StatusMessage from '@/shared/components/StatusMessage';
+import { useEditAccount } from '../hooks/useEditAccount';
+import { useRef } from 'react';
+import { useUpdateUserData } from '../hooks/useUpdateUserData';
 
 export default function EditAccountPage() {
-  // 1. 상태/훅 선언
-  const { userId } = useParams();
   const navigate = useNavigate();
-  const { userData, isLoading: isLoadingUser } = useUser(userId ?? null);
-  const { nickname, handleNicknameChange } = useNickname(userData?.nickname || '');
-  const { profilePhotoFile, currentProfilePhotoURL, handleProfilePhotoChange } = useProfilePhoto(userData?.profilePhotoURL || null);
-  const [bio, setBio] = useState(userData?.bio || '');
+  const { userId } = useParams();
   const profilePhotoFileRef = useRef<HTMLInputElement>(null);
   const { mutateAsync, isLoading: isLoadingUpdate } = useUpdateUserData();
-  const isLoading = isLoadingUser || isLoadingUpdate;
+  
+  const {
+    userData,
+    nickname,
+    handleNicknameChange,
+    profilePhotoFile,
+    currentProfilePhotoURL,
+    handleProfilePhotoChange,
+    bio,
+    setBio,
+    isLoadingUser
+  } = useEditAccount({ userId: userId ?? null });
 
-  // bio 상태는 userData가 바뀔 때 동기화
-  useEffect(() => {
-    setBio(userData?.bio || '');
-  }, [userData?.bio]);
-
-  // 2. 빠른 분기 처리
   if (!userId) return <StatusMessage errorMessage="유저 정보를 찾을 수 없습니다." />;
   if (isLoadingUser) return <LoadingSkeleton />;
 
-  // 3. 핸들러 함수
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -63,11 +59,10 @@ export default function EditAccountPage() {
     }
   };
 
-  // 4. UI 렌더
   return (
     <div className='relative flex min-h-screen items-start justify-center bg-gray-50 p-4'>
-      {isLoading && <LoadingOverlay />}
-      <Card className={`w-full max-w-md ${isLoading ? 'pointer-events-none opacity-50' : ''}`}>
+      {isLoadingUpdate && <LoadingOverlay />}
+      <Card className={`w-full max-w-md ${isLoadingUpdate ? 'pointer-events-none opacity-50' : ''}`}>
         <CardHeader>
           <CardTitle className='text-center text-2xl font-bold'>내 정보 수정하기</CardTitle>
         </CardHeader>
@@ -79,7 +74,7 @@ export default function EditAccountPage() {
               showProfilePhotoChangeButton={showProfilePhotoChangeButton}
               handleProfilePhotoChange={handleProfilePhotoChange}
               profilePhotoFileRef={profilePhotoFileRef}
-              isLoading={isLoading}
+              isLoading={isLoadingUpdate}
             />
             <div className='space-y-2'>
               <Label htmlFor='nickname'>닉네임</Label>
@@ -89,7 +84,7 @@ export default function EditAccountPage() {
                 value={nickname}
                 onChange={handleNicknameChange}
                 placeholder='새로운 닉네임을 입력하세요'
-                disabled={isLoading}
+                disabled={isLoadingUpdate}
               />
             </div>
             <div className='space-y-2'>
@@ -103,7 +98,7 @@ export default function EditAccountPage() {
                 onChange={handleBioChange}
                 placeholder='자신을 간단히 소개해 주세요'
                 className='min-h-24 resize-none'
-                disabled={isLoading}
+                disabled={isLoadingUpdate}
               />
             </div>
           </CardContent>
@@ -112,13 +107,13 @@ export default function EditAccountPage() {
               type='button'
               variant='outline'
               className='w-full'
-              onClick={() => navigate(-1)}
-              disabled={isLoading}
+              onClick={() => window.history.back()}
+              disabled={isLoadingUpdate}
             >
               취소
             </Button>
-            <Button type='submit' className='w-full' disabled={isLoading}>
-              {isLoading ? <Loader2 className='size-4 animate-spin' /> : '저장하기'}
+            <Button type='submit' className='w-full' disabled={isLoadingUpdate}>
+              {isLoadingUpdate ? <Loader2 className='size-4 animate-spin' /> : '저장하기'}
             </Button>
           </CardFooter>
         </form>
