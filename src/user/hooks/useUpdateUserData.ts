@@ -1,10 +1,10 @@
-import { updateProfile } from 'firebase/auth';
-import { useMutation } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react';
+import { useMutation } from '@tanstack/react-query';
+import { updateProfile } from 'firebase/auth';
 import { useToast } from '@/shared/hooks/use-toast';
+import { useAuth } from '@/shared/hooks/useAuth';
 import { updateUser, uploadUserProfilePhoto } from '@/user/api/user';
 import { User } from '../model/User';
-import { useAuth } from '@/shared/hooks/useAuth';
 
 interface UpdateUserDataParams {
   userId: string;

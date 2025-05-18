@@ -3,10 +3,10 @@
 // Abstract repetitive Firebase logic into helpers
 
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, collection, getDocs, where, query } from 'firebase/firestore';
-import { firestore } from '@/firebase';
-import { User } from '@/user/model/User';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { firestore } from '@/firebase';
 import { storage } from '@/firebase';
+import { User } from '@/user/model/User';
 
 // Firestore에서 User 데이터 읽기
 export async function fetchUser(uid: string): Promise<User | null> {

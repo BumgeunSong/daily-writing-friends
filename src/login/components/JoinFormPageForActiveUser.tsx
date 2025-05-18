@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { Board } from "@/board/model/Board"
 import { showErrorToast } from "@/login/components/showErrorToast"
 import { useUpcomingBoard } from "@/login/hooks/useUpcomingBoard"
 import { JoinFormDataForActiveUser } from "@/login/model/join"
@@ -10,7 +11,6 @@ import { useUserNickname } from "@/user/hooks/useUserNickname"
 import JoinCompletePage from "./JoinCompletePage"
 import JoinFormCardForActiveUser from "./JoinFormCardForActiveUser"
 import FormHeader from "./JoinFormHeader"
-import { Board } from "@/board/model/Board"
 
 /**
  * 기존 사용자를 위한 매글프 신청 폼 페이지 컴포넌트

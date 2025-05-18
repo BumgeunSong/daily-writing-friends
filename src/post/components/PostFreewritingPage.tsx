@@ -2,11 +2,11 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { PostVisibility } from '@/post/model/Post'
 import { createPost } from '@/post/utils/postUtils'
-import { WritingStatus } from "@/stats/model/WritingStatus"
-import { useUserNickname } from '@/user/hooks/useUserNickname'
 import { useToast } from "@/shared/hooks/use-toast"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig"
+import { WritingStatus } from "@/stats/model/WritingStatus"
+import { useUserNickname } from '@/user/hooks/useUserNickname'
 import CountupWritingTimer from "./CountupWritingTimer"
 import { PostSubmitButton } from "./PostSubmitButton"
 import { PostTextEditor } from "./PostTextEditor"

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Notification, NotificationType } from '@/notification/model/Notification';
 import { usePostTitle } from '@/post/utils/postUtils';
-import { useUserNickname } from '@/user/hooks/useUserNickname';
 import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
+import { useUserNickname } from '@/user/hooks/useUserNickname';
 
 interface NotificationItemProps {
   notification: Notification;

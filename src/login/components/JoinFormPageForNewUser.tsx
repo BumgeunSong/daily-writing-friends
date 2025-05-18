@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { Board } from "@/board/model/Board"
 import { showErrorToast } from "@/login/components/showErrorToast"
 import { useUpcomingBoard } from "@/login/hooks/useUpcomingBoard"
 import { JoinFormDataForNewUser } from "@/login/model/join"
@@ -6,11 +7,10 @@ import { useToast } from "@/shared/hooks/use-toast"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"
 import { fetchUser, createUser, updateUser } from "@/user/api/user"
+import { User } from "@/user/model/User"
 import JoinCompletePage from "./JoinCompletePage"
 import JoinFormCardForNewUser from './JoinFormCardForNewUser'
 import FormHeader from "./JoinFormHeader"
-import { Board } from "@/board/model/Board"
-import { User } from "@/user/model/User"
 
 /**
  * 신규 사용자를 위한 매글프 신청 폼 페이지 컴포넌트

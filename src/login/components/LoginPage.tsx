@@ -3,11 +3,11 @@ import { Loader2 } from 'lucide-react';
 
 import { useNavigate } from 'react-router-dom';
 import { signInWithGoogle } from '@/firebase';
-import { User } from '@/user/model/User';
-import { createUser, fetchUser } from '@/user/api/user';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
+import { createUser, fetchUser } from '@/user/api/user';
+import { User } from '@/user/model/User';
 
 export default function LoginPage() {
   const { loading, redirectPathAfterLogin, setRedirectPathAfterLogin } = useAuth();

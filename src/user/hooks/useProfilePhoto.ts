@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import * as Sentry from '@sentry/react';
+import { useState } from 'react';
 import { cropAndResizeImage } from '@/post/utils/ImageUtils';
 
 export function useProfilePhoto(initialUrl: string | null) {

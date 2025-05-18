@@ -12,7 +12,7 @@ export default function UserProfile({ uid }: UserProfileProps) {
   if (isLoading) {
     return (
       <div className="flex items-center gap-4">
-        <Skeleton className="h-16 w-16 rounded-full" />
+        <Skeleton className="size-16 rounded-full" />
         <div className="space-y-2">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-3 w-40" />
@@ -31,7 +31,7 @@ export default function UserProfile({ uid }: UserProfileProps) {
 
   return (
     <div className="flex items-center gap-4">
-      <Avatar className="h-16 w-16">
+      <Avatar className="size-16">
         {userData.profilePhotoURL ? (
           <AvatarImage src={userData.profilePhotoURL} alt={`${userData.nickname}'s profile`} />
         ) : (
@@ -40,7 +40,7 @@ export default function UserProfile({ uid }: UserProfileProps) {
       </Avatar>
       <div>
         <h2 className="text-lg font-medium">{userData.nickname}</h2>
-        <p className="text-sm text-muted-foreground line-clamp-2">{userData.bio || '아직 자기소개가 없어요.'}</p>
+        <p className="line-clamp-2 text-sm text-muted-foreground">{userData.bio || '아직 자기소개가 없어요.'}</p>
       </div>
     </div>
   )

@@ -12,8 +12,8 @@ import { mapDocumentToPosting } from '@/shared/utils/postingUtils';
 import { WritingStats, Contribution, WritingBadge } from '@/stats/model/WritingStats';
 import { getDateKey } from '@/stats/utils/streakUtils';
 import { calculateCurrentStreak } from '@/stats/utils/streakUtils';
-import { User } from '@/user/model/User';
 import { fetchUser } from '@/user/api/user';
+import { User } from '@/user/model/User';
 
 export function useWritingStatsV2(userIds: string[]) {
     return useQuery({

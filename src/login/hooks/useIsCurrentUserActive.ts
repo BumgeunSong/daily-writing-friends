@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchUsersWithBoardPermission } from "@/user/api/user";
 import { useAuth } from '@/shared/hooks/useAuth';
+import { fetchUsersWithBoardPermission } from "@/user/api/user";
 import { useRemoteConfig } from "../../shared/hooks/useRemoteConfig";
 
 export function useIsCurrentUserActive() {

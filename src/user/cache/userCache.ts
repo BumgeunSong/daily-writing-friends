@@ -1,5 +1,5 @@
-import { User } from '@/user/model/User';
 import { Timestamp } from 'firebase/firestore';
+import { User } from '@/user/model/User';
 
 // localStorage에서 User 데이터 읽기
 export function getCachedUserData(uid: string): User | null {
