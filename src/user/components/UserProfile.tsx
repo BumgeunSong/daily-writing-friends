@@ -49,7 +49,7 @@ export default function UserProfile({ uid }: UserProfileProps) {
         </div>
         <p className="line-clamp-2 text-sm text-muted-foreground mt-1">
           {userData.bio ||
-            "아직 자기소개가 없어요. 아직 자기소개가 없어요. 아직 자기소개가 없어요. 아직 자기소개가 없어요."}
+            "아직 자기소개가 없어요 😅"}
         </p>
       </div>
     </div>

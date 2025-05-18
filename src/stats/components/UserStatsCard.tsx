@@ -6,14 +6,20 @@ import { WritingBadgeComponent } from "./WritingBadgeComponent"
 
 interface UserStatsCardProps {
   stats: WritingStats
+  onClick?: () => void
 }
 
-export function UserStatsCard({ stats }: UserStatsCardProps) {
+export function UserStatsCard({ stats, onClick }: UserStatsCardProps) {
     const { user, contributions } = stats
 
     return (
       <Card className="w-full">
-        <CardContent className="flex items-start gap-4 p-4">
+        <CardContent
+          className="flex items-start gap-4 p-4 cursor-pointer hover:bg-muted/40 transition"
+          onClick={onClick}
+          role={onClick ? 'button' : undefined}
+          tabIndex={onClick ? 0 : undefined}
+        >
           <div className="flex flex-1 items-start gap-4">
             <Avatar className="size-12 shrink-0">
               <AvatarImage src={user.profilePhotoURL || undefined} alt={user.nickname || "User"} />

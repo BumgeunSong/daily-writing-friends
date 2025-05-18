@@ -9,6 +9,7 @@ import { StatsNoticeBanner } from "@/stats/components/StatsNoticeBanner"
 import { UserStatsCard } from "@/stats/components/UserStatsCard"
 import { useWritingStatsV2 } from "@/stats/hooks/useWritingStatsV2"
 import { useUserInBoard } from "@/user/hooks/useUserInBoard"
+import { useNavigate } from "react-router-dom"
 
 // 통계 페이지 스크롤 영역의 고유 ID
 const STATS_SCROLL_ID = 'stats-scroll';
@@ -16,6 +17,7 @@ const STATS_SCROLL_ID = 'stats-scroll';
 export default function StatsPage() {
     usePerformanceMonitoring('StatsPage');
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
     
     // Remote Config에서 활성 게시판 ID 가져오기 (문자열로 타입 변경)
     const { 
@@ -73,7 +75,11 @@ export default function StatsPage() {
                     <StatsNoticeBanner />
                     <div className="grid grid-cols-1 gap-4 pb-20 md:grid-cols-2">
                         {writingStats?.map((stats) => (
-                            <UserStatsCard key={stats.user.id} stats={stats} />
+                            <UserStatsCard
+                              key={stats.user.id}
+                              stats={stats}
+                              onClick={() => navigate(`/user/${stats.user.id}`)}
+                            />
                         ))}
                     </div>
                 </ScrollArea>
