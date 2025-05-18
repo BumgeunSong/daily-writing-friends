@@ -21,6 +21,14 @@ interface UserPostProfileProps {
   onClickProfile: (e: React.MouseEvent) => void;
 }
 
+// 키보드 접근성: role="button"에서 Enter/Space로 클릭 지원
+function handleKeyDown(e: React.KeyboardEvent, onClick: (e: any) => void) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    onClick(e);
+  }
+}
+
 const UserPostProfile: React.FC<UserPostProfileProps> = ({ authorData, isLoading, onClickProfile }) => (
   <div className="flex items-center">
     {isLoading ? (
@@ -32,6 +40,7 @@ const UserPostProfile: React.FC<UserPostProfileProps> = ({ authorData, isLoading
         role="button"
         tabIndex={0}
         aria-label="작성자 프로필로 이동"
+        onKeyDown={e => handleKeyDown(e, onClickProfile)}
       >
         <AvatarImage src={authorData?.profilePhotoURL || ""} alt={authorData?.realName || "User"} />
         <AvatarFallback>
@@ -49,6 +58,7 @@ const UserPostProfile: React.FC<UserPostProfileProps> = ({ authorData, isLoading
           role="button"
           tabIndex={0}
           aria-label="작성자 프로필로 이동"
+          onKeyDown={e => handleKeyDown(e, onClickProfile)}
         >
           {authorData?.nickname || "알 수 없음"}
         </p>
@@ -98,6 +108,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) =>
         role="button"
         tabIndex={0}
         aria-label="게시글 상세로 이동"
+        onKeyDown={e => handleKeyDown(e, handleCardClick)}
       >
         {!isPrivate && contentPreview && (
           <div
@@ -124,6 +135,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) =>
         role="button"
         tabIndex={0}
         aria-label="게시글 상세로 이동"
+        onKeyDown={e => handleKeyDown(e, handleCardClick)}
       >
         <div className="flex items-center text-muted-foreground">
           <MessageCircle className="mr-1 size-4" />
