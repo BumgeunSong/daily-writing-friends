@@ -1,6 +1,6 @@
 import { Camera, Loader2 } from 'lucide-react';
-import { useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useRef, useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
@@ -11,21 +11,30 @@ import { Textarea } from '@/shared/ui/textarea';
 import { useNickname } from '@/user/hooks/useNickName';
 import { useProfilePhoto } from '@/user/hooks/useProfilePhoto';
 import { useUpdateUserData } from '@/user/hooks/useUpdateUserData';
-import { User } from '@/user/model/User';
+import { useUser } from '@/user/hooks/useUser';
+import StatusMessage from '@/shared/components/StatusMessage';
 
 export default function EditAccountPage() {
-  const location = useLocation();
+  const { userId } = useParams();
   const navigate = useNavigate();
 
-  const userData = location.state?.userData as User;
-  const { nickname, handleNicknameChange } = useNickname(userData?.nickname || '');
-  const { profilePhotoFile, currentProfilePhotoURL, handleProfilePhotoChange } = useProfilePhoto(userData?.profilePhotoURL);
+  if (!userId) {
+    return <StatusMessage errorMessage="유저 정보를 찾을 수 없습니다." />
+  }
+
+  const { userData, isLoading: isLoadingUser } = useUser(userId);
+  const { nickname, handleNicknameChange } = userData ? useNickname(userData.nickname || '') : { nickname: '', handleNicknameChange: () => {} };
+  const { profilePhotoFile, currentProfilePhotoURL, handleProfilePhotoChange } = userData ? useProfilePhoto(userData.profilePhotoURL || null) : { profilePhotoFile: null, currentProfilePhotoURL: '', handleProfilePhotoChange: () => {} };
   const [bio, setBio] = useState(userData?.bio || '');
   const profilePhotoFileRef = useRef<HTMLInputElement>(null);
-  const { mutateAsync, isLoading } = useUpdateUserData();
+  const { mutateAsync, isLoading: isLoadingUpdate } = useUpdateUserData();
+
+  useEffect(() => {
+    setBio(userData?.bio || '');
+  }, [userData?.bio]);
 
   const showProfilePhotoChangeButton = () => {
-    !isLoading && profilePhotoFileRef.current?.click();
+    !isLoadingUser && profilePhotoFileRef.current?.click();
   }
   
   const handleBioChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -38,20 +47,18 @@ export default function EditAccountPage() {
     e.preventDefault();
     try {
       await mutateAsync({
-        userId: userData?.uid,
+        userId: userData?.uid || '',
         nickname,
         profilePhotoFile,
         bio,
       });
-      if (location.state?.from === 'userProfile') {
-        navigate(`/user/${userData?.uid}`);
-      } else {
-        navigate('/account');
-      }
+      navigate(-1)
     } catch (err) {
       // 에러는 useUpdateUserData에서 처리됨
     }
   };
+
+  const isLoading = isLoadingUser || isLoadingUpdate;
 
   return (
     <div className='relative flex min-h-screen items-start justify-center bg-gray-50 p-4'>
@@ -126,11 +133,7 @@ export default function EditAccountPage() {
               type='button'
               variant='outline'
               className='w-full'
-              onClick={() => 
-                location.state?.from === 'userProfile' 
-                  ? navigate(`/user/${userData?.uid}`) 
-                  : navigate('/account')
-              }
+              onClick={() => navigate(-1)}
               disabled={isLoading}
             >
               취소

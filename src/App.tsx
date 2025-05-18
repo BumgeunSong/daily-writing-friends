@@ -65,7 +65,7 @@ export default function App() {
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/notifications/settings" element={<NotificationSettingPage />} />
         <Route path="/account" element={<LegacyAccountPage />} />
-        <Route path="/account/edit" element={<EditAccountPage />} />
+        <Route path="/account/edit/:userId" element={<EditAccountPage />} />
         <Route path="/stats" element={<StatsPage />} />
         <Route path="/user/:userId" element={<UserPage />} />
         <Route path="/user/settings" element={<UserSettingPage />} />

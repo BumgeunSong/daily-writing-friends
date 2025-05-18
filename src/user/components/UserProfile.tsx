@@ -6,15 +6,14 @@ import { useNavigate } from "react-router-dom"
 import { Edit } from "lucide-react"
 import { Button } from "@/shared/ui/button"
 
+
+
 interface UserProfileProps {
   uid: string
 }
 
 export default function UserProfile({ uid }: UserProfileProps) {
   const { userData, isLoading } = useUser(uid)
-  const { currentUser } = useAuth()
-  const navigate = useNavigate()
-  const isCurrentUser = currentUser?.uid === uid
 
   if (isLoading) {
     return (
@@ -48,17 +47,7 @@ export default function UserProfile({ uid }: UserProfileProps) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-medium">{userData.nickname}</h2>
-          {isCurrentUser && (
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="설정"
-              className="ml-2 shrink-0"
-              onClick={() => navigate("/user/settings")}
-            >
-              <Edit className="size-5 text-muted-foreground" />
-            </Button>
-          )}
+          <UserProfileSettingsButton uid={uid} />
         </div>
         <p className="line-clamp-2 text-sm text-muted-foreground mt-1">
           {userData.bio ||
@@ -66,5 +55,23 @@ export default function UserProfile({ uid }: UserProfileProps) {
         </p>
       </div>
     </div>
+  )
+}
+
+// 설정 버튼 분리 컴포넌트
+function UserProfileSettingsButton({ uid }: { uid: string }) {
+  const { currentUser } = useAuth()
+  const navigate = useNavigate()
+  if (currentUser?.uid !== uid) return null
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      aria-label="설정"
+      className="ml-2 shrink-0"
+      onClick={() => navigate(`/account/edit/${uid}`)}
+    >
+      <Edit className="size-5 text-muted-foreground" />
+    </Button>
   )
 }
