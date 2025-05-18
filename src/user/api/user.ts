@@ -71,8 +71,15 @@ export async function uploadUserProfilePhoto(userId: string, file: File): Promis
     return getDownloadURL(storageRef);
 }
 
-// User가 없으면 생성하는 함수 (존재하면 아무것도 안 함)
-// Auth에서 로그인된 유저가 Firestore에도 존재해야할 때 사용
+
+/**
+ * Firestore에 User가 없으면 생성하는 함수입니다. 
+ * 이미 존재하는 경우 아무 작업도 수행하지 않습니다.
+ * 이 함수는 Auth에서 로그인된 유저(FirebaseUser)가 Firestore의 Users 컬렉션에도 존재해야 할 때 사용됩니다.
+ *
+ * @param {FirebaseUser} user - Firebase 인증을 통해 로그인된 사용자 객체입니다.
+ * @returns {Promise<void>} - 작업이 완료되면 반환되는 프로미스입니다.
+ */
 export async function createUserIfNotExists(user: FirebaseUser): Promise<void> {
     const existing = await fetchUser(user.uid);
     if (!existing) {
@@ -90,7 +97,7 @@ export async function createUserIfNotExists(user: FirebaseUser): Promise<void> {
             phoneNumber: null,
             referrer: null,
             boardPermissions: {
-                'rW3Y3E2aEbpB0KqGiigd': 'read', // default board id
+                'rW3Y3E2aEbpB0KqGiigd': 'read', // 기본 보드 ID
             },
             updatedAt: Timestamp.now(),
         }
