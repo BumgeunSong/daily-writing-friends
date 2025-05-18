@@ -6,11 +6,11 @@ import { useToast } from "@/shared/hooks/use-toast"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"  
 import { addReviewToBoard } from "@/shared/utils/reviewUtils"
-import { useUserNickname } from "@/shared/utils/userUtils"
+import { useUserNickname } from "@/user/utils/userUtils"
 import JoinCompletePage from "./JoinCompletePage"
 import JoinFormCardForActiveUser from "./JoinFormCardForActiveUser"
 import FormHeader from "./JoinFormHeader"
-import { Board } from "@/types/Board"
+import { Board } from "@/board/model/Board"
 
 /**
  * 기존 사용자를 위한 매글프 신청 폼 페이지 컴포넌트

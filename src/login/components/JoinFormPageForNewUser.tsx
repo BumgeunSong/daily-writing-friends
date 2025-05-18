@@ -5,12 +5,12 @@ import { JoinFormDataForNewUser } from "@/login/model/join"
 import { useToast } from "@/shared/hooks/use-toast"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"
-import { updateUserData, fetchUserData, createUserData } from "@/shared/utils/userUtils"
+import { updateUserData, fetchUserData, createUserData } from "@/user/utils/userUtils"
 import JoinCompletePage from "./JoinCompletePage"
 import JoinFormCardForNewUser from './JoinFormCardForNewUser'
 import FormHeader from "./JoinFormHeader"
-import { Board } from "@/types/Board"
-import { User } from "@/types/User"
+import { Board } from "@/board/model/Board"
+import { User } from "@/user/model/User"
 
 /**
  * 신규 사용자를 위한 매글프 신청 폼 페이지 컴포넌트
