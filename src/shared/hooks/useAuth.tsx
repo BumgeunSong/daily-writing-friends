@@ -1,5 +1,5 @@
 // src/contexts/AuthContext.tsx
-import { User } from 'firebase/auth';
+import { User as FirebaseUser } from 'firebase/auth';
 import React, { useContext, useState, useEffect, createContext } from 'react';
 
 import { auth } from '@/firebase';
@@ -22,7 +22,7 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(() => {
     const storedUser = localStorage.getItem('currentUser');
     return storedUser ? JSON.parse(storedUser) : null;
   });

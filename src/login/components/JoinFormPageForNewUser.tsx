@@ -6,8 +6,7 @@ import { JoinFormDataForNewUser } from "@/login/model/join"
 import { useToast } from "@/shared/hooks/use-toast"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"
-import { fetchUser, createUser, updateUser } from "@/user/api/user"
-import { User } from "@/user/model/User"
+import { updateUser, createUserIfNotExists } from "@/user/api/user"
 import JoinCompletePage from "./JoinCompletePage"
 import JoinFormCardForNewUser from './JoinFormCardForNewUser'
 import FormHeader from "./JoinFormHeader"
@@ -85,35 +84,16 @@ export async function submitNewUserJoin(params: {
             throw new Error("사용자 정보를 찾을 수 없습니다. 로그인 상태를 확인해주세요.");
         }
 
-        // 사용자 정보 작성을 위한 데이터
-        const userData = {
+        await createUserIfNotExists(currentUser);
+
+        const submittedDataByUser = {
             realName: data.name,
             phoneNumber: data.phoneNumber,
-            nickname: data.nickname || null,
-            referrer: data.referrer || null
+            nickname: data.nickname,
+            referrer: data.referrer,
         };
 
-        // Firestore에서 사용자 문서 확인
-        const existingUser = await fetchUser(currentUser.uid);
-        
-        if (existingUser) {
-            // 기존 사용자가 있으면 업데이트
-            await updateUser(currentUser.uid, userData);
-        } else {
-            // 기존 사용자가 없으면 새로 생성
-            const newUser: User = {
-                uid: currentUser.uid,
-                email: currentUser.email || null,
-                profilePhotoURL: currentUser.photoURL || null,
-                bio: null,
-                boardPermissions: {
-                    'rW3Y3E2aEbpB0KqGiigd': 'read', // default board id
-                },
-                ...userData,
-                updatedAt: null,
-            };
-            await createUser(newUser);
-        }
+        await updateUser(currentUser.uid, submittedDataByUser);
 
         // 대기자 명단에 추가
         const result = await addUserToBoardWaitingList(upcomingBoard.id, currentUser.uid);
