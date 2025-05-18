@@ -5,6 +5,8 @@
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, collection, getDocs, where, query } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { User } from '@/user/model/User';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '@/firebase';
 
 // Firestore에서 User 데이터 읽기
 export async function fetchUserFromFirestore(uid: string): Promise<User | null> {
@@ -60,4 +62,11 @@ export async function fetchUsersWithBoardPermission(boardIds: string[]): Promise
     console.error('Error fetching users with board permission:', error);
     return [];
   }
+}
+
+// 프로필 사진 업로드 및 URL 반환
+export async function uploadUserProfilePhoto(userId: string, file: File): Promise<string> {
+  const storageRef = ref(storage, `profilePhotos/${userId}`);
+  await uploadBytes(storageRef, file);
+  return getDownloadURL(storageRef);
 }

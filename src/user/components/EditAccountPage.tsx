@@ -22,8 +22,7 @@ export default function EditAccountPage() {
   const { profilePhotoFile, currentProfilePhotoURL, handleProfilePhotoChange } = useProfilePhoto(userData?.profilePhotoURL);
   const [bio, setBio] = useState(userData?.bio || '');
   const profilePhotoFileRef = useRef<HTMLInputElement>(null);
-  
-  const { onSubmit, isLoading } = useUpdateUserData(userData?.uid, nickname, profilePhotoFile, bio);
+  const { mutate, isLoading } = useUpdateUserData();
 
   const showProfilePhotoChangeButton = () => {
     !isLoading && profilePhotoFileRef.current?.click();
@@ -38,7 +37,12 @@ export default function EditAccountPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    onSubmit(e);
+    mutate({
+      userId: userData?.uid,
+      nickname,
+      profilePhotoFile,
+      bio,
+    });
     
     if (location.state?.from === 'userProfile') {
       navigate(`/user/${userData?.uid}`);
