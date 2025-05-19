@@ -58,10 +58,7 @@ export default function PostCreationPage() {
 
   return (
     <div className='mx-auto max-w-4xl px-6 py-8 sm:px-8 lg:px-12'>
-      <div className="mb-6">
-        <PostBackButton />
-      </div>
-      
+        <PostBackButton className='mb-2' />
       {/* draftId가 있을 때만 로딩 상태 표시 */}
       {draftId && isDraftLoading ? (
         <div className="flex items-center justify-center py-8">
