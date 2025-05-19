@@ -41,6 +41,7 @@ const PostTitleEditor = React.forwardRef<
         className,
       )}
       rows={1}
+      maxLength={100}
       {...props}
     />
   );
