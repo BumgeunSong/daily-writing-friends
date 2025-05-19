@@ -3,7 +3,7 @@ import { Share } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from '@/shared/ui/button';
 import { formatDateToKorean } from '@/shared/utils/dateUtils';
-import { PostVisibility } from '@post/model/Post';
+import { PostVisibility } from '@/post/model/Post';
 
 // 헤더 UI
 export function PostDetailHeader({
@@ -40,7 +40,7 @@ export function PostDetailHeader({
     return (
       <header className='space-y-4'>
         <div className="flex items-center gap-2">
-          <h1 className='mb-4 text-4xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl'>
+          <h1 className='mb-4 text-2xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-5xl'>
             {post.title}
           </h1>
         </div>
