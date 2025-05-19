@@ -112,7 +112,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
 
   return (
     <div className='mx-auto max-w-4xl px-6 py-8 sm:px-8 lg:px-12'>
-      <PostBackButton className='mb-6' />
+      <PostBackButton className='mb-2' />
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader className='flex flex-col space-y-2'>
