@@ -17,12 +17,16 @@ const quillStyles = `
   font-size: 1.125rem;
   line-height: 1.75;
   min-height: 300px;
+  width: 100%;
+  max-width: none;
 }
 
 .ql-editor {
   padding: 1.5rem;
   color: hsl(var(--foreground));
   background-color: hsl(var(--background));
+  width: 100%;
+  max-width: none;
 }
 
 .ql-editor p {
@@ -182,8 +186,8 @@ export function PostTextEditor({
   }, []);
 
   return (
-    <div className='relative space-y-2'>
-      <div className='rounded-lg border border-border bg-background'>
+    <div className='relative space-y-2 w-full'>
+      <div className='rounded-lg border border-border bg-background w-full'>
         <ReactQuill
           ref={quillRef}
           value={value}
@@ -192,7 +196,7 @@ export function PostTextEditor({
           theme="snow"
           modules={modules}
           formats={formats}
-          className="prose prose-lg prose-slate dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold"
+          className="prose prose-lg prose-slate dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold max-w-none w-full"
         />
       </div>
       
