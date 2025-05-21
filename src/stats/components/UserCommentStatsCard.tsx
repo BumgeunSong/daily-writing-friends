@@ -1,15 +1,14 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar'
 import { Card, CardContent } from '@/shared/ui/card'
-import { WritingStats } from "@/stats/model/WritingStats"
+import { UserCommentingStats } from "@/stats/hooks/useCommentingStats"
 import { ContributionGraph } from "./ContributionGraph"
-import { WritingBadgeComponent } from "./WritingBadgeComponent"
 
-interface UserStatsCardProps {
-  stats: WritingStats
+interface UserCommentStatsCardProps {
+  stats: UserCommentingStats
   onClick?: () => void
 }
 
-export function UserStatsCard({ stats, onClick }: UserStatsCardProps) {
+export function UserCommentStatsCard({ stats, onClick }: UserCommentStatsCardProps) {
     const { user, contributions } = stats
 
     return (
@@ -29,15 +28,12 @@ export function UserStatsCard({ stats, onClick }: UserStatsCardProps) {
               <h3 className="truncate font-semibold">
                 {user.nickname || user.realname || "Anonymous"}
               </h3>
-              <div className="flex flex-wrap gap-1">
-                {stats.badges.map((badge) => (
-                  <WritingBadgeComponent key={badge.name} badge={badge} />
-                ))}
-              </div>
+              {/* bio 등 추가 정보 필요시 여기에 */}
             </div>
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2">
             <ContributionGraph 
+              type="commenting"
               contributions={contributions} 
               className="w-24"
             />
@@ -45,4 +41,4 @@ export function UserStatsCard({ stats, onClick }: UserStatsCardProps) {
         </CardContent>
       </Card>
     )
-  }
+  } 

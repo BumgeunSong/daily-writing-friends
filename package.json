@@ -74,6 +74,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.52.0",
     "@rollup/plugin-replace": "^6.0.1",
     "@tanstack/eslint-plugin-query": "^4.38.0",
     "@types/canvas-confetti": "^1.9.0",

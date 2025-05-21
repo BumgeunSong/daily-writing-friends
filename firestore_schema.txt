@@ -58,7 +58,6 @@ Firestore Database Schema
       - comment.id (string)
       - createdAt (Timestamp)
 
-
   - replyings
     - Document ID: {replyingId}
     - Fields:

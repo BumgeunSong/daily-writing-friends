@@ -1,9 +1,11 @@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/tooltip"
 import { cn } from "@/shared/utils/cn"
 import { Contribution } from "@/stats/model/WritingStats"
+import { CommentingContribution } from '@/stats/utils/commentingContributionUtils'
 
+// Contribution | CommentingContribution 모두 지원
 interface ContributionItemProps {
-    contribution?: Contribution
+    contribution?: Contribution | CommentingContribution
     value: number | null
     maxValue: number
 }

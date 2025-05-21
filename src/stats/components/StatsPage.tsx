@@ -1,15 +1,18 @@
 import { useQueryClient } from "@tanstack/react-query"
-import { useCallback } from "react"
+import { useCallback, useState } from "react"
 import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
 import { usePerformanceMonitoring } from "@/shared/hooks/usePerformanceMonitoring"
 import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig"
 import { ScrollArea } from "@/shared/ui/scroll-area"
 import StatsHeader from "@/stats/components/StatsHeader"
 import { StatsNoticeBanner } from "@/stats/components/StatsNoticeBanner"
-import { UserStatsCard } from "@/stats/components/UserStatsCard"
 import { useWritingStatsV2 } from "@/stats/hooks/useWritingStatsV2"
 import { useUserInBoard } from "@/user/hooks/useUserInBoard"
 import { useNavigate } from "react-router-dom"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs"
+import { useCommentingStats } from "@/stats/hooks/useCommentingStats"
+import { UserPostingStatsCardList } from "@/stats/components/UserPostingStatsCardList"
+import { UserCommentStatsCardList } from "@/stats/components/UserCommentStatsCardList"
 
 // 통계 페이지 스크롤 영역의 고유 ID
 const STATS_SCROLL_ID = 'stats-scroll';
@@ -18,6 +21,7 @@ export default function StatsPage() {
     usePerformanceMonitoring('StatsPage');
     const queryClient = useQueryClient();
     const navigate = useNavigate();
+    const [tab, setTab] = useState<'posting' | 'commenting'>('posting');
     
     // Remote Config에서 활성 게시판 ID 가져오기 (문자열로 타입 변경)
     const { 
@@ -42,6 +46,14 @@ export default function StatsPage() {
     } = useWritingStatsV2(
         activeUsers.map((user: any) => user.uid)
     );
+
+    const { 
+        data: commentingStats, 
+        isLoading: isLoadingCommenting, 
+        error: commentingError 
+    } = useCommentingStats(
+        activeUsers.map((user: any) => user.uid)
+    );
     
     // 통계 새로고침 핸들러
     const handleRefreshStats = useCallback(() => {
@@ -50,14 +62,15 @@ export default function StatsPage() {
         // 2. 통계 관련 쿼리 캐시 무효화
         queryClient.invalidateQueries(['activeUsers', activeBoardId]);
         queryClient.invalidateQueries(['writingStatsV2']);
+        queryClient.invalidateQueries(['commentingStats']);
         
     }, [queryClient, activeBoardId]);
     
     // Stats 탭 핸들러 등록
     useRegisterTabHandler('Stats', handleRefreshStats);
     
-    const isLoading = isLoadingConfig || isLoadingUsers || isLoadingStats;
-    const error = configError || usersError || statsError;
+    const isLoading = isLoadingConfig || isLoadingUsers || (tab === 'posting' ? isLoadingStats : isLoadingCommenting);
+    const error = configError || usersError || (tab === 'posting' ? statsError : commentingError);
     
     if (isLoading) {
         return <LoadingState />
@@ -73,15 +86,24 @@ export default function StatsPage() {
             <main className="container flex-1 p-4">
                 <ScrollArea className="h-full" id={STATS_SCROLL_ID}>
                     <StatsNoticeBanner />
-                    <div className="grid grid-cols-1 gap-4 pb-20 md:grid-cols-2">
-                        {writingStats?.map((stats) => (
-                            <UserStatsCard
-                              key={stats.user.id}
-                              stats={stats}
-                              onClick={() => navigate(`/user/${stats.user.id}`)}
+                    <Tabs value={tab} onValueChange={v => setTab(v as 'posting' | 'commenting')}>
+                        <TabsList>
+                            <TabsTrigger value="posting">글쓰기</TabsTrigger>
+                            <TabsTrigger value="commenting">댓글·답글</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="posting">
+                            <UserPostingStatsCardList 
+                                stats={writingStats || []} 
+                                onCardClick={userId => navigate(`/user/${userId}`)}
                             />
-                        ))}
-                    </div>
+                        </TabsContent>
+                        <TabsContent value="commenting">
+                            <UserCommentStatsCardList 
+                                stats={commentingStats || []} 
+                                onCardClick={userId => navigate(`/user/${userId}`)}
+                            />
+                        </TabsContent>
+                    </Tabs>
                 </ScrollArea>
             </main>
         </div>
