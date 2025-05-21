@@ -2,24 +2,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar'
 import { Card, CardContent } from '@/shared/ui/card'
 import { UserCommentingStats } from "@/stats/hooks/useCommentingStats"
 import { ContributionGraph } from "./ContributionGraph"
-import { Contribution } from '@/stats/model/WritingStats'
 
 interface UserCommentStatsCardProps {
   stats: UserCommentingStats
   onClick?: () => void
 }
 
-// CommentingContribution[] -> Contribution[] 변환
-function toContributionArray(commenting: { createdAt: string; countOfCommentAndReplies: number | null }[]): Contribution[] {
-  return commenting.map(c => ({
-    createdAt: c.createdAt,
-    contentLength: c.countOfCommentAndReplies
-  }))
-}
-
 export function UserCommentStatsCard({ stats, onClick }: UserCommentStatsCardProps) {
     const { user, contributions } = stats
-    const postingContributions = toContributionArray(contributions)
 
     return (
       <Card className="w-full">
@@ -43,7 +33,8 @@ export function UserCommentStatsCard({ stats, onClick }: UserCommentStatsCardPro
           </div>
           <div className="flex shrink-0 flex-col items-end gap-2">
             <ContributionGraph 
-              contributions={postingContributions} 
+              type="commenting"
+              contributions={contributions} 
               className="w-24"
             />
           </div>
