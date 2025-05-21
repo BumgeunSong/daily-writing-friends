@@ -1,7 +1,7 @@
 import MockCommentRow from '../../shared/components/MockCommentRow'
 import { mockUserStats } from '../../shared/components/mockUserStats'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../shared/ui/card'
-import { UserStatsCard } from '../../stats/components/UserStatsCard'
+import { UserPostingStatsCard } from '../../stats/components/UserPostingStatsCard'
 
 export default function GoalSection() {
   return (
@@ -29,7 +29,7 @@ export default function GoalSection() {
           </p>
         </CardContent>
         <CardFooter>
-          <UserStatsCard stats={mockUserStats} />
+          <UserPostingStatsCard stats={mockUserStats} />
         </CardFooter>
       </Card>
 
