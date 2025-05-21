@@ -33,7 +33,7 @@ export function useUpdateUserData() {
       }
 
       await updateUser(userId, updates);
-
+      
       if (currentUser && currentUser.uid === userId) {
         await updateProfile(currentUser, { displayName: nickname });
       }

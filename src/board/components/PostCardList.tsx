@@ -80,10 +80,10 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
   return (
     <div className='space-y-6'>
       {allPosts.map((post) => (
-        <PostCard
-          key={post.id}
-          post={post}
-          onClick={() => handlePostClick(post.id)}
+        <PostCard 
+          key={post.id} 
+          post={post} 
+          onClick={() => handlePostClick(post.id)} 
           onClickProfile={onClickProfile}
         />
       ))}

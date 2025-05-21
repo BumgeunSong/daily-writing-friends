@@ -16,6 +16,6 @@ export function PostBackButton({ className }: PostBackButtonProps) {
       aria-label="뒤로가기"
     >
       <ChevronLeft className='size-4' />
-    </Button>
+      </Button>
   );
 }

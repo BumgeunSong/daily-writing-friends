@@ -1,0 +1,76 @@
+<context>
+# Overview  
+DailyWritingFriends의 통계 페이지에 "댓글/답글" 통계 탭을 추가합니다.  
+이 기능은 각 사용자의 댓글 및 답글 활동량을 시각적으로 보여주어, 커뮤니티 내 활발한 소통을 장려하고, 자신의 활동 패턴을 쉽게 파악할 수 있도록 합니다.
+
+# Core Features  
+- **댓글/답글 통계 탭**
+  - 각 사용자의 최근 28일간 댓글/답글 작성량을 시각화(그래프)로 보여줌
+  - 일별 댓글+답글 수를 집계하여, 활동 패턴을 한눈에 확인 가능
+  - 기존 "글쓰기" 통계와 동일한 UI/UX, 탭 전환 방식 제공
+- **UserCommentStatsCard 컴포넌트**
+  - 각 유저별로 닉네임, 프로필, 일별 댓글/답글 수 그래프를 카드 형태로 표시
+  - 그래프 스타일은 기존 글쓰기 통계와 동일(최대값 기준 색상 강도 조절)
+- **탭 UI**
+  - shadcn UI의 TabBar 컴포넌트 사용
+  - "글쓰기", "댓글/답글" 두 개의 탭 제공, 각 탭별로 해당 통계만 노출
+
+# User Experience  
+- **대상 사용자**: 활성 게시판 권한이 있는 모든 사용자
+- **주요 플로우**:
+  1. 사용자가 통계 페이지에 진입
+  2. 상단 탭에서 "글쓰기" 또는 "댓글/답글" 선택
+  3. 각 탭에서 유저별 활동량(그래프) 및 기본 정보(닉네임, 프로필 등) 확인
+- **UI/UX 고려사항**:
+  - 모바일 퍼스트, 반응형 디자인
+  - 각 카드 클릭 시 해당 유저 상세 페이지로 이동
+  - 로딩/에러 상태 명확하게 표시
+
+</context>
+<PRD>
+# Technical Architecture  
+- **System Components**
+  - React + TypeScript + Vite + shadcn UI + Tailwind CSS
+  - React Query로 데이터 fetch/caching
+- **Data Models**
+  - `PostingContribution`: `{ createdAt: string, contentLength: number | null }`
+  - `CommentingContribution`: `{ createdAt: string, countOfCommentAndReplies: number | null }`
+- **APIs and Integrations**
+  - Firestore: `/users/{userId}/commentings`, `/users/{userId}/replyings` 서브컬렉션에서 데이터 fetch
+  - **commentingContributions는 Firestore에 저장하지 않으며, commentings/replyings를 fetch 후 클라이언트에서 집계**
+  - 기존 `/users/{userId}/postings`와 동일한 방식으로 집계
+- **Infrastructure Requirements**
+  - 기존 인프라와 동일, 추가 요구사항 없음
+
+# Development Roadmap  
+- **MVP**
+  1. 댓글/답글 통계 데이터 fetch 로직 구현 (commentings/replyings만 fetch, client-side 집계)
+  2. `CommentingContribution` 타입 및 집계 함수 구현
+  3. `UserCommentStatsCard` 컴포넌트 구현 (기존 스타일 재사용)
+  4. shadcn UI TabBar 적용, 탭별로 데이터 분리 표시
+  5. 통계 페이지에 탭 및 카드 컴포넌트 통합
+- **Future Enhancements**
+  - streak, badge, 랭킹 등 추가
+  - 댓글/답글 길이, 활동 시간대 등 세부 통계 추가
+  - 성능 최적화(페이징, lazy loading 등)
+
+# Logical Dependency Chain
+- 1) 댓글/답글 데이터 모델 및 집계 함수 구현
+- 2) 데이터 fetch hook 구현
+- 3) 카드 컴포넌트 구현
+- 4) 탭 UI 및 통계 페이지 통합
+- 5) QA 및 UI/UX 개선
+
+# Risks and Mitigations  
+- **댓글/답글 데이터 누락/불일치**: Firestore 구조가 일관되지 않을 경우, 집계 로직에서 예외 처리 필요
+- **대용량 데이터 fetch로 인한 성능 저하**: MVP에서는 무시, 추후 최적화 예정
+- **UI/UX 불일치**: 기존 컴포넌트 스타일을 최대한 재사용하여 일관성 유지
+
+# Appendix  
+- **참고 파일**
+  - `example_prd.txt` (PRD 포맷)
+  - `ContributionGraph.tsx`, `ContributionItem.tsx` (그래프 스타일)
+  - `Commenting.ts`, `Replying.ts` (데이터 모델)
+- **기타**
+  - 향후 badge, streak 등 확장 고려
+</PRD> 
