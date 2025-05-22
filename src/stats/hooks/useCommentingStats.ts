@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchUserCommentings, fetchUserReplyings } from '@/user/api/commenting';
+import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
 import { fetchUser } from '@/user/api/user';
 import { aggregateCommentingContributions, CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
@@ -18,12 +18,15 @@ export type UserCommentingStats = {
 async function fetchMultipleUserCommentingStats(userIds: string[]): Promise<UserCommentingStats[]> {
   if (!userIds.length) return [];
   const workingDays = getRecentWorkingDays();
+  const start = workingDays[0];
+  const end = new Date(workingDays[workingDays.length - 1]);
+  end.setHours(23, 59, 59, 999); // 마지막 날의 끝까지 포함
 
   const statsPromises = userIds.map(async (userId) => {
     const [user, commentings, replyings] = await Promise.all([
       fetchUser(userId),
-      fetchUserCommentings(userId),
-      fetchUserReplyings(userId),
+      fetchUserCommentingsByDateRange(userId, start, end),
+      fetchUserReplyingsByDateRange(userId, start, end),
     ]);
     if (!user) return null;
     return {
