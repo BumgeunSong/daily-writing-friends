@@ -13,6 +13,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs"
 import { useCommentingStats } from "@/stats/hooks/useCommentingStats"
 import { UserPostingStatsCardList } from "@/stats/components/UserPostingStatsCardList"
 import { UserCommentStatsCardList } from "@/stats/components/UserCommentStatsCardList"
+import React from "react"
+import { Loader2 } from "lucide-react"
 
 // 통계 페이지 스크롤 영역의 고유 ID
 const STATS_SCROLL_ID = 'stats-scroll';
@@ -87,22 +89,36 @@ export default function StatsPage() {
                 <ScrollArea className="h-full" id={STATS_SCROLL_ID}>
                     <StatsNoticeBanner />
                     <Tabs value={tab} onValueChange={v => setTab(v as 'posting' | 'commenting')}>
-                        <TabsList>
-                            <TabsTrigger value="posting">글쓰기</TabsTrigger>
-                            <TabsTrigger value="commenting">댓글·답글</TabsTrigger>
+                        <TabsList className="w-full flex justify-between mb-4 rounded-lg bg-muted">
+                            <TabsTrigger value="posting" className="flex-1 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg text-base p-2">글쓰기</TabsTrigger>
+                            <TabsTrigger
+                                value="commenting"
+                                className="flex-1 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg text-base p-2 flex items-center justify-center gap-2"
+                            >
+                                댓글·답글
+                                {isLoadingCommenting && (
+                                    <Loader2 className="ml-1 h-4 w-4 animate-spin text-muted-foreground" />
+                                )}
+                            </TabsTrigger>
                         </TabsList>
-                        <TabsContent value="posting">
-                            <UserPostingStatsCardList 
+                        <div className="mt-4">
+                          <TabsContent value="posting">
+                            <React.Suspense fallback={<LoadingState />}>
+                              <UserPostingStatsCardList 
                                 stats={writingStats || []} 
                                 onCardClick={userId => navigate(`/user/${userId}`)}
-                            />
-                        </TabsContent>
-                        <TabsContent value="commenting">
-                            <UserCommentStatsCardList 
+                              />
+                            </React.Suspense>
+                          </TabsContent>
+                          <TabsContent value="commenting">
+                            <React.Suspense fallback={<LoadingState />}>
+                              <UserCommentStatsCardList 
                                 stats={commentingStats || []} 
                                 onCardClick={userId => navigate(`/user/${userId}`)}
-                            />
-                        </TabsContent>
+                              />
+                            </React.Suspense>
+                          </TabsContent>
+                        </div>
                     </Tabs>
                 </ScrollArea>
             </main>
