@@ -3,14 +3,12 @@ import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext
 import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig"
 import { useWritingStatsV2 } from "@/stats/hooks/useWritingStatsV2"
 import { useUserInBoard } from "@/user/hooks/useUserInBoard"
-import { useNavigate } from "react-router-dom"
 import { useCommentingStats } from "@/stats/hooks/useCommentingStats"
 
 type TabType = 'posting' | 'commenting';
 
 export function useStatsPageData(tab: TabType) {
     const queryClient = useQueryClient();
-    const navigate = useNavigate();
     
     // Remote Config에서 활성 게시판 ID 가져오기
     const { 
