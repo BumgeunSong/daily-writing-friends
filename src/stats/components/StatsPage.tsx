@@ -1,78 +1,47 @@
-import { useQueryClient } from "@tanstack/react-query"
-import { useCallback, useState } from "react"
-import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
+import { useState } from "react"
 import { usePerformanceMonitoring } from "@/shared/hooks/usePerformanceMonitoring"
-import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig"
 import { ScrollArea } from "@/shared/ui/scroll-area"
 import StatsHeader from "@/stats/components/StatsHeader"
 import { StatsNoticeBanner } from "@/stats/components/StatsNoticeBanner"
-import { useWritingStatsV2 } from "@/stats/hooks/useWritingStatsV2"
-import { useUserInBoard } from "@/user/hooks/useUserInBoard"
-import { useNavigate } from "react-router-dom"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs"
-import { useCommentingStats } from "@/stats/hooks/useCommentingStats"
+import { useStatsPageData } from "@/stats/hooks/useStatsPageData"
 import { UserPostingStatsCardList } from "@/stats/components/UserPostingStatsCardList"
 import { UserCommentStatsCardList } from "@/stats/components/UserCommentStatsCardList"
 import React from "react"
 import { Loader2 } from "lucide-react"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs"
+import { useNavigate } from "react-router-dom"
 
 // 통계 페이지 스크롤 영역의 고유 ID
 const STATS_SCROLL_ID = 'stats-scroll';
 
+type TabType = 'posting' | 'commenting';
+
+/**
+ * Custom hook to fetch and manage data for the stats page.
+ * 
+ * @param {TabType} tab - The active tab type, either 'posting' or 'commenting'.
+ * @returns {Object} An object containing:
+ *   - activeUsers: Array of active users in the board.
+ *   - writingStats: Statistics related to user postings.
+ *   - commentingStats: Statistics related to user comments.
+ *   - isLoading: Boolean indicating if data is still loading.
+ *   - error: Any error encountered during data fetching.
+ *   - handleRefreshStats: Function to refresh the stats data.
+ *   - navigate: Function to navigate between routes.
+ *   - isLoadingCommenting: Boolean indicating if commenting stats are loading.
+ */
 export default function StatsPage() {
     usePerformanceMonitoring('StatsPage');
-    const queryClient = useQueryClient();
     const navigate = useNavigate();
-    const [tab, setTab] = useState<'posting' | 'commenting'>('posting');
+    const [tab, setTab] = useState<TabType>('posting');
     
-    // Remote Config에서 활성 게시판 ID 가져오기 (문자열로 타입 변경)
-    const { 
-        value: activeBoardId, 
-        isLoading: isLoadingConfig,
-        error: configError
-    } = useRemoteConfig<string>(
-        'active_board_id', 
-        '5rfpfRBuhRFZB13dJVy8' // 기본값을 문자열로 변경
-    );
-    
-    // 활성 게시판 권한이 있는 사용자 가져오기
-    const { users: activeUsers, isLoading: isLoadingUsers, error: usersError } = useUserInBoard(
-      activeBoardId ? [activeBoardId] : []
-    );
-
-    // 사용자 ID 배열로 통계 가져오기
-    const { 
-        data: writingStats, 
-        isLoading: isLoadingStats, 
-        error: statsError 
-    } = useWritingStatsV2(
-        activeUsers.map((user: any) => user.uid)
-    );
-
-    const { 
-        data: commentingStats, 
-        isLoading: isLoadingCommenting, 
-        error: commentingError 
-    } = useCommentingStats(
-        activeUsers.map((user: any) => user.uid)
-    );
-    
-    // 통계 새로고침 핸들러
-    const handleRefreshStats = useCallback(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        
-        // 2. 통계 관련 쿼리 캐시 무효화
-        queryClient.invalidateQueries(['activeUsers', activeBoardId]);
-        queryClient.invalidateQueries(['writingStatsV2']);
-        queryClient.invalidateQueries(['commentingStats']);
-        
-    }, [queryClient, activeBoardId]);
-    
-    // Stats 탭 핸들러 등록
-    useRegisterTabHandler('Stats', handleRefreshStats);
-    
-    const isLoading = isLoadingConfig || isLoadingUsers || (tab === 'posting' ? isLoadingStats : isLoadingCommenting);
-    const error = configError || usersError || (tab === 'posting' ? statsError : commentingError);
+    const {
+        writingStats,
+        commentingStats,
+        isLoading,
+        error,
+        isLoadingCommenting
+    } = useStatsPageData(tab);
     
     if (isLoading) {
         return <LoadingState />
@@ -88,7 +57,7 @@ export default function StatsPage() {
             <main className="container flex-1 p-4">
                 <ScrollArea className="h-full" id={STATS_SCROLL_ID}>
                     <StatsNoticeBanner />
-                    <Tabs value={tab} onValueChange={v => setTab(v as 'posting' | 'commenting')}>
+                    <Tabs value={tab} onValueChange={v => setTab(v as TabType)}>
                         <TabsList className="w-full flex justify-between mb-4 rounded-lg bg-muted">
                             <TabsTrigger value="posting" className="flex-1 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg text-base p-2">글쓰기</TabsTrigger>
                             <TabsTrigger
@@ -102,22 +71,25 @@ export default function StatsPage() {
                             </TabsTrigger>
                         </TabsList>
                         <div className="mt-4">
-                          <TabsContent value="posting">
-                            <React.Suspense fallback={<LoadingState />}>
-                              <UserPostingStatsCardList 
-                                stats={writingStats || []} 
-                                onCardClick={userId => navigate(`/user/${userId}`)}
-                              />
-                            </React.Suspense>
-                          </TabsContent>
-                          <TabsContent value="commenting">
-                            <React.Suspense fallback={<LoadingState />}>
-                              <UserCommentStatsCardList 
-                                stats={commentingStats || []} 
-                                onCardClick={userId => navigate(`/user/${userId}`)}
-                              />
-                            </React.Suspense>
-                          </TabsContent>
+                          {tab === 'posting' ? (
+                            <TabsContent value="posting">
+                              <React.Suspense fallback={<LoadingState />}>
+                                <UserPostingStatsCardList 
+                                  stats={writingStats || []} 
+                                  onCardClick={userId => navigate(`/user/${userId}`)}
+                                />
+                              </React.Suspense>
+                            </TabsContent>
+                          ) : (
+                            <TabsContent value="commenting">
+                              <React.Suspense fallback={<LoadingState />}>
+                                <UserCommentStatsCardList 
+                                  stats={commentingStats || []} 
+                                  onCardClick={userId => navigate(`/user/${userId}`)}
+                                />
+                              </React.Suspense>
+                            </TabsContent>
+                          )}
                         </div>
                     </Tabs>
                 </ScrollArea>
