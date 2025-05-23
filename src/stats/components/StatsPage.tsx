@@ -16,6 +16,20 @@ const STATS_SCROLL_ID = 'stats-scroll';
 
 type TabType = 'posting' | 'commenting';
 
+/**
+ * Custom hook to fetch and manage data for the stats page.
+ * 
+ * @param {TabType} tab - The active tab type, either 'posting' or 'commenting'.
+ * @returns {Object} An object containing:
+ *   - activeUsers: Array of active users in the board.
+ *   - writingStats: Statistics related to user postings.
+ *   - commentingStats: Statistics related to user comments.
+ *   - isLoading: Boolean indicating if data is still loading.
+ *   - error: Any error encountered during data fetching.
+ *   - handleRefreshStats: Function to refresh the stats data.
+ *   - navigate: Function to navigate between routes.
+ *   - isLoadingCommenting: Boolean indicating if commenting stats are loading.
+ */
 export default function StatsPage() {
     usePerformanceMonitoring('StatsPage');
     const navigate = useNavigate();
