@@ -8,14 +8,14 @@ import GoalWrapper from "@/login/components/GoalWrapper"
 import IntroCTA from "@/login/components/IntroCTA"
 import IntroHeader from "@/login/components/IntroHeader"
 import IntroHero from "@/login/components/IntroHero"
-import { useActiveUserCount } from "@/login/hooks/useActiveUserCount"
+import { useActiveUser } from "@/login/hooks/useActiveUser"
 
 export default function JoinIntroPage() {
   const navigate = useNavigate()
   const [daysRemaining, setDaysRemaining] = useState<number>(0)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const { data: upcomingBoard } = useUpcomingBoard()
-  const { data: activeUserCount } = useActiveUserCount()
+  const { data: activeUsers } = useActiveUser()
   
   // Calculate days remaining until cohort starts
   useEffect(() => {
@@ -54,7 +54,7 @@ export default function JoinIntroPage() {
           <IntroHero />
           <div className="space-y-8 px-2 md:px-6">
             <GoalWrapper />
-            <CountdownWrapper daysRemaining={daysRemaining} activeUserCount={activeUserCount} />
+            <CountdownWrapper daysRemaining={daysRemaining} activeUserCount={activeUsers?.length} />
             <CohortDetailsWrapper upcomingBoard={upcomingBoard} />
           </div>
         </div>

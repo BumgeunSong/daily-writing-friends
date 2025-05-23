@@ -6,7 +6,7 @@ import { fetchUsersWithBoardPermission } from '@/user/api/user';
  * 현재 활성 보드의 write 권한을 가진 유저 수를 반환하는 커스텀 훅
  * @returns { data, isLoading, error, count }
  */
-export function useActiveUserCount() {
+export function useActiveUser() {
   const { value: activeBoardId } = useRemoteConfig<string>('active_board_id', '');
 
   const {
@@ -23,7 +23,6 @@ export function useActiveUserCount() {
   return {
     data: users,
     isLoading,
-    error,
-    count: users ? users.length : 0,
+    error
   };
 } 
