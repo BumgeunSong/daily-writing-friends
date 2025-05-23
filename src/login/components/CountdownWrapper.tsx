@@ -1,8 +1,8 @@
 import CountdownSection from '@/login/components/CountdownSection'
 
 interface CountdownWrapperProps {
-  daysRemaining: number
-  activeUserCount: number
+  daysRemaining: number | undefined
+  activeUserCount: number | undefined
 }
 
 export default function CountdownWrapper({ daysRemaining, activeUserCount }: CountdownWrapperProps) {
