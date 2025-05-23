@@ -50,7 +50,7 @@ export default function ActiveUserProfileList({ users, className }: ActiveUserPr
     checkScrollability()
   }, [users])
 
-  if (!users || users.length === 0) return null
+  if (users.length === 0) return null
 
   const handleScroll = (direction: "left" | "right") => {
     if (!scrollContainerRef.current) return
