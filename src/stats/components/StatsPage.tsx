@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query"
-import { useCallback, useState } from "react"
+import { useState } from "react"
 import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
 import { usePerformanceMonitoring } from "@/shared/hooks/usePerformanceMonitoring"
 import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig"
@@ -19,13 +19,13 @@ import { Loader2 } from "lucide-react"
 // 통계 페이지 스크롤 영역의 고유 ID
 const STATS_SCROLL_ID = 'stats-scroll';
 
-export default function StatsPage() {
-    usePerformanceMonitoring('StatsPage');
+type TabType = 'posting' | 'commenting';
+
+function useStatsPageData(tab: TabType) {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
-    const [tab, setTab] = useState<'posting' | 'commenting'>('posting');
     
-    // Remote Config에서 활성 게시판 ID 가져오기 (문자열로 타입 변경)
+    // Remote Config에서 활성 게시판 ID 가져오기
     const { 
         value: activeBoardId, 
         isLoading: isLoadingConfig,
@@ -46,7 +46,7 @@ export default function StatsPage() {
         isLoading: isLoadingStats, 
         error: statsError 
     } = useWritingStatsV2(
-        activeUsers.map((user: any) => user.uid)
+        activeUsers.map((user) => user.uid)
     );
 
     const { 
@@ -54,25 +54,49 @@ export default function StatsPage() {
         isLoading: isLoadingCommenting, 
         error: commentingError 
     } = useCommentingStats(
-        activeUsers.map((user: any) => user.uid)
+        activeUsers.map((user) => user.uid)
     );
     
+    const isLoading = isLoadingConfig || isLoadingUsers || (tab === 'posting' ? isLoadingStats : isLoadingCommenting);
+    const error = configError || usersError || (tab === 'posting' ? statsError : commentingError);
+    
     // 통계 새로고침 핸들러
-    const handleRefreshStats = useCallback(() => {
+    const handleRefreshStats = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
         
         // 2. 통계 관련 쿼리 캐시 무효화
         queryClient.invalidateQueries(['activeUsers', activeBoardId]);
         queryClient.invalidateQueries(['writingStatsV2']);
         queryClient.invalidateQueries(['commentingStats']);
-        
-    }, [queryClient, activeBoardId]);
+    };
     
     // Stats 탭 핸들러 등록
     useRegisterTabHandler('Stats', handleRefreshStats);
     
-    const isLoading = isLoadingConfig || isLoadingUsers || (tab === 'posting' ? isLoadingStats : isLoadingCommenting);
-    const error = configError || usersError || (tab === 'posting' ? statsError : commentingError);
+    return {
+        activeUsers,
+        writingStats,
+        commentingStats,
+        isLoading,
+        error,
+        handleRefreshStats,
+        navigate,
+        isLoadingCommenting
+    };
+}
+
+export default function StatsPage() {
+    usePerformanceMonitoring('StatsPage');
+    const [tab, setTab] = useState<TabType>('posting');
+    const {
+        writingStats,
+        commentingStats,
+        isLoading,
+        error,
+        handleRefreshStats,
+        navigate,
+        isLoadingCommenting
+    } = useStatsPageData(tab);
     
     if (isLoading) {
         return <LoadingState />
@@ -88,7 +112,7 @@ export default function StatsPage() {
             <main className="container flex-1 p-4">
                 <ScrollArea className="h-full" id={STATS_SCROLL_ID}>
                     <StatsNoticeBanner />
-                    <Tabs value={tab} onValueChange={v => setTab(v as 'posting' | 'commenting')}>
+                    <Tabs value={tab} onValueChange={v => setTab(v as TabType)}>
                         <TabsList className="w-full flex justify-between mb-4 rounded-lg bg-muted">
                             <TabsTrigger value="posting" className="flex-1 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg text-base p-2">글쓰기</TabsTrigger>
                             <TabsTrigger
@@ -102,22 +126,25 @@ export default function StatsPage() {
                             </TabsTrigger>
                         </TabsList>
                         <div className="mt-4">
-                          <TabsContent value="posting">
-                            <React.Suspense fallback={<LoadingState />}>
-                              <UserPostingStatsCardList 
-                                stats={writingStats || []} 
-                                onCardClick={userId => navigate(`/user/${userId}`)}
-                              />
-                            </React.Suspense>
-                          </TabsContent>
-                          <TabsContent value="commenting">
-                            <React.Suspense fallback={<LoadingState />}>
-                              <UserCommentStatsCardList 
-                                stats={commentingStats || []} 
-                                onCardClick={userId => navigate(`/user/${userId}`)}
-                              />
-                            </React.Suspense>
-                          </TabsContent>
+                          {tab === 'posting' ? (
+                            <TabsContent value="posting">
+                              <React.Suspense fallback={<LoadingState />}>
+                                <UserPostingStatsCardList 
+                                  stats={writingStats || []} 
+                                  onCardClick={userId => navigate(`/user/${userId}`)}
+                                />
+                              </React.Suspense>
+                            </TabsContent>
+                          ) : (
+                            <TabsContent value="commenting">
+                              <React.Suspense fallback={<LoadingState />}>
+                                <UserCommentStatsCardList 
+                                  stats={commentingStats || []} 
+                                  onCardClick={userId => navigate(`/user/${userId}`)}
+                                />
+                              </React.Suspense>
+                            </TabsContent>
+                          )}
                         </div>
                     </Tabs>
                 </ScrollArea>
