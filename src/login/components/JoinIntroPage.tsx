@@ -15,6 +15,7 @@ export default function JoinIntroPage() {
   const [daysRemaining, setDaysRemaining] = useState<number>(0)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const { data: upcomingBoard } = useUpcomingBoard()
+  const { data: activeUserCount } = useActiveUserCount()
   
   // Calculate days remaining until cohort starts
   useEffect(() => {
@@ -53,7 +54,7 @@ export default function JoinIntroPage() {
           <IntroHero />
           <div className="space-y-8 px-2 md:px-6">
             <GoalWrapper />
-            <CountdownWrapper daysRemaining={daysRemaining} />
+            <CountdownWrapper daysRemaining={daysRemaining} activeUserCount={activeUserCount} />
             <CohortDetailsWrapper upcomingBoard={upcomingBoard} />
           </div>
         </div>
