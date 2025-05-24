@@ -1,4 +1,5 @@
 import admin from '../admin';
+import * as functions from 'firebase-functions';
 
 // Remote Config에서 active_board_id 가져오기
 async function getActiveBoardId(): Promise<string> {
@@ -96,26 +97,31 @@ async function saveBuddyPairsToFirestore(buddyPairs: { user: any; knownBuddy: an
   console.log('모든 buddy 정보가 Firestore에 저장되었습니다.');
 }
 
-// 실행부
-(async () => {
-  try {
-    const activeBoardId = await getActiveBoardId();
-    console.log('active_board_id:', activeBoardId);
-    const activeUsers = await getActiveUsers(activeBoardId);
-    console.log('활성 유저 수:', activeUsers.length);
-    if (activeUsers.length < 2) {
-      throw new Error('활성 유저가 2명 이상이어야 buddy 할당이 가능합니다.');
-    }
-    const buddyPairs = assignBuddies(activeUsers);
-    console.log('버디 매칭 결과:');
-    buddyPairs.forEach(pair => {
-      console.log(`User(${pair.user.uid}, ${pair.user.nickname}) → KnownBuddy(${pair.knownBuddy.uid}, ${pair.knownBuddy.nickname})`);
-    });
-    // Firestore에 저장
-    await saveBuddyPairsToFirestore(buddyPairs);
-    process.exit(0);
-  } catch (err) {
-    console.error(err);
-    process.exit(1);
+// 메인 로직 함수로 분리
+export async function mainAllocateSecretBuddyLogic() {
+  const activeBoardId = await getActiveBoardId();
+  console.log('active_board_id:', activeBoardId);
+  const activeUsers = await getActiveUsers(activeBoardId);
+  console.log('활성 유저 수:', activeUsers.length);
+  if (activeUsers.length < 2) {
+    throw new Error('활성 유저가 2명 이상이어야 buddy 할당이 가능합니다.');
   }
-})();
+  const buddyPairs = assignBuddies(activeUsers);
+  console.log('버디 매칭 결과:');
+  buddyPairs.forEach(pair => {
+    console.log(`User(${pair.user.uid}, ${pair.user.nickname}) → KnownBuddy(${pair.knownBuddy.uid}, ${pair.knownBuddy.nickname})`);
+  });
+  await saveBuddyPairsToFirestore(buddyPairs);
+  return buddyPairs.length;
+}
+
+// HTTP 트리거 Cloud Function 엔트리포인트
+export const allocateSecretBuddy = functions.https.onRequest(async (req, res) => {
+  try {
+    const count = await mainAllocateSecretBuddyLogic();
+    res.status(200).send(`Secret buddy allocation completed! (${count} users updated)`);
+  } catch (err: any) {
+    console.error(err);
+    res.status(500).send(`Error: ${err.message}`);
+  }
+});

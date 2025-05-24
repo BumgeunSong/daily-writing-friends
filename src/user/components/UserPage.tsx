@@ -6,36 +6,12 @@ import UserProfile from "@/user/components/UserProfile"
 import { useAuth } from "@/shared/hooks/useAuth"
 import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
 import { useCallback } from "react"
-import { useUser } from '../hooks/useUser'
-import { Link } from 'react-router-dom'
-import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar'
-
-interface KnownBuddyProps {
-  knownBuddy: {
-    uid: string;
-    nickname: string | null;
-    profilePhotoURL: string | null;
-  }
-}
-
-const KnownBuddy: React.FC<KnownBuddyProps> = ({ knownBuddy }) => (
-  <div className="mt-6 p-4 rounded-xl bg-gradient-to-tr from-orange-100 via-pink-100 to-purple-100 flex items-center gap-3">
-    <span className="text-sm font-semibold text-gray-700">비밀 친구</span>
-    <Link to={`/user/${knownBuddy.uid}`} className="flex items-center gap-2 group">
-      <Avatar className="size-9">
-        <AvatarImage src={knownBuddy.profilePhotoURL || ''} alt={knownBuddy.nickname || 'Buddy'} />
-        <AvatarFallback>{knownBuddy.nickname?.[0] || 'B'}</AvatarFallback>
-      </Avatar>
-      <span className="font-medium text-gray-900 group-hover:underline">{knownBuddy.nickname}</span>
-    </Link>
-  </div>
-);
+import { UserKnownBuddy } from './UserKnownBuddy'
 
 export default function UserPage() {
   const { userId: paramUserId } = useParams()
   const { currentUser } = useAuth()
   const userId = paramUserId || currentUser?.uid
-  const { userData } = useUser(userId)
 
   useRegisterTabHandler('User', useCallback(() => window.scrollTo({ top: 0, behavior: 'smooth' }), [userId]));
 
@@ -54,7 +30,7 @@ export default function UserPage() {
           <UserProfile uid={userId} />
 
           {/* Known Buddy 정보 표시 */}
-          {userData?.knownBuddy && <KnownBuddy knownBuddy={userData.knownBuddy} />}
+          <UserKnownBuddy />
         </div>
       </header>
 

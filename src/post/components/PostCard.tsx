@@ -6,13 +6,12 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/shared/ui/card"
 import { useUser } from "@/user/hooks/useUser"
 import { PostUserProfile } from './PostUserProfile'
 import type React from "react"
-import { User } from "@/user/model/User"
 
 interface PostCardProps {
   post: Post
   onClick: (postId: string) => void
   onClickProfile?: (userId: string) => void
-  currentUser: User | null
+  isKnownBuddy: boolean
 }
 
 // 키보드 접근성: role="button"에서 Enter/Space로 클릭 지원
@@ -23,10 +22,8 @@ function handleKeyDown(e: React.KeyboardEvent, onClick: (e: any) => void) {
   }
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, currentUser }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, isKnownBuddy }) => {
   const { userData: authorData, isLoading: isAuthorLoading } = useUser(post.authorId)
-  const isKnownBuddy = currentUser?.knownBuddy?.uid === post.authorId;
-
   const isPrivate = post.visibility === PostVisibility.PRIVATE
   const contentPreview = !isPrivate ? getContentPreview(post.content) : null
 

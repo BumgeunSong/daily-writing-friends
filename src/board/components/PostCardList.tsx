@@ -8,7 +8,7 @@ import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitorin
 import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
 import PostCard from '@/post/components/PostCard';
 import { usePosts } from '@/post/hooks/usePosts';
-import { useAuth } from '@/shared/hooks/useAuth';
+import { useCurrentUserKnownBuddy } from '@/user/hooks/useCurrentUserKnownBuddy';
 
 interface PostCardListProps {
   boardId: string;
@@ -21,7 +21,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
   const [limitCount] = useState(7);
   usePerformanceMonitoring('PostCardList')
   const queryClient = useQueryClient();
-  const { currentUser } = useAuth();
+  const { knownBuddy, isLoading: isKnownBuddyLoading, error: knownBuddyError } = useCurrentUserKnownBuddy();
 
   const {
     data: postPages,
@@ -87,7 +87,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
           post={post} 
           onClick={() => handlePostClick(post.id)} 
           onClickProfile={onClickProfile}
-          currentUser={currentUser}
+          currentUser={knownBuddy ?? null}
         />
       ))}
       <div ref={inViewRef} />
