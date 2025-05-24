@@ -33,19 +33,42 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps & { setCarouselA
   className,
   setCarouselApi,
 }) => {
+  const [selectedIndex, setSelectedIndex] = React.useState(0)
+  const emblaApiRef = React.useRef<CarouselApi | null>(null)
+
+  const handleSetApi = React.useCallback((api: CarouselApi) => {
+    emblaApiRef.current = api
+    setCarouselApi?.(api)
+    if (api) {
+      setSelectedIndex(api.selectedScrollSnap())
+      api.on("select", () => {
+        setSelectedIndex(api.selectedScrollSnap())
+      })
+      api.on("reInit", () => {
+        setSelectedIndex(api.selectedScrollSnap())
+      })
+    }
+  }, [setCarouselApi])
+
+  const handleDotClick = (idx: number) => {
+    if (emblaApiRef.current) {
+      emblaApiRef.current.scrollTo(idx)
+    }
+  }
+
   return (
     <div className={className}>
       <div className="relative">
-        <Carousel className="w-full max-w-full px-2 sm:px-0" opts={{ loop: true }} setApi={setCarouselApi}>
-          <CarouselContent>
+        <Carousel className="w-full max-w-full px-2 sm:px-0" opts={{ loop: true }} setApi={handleSetApi}>
+          <CarouselContent className="gap-4">
             {topicCards.map((card) => {
               const state = cardStates[card.id] || {}
               return (
                 <CarouselItem
                   key={card.id}
-                  className="basis-full max-w-full flex-shrink-0 flex-grow-0 px-2 flex items-center justify-center"
+                  className="basis-full max-w-full flex-shrink-0 flex-grow-0 flex items-center justify-center"
                 >
-                  <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl flex flex-col justify-between items-center h-[420px] sm:h-[480px] min-h-[420px] sm:min-h-[480px] w-full max-w-[360px] mx-auto p-6 transition-shadow duration-200">
+                  <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl flex flex-col justify-between items-center h-[420px] sm:h-[480px] min-h-[420px] sm:min-h-[480px] w-full max-w-[360px] mx-auto p-6 transition-shadow duration-200 mx-4 sm:mx-0">
                     {/* 액션 버튼 그룹 */}
                     <div className="absolute top-3 right-3 flex gap-2 z-10">
                       <button
@@ -108,6 +131,25 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps & { setCarouselA
           <CarouselPrevious />
           <CarouselNext />
         </Carousel>
+        {/* Dot Indicator */}
+        {topicCards.length > 1 && (
+          <div className="absolute left-0 right-0 flex justify-center gap-2 mt-4 sm:mt-6 bottom-[-32px] sm:bottom-[-40px] z-20 pointer-events-none select-none">
+            {topicCards.map((_, idx) => (
+              <button
+                key={idx}
+                type="button"
+                aria-label={`슬라이드 ${idx + 1}로 이동`}
+                className={`w-2.5 h-2.5 rounded-full transition-all duration-200 border border-zinc-300 dark:border-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+                  selectedIndex === idx
+                    ? "bg-zinc-900 dark:bg-white scale-110 shadow"
+                    : "bg-zinc-200 dark:bg-zinc-700 opacity-60"
+                } pointer-events-auto`}
+                onClick={() => handleDotClick(idx)}
+                tabIndex={0}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

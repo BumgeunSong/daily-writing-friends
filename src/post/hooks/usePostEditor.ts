@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Draft } from '@/types/Draft';
+import { Draft } from '@/draft/model/Draft';
 
 interface UsePostEditorProps {
   initialDraft: Draft | null;
+  initialTitle?: string;
+  initialContent?: string;
 }
 
 interface UsePostEditorResult {
@@ -12,9 +14,9 @@ interface UsePostEditorResult {
   setContent: (content: string) => void;
 }
 
-export function usePostEditor({ initialDraft }: UsePostEditorProps): UsePostEditorResult {
-  const [title, setTitle] = useState<string>('');
-  const [content, setContent] = useState<string>('');
+export function usePostEditor({ initialDraft, initialTitle = '', initialContent = '' }: UsePostEditorProps): UsePostEditorResult {
+  const [title, setTitle] = useState<string>(initialDraft ? initialDraft.title : initialTitle);
+  const [content, setContent] = useState<string>(initialDraft ? initialDraft.content : initialContent);
 
   // 초안 데이터가 로드되면 상태 업데이트
   useEffect(() => {

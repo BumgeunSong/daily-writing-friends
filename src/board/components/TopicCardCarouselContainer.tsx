@@ -4,6 +4,7 @@ import { useTopicCardStates } from "../../board/hooks/useTopicCardStates"
 import { TopicCard } from "../../board/model/TopicCard"
 import { toast } from "sonner"
 import { type CarouselApi } from "@/shared/ui/Carousel"
+import { useNavigate, useParams } from "react-router-dom"
 
 interface TopicCardCarouselContainerProps {
   userId: string
@@ -46,6 +47,8 @@ export const TopicCardCarouselContainer: React.FC<TopicCardCarouselContainerProp
 
   // Embla API ref
   const carouselApiRef = React.useRef<CarouselApi | null>(null)
+  const navigate = useNavigate()
+  const { boardId } = useParams<{ boardId: string }>()
 
   // 북마크/숨김된 카드는 제외, 북마크 정렬은 최초 마운트/새로고침 시에만 적용
   const visibleCards = React.useMemo(() => {
@@ -72,6 +75,12 @@ export const TopicCardCarouselContainer: React.FC<TopicCardCarouselContainerProp
     if (carouselApiRef.current) {
       carouselApiRef.current.scrollNext()
     }
+  }
+
+  // 글쓰기 시작(CTA) 클릭 시 이동
+  const handleStartWriting = (card: TopicCard) => {
+    if (!boardId) return
+    navigate(`/create/${boardId}?title=${encodeURIComponent(card.title)}&content=${encodeURIComponent(card.description)}`)
   }
 
   if (isLoading) {
@@ -109,6 +118,7 @@ export const TopicCardCarouselContainer: React.FC<TopicCardCarouselContainerProp
         isHiding={isHiding}
         className="w-full"
         setCarouselApi={(api: CarouselApi) => (carouselApiRef.current = api)}
+        onStartWriting={handleStartWriting}
       />
     </div>
   )

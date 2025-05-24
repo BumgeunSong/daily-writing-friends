@@ -18,6 +18,8 @@ export default function PostCreationPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const [searchParams] = useSearchParams();
   const draftId = searchParams.get('draftId');
+  const initialTitle = searchParams.get('title') || '';
+  const initialContent = searchParams.get('content') || '';
   
   // 1. 임시 저장 글 로드
   const { draft, draftId: loadedDraftId, isLoading: isDraftLoading } = useDraftLoader({
@@ -28,7 +30,9 @@ export default function PostCreationPage() {
   
   // 2. 게시물 편집 상태 관리
   const { title, setTitle, content, setContent } = usePostEditor({
-    initialDraft: draft
+    initialDraft: draft,
+    initialTitle,
+    initialContent,
   });
   
   // 3. 자동 저장 - 로드된 임시 저장 글의 ID 사용
