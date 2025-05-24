@@ -5,6 +5,7 @@ import { TopicCard } from "../model/TopicCard"
 import { Skeleton } from "@/shared/ui/skeleton"
 import { Timestamp } from "firebase/firestore"
 import { useQuery } from "@tanstack/react-query"
+import { ErrorBoundary } from "@/shared/components/ErrorBoundary"
 
 // TODO: 실제 Firestore fetch로 대체
 async function fetchTopicCards(): Promise<TopicCard[]> {
@@ -48,26 +49,11 @@ export default function TopicCardCarouselPage() {
       </header>
       <main className="flex-1 flex flex-col items-center justify-start px-2 pb-8">
         <React.Suspense fallback={<div className="p-8"><Skeleton className="h-40 w-full rounded-2xl mb-4" /><Skeleton className="h-40 w-full rounded-2xl" /></div>}>
-          <TopicCardCarouselContent />
+          <ErrorBoundary fallback={<div className="p-8 text-center text-red-500">글감 정보를 불러오지 못했습니다.</div>}>
+            <TopicCardCarouselContent />
+          </ErrorBoundary>
         </React.Suspense>
       </main>
     </div>
   )
-}
-
-// 간단한 ErrorBoundary 구현
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props)
-    this.state = { hasError: false }
-  }
-  static getDerivedStateFromError() {
-    return { hasError: true }
-  }
-  render() {
-    if (this.state.hasError) {
-      return <div className="p-8 text-center text-red-500">글감 정보를 불러오지 못했습니다.</div>
-    }
-    return this.props.children
-  }
 } 
