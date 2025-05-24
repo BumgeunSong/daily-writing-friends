@@ -1,10 +1,16 @@
-import * as admin from 'firebase-admin';
+import admin from '../admin';
 
-// Firebase Admin 초기화 (환경에 따라 수정 필요)
-if (!admin.apps.length) {
-  admin.initializeApp();
+// Remote Config에서 active_board_id 가져오기
+async function getActiveBoardId(): Promise<string> {
+  const remoteConfig = admin.remoteConfig();
+  const template = await remoteConfig.getTemplate();
+  const param = template.parameters['active_board_id'];
+  const value = param?.defaultValue && (param.defaultValue as any).value;
+  if (!value) {
+    throw new Error('active_board_id가 Remote Config에 존재하지 않습니다.');
+  }
+  return String(value);
 }
-const db = admin.firestore();
 
 // 활성 유저 정보 타입
 interface ActiveUser {
@@ -14,24 +20,16 @@ interface ActiveUser {
   boardPermissions: Record<string, string>;
 }
 
-async function getActiveUsers() {
-  // 1. 모든 boardId 조회
-  const boardsSnap = await db.collection('boards').get();
-  const boardIds = boardsSnap.docs.map(doc => doc.id);
-
-  // 2. 모든 user 조회
+async function getActiveUsers(activeBoardId: string) {
+  const db = admin.firestore();
+  // 모든 user 조회
   const usersSnap = await db.collection('users').get();
-
-  // 3. boardPermissions로 필터링
+  // boardPermissions에 activeBoardId가 있고, 값이 read 또는 write인 유저만 필터링
   const activeUsers: ActiveUser[] = [];
   usersSnap.forEach(doc => {
     const data = doc.data();
     const boardPermissions = data.boardPermissions || {};
-    // boardPermissions에 boardId가 하나라도 있으면 활성 유저로 간주
-    const isActive = boardIds.some(boardId =>
-      boardPermissions[boardId] === 'read' || boardPermissions[boardId] === 'write'
-    );
-    if (isActive) {
+    if (boardPermissions[activeBoardId] === 'read' || boardPermissions[activeBoardId] === 'write') {
       activeUsers.push({
         uid: data.uid,
         nickname: data.nickname ?? null,
@@ -45,8 +43,15 @@ async function getActiveUsers() {
 
 // 실행부
 (async () => {
-  const activeUsers = await getActiveUsers();
-  console.log('활성 유저 수:', activeUsers.length);
-  console.log('활성 유저 목록:', activeUsers.map(u => ({ uid: u.uid, nickname: u.nickname, profilePhotoURL: u.profilePhotoURL })));
-  process.exit(0);
+  try {
+    const activeBoardId = await getActiveBoardId();
+    console.log('active_board_id:', activeBoardId);
+    const activeUsers = await getActiveUsers(activeBoardId);
+    console.log('활성 유저 수:', activeUsers.length);
+    console.log('활성 유저 목록:', activeUsers.map(u => ({ uid: u.uid, nickname: u.nickname, profilePhotoURL: u.profilePhotoURL })));
+    process.exit(0);
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
 })();
