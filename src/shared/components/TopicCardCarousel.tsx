@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "./Carousel"
+import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi } from "./Carousel"
 import { Star, StarOff, X } from "lucide-react"
 import { Button } from "../ui/button"
 import { TopicCard } from "../../board/model/TopicCard"
@@ -21,7 +21,7 @@ type TopicCardCarouselProps = {
   className?: string
 }
 
-export const TopicCardCarousel: React.FC<TopicCardCarouselProps> = ({
+export const TopicCardCarousel: React.FC<TopicCardCarouselProps & { setCarouselApi?: (api: CarouselApi) => void }> = ({
   topicCards,
   cardStates = {},
   onBookmarkClick,
@@ -31,11 +31,12 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps> = ({
   isHiding,
   isError,
   className,
+  setCarouselApi,
 }) => {
   return (
     <div className={className}>
       <div className="relative">
-        <Carousel className="w-full max-w-full px-2 sm:px-0">
+        <Carousel className="w-full max-w-full px-2 sm:px-0" opts={{ loop: true }} setApi={setCarouselApi}>
           <CarouselContent>
             {topicCards.map((card) => {
               const state = cardStates[card.id] || {}
