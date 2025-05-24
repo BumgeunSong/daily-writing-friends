@@ -5,5 +5,4 @@ export type TopicCard = {
   title: string
   description: string
   createdAt: Timestamp
-  createdBy: string
 } 
