@@ -3,7 +3,7 @@ import { TopicCardCarousel } from "./TopicCardCarousel"
 import { useTopicCardStates } from "../../board/hooks/useTopicCardStates"
 import { TopicCard } from "../../board/model/TopicCard"
 import { toast } from "sonner"
-import { type CarouselApi } from "./Carousel"
+import { type CarouselApi } from "@/shared/ui/Carousel"
 
 interface TopicCardCarouselContainerProps {
   userId: string
