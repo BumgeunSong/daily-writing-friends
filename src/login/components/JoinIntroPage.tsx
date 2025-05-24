@@ -2,18 +2,21 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { signInWithGoogle } from "@/firebase"
 import { useUpcomingBoard } from "@/login/hooks/useUpcomingBoard"
-import CohortDetailsWrapper from "./CohortDetailsWrapper"
-import CountdownWrapper from "./CountdownWrapper"
-import GoalWrapper from "./GoalWrapper"
-import IntroCTA from "./IntroCTA"
-import IntroHeader from "./IntroHeader"
-import IntroHero from "./IntroHero"
+import CohortDetailsWrapper from "@/login/components/CohortDetailsWrapper"
+import CountdownWrapper from "@/login/components/CountdownWrapper"
+import GoalWrapper from "@/login/components/GoalWrapper"
+import IntroCTA from "@/login/components/IntroCTA"
+import IntroHeader from "@/login/components/IntroHeader"
+import IntroHero from "@/login/components/IntroHero"
+import { useActiveUser } from "@/login/hooks/useActiveUser"
+import ActiveUserProfileList from "@/login/components/ActiveUserProfileList"
 
 export default function JoinIntroPage() {
   const navigate = useNavigate()
   const [daysRemaining, setDaysRemaining] = useState<number>(0)
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const { data: upcomingBoard } = useUpcomingBoard()
+  const { data: activeUsers } = useActiveUser()
   
   // Calculate days remaining until cohort starts
   useEffect(() => {
@@ -52,7 +55,9 @@ export default function JoinIntroPage() {
           <IntroHero />
           <div className="space-y-8 px-2 md:px-6">
             <GoalWrapper />
-            <CountdownWrapper daysRemaining={daysRemaining} />
+            <CountdownWrapper daysRemaining={daysRemaining} activeUserCount={activeUsers?.length} />
+            <ActiveUserProfileList users={activeUsers ?? []} />
+            <div className="h-6" />
             <CohortDetailsWrapper upcomingBoard={upcomingBoard} />
           </div>
         </div>
