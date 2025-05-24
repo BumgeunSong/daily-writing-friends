@@ -1,11 +1,11 @@
 import * as React from "react"
 import { useAuth } from "@/shared/hooks/useAuth"
-import { TopicCardCarouselContainer } from "@/shared/components/TopicCardCarouselContainer"
-import { TopicCard } from "../model/TopicCard"
 import { Skeleton } from "@/shared/ui/skeleton"
 import { Timestamp } from "firebase/firestore"
 import { useQuery } from "@tanstack/react-query"
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary"
+import { TopicCardCarouselContainer } from "./TopicCardCarouselContainer"
+import { TopicCard } from "../model/TopicCard"
 
 // TODO: 실제 Firestore fetch로 대체
 async function fetchTopicCards(): Promise<TopicCard[]> {
@@ -35,25 +35,19 @@ function TopicCardCarouselContent() {
     <TopicCardCarouselContainer
       userId={currentUser.uid}
       topicCards={topicCards}
-      className="w-full max-w-lg mx-auto"
+      className="w-full h-full flex-1 flex flex-col justify-center items-center"
     />
   )
 }
 
 export default function TopicCardCarouselPage() {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <header className="px-4 pt-6 pb-2">
-        <h1 className="text-xl font-bold text-primary mb-1">글감 목록</h1>
-        <p className="text-sm text-muted-foreground">글쓰기가 막막할 때, 다양한 글감을 참고해 보세요.</p>
-      </header>
-      <main className="flex-1 flex flex-col items-center justify-start px-2 pb-8">
-        <React.Suspense fallback={<div className="p-8"><Skeleton className="h-40 w-full rounded-2xl mb-4" /><Skeleton className="h-40 w-full rounded-2xl" /></div>}>
-          <ErrorBoundary fallback={<div className="p-8 text-center text-red-500">글감 정보를 불러오지 못했습니다.</div>}>
-            <TopicCardCarouselContent />
-          </ErrorBoundary>
-        </React.Suspense>
-      </main>
+    <div className="w-full h-full min-h-0 flex flex-col bg-background">
+      <React.Suspense fallback={<div className="flex-1 flex items-center justify-center"><Skeleton className="h-40 w-full rounded-2xl mb-4" /><Skeleton className="h-40 w-full rounded-2xl" /></div>}>
+        <ErrorBoundary fallback={<div className="p-8 text-center text-red-500">글감 정보를 불러오지 못했습니다.</div>}>
+          <TopicCardCarouselContent />
+        </ErrorBoundary>
+      </React.Suspense>
     </div>
   )
-} 
+}
