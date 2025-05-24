@@ -1,6 +1,6 @@
 import * as React from "react"
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi } from "./Carousel"
-import { Star, StarOff, X } from "lucide-react"
+import { Star, X } from "lucide-react"
 import { Button } from "../ui/button"
 import { TopicCard } from "../../board/model/TopicCard"
 
