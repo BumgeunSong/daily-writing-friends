@@ -25,6 +25,7 @@ import UserPage from '@/user/components/UserPage';
 import UserSettingPage from '@/user/components/UserSettingPage';
 import { PrivateRoutes } from './shared/components/route/PrivateRoutes';
 import { PublicRoutes } from './shared/components/route/PublicRoutes';
+import TopicCardCarouselPage from '@/board/components/TopicCardCarouselPage';
 
 export default function App() {
   const { currentUser } = useAuth();
@@ -61,6 +62,7 @@ export default function App() {
         <Route path="/create/:boardId/completion" element={<PostCompletionPage />} />
         <Route path="/board/:boardId/post/:postId" element={<PostDetailPage />} />
         <Route path="/board/:boardId/edit/:postId" element={<PostEditPage />} />
+        <Route path="/board/:boardId/topic-cards" element={<TopicCardCarouselPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/notifications/settings" element={<NotificationSettingPage />} />
         <Route path="/account/edit/:userId" element={<EditAccountPage />} />
