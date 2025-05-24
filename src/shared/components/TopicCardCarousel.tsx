@@ -1,15 +1,8 @@
 import * as React from "react"
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "./Carousel"
 import { Star, StarOff, X } from "lucide-react"
-import { useTopicCardStates } from "../hooks/useTopicCardStates"
-
-export type TopicCard = {
-  id: string
-  title: string
-  description: string
-  createdAt: any // Timestamp (firebase)
-  createdBy: string
-}
+import { Button } from "../ui/button"
+import { TopicCard } from "../../board/model/TopicCard"
 
 type TopicCardState = {
   bookmarked?: boolean
@@ -21,6 +14,7 @@ type TopicCardCarouselProps = {
   cardStates?: Record<string, TopicCardState> // topicId -> state
   onBookmarkClick?: (topicId: string) => void
   onHideClick?: (topicId: string) => void
+  onStartWriting?: (card: TopicCard) => void
   className?: string
 }
 
@@ -29,6 +23,7 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps> = ({
   cardStates = {},
   onBookmarkClick,
   onHideClick,
+  onStartWriting,
   className,
 }) => {
   return (
@@ -69,7 +64,7 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps> = ({
                         <X className="w-6 h-6 text-gray-400" />
                       </button>
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <h3 className="text-base sm:text-lg md:text-xl font-bold mb-2 text-gray-900 truncate">
                         {card.title}
                       </h3>
@@ -77,7 +72,16 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps> = ({
                         {card.description}
                       </p>
                     </div>
-                    {/* CTA 등은 추후 확장 */}
+                    <div className="mt-4 flex justify-end">
+                      <Button
+                        size="sm"
+                        className="w-full sm:w-auto"
+                        aria-label="글쓰기 시작"
+                        onClick={() => onStartWriting?.(card)}
+                      >
+                        글쓰기 시작
+                      </Button>
+                    </div>
                   </div>
                 </CarouselItem>
               )
@@ -88,45 +92,5 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps> = ({
         </Carousel>
       </div>
     </div>
-  )
-}
-
-interface TopicCardCarouselContainerProps {
-  userId: string
-  topicCards: TopicCard[]
-  className?: string
-}
-
-export const TopicCardCarouselContainer: React.FC<TopicCardCarouselContainerProps> = ({ userId, topicCards, className }) => {
-  const {
-    cardStates,
-    toggleBookmark,
-    toggleHide,
-    isLoading,
-    isError,
-    isBookmarking,
-    isHiding,
-  } = useTopicCardStates(userId, topicCards)
-
-  // 숨김된 카드는 제외, 북마크된 카드는 상단 정렬
-  const visibleCards = React.useMemo(() => {
-    return topicCards
-      .filter((card) => !cardStates[card.id]?.deleted)
-      .sort((a, b) => {
-        const aBookmarked = !!cardStates[a.id]?.bookmarked
-        const bBookmarked = !!cardStates[b.id]?.bookmarked
-        if (aBookmarked === bBookmarked) return 0
-        return aBookmarked ? -1 : 1
-      })
-  }, [topicCards, cardStates])
-
-  return (
-    <TopicCardCarousel
-      topicCards={visibleCards}
-      cardStates={cardStates}
-      onBookmarkClick={toggleBookmark}
-      onHideClick={toggleHide}
-      className={className}
-    />
   )
 } 
