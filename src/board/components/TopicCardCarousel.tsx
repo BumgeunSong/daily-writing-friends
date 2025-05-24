@@ -1,6 +1,6 @@
 import * as React from "react"
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi } from "@/shared/ui/Carousel"
-import { Star, X } from "lucide-react"
+import { Star, X, Quote } from "lucide-react"
 import { Button } from "@/shared/ui/button"
 import { TopicCard } from "../../board/model/TopicCard"
 
@@ -43,9 +43,9 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps & { setCarouselA
               return (
                 <CarouselItem
                   key={card.id}
-                  className="max-w-[90vw] sm:max-w-xs md:max-w-sm lg:max-w-md flex-shrink-0"
+                  className="basis-full max-w-full flex-shrink-0 flex-grow-0 px-2 flex items-center justify-center"
                 >
-                  <div className="bg-white rounded-2xl shadow-md p-4 flex flex-col h-full min-h-[180px] justify-between transition-shadow hover:shadow-lg focus-within:shadow-lg relative">
+                  <div className="relative bg-white rounded-2xl shadow-md flex flex-col justify-between items-center h-[420px] sm:h-[480px] min-h-[420px] sm:min-h-[480px] w-full max-w-[360px] mx-auto p-6">
                     {/* 버튼 그룹: 카드 우상단 */}
                     <div className="absolute top-2 right-2 flex gap-2 z-10">
                       <button
@@ -73,24 +73,28 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps & { setCarouselA
                         <X className="w-6 h-6 text-gray-400" />
                       </button>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-base sm:text-lg md:text-xl font-bold mb-2 text-gray-900 truncate">
+                    {/* 상단 Lucide quote 아이콘 */}
+                    <Quote className="w-8 h-8 text-gray-300 mb-2" />
+
+                    {/* 제목/설명 */}
+                    <div className="flex-1 flex flex-col items-center justify-center w-full">
+                      <h3 className="text-lg sm:text-xl font-bold text-center text-gray-900 mb-2 break-words">
                         {card.title}
                       </h3>
-                      <p className="text-sm sm:text-base text-gray-600 line-clamp-3">
+                      <p className="text-sm sm:text-base text-gray-500 text-center break-words">
                         {card.description}
                       </p>
                     </div>
-                    <div className="mt-4 flex justify-end">
-                      <Button
-                        size="sm"
-                        className="w-full sm:w-auto"
-                        aria-label="글쓰기 시작"
-                        onClick={() => onStartWriting?.(card)}
-                      >
-                        글쓰기 시작
-                      </Button>
-                    </div>
+
+                    {/* CTA 버튼 */}
+                    <Button
+                      size="lg"
+                      className="w-full mt-6"
+                      aria-label="글쓰기 시작"
+                      onClick={() => onStartWriting?.(card)}
+                    >
+                      글쓰기 시작
+                    </Button>
                     {isError && (
                       <div className="mt-2 text-sm text-red-500">오류가 발생했습니다. 다시 시도해 주세요.</div>
                     )}
