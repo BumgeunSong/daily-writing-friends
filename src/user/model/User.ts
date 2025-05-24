@@ -14,6 +14,11 @@ export interface User {
     [boardId: string]: 'read' | 'write'; // Permissions for each board
   };
   updatedAt: Timestamp | null; // 마지막 업데이트 시각 (Firestore Timestamp)
+  knownBuddy?: {
+    uid: string;
+    nickname: string | null;
+    profilePhotoURL: string | null;
+  };
 }
 
 export type UserRequiredFields = {
@@ -32,4 +37,9 @@ export type UserOptionalFields = {
     [boardId: string]: 'read' | 'write'; // Permissions for each board
   };
   updatedAt: Timestamp | null; // 마지막 업데이트 시각 (Firestore Timestamp)
+  knownBuddy?: {
+    uid: string;
+    nickname: string | null;
+    profilePhotoURL: string | null;
+  };
 };

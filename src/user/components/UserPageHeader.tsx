@@ -1,16 +1,13 @@
 import { Menu } from "lucide-react"
 import { Button } from "@/shared/ui/button"
 import { useNavigate } from "react-router-dom"
-import { useAuth } from '@/shared/hooks/useAuth'
 
 interface UserPageHeaderProps {
-  userId: string
+  isMyPage: boolean
 }
 
-export function UserPageHeader({ userId }: UserPageHeaderProps) {
+export function UserPageHeader({ isMyPage }: UserPageHeaderProps) {
   const navigate = useNavigate()
-  const { currentUser } = useAuth()
-  const isCurrentUser = currentUser?.uid === userId
 
   const handleGoToSettings = () => {
     navigate("/user/settings")
@@ -18,7 +15,7 @@ export function UserPageHeader({ userId }: UserPageHeaderProps) {
 
   return (
     <>
-      {isCurrentUser && (
+      {isMyPage && (
         <div className="flex justify-end border-b border-border/40 bg-black p-2">
           <Button
             variant="ghost"

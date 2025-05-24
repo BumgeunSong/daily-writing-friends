@@ -6,6 +6,7 @@ import UserProfile from "@/user/components/UserProfile"
 import { useAuth } from "@/shared/hooks/useAuth"
 import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
 import { useCallback } from "react"
+import { UserKnownBuddy } from './UserKnownBuddy'
 
 export default function UserPage() {
   const { userId: paramUserId } = useParams()
@@ -18,15 +19,20 @@ export default function UserPage() {
     return <StatusMessage errorMessage="유저 정보를 찾을 수 없습니다." />
   }
 
+  const isMyPage = currentUser?.uid === userId;
+
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-full flex-col bg-background pb-16">
       {/* Header section with settings button */}
       <header className="sticky top-0 z-10 border-b bg-background">
-        <UserPageHeader userId={userId} />
+        <UserPageHeader isMyPage={isMyPage} />
 
         {/* User profile section */}
         <div className="p-4">
           <UserProfile uid={userId} />
+
+          {/* Known Buddy 정보 표시 */}
+          {isMyPage && <UserKnownBuddy />}
         </div>
       </header>
 

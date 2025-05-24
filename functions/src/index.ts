@@ -16,6 +16,7 @@ import { createCommenting } from './commentings/createCommenting';
 import { updateCommenting } from './commentings/updateCommenting';
 import { createReplying } from './replyings/createReplying';
 import { updateReplying } from './replyings/updateReplying';
+import { allocateSecretBuddy } from './oneTimeScript/allocateSecretBuddy';
 
 export {
   onCommentCreated,
@@ -37,5 +38,6 @@ export {
   createCommenting,
   updateCommenting,
   createReplying,
-  updateReplying
+  updateReplying,
+  allocateSecretBuddy
 };
