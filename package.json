@@ -51,6 +51,8 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dompurify": "^3.1.7",
+    "embla-carousel": "^8.6.0",
+    "embla-carousel-react": "^8.6.0",
     "firebase": "^10.14.1",
     "framer-motion": "^12.7.4",
     "lucide-react": "^0.453.0",
