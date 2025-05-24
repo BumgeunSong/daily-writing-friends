@@ -8,6 +8,7 @@ import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitorin
 import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
 import PostCard from '@/post/components/PostCard';
 import { usePosts } from '@/post/hooks/usePosts';
+import { useAuth } from '@/shared/hooks/useAuth';
 
 interface PostCardListProps {
   boardId: string;
@@ -20,6 +21,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
   const [limitCount] = useState(7);
   usePerformanceMonitoring('PostCardList')
   const queryClient = useQueryClient();
+  const { currentUser } = useAuth();
 
   const {
     data: postPages,
@@ -85,6 +87,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
           post={post} 
           onClick={() => handlePostClick(post.id)} 
           onClickProfile={onClickProfile}
+          currentUser={currentUser}
         />
       ))}
       <div ref={inViewRef} />
