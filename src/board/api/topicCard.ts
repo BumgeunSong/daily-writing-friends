@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from "firebase/firestore"
+import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore"
 import { firestore } from "../../firebase"
 import { TopicCard } from "../model/TopicCard"
 
@@ -42,4 +42,13 @@ export async function fetchTopicCardState(userId: string, topicId: string): Prom
 export async function updateTopicCardState(userId: string, topicId: string, state: Partial<TopicCardState>): Promise<void> {
   const ref = getTopicStateDocRef(userId, topicId)
   await setDoc(ref, state, { merge: true })
+}
+
+/**
+ * 모든 TopicCard 문서를 Firestore에서 가져옴
+ */
+export async function fetchAllTopicCards(): Promise<TopicCard[]> {
+  const colRef = collection(firestore, "topicCards")
+  const snap = await getDocs(colRef)
+  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as TopicCard))
 } 
