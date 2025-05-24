@@ -73,6 +73,29 @@ async function getActiveUsers(activeBoardId: string) {
   return activeUsers;
 }
 
+// buddyPairs를 Firestore에 저장 (batch 처리)
+async function saveBuddyPairsToFirestore(buddyPairs: { user: any; knownBuddy: any }[]) {
+  const db = admin.firestore();
+  const BATCH_LIMIT = 500;
+  let batch = db.batch();
+  let opCount = 0;
+  let batchCount = 1;
+  for (let i = 0; i < buddyPairs.length; i++) {
+    const { user, knownBuddy } = buddyPairs[i];
+    const userRef = db.collection('users').doc(user.uid);
+    batch.update(userRef, { knownBuddy });
+    opCount++;
+    if (opCount === BATCH_LIMIT || i === buddyPairs.length - 1) {
+      await batch.commit();
+      console.log(`Batch ${batchCount} committed (${opCount} users)`);
+      batch = db.batch();
+      opCount = 0;
+      batchCount++;
+    }
+  }
+  console.log('모든 buddy 정보가 Firestore에 저장되었습니다.');
+}
+
 // 실행부
 (async () => {
   try {
@@ -88,6 +111,8 @@ async function getActiveUsers(activeBoardId: string) {
     buddyPairs.forEach(pair => {
       console.log(`User(${pair.user.uid}, ${pair.user.nickname}) → KnownBuddy(${pair.knownBuddy.uid}, ${pair.knownBuddy.nickname})`);
     });
+    // Firestore에 저장
+    await saveBuddyPairsToFirestore(buddyPairs);
     process.exit(0);
   } catch (err) {
     console.error(err);
