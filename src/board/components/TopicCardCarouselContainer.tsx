@@ -66,7 +66,7 @@ export const TopicCardCarouselContainer: React.FC<TopicCardCarouselContainerProp
   if (isLoading) {
     // Skeleton 3개 표시
     return (
-      <div className={className}>
+      <div className={className + " flex-1 flex flex-col justify-center items-center min-h-[calc(100vh-80px)]"}>
         <div className="flex gap-4 overflow-x-auto">
           <TopicCardSkeleton />
           <TopicCardSkeleton />
@@ -79,7 +79,7 @@ export const TopicCardCarouselContainer: React.FC<TopicCardCarouselContainerProp
   if (isError) {
     // 에러 메시지 카드
     return (
-      <div className={className}>
+      <div className={className + " flex-1 flex flex-col justify-center items-center min-h-[calc(100vh-80px)]"}>
         <div className="max-w-[90vw] sm:max-w-xs md:max-w-sm lg:max-w-md bg-red-50 border border-red-200 rounded-2xl shadow-md p-4 h-[180px] flex items-center justify-center text-red-600">
           글감 정보를 불러오지 못했습니다. 새로고침 해주세요.
         </div>
@@ -88,15 +88,17 @@ export const TopicCardCarouselContainer: React.FC<TopicCardCarouselContainerProp
   }
 
   return (
-    <TopicCardCarousel
-      topicCards={visibleCards}
-      cardStates={cardStates}
-      onBookmarkClick={handleBookmarkClick}
-      onHideClick={handleHideClick}
-      isBookmarking={isBookmarking}
-      isHiding={isHiding}
-      className={className}
-      setCarouselApi={(api: CarouselApi) => (carouselApiRef.current = api)}
-    />
+    <div className={className + " flex-1 flex flex-col justify-center items-center min-h-[calc(100vh-80px)]"}>
+      <TopicCardCarousel
+        topicCards={visibleCards}
+        cardStates={cardStates}
+        onBookmarkClick={handleBookmarkClick}
+        onHideClick={handleHideClick}
+        isBookmarking={isBookmarking}
+        isHiding={isHiding}
+        className="w-full"
+        setCarouselApi={(api: CarouselApi) => (carouselApiRef.current = api)}
+      />
+    </div>
   )
 } 
