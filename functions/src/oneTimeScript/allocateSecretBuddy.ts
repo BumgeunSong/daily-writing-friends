@@ -97,6 +97,28 @@ async function saveBuddyPairsToFirestore(buddyPairs: { user: any; knownBuddy: an
   console.log('모든 buddy 정보가 Firestore에 저장되었습니다.');
 }
 
+// 활성 유저의 knownBuddy 필드를 모두 null로 초기화
+async function clearAllKnownBuddies(activeUserIds: string[]) {
+  const db = admin.firestore();
+  const BATCH_LIMIT = 500;
+  let batch = db.batch();
+  let opCount = 0;
+  let batchCount = 1;
+  for (let i = 0; i < activeUserIds.length; i++) {
+    const userRef = db.collection('users').doc(activeUserIds[i]);
+    batch.update(userRef, { knownBuddy: admin.firestore.FieldValue.delete() });
+    opCount++;
+    if (opCount === BATCH_LIMIT || i === activeUserIds.length - 1) {
+      await batch.commit();
+      console.log(`Buddy 초기화 Batch ${batchCount} committed (${opCount} users)`);
+      batch = db.batch();
+      opCount = 0;
+      batchCount++;
+    }
+  }
+  console.log('모든 활성 유저의 knownBuddy 필드를 초기화했습니다.');
+}
+
 // 메인 로직 함수로 분리
 export async function mainAllocateSecretBuddyLogic() {
   const activeBoardId = await getActiveBoardId();
@@ -106,6 +128,8 @@ export async function mainAllocateSecretBuddyLogic() {
   if (activeUsers.length < 2) {
     throw new Error('활성 유저가 2명 이상이어야 buddy 할당이 가능합니다.');
   }
+  // 기존 buddy 관계 초기화
+  await clearAllKnownBuddies(activeUsers.map(u => u.uid));
   const buddyPairs = assignBuddies(activeUsers);
   console.log('버디 매칭 결과:');
   buddyPairs.forEach(pair => {
