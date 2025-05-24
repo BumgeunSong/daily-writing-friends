@@ -71,6 +71,26 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
             <PenSquare className="size-4" />
           </Button>
         </Link>
+
+        <Link
+          to={`/board/${boardId}/topic-cards`}
+          className="group flex items-center"
+          onClick={() => setIsExpanded(false)}
+        >
+          <span className={cn(
+            "mr-2 px-2 py-1 bg-card text-card-foreground rounded text-sm shadow-sm transition-opacity duration-200",
+            isExpanded ? "opacity-100" : "opacity-0 md:group-hover:opacity-100"
+          )}>
+            글감 목록
+          </span>
+          <Button
+            size="sm"
+            className="size-10 rounded-full bg-secondary text-secondary-foreground shadow-md transition-transform hover:scale-110"
+            aria-label="Show Topic Cards"
+          >
+            <Sparkles className="size-4" />
+          </Button>
+        </Link>
       </div>
 
       <Button
