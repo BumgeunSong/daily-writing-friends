@@ -11,14 +11,25 @@ interface TopicCardCarouselContainerProps {
   className?: string
 }
 
-// 간단한 Skeleton 컴포넌트
+// 개선된 Skeleton 컴포넌트
 const TopicCardSkeleton: React.FC = () => (
-  <div className="max-w-[90vw] sm:max-w-xs md:max-w-sm lg:max-w-md bg-gray-100 rounded-2xl shadow-md p-4 h-[180px] animate-pulse flex flex-col justify-between">
-    <div className="h-6 bg-gray-200 rounded w-2/3 mb-2" />
-    <div className="h-4 bg-gray-200 rounded w-full mb-1" />
-    <div className="h-4 bg-gray-200 rounded w-5/6 mb-1" />
-    <div className="h-4 bg-gray-200 rounded w-1/2" />
-    <div className="mt-4 h-9 bg-gray-200 rounded" />
+  <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl flex flex-col justify-between items-center h-[420px] sm:h-[480px] min-h-[420px] sm:min-h-[480px] w-full max-w-[360px] mx-auto p-6 animate-pulse overflow-hidden">
+    {/* 액션 버튼 자리 */}
+    <div className="absolute top-3 right-3 flex gap-2 z-10">
+      <div className="w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-800" />
+      <div className="w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-800" />
+    </div>
+    {/* Quote 아이콘 자리 */}
+    <div className="w-8 h-8 rounded bg-zinc-100 dark:bg-zinc-800 mb-2" />
+    {/* 타이틀/설명 자리 */}
+    <div className="flex-1 flex flex-col items-center justify-center w-full">
+      <div className="h-6 bg-zinc-100 dark:bg-zinc-800 rounded w-2/3 mb-2" />
+      <div className="h-4 bg-zinc-100 dark:bg-zinc-800 rounded w-full mb-1" />
+      <div className="h-4 bg-zinc-100 dark:bg-zinc-800 rounded w-5/6 mb-1" />
+      <div className="h-4 bg-zinc-100 dark:bg-zinc-800 rounded w-1/2" />
+    </div>
+    {/* CTA 버튼 자리 */}
+    <div className="mt-6 h-11 w-full rounded bg-zinc-100 dark:bg-zinc-800" />
   </div>
 )
 
