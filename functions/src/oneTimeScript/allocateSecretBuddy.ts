@@ -20,6 +20,38 @@ interface ActiveUser {
   boardPermissions: Record<string, string>;
 }
 
+// Fisher-Yates shuffle
+function shuffle<T>(array: T[]): T[] {
+  const arr = array.slice();
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// buddy 순환 할당
+function assignBuddies(users: ActiveUser[]) {
+  if (users.length < 2) throw new Error('활성 유저가 2명 이상이어야 합니다.');
+  const shuffled = shuffle(users);
+  const buddyPairs = shuffled.map((user, idx) => {
+    const knownBuddy = shuffled[(idx + 1) % shuffled.length];
+    return {
+      user: {
+        uid: user.uid,
+        nickname: user.nickname,
+        profilePhotoURL: user.profilePhotoURL,
+      },
+      knownBuddy: {
+        uid: knownBuddy.uid,
+        nickname: knownBuddy.nickname,
+        profilePhotoURL: knownBuddy.profilePhotoURL,
+      },
+    };
+  });
+  return buddyPairs;
+}
+
 async function getActiveUsers(activeBoardId: string) {
   const db = admin.firestore();
   // 모든 user 조회
@@ -48,7 +80,14 @@ async function getActiveUsers(activeBoardId: string) {
     console.log('active_board_id:', activeBoardId);
     const activeUsers = await getActiveUsers(activeBoardId);
     console.log('활성 유저 수:', activeUsers.length);
-    console.log('활성 유저 목록:', activeUsers.map(u => ({ uid: u.uid, nickname: u.nickname, profilePhotoURL: u.profilePhotoURL })));
+    if (activeUsers.length < 2) {
+      throw new Error('활성 유저가 2명 이상이어야 buddy 할당이 가능합니다.');
+    }
+    const buddyPairs = assignBuddies(activeUsers);
+    console.log('버디 매칭 결과:');
+    buddyPairs.forEach(pair => {
+      console.log(`User(${pair.user.uid}, ${pair.user.nickname}) → KnownBuddy(${pair.knownBuddy.uid}, ${pair.knownBuddy.nickname})`);
+    });
     process.exit(0);
   } catch (err) {
     console.error(err);
