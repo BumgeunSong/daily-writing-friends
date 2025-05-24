@@ -15,7 +15,7 @@ export function getTopicStateDocRef(userId: string, topicId: string) {
  */
 export async function fetchTopicCardStates(userId: string, topicIds: string[]): Promise<Record<string, TopicCardState>> {
   const states: Record<string, TopicCardState> = {}
-  const colRef = collection(firestore, "userTopicStates", userId, "states")
+  const colRef = collection(firestore, "users", userId, "topicStates")
   const snap = await getDocs(colRef)
   snap.forEach(doc => {
     const data = doc.data() as TopicCardState
@@ -30,7 +30,7 @@ export async function fetchTopicCardStates(userId: string, topicIds: string[]): 
  * 단일 TopicCard 상태 읽기
  */
 export async function fetchTopicCardState(userId: string, topicId: string): Promise<TopicCardState | null> {
-  const ref = doc(firestore, "userTopicStates", userId, "states", topicId)
+  const ref = doc(firestore, "users", userId, "topicStates", topicId)
   const snap = await getDoc(ref)
   return snap.exists() ? (snap.data() as TopicCardState) : null
 }
@@ -39,7 +39,7 @@ export async function fetchTopicCardState(userId: string, topicId: string): Prom
  * TopicCard 상태 생성/업데이트 (merge)
  */
 export async function updateTopicCardState(userId: string, topicId: string, state: Partial<TopicCardState>): Promise<void> {
-  const ref = doc(firestore, "userTopicStates", userId, "states", topicId)
+  const ref = doc(firestore, "users", userId, "topicStates", topicId)
   await setDoc(ref, { ...state, updatedAt: serverTimestamp(), topicId }, { merge: true })
 }
 

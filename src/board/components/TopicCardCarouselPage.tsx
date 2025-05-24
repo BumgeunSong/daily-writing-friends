@@ -1,4 +1,3 @@
-import * as React from "react"
 import { useAuth } from "@/shared/hooks/useAuth"
 import { Skeleton } from "@/shared/ui/skeleton"
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary"
