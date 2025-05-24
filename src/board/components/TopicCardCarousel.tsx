@@ -45,43 +45,45 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps & { setCarouselA
                   key={card.id}
                   className="basis-full max-w-full flex-shrink-0 flex-grow-0 px-2 flex items-center justify-center"
                 >
-                  <div className="relative bg-white rounded-2xl shadow-md flex flex-col justify-between items-center h-[420px] sm:h-[480px] min-h-[420px] sm:min-h-[480px] w-full max-w-[360px] mx-auto p-6">
-                    {/* 버튼 그룹: 카드 우상단 */}
-                    <div className="absolute top-2 right-2 flex gap-2 z-10">
+                  <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl flex flex-col justify-between items-center h-[420px] sm:h-[480px] min-h-[420px] sm:min-h-[480px] w-full max-w-[360px] mx-auto p-6 transition-shadow duration-200">
+                    {/* 액션 버튼 그룹 */}
+                    <div className="absolute top-3 right-3 flex gap-2 z-10">
                       <button
                         type="button"
                         aria-label={state.bookmarked ? "북마크 해제" : "북마크"}
-                        className="w-11 h-11 flex items-center justify-center rounded-full bg-white/80 hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-primary/60 shadow transition"
+                        className="w-11 h-11 flex items-center justify-center rounded-full bg-white/90 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow hover:bg-zinc-100 dark:hover:bg-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-400 transition"
                         onClick={() => onBookmarkClick?.(card.id)}
                         tabIndex={0}
-                        disabled={!!isBookmarking}
+                        aria-pressed={!!state.bookmarked}
+                        disabled={isBookmarking}
                       >
                         {state.bookmarked ? (
                           <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
                         ) : (
-                          <Star className="w-6 h-6 text-gray-400" />
+                          <Star className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
                         )}
                       </button>
                       <button
                         type="button"
                         aria-label="숨김"
-                        className="w-11 h-11 flex items-center justify-center rounded-full bg-white/80 hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-destructive/60 shadow transition"
+                        className="w-11 h-11 flex items-center justify-center rounded-full bg-white/90 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow hover:bg-zinc-100 dark:hover:bg-zinc-700 focus-visible:ring-2 focus-visible:ring-destructive/60 transition"
                         onClick={() => onHideClick?.(card.id)}
                         tabIndex={0}
-                        disabled={!!isHiding}
+                        aria-pressed={!!state.hidden}
+                        disabled={isHiding}
                       >
-                        <X className="w-6 h-6 text-gray-400" />
+                        <X className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
                       </button>
                     </div>
-                    {/* 상단 Lucide quote 아이콘 */}
-                    <Quote className="w-8 h-8 text-gray-300 mb-2" />
+                    {/* Quote 아이콘 */}
+                    <Quote className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-2" />
 
-                    {/* 제목/설명 */}
+                    {/* 타이틀/설명 */}
                     <div className="flex-1 flex flex-col items-center justify-center w-full">
-                      <h3 className="text-lg sm:text-xl font-bold text-center text-gray-900 mb-2 break-words">
+                      <h3 className="text-lg sm:text-xl font-bold text-center text-zinc-900 dark:text-white mb-2 break-words">
                         {card.title}
                       </h3>
-                      <p className="text-sm sm:text-base text-gray-500 text-center break-words">
+                      <p className="text-sm sm:text-base text-zinc-500 dark:text-zinc-400 text-center break-words">
                         {card.description}
                       </p>
                     </div>
