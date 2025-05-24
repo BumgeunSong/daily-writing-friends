@@ -2,6 +2,8 @@ import * as React from "react"
 import { TopicCardCarousel } from "./TopicCardCarousel"
 import { useTopicCardStates } from "../../board/hooks/useTopicCardStates"
 import { TopicCard } from "../../board/model/TopicCard"
+import { toast } from "sonner"
+import { type CarouselApi } from "./Carousel"
 
 interface TopicCardCarouselContainerProps {
   userId: string
@@ -31,7 +33,10 @@ export const TopicCardCarouselContainer: React.FC<TopicCardCarouselContainerProp
     isHiding,
   } = useTopicCardStates(userId, topicCards)
 
-  // 숨김된 카드는 제외, 북마크된 카드는 상단 정렬
+  // Embla API ref
+  const carouselApiRef = React.useRef<CarouselApi | null>(null)
+
+  // 북마크/숨김된 카드는 제외, 북마크 정렬은 최초 마운트/새로고침 시에만 적용
   const visibleCards = React.useMemo(() => {
     return topicCards
       .filter((card) => !cardStates[card.id]?.deleted)
@@ -41,7 +46,22 @@ export const TopicCardCarouselContainer: React.FC<TopicCardCarouselContainerProp
         if (aBookmarked === bBookmarked) return 0
         return aBookmarked ? -1 : 1
       })
-  }, [topicCards, cardStates])
+  }, [topicCards /* cardStates 제거로 즉시 정렬 방지 */])
+
+  // 북마크 클릭 핸들러
+  const handleBookmarkClick = (topicId: string) => {
+    toggleBookmark(topicId)
+    toast("북마크된 글감은 곧 가장 먼저 보여드릴게요")
+  }
+
+  // 숨김 클릭 핸들러
+  const handleHideClick = (topicId: string) => {
+    toggleHide(topicId)
+    // 숨김 후 자동 다음 카드로 이동
+    if (carouselApiRef.current) {
+      carouselApiRef.current.scrollNext()
+    }
+  }
 
   if (isLoading) {
     // Skeleton 3개 표시
@@ -71,11 +91,12 @@ export const TopicCardCarouselContainer: React.FC<TopicCardCarouselContainerProp
     <TopicCardCarousel
       topicCards={visibleCards}
       cardStates={cardStates}
-      onBookmarkClick={toggleBookmark}
-      onHideClick={toggleHide}
+      onBookmarkClick={handleBookmarkClick}
+      onHideClick={handleHideClick}
       isBookmarking={isBookmarking}
       isHiding={isHiding}
       className={className}
+      setCarouselApi={(api: CarouselApi) => (carouselApiRef.current = api)}
     />
   )
 } 
