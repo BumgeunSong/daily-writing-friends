@@ -8,7 +8,7 @@ export function UserKnownBuddy() {
     if (error) return <div>에러 발생: {String(error)}</div>;
     if (!knownBuddy) return null;
     return (
-        <div className="mt-6 p-4 rounded-xl bg-gradient-to-tr from-orange-100 via-pink-100 to-purple-100 flex items-center gap-3">
+        <div className="mt-6 px-4 py-2 rounded-xl bg-gradient-to-tr from-orange-100 via-pink-100 to-purple-100 flex items-center gap-3">
             <span className="text-sm font-semibold text-gray-700">비밀 친구</span>
             <Link to={`/user/${knownBuddy.uid}`} className="flex items-center gap-2 group">
                 <Avatar className="size-9">

@@ -19,6 +19,8 @@ export default function UserPage() {
     return <StatusMessage errorMessage="유저 정보를 찾을 수 없습니다." />
   }
 
+  const isMyPage = currentUser?.uid === userId;
+
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-full flex-col bg-background pb-16">
       {/* Header section with settings button */}
@@ -30,7 +32,7 @@ export default function UserPage() {
           <UserProfile uid={userId} />
 
           {/* Known Buddy 정보 표시 */}
-          <UserKnownBuddy />
+          {isMyPage && <UserKnownBuddy />}
         </div>
       </header>
 
