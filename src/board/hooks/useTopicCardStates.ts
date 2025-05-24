@@ -1,7 +1,6 @@
-import { useCallback } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { setDoc } from "firebase/firestore"
-import { fetchTopicCardStates, getTopicStateDocRef, TopicCard, TopicCardState } from "../api/topicCard"
+import { fetchTopicCardStates, getTopicStateDocRef, TopicCard } from "../api/topicCard"
 
 export function useTopicCardStates(userId: string, topicCards: TopicCard[]) {
   const queryClient = useQueryClient()
