@@ -15,6 +15,9 @@ type TopicCardCarouselProps = {
   onBookmarkClick?: (topicId: string) => void
   onHideClick?: (topicId: string) => void
   onStartWriting?: (card: TopicCard) => void
+  isBookmarking?: boolean
+  isHiding?: boolean
+  isError?: boolean
   className?: string
 }
 
@@ -24,6 +27,9 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps> = ({
   onBookmarkClick,
   onHideClick,
   onStartWriting,
+  isBookmarking,
+  isHiding,
+  isError,
   className,
 }) => {
   return (
@@ -47,6 +53,7 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps> = ({
                         className="w-11 h-11 flex items-center justify-center rounded-full bg-white/80 hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-primary/60 shadow transition"
                         onClick={() => onBookmarkClick?.(card.id)}
                         tabIndex={0}
+                        disabled={!!isBookmarking}
                       >
                         {state.bookmarked ? (
                           <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
@@ -60,6 +67,7 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps> = ({
                         className="w-11 h-11 flex items-center justify-center rounded-full bg-white/80 hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-destructive/60 shadow transition"
                         onClick={() => onHideClick?.(card.id)}
                         tabIndex={0}
+                        disabled={!!isHiding}
                       >
                         <X className="w-6 h-6 text-gray-400" />
                       </button>
@@ -82,6 +90,9 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps> = ({
                         글쓰기 시작
                       </Button>
                     </div>
+                    {isError && (
+                      <div className="mt-2 text-sm text-red-500">오류가 발생했습니다. 다시 시도해 주세요.</div>
+                    )}
                   </div>
                 </CarouselItem>
               )
