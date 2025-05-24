@@ -1,14 +1,6 @@
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp, collection, getDocs, where, query } from "firebase/firestore"
+import { doc, getDoc, setDoc } from "firebase/firestore"
 import { firestore } from "../../firebase"
-
-// TopicCard 데이터 모델
-export type TopicCard = {
-  id: string
-  title: string
-  description: string
-  createdAt: Timestamp
-  createdBy: string
-}
+import { TopicCard } from "../model/TopicCard"
 
 export type TopicCardState = {
   bookmarked?: boolean

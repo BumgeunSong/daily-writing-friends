@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { fetchTopicCardStates, updateTopicCardState, TopicCard } from "../api/topicCard"
+import { fetchTopicCardStates, updateTopicCardState } from "../api/topicCard"
+import { TopicCard } from "../model/TopicCard"
 
 export function useTopicCardStates(userId: string, topicCards: TopicCard[]) {
   const queryClient = useQueryClient()
