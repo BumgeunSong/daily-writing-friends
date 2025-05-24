@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { fetchTopicCardStates, updateTopicCardState } from "../api/topicCard"
 import { TopicCard } from "../model/TopicCard"
+import { toast } from "sonner"
 
 export function useTopicCardStates(userId: string, topicCards: TopicCard[]) {
   const queryClient = useQueryClient()
@@ -43,6 +44,9 @@ export function useTopicCardStates(userId: string, topicCards: TopicCard[]) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["topicCardStates", userId] })
     },
+    onError: () => {
+      toast.error("북마크 처리 중 오류가 발생했습니다.")
+    },
   })
 
   // Optimistic UI: 숨김 토글
@@ -66,6 +70,9 @@ export function useTopicCardStates(userId: string, topicCards: TopicCard[]) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["topicCardStates", userId] })
+    },
+    onError: () => {
+      toast.error("숨김 처리 중 오류가 발생했습니다.")
     },
   })
 
