@@ -8,7 +8,7 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { fetchUser } from '@/user/api/user';
 
 /**
- * 게시글 목록을 불러오는 커스텀 훅 (내 컨텐츠 숨김 유저 자동 필터링)
+ * 게시글 목록을 불러오는 커스텀 훅 (blockedBy 기반 서버사이드 필터링)
  * @param boardId 게시판 ID
  * @param limitCount 페이지당 글 개수
  */
@@ -17,7 +17,7 @@ export const usePosts = (
     limitCount: number
 ) => {
     const { currentUser } = useAuth();
-    // 내 컨텐츠 숨김 유저(blockedUsers) 가져오기
+    // 내 blockedBy(나를 차단한 유저 uid 배열) 가져오기
     const {
         data: user,
         isLoading: isUserLoading,
@@ -26,11 +26,11 @@ export const usePosts = (
         enabled: !!currentUser?.uid,
         suspense: false,
     });
-    const blockedUsers = Array.isArray(user?.blockedUsers) ? user.blockedUsers : [];
+    const blockedBy = Array.isArray(user?.blockedBy) ? user.blockedBy : [];
 
     const queryResult = useInfiniteQuery<Post[]>(
-        ['posts', boardId, blockedUsers],
-        ({ pageParam = null }) => fetchPosts(boardId, limitCount, blockedUsers, pageParam),
+        ['posts', boardId, blockedBy],
+        ({ pageParam = null }) => fetchPosts(boardId, limitCount, blockedBy, pageParam),
         {
             enabled: !!boardId && !isUserLoading && !userError,
             getNextPageParam: (lastPage) => {
@@ -47,29 +47,26 @@ export const usePosts = (
         }
     );
 
-    // blockedUsers 로딩/에러 상태를 함께 반환
     return {
         ...queryResult,
-        isLoading: isUserLoading || queryResult.isLoading,
-        isError: !!userError || queryResult.isError,
-        blockedUsers,
+        blockedBy,
         userError,
         isUserLoading
     };
 };
 
 /**
- * Firestore에서 게시글을 불러옴 (blockedUsers 필터링)
+ * Firestore에서 게시글을 불러옴 (blockedBy 서버사이드 필터링)
  * @param boardId
  * @param limitCount
- * @param blockedUsers
+ * @param blockedBy
  * @param after
  * @returns Post[]
  */
 async function fetchPosts(
     boardId: string,
     limitCount: number,
-    blockedUsers: string[] = [],
+    blockedBy: string[] = [],
     after?: Date
 ): Promise<Post[]> {
     let q = query(
@@ -77,22 +74,19 @@ async function fetchPosts(
         orderBy('createdAt', 'desc'),
         limit(limitCount)
     );
-
     // Firestore not-in 조건은 10개 이하만 지원
-    if (blockedUsers.length > 0 && blockedUsers.length <= 10) {
+    if (blockedBy.length > 0 && blockedBy.length <= 10) {
         q = query(
             collection(firestore, `boards/${boardId}/posts`),
-            where('authorId', 'not-in', blockedUsers),
+            where('authorId', 'not-in', blockedBy),
             orderBy('createdAt', 'desc'),
             limit(limitCount)
         );
     }
     // 10개 초과 시 전체 글 반환 (제약)
-
     if (after) {
         q = query(q, startAfter(after));
     }
-
     const snapshot = await getDocs(q);
     const postsData = snapshot.docs.map(doc => mapDocumentToPost(doc));
     return postsData;

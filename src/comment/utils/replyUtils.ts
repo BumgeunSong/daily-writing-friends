@@ -3,25 +3,24 @@ import { Reply } from '@/comment/model/Reply';
 import { firestore } from '@/firebase';
 
 /**
- * 실시간 답글 구독 (blockedUsers 필터링 지원)
+ * 실시간 답글 구독 (blockedBy 서버사이드 필터링 지원)
  * @param boardId
  * @param postId
  * @param commentId
  * @param setReplies
- * @param blockedUsers 내 컨텐츠 숨김 유저 uid 배열 (userId not-in)
+ * @param blockedBy 내 blockedBy uid 배열 (userId not-in)
  */
 export function fetchReplies(
   boardId: string,
   postId: string,
   commentId: string,
   setReplies: (replies: Reply[]) => void,
-  blockedUsers: string[] = []
+  blockedBy: string[] = []
 ) {
   const repliesRef = collection(firestore, `boards/${boardId}/posts/${postId}/comments/${commentId}/replies`);
   let repliesQuery = query(repliesRef, orderBy('createdAt', 'asc'));
-  // Firestore not-in 조건은 10개 이하만 지원
-  if (blockedUsers.length > 0 && blockedUsers.length <= 10) {
-    repliesQuery = query(repliesRef, where('userId', 'not-in', blockedUsers), orderBy('createdAt', 'asc'));
+  if (blockedBy.length > 0 && blockedBy.length <= 10) {
+    repliesQuery = query(repliesRef, where('userId', 'not-in', blockedBy), orderBy('createdAt', 'asc'));
   }
   // 10개 초과 시 전체 답글 반환 (제약)
   const unsubscribe = onSnapshot(repliesQuery, (snapshot) => {
@@ -43,18 +42,18 @@ export function fetchReplyCount(boardId: string, postId: string, commentId: stri
 }
 
 /**
- * React Query용 한 번만 실행되는 답글 가져오기 함수 (blockedUsers 필터링 지원)
+ * React Query용 한 번만 실행되는 답글 가져오기 함수 (blockedBy 서버사이드 필터링 지원)
  * @param boardId
  * @param postId
  * @param commentId
- * @param blockedUsers
+ * @param blockedBy
  * @returns Reply[]
  */
 export const fetchRepliesOnce = async (
   boardId: string,
   postId: string,
   commentId: string,
-  blockedUsers: string[] = []
+  blockedBy: string[] = []
 ): Promise<Reply[]> => {
   try {
     const repliesRef = collection(
@@ -68,8 +67,8 @@ export const fetchRepliesOnce = async (
       'replies'
     );
     let q = query(repliesRef, orderBy('createdAt', 'asc'));
-    if (blockedUsers.length > 0 && blockedUsers.length <= 10) {
-      q = query(repliesRef, where('userId', 'not-in', blockedUsers), orderBy('createdAt', 'asc'));
+    if (blockedBy.length > 0 && blockedBy.length <= 10) {
+      q = query(repliesRef, where('userId', 'not-in', blockedBy), orderBy('createdAt', 'asc'));
     }
     // 10개 초과 시 전체 답글 반환 (제약)
     const snapshot = await getDocs(q);

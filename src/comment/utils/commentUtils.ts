@@ -3,23 +3,22 @@ import { Comment } from '@/comment/model/Comment';
 import { firestore } from '@/firebase';
 
 /**
- * 실시간 댓글 구독 (blockedUsers 필터링 지원)
+ * 실시간 댓글 구독 (blockedBy 서버사이드 필터링 지원)
  * @param boardId
  * @param postId
  * @param setComments
- * @param blockedUsers 내 컨텐츠 숨김 유저 uid 배열 (userId not-in)
+ * @param blockedBy 내 blockedBy uid 배열 (userId not-in)
  */
 export function fetchComments(
   boardId: string,
   postId: string,
   setComments: React.Dispatch<React.SetStateAction<Comment[]>>,
-  blockedUsers: string[] = []
+  blockedBy: string[] = []
 ) {
   const commentsRef = collection(firestore, `boards/${boardId}/posts/${postId}/comments`);
   let commentsQuery = query(commentsRef, orderBy('createdAt', 'asc'));
-  // Firestore not-in 조건은 10개 이하만 지원
-  if (blockedUsers.length > 0 && blockedUsers.length <= 10) {
-    commentsQuery = query(commentsRef, where('userId', 'not-in', blockedUsers), orderBy('createdAt', 'asc'));
+  if (blockedBy.length > 0 && blockedBy.length <= 10) {
+    commentsQuery = query(commentsRef, where('userId', 'not-in', blockedBy), orderBy('createdAt', 'asc'));
   }
   // 10개 초과 시 전체 댓글 반환 (제약)
   return onSnapshot(commentsQuery, async (snapshot) => {
@@ -132,13 +131,13 @@ export const deleteReplyToComment = async (boardId: string, postId: string, comm
 };
 
 /**
- * React Query용 한 번만 실행되는 댓글 가져오기 함수 (blockedUsers 필터링 지원)
+ * React Query용 한 번만 실행되는 댓글 가져오기 함수 (blockedBy 서버사이드 필터링 지원)
  * @param boardId
  * @param postId
- * @param blockedUsers
+ * @param blockedBy
  * @returns Comment[]
  */
-export const fetchCommentsOnce = async (boardId: string, postId: string, blockedUsers: string[] = []): Promise<Comment[]> => {
+export const fetchCommentsOnce = async (boardId: string, postId: string, blockedBy: string[] = []): Promise<Comment[]> => {
   try {
     const commentsRef = collection(
       firestore, 
@@ -149,8 +148,8 @@ export const fetchCommentsOnce = async (boardId: string, postId: string, blocked
       'comments'
     );
     let q = query(commentsRef, orderBy('createdAt', 'asc'));
-    if (blockedUsers.length > 0 && blockedUsers.length <= 10) {
-      q = query(commentsRef, where('userId', 'not-in', blockedUsers), orderBy('createdAt', 'asc'));
+    if (blockedBy.length > 0 && blockedBy.length <= 10) {
+      q = query(commentsRef, where('userId', 'not-in', blockedBy), orderBy('createdAt', 'asc'));
     }
     // 10개 초과 시 전체 댓글 반환 (제약)
     const snapshot = await getDocs(q);
