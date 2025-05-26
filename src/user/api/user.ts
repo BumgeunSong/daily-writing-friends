@@ -2,7 +2,7 @@
 // Use a consistent naming convention; fetchX() → read-only function, createX(), updateX() → write, cacheX() → caching helpers (if used outside)
 // Abstract repetitive Firebase logic into helpers
 
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, collection, getDocs, where, query, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, collection, getDocs, where, query, Timestamp, writeBatch, orderBy, CollectionReference, Query } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, storage } from '@/firebase';
 import { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
@@ -106,4 +106,95 @@ export async function createUserIfNotExists(user: FirebaseUser): Promise<void> {
             ...defaultUserFields,
         });
     }
+}
+
+/**
+ * blockedBy 배열에 나를 차단한 유저 uid를 추가합니다.
+ * 이미 차단된 경우 중복 추가하지 않습니다.
+ */
+export async function addBlockedUser(myUid: string, blockedUid: string): Promise<void> {
+    const blockedUser = await fetchUser(blockedUid);
+    if (!blockedUser) throw new Error('User to be blocked not found');
+    const blockedBy = Array.isArray(blockedUser.blockedBy) ? blockedUser.blockedBy : [];
+    if (blockedBy.includes(myUid)) return; // 이미 차단됨
+    const updated = [...blockedBy, myUid];
+    await updateUser(blockedUid, { blockedBy: updated });
+}
+
+/**
+ * blockedBy 배열에서 차단 해제할 유저 uid를 제거합니다.
+ * 없는 경우 아무 작업도 하지 않습니다.
+ */
+export async function removeBlockedUser(myUid: string, blockedUid: string): Promise<void> {
+    const blockedUser = await fetchUser(blockedUid);
+    if (!blockedUser) throw new Error('User to be unblocked not found');
+    const blockedBy = Array.isArray(blockedUser.blockedBy) ? blockedUser.blockedBy : [];
+    if (!blockedBy.includes(myUid)) return; // 이미 없음
+    const updated = blockedBy.filter(uid => uid !== myUid);
+    await updateUser(blockedUid, { blockedBy: updated });
+}
+
+/**
+ * 모든 유저를 반환합니다 (관리자/검색용)
+ * @returns User[]
+ */
+export async function fetchAllUsers(): Promise<User[]> {
+    try {
+        const usersSnap = await getDocs(collection(firestore, 'users'));
+        return usersSnap.docs.map(doc => doc.data() as User);
+    } catch (error) {
+        console.error('Error fetching all users:', error);
+        return [];
+    }
+}
+
+/** 차단 */
+export async function blockUser(blockerId: string, blockedId: string) {
+  const batch = writeBatch(firestore);
+  batch.set(doc(firestore, `users/${blockerId}/blockedUsers/${blockedId}`), { blockedAt: serverTimestamp() });
+  batch.set(doc(firestore, `users/${blockedId}/blockedByUsers/${blockerId}`), { blockedAt: serverTimestamp() });
+  await batch.commit();
+}
+
+/** 차단 해제 */
+export async function unblockUser(blockerId: string, blockedId: string) {
+  const batch = writeBatch(firestore);
+  batch.delete(doc(firestore, `users/${blockerId}/blockedUsers/${blockedId}`));
+  batch.delete(doc(firestore, `users/${blockedId}/blockedByUsers/${blockerId}`));
+  await batch.commit();
+}
+
+/** 내가 차단한 유저 목록 */
+export async function getBlockedUsers(userId: string): Promise<string[]> {
+  const snap = await getDocs(collection(firestore, `users/${userId}/blockedUsers`));
+  return snap.docs.map(doc => doc.id);
+}
+
+/** 나를 차단한 유저 목록 */
+export async function getBlockedByUsers(userId: string): Promise<string[]> {
+  const snap = await getDocs(collection(firestore, `users/${userId}/blockedByUsers`));
+  return snap.docs.map(doc => doc.id);
+}
+
+/**
+ * Firestore not-in 쿼리 조건 유틸
+ * @param ref Firestore 컬렉션 참조
+ * @param field not-in 필드명
+ * @param notInList 제외할 uid 배열
+ * @param restOrderBy 추가 orderBy 조건
+ * @returns Query
+ */
+export function buildNotInQuery<T = any>(
+  ref: CollectionReference<T>,
+  field: string,
+  notInList: string[],
+  ...restOrderBy: [string, "asc" | "desc"][]
+): Query<T> {
+  let q: Query<T> = ref;
+  if (notInList.length > 0 && notInList.length <= 10) {
+    q = query(ref, where(field, 'not-in', notInList), ...restOrderBy.map(([f, dir]) => orderBy(f, dir)));
+  } else {
+    q = query(ref, ...restOrderBy.map(([f, dir]) => orderBy(f, dir)));
+  }
+  return q;
 }

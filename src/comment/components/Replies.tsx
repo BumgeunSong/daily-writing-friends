@@ -1,8 +1,6 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Loader2, MessageCircle } from "lucide-react"
 import { useState, Suspense } from "react"
 import { addReplyToComment } from "@/comment/utils/commentUtils"
-import { fetchRepliesOnce, fetchReplyCountOnce } from "@/comment/utils/replyUtils"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { Button } from "@/shared/ui/button"
 import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
@@ -10,6 +8,7 @@ import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import ReplyInput from "./ReplyInput"
 import ReplyList from "./ReplyList"
 import type React from "react"
+import { useReplyCount } from '@/comment/hooks/useReplyCount'
 
 interface RepliesProps {
   boardId: string
@@ -23,14 +22,7 @@ const LoadingIndicator: React.FC = () => <Loader2 className="ml-1 size-4 animate
 const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const { currentUser } = useAuth()
-  const queryClient = useQueryClient()
-
-  // 답글 개수 가져오기
-  const { data: replyCount = 0 } = useQuery({
-    queryKey: ["replyCount", boardId, postId, commentId],
-    queryFn: () => fetchReplyCountOnce(boardId, postId, commentId),
-    refetchOnWindowFocus: false,
-  })
+  const { replyCount } = useReplyCount(boardId, postId, commentId)
 
   const handleSubmit = async (content: string) => {
     if (!currentUser) return
@@ -51,20 +43,10 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
       userId: currentUser.uid,
       userName: currentUser.displayName,
     })
-    // 답글 추가 후 캐시 무효화
-    queryClient.invalidateQueries({ queryKey: ["replies", boardId, postId, commentId] })
-    queryClient.invalidateQueries({ queryKey: ["replyCount", boardId, postId, commentId] })
+    // 답글 추가 후 캐시 무효화는 useReplyCount/useReplies 훅에서 react-query로 처리
   }
 
   const toggleExpand = () => {
-    if (!isExpanded) {
-      // 펼칠 때 데이터 미리 가져오기
-      queryClient.prefetchQuery({
-        queryKey: ["replies", boardId, postId, commentId],
-        queryFn: () => fetchRepliesOnce(boardId, postId, commentId),
-      })
-    }
-
     setIsExpanded(!isExpanded)
   }
 
@@ -85,7 +67,7 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
           {/* 답글이 펼쳐져 있을 때만 로딩 인디케이터 표시 */}
           {isExpanded && (
             <Suspense fallback={<LoadingIndicator />}>
-              <ReplyLoadingIndicator boardId={boardId} postId={postId} commentId={commentId} />
+              {/* Suspense fallback만 담당, 실제 데이터 fetch는 ReplyList 내부에서 */}
             </Suspense>
           )}
         </div>
@@ -94,7 +76,7 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
       {isExpanded && (
         <div className="mt-6 border-l-2 border-gray-200 pl-4 dark:border-gray-700">
           <Suspense fallback={null}>
-            <ReplyList boardId={boardId} postId={postId} commentId={commentId} />
+            <ReplyList boardId={boardId} postId={postId} commentId={commentId} currentUserId={currentUser?.uid} />
           </Suspense>
           <div className="space-y-2">
             <ReplyInput onSubmit={handleSubmit} />
@@ -103,23 +85,6 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
       )}
     </div>
   )
-}
-
-// 이 컴포넌트는 Suspense와 함께 사용하기 위한 것입니다
-const ReplyLoadingIndicator: React.FC<{
-  boardId: string
-  postId: string
-  commentId: string
-}> = ({ boardId, postId, commentId }) => {
-  // 이 쿼리는 Suspense를 트리거하기 위해 사용됩니다
-  useQuery({
-    queryKey: ["replies", boardId, postId, commentId],
-    queryFn: () => fetchRepliesOnce(boardId, postId, commentId),
-    suspense: true,
-  })
-
-  // 데이터가 로드되면 아무것도 렌더링하지 않습니다
-  return null
 }
 
 export default Replies

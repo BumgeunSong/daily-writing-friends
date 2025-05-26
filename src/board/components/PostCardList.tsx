@@ -16,12 +16,15 @@ interface PostCardListProps {
   onClickProfile?: (userId: string) => void;
 }
 
+/**
+ * 게시글 목록 컴포넌트 (내 컨텐츠 숨김 유저 필터링)
+ */
 const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onClickProfile }) => {
   const [inViewRef, inView] = useInView();
   const [limitCount] = useState(7);
   usePerformanceMonitoring('PostCardList')
   const queryClient = useQueryClient();
-  const { knownBuddy, isLoading: isKnownBuddyLoading, error: knownBuddyError } = useCurrentUserKnownBuddy();
+  const { knownBuddy } = useCurrentUserKnownBuddy();
 
   const {
     data: postPages,
@@ -87,7 +90,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
           post={post} 
           onClick={() => handlePostClick(post.id)} 
           onClickProfile={onClickProfile}
-          currentUser={knownBuddy ?? null}
+          isKnownBuddy={post.authorId === knownBuddy?.uid}
         />
       ))}
       <div ref={inViewRef} />

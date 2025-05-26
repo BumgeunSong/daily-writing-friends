@@ -1,16 +1,32 @@
 import * as Sentry from '@sentry/react';
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { limit, query, collection, orderBy, getDocs, startAfter } from "firebase/firestore";
-import { firestore } from "@/firebase";
+import { useAuth } from '@/shared/hooks/useAuth';
+import { getBlockedByUsers } from '@/user/api/user';
 import { Post } from '@/post/model/Post';
-import { mapDocumentToPost } from '@/post/utils/postUtils';
+import { fetchPosts } from '@/post/api/post';
+import { useState, useEffect } from 'react';
 
-export const usePosts = (boardId: string, limitCount: number) => {
-    return useInfiniteQuery<Post[]>(
-        ['posts', boardId],
-        ({ pageParam = null }) => fetchPosts(boardId, limitCount, pageParam),
+/**
+ * 게시글 목록을 불러오는 커스텀 훅 (blockedBy 기반 서버사이드 필터링)
+ * @param boardId 게시판 ID
+ * @param limitCount 페이지당 글 개수
+ */
+export const usePosts = (
+    boardId: string,
+    limitCount: number
+) => {
+    const { currentUser } = useAuth();
+    const [blockedByUsers, setBlockedByUsers] = useState<string[]>([]);
+    useEffect(() => {
+      if (currentUser?.uid) {
+        getBlockedByUsers(currentUser.uid).then(setBlockedByUsers);
+      }
+    }, [currentUser?.uid]);
+    const queryResult = useInfiniteQuery<Post[]>(
+        ['posts', boardId, blockedByUsers],
+        ({ pageParam = null }) => fetchPosts(boardId, limitCount, blockedByUsers, pageParam),
         {
-            enabled: !!boardId,
+            enabled: !!boardId && !!currentUser?.uid,
             getNextPageParam: (lastPage) => {
                 const lastPost = lastPage[lastPage.length - 1];
                 return lastPost ? lastPost.createdAt?.toDate() : undefined;
@@ -24,20 +40,9 @@ export const usePosts = (boardId: string, limitCount: number) => {
             refetchOnWindowFocus: true, // Refetch when the window regains focus
         }
     );
+
+    return {
+        ...queryResult,
+        blockedByUsers,
+    };
 };
-
-async function fetchPosts(boardId: string, limitCount: number, after?: Date): Promise<Post[]> {
-    let q = query(
-        collection(firestore, `boards/${boardId}/posts`),
-        orderBy('createdAt', 'desc'),
-        limit(limitCount)
-    );
-
-    if (after) {
-        q = query(q, startAfter(after));
-    }
-
-    const snapshot = await getDocs(q);
-    const postsData = snapshot.docs.map(doc => mapDocumentToPost(doc));
-    return postsData;
-}

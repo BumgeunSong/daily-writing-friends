@@ -1,14 +1,14 @@
-import { useQueryClient, useQuery } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
 import { Suspense } from "react"
 import CommentInput from "@/comment/components/CommentInput"
 import CommentList from "@/comment/components/CommentList"
 import CommentPrompt from "@/comment/components/CommentPrompt"
-import { fetchCommentsOnce } from "@/comment/utils/commentUtils"
 import { addCommentToPost } from "@/comment/utils/commentUtils"
 import { useAuth } from "@/shared/hooks/useAuth"
 import { sendAnalyticsEvent, AnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import type React from "react"
+
 interface CommentsProps {
   boardId: string
   postId: string
@@ -20,22 +20,6 @@ interface CommentsProps {
 const LoadingIndicator: React.FC = () => (
   <Loader2 className="ml-2 size-4 animate-spin text-muted-foreground" />
 );
-
-// 이 컴포넌트는 Suspense와 함께 사용하기 위한 것입니다
-const CommentLoadingIndicator: React.FC<{
-  boardId: string;
-  postId: string;
-}> = ({ boardId, postId }) => {
-  // 이 쿼리는 Suspense를 트리거하기 위해 사용됩니다
-  useQuery({
-    queryKey: ['comments', boardId, postId],
-    queryFn: () => fetchCommentsOnce(boardId, postId),
-    suspense: true,
-  });
-  
-  // 데이터가 로드되면 아무것도 렌더링하지 않습니다
-  return null;
-};
 
 const Comments: React.FC<CommentsProps> = ({ boardId, postId, postAuthorId, postAuthorNickname }) => {
   const { currentUser } = useAuth()
@@ -53,7 +37,6 @@ const Comments: React.FC<CommentsProps> = ({ boardId, postId, postAuthorId, post
       userId: currentUser.uid,
       userName: currentUser.displayName
     });
-    
     // 댓글 추가 후 캐시 무효화
     queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] })
   }
@@ -63,11 +46,11 @@ const Comments: React.FC<CommentsProps> = ({ boardId, postId, postAuthorId, post
       <div className="flex items-center">
         <h2 className="text-2xl font-semibold">댓글</h2>
         <Suspense fallback={<LoadingIndicator />}>
-          <CommentLoadingIndicator boardId={boardId} postId={postId} />
+          {/* Suspense fallback만 담당, 데이터 fetch는 CommentList 내부에서 */}
         </Suspense>
       </div>
       <Suspense fallback={null}>
-        <CommentList boardId={boardId} postId={postId} />
+        <CommentList boardId={boardId} postId={postId} currentUserId={currentUser?.uid} />
       </Suspense>
       <div className="mt-6 space-y-4 border-t border-gray-200 pt-6 dark:border-gray-700">
         <CommentPrompt postAuthorId={postAuthorId} postAuthorNickname={postAuthorNickname} />

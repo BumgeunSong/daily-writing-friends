@@ -23,6 +23,7 @@ import StatsPage from '@/stats/components/StatsPage';
 import EditAccountPage from '@/user/components/EditAccountPage';
 import UserPage from '@/user/components/UserPage';
 import UserSettingPage from '@/user/components/UserSettingPage';
+import BlockedUsersPage from '@/user/components/BlockedUsersPage';
 import { PrivateRoutes } from './shared/components/route/PrivateRoutes';
 import { PublicRoutes } from './shared/components/route/PublicRoutes';
 
@@ -68,6 +69,7 @@ export default function App() {
         <Route path="/user" element={<UserPage />} />
         <Route path="/user/:userId" element={<UserPage />} />
         <Route path="/user/settings" element={<UserSettingPage />} />
+        <Route path="/user/blocked-users" element={<BlockedUsersPage />} />
       </Route>
 
       {/* 인증 필요, BottomNavigatorLayout 미적용 (개별 페이지) */}
