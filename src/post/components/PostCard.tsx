@@ -1,24 +1,17 @@
-import { MessageCircle, User, Lock } from "lucide-react"
+import { MessageCircle, Lock } from "lucide-react"
 import { type Post, PostVisibility } from "@/post/model/Post"
 import { getContentPreview } from "@/post/utils/contentUtils"
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
 import { Badge } from "@/shared/ui/badge"
 import { Card, CardContent, CardFooter, CardHeader } from "@/shared/ui/card"
-import { Skeleton } from "@/shared/ui/skeleton"
 import { useUser } from "@/user/hooks/useUser"
-
+import { PostUserProfile } from './PostUserProfile'
 import type React from "react"
 
 interface PostCardProps {
   post: Post
   onClick: (postId: string) => void
   onClickProfile?: (userId: string) => void
-}
-
-interface UserPostProfileProps {
-  authorData: any;
-  isLoading: boolean;
-  onClickProfile: (e: React.MouseEvent) => void;
+  isKnownBuddy: boolean
 }
 
 // 키보드 접근성: role="button"에서 Enter/Space로 클릭 지원
@@ -29,47 +22,8 @@ function handleKeyDown(e: React.KeyboardEvent, onClick: (e: any) => void) {
   }
 }
 
-const UserPostProfile: React.FC<UserPostProfileProps> = ({ authorData, isLoading, onClickProfile }) => (
-  <div className="flex items-center">
-    {isLoading ? (
-      <Skeleton className="size-7 rounded-full" />
-    ) : (
-      <Avatar
-        className="size-7 cursor-pointer transition-all duration-150 group/profile min-w-[44px] min-h-[44px] active:scale-95 active:bg-accent/20"
-        onClick={onClickProfile}
-        role="button"
-        tabIndex={0}
-        aria-label="작성자 프로필로 이동"
-        onKeyDown={e => handleKeyDown(e, onClickProfile)}
-      >
-        <AvatarImage src={authorData?.profilePhotoURL || ""} alt={authorData?.realName || "User"} />
-        <AvatarFallback>
-          <User className="size-3.5" />
-        </AvatarFallback>
-      </Avatar>
-    )}
-    <div className="ml-2">
-      {isLoading ? (
-        <Skeleton className="h-4 w-20" />
-      ) : (
-        <p
-          className="text-sm font-medium text-foreground/90 cursor-pointer transition-colors duration-150 group-hover/profile:text-primary group-hover/profile:underline min-h-[44px] flex items-center active:text-primary"
-          onClick={onClickProfile}
-          role="button"
-          tabIndex={0}
-          aria-label="작성자 프로필로 이동"
-          onKeyDown={e => handleKeyDown(e, onClickProfile)}
-        >
-          {authorData?.nickname || "알 수 없음"}
-        </p>
-      )}
-    </div>
-  </div>
-);
-
-const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, isKnownBuddy }) => {
   const { userData: authorData, isLoading: isAuthorLoading } = useUser(post.authorId)
-
   const isPrivate = post.visibility === PostVisibility.PRIVATE
   const contentPreview = !isPrivate ? getContentPreview(post.content) : null
 
@@ -90,13 +44,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) =>
     >
       <CardHeader className="px-4 pb-2 pt-3">
         <div className="mb-2 flex items-center">
-          <UserPostProfile
+          <PostUserProfile
             authorData={authorData}
             isLoading={isAuthorLoading}
+            isKnownBuddy={isKnownBuddy}
             onClickProfile={handleProfileClick}
           />
         </div>
-
         <h2 className="flex items-center text-xl font-semibold text-foreground/90">
           {isPrivate && <Lock className="mr-1.5 size-4 shrink-0 text-muted-foreground" aria-label="비공개 글" />}
           {post.title}
