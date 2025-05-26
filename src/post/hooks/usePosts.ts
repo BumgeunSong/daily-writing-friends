@@ -1,11 +1,12 @@
 import * as Sentry from '@sentry/react';
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { limit, query, collection, orderBy, getDocs, startAfter, where } from "firebase/firestore";
 import { firestore } from "@/firebase";
 import { Post } from '@/post/model/Post';
 import { mapDocumentToPost } from '@/post/utils/postUtils';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { fetchUser } from '@/user/api/user';
+import { getBlockedByUsers } from '@/user/api/user';
+import { useState, useEffect } from 'react';
 
 /**
  * 게시글 목록을 불러오는 커스텀 훅 (blockedBy 기반 서버사이드 필터링)
@@ -17,22 +18,17 @@ export const usePosts = (
     limitCount: number
 ) => {
     const { currentUser } = useAuth();
-    // 내 blockedBy(나를 차단한 유저 uid 배열) 가져오기
-    const {
-        data: user,
-        isLoading: isUserLoading,
-        error: userError
-    } = useQuery(['user', currentUser?.uid], () => currentUser?.uid ? fetchUser(currentUser.uid) : null, {
-        enabled: !!currentUser?.uid,
-        suspense: false,
-    });
-    const blockedBy = Array.isArray(user?.blockedBy) ? user.blockedBy : [];
-
+    const [blockedByUsers, setBlockedByUsers] = useState<string[]>([]);
+    useEffect(() => {
+      if (currentUser?.uid) {
+        getBlockedByUsers(currentUser.uid).then(setBlockedByUsers);
+      }
+    }, [currentUser?.uid]);
     const queryResult = useInfiniteQuery<Post[]>(
-        ['posts', boardId, blockedBy],
-        ({ pageParam = null }) => fetchPosts(boardId, limitCount, blockedBy, pageParam),
+        ['posts', boardId, blockedByUsers],
+        ({ pageParam = null }) => fetchPosts(boardId, limitCount, blockedByUsers, pageParam),
         {
-            enabled: !!boardId && !isUserLoading && !userError,
+            enabled: !!boardId && !!currentUser?.uid,
             getNextPageParam: (lastPage) => {
                 const lastPost = lastPage[lastPage.length - 1];
                 return lastPost ? lastPost.createdAt?.toDate() : undefined;
@@ -49,9 +45,7 @@ export const usePosts = (
 
     return {
         ...queryResult,
-        blockedBy,
-        userError,
-        isUserLoading
+        blockedByUsers,
     };
 };
 
@@ -59,14 +53,14 @@ export const usePosts = (
  * Firestore에서 게시글을 불러옴 (blockedBy 서버사이드 필터링)
  * @param boardId
  * @param limitCount
- * @param blockedBy
+ * @param blockedByUsers
  * @param after
  * @returns Post[]
  */
 async function fetchPosts(
     boardId: string,
     limitCount: number,
-    blockedBy: string[] = [],
+    blockedByUsers: string[] = [],
     after?: Date
 ): Promise<Post[]> {
     let q = query(
@@ -74,16 +68,14 @@ async function fetchPosts(
         orderBy('createdAt', 'desc'),
         limit(limitCount)
     );
-    // Firestore not-in 조건은 10개 이하만 지원
-    if (blockedBy.length > 0 && blockedBy.length <= 10) {
+    if (blockedByUsers.length > 0 && blockedByUsers.length <= 10) {
         q = query(
             collection(firestore, `boards/${boardId}/posts`),
-            where('authorId', 'not-in', blockedBy),
+            where('authorId', 'not-in', blockedByUsers),
             orderBy('createdAt', 'desc'),
             limit(limitCount)
         );
     }
-    // 10개 초과 시 전체 글 반환 (제약)
     if (after) {
         q = query(q, startAfter(after));
     }

@@ -7,18 +7,18 @@ import { firestore } from '@/firebase';
  * @param boardId
  * @param postId
  * @param setComments
- * @param blockedBy 내 blockedBy uid 배열 (userId not-in)
+ * @param blockedByUsers 내 blockedBy uid 배열 (userId not-in)
  */
 export function fetchComments(
   boardId: string,
   postId: string,
   setComments: React.Dispatch<React.SetStateAction<Comment[]>>,
-  blockedBy: string[] = []
+  blockedByUsers: string[] = []
 ) {
   const commentsRef = collection(firestore, `boards/${boardId}/posts/${postId}/comments`);
   let commentsQuery = query(commentsRef, orderBy('createdAt', 'asc'));
-  if (blockedBy.length > 0 && blockedBy.length <= 10) {
-    commentsQuery = query(commentsRef, where('userId', 'not-in', blockedBy), orderBy('createdAt', 'asc'));
+  if (blockedByUsers.length > 0 && blockedByUsers.length <= 10) {
+    commentsQuery = query(commentsRef, where('userId', 'not-in', blockedByUsers), orderBy('createdAt', 'asc'));
   }
   // 10개 초과 시 전체 댓글 반환 (제약)
   return onSnapshot(commentsQuery, async (snapshot) => {
@@ -134,10 +134,10 @@ export const deleteReplyToComment = async (boardId: string, postId: string, comm
  * React Query용 한 번만 실행되는 댓글 가져오기 함수 (blockedBy 서버사이드 필터링 지원)
  * @param boardId
  * @param postId
- * @param blockedBy
+ * @param blockedByUsers
  * @returns Comment[]
  */
-export const fetchCommentsOnce = async (boardId: string, postId: string, blockedBy: string[] = []): Promise<Comment[]> => {
+export const fetchCommentsOnce = async (boardId: string, postId: string, blockedByUsers: string[] = []): Promise<Comment[]> => {
   try {
     const commentsRef = collection(
       firestore, 
@@ -148,8 +148,8 @@ export const fetchCommentsOnce = async (boardId: string, postId: string, blocked
       'comments'
     );
     let q = query(commentsRef, orderBy('createdAt', 'asc'));
-    if (blockedBy.length > 0 && blockedBy.length <= 10) {
-      q = query(commentsRef, where('userId', 'not-in', blockedBy), orderBy('createdAt', 'asc'));
+    if (blockedByUsers.length > 0 && blockedByUsers.length <= 10) {
+      q = query(commentsRef, where('userId', 'not-in', blockedByUsers), orderBy('createdAt', 'asc'));
     }
     // 10개 초과 시 전체 댓글 반환 (제약)
     const snapshot = await getDocs(q);

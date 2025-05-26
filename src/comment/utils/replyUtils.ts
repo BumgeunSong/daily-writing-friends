@@ -8,19 +8,19 @@ import { firestore } from '@/firebase';
  * @param postId
  * @param commentId
  * @param setReplies
- * @param blockedBy 내 blockedBy uid 배열 (userId not-in)
+ * @param blockedByUsers 내 blockedBy uid 배열 (userId not-in)
  */
 export function fetchReplies(
   boardId: string,
   postId: string,
   commentId: string,
   setReplies: (replies: Reply[]) => void,
-  blockedBy: string[] = []
+  blockedByUsers: string[] = []
 ) {
   const repliesRef = collection(firestore, `boards/${boardId}/posts/${postId}/comments/${commentId}/replies`);
   let repliesQuery = query(repliesRef, orderBy('createdAt', 'asc'));
-  if (blockedBy.length > 0 && blockedBy.length <= 10) {
-    repliesQuery = query(repliesRef, where('userId', 'not-in', blockedBy), orderBy('createdAt', 'asc'));
+  if (blockedByUsers.length > 0 && blockedByUsers.length <= 10) {
+    repliesQuery = query(repliesRef, where('userId', 'not-in', blockedByUsers), orderBy('createdAt', 'asc'));
   }
   // 10개 초과 시 전체 답글 반환 (제약)
   const unsubscribe = onSnapshot(repliesQuery, (snapshot) => {
@@ -46,14 +46,14 @@ export function fetchReplyCount(boardId: string, postId: string, commentId: stri
  * @param boardId
  * @param postId
  * @param commentId
- * @param blockedBy
+ * @param blockedByUsers
  * @returns Reply[]
  */
 export const fetchRepliesOnce = async (
   boardId: string,
   postId: string,
   commentId: string,
-  blockedBy: string[] = []
+  blockedByUsers: string[] = []
 ): Promise<Reply[]> => {
   try {
     const repliesRef = collection(
@@ -67,8 +67,8 @@ export const fetchRepliesOnce = async (
       'replies'
     );
     let q = query(repliesRef, orderBy('createdAt', 'asc'));
-    if (blockedBy.length > 0 && blockedBy.length <= 10) {
-      q = query(repliesRef, where('userId', 'not-in', blockedBy), orderBy('createdAt', 'asc'));
+    if (blockedByUsers.length > 0 && blockedByUsers.length <= 10) {
+      q = query(repliesRef, where('userId', 'not-in', blockedByUsers), orderBy('createdAt', 'asc'));
     }
     // 10개 초과 시 전체 답글 반환 (제약)
     const snapshot = await getDocs(q);

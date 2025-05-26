@@ -2,7 +2,7 @@
 // Use a consistent naming convention; fetchX() → read-only function, createX(), updateX() → write, cacheX() → caching helpers (if used outside)
 // Abstract repetitive Firebase logic into helpers
 
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, collection, getDocs, where, query, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, collection, getDocs, where, query, Timestamp, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, storage } from '@/firebase';
 import { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
@@ -146,4 +146,32 @@ export async function fetchAllUsers(): Promise<User[]> {
         console.error('Error fetching all users:', error);
         return [];
     }
+}
+
+/** 차단 */
+export async function blockUser(blockerId: string, blockedId: string) {
+  const batch = writeBatch(firestore);
+  batch.set(doc(firestore, `users/${blockerId}/blockedUsers/${blockedId}`), { blockedAt: Date.now() });
+  batch.set(doc(firestore, `users/${blockedId}/blockedByUsers/${blockerId}`), { blockedAt: Date.now() });
+  await batch.commit();
+}
+
+/** 차단 해제 */
+export async function unblockUser(blockerId: string, blockedId: string) {
+  const batch = writeBatch(firestore);
+  batch.delete(doc(firestore, `users/${blockerId}/blockedUsers/${blockedId}`));
+  batch.delete(doc(firestore, `users/${blockedId}/blockedByUsers/${blockerId}`));
+  await batch.commit();
+}
+
+/** 내가 차단한 유저 목록 */
+export async function getBlockedUsers(userId: string): Promise<string[]> {
+  const snap = await getDocs(collection(firestore, `users/${userId}/blockedUsers`));
+  return snap.docs.map(doc => doc.id);
+}
+
+/** 나를 차단한 유저 목록 */
+export async function getBlockedByUsers(userId: string): Promise<string[]> {
+  const snap = await getDocs(collection(firestore, `users/${userId}/blockedByUsers`));
+  return snap.docs.map(doc => doc.id);
 }

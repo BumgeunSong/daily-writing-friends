@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Separator } from "@/shared/ui/separator"
 import { ArrowLeft, UserX, Search, X } from "lucide-react"
 import { useAuth } from '@/shared/hooks/useAuth'
-import { fetchUser, addBlockedUser, removeBlockedUser } from '@/user/api/user'
+import { blockUser, unblockUser, getBlockedUsers, fetchUser } from '@/user/api/user'
 import useUserSearch from '@/user/hooks/useUserSearch'
 
 // 검색 서제스트 드롭다운만 별도 컴포넌트로 분리 (Suspense 지원)
@@ -115,15 +115,14 @@ export default function BlockedUsersPage() {
   useEffect(() => {
     if (!currentUser) return;
     (async () => {
-      const user = await fetchUser(currentUser.uid);
-      if (!user) return;
-      if (!user.blockedUsers || user.blockedUsers.length === 0) {
+      const blockedUids = await getBlockedUsers(currentUser.uid);
+      if (!blockedUids || blockedUids.length === 0) {
         setBlockedUsers([]);
         return;
       }
       // 차단 유저 정보 fetch
       const users = await Promise.all(
-        user.blockedUsers.map(uid => fetchUser(uid))
+        blockedUids.map(uid => fetchUser(uid))
       );
       setBlockedUsers(users.filter(Boolean));
     })();
@@ -186,7 +185,7 @@ export default function BlockedUsersPage() {
     }
     setLoading(true)
     try {
-      await addBlockedUser(currentUser.uid, user.uid)
+      await blockUser(currentUser.uid, user.uid)
       setBlockedUsers((prev) => [...prev, user])
       setSearchQuery("")
       setShowSuggestions(false)
@@ -205,7 +204,7 @@ export default function BlockedUsersPage() {
     if (!currentUser) return;
     setLoading(true)
     try {
-      await removeBlockedUser(currentUser.uid, uid)
+      await unblockUser(currentUser.uid, uid)
       const user = blockedUsers.find((u) => u.uid === uid)
       setBlockedUsers((prev) => prev.filter((u) => u.uid !== uid))
       setConfirmUnblockUid(null)

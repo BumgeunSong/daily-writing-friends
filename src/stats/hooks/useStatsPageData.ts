@@ -5,7 +5,7 @@ import { useWritingStatsV2 } from "@/stats/hooks/useWritingStatsV2"
 import { useUserInBoard } from "@/user/hooks/useUserInBoard"
 import { useCommentingStats } from "@/stats/hooks/useCommentingStats"
 import { useAuth } from '@/shared/hooks/useAuth';
-import { fetchUser } from '@/user/api/user';
+import { getBlockedByUsers } from '@/user/api/user';
 import { useQuery } from '@tanstack/react-query';
 
 /**
@@ -31,32 +31,30 @@ export function useStatsPageData(tab: TabType) {
     );
     // 내 blockedBy(나를 차단한 유저 uid 배열) 가져오기
     const { currentUser } = useAuth();
-    const {
-        data: user,
-        isLoading: isUserLoading,
-        error: userError
-    } = useQuery(['user', currentUser?.uid], () => currentUser?.uid ? fetchUser(currentUser.uid) : null, {
+    const { data: blockedByUsers = [] } = useQuery(
+      ['blockedByUsers', currentUser?.uid],
+      () => getBlockedByUsers(currentUser!.uid),
+      {
         enabled: !!currentUser?.uid,
-        suspense: false,
-    });
-    const blockedBy = Array.isArray(user?.blockedBy) ? user.blockedBy : [];
-    // blockedBy에 포함된 유저 제외
-    const filteredUserIds = activeUsers
-        .filter(u => !blockedBy.includes(u.uid))
-        .map(u => u.uid);
+        initialData: [],
+      }
+    );
+
+    const filteredActiveUsers = activeUsers.filter(u => !blockedByUsers.includes(u.uid));
+
     // 사용자 ID 배열로 통계 가져오기
     const { 
         data: writingStats, 
         isLoading: isLoadingStats, 
         error: statsError 
-    } = useWritingStatsV2(filteredUserIds);
+    } = useWritingStatsV2(filteredActiveUsers.map(u => u.uid));
     const { 
         data: commentingStats, 
         isLoading: isLoadingCommenting, 
         error: commentingError 
-    } = useCommentingStats(filteredUserIds);
-    const isLoading = isLoadingConfig || isLoadingUsers || isUserLoading || (tab === 'posting' ? isLoadingStats : isLoadingCommenting);
-    const error = configError || usersError || userError || (tab === 'posting' ? statsError : commentingError);
+    } = useCommentingStats(filteredActiveUsers.map(u => u.uid));
+    const isLoading = isLoadingConfig || isLoadingUsers || isLoadingStats || isLoadingCommenting;
+    const error = configError || usersError || statsError || commentingError;
     // 통계 새로고침 핸들러
     const handleRefreshStats = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -68,7 +66,7 @@ export function useStatsPageData(tab: TabType) {
     // Stats 탭 핸들러 등록
     useRegisterTabHandler('Stats', handleRefreshStats);
     return {
-        activeUsers,
+        filteredActiveUsers,
         writingStats,
         commentingStats,
         isLoading,
