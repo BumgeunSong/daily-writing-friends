@@ -57,8 +57,6 @@ function SuggestionsDropdown({
       .slice(0, 5)
   }, [searchResult, searchQuery, blockedUsers, currentUser])
 
-  console.log('searchResult:', searchResult)
-
   if (suggestions.length > 0) {
     return (
       <div

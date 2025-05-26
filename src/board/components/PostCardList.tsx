@@ -26,19 +26,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
   const [limitCount] = useState(7);
   usePerformanceMonitoring('PostCardList')
   const queryClient = useQueryClient();
-  const { knownBuddy, isLoading: isKnownBuddyLoading, error: knownBuddyError } = useCurrentUserKnownBuddy();
-  const { currentUser } = useAuth();
-
-  // 내 컨텐츠 숨김 유저(blockedUsers) 가져오기
-  const {
-    data: user,
-    isLoading: isUserLoading,
-    error: userError
-  } = useQuery(['user', currentUser?.uid], () => currentUser?.uid ? fetchUser(currentUser.uid) : null, {
-    enabled: !!currentUser?.uid,
-    suspense: false,
-  });
-  const blockedUsers = Array.isArray(user?.blockedUsers) ? user.blockedUsers : [];
+  const { knownBuddy } = useCurrentUserKnownBuddy();
 
   const {
     data: postPages,
@@ -104,7 +92,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
           post={post} 
           onClick={() => handlePostClick(post.id)} 
           onClickProfile={onClickProfile}
-          isKnownBuddy={!!knownBuddy}
+          isKnownBuddy={post.authorId === knownBuddy?.uid}
         />
       ))}
       <div ref={inViewRef} />
