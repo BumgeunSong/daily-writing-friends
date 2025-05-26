@@ -2,7 +2,7 @@
 // Use a consistent naming convention; fetchX() → read-only function, createX(), updateX() → write, cacheX() → caching helpers (if used outside)
 // Abstract repetitive Firebase logic into helpers
 
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, collection, getDocs, where, query, Timestamp, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, collection, getDocs, where, query, Timestamp, writeBatch, orderBy, CollectionReference, Query } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, storage } from '@/firebase';
 import { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
@@ -174,4 +174,27 @@ export async function getBlockedUsers(userId: string): Promise<string[]> {
 export async function getBlockedByUsers(userId: string): Promise<string[]> {
   const snap = await getDocs(collection(firestore, `users/${userId}/blockedByUsers`));
   return snap.docs.map(doc => doc.id);
+}
+
+/**
+ * Firestore not-in 쿼리 조건 유틸
+ * @param ref Firestore 컬렉션 참조
+ * @param field not-in 필드명
+ * @param notInList 제외할 uid 배열
+ * @param restOrderBy 추가 orderBy 조건
+ * @returns Query
+ */
+export function buildNotInQuery<T = any>(
+  ref: CollectionReference<T>,
+  field: string,
+  notInList: string[],
+  ...restOrderBy: [string, "asc" | "desc"][]
+): Query<T> {
+  let q: Query<T> = ref;
+  if (notInList.length > 0 && notInList.length <= 10) {
+    q = query(ref, where(field, 'not-in', notInList), ...restOrderBy.map(([f, dir]) => orderBy(f, dir)));
+  } else {
+    q = query(ref, ...restOrderBy.map(([f, dir]) => orderBy(f, dir)));
+  }
+  return q;
 }

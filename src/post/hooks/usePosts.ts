@@ -1,11 +1,9 @@
 import * as Sentry from '@sentry/react';
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { limit, query, collection, orderBy, getDocs, startAfter, where } from "firebase/firestore";
-import { firestore } from "@/firebase";
-import { Post } from '@/post/model/Post';
-import { mapDocumentToPost } from '@/post/utils/postUtils';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { getBlockedByUsers } from '@/user/api/user';
+import { Post } from '@/post/model/Post';
+import { fetchPosts } from '@/post/api/post';
 import { useState, useEffect } from 'react';
 
 /**
@@ -48,38 +46,3 @@ export const usePosts = (
         blockedByUsers,
     };
 };
-
-/**
- * Firestore에서 게시글을 불러옴 (blockedBy 서버사이드 필터링)
- * @param boardId
- * @param limitCount
- * @param blockedByUsers
- * @param after
- * @returns Post[]
- */
-async function fetchPosts(
-    boardId: string,
-    limitCount: number,
-    blockedByUsers: string[] = [],
-    after?: Date
-): Promise<Post[]> {
-    let q = query(
-        collection(firestore, `boards/${boardId}/posts`),
-        orderBy('createdAt', 'desc'),
-        limit(limitCount)
-    );
-    if (blockedByUsers.length > 0 && blockedByUsers.length <= 10) {
-        q = query(
-            collection(firestore, `boards/${boardId}/posts`),
-            where('authorId', 'not-in', blockedByUsers),
-            orderBy('createdAt', 'desc'),
-            limit(limitCount)
-        );
-    }
-    if (after) {
-        q = query(q, startAfter(after));
-    }
-    const snapshot = await getDocs(q);
-    const postsData = snapshot.docs.map(doc => mapDocumentToPost(doc));
-    return postsData;
-}

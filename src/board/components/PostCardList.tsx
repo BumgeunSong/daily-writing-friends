@@ -1,4 +1,4 @@
-import { useQueryClient, useQuery } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { useScrollRestoration } from '@/post/hooks/useScrollRestoration';
@@ -9,8 +9,6 @@ import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
 import PostCard from '@/post/components/PostCard';
 import { usePosts } from '@/post/hooks/usePosts';
 import { useCurrentUserKnownBuddy } from '@/user/hooks/useCurrentUserKnownBuddy';
-import { useAuth } from '@/shared/hooks/useAuth';
-import { fetchUser } from '@/user/api/user';
 
 interface PostCardListProps {
   boardId: string;
