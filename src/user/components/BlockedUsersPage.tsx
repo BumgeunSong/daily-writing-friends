@@ -1,7 +1,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useToast } from '@/shared/hooks/use-toast';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { fetchUser, addBlockedUser, removeBlockedUser, fetchUsersWithBoardPermission } from '@/user/api/user';
+import { fetchUser, addBlockedUser, removeBlockedUser } from '@/user/api/user';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
@@ -48,6 +48,7 @@ export default function BlockedUsersPage() {
   const [loading, setLoading] = useState(false);
   const [confirmUnblockUid, setConfirmUnblockUid] = useState<string | null>(null);
   const [showSearchResult, setShowSearchResult] = useState(false);
+  const [showLimitDialog, setShowLimitDialog] = useState(false);
 
   // 차단 목록 불러오기
   useEffect(() => {
@@ -70,6 +71,10 @@ export default function BlockedUsersPage() {
   // 차단 추가
   const handleBlock = async (uid: string, userObj: any) => {
     if (!currentUser) return;
+    if (blockedUsers.length >= 10) {
+      setShowLimitDialog(true);
+      return;
+    }
     setLoading(true);
     try {
       await addBlockedUser(currentUser.uid, uid);
@@ -116,33 +121,9 @@ export default function BlockedUsersPage() {
         </Button>
         <h2 className="text-xl font-bold flex-1 text-center">접근 제어 관리</h2>
       </header>
-      <section className="w-full max-w-md mx-auto mb-8">
-        <h3 className="text-lg font-semibold mb-2">유저 내 컨텐츠 숨김</h3>
-        <form className="flex gap-2 mb-2" onSubmit={handleSearchSubmit}>
-          <Input
-            placeholder="닉네임 또는 이메일 입력"
-            value={search}
-            onChange={handleSearchInput}
-            className="flex-1"
-            disabled={loading}
-          />
-          <Button type="submit" disabled={loading || !search}>
-            {loading ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}
-          </Button>
-        </form>
-        {showSearchResult && search && (
-          <Suspense fallback={<div className="flex items-center gap-2 p-2 border rounded-md mb-2"><Loader2 className="size-4 animate-spin mr-2" />검색 중...</div>}>
-            <SearchResultWithSuspense
-              search={search}
-              boardPermissions={currentUser?.boardPermissions}
-              onBlock={handleBlock}
-              loading={loading}
-            />
-          </Suspense>
-        )}
-      </section>
       <section className="w-full max-w-md mx-auto">
-        <h3 className="text-lg font-semibold mb-2">내 컨텐츠 숨김 유저 목록</h3>
+        <h3 className="text-lg font-semibold mb-2">비공개 유저 목록</h3>
+        <h5 className="text-muted-foreground text-sm mb-4">비공개 유저에게는 내 글, 댓글, 답글, 기록이 보이지 않아요.</h5>
         {blockedUsers.length === 0 ? (
           <div className="text-muted-foreground text-sm">내 컨텐츠를 숨긴 유저가 없습니다.</div>
         ) : (
@@ -177,6 +158,41 @@ export default function BlockedUsersPage() {
           </ul>
         )}
       </section>
+      <section className="w-full max-w-md mx-auto mb-8">
+        <h3 className="text-lg font-semibold mb-2">유저 내 컨텐츠 숨김</h3>
+        <form className="flex gap-2 mb-2" onSubmit={handleSearchSubmit}>
+          <Input
+            placeholder="닉네임 또는 이메일 입력"
+            value={search}
+            onChange={handleSearchInput}
+            className="flex-1"
+            disabled={loading || blockedUsers.length >= 10}
+          />
+          <Button type="submit" disabled={loading || !search || blockedUsers.length >= 10}>
+            {loading ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}
+          </Button>
+        </form>
+        {showSearchResult && search && (
+          <Suspense fallback={<div className="flex items-center gap-2 p-2 border rounded-md mb-2"><Loader2 className="size-4 animate-spin mr-2" />검색 중...</div>}>
+            <SearchResultWithSuspense
+              search={search}
+              boardPermissions={currentUser?.boardPermissions}
+              onBlock={handleBlock}
+              loading={loading}
+            />
+          </Suspense>
+        )}
+      </section>
+      <AlertDialog open={showLimitDialog} onOpenChange={setShowLimitDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>비공개 유저는 10명까지만 가능해요</AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowLimitDialog(false)}>확인</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 } 
