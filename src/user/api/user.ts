@@ -151,8 +151,8 @@ export async function fetchAllUsers(): Promise<User[]> {
 /** 차단 */
 export async function blockUser(blockerId: string, blockedId: string) {
   const batch = writeBatch(firestore);
-  batch.set(doc(firestore, `users/${blockerId}/blockedUsers/${blockedId}`), { blockedAt: Date.now() });
-  batch.set(doc(firestore, `users/${blockedId}/blockedByUsers/${blockerId}`), { blockedAt: Date.now() });
+  batch.set(doc(firestore, `users/${blockerId}/blockedUsers/${blockedId}`), { blockedAt: serverTimestamp() });
+  batch.set(doc(firestore, `users/${blockedId}/blockedByUsers/${blockerId}`), { blockedAt: serverTimestamp() });
   await batch.commit();
 }
 

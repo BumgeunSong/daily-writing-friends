@@ -3,12 +3,7 @@ import { Reply } from '@/comment/model/Reply';
 import { firestore } from '@/firebase';
 
 /**
- * 실시간 답글 구독 (blockedBy 서버사이드 필터링 지원)
- * @param boardId
- * @param postId
- * @param commentId
- * @param setReplies
- * @param blockedByUsers 내 blockedBy uid 배열 (userId not-in)
+ * 실시간 답글 구독 (blockedByUsers 서버사이드 필터링 지원)
  */
 export function fetchReplies(
   boardId: string,
@@ -22,7 +17,6 @@ export function fetchReplies(
   if (blockedByUsers.length > 0 && blockedByUsers.length <= 10) {
     repliesQuery = query(repliesRef, where('userId', 'not-in', blockedByUsers), orderBy('createdAt', 'asc'));
   }
-  // 10개 초과 시 전체 답글 반환 (제약)
   const unsubscribe = onSnapshot(repliesQuery, (snapshot) => {
     const fetchedReplies = snapshot.docs.map((doc) => ({
       id: doc.id,

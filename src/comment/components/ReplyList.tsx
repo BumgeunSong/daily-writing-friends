@@ -1,35 +1,28 @@
-import { useQuery } from '@tanstack/react-query';
-import React from 'react';
+import { useReplies } from '@/comment/hooks/useReplies';
 import { Reply } from '@/comment/model/Reply';
-import { fetchRepliesOnce } from '@/comment/utils/replyUtils';
-import { useAuth } from '@/shared/hooks/useAuth';
+import React from 'react';
 import ReplyRow from './ReplyRow';
 
 interface ReplyListProps {
   boardId: string;
   postId: string;
   commentId: string;
+  currentUserId?: string;
 }
 
-const ReplyList: React.FC<ReplyListProps> = ({ boardId, postId, commentId }) => {
-  const { currentUser } = useAuth();
+const ReplyList: React.FC<ReplyListProps> = ({ boardId, postId, commentId, currentUserId }) => {
+  const { replies } = useReplies(boardId, postId, commentId);
 
-  const { data: replies = [] } = useQuery<Reply[]>({
-    queryKey: ['replies', boardId, postId, commentId],
-    queryFn: () => fetchRepliesOnce(boardId, postId, commentId),
-    suspense: true,
-  });
-  // 답글 목록 렌더링
   return (
     <div className='space-y-4'>
-      {replies.map((reply) => (
+      {replies.map((reply: Reply) => (
         <ReplyRow
           key={reply.id}
           boardId={boardId}
           postId={postId}
           commentId={commentId}
           reply={reply}
-          isAuthor={reply.userId === currentUser?.uid}
+          isAuthor={reply.userId === currentUserId}
         />
       ))}
     </div>

@@ -9,6 +9,7 @@ import { addCommentToPost } from "@/comment/utils/commentUtils"
 import { useAuth } from "@/shared/hooks/useAuth"
 import { sendAnalyticsEvent, AnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import type React from "react"
+import { getBlockedByUsers } from "@/user/api/user"
 interface CommentsProps {
   boardId: string
   postId: string
@@ -27,9 +28,14 @@ const CommentLoadingIndicator: React.FC<{
   postId: string;
 }> = ({ boardId, postId }) => {
   // 이 쿼리는 Suspense를 트리거하기 위해 사용됩니다
+  const { currentUser } = useAuth()
+
   useQuery({
     queryKey: ['comments', boardId, postId],
-    queryFn: () => fetchCommentsOnce(boardId, postId),
+    queryFn: async () => {
+      const blockedByUsers = await getBlockedByUsers(currentUser?.uid);
+      return fetchCommentsOnce(boardId, postId, blockedByUsers);
+    },
     suspense: true,
   });
   
