@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { useScrollRestoration } from '@/post/hooks/useScrollRestoration';
@@ -9,6 +9,8 @@ import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
 import PostCard from '@/post/components/PostCard';
 import { usePosts } from '@/post/hooks/usePosts';
 import { useCurrentUserKnownBuddy } from '@/user/hooks/useCurrentUserKnownBuddy';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { fetchUser } from '@/user/api/user';
 
 interface PostCardListProps {
   boardId: string;
@@ -16,12 +18,27 @@ interface PostCardListProps {
   onClickProfile?: (userId: string) => void;
 }
 
+/**
+ * 게시글 목록 컴포넌트 (내 컨텐츠 숨김 유저 필터링)
+ */
 const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onClickProfile }) => {
   const [inViewRef, inView] = useInView();
   const [limitCount] = useState(7);
   usePerformanceMonitoring('PostCardList')
   const queryClient = useQueryClient();
   const { knownBuddy, isLoading: isKnownBuddyLoading, error: knownBuddyError } = useCurrentUserKnownBuddy();
+  const { currentUser } = useAuth();
+
+  // 내 컨텐츠 숨김 유저(blockedUsers) 가져오기
+  const {
+    data: user,
+    isLoading: isUserLoading,
+    error: userError
+  } = useQuery(['user', currentUser?.uid], () => currentUser?.uid ? fetchUser(currentUser.uid) : null, {
+    enabled: !!currentUser?.uid,
+    suspense: false,
+  });
+  const blockedUsers = Array.isArray(user?.blockedUsers) ? user.blockedUsers : [];
 
   const {
     data: postPages,
@@ -30,7 +47,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage
-  } = usePosts(boardId, limitCount);
+  } = usePosts(boardId, limitCount, blockedUsers);
 
   const allPosts = postPages?.pages.flatMap((page) => page) || [];
 
@@ -61,6 +78,19 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
     }
   }, [boardId]);
 
+  if (isUserLoading) {
+    return (
+      <div className="space-y-6">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <PostCardSkeleton key={index} />
+        ))}
+      </div>
+    );
+  }
+  if (userError) {
+    return <StatusMessage error errorMessage="유저 정보를 불러오는 중 오류가 발생했습니다." />;
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -87,7 +117,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
           post={post} 
           onClick={() => handlePostClick(post.id)} 
           onClickProfile={onClickProfile}
-          currentUser={knownBuddy ?? null}
+          isKnownBuddy={!!knownBuddy}
         />
       ))}
       <div ref={inViewRef} />
