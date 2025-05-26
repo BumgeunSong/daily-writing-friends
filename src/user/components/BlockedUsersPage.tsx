@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useToast } from '@/shared/hooks/use-toast';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { fetchUser, addBlockedUser, removeBlockedUser, fetchUsersWithBoardPermission } from '@/user/api/user';
@@ -8,6 +8,36 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/shared/ui/alert-dialog';
 import { Loader2, UserX, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import useUserSearch from '@/user/hooks/useUserSearch';
+
+function SearchResultWithSuspense({
+  search,
+  boardPermissions,
+  onBlock,
+  loading,
+}: {
+  search: string;
+  boardPermissions: Record<string, string> | undefined;
+  onBlock: (uid: string, user: any) => void;
+  loading: boolean;
+}) {
+  const { data: searchResult } = useUserSearch(search, boardPermissions);
+  if (!searchResult) {
+    return <div className="text-muted-foreground text-sm">해당 유저를 찾을 수 없습니다.</div>;
+  }
+  return (
+    <div className="flex items-center gap-2 p-2 border rounded-md mb-2">
+      <Avatar className="size-8">
+        <AvatarImage src={searchResult.profilePhotoURL || ''} />
+        <AvatarFallback>{searchResult.nickname?.[0] || '?'}</AvatarFallback>
+      </Avatar>
+      <span className="flex-1">{searchResult.nickname} ({searchResult.email})</span>
+      <Button size="sm" onClick={() => onBlock(searchResult.uid, searchResult)} disabled={loading}>
+        내 컨텐츠 숨김
+      </Button>
+    </div>
+  );
+}
 
 export default function BlockedUsersPage() {
   const { currentUser } = useAuth();
@@ -15,9 +45,9 @@ export default function BlockedUsersPage() {
   const navigate = useNavigate();
   const [blockedUsers, setBlockedUsers] = useState<any[]>([]);
   const [search, setSearch] = useState('');
-  const [searchResult, setSearchResult] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [confirmUnblockUid, setConfirmUnblockUid] = useState<string | null>(null);
+  const [showSearchResult, setShowSearchResult] = useState(false);
 
   // 차단 목록 불러오기
   useEffect(() => {
@@ -37,37 +67,18 @@ export default function BlockedUsersPage() {
     })();
   }, [currentUser]);
 
-  // 유저 검색
-  const handleSearch = async () => {
-    setLoading(true);
-    setSearchResult(null);
-    try {
-      // 닉네임으로 검색 (간단 구현: board write 권한 유저 중에서만)
-      const candidates = await fetchUsersWithBoardPermission(Object.keys(currentUser?.boardPermissions || {}));
-      const found = candidates.find(u => u.nickname === search || u.email === search);
-      if (found) {
-        setSearchResult(found);
-      } else {
-        toast({ description: '해당 유저를 찾을 수 없습니다.' });
-      }
-    } catch (e) {
-      toast({ description: '유저 검색 중 오류가 발생했습니다.' });
-    }
-    setLoading(false);
-  };
-
   // 차단 추가
-  const handleBlock = async (uid: string) => {
+  const handleBlock = async (uid: string, userObj: any) => {
     if (!currentUser) return;
     setLoading(true);
     try {
       await addBlockedUser(currentUser.uid, uid);
-      toast({ description: '차단 완료!' });
-      setBlockedUsers(prev => [...prev, searchResult]);
+      toast({ description: '내 컨텐츠 숨김 완료!' });
+      setBlockedUsers(prev => [...prev, userObj]);
       setSearch('');
-      setSearchResult(null);
+      setShowSearchResult(false);
     } catch (e) {
-      toast({ description: '차단 중 오류가 발생했습니다.' });
+      toast({ description: '내 컨텐츠 숨김 중 오류가 발생했습니다.' });
     }
     setLoading(false);
   };
@@ -78,13 +89,23 @@ export default function BlockedUsersPage() {
     setLoading(true);
     try {
       await removeBlockedUser(currentUser.uid, uid);
-      toast({ description: '차단 해제 완료!' });
+      toast({ description: '숨김 해제 완료!' });
       setBlockedUsers(prev => prev.filter(u => u.uid !== uid));
       setConfirmUnblockUid(null);
     } catch (e) {
-      toast({ description: '차단 해제 중 오류가 발생했습니다.' });
+      toast({ description: '숨김 해제 중 오류가 발생했습니다.' });
     }
     setLoading(false);
+  };
+
+  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setShowSearchResult(false);
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowSearchResult(true);
   };
 
   return (
@@ -96,37 +117,34 @@ export default function BlockedUsersPage() {
         <h2 className="text-xl font-bold flex-1 text-center">접근 제어 관리</h2>
       </header>
       <section className="w-full max-w-md mx-auto mb-8">
-        <h3 className="text-lg font-semibold mb-2">유저 차단하기</h3>
-        <div className="flex gap-2 mb-2">
+        <h3 className="text-lg font-semibold mb-2">유저 내 컨텐츠 숨김</h3>
+        <form className="flex gap-2 mb-2" onSubmit={handleSearchSubmit}>
           <Input
             placeholder="닉네임 또는 이메일 입력"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={handleSearchInput}
             className="flex-1"
-            onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
             disabled={loading}
           />
-          <Button onClick={handleSearch} disabled={loading || !search}>
+          <Button type="submit" disabled={loading || !search}>
             {loading ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}
           </Button>
-        </div>
-        {searchResult && (
-          <div className="flex items-center gap-2 p-2 border rounded-md mb-2">
-            <Avatar className="size-8">
-              <AvatarImage src={searchResult.profilePhotoURL || ''} />
-              <AvatarFallback>{searchResult.nickname?.[0] || '?'}</AvatarFallback>
-            </Avatar>
-            <span className="flex-1">{searchResult.nickname} ({searchResult.email})</span>
-            <Button size="sm" onClick={() => handleBlock(searchResult.uid)} disabled={loading}>
-              차단
-            </Button>
-          </div>
+        </form>
+        {showSearchResult && search && (
+          <Suspense fallback={<div className="flex items-center gap-2 p-2 border rounded-md mb-2"><Loader2 className="size-4 animate-spin mr-2" />검색 중...</div>}>
+            <SearchResultWithSuspense
+              search={search}
+              boardPermissions={currentUser?.boardPermissions}
+              onBlock={handleBlock}
+              loading={loading}
+            />
+          </Suspense>
         )}
       </section>
       <section className="w-full max-w-md mx-auto">
-        <h3 className="text-lg font-semibold mb-2">차단한 유저 목록</h3>
+        <h3 className="text-lg font-semibold mb-2">내 컨텐츠 숨김 유저 목록</h3>
         {blockedUsers.length === 0 ? (
-          <div className="text-muted-foreground text-sm">차단한 유저가 없습니다.</div>
+          <div className="text-muted-foreground text-sm">내 컨텐츠를 숨긴 유저가 없습니다.</div>
         ) : (
           <ul className="space-y-2">
             {blockedUsers.map(user => (
@@ -139,17 +157,17 @@ export default function BlockedUsersPage() {
                 <AlertDialog open={confirmUnblockUid === user.uid}>
                   <AlertDialogTrigger asChild>
                     <Button size="sm" variant="outline" onClick={() => setConfirmUnblockUid(user.uid)}>
-                      <UserX className="size-4 mr-1" /> 해제
+                      <UserX className="size-4 mr-1" /> 숨김 해제
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>차단을 해제하시겠습니까?</AlertDialogTitle>
+                      <AlertDialogTitle>이 유저에 대한 내 컨텐츠 숨김을 해제하시겠습니까?</AlertDialogTitle>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel onClick={() => setConfirmUnblockUid(null)}>취소</AlertDialogCancel>
                       <AlertDialogAction onClick={() => handleUnblock(user.uid)} className="bg-red-500 hover:bg-red-600">
-                        해제
+                        숨김 해제
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
