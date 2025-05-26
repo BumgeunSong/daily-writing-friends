@@ -1,10 +1,16 @@
-import { useQueryClient } from "@tanstack/react-query"
+import { useQueryClient, useQuery } from "@tanstack/react-query"
 import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
 import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig"
 import { useWritingStatsV2 } from "@/stats/hooks/useWritingStatsV2"
 import { useUserInBoard } from "@/user/hooks/useUserInBoard"
 import { useCommentingStats } from "@/stats/hooks/useCommentingStats"
+import { useAuth } from '@/shared/hooks/useAuth';
+import { fetchUser } from '@/user/api/user';
 
+/**
+ * 통계 페이지 데이터 훅 (내 컨텐츠 숨김 유저 필터링)
+ * @param tab 'posting' | 'commenting'
+ */
 type TabType = 'posting' | 'commenting';
 
 export function useStatsPageData(tab: TabType) {
@@ -25,25 +31,38 @@ export function useStatsPageData(tab: TabType) {
       activeBoardId ? [activeBoardId] : []
     );
 
+    // 내 컨텐츠 숨김 유저(blockedUsers) 가져오기
+    const { currentUser } = useAuth();
+    const {
+        data: user,
+        isLoading: isUserLoading,
+        error: userError
+    } = useQuery(['user', currentUser?.uid], () => currentUser?.uid ? fetchUser(currentUser.uid) : null, {
+        enabled: !!currentUser?.uid,
+        suspense: false,
+    });
+    const blockedUsers = Array.isArray(user?.blockedUsers) ? user.blockedUsers : [];
+
+    // blockedUsers에 포함된 유저 제외
+    const filteredUserIds = activeUsers
+        .filter(u => !blockedUsers.includes(u.uid))
+        .map(u => u.uid);
+
     // 사용자 ID 배열로 통계 가져오기
     const { 
         data: writingStats, 
         isLoading: isLoadingStats, 
         error: statsError 
-    } = useWritingStatsV2(
-        activeUsers.map((user) => user.uid)
-    );
+    } = useWritingStatsV2(filteredUserIds);
 
     const { 
         data: commentingStats, 
         isLoading: isLoadingCommenting, 
         error: commentingError 
-    } = useCommentingStats(
-        activeUsers.map((user) => user.uid)
-    );
+    } = useCommentingStats(filteredUserIds);
     
-    const isLoading = isLoadingConfig || isLoadingUsers || (tab === 'posting' ? isLoadingStats : isLoadingCommenting);
-    const error = configError || usersError || (tab === 'posting' ? statsError : commentingError);
+    const isLoading = isLoadingConfig || isLoadingUsers || isUserLoading || (tab === 'posting' ? isLoadingStats : isLoadingCommenting);
+    const error = configError || usersError || userError || (tab === 'posting' ? statsError : commentingError);
     
     // 통계 새로고침 핸들러
     const handleRefreshStats = () => {
