@@ -133,3 +133,17 @@ export async function removeBlockedUser(myUid: string, blockedUid: string): Prom
     const updated = blockedUsers.filter(uid => uid !== blockedUid);
     await updateUser(myUid, { blockedUsers: updated });
 }
+
+/**
+ * 모든 유저를 반환합니다 (관리자/검색용)
+ * @returns User[]
+ */
+export async function fetchAllUsers(): Promise<User[]> {
+    try {
+        const usersSnap = await getDocs(collection(firestore, 'users'));
+        return usersSnap.docs.map(doc => doc.data() as User);
+    } catch (error) {
+        console.error('Error fetching all users:', error);
+        return [];
+    }
+}

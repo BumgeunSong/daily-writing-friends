@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 /**
  * 유저 검색 커스텀 훅 (Suspense 지원)
  * @param search 검색어(닉네임 또는 이메일)
- * @param boardPermissions boardPermissions 맵 (권한 있는 board 기준으로 검색 범위 제한)
+ * @param boardPermissions boardPermissions 맵 (향후 확장 대비, 현재는 전체 유저에서 검색)
  * @returns 검색 결과 유저 객체 또는 null
  */
 export default function useUserSearch(
@@ -13,12 +13,12 @@ export default function useUserSearch(
   return useQuery({
     queryKey: ['userSearch', search, boardPermissions],
     queryFn: async () => {
-      if (!search || !boardPermissions) return null;
-      const { fetchUsersWithBoardPermission } = await import('@/user/api/user');
-      const candidates = await fetchUsersWithBoardPermission(Object.keys(boardPermissions));
+      if (!search) return null;
+      const { fetchAllUsers } = await import('@/user/api/user');
+      const candidates = await fetchAllUsers();
       return candidates.find(u => u.nickname === search || u.email === search) || null;
     },
-    enabled: !!search && !!boardPermissions,
+    enabled: !!search,
     suspense: true,
   });
 } 
