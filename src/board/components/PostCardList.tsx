@@ -47,7 +47,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage
-  } = usePosts(boardId, limitCount, blockedUsers);
+  } = usePosts(boardId, limitCount);
 
   const allPosts = postPages?.pages.flatMap((page) => page) || [];
 
@@ -77,19 +77,6 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
       restoreScrollPosition();
     }
   }, [boardId]);
-
-  if (isUserLoading) {
-    return (
-      <div className="space-y-6">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <PostCardSkeleton key={index} />
-        ))}
-      </div>
-    );
-  }
-  if (userError) {
-    return <StatusMessage error errorMessage="유저 정보를 불러오는 중 오류가 발생했습니다." />;
-  }
 
   if (isLoading) {
     return (

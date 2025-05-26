@@ -1,26 +1,38 @@
 import * as Sentry from '@sentry/react';
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { limit, query, collection, orderBy, getDocs, startAfter, where } from "firebase/firestore";
 import { firestore } from "@/firebase";
 import { Post } from '@/post/model/Post';
 import { mapDocumentToPost } from '@/post/utils/postUtils';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { fetchUser } from '@/user/api/user';
 
 /**
- * 게시글 목록을 불러오는 커스텀 훅 (blockedUsers 필터링 지원)
+ * 게시글 목록을 불러오는 커스텀 훅 (내 컨텐츠 숨김 유저 자동 필터링)
  * @param boardId 게시판 ID
  * @param limitCount 페이지당 글 개수
- * @param blockedUsers 내 컨텐츠 숨김 유저 uid 배열 (authorId not-in)
  */
 export const usePosts = (
     boardId: string,
-    limitCount: number,
-    blockedUsers: string[] = []
+    limitCount: number
 ) => {
-    return useInfiniteQuery<Post[]>(
+    const { currentUser } = useAuth();
+    // 내 컨텐츠 숨김 유저(blockedUsers) 가져오기
+    const {
+        data: user,
+        isLoading: isUserLoading,
+        error: userError
+    } = useQuery(['user', currentUser?.uid], () => currentUser?.uid ? fetchUser(currentUser.uid) : null, {
+        enabled: !!currentUser?.uid,
+        suspense: false,
+    });
+    const blockedUsers = Array.isArray(user?.blockedUsers) ? user.blockedUsers : [];
+
+    const queryResult = useInfiniteQuery<Post[]>(
         ['posts', boardId, blockedUsers],
         ({ pageParam = null }) => fetchPosts(boardId, limitCount, blockedUsers, pageParam),
         {
-            enabled: !!boardId,
+            enabled: !!boardId && !isUserLoading && !userError,
             getNextPageParam: (lastPage) => {
                 const lastPost = lastPage[lastPage.length - 1];
                 return lastPost ? lastPost.createdAt?.toDate() : undefined;
@@ -34,6 +46,16 @@ export const usePosts = (
             refetchOnWindowFocus: true, // Refetch when the window regains focus
         }
     );
+
+    // blockedUsers 로딩/에러 상태를 함께 반환
+    return {
+        ...queryResult,
+        isLoading: isUserLoading || queryResult.isLoading,
+        isError: !!userError || queryResult.isError,
+        blockedUsers,
+        userError,
+        isUserLoading
+    };
 };
 
 /**
