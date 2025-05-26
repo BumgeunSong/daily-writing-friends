@@ -107,3 +107,29 @@ export async function createUserIfNotExists(user: FirebaseUser): Promise<void> {
         });
     }
 }
+
+/**
+ * blockedUsers 배열에 차단할 유저 uid를 추가합니다.
+ * 이미 차단된 경우 중복 추가하지 않습니다.
+ */
+export async function addBlockedUser(myUid: string, blockedUid: string): Promise<void> {
+    const user = await fetchUser(myUid);
+    if (!user) throw new Error('User not found');
+    const blockedUsers = Array.isArray(user.blockedUsers) ? user.blockedUsers : [];
+    if (blockedUsers.includes(blockedUid)) return; // 이미 차단됨
+    const updated = [...blockedUsers, blockedUid];
+    await updateUser(myUid, { blockedUsers: updated });
+}
+
+/**
+ * blockedUsers 배열에서 차단 해제할 유저 uid를 제거합니다.
+ * 없는 경우 아무 작업도 하지 않습니다.
+ */
+export async function removeBlockedUser(myUid: string, blockedUid: string): Promise<void> {
+    const user = await fetchUser(myUid);
+    if (!user) throw new Error('User not found');
+    const blockedUsers = Array.isArray(user.blockedUsers) ? user.blockedUsers : [];
+    if (!blockedUsers.includes(blockedUid)) return; // 이미 없음
+    const updated = blockedUsers.filter(uid => uid !== blockedUid);
+    await updateUser(myUid, { blockedUsers: updated });
+}
