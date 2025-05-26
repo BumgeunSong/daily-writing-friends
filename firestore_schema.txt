@@ -9,7 +9,14 @@ Firestore Database Schema
   - email (string | null): User's email address
   - profilePhotoURL (string | null): Profile picture URL
   - bio (string | null): Short bio about the user
+  - phoneNumber (string | null): User's phone number
+  - referrer (string | null): Referrer information
   - boardPermissions (map): { [boardId]: 'read' | 'write' }
+  - updatedAt (Timestamp | null): Last updated timestamp
+  - knownBuddy (map | optional): 
+    - uid (string)
+    - nickname (string | null)
+    - profilePhotoURL (string | null)
 
   Subcollections:
   - notifications
@@ -77,7 +84,9 @@ Firestore Database Schema
   - description (string)
   - createdAt (Date)
   - firstDay (Timestamp | optional)
+  - lastDay (Timestamp | optional)
   - cohort (number | optional)
+  - waitingUsersIds (array of strings): List of user IDs waiting for approval
 
   Subcollections:
   - posts
@@ -90,11 +99,12 @@ Firestore Database Schema
       - thumbnailImageURL (string | null)
       - authorId (string)
       - authorName (string)
-      - createdAt (Date | optional)
-      - updatedAt (Date | optional)
+      - createdAt (Timestamp | optional)
+      - updatedAt (Timestamp | optional)
       - countOfComments (number)
       - countOfReplies (number)
       - weekDaysFromFirstDay (number | optional)
+      - visibility (enum | optional): Post visibility (PUBLIC, PRIVATE)
 
     - comments
       - Document ID: {commentId}

@@ -1,0 +1,89 @@
+<context>
+# Overview  
+Access Control(접근 제어) 기능은 사용자가 특정 유저가 자신의 모든 콘텐츠(글, 댓글, 답글, 통계 등)를 볼 수 없도록 제한할 수 있게 해줍니다. 이 기능은 사용자가 원치 않는 유저로부터 자신의 활동을 보호하고, 프라이버시를 강화하는 데 목적이 있습니다.
+
+# Core Features  
+- 접근 차단 관리
+  - 사용자는 설정 페이지에서 "내 콘텐츠를 볼 수 없게 할 유저" 목록을 관리할 수 있습니다.
+  - 차단할 유저를 추가/삭제할 수 있습니다.
+  - 차단/해제 시 확인 다이얼로그 및 성공 토스트 제공
+- 콘텐츠 접근 제어
+  - 내가 차단한 유저(blockedUsers)에 대해 내 모든 콘텐츠(글, 댓글, 답글, 통계 등)가 Firestore 쿼리 레벨에서 보이지 않도록 필터링합니다.
+  - 차단된 유저는 내 글에 댓글/답글도 달 수 없습니다(글 자체가 안 보임).
+- 데이터 동기화
+  - 각 유저의 Firestore User Document에 blockedUsers(내가 차단한 유저) 필드를 저장합니다.
+  - 차단/해제 시점에만 blockedUsers를 동기화(실시간 아님).
+
+# User Experience  
+- 설정 페이지
+  - "접근 제어 관리" 섹션에서 차단할 유저 추가/삭제
+  - 차단/해제 시 확인 다이얼로그 및 성공 토스트
+  - 차단 목록(내가 차단한 유저) 확인 및 해제 가능
+- 콘텐츠 필터링
+  - 내가 차단한 유저는 내 콘텐츠를 볼 수 없음(글, 댓글, 답글, 통계 등)
+  - 차단 해제 시 즉시 다시 볼 수 있음
+</context>
+<PRD>
+# Technical Architecture  
+- 데이터 모델
+  - User Document (users/{uid}):  
+    - blockedUsers: string[] (내가 차단한 유저 uid 배열)
+- Firestore 쿼리 기반 서버사이드 필터링
+  - 글(Posts):
+    - boards/{boardId}/posts 컬렉션에서 authorId에 대해 blockedUsers를 'not-in' 조건으로 쿼리
+    - 예: where('authorId', 'not-in', blockedUsers)
+  - 댓글(Comments):
+    - boards/{boardId}/posts/{postId}/comments 컬렉션에서 userId에 대해 blockedUsers를 'not-in' 조건으로 쿼리
+  - 답글(Replies):
+    - boards/{boardId}/posts/{postId}/comments/{commentId}/replies 컬렉션에서 userId에 대해 blockedUsers를 'not-in' 조건으로 쿼리
+  - 통계(Stats):
+    - 클라이언트에서 blockedUsers에 포함된 유저의 데이터는 제외하고 계산
+- 쿼리 한계
+  - Firestore의 'not-in' 조건은 최대 10개 값까지만 지원
+  - blockedUsers가 10명을 초과할 경우, Cloud Function 등 서버 API로 확장 필요
+- UI/UX
+  - UserSettingPage에 "접근 제어 관리" 섹션 추가
+    - 차단할 유저 검색/선택 UI
+    - 차단 목록 및 해제 버튼
+    - 차단/해제 시 확인 다이얼로그, 성공 토스트
+
+# Development Roadmap  
+- MVP
+  - User 모델에 blockedUsers 필드 추가
+  - UserSettingPage에 접근 제어 관리 UI 구현(차단, 해제, 목록)
+  - PostCardList, Comments, Replies, UserCommentStatsCardList, UserPostingStatsCardList에서 blockedUsers 기반 Firestore 쿼리 필터링
+  - 차단/해제 시 blockedUsers 동기화 및 UI 피드백
+- Future Enhancements
+  - 서버/쿼리 레벨에서 blockedUsers 10명 초과 시 Cloud Function 기반 API로 확장
+  - 접근 차단 사유 입력, 신고 기능 연동
+
+# Logical Dependency Chain
+1. User 모델 및 Firestore 구조 변경 (blockedUsers 필드 추가)
+2. 접근 제어 관리 UI(UserSettingPage) 구현
+3. 콘텐츠 필터링 로직(PostCardList, Comments, Replies, StatsCardList) Firestore 쿼리 기반으로 구현
+4. 차단/해제 시 blockedUsers 동기화 및 상태 동기화
+5. (선택) 차단 목록/검색 최적화, UX 개선
+
+# Risks and Mitigations  
+- Firestore 'not-in' 쿼리 한계(10명): 차단 유저가 10명을 초과하면 Cloud Function 등 서버 API로 확장 필요
+- blockedUsers 동기화 지연: 차단/해제 시점에만 동기화하므로, 실시간 반영이 필요하다면 추가 구현 필요
+- UI 혼란: 차단/해제 시 즉각적이고 명확한 피드백 제공(토스트, 다이얼로그 등)
+
+# Appendix  
+- User 모델 예시
+  ```typescript
+  export interface User {
+    // ...기존 필드
+    blockedUsers?: string[]; // 내가 차단한 유저 uid 배열
+  }
+  ```
+- Firestore 구조 예시
+  ```
+  users/{uid}
+    - blockedUsers: [uid1, uid2, ...]
+  ```
+- 참고
+  - 접근 제어는 단방향(one-directional)이며, 내가 차단한 유저만 내 콘텐츠를 볼 수 없음
+  - 차단 해제 시 숨겨진 콘텐츠가 다시 노출됨
+  - 서버/쿼리 레벨 접근 제어, 사유 입력 등은 추후 확장 가능
+</PRD> 
