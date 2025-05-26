@@ -19,6 +19,11 @@ export interface User {
     nickname: string | null;
     profilePhotoURL: string | null;
   };
+  /**
+   * 차단한 유저의 uid 배열 (Access Control)
+   * 이 배열에 포함된 유저는 내 모든 콘텐츠를 볼 수 없음
+   */
+  blockedUsers?: string[];
 }
 
 export type UserRequiredFields = {
