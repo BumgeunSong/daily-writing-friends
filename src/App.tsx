@@ -1,7 +1,6 @@
-import { Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
 import BoardListPage from '@/board/components/BoardListPage';
-import BoardPage from '@/board/components/BoardPage';
 import RecentBoard from '@/board/components/RecentBoard';
 import { useBoards } from '@/board/hooks/useBoards';
 import { JoinFormPageForActiveOrNewUser } from '@/login/components/JoinFormPageForActiveOrNewUser';
@@ -13,7 +12,6 @@ import NotificationSettingPage from '@/notification/components/NotificationSetti
 import NotificationsPage from '@/notification/components/NotificationsPage';
 import PostCompletionPage from '@/post/components/PostCompletionPage';
 import PostCreationPage from '@/post/components/PostCreationPage';
-import PostDetailPage from '@/post/components/PostDetailPage';
 import PostEditPage from '@/post/components/PostEditPage';
 import PostFreewritingIntro from '@/post/components/PostFreewritingIntro';
 import PostFreewritingPage from '@/post/components/PostFreewritingPage';
