@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import './index.css';
 import BoardListPage from '@/board/components/BoardListPage';
 import BoardPage from '@/board/components/BoardPage';
@@ -26,6 +26,28 @@ import UserSettingPage from '@/user/components/UserSettingPage';
 import BlockedUsersPage from '@/user/components/BlockedUsersPage';
 import { PrivateRoutes } from './shared/components/route/PrivateRoutes';
 import { PublicRoutes } from './shared/components/route/PublicRoutes';
+import { BoardPermissionGuard } from '@/shared/components/BoardPermissionGuard';
+
+// boardId를 useParams로 추출하는 래퍼 컴포넌트
+function BoardPageWithGuard() {
+  const { boardId } = useParams<{ boardId: string }>();
+  if (!boardId) return <div>잘못된 경로입니다.</div>;
+  return (
+    <BoardPermissionGuard boardId={boardId}>
+      <BoardPage />
+    </BoardPermissionGuard>
+  );
+}
+
+function PostDetailPageWithGuard() {
+  const { boardId } = useParams<{ boardId: string }>();
+  if (!boardId) return <div>잘못된 경로입니다.</div>;
+  return (
+    <BoardPermissionGuard boardId={boardId}>
+      <PostDetailPage />
+    </BoardPermissionGuard>
+  );
+}
 
 export default function App() {
   const { currentUser } = useAuth();
@@ -57,10 +79,10 @@ export default function App() {
       }>
         <Route path="/boards" element={<RecentBoard />} />
         <Route path="/boards/list" element={<BoardListPage />} />
-        <Route path="/board/:boardId" element={<BoardPage />} />
+        <Route path="/board/:boardId" element={<BoardPageWithGuard />} />
         <Route path="/create/:boardId" element={<PostCreationPage />} />
         <Route path="/create/:boardId/completion" element={<PostCompletionPage />} />
-        <Route path="/board/:boardId/post/:postId" element={<PostDetailPage />} />
+        <Route path="/board/:boardId/post/:postId" element={<PostDetailPageWithGuard />} />
         <Route path="/board/:boardId/edit/:postId" element={<PostEditPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/notifications/settings" element={<NotificationSettingPage />} />
