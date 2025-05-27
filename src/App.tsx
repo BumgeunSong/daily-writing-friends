@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
 import BoardListPage from '@/board/components/BoardListPage';
-import BoardPage from '@/board/components/BoardPage';
 import RecentBoard from '@/board/components/RecentBoard';
 import { useBoards } from '@/board/hooks/useBoards';
 import { JoinFormPageForActiveOrNewUser } from '@/login/components/JoinFormPageForActiveOrNewUser';
@@ -13,7 +12,6 @@ import NotificationSettingPage from '@/notification/components/NotificationSetti
 import NotificationsPage from '@/notification/components/NotificationsPage';
 import PostCompletionPage from '@/post/components/PostCompletionPage';
 import PostCreationPage from '@/post/components/PostCreationPage';
-import PostDetailPage from '@/post/components/PostDetailPage';
 import PostEditPage from '@/post/components/PostEditPage';
 import PostFreewritingIntro from '@/post/components/PostFreewritingIntro';
 import PostFreewritingPage from '@/post/components/PostFreewritingPage';
@@ -26,6 +24,8 @@ import UserSettingPage from '@/user/components/UserSettingPage';
 import BlockedUsersPage from '@/user/components/BlockedUsersPage';
 import { PrivateRoutes } from './shared/components/route/PrivateRoutes';
 import { PublicRoutes } from './shared/components/route/PublicRoutes';
+import BoardPageWithGuard from '@/board/components/BoardPageWithGuard';
+import PostDetailPageWithGuard from '@/post/components/PostDetailPageWithGuard';
 
 export default function App() {
   const { currentUser } = useAuth();
@@ -57,10 +57,10 @@ export default function App() {
       }>
         <Route path="/boards" element={<RecentBoard />} />
         <Route path="/boards/list" element={<BoardListPage />} />
-        <Route path="/board/:boardId" element={<BoardPage />} />
+        <Route path="/board/:boardId" element={<BoardPageWithGuard />} />
         <Route path="/create/:boardId" element={<PostCreationPage />} />
         <Route path="/create/:boardId/completion" element={<PostCompletionPage />} />
-        <Route path="/board/:boardId/post/:postId" element={<PostDetailPage />} />
+        <Route path="/board/:boardId/post/:postId" element={<PostDetailPageWithGuard />} />
         <Route path="/board/:boardId/edit/:postId" element={<PostEditPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/notifications/settings" element={<NotificationSettingPage />} />
