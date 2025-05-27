@@ -38,9 +38,8 @@ export function BoardPermissionGuard({ boardId, children }: BoardPermissionGuard
   }
 
   const hasPermission = userData?.boardPermissions?.[boardId] === 'read' || userData?.boardPermissions?.[boardId] === 'write';
-  console.log("hasPermission",hasPermission);
-  // 권한 없음: AlertDialog만 노출, children 미노출
   
+  // 권한 없음: AlertDialog만 노출, children 미노출
   if (!hasPermission) {
     return (
       <AlertDialog open={open} onOpenChange={setOpen}>
