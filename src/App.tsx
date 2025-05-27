@@ -26,28 +26,8 @@ import UserSettingPage from '@/user/components/UserSettingPage';
 import BlockedUsersPage from '@/user/components/BlockedUsersPage';
 import { PrivateRoutes } from './shared/components/route/PrivateRoutes';
 import { PublicRoutes } from './shared/components/route/PublicRoutes';
-import { BoardPermissionGuard } from '@/shared/components/BoardPermissionGuard';
-
-// boardId를 useParams로 추출하는 래퍼 컴포넌트
-function BoardPageWithGuard() {
-  const { boardId } = useParams<{ boardId: string }>();
-  if (!boardId) return <div>잘못된 경로입니다.</div>;
-  return (
-    <BoardPermissionGuard boardId={boardId}>
-      <BoardPage />
-    </BoardPermissionGuard>
-  );
-}
-
-function PostDetailPageWithGuard() {
-  const { boardId } = useParams<{ boardId: string }>();
-  if (!boardId) return <div>잘못된 경로입니다.</div>;
-  return (
-    <BoardPermissionGuard boardId={boardId}>
-      <PostDetailPage />
-    </BoardPermissionGuard>
-  );
-}
+import BoardPageWithGuard from '@/board/components/BoardPageWithGuard';
+import PostDetailPageWithGuard from '@/post/components/PostDetailPageWithGuard';
 
 export default function App() {
   const { currentUser } = useAuth();
