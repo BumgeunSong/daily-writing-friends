@@ -8,10 +8,10 @@ import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
 // uid로 User를 가져오는 React Query 훅 (캐시 우선)
 export function useUser(uid: string | null | undefined) {
   const noUserIdError = !uid ? new Error('유저 ID가 존재하지 않아 유저 데이터를 불러올 수 없습니다.') : null;
-  const { value: cacheVersion, isLoading: isLoadingRemoteConfig } = useRemoteConfig<string>('user_cache_version', 'v2');
+  const { value: cacheVersion } = useRemoteConfig<string>('user_cache_version', 'v2');
   const safeCacheVersion = cacheVersion ?? '';
   const initialData = uid ? getCachedUserData(uid, safeCacheVersion) : null;
-  const isEnabled = !!uid && !isLoadingRemoteConfig;
+  const isEnabled = !!uid;
 
   // queryKey는 항상 고정: ['user', uid, cacheVersion]
   const { data, isLoading, error } = useQuery<User | null>(
@@ -35,11 +35,6 @@ export function useUser(uid: string | null | undefined) {
       refetchOnWindowFocus: true,
     }
   );
-
-  // remote config 로딩 중이면 강제로 로딩 상태 반환
-  if (isLoadingRemoteConfig) {
-    return { userData: null, isLoading: true, error: null };
-  }
 
   return { userData: data, isLoading, error: error || noUserIdError };
 }

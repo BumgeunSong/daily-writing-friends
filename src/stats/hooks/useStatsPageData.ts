@@ -16,20 +16,10 @@ type TabType = 'posting' | 'commenting';
 
 export function useStatsPageData(tab: TabType) {
     const queryClient = useQueryClient();
-    // Remote Config에서 활성 게시판 ID 가져오기
-    const { 
-        value: activeBoardId, 
-        isLoading: isLoadingConfig,
-        error: configError
-    } = useRemoteConfig<string>(
-        'active_board_id', 
-        '5rfpfRBuhRFZB13dJVy8' // 기본값을 문자열로 변경
-    );
-    // 활성 게시판 권한이 있는 사용자 가져오기
+    const { value: activeBoardId } = useRemoteConfig<string>('active_board_id', '5rfpfRBuhRFZB13dJVy8');
     const { users: activeUsers, isLoading: isLoadingUsers, error: usersError } = useUserInBoard(
       activeBoardId ? [activeBoardId] : []
     );
-    // 내 blockedBy(나를 차단한 유저 uid 배열) 가져오기
     const { currentUser } = useAuth();
     const { data: blockedByUsers = [] } = useQuery(
       ['blockedByUsers', currentUser?.uid],
@@ -42,7 +32,6 @@ export function useStatsPageData(tab: TabType) {
 
     const filteredActiveUsers = activeUsers.filter(u => !blockedByUsers.includes(u.uid));
 
-    // 사용자 ID 배열로 통계 가져오기
     const { 
         data: writingStats, 
         isLoading: isLoadingStats, 
@@ -53,8 +42,8 @@ export function useStatsPageData(tab: TabType) {
         isLoading: isLoadingCommenting, 
         error: commentingError 
     } = useCommentingStats(filteredActiveUsers.map(u => u.uid));
-    const isLoading = isLoadingConfig || isLoadingUsers || isLoadingStats || isLoadingCommenting;
-    const error = configError || usersError || statsError || commentingError;
+    const isLoading = isLoadingUsers || isLoadingStats || isLoadingCommenting;
+    const error = usersError || statsError || commentingError;
     // 통계 새로고침 핸들러
     const handleRefreshStats = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
