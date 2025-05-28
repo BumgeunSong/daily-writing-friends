@@ -6,7 +6,7 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { updateUser, uploadUserProfilePhoto } from '@/user/api/user';
 import { User } from '../model/User';
 import { removeCachedUserData } from '@/user/cache/userCache';
-import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
+import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 
 interface UpdateUserDataParams {
   userId: string;
@@ -18,7 +18,7 @@ interface UpdateUserDataParams {
 export function useUpdateUserData() {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
-  const { value: cacheVersion } = useRemoteConfig<string>('user_cache_version', 'v2');
+  const { value: cacheVersion } = useRemoteConfig('user_cache_version');
 
   const mutation = useMutation({
     mutationFn: async ({ userId, nickname, profilePhotoFile, bio }: UpdateUserDataParams) => {

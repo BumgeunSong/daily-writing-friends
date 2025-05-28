@@ -4,7 +4,7 @@ import { PostVisibility } from '@/post/model/Post'
 import { createPost } from '@/post/utils/postUtils'
 import { useToast } from "@/shared/hooks/use-toast"
 import { useAuth } from '@/shared/hooks/useAuth'
-import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig"
+import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext"
 import { WritingStatus } from "@/stats/model/WritingStatus"
 import { useUserNickname } from '@/user/hooks/useUserNickname'
 import CountupWritingTimer from "./CountupWritingTimer"
@@ -12,16 +12,13 @@ import { PostSubmitButton } from "./PostSubmitButton"
 import { PostTextEditor } from "./PostTextEditor"
 import type React from "react"
 
-// 목표 시간 5 minutes
-const DEFAULT_TARGET_TIME = 300
-
 export default function PostFreewritingPage() {
   const { currentUser } = useAuth()
   const navigate = useNavigate()
   const { boardId } = useParams<{ boardId: string }>()
   const { toast } = useToast()
   const { nickname: userNickname } = useUserNickname(currentUser?.uid);
-  const { value: freeWritingTargetTime } = useRemoteConfig("free_writing_target_time", DEFAULT_TARGET_TIME)
+  const { value: freeWritingTargetTime } = useRemoteConfig('free_writing_target_time')
 
   // 상태 관리
   const POST_TITLE = userNickname ? `${userNickname}님의 프리라이팅` : "프리라이팅"

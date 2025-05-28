@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useAuth } from '@/shared/hooks/useAuth';
-import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig";
+import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext";
 import { fetchPostingData } from "@/shared/utils/postingUtils";
 import { calculateCurrentStreak } from "@/stats/utils/streakUtils";
 
@@ -22,7 +22,7 @@ export interface CompletionMessageResult {
 export function useCompletionMessage(): CompletionMessageResult {
   const { currentUser } = useAuth();
   const userId = currentUser?.uid;
-  const { value: activeBoardId } = useRemoteConfig<string>("active_board_id", "");
+  const { value: activeBoardId } = useRemoteConfig("active_board_id");
 
   const {
     data: postings,

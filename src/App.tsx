@@ -29,13 +29,26 @@ import PostDetailPageWithGuard from '@/post/components/PostDetailPageWithGuard';
 import { remoteConfig } from '@/firebase';
 import { fetchAndActivate } from 'firebase/remote-config';
 import { useEffect } from 'react';
+import { useRemoteConfigReady } from '@/shared/contexts/RemoteConfigContext';
+import StatusMessage from '@/shared/components/StatusMessage';
+import { Loader2 } from 'lucide-react';
 
 export default function App() {
   const { currentUser } = useAuth();
   useBoards();
+  const remoteConfigReady = useRemoteConfigReady();
+
+  if (!remoteConfigReady) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background">
+        <Loader2 className="size-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   // 앱 최상위에서 Remote Config fetchAndActivate 1회 실행
   useEffect(() => {
+    console.log('fetchAndActivate called')
     fetchAndActivate(remoteConfig).catch((err) => {
       console.error('Remote Config fetchAndActivate 실패:', err);
     });

@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query"
 import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
-import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig"
+import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext"
 import { useWritingStatsV2 } from "@/stats/hooks/useWritingStatsV2"
 import { useUserInBoard } from "@/user/hooks/useUserInBoard"
 import { useCommentingStats } from "@/stats/hooks/useCommentingStats"
@@ -16,7 +16,7 @@ type TabType = 'posting' | 'commenting';
 
 export function useStatsPageData(tab: TabType) {
     const queryClient = useQueryClient();
-    const { value: activeBoardId } = useRemoteConfig<string>('active_board_id', '5rfpfRBuhRFZB13dJVy8');
+    const { value: activeBoardId } = useRemoteConfig('active_board_id');
     const { users: activeUsers, isLoading: isLoadingUsers, error: usersError } = useUserInBoard(
       activeBoardId ? [activeBoardId] : []
     );

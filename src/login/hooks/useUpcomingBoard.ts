@@ -1,7 +1,7 @@
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
 import { Board } from "@/board/model/Board";
 import * as boardUtils from '@/board/utils/boardUtils';
-import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
+import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 
 /**
  * 캐시 키를 생성하는 헬퍼 함수
@@ -27,7 +27,7 @@ const getYearMonth = (): string => {
  * @returns UseQueryResult<Board | null> 쿼리 결과 (data 속성에 보드 정보 또는 null)
  */
 export function useUpcomingBoard(): UseQueryResult<Board | null> {
-    const { value: upcomingBoardId } = useRemoteConfig('upcoming_board_id', null);
+    const { value: upcomingBoardId } = useRemoteConfig('upcoming_board_id');
     const cacheKey = getCacheKey(upcomingBoardId);
 
     return useQuery({
