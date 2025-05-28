@@ -2,7 +2,6 @@ import { Timestamp } from 'firebase/firestore';
 import { User } from '@/user/model/User';
 
 const CACHE_EXPIRE_MS = 1000 * 60 * 60 * 24; // 24시간
-const CACHE_VERSION = 'v2';
 
 function isValidUserData(data: any): data is User {
   return (
@@ -15,8 +14,8 @@ function isValidUserData(data: any): data is User {
 }
 
 // localStorage에서 User 데이터 읽기
-export function getCachedUserData(uid: string): User | null {
-  const cached = localStorage.getItem(`${CACHE_VERSION}-user-${uid}`);
+export function getCachedUserData(uid: string, cacheVersion: string): User | null {
+  const cached = localStorage.getItem(`${cacheVersion}-user-${uid}`);
   if (!cached) return null;
   try {
     const parsed = JSON.parse(cached);
@@ -24,11 +23,11 @@ export function getCachedUserData(uid: string): User | null {
     const now = Date.now();
     const cachedAt = new Date(parsed.updatedAt).getTime();
     if (now - cachedAt > CACHE_EXPIRE_MS) {
-      removeCachedUserData(uid);
+      removeCachedUserData(uid, cacheVersion);
       return null;
     }
     if (!isValidUserData(parsed.data)) {
-      removeCachedUserData(uid);
+      removeCachedUserData(uid, cacheVersion);
       return null;
     }
     return {
@@ -36,16 +35,16 @@ export function getCachedUserData(uid: string): User | null {
       updatedAt: parsed.updatedAt ? Timestamp.fromDate(new Date(parsed.updatedAt)) : null,
     };
   } catch {
-    removeCachedUserData(uid);
+    removeCachedUserData(uid, cacheVersion);
     return null;
   }
 }
 
 // localStorage에 User 데이터 저장
-export function cacheUserData(uid: string, data: User): void {
+export function cacheUserData(uid: string, data: User, cacheVersion: string): void {
   if (!isValidUserData(data)) return;
   localStorage.setItem(
-    `${CACHE_VERSION}-user-${uid}`,
+    `${cacheVersion}-user-${uid}`,
     JSON.stringify({
       data: { ...data, updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : null },
       updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : null,
@@ -54,6 +53,6 @@ export function cacheUserData(uid: string, data: User): void {
 }
 
 // localStorage에서 User 데이터 삭제
-export function removeCachedUserData(uid: string): void {
-  localStorage.removeItem(`${CACHE_VERSION}-user-${uid}`);
+export function removeCachedUserData(uid: string, cacheVersion: string): void {
+  localStorage.removeItem(`${cacheVersion}-user-${uid}`);
 } 
