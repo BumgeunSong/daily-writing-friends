@@ -22,11 +22,7 @@ export interface CompletionMessageResult {
 export function useCompletionMessage(): CompletionMessageResult {
   const { currentUser } = useAuth();
   const userId = currentUser?.uid;
-  const {
-    value: activeBoardId,
-    isLoading: isConfigLoading,
-    error: configError,
-  } = useRemoteConfig<string>("active_board_id", "");
+  const { value: activeBoardId } = useRemoteConfig<string>("active_board_id", "");
 
   const {
     data: postings,
@@ -64,7 +60,7 @@ export function useCompletionMessage(): CompletionMessageResult {
     iconType = "sparkles";
   }
 
-  const isLoading = isConfigLoading || isPostingsLoading;
+  const isLoading = isPostingsLoading;
 
   return {
     titleMessage,
@@ -72,6 +68,6 @@ export function useCompletionMessage(): CompletionMessageResult {
     highlight,
     iconType,
     isLoading,
-    error: configError || postingsError,
+    error: postingsError,
   };
 } 
