@@ -13,5 +13,5 @@ export function useUserStorageSync(uid: string | null, cacheVersion: string | un
       }
       window.addEventListener('storage', handleStorage);
       return () => window.removeEventListener('storage', handleStorage);
-    }, [uid, queryClient, cacheVersion]);
+    }, [uid ?? '', queryClient, cacheVersion ?? '']);
   }
