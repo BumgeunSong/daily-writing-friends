@@ -1,31 +1,51 @@
 import { Timestamp } from 'firebase/firestore';
 import { User } from '@/user/model/User';
 
+const CACHE_EXPIRE_MS = 1000 * 60 * 60 * 24; // 24시간
+const CACHE_VERSION = 'v2';
+
+function isValidUserData(data: any): data is User {
+  return (
+    data &&
+    typeof data.uid === 'string' &&
+    typeof data.nickname === 'string' &&
+    typeof data.profilePhotoURL === 'string' &&
+    data.updatedAt
+  );
+}
+
 // localStorage에서 User 데이터 읽기
 export function getCachedUserData(uid: string): User | null {
-  const cached = localStorage.getItem(`user-${uid}`);
+  const cached = localStorage.getItem(`${CACHE_VERSION}-user-${uid}`);
   if (!cached) return null;
   try {
     const parsed = JSON.parse(cached);
-    if (parsed && parsed.data && parsed.updatedAt) {
-      return {
-        ...parsed.data,
-        updatedAt: parsed.updatedAt ? Timestamp.fromDate(new Date(parsed.updatedAt)) : null,
-      };
+    if (!parsed || !parsed.data || !parsed.updatedAt) return null;
+    const now = Date.now();
+    const cachedAt = new Date(parsed.updatedAt).getTime();
+    if (now - cachedAt > CACHE_EXPIRE_MS) {
+      removeCachedUserData(uid);
+      return null;
     }
-    // 구버전 캐시 호환
-    return parsed as User;
+    if (!isValidUserData(parsed.data)) {
+      removeCachedUserData(uid);
+      return null;
+    }
+    return {
+      ...parsed.data,
+      updatedAt: parsed.updatedAt ? Timestamp.fromDate(new Date(parsed.updatedAt)) : null,
+    };
   } catch {
+    removeCachedUserData(uid);
     return null;
   }
 }
 
 // localStorage에 User 데이터 저장
 export function cacheUserData(uid: string, data: User): void {
-  // 닉네임과 프로필 사진이 모두 있어야만 캐시 저장
-  if (!data.nickname || !data.profilePhotoURL) return;
+  if (!isValidUserData(data)) return;
   localStorage.setItem(
-    `user-${uid}`,
+    `${CACHE_VERSION}-user-${uid}`,
     JSON.stringify({
       data: { ...data, updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : null },
       updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : null,
@@ -35,5 +55,5 @@ export function cacheUserData(uid: string, data: User): void {
 
 // localStorage에서 User 데이터 삭제
 export function removeCachedUserData(uid: string): void {
-  localStorage.removeItem(`user-${uid}`);
+  localStorage.removeItem(`${CACHE_VERSION}-user-${uid}`);
 } 

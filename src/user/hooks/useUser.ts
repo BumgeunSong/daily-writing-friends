@@ -5,6 +5,8 @@ import { getCachedUserData, cacheUserData } from '@/user/cache/userCache';
 import { User } from '@/user/model/User';
 import React from 'react';
 
+const CACHE_VERSION = 'v2';
+
 // uid로 User를 가져오는 React Query 훅 (캐시 우선)
 export function useUser(uid: string | null) {
   const queryClient = useQueryClient();
@@ -16,7 +18,7 @@ export function useUser(uid: string | null) {
   // 2. storage 이벤트로 다른 탭 동기화
   React.useEffect(() => {
     function handleStorage(e: StorageEvent) {
-      if (e.key === `user-${uid}`) {
+      if (e.key === `${CACHE_VERSION}-user-${uid}`) {
         queryClient.invalidateQueries(['user', uid]);
       }
     }
