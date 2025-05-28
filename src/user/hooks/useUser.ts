@@ -25,9 +25,6 @@ export function useUser(uid: string | null | undefined) {
     {
       enabled: isEnabled,
       initialData,
-      onSuccess: (user) => {
-        if (uid && user) cacheUserData(uid, user, safeCacheVersion);
-      },
       onError: (error) => {
         console.error('유저 데이터를 불러오던 중 에러가 발생했습니다:', error);
         Sentry.captureException(error);
