@@ -1,10 +1,10 @@
 import * as Sentry from '@sentry/react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { fetchUser } from '@/user/api/user';
 import { getCachedUserData, cacheUserData } from '@/user/cache/userCache';
 import { User } from '@/user/model/User';
-import React from 'react';
 import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
+import { useUserStorageSync } from './useUserStorageSync';
 
 // uid로 User를 가져오는 React Query 훅 (캐시 우선)
 export function useUser(uid: string | null) {

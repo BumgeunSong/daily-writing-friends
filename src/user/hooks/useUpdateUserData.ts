@@ -6,6 +6,7 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { updateUser, uploadUserProfilePhoto } from '@/user/api/user';
 import { User } from '../model/User';
 import { removeCachedUserData } from '@/user/cache/userCache';
+import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
 
 interface UpdateUserDataParams {
   userId: string;
@@ -17,6 +18,7 @@ interface UpdateUserDataParams {
 export function useUpdateUserData() {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
+  const { value: cacheVersion } = useRemoteConfig<string>('user_cache_version', 'v2');
 
   const mutation = useMutation({
     mutationFn: async ({ userId, nickname, profilePhotoFile, bio }: UpdateUserDataParams) => {
@@ -39,7 +41,7 @@ export function useUpdateUserData() {
       }
 
       // 캐시 무효화: localStorage에서 해당 유저 캐시 삭제
-      removeCachedUserData(userId);
+      removeCachedUserData(userId, cacheVersion ?? 'v2');
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['user', variables.userId] });
