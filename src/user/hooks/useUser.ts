@@ -13,9 +13,9 @@ export function useUser(uid: string | null | undefined) {
   const initialData = uid ? getCachedUserData(uid, safeCacheVersion) : null;
   const isEnabled = !!uid && !isLoadingRemoteConfig;
 
-  // useQuery는 항상 호출!
+  // queryKey는 항상 고정: ['user', uid, cacheVersion]
   const { data, isLoading, error } = useQuery<User | null>(
-    isEnabled ? ['user', uid] : [],
+    ['user', uid, safeCacheVersion],
     async () => {
       if (!uid) throw new Error('유저 ID가 존재하지 않아 유저 데이터를 불러올 수 없습니다.');
       const user = await fetchUser(uid);
