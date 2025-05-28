@@ -9,6 +9,7 @@ import App from './App';
 import { initSentry } from './centry';
 import { BottomTabHandlerProvider } from './shared/contexts/BottomTabHandlerContext';
 import { NavigationProvider } from './shared/contexts/NavigationContext';
+import { RemoteConfigProvider } from '@/shared/contexts/RemoteConfigContext';
 initSentry();
 const queryClient = new QueryClient();
 
@@ -24,7 +25,9 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
             ignoreSmallChanges={10}
           >
             <BottomTabHandlerProvider>
-              <App />
+              <RemoteConfigProvider>
+                <App />
+              </RemoteConfigProvider>
             </BottomTabHandlerProvider>
           </NavigationProvider>
         </AuthProvider>

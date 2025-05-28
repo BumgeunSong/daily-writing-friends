@@ -1,19 +1,15 @@
 import { Info } from "lucide-react"
-import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig"
+import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext"
 import { Alert, AlertDescription } from '@/shared/ui/alert'
 import { Skeleton } from '@/shared/ui/skeleton'
 
 export function StatsNoticeBanner() {
     // Remote Config에서 배너 텍스트 가져오기
-    const defaultBannerText = '';
     const { 
         value: bannerText, 
         isLoading, 
         error 
-    } = useRemoteConfig<string>(
-        'stats_notice_banner_text', 
-        defaultBannerText 
-    );
+    } = useRemoteConfig('stats_notice_banner_text');
     
     // 배너 표시 여부 결정
     const shouldShowBanner = !error && (isLoading || bannerText.trim().length > 0);

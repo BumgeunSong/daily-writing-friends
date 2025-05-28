@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
+import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { fetchUsersWithBoardPermission } from '@/user/api/user';
 
 /**
@@ -7,7 +7,7 @@ import { fetchUsersWithBoardPermission } from '@/user/api/user';
  * @returns { data, isLoading, error }
  */
 export function useActiveUser() {
-  const { value: activeBoardId } = useRemoteConfig<string>('active_board_id', '');
+  const { value: activeBoardId } = useRemoteConfig('active_board_id');
 
   const {
     data: users,

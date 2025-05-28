@@ -20,6 +20,7 @@ export default function JoinIntroPage() {
   
   // Calculate days remaining until cohort starts
   useEffect(() => {
+    console.log('useEffect: upcomingBoard', upcomingBoard)
     if (upcomingBoard && upcomingBoard.firstDay) {
       const cohortStartDate = upcomingBoard.firstDay.toDate()
       const today = new Date()
@@ -45,6 +46,10 @@ export default function JoinIntroPage() {
     }
   }
 
+  console.log('daysRemaining', daysRemaining)
+  console.log('upcomingBoard', upcomingBoard)
+  console.log('activeUsers', activeUsers)
+  
   return (
     <div className="flex min-h-screen justify-center bg-background">
       {/* Center container with max-width */}
