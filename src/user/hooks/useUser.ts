@@ -8,30 +8,24 @@ import { User } from '@/user/model/User';
 export function useUser(uid: string | null) {
   const noUserIdError = uid === null ? new Error('유저 ID가 존재하지 않아 유저 데이터를 불러올 수 없습니다.') : null;
 
+  // 1. localStorage에서 최초 데이터 읽기 (SWR: persistent cache)
+  const initialData = uid ? getCachedUserData(uid) : null;
+
   const { data, isLoading, error } = useQuery<User | null>(
     ['user', uid],
     async () => {
       if (uid === null) throw noUserIdError;
-      const cached = getCachedUserData(uid);
+      // 기존: 캐시와 Firestore 동시 fetch 및 비교
       const user = await fetchUser(uid);
-      // updatedAt 비교: Firestore 데이터가 더 최신이면 캐시 갱신
-      if (
-        user &&
-        (
-          !cached ||
-          !user.updatedAt ||
-          !cached.updatedAt ||
-          user.updatedAt.toMillis() > cached.updatedAt.toMillis()
-        )
-      ) {
-        cacheUserData(uid, user);
-        return user;
-      }
-      // 캐시가 더 최신이거나, user가 없으면 캐시 반환
-      return cached;
+      if (user) cacheUserData(uid, user); // 2. 최신 데이터 도착 시 localStorage 갱신
+      return user;
     },
     {
       enabled: uid !== null,
+      initialData, // SWR: 첫 화면에 localStorage 데이터 사용
+      onSuccess: (user) => {
+        if (uid && user) cacheUserData(uid, user); // 이중 안전
+      },
       onError: (error) => {
         console.error('유저 데이터를 불러오던 중 에러가 발생했습니다:', error);
         Sentry.captureException(error);
