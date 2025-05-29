@@ -48,6 +48,7 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
           upcoming_board_id: getValue(remoteConfig, 'upcoming_board_id').asString() || REMOTE_CONFIG_DEFAULTS.upcoming_board_id,
           user_cache_version: getValue(remoteConfig, 'user_cache_version').asString() || REMOTE_CONFIG_DEFAULTS.user_cache_version,
           stats_notice_banner_text: getValue(remoteConfig, 'stats_notice_banner_text').asString() || REMOTE_CONFIG_DEFAULTS.stats_notice_banner_text,
+          free_writing_target_time: getValue(remoteConfig, 'free_writing_target_time').toString() || REMOTE_CONFIG_DEFAULTS.free_writing_target_time,
         });
       })
       .catch((err) => {
