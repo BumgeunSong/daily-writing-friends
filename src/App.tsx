@@ -1,5 +1,4 @@
 import './index.css';
-import { useBoards } from '@/board/hooks/useBoards';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useRemoteConfigReady } from '@/shared/contexts/RemoteConfigContext';
 import { Loader2 } from 'lucide-react';
@@ -7,7 +6,6 @@ import { AppRouter } from './AppRouter';
 
 export default function App() {
   const { currentUser } = useAuth();
-  useBoards();
   const remoteConfigReady = useRemoteConfigReady();
 
   if (!remoteConfigReady) {

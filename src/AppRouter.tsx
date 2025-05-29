@@ -2,7 +2,6 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
 import BoardListPage from '@/board/components/BoardListPage';
 import RecentBoard from '@/board/components/RecentBoard';
-import { useBoards } from '@/board/hooks/useBoards';
 import { JoinFormPageForActiveOrNewUser } from '@/login/components/JoinFormPageForActiveOrNewUser';
 import JoinFormPageForActiveUser from '@/login/components/JoinFormPageForActiveUser';
 import JoinFormPageForNewUser from '@/login/components/JoinFormPageForNewUser';
