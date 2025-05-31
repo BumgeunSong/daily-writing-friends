@@ -1,4 +1,4 @@
-import { Plus, X, PenSquare, CookingPot } from 'lucide-react';
+import { Plus, X, PenSquare, CookingPot, Sparkle } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -48,7 +48,7 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
             className="size-10 rounded-full bg-secondary text-secondary-foreground shadow-md transition-transform hover:scale-110"
             aria-label="Start Freewriting"
           >
-            <CookingPot className="size-4" />
+            <Sparkle className="size-4" />
           </Button>
         </Link>
 
