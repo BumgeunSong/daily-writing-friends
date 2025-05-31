@@ -1,26 +1,34 @@
 import * as React from "react"
-import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext, type CarouselApi } from "@/shared/ui/Carousel"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+  type CarouselApi,
+} from "@/shared/ui/Carousel"
 import { Star, X, Quote } from "lucide-react"
 import { Button } from "@/shared/ui/button"
 import { TopicCard } from "../../board/model/TopicCard"
 
-type TopicCardState = {
+interface TopicCardState {
   bookmarked?: boolean
   hidden?: boolean
 }
 
-type TopicCardCarouselProps = {
+interface TopicCardCarouselProps {
   topicCards: TopicCard[]
-  cardStates?: Record<string, TopicCardState> // topicId -> state
+  cardStates?: Record<string, TopicCardState>
   onBookmarkClick?: (topicId: string) => void
   onHideClick?: (topicId: string) => void
   onStartWriting?: (card: TopicCard) => void
   isBookmarking?: boolean
   isHiding?: boolean
   isError?: boolean
+  setCarouselApi?: (api: CarouselApi) => void
 }
 
-export const TopicCardCarousel: React.FC<TopicCardCarouselProps & { setCarouselApi?: (api: CarouselApi) => void }> = ({
+export const TopicCardCarousel: React.FC<TopicCardCarouselProps> = ({
   topicCards,
   cardStates = {},
   onBookmarkClick,
@@ -39,25 +47,23 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps & { setCarouselA
     setCarouselApi?.(api)
     if (api) {
       setSelectedIndex(api.selectedScrollSnap())
-      api.on("select", () => {
-        setSelectedIndex(api.selectedScrollSnap())
-      })
-      api.on("reInit", () => {
-        setSelectedIndex(api.selectedScrollSnap())
-      })
+      api.on("select", () => setSelectedIndex(api.selectedScrollSnap()))
+      api.on("reInit", () => setSelectedIndex(api.selectedScrollSnap()))
     }
   }, [setCarouselApi])
 
   const handleDotClick = (idx: number) => {
-    if (emblaApiRef.current) {
-      emblaApiRef.current.scrollTo(idx)
-    }
+    emblaApiRef.current?.scrollTo(idx)
   }
 
   return (
     <div className="w-full">
       <div className="relative">
-        <Carousel className="w-full max-w-full px-2 sm:px-0 rounded-2xl overflow-visible" opts={{ loop: true }} setApi={handleSetApi}>
+        <Carousel
+          className="w-full max-w-full px-2 sm:px-0 rounded-2xl overflow-visible"
+          opts={{ loop: true }}
+          setApi={handleSetApi}
+        >
           <CarouselContent className="gap-4 overflow-visible">
             {topicCards.map((card) => {
               const state = cardStates[card.id] || {}
