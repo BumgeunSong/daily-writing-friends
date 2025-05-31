@@ -15,11 +15,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/shared/ui/alert-dialog';
+import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 
 export default function UserSettingPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const clearCache = useClearCache();
+  const { value: blockUserFeatureEnabled } = useRemoteConfig('block_user_feature_enabled');
 
   // 로그아웃
   const handleSignOut = async () => {
@@ -109,6 +111,7 @@ export default function UserSettingPage() {
         >
           <SquareArrowRight className="size-5" /> 다음 기수 신청하기
         </Button>
+        {blockUserFeatureEnabled && (
         <Button
           variant="ghost"
           className="w-full flex items-center justify-start gap-2 rounded-none border-b border-border text-base h-14"
@@ -116,9 +119,10 @@ export default function UserSettingPage() {
         >
           <span className="inline-flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-1.414 1.414M6.343 17.657l-1.415 1.415M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            접근 제어 관리
-          </span>
-        </Button>
+              접근 제어 관리
+            </span>
+          </Button>
+        )}
       </div>
     </div>
   );
