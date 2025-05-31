@@ -54,9 +54,11 @@ export function useCompletionMessage(): CompletionMessageResult {
     highlight = { keywords: [`${streak}일`], color: "yellow" };
     iconType = "trophy";
   } else {
-    titleMessage = `${boardPostCount}번째 글`;
+    // 올리고 나면 하나 늘어나므로 +1을 해준다
+    const boardPostCountToBe = boardPostCount + 1
+    titleMessage = `${boardPostCountToBe}번째 글`;
     contentMessage = `글 정말 재미있어요! 계속 써주세요.`;
-    highlight = { keywords: [`${boardPostCount}개`], color: "purple" };
+    highlight = { keywords: [`${boardPostCountToBe}`], color: "purple" };
     iconType = "sparkles";
   }
 
