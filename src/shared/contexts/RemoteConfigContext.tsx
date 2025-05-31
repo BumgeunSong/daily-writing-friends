@@ -8,20 +8,31 @@ export type RemoteConfigKey =
   | 'upcoming_board_id'
   | 'user_cache_version'
   | 'free_writing_target_time'
-  | 'stats_notice_banner_text';
+  | 'stats_notice_banner_text'
+  | 'block_user_feature_enabled';
 
-// 기본값 상수
-export const REMOTE_CONFIG_DEFAULTS: Record<RemoteConfigKey, string> = {
+// 각 key별 타입 정의
+interface RemoteConfigValueTypes {
+  active_board_id: string;
+  upcoming_board_id: string;
+  user_cache_version: string;
+  free_writing_target_time: string;
+  stats_notice_banner_text: string;
+  block_user_feature_enabled: boolean;
+}
+
+export const REMOTE_CONFIG_DEFAULTS: RemoteConfigValueTypes = {
   active_board_id: 'rW3Y3E2aEbpB0KqGiigd',
   upcoming_board_id: 'rW3Y3E2aEbpB0KqGiigd',
   user_cache_version: 'v2',
   free_writing_target_time: '300',
   stats_notice_banner_text: '',
+  block_user_feature_enabled: false,
 };
 
 interface RemoteConfigContextValue {
   ready: boolean;
-  values: Record<RemoteConfigKey, string>;
+  values: RemoteConfigValueTypes;
   error: Error | null;
   refetch: () => void;
 }
@@ -35,7 +46,7 @@ const RemoteConfigContext = createContext<RemoteConfigContextValue>({
 
 export function RemoteConfigProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
-  const [values, setValues] = useState<Record<RemoteConfigKey, string>>(REMOTE_CONFIG_DEFAULTS);
+  const [values, setValues] = useState<RemoteConfigValueTypes>(REMOTE_CONFIG_DEFAULTS);
   const [error, setError] = useState<Error | null>(null);
 
   const loadConfig = useCallback(() => {
@@ -48,7 +59,8 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
           upcoming_board_id: getValue(remoteConfig, 'upcoming_board_id').asString() || REMOTE_CONFIG_DEFAULTS.upcoming_board_id,
           user_cache_version: getValue(remoteConfig, 'user_cache_version').asString() || REMOTE_CONFIG_DEFAULTS.user_cache_version,
           stats_notice_banner_text: getValue(remoteConfig, 'stats_notice_banner_text').asString() || REMOTE_CONFIG_DEFAULTS.stats_notice_banner_text,
-          free_writing_target_time: getValue(remoteConfig, 'free_writing_target_time').toString() || REMOTE_CONFIG_DEFAULTS.free_writing_target_time,
+          free_writing_target_time: getValue(remoteConfig, 'free_writing_target_time').asString() || REMOTE_CONFIG_DEFAULTS.free_writing_target_time,
+          block_user_feature_enabled: getValue(remoteConfig, 'block_user_feature_enabled').asBoolean(),
         });
       })
       .catch((err) => {
@@ -69,7 +81,8 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
   );
 }
 
-export function useRemoteConfig<K extends RemoteConfigKey>(key: K) {
+// key별 타입 추론 지원
+export function useRemoteConfig<K extends keyof RemoteConfigValueTypes>(key: K) {
   const ctx = useContext(RemoteConfigContext);
   return {
     value: ctx.values[key],
