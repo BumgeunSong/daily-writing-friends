@@ -24,6 +24,7 @@ import { PrivateRoutes } from './shared/components/route/PrivateRoutes';
 import { PublicRoutes } from './shared/components/route/PublicRoutes';
 import BoardPageWithGuard from '@/board/components/BoardPageWithGuard';
 import PostDetailPageWithGuard from '@/post/components/PostDetailPageWithGuard';
+import TopicCardCarouselPage from './board/components/TopicCardCarouselPage';
 
 export function AppRouter({ currentUser }: { currentUser: any | null }) {
     return (
@@ -55,6 +56,7 @@ export function AppRouter({ currentUser }: { currentUser: any | null }) {
           <Route path="/board/:boardId" element={<BoardPageWithGuard />} />
           <Route path="/create/:boardId" element={<PostCreationPage />} />
           <Route path="/create/:boardId/completion" element={<PostCompletionPage />} />
+          <Route path="/board/:boardId/topic-cards" element={<TopicCardCarouselPage />} />
           <Route path="/board/:boardId/post/:postId" element={<PostDetailPageWithGuard />} />
           <Route path="/board/:boardId/edit/:postId" element={<PostEditPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />

@@ -1,4 +1,4 @@
-import { Plus, X, PenSquare, Sparkles } from 'lucide-react';
+import { Plus, X, PenSquare, CookingPot, Sparkle } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -48,7 +48,7 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
             className="size-10 rounded-full bg-secondary text-secondary-foreground shadow-md transition-transform hover:scale-110"
             aria-label="Start Freewriting"
           >
-            <Sparkles className="size-4" />
+            <Sparkle className="size-4" />
           </Button>
         </Link>
 
@@ -69,6 +69,26 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
             aria-label="Create Normal Post"
           >
             <PenSquare className="size-4" />
+          </Button>
+        </Link>
+
+        <Link
+          to={`/board/${boardId}/topic-cards`}
+          className="group flex items-center"
+          onClick={() => setIsExpanded(false)}
+        >
+          <span className={cn(
+            "mr-2 px-2 py-1 bg-card text-card-foreground rounded text-sm shadow-sm transition-opacity duration-200",
+            isExpanded ? "opacity-100" : "opacity-0 md:group-hover:opacity-100"
+          )}>
+            글감 목록
+          </span>
+          <Button
+            size="sm"
+            className="size-10 rounded-full bg-secondary text-secondary-foreground shadow-md transition-transform hover:scale-110"
+            aria-label="Show Topic Cards"
+          >
+            <CookingPot className="size-4" />
           </Button>
         </Link>
       </div>
