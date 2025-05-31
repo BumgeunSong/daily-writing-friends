@@ -13,7 +13,7 @@ import { TopicCard } from "../../board/model/TopicCard"
 
 interface TopicCardState {
   bookmarked?: boolean
-  hidden?: boolean
+  deleted?: boolean
 }
 
 interface TopicCardCarouselProps {
@@ -96,7 +96,7 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps> = ({
                         className="w-11 h-11 flex items-center justify-center rounded-full bg-white/90 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow hover:bg-zinc-100 dark:hover:bg-zinc-700 focus-visible:ring-2 focus-visible:ring-destructive/60 transition"
                         onClick={() => onHideClick?.(card.id)}
                         tabIndex={0}
-                        aria-pressed={!!state.hidden}
+                        aria-pressed={!!state.deleted}
                         disabled={isHiding}
                       >
                         <X className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
