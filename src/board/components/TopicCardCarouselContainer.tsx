@@ -65,7 +65,7 @@ export const TopicCardCarouselContainer: React.FC<TopicCardCarouselContainerProp
   // 북마크 클릭 핸들러
   const handleBookmarkClick = (topicId: string) => {
     toggleBookmark(topicId)
-    toast("북마크된 글감은 곧 가장 먼저 보여드릴게요")
+    toast("북마크한 글감은 다음부터 먼저 보여드릴게요.")
   }
 
   // 숨김 클릭 핸들러
