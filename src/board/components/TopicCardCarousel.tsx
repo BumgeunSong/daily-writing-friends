@@ -18,7 +18,6 @@ type TopicCardCarouselProps = {
   isBookmarking?: boolean
   isHiding?: boolean
   isError?: boolean
-  className?: string
 }
 
 export const TopicCardCarousel: React.FC<TopicCardCarouselProps & { setCarouselApi?: (api: CarouselApi) => void }> = ({
@@ -30,7 +29,6 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps & { setCarouselA
   isBookmarking,
   isHiding,
   isError,
-  className,
   setCarouselApi,
 }) => {
   const [selectedIndex, setSelectedIndex] = React.useState(0)
@@ -57,18 +55,18 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps & { setCarouselA
   }
 
   return (
-    <div className={className}>
+    <div className="w-full">
       <div className="relative">
-        <Carousel className="w-full max-w-full px-2 sm:px-0" opts={{ loop: true }} setApi={handleSetApi}>
-          <CarouselContent className="gap-4">
+        <Carousel className="w-full max-w-full px-2 sm:px-0 rounded-2xl overflow-visible" opts={{ loop: true }} setApi={handleSetApi}>
+          <CarouselContent className="gap-4 overflow-visible">
             {topicCards.map((card) => {
               const state = cardStates[card.id] || {}
               return (
                 <CarouselItem
                   key={card.id}
-                  className="basis-full max-w-full flex-shrink-0 flex-grow-0 flex items-center justify-center"
+                  className="basis-full max-w-full flex-shrink-0 flex-grow-0 flex items-center justify-center overflow-visible"
                 >
-                  <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl flex flex-col justify-between items-center h-[420px] sm:h-[480px] min-h-[420px] sm:min-h-[480px] w-full max-w-[360px] mx-auto p-6 transition-shadow duration-200 mx-4 sm:mx-0">
+                  <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl flex flex-col justify-between items-center h-[420px] sm:h-[480px] min-h-[420px] sm:min-h-[480px] w-full max-w-[360px] mx-auto p-6 transition-shadow duration-200 mx-4 sm:mx-0">
                     {/* 액션 버튼 그룹 */}
                     <div className="absolute top-3 right-3 flex gap-2 z-10">
                       <button

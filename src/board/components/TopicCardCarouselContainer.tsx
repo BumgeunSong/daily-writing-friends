@@ -116,7 +116,6 @@ export const TopicCardCarouselContainer: React.FC<TopicCardCarouselContainerProp
         onHideClick={handleHideClick}
         isBookmarking={isBookmarking}
         isHiding={isHiding}
-        className="w-full"
         setCarouselApi={(api: CarouselApi) => (carouselApiRef.current = api)}
         onStartWriting={handleStartWriting}
       />
