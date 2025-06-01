@@ -80,56 +80,6 @@ export const deleteCommentToPost = async (boardId: string, postId: string, comme
   }
 };
 
-export const addReplyToComment = async (
-  boardId: string,
-  postId: string,
-  commentId: string,
-  content: string,
-  userId: string,
-  userName: string,
-  userProfileImage: string,
-) => {
-  try {
-    const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
-    await addDoc(collection(postRef, 'comments', commentId, 'replies'), {
-      content,
-      userId,
-      userName,
-      userProfileImage,
-      createdAt: serverTimestamp(),
-    });
-    console.log('Reply added successfully');
-  } catch (error) {
-    console.error('Error adding reply:', error);
-  }
-};
-
-export const updateReplyToComment = async (
-  boardId: string,
-  postId: string,
-  commentId: string,
-  replyId: string,
-  content: string,
-) => {
-  try {
-    const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
-    await updateDoc(doc(postRef, 'comments', commentId, 'replies', replyId), {
-      content,
-    });
-  } catch (error) {
-    console.error('Error updating reply:', error);
-  }
-};
-
-export const deleteReplyToComment = async (boardId: string, postId: string, commentId: string, replyId: string) => {
-  try {
-    const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
-    await deleteDoc(doc(postRef, 'comments', commentId, 'replies', replyId));
-  } catch (error) {
-    console.error('Error deleting reply:', error);
-  }
-};
-
 /**
  * React Query용 한 번만 실행되는 댓글 가져오기 함수 (blockedBy 서버사이드 필터링 지원)
  * @param boardId

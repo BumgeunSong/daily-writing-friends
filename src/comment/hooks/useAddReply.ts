@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/shared/hooks/useAuth";
-import { addReplyToComment } from "../utils/commentUtils";
+import { addReplyToComment } from "../api/reply";
 import { useQueryClient } from "@tanstack/react-query";
 
 export function useAddReply(boardId: string, postId: string, commentId: string) {

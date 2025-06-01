@@ -1,7 +1,29 @@
-import { collection, getDocs, getCountFromServer } from 'firebase/firestore';
+import { collection, getDocs, getCountFromServer, addDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { Reply } from '@/comment/model/Reply';
 import { buildNotInQuery } from '@/user/api/user';
+
+/**
+ * 답글 추가 (순수 데이터 mutation 함수)
+ */
+export async function addReplyToComment(
+  boardId: string,
+  postId: string,
+  commentId: string,
+  content: string,
+  userId: string,
+  userName: string,
+  userProfileImage: string,
+) {
+  const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
+  await addDoc(collection(postRef, 'comments', commentId, 'replies'), {
+    content,
+    userId,
+    userName,
+    userProfileImage,
+    createdAt: serverTimestamp(),
+  });
+}
 
 /**
  * 답글 목록을 한 번만 가져오는 함수 (blockedByUsers 서버사이드 필터링 지원)
