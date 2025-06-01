@@ -23,11 +23,11 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const { currentUser } = useAuth()
   const { replyCount } = useReplyCount(boardId, postId, commentId)
-  const addReply = useCreateReply(boardId, postId, commentId)
+  const createReply = useCreateReply(boardId, postId, commentId)
 
   const handleSubmit = async (content: string) => {
     try {
-      await addReply.mutateAsync(content)
+      await createReply.mutateAsync(content)
       if (currentUser) {
         sendAnalyticsEvent(AnalyticsEvent.CREATE_REPLY, {
           boardId,

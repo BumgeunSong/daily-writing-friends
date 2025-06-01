@@ -15,9 +15,10 @@ interface EmojiReactionProps {
   users: ReactionUser[]
   currentUserId: string
   onDelete: (emoji: string, userId: string) => Promise<void>
+  onCreate: (emoji: string, userId: string) => Promise<void>
 }
 
-const EmojiReaction: React.FC<EmojiReactionProps> = ({ content, count, users, currentUserId, onDelete }) => {
+const EmojiReaction: React.FC<EmojiReactionProps> = ({ content, count, users, currentUserId, onDelete, onCreate }) => {
   const [loading, setLoading] = useState(false)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const isMobile = useMediaQuery("(max-width: 768px)")
@@ -27,15 +28,17 @@ const EmojiReaction: React.FC<EmojiReactionProps> = ({ content, count, users, cu
 
   // 이모지 클릭 핸들러 - 웹과 모바일 모두에서 사용
   const handleClick = async () => {
-    if (hasReacted) {
-      try {
-        setLoading(true)
+    try {
+      setLoading(true)
+      if (hasReacted) {
         await onDelete(content, currentUserId)
-      } catch (error) {
-        console.error("반응 삭제 중 오류 발생:", error)
-      } finally {
-        setLoading(false)
+      } else {
+        await onCreate(content, currentUserId)
       }
+    } catch (error) {
+      console.error("반응 처리 중 오류 발생:", error)
+    } finally {
+      setLoading(false)
     }
   }
 
