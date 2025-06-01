@@ -3,7 +3,7 @@ import { Suspense } from "react"
 import CommentInput from "@/comment/components/CommentInput"
 import CommentList from "@/comment/components/CommentList"
 import CommentPrompt from "@/comment/components/CommentPrompt"
-import { useAddComment } from "@/comment/hooks/useAddComment"
+import { useCreateComment } from "@/comment/hooks/useCreateComment"
 import { useAuth } from "@/shared/hooks/useAuth"
 import { sendAnalyticsEvent, AnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import type React from "react"
@@ -22,7 +22,7 @@ const LoadingIndicator: React.FC = () => (
 
 const Comments: React.FC<CommentsProps> = ({ boardId, postId, postAuthorId, postAuthorNickname }) => {
   const { currentUser } = useAuth()
-  const addComment = useAddComment(boardId, postId)
+  const addComment = useCreateComment(boardId, postId)
 
   const handleSubmit = async (content: string) => {
     try {

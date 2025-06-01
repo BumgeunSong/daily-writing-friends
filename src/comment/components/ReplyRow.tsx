@@ -1,9 +1,8 @@
-import { useQueryClient } from "@tanstack/react-query"
 import { Edit, Trash2, X } from "lucide-react"
 import { useState } from "react"
 import ReactionList from "@/comment/components/ReactionList"
 import ReplyInput from "@/comment/components/ReplyInput"
-import { deleteReplyToComment, updateReplyToComment } from "@/comment/utils/commentUtils"
+import { useDeleteReply, useEditReply } from "@/comment/hooks/useCreateReply"
 import { sanitizeCommentContent } from "@/post/utils/contentUtils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
 import { Button } from "@/shared/ui/button"
@@ -21,7 +20,8 @@ interface ReplyRowProps {
 
 const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, isAuthor }) => {
   const [isEditing, setIsEditing] = useState(false)
-  const queryClient = useQueryClient()
+  const deleteReply = useDeleteReply(boardId, postId, commentId, reply.id)
+  const editReply = useEditReply(boardId, postId, commentId, reply.id)
 
   const { data: userProfile } = useUserProfile(reply.userId);
 
@@ -31,18 +31,13 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
 
   const handleDelete = async () => {
     if (window.confirm("답글을 삭제하시겠습니까?")) {
-      await deleteReplyToComment(boardId, postId, commentId, reply.id)
-      // 답글 삭제 후 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["replies", boardId, postId, commentId] })
-      queryClient.invalidateQueries({ queryKey: ["replyCount", boardId, postId, commentId] })
+      await deleteReply.mutateAsync()
     }
   }
 
   const handleEditSubmit = async (content: string) => {
-    await updateReplyToComment(boardId, postId, commentId, reply.id, content)
+    await editReply.mutateAsync(content)
     setIsEditing(false)
-    // 답글 수정 후 캐시 무효화
-    queryClient.invalidateQueries({ queryKey: ["replies", boardId, postId, commentId] })
   }
 
   const EditIcon = isEditing ? X : Edit

@@ -1,9 +1,8 @@
-import { useQueryClient } from "@tanstack/react-query"
 import { Edit, Trash2, X } from "lucide-react"
 import { useState } from "react"
 import CommentInput from "@/comment/components/CommentInput"
 import ReactionList from "@/comment/components/ReactionList"
-import { deleteCommentToPost, updateCommentToPost } from "@/comment/utils/commentUtils"
+import { useDeleteComment, useEditComment } from "@/comment/hooks/useCreateComment"
 import { sanitizeCommentContent } from "@/post/utils/contentUtils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
 import { Button } from "@/shared/ui/button"
@@ -21,7 +20,8 @@ interface CommentRowProps {
 
 const CommentRow: React.FC<CommentRowProps> = ({ boardId, postId, comment, isAuthor }) => {
   const [isEditing, setIsEditing] = useState(false)
-  const queryClient = useQueryClient()
+  const deleteComment = useDeleteComment(boardId, postId, comment.id)
+  const editComment = useEditComment(boardId, postId, comment.id)
 
   const { data: userProfile } = useUserProfile(comment.userId);
 
@@ -31,17 +31,13 @@ const CommentRow: React.FC<CommentRowProps> = ({ boardId, postId, comment, isAut
 
   const handleDelete = async () => {
     if (window.confirm("댓글을 삭제하시겠습니까?")) {
-      await deleteCommentToPost(boardId, postId, comment.id)
-      // 댓글 삭제 후 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["comments", boardId, postId] })
+      await deleteComment.mutateAsync()
     }
   }
 
   const handleEditSubmit = async (content: string) => {
-    await updateCommentToPost(boardId, postId, comment.id, content)
+    await editComment.mutateAsync(content)
     setIsEditing(false)
-    // 댓글 수정 후 캐시 무효화
-    queryClient.invalidateQueries({ queryKey: ["comments", boardId, postId] })
   }
 
   const EditIcon = isEditing ? X : Edit

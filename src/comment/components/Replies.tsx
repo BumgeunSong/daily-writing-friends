@@ -8,7 +8,7 @@ import ReplyInput from "./ReplyInput"
 import ReplyList from "./ReplyList"
 import type React from "react"
 import { useReplyCount } from '@/comment/hooks/useReplyCount'
-import { useAddReply } from '@/comment/hooks/useAddReply'
+import { useCreateReply } from '@/comment/hooks/useCreateReply'
 
 interface RepliesProps {
   boardId: string
@@ -23,7 +23,7 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const { currentUser } = useAuth()
   const { replyCount } = useReplyCount(boardId, postId, commentId)
-  const addReply = useAddReply(boardId, postId, commentId)
+  const addReply = useCreateReply(boardId, postId, commentId)
 
   const handleSubmit = async (content: string) => {
     try {

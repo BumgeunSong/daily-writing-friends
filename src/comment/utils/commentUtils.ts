@@ -1,4 +1,4 @@
-import { collection, addDoc, doc, serverTimestamp, updateDoc, deleteDoc, getDocs, query, orderBy, onSnapshot, QueryDocumentSnapshot, DocumentData, where } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, onSnapshot, QueryDocumentSnapshot, DocumentData, where } from 'firebase/firestore';
 import { Comment } from '@/comment/model/Comment';
 import { firestore } from '@/firebase';
 
@@ -38,24 +38,6 @@ async function mapDocToComment(docSnap: QueryDocumentSnapshot<DocumentData>): Pr
     createdAt: data.createdAt,
   };
 }
-
-export const updateCommentToPost = async (boardId: string, postId: string, commentId: string, content: string) => {
-  try {
-    const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
-    await updateDoc(doc(postRef, 'comments', commentId), { content });
-  } catch (error) {
-    console.error('Error updating comment:', error);
-  }
-};
-
-export const deleteCommentToPost = async (boardId: string, postId: string, commentId: string) => {
-  try {
-    const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
-    await deleteDoc(doc(postRef, 'comments', commentId));
-  } catch (error) {
-    console.error('Error deleting comment:', error);
-  }
-};
 
 /**
  * React Query용 한 번만 실행되는 댓글 가져오기 함수 (blockedBy 서버사이드 필터링 지원)
