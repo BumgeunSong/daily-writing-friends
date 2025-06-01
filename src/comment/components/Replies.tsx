@@ -1,6 +1,5 @@
 import { Loader2, MessageCircle } from "lucide-react"
 import { useState, Suspense } from "react"
-import { addReplyToComment } from "@/comment/utils/commentUtils"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { Button } from "@/shared/ui/button"
 import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
@@ -9,6 +8,7 @@ import ReplyInput from "./ReplyInput"
 import ReplyList from "./ReplyList"
 import type React from "react"
 import { useReplyCount } from '@/comment/hooks/useReplyCount'
+import { useAddReply } from '@/comment/hooks/useAddReply'
 
 interface RepliesProps {
   boardId: string
@@ -23,27 +23,23 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const { currentUser } = useAuth()
   const { replyCount } = useReplyCount(boardId, postId, commentId)
+  const addReply = useAddReply(boardId, postId, commentId)
 
   const handleSubmit = async (content: string) => {
-    if (!currentUser) return
-
-    await addReplyToComment(
-      boardId,
-      postId,
-      commentId,
-      content,
-      currentUser.uid,
-      currentUser.displayName,
-      currentUser.photoURL,
-    )
-    sendAnalyticsEvent(AnalyticsEvent.CREATE_REPLY, {
-      boardId,
-      postId,
-      commentId,
-      userId: currentUser.uid,
-      userName: currentUser.displayName,
-    })
-    // 답글 추가 후 캐시 무효화는 useReplyCount/useReplies 훅에서 react-query로 처리
+    try {
+      await addReply.mutateAsync(content)
+      if (currentUser) {
+        sendAnalyticsEvent(AnalyticsEvent.CREATE_REPLY, {
+          boardId,
+          postId,
+          commentId,
+          userId: currentUser.uid,
+          userName: currentUser.displayName,
+        })
+      }
+    } catch (e) {
+      // 에러 핸들링 필요시 추가
+    }
   }
 
   const toggleExpand = () => {
