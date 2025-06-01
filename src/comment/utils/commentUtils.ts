@@ -39,29 +39,6 @@ async function mapDocToComment(docSnap: QueryDocumentSnapshot<DocumentData>): Pr
   };
 }
 
-export const addCommentToPost = async (
-  boardId: string,
-  postId: string,
-  content: string,
-  userId: string,
-  userName: string,
-  userProfileImage: string,
-) => {
-  try {
-    const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
-    await addDoc(collection(postRef, 'comments'), {
-      content,
-      userId,
-      userName,
-      userProfileImage,
-      createdAt: serverTimestamp(),
-    });
-    console.log('Comment added successfully');
-  } catch (error) {
-    console.error('Error adding comment:', error);
-  }
-};
-
 export const updateCommentToPost = async (boardId: string, postId: string, commentId: string, content: string) => {
   try {
     const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
