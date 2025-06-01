@@ -4,7 +4,6 @@ import { useAuth } from '@/shared/hooks/useAuth';
 
 export function useCreateReply(boardId: string, postId: string, commentId: string) {
   const { currentUser } = useAuth();
-  const userId = currentUser?.uid;
   const queryClient = useQueryClient();
 
   return useMutation(
@@ -22,8 +21,8 @@ export function useCreateReply(boardId: string, postId: string, commentId: strin
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['replies', boardId, postId, commentId, userId] });
-        queryClient.invalidateQueries({ queryKey: ['replyCount', boardId, postId, commentId, userId] });
+        queryClient.invalidateQueries({ queryKey: ['replies', boardId, postId, commentId] });
+        queryClient.invalidateQueries({ queryKey: ['replyCount', boardId, postId, commentId] });
       },
     }
   );
