@@ -5,6 +5,8 @@ import { TopicCard } from "../../board/model/TopicCard"
 import { toast } from "sonner"
 import { type CarouselApi } from "@/shared/ui/Carousel"
 import { useNavigate, useParams } from "react-router-dom"
+import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
+import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 
 interface TopicCardCarouselContainerProps {
   userId: string
@@ -80,6 +82,7 @@ export const TopicCardCarouselContainer: React.FC<TopicCardCarouselContainerProp
   // 글쓰기 시작(CTA) 클릭 시 이동
   const handleStartWriting = (card: TopicCard) => {
     if (!boardId) return
+    sendAnalyticsEvent(AnalyticsEvent.FINISH_TOPIC_CARD, { boardId })
     navigate(`/create/${boardId}?title=${encodeURIComponent(card.title)}&content=${encodeURIComponent(card.description)}`)
   }
 
