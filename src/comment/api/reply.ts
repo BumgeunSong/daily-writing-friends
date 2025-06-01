@@ -1,7 +1,56 @@
-import { collection, getDocs, getCountFromServer } from 'firebase/firestore';
+import { collection, getDocs, getCountFromServer, addDoc, doc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { Reply } from '@/comment/model/Reply';
 import { buildNotInQuery } from '@/user/api/user';
+
+/**
+ * 답글 추가 (순수 데이터 mutation 함수)
+ */
+export async function createReply(
+  boardId: string,
+  postId: string,
+  commentId: string,
+  content: string,
+  userId: string,
+  userName: string,
+  userProfileImage: string,
+) {
+  const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
+  await addDoc(collection(postRef, 'comments', commentId, 'replies'), {
+    content,
+    userId,
+    userName,
+    userProfileImage,
+    createdAt: serverTimestamp(),
+  });
+}
+
+/**
+ * 답글 수정 (순수 데이터 mutation 함수)
+ */
+export async function updateReplyToComment(
+  boardId: string,
+  postId: string,
+  commentId: string,
+  replyId: string,
+  content: string,
+) {
+  const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
+  await updateDoc(doc(postRef, 'comments', commentId, 'replies', replyId), { content });
+}
+
+/**
+ * 답글 삭제 (순수 데이터 mutation 함수)
+ */
+export async function deleteReplyToComment(
+  boardId: string,
+  postId: string,
+  commentId: string,
+  replyId: string,
+) {
+  const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
+  await deleteDoc(doc(postRef, 'comments', commentId, 'replies', replyId));
+}
 
 /**
  * 답글 목록을 한 번만 가져오는 함수 (blockedByUsers 서버사이드 필터링 지원)

@@ -17,4 +17,4 @@ export function useReplies(boardId: string, postId: string, commentId: string) {
   });
 
   return { replies };
-} 
+}

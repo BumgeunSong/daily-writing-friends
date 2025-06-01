@@ -1,10 +1,9 @@
-import { useQueryClient } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
 import { Suspense } from "react"
 import CommentInput from "@/comment/components/CommentInput"
 import CommentList from "@/comment/components/CommentList"
 import CommentPrompt from "@/comment/components/CommentPrompt"
-import { addCommentToPost } from "@/comment/utils/commentUtils"
+import { useCreateComment } from "@/comment/hooks/useCreateComment"
 import { useAuth } from "@/shared/hooks/useAuth"
 import { sendAnalyticsEvent, AnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import type React from "react"
@@ -23,22 +22,22 @@ const LoadingIndicator: React.FC = () => (
 
 const Comments: React.FC<CommentsProps> = ({ boardId, postId, postAuthorId, postAuthorNickname }) => {
   const { currentUser } = useAuth()
-  const queryClient = useQueryClient()
+  const addComment = useCreateComment(boardId, postId)
 
   const handleSubmit = async (content: string) => {
-    if (!postId || !currentUser) {
-      return
+    try {
+      await addComment.mutateAsync(content)
+      if (currentUser) {
+        sendAnalyticsEvent(AnalyticsEvent.CREATE_COMMENT, {
+          boardId,
+          postId,
+          userId: currentUser.uid,
+          userName: currentUser.displayName
+        });
+      }
+    } catch (e) {
+      // 에러 핸들링 필요시 추가
     }
-
-    await addCommentToPost(boardId, postId, content, currentUser.uid, currentUser.displayName, currentUser.photoURL)
-    sendAnalyticsEvent(AnalyticsEvent.CREATE_COMMENT, {
-      boardId,
-      postId,
-      userId: currentUser.uid,
-      userName: currentUser.displayName
-    });
-    // 댓글 추가 후 캐시 무효화
-    queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] })
   }
 
   return (

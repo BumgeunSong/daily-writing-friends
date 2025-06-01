@@ -42,6 +42,7 @@ const ReactionContent: React.FC<ReactionListProps> = ({ entity }) => {
           users={reaction.by}
           currentUserId={currentUser.uid}
           onDelete={deleteReaction}
+          onCreate={createReaction}
         />
       ))}
     </div>
