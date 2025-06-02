@@ -5,11 +5,18 @@ import { useNavigate, useParams } from "react-router-dom"
 import { Button } from '@/shared/ui/button'
 import { cn } from "@/shared/utils/cn"
 import type React from "react"
+import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
+import { useEffect } from "react"
+import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 
 const PostFreewritingIntro: React.FC = () => {
   const navigate = useNavigate()
   const { boardId } = useParams<{ boardId: string }>()
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+
+  useEffect(() => {
+    sendAnalyticsEvent(AnalyticsEvent.START_FREE_WRITING, { boardId })
+  }, [])
 
   const handleStartFreewriting = () => {
     navigate(`/create/${boardId}/free-writing`)

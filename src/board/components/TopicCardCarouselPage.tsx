@@ -3,6 +3,9 @@ import { Skeleton } from "@/shared/ui/skeleton"
 import { ErrorBoundary } from "@/shared/components/ErrorBoundary"
 import { TopicCardCarouselContainer } from "./TopicCardCarouselContainer"
 import { useAllTopicCards } from "../hooks/useAllTopicCards"
+import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
+import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
+import { useEffect } from "react"
 
 function TopicCardCarouselContent() {
   const { currentUser } = useAuth()
@@ -35,6 +38,11 @@ function TopicCardCarouselContent() {
 }
 
 export default function TopicCardCarouselPage() {
+  
+  useEffect(() => {
+    sendAnalyticsEvent(AnalyticsEvent.START_TOPIC_CARD)
+  }, [])
+
   return (
     <div className="w-full h-full min-h-0 flex flex-col bg-background">
       <ErrorBoundary fallback={<div className="p-8 text-center text-red-500">글감 정보를 불러오지 못했습니다.</div>}>

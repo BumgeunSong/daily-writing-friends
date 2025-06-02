@@ -11,6 +11,8 @@ import CountupWritingTimer from "./CountupWritingTimer"
 import { PostSubmitButton } from "./PostSubmitButton"
 import { PostTextEditor } from "./PostTextEditor"
 import type React from "react"
+import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
+import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
 
 export default function PostFreewritingPage() {
   const { currentUser } = useAuth()
@@ -91,6 +93,8 @@ export default function PostFreewritingPage() {
         title: "업로드 완료",
         description: "프리라이팅으로 쓴 글은 다른 사람에게 보이지 않아요.",
       })
+
+      sendAnalyticsEvent(AnalyticsEvent.FINISH_FREE_WRITING, { boardId })
 
       navigate(`/boards/${boardId}`)
     } catch (error) {
