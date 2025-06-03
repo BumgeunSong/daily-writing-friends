@@ -15,7 +15,7 @@ import { calculateCurrentStreak } from '@/stats/utils/streakUtils';
 import { fetchUser } from '@/user/api/user';
 import { User } from '@/user/model/User';
 
-export function useWritingStatsV2(userIds: string[]) {
+export function useWritingStats(userIds: string[]) {
     return useQuery({
         queryKey: ['writingStatsV2', userIds],
         queryFn: () => fetchMultipleUserStats(userIds),
