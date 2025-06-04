@@ -1,5 +1,6 @@
 import { Posting } from '@/post/model/Posting';
 import { isWorkingDay } from '@/shared/utils/dateUtils';
+import { fetchPostingData } from '@/shared/utils/postingUtils';
 
 // Types
 type DateKey = string;
@@ -128,4 +129,35 @@ export function getRecoveryStatus(today: Date, postingDays: Set<string>): Recove
     if (todayCount >= 2) return 'success';
     if (todayCount === 1) return 'partial';
     return 'eligible';
+}
+
+/**
+ * Firestore 페이징 기반 streak 계산 함수
+ * @param userId 사용자 ID
+ * @param pageSize 한 번에 fetch할 posting 개수
+ */
+export async function calculateStreakWithPagination(userId: string, pageSize: number = 30): Promise<number> {
+    let postings: Posting[] = [];
+    let lastCreatedAt: Date | undefined = undefined;
+    let streakEnded = false;
+    let streak = 0;
+
+    while (!streakEnded) {
+        const page = await fetchPostingData(userId, pageSize, lastCreatedAt);
+        if (page.length === 0) break;
+
+        postings = postings.concat(page);
+        lastCreatedAt = page[page.length - 1].createdAt.toDate();
+
+        const newStreak = calculateCurrentStreak(postings);
+        if (newStreak < postings.length) {
+            streakEnded = true;
+            streak = newStreak;
+        } else if (page.length < pageSize) {
+            streak = newStreak;
+            break;
+        }
+        // 아니면 다음 페이지 fetch
+    }
+    return streak;
 }
