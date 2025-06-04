@@ -97,3 +97,35 @@ export function calculateCurrentStreak(postings: Posting[]): number {
 export function getUserTimeZone(): string {
     return 'Asia/Seoul';
 }
+
+// RecoveryStatus 타입 정의
+export type RecoveryStatus = 'none' | 'eligible' | 'partial' | 'success';
+
+// 이전 working day 반환
+export function getPreviousWorkingDay(date: Date): Date {
+    let prev = new Date(date);
+    do {
+        prev.setDate(prev.getDate() - 1);
+    } while (!isWorkingDay(prev));
+    return prev;
+}
+
+// Posting[] -> YYYY-MM-DD Set
+export function getPostingDaysSet(postings: Posting[]): Set<string> {
+    return new Set(postings.map(p => getDateKey(p.createdAt.toDate())));
+}
+
+// streak recovery 상태 판별
+export function getRecoveryStatus(today: Date, postingDays: Set<string>): RecoveryStatus {
+    const todayKey = getDateKey(today);
+    const yesterday = getPreviousWorkingDay(today);
+    const yesterdayKey = getDateKey(yesterday);
+
+    const missedYesterday = !postingDays.has(yesterdayKey);
+    const todayCount = Array.from(postingDays).filter(k => k === todayKey).length;
+
+    if (!missedYesterday) return 'none';
+    if (todayCount >= 2) return 'success';
+    if (todayCount === 1) return 'partial';
+    return 'eligible';
+}
