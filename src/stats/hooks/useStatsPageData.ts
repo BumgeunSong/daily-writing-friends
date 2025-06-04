@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query"
 import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
 import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext"
-import { useWritingStatsV2 } from "@/stats/hooks/useWritingStatsV2"
+import { useWritingStats } from "@/stats/hooks/useWritingStats"
 import { useUserInBoard } from "@/user/hooks/useUserInBoard"
 import { useCommentingStats } from "@/stats/hooks/useCommentingStats"
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -36,7 +36,7 @@ export function useStatsPageData(tab: TabType) {
         data: writingStats, 
         isLoading: isLoadingStats, 
         error: statsError 
-    } = useWritingStatsV2(filteredActiveUsers.map(u => u.uid));
+    } = useWritingStats(filteredActiveUsers.map(u => u.uid));
     const { 
         data: commentingStats, 
         isLoading: isLoadingCommenting, 
