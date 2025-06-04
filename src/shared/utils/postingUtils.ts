@@ -1,11 +1,10 @@
-
-import { collection, getDocs, query, orderBy, QueryDocumentSnapshot, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, QueryDocumentSnapshot, Timestamp, limit as fbLimit } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { Posting } from '@/post/model/Posting';
 
-export async function fetchPostingData(userId: string): Promise<Posting[]> {
+export async function fetchPostingData(userId: string, limitCount: number = 20): Promise<Posting[]> {
     const postingsRef = collection(firestore, 'users', userId, 'postings');
-    const q = query(postingsRef, orderBy('createdAt', 'desc'));
+    const q = query(postingsRef, orderBy('createdAt', 'desc'), fbLimit(limitCount));
     const querySnapshot = await getDocs(q);
     
     return querySnapshot.docs.map(doc => mapDocumentToPosting(doc));
