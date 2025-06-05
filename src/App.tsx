@@ -13,7 +13,12 @@ export default function App() {
     return <AppLoader />;
   }
 
-  return <RouterProvider router={router} />;
+  return (
+    <RouterProvider 
+      router={router}
+      fallbackElement={<AppLoader />}
+    />
+  );
 }
 
 function AppLoader() {
