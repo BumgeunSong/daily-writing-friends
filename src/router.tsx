@@ -1,4 +1,4 @@
-import { createBrowserRouter, redirect, LoaderFunctionArgs, ActionFunctionArgs, Outlet } from 'react-router-dom';
+import { createBrowserRouter, redirect, Outlet } from 'react-router-dom';
 import './index.css';
 
 // Providers that need router context
@@ -34,9 +34,10 @@ import JoinFormPageForNewUser from '@/login/components/JoinFormPageForNewUser';
 import JoinIntroPage from '@/login/components/JoinIntroPage';
 import LoginPage from '@/login/components/LoginPage';
 
-// API functions that will be used in loaders
-import { fetchBoardsWithUserPermissions } from '@/board/utils/boardUtils';
-import { fetchPost } from '@/post/utils/postUtils';
+// Loaders and actions from feature hooks
+import { boardsLoader } from '@/board/hooks/useBoardsLoader';
+import { postDetailLoader } from '@/post/hooks/usePostDetailLoader';
+import { createPostAction } from '@/post/hooks/useCreatePostAction';
 import { auth } from '@/firebase';
 
 // Error boundary
@@ -61,88 +62,6 @@ function RootLayout() {
 // Auth utility to get current user synchronously
 function getCurrentUser() {
   return auth.currentUser;
-}
-
-// Loader functions
-export async function boardsLoader() {
-  const currentUser = getCurrentUser();
-  if (!currentUser) {
-    throw redirect('/login');
-  }
-  
-  try {
-    const boards = await fetchBoardsWithUserPermissions(currentUser.uid);
-    return { boards: boards.sort((a, b) => (a.cohort || 0) - (b.cohort || 0)) };
-  } catch (error) {
-    console.error('Failed to fetch boards:', error);
-    throw new Response('Failed to load boards', { status: 500 });
-  }
-}
-
-export async function postDetailLoader({ params }: LoaderFunctionArgs) {
-  const { boardId, postId } = params;
-  
-  if (!boardId || !postId) {
-    throw new Response('Missing required parameters', { status: 400 });
-  }
-
-  try {
-    const post = await fetchPost(boardId, postId);
-    return { post, boardId, postId };
-  } catch (error) {
-    console.error('Failed to fetch post:', error);
-    throw new Response('Post not found', { status: 404 });
-  }
-}
-
-// Action functions for mutations
-export async function createPostAction({ request, params }: ActionFunctionArgs) {
-  const { boardId } = params;
-  const formData = await request.formData();
-  
-  const title = formData.get('title') as string;
-  const content = formData.get('content') as string;
-  const authorId = formData.get('authorId') as string;
-  const authorName = formData.get('authorName') as string;
-  const draftId = formData.get('draftId') as string | null;
-
-  if (!title?.trim() || !content?.trim() || !boardId || !authorId) {
-    return {
-      error: '필수 정보가 누락되었습니다.'
-    };
-  }
-
-  try {
-    // Import the actual functions
-    const { createPost } = await import('@/post/utils/postUtils');
-    const { deleteDraft } = await import('@/draft/utils/draftUtils');
-    const { sendAnalyticsEvent, AnalyticsEvent } = await import('@/shared/utils/analyticsUtils');
-
-    // Create the post
-    await createPost(boardId, title, content, authorId, authorName);
-    
-    // Send analytics
-    sendAnalyticsEvent(AnalyticsEvent.CREATE_POST, {
-      boardId,
-      title,
-      userId: authorId,
-      userName: authorName
-    });
-
-    // Delete draft if it exists
-    if (draftId) {
-      await deleteDraft(authorId, draftId);
-    }
-
-    // React Router automatically revalidates all loaders after actions!
-    // No manual cache invalidation needed!
-    return redirect(`/create/${boardId}/completion`);
-  } catch (error) {
-    console.error('게시물 작성 중 오류가 발생했습니다:', error);
-    return {
-      error: '게시물 작성 중 오류가 발생했습니다. 다시 시도해주세요.'
-    };
-  }
 }
 
 // Auth utility functions
