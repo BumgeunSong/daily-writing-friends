@@ -11,13 +11,13 @@ import { PrivateRoutes } from './shared/components/route/PrivateRoutes';
 import { PublicRoutes } from './shared/components/route/PublicRoutes';
 
 // Pages
-import BoardListPage from '@/board/components/BoardListPage';
+import BoardListPageMigrated from '@/board/components/BoardListPageMigrated';
 import RecentBoard from '@/board/components/RecentBoard';
 import BoardPageWithGuard from '@/board/components/BoardPageWithGuard';
 import TopicCardCarouselPage from './board/components/TopicCardCarouselPage';
-import PostCreationPage from '@/post/components/PostCreationPage';
+import PostCreationPageMigrated from '@/post/components/PostCreationPageMigrated';
 import PostCompletionPage from '@/post/components/PostCompletionPage';
-import PostDetailPageWithGuard from '@/post/components/PostDetailPageWithGuard';
+import PostDetailPageMigrated from '@/post/components/PostDetailPageMigrated';
 import PostEditPage from '@/post/components/PostEditPage';
 import PostFreewritingIntro from '@/post/components/PostFreewritingIntro';
 import PostFreewritingPage from '@/post/components/PostFreewritingPage';
@@ -133,7 +133,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'boards/list',
-            element: <BoardListPage />,
+            element: <BoardListPageMigrated />,
             loader: boardsLoader,
           },
           {
@@ -143,7 +143,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'create/:boardId',
-            element: <PostCreationPage />,
+            element: <PostCreationPageMigrated />,
             loader: requireAuth,
             action: createPostAction,
           },
@@ -159,7 +159,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'board/:boardId/post/:postId',
-            element: <PostDetailPageWithGuard />,
+            element: <PostDetailPageMigrated />,
             loader: postDetailLoader,
           },
           {
