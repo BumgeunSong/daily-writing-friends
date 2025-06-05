@@ -10,7 +10,7 @@ interface ActionData {
   success?: boolean;
 }
 
-export default function PostCreationPageMigrated() {
+export default function PostCreationPage() {
   const { boardId } = useParams<{ boardId: string }>();
   const { currentUser } = useAuth();
   const navigation = useNavigation();

@@ -17,7 +17,7 @@ interface PostDetailData {
   postId: string;
 }
 
-export default function PostDetailPageMigrated() {
+export default function PostDetailPage() {
   // No more useQuery! Data is provided by the loader
   const { post, boardId, postId } = useLoaderData() as PostDetailData;
   const { currentUser } = useAuth();

@@ -5,7 +5,7 @@ import ReactDOM from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from '@/shared/hooks/useAuth';
 import App from './App';
-import { initSentry } from './centry';
+import { initSentry } from '@/sentry';
 import { RemoteConfigProvider } from '@/shared/contexts/RemoteConfigContext';
 initSentry();
 const queryClient = new QueryClient();

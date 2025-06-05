@@ -1,4 +1,4 @@
-// src/board/components/BoardListPageMigrated.tsx
+// src/board/components/BoardListPage.tsx
 import React from 'react';
 import { Link, useLoaderData } from 'react-router-dom';
 import { Board } from '@/board/model/Board';
@@ -8,7 +8,7 @@ interface BoardListData {
   boards: Board[];
 }
 
-const BoardListPageMigrated: React.FC = () => {
+const BoardListPage: React.FC = () => {
   // No more useQuery, no more loading/error states!
   const { boards } = useLoaderData() as BoardListData;
 
@@ -45,4 +45,4 @@ const BoardListPageMigrated: React.FC = () => {
   );
 };
 
-export default BoardListPageMigrated;
+export default BoardListPage;
