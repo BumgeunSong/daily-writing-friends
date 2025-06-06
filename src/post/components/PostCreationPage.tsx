@@ -1,110 +1,80 @@
-import { Loader2, FileText } from 'lucide-react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, Form, useNavigation, useActionData } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { Button } from '@/shared/ui/button';
-import { DraftsDrawer } from '@/draft/components/DraftsDrawer';
-import { DraftStatusIndicator } from '@/draft/components/DraftStatusIndicator';
-import { useAutoSaveDrafts } from '@/draft/hooks/useAutoSaveDrafts';
-import { useDraftLoader } from '@/draft/hooks/useDraftLoader';
-import { usePostEditor } from '@/post/hooks/usePostEditor';
-import { usePostSubmit } from '@/post/hooks/usePostSubmit';
-import { PostBackButton } from './PostBackButton';
-import { PostSubmitButton } from './PostSubmitButton';
 import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
+import { Button } from '@/shared/ui/button';
+
+// Type for action data (errors, success messages, etc.)
+interface ActionData {
+  error?: string;
+  success?: boolean;
+}
 
 export default function PostCreationPage() {
-  const { currentUser } = useAuth();
   const { boardId } = useParams<{ boardId: string }>();
-  const [searchParams] = useSearchParams();
-  const draftId = searchParams.get('draftId');
-  const initialTitle = searchParams.get('title') || '';
-  const initialContent = searchParams.get('content') || '';
-  
-  // 1. 임시 저장 글 로드
-  const { draft, draftId: loadedDraftId, isLoading: isDraftLoading } = useDraftLoader({
-    userId: currentUser?.uid,
-    boardId,
-    draftId
-  });
-  
-  // 2. 게시물 편집 상태 관리
-  const { title, setTitle, content, setContent } = usePostEditor({
-    initialDraft: draft,
-    initialTitle,
-    initialContent,
-  });
-  
-  // 3. 자동 저장 - 로드된 임시 저장 글의 ID 사용
-  const {
-    draftId: autoDraftId,
-    lastSavedAt,
-    isSaving,
-    savingError
-  } = useAutoSaveDrafts({
-    boardId: boardId || '',
-    userId: currentUser?.uid,
-    title,
-    content,
-    initialDraftId: loadedDraftId || undefined, // URL의 draftId가 아닌 로드된 임시 저장 글의 ID 사용
-    autoSaveInterval: 10000
-  });
-  
-  // 4. 게시물 제출
-  const { isSubmitting, handleSubmit } = usePostSubmit({
-    userId: currentUser?.uid,
-    userName: currentUser?.displayName,
-    boardId,
-    draftId: autoDraftId,
-    title,
-    content
-  });
+  const { currentUser } = useAuth();
+  const navigation = useNavigation();
+  const actionData = useActionData() as ActionData;
 
+  // Router automatically handles loading states during form submission
+  const isSubmitting = navigation.state === 'submitting';
+  
   return (
-    <div className='mx-auto max-w-4xl px-6 py-8 sm:px-8 lg:px-12'>
-        <PostBackButton className='mb-2' />
-      {/* draftId가 있을 때만 로딩 상태 표시 */}
-      {draftId && isDraftLoading ? (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="size-8 animate-spin text-primary" />
-          <span className="ml-2 text-gray-600">임시 저장 글을 불러오는 중...</span>
+    <div className='mx-auto max-w-4xl px-6 py-8'>
+      <h1 className='mb-6 text-2xl font-bold'>새 글 작성</h1>
+      
+      {/* React Router Form automatically submits to the route's action */}
+      <Form method="post" className='space-y-6'>
+        <input type="hidden" name="boardId" value={boardId} />
+        <input type="hidden" name="authorId" value={currentUser?.uid} />
+        
+        <PostTitleEditor name="title" />
+        <PostTextEditor name="content" />
+        
+        {actionData?.error && (
+          <div className="text-red-600 text-sm">{actionData.error}</div>
+        )}
+        
+        <div className='flex justify-end space-x-4'>
+          <Button type="button" variant="outline" disabled={isSubmitting}>
+            취소
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? '저장 중...' : '글 저장'}
+          </Button>
         </div>
-      ) : (
-        <form onSubmit={handleSubmit} className='space-y-6'>
-          <PostTitleEditor
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className='mb-4'
-          />
-          <PostTextEditor 
-            value={content}
-            onChange={setContent}
-          />
-          
-          {/* 임시 저장 상태 표시 컴포넌트 */}
-          <DraftStatusIndicator
-            isSaving={isSaving}
-            savingError={savingError}
-            lastSavedAt={lastSavedAt}
-          />
-          
-          <div className='flex items-center justify-between'>
-            {currentUser && (
-              <DraftsDrawer userId={currentUser.uid} boardId={boardId}>
-                <Button variant="outline" size="default" className="flex items-center">
-                  <FileText className="mr-2 size-4" />
-                  임시 저장 글
-                </Button>
-              </DraftsDrawer>
-            )}
-            
-            <PostSubmitButton 
-              isSubmitting={isSubmitting}
-              disabled={!title.trim() || !content.trim()}
-            />
-          </div>
-        </form>
-      )}
+      </Form>
     </div>
   );
 }
+
+/*
+Key improvements with React Router actions:
+
+1. ❌ OLD WAY: Manual useMutation with loading states
+   const [isSubmitting, setIsSubmitting] = useState(false);
+   const createMutation = useMutation({
+     mutationFn: createPost,
+     onSuccess: () => {
+       queryClient.invalidateQueries(['posts', boardId]);
+       navigate(`/board/${boardId}`);
+     },
+     onError: (error) => {
+       setError(error.message);
+     }
+   });
+
+2. ✅ NEW WAY: Router handles everything
+   - Form submission goes to route action
+   - Loading state via useNavigation()
+   - Errors via useActionData()
+   - Automatic revalidation after mutations
+   - Automatic redirect on success
+
+This eliminates:
+- Manual cache invalidation
+- Manual loading state management  
+- Manual error handling in mutations
+- Manual navigation after success
+- Complex mutation logic in components
+*/
