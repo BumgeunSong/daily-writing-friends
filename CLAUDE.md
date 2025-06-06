@@ -1,14 +1,5 @@
 # CLAUDE.md
 
-## 📐 Design System Reference
-
-- **For all UI, style, layout, and component work, you MUST strictly follow the 100 guidelines (quantitative and qualitative) in [`app_design.md`](./app_design.md).**
-- The app_design.md file covers Tailwind, shadcn/ui, mobile-first, responsive design, cards/lists/forms/buttons/nav/status/feedback/accessibility, concrete measurements, naming, structure, and design philosophy actually used in this codebase.
-- Whenever you create or modify components, layouts, styles, naming, folder structure, UI/UX improvements, refactoring, or tests, always treat app_design.md as the primary reference.
-- If there is any conflict between app_design.md and this file, app_design.md takes precedence. Update CLAUDE.md only to supplement or clarify, never to override app_design.md.
-
----
-
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Architecture Overview
