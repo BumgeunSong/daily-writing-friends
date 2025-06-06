@@ -59,24 +59,3 @@ export default function PostDetailPage() {
     </div>
   );
 }
-
-/*
-Key improvements over the original:
-
-1. ❌ OLD WAY: Manual loading/error handling
-   const { data: post, isLoading, error } = useQuery(...)
-   if (isLoading) return <PostDetailSkeleton />;
-   if (error || !post) return <PostDetailError boardId={boardId} />;
-
-2. ✅ NEW WAY: Router handles all loading/error states
-   const { post, boardId, postId } = useLoaderData() as PostDetailData;
-   
-3. ❌ OLD WAY: Component has to handle data fetching concerns
-4. ✅ NEW WAY: Component only focuses on rendering
-
-This eliminates:
-- 30+ lines of loading/error boilerplate per component
-- Manual useQuery management 
-- Inconsistent loading states across the app
-- Manual error handling everywhere
-*/
