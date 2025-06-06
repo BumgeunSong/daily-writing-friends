@@ -2,23 +2,17 @@ import './index.css';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useRemoteConfigReady } from '@/shared/contexts/RemoteConfigContext';
 import { Loader2 } from 'lucide-react';
-import { RouterProvider } from 'react-router-dom';
-import { router } from './router';
+import { AppRouter } from './AppRouter';
 
 export default function App() {
-  const { loading } = useAuth();
+  const { currentUser } = useAuth();
   const remoteConfigReady = useRemoteConfigReady();
 
-  if (!remoteConfigReady || loading) {
+  if (!remoteConfigReady) {
     return <AppLoader />;
   }
 
-  return (
-    <RouterProvider 
-      router={router}
-      fallbackElement={<AppLoader />}
-    />
-  );
+  return <AppRouter currentUser={currentUser} />;
 }
 
 function AppLoader() {
