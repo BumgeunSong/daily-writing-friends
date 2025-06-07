@@ -11,16 +11,22 @@ export function PrivateRoutes() {
   const { currentUser, loading, setRedirectPathAfterLogin } = useAuth();
   const location = useLocation();
 
+
   useEffect(() => {
-    // Store current path when user is not authenticated (after loading or when user is null)
-    if ((loading || !currentUser) && location.pathname !== '/login') {
+    // Store current path when user is not authenticated (only when not loading and user is null)
+    if (!loading && !currentUser && location.pathname !== '/login') {
       setRedirectPathAfterLogin(location.pathname);
     }
   }, [loading, currentUser, location.pathname, setRedirectPathAfterLogin]);
 
-  // Immediately redirect if loading or not authenticated
-  if (loading || !currentUser) {
+  // Only redirect if auth has finished loading and user is not authenticated
+  if (!loading && !currentUser) {
     return <Navigate to="/login" replace />;
+  }
+
+  // If still loading, don't render anything (prevent flash of redirect)
+  if (loading) {
+    return null;
   }
 
   // User is authenticated, render the protected route
@@ -33,6 +39,7 @@ export function PrivateRoutes() {
  */
 export function PublicRoutes() {
   const { currentUser, loading, redirectPathAfterLogin, setRedirectPathAfterLogin } = useAuth();
+
 
   // If user is authenticated (and not loading), redirect them away from public routes
   if (!loading && currentUser) {

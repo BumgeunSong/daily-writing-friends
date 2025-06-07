@@ -8,9 +8,10 @@ import { useAuth } from '@/shared/hooks/useAuth';
 export function RootRedirect() {
   const { currentUser, loading } = useAuth();
 
-  // If still loading, redirect to login (as per private route behavior)
+
+  // If still loading, don't render anything
   if (loading) {
-    return <Navigate to="/login" replace />;
+    return null;
   }
 
   // Redirect based on auth state

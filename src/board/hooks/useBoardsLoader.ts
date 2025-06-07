@@ -2,13 +2,16 @@ import { fetchBoardsWithUserPermissions } from '@/board/utils/boardUtils';
 import { getCurrentUser } from '@/shared/utils/authUtils';
 
 export async function boardsLoader() {
-  const currentUser = await getCurrentUser();
-  
-  if (!currentUser) {
-    throw new Response('로그인 후 이용해주세요.', { status: 401 });
-  }
-  
+  // NOTE: Auth checking is handled by PrivateRoutes component
+  // This loader only runs when user is already authenticated
   try {
+    const currentUser = await getCurrentUser();
+    
+    if (!currentUser) {
+      // Return empty data instead of throwing, let route guard handle auth
+      return { boards: [] };
+    }
+    
     const boards = await fetchBoardsWithUserPermissions(currentUser.uid);
     return { boards: boards.sort((a, b) => (a.cohort || 0) - (b.cohort || 0)) };
   } catch (error) {
