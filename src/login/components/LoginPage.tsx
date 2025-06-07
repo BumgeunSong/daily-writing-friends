@@ -15,7 +15,7 @@ export default function LoginPage() {
       const userCredential = await signInWithGoogle();
       await createUserIfNotExists(userCredential.user);
 
-      // Redirect to the stored path or a default path after successful login
+      // Use redirect path from useAuth context (set by RouterAuthGuard)
       const redirectTo = redirectPathAfterLogin || '/boards';
       setRedirectPathAfterLogin(null); // Clear the redirect path
       navigate(redirectTo, { replace: true });

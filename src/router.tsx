@@ -1,0 +1,207 @@
+import { createBrowserRouter, redirect, Outlet } from 'react-router-dom';
+import './index.css';
+
+// Providers that need router context
+import { BottomTabHandlerProvider } from './shared/contexts/BottomTabHandlerContext';
+import { NavigationProvider } from './shared/contexts/NavigationContext';
+
+// Layouts
+import { BottomNavigatorLayout } from '@/shared/components/BottomNavigatorLayout';
+
+// Pages
+import BoardListPage from '@/board/components/BoardListPage';
+import RecentBoard from '@/board/components/RecentBoard';
+import BoardPageWithGuard from '@/board/components/BoardPageWithGuard';
+import TopicCardCarouselPage from './board/components/TopicCardCarouselPage';
+import PostCreationPage from '@/post/components/PostCreationPage';
+import PostCompletionPage from '@/post/components/PostCompletionPage';
+import PostDetailPage from '@/post/components/PostDetailPage';
+import PostEditPage from '@/post/components/PostEditPage';
+import PostFreewritingIntro from '@/post/components/PostFreewritingIntro';
+import PostFreewritingPage from '@/post/components/PostFreewritingPage';
+import NotificationsPage from '@/notification/components/NotificationsPage';
+import NotificationSettingPage from '@/notification/components/NotificationSettingPage';
+import StatsPage from '@/stats/components/StatsPage';
+import UserPage from '@/user/components/UserPage';
+import UserSettingPage from '@/user/components/UserSettingPage';
+import EditAccountPage from '@/user/components/EditAccountPage';
+import BlockedUsersPage from '@/user/components/BlockedUsersPage';
+import { JoinFormPageForActiveOrNewUser } from '@/login/components/JoinFormPageForActiveOrNewUser';
+import JoinFormPageForActiveUser from '@/login/components/JoinFormPageForActiveUser';
+import JoinFormPageForNewUser from '@/login/components/JoinFormPageForNewUser';
+import JoinIntroPage from '@/login/components/JoinIntroPage';
+import LoginPage from '@/login/components/LoginPage';
+
+// Loaders and actions from feature hooks
+import { boardsLoader } from '@/board/hooks/useBoardsLoader';
+import { postDetailLoader } from '@/post/hooks/usePostDetailLoader';
+import { createPostAction } from '@/post/hooks/useCreatePostAction';
+
+// Auth guards and components
+import { PrivateRoutes, PublicRoutes } from '@/shared/components/auth/RouteGuards';
+import { RootRedirect } from '@/shared/components/auth/RootRedirect';
+
+// Error boundary
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
+import StatusMessage from '@/shared/components/StatusMessage';
+
+// Root layout component with router-dependent providers
+function RootLayout({ children }: { children?: React.ReactNode }) {
+  return (
+    <NavigationProvider 
+      debounceTime={500} 
+      topThreshold={30} 
+      ignoreSmallChanges={10}
+    >
+      <BottomTabHandlerProvider>
+        {children || <Outlet />}
+      </BottomTabHandlerProvider>
+    </NavigationProvider>
+  );
+}
+
+
+export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <RootLayout />,
+    errorElement: (
+      <ErrorBoundary fallback={<StatusMessage error errorMessage="페이지를 불러오는 중에 문제가 생겼어요. 잠시 후 다시 시도해주세요." />}>
+        <></>
+      </ErrorBoundary>
+    ),
+    children: [
+      // Root redirect
+      {
+        index: true,
+        element: <RootRedirect />,
+      },
+      
+      // Public routes
+      {
+        path: '',
+        element: <PublicRoutes />,
+        children: [
+          {
+            path: 'login',
+            element: <LoginPage />,
+          },
+          {
+            path: 'join',
+            element: <JoinIntroPage />,
+          },
+          {
+            path: 'board/:boardId/free-writing/intro',
+            element: <PostFreewritingIntro />,
+          },
+        ],
+      },
+
+      // Private routes with bottom navigation
+      {
+        path: '',
+        element: <PrivateRoutes />,
+        children: [
+          {
+            path: '',
+            element: <BottomNavigatorLayout />,
+            children: [
+          {
+            path: 'boards',
+            element: <RecentBoard />,
+          },
+          {
+            path: 'boards/list',
+            element: <BoardListPage />,
+            loader: boardsLoader,
+          },
+          {
+            path: 'board/:boardId',
+            element: <BoardPageWithGuard />,
+          },
+          {
+            path: 'create/:boardId',
+            element: <PostCreationPage />,
+            action: createPostAction,
+          },
+          {
+            path: 'create/:boardId/completion',
+            element: <PostCompletionPage />,
+          },
+          {
+            path: 'board/:boardId/topic-cards',
+            element: <TopicCardCarouselPage />,
+          },
+          {
+            path: 'board/:boardId/post/:postId',
+            element: <PostDetailPage />,
+            loader: postDetailLoader,
+          },
+          {
+            path: 'board/:boardId/edit/:postId',
+            element: <PostEditPage />,
+            loader: postDetailLoader,
+          },
+          {
+            path: 'notifications',
+            element: <NotificationsPage />,
+          },
+          {
+            path: 'notifications/settings',
+            element: <NotificationSettingPage />,
+          },
+          {
+            path: 'account/edit/:userId',
+            element: <EditAccountPage />,
+          },
+          {
+            path: 'stats',
+            element: <StatsPage />,
+          },
+          {
+            path: 'user',
+            element: <UserPage />,
+          },
+          {
+            path: 'user/:userId',
+            element: <UserPage />,
+          },
+          {
+            path: 'user/settings',
+            element: <UserSettingPage />,
+          },
+          {
+            path: 'user/blocked-users',
+            element: <BlockedUsersPage />,
+          },
+            ],
+          },
+          
+          // Private routes without bottom navigation  
+          {
+            path: 'create/:boardId/free-writing',
+            element: <PostFreewritingPage />,
+          },
+          {
+            path: 'join/form',
+            element: <JoinFormPageForActiveOrNewUser />,
+          },
+          {
+            path: 'join/form/new-user',
+            element: <JoinFormPageForNewUser />,
+          },
+          {
+            path: 'join/form/active-user',
+            element: <JoinFormPageForActiveUser />,
+          },
+        ],
+      },
+
+      // Catch-all redirect
+      {
+        path: '*',
+        loader: () => redirect('/'),
+      },
+    ],
+  },
+]);

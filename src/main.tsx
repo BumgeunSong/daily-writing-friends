@@ -1,5 +1,5 @@
 // src/main.tsx
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
@@ -10,8 +10,8 @@ import { initSentry } from './centry';
 import { BottomTabHandlerProvider } from './shared/contexts/BottomTabHandlerContext';
 import { NavigationProvider } from './shared/contexts/NavigationContext';
 import { RemoteConfigProvider } from '@/shared/contexts/RemoteConfigContext';
+import { queryClient } from '@/shared/lib/queryClient';
 initSentry();
-const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

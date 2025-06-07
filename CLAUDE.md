@@ -27,6 +27,12 @@ src/[feature]/
 - **Zod**: Runtime validation with TypeScript inference
 - **Type Safety**: Strict TypeScript with schema-driven development
 
+### Authentication & Routing
+- **Complete guide**: See [`AUTHENTICATION_ROUTING.md`](./AUTHENTICATION_ROUTING.md) for detailed authentication flow, route guards, and data fetching strategies
+- **React Router v6.4 Data API**: Uses loaders and actions with custom auth guards
+- **Hybrid Data Fetching**: Router loaders for initial data + React Query for dynamic updates
+- **QueryClient Access**: Use `@/shared/lib/queryClient` for cache invalidation in router actions
+
 ## Code Writing Practices
 
 ### Component Structure
