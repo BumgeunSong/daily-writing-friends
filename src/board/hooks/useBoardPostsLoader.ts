@@ -11,7 +11,11 @@ export async function boardPostsLoader({ params }: LoaderFunctionArgs) {
   }
 
   // PrivateRoutes ensures user is authenticated before this runs
-  const currentUser = getCurrentUser();
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser) {
+    throw new Response('로그인 후 이용해주세요.', { status: 401 });
+  }
 
   try {
     // Get blocked users first

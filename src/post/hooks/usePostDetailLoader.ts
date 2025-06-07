@@ -3,8 +3,12 @@ import { fetchPost } from '@/post/utils/postUtils';
 import { getCurrentUser } from '@/shared/utils/authUtils';
 
 export async function postDetailLoader({ params }: LoaderFunctionArgs) {
-  // PrivateRoutes ensures user is authenticated before this runs
-  getCurrentUser(); // Ensure we have a user (throws if not)
+  // Wait for auth to initialize before proceeding
+  const user = await getCurrentUser();
+  
+  if (!user) {
+    throw new Response('로그인 후 이용해주세요.', { status: 401 });
+  }
   
   const { boardId, postId } = params;
   

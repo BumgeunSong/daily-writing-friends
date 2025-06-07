@@ -2,8 +2,11 @@ import { fetchBoardsWithUserPermissions } from '@/board/utils/boardUtils';
 import { getCurrentUser } from '@/shared/utils/authUtils';
 
 export async function boardsLoader() {
-  // PrivateRoutes ensures user is authenticated before this runs
-  const currentUser = getCurrentUser();
+  const currentUser = await getCurrentUser();
+  
+  if (!currentUser) {
+    throw new Response('로그인 후 이용해주세요.', { status: 401 });
+  }
   
   try {
     const boards = await fetchBoardsWithUserPermissions(currentUser.uid);
