@@ -38,14 +38,17 @@ import LoginPage from '@/login/components/LoginPage';
 import { boardsLoader } from '@/board/hooks/useBoardsLoader';
 import { postDetailLoader } from '@/post/hooks/usePostDetailLoader';
 import { createPostAction } from '@/post/hooks/useCreatePostAction';
-import { requireAuthentication, getCurrentAuthenticatedUser } from '@/shared/utils/authUtils';
+import { requireAuthentication, getCurrentUser } from '@/shared/utils/authUtils';
+
+// Router components
+import { RouterAuthGuard } from '@/shared/components/RouterAuthGuard';
 
 // Error boundary
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import StatusMessage from '@/shared/components/StatusMessage';
 
 // Root layout component with router-dependent providers
-function RootLayout() {
+function RootLayout({ children }: { children?: React.ReactNode }) {
   return (
     <NavigationProvider 
       debounceTime={500} 
@@ -53,28 +56,29 @@ function RootLayout() {
       ignoreSmallChanges={10}
     >
       <BottomTabHandlerProvider>
-        <Outlet />
+        {children || <Outlet />}
       </BottomTabHandlerProvider>
     </NavigationProvider>
   );
 }
 
-// Auth utility functions
-async function requireAuth() {
-  return await requireAuthentication();
+// Auth utility functions for loaders
+function requireAuth() {
+  // RouterAuthGuard ensures auth is initialized before this runs
+  return requireAuthentication();
 }
 
-async function redirectIfAuthenticated() {
-  const currentUser = await getCurrentAuthenticatedUser();
+function redirectIfAuthenticated() {
+  const currentUser = getCurrentUser();
   if (currentUser) {
     throw redirect('/boards');
   }
   return null;
 }
 
-// Root redirect - wait for auth state before deciding
-async function handleRootRedirect() {
-  const currentUser = await getCurrentAuthenticatedUser();
+// Root redirect - RouterAuthGuard ensures auth is initialized
+function handleRootRedirect() {
+  const currentUser = getCurrentUser();
   return redirect(currentUser ? '/boards' : '/login');
 }
 
@@ -88,6 +92,11 @@ export const router = createBrowserRouter([
       </ErrorBoundary>
     ),
     children: [
+      // Wrap all routes with auth guard
+      {
+        path: '',
+        element: <RouterAuthGuard />,
+        children: [
       // Root redirect
       {
         index: true,
@@ -252,6 +261,8 @@ export const router = createBrowserRouter([
       {
         path: '*',
         loader: () => redirect('/'),
+      },
+        ],
       },
     ],
   },

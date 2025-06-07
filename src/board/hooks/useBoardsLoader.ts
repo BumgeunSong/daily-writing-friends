@@ -2,8 +2,8 @@ import { fetchBoardsWithUserPermissions } from '@/board/utils/boardUtils';
 import { requireAuthentication } from '@/shared/utils/authUtils';
 
 export async function boardsLoader() {
-  // Wait for Firebase auth state to be restored before checking authentication
-  const currentUser = await requireAuthentication();
+  // RouterAuthGuard ensures auth is initialized before this runs
+  const currentUser = requireAuthentication();
   
   try {
     const boards = await fetchBoardsWithUserPermissions(currentUser.uid);

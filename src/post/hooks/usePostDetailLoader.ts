@@ -3,8 +3,8 @@ import { fetchPost } from '@/post/utils/postUtils';
 import { requireAuthentication } from '@/shared/utils/authUtils';
 
 export async function postDetailLoader({ params }: LoaderFunctionArgs) {
-  // Ensure user is authenticated before fetching post
-  await requireAuthentication();
+  // RouterAuthGuard ensures auth is initialized before this runs
+  requireAuthentication();
   
   const { boardId, postId } = params;
   

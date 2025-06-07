@@ -10,8 +10,8 @@ export async function boardPostsLoader({ params }: LoaderFunctionArgs) {
     throw new Response('Missing boardId parameter', { status: 400 });
   }
 
-  // Wait for Firebase auth state to be restored before proceeding
-  const currentUser = await requireAuthentication();
+  // RouterAuthGuard ensures auth is initialized before this runs
+  const currentUser = requireAuthentication();
 
   try {
     // Get blocked users first
