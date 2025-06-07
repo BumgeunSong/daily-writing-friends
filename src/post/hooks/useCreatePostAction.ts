@@ -1,4 +1,5 @@
 import { ActionFunctionArgs, redirect } from 'react-router-dom';
+import { queryClient } from '@/shared/lib/queryClient';
 
 export async function createPostAction({ request, params }: ActionFunctionArgs) {
   const { boardId } = params;
@@ -51,10 +52,24 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
     // Delete draft if it exists
     if (draftId) {
       await deleteDraft(authorId, draftId);
+      
+      // Remove specific draft from cache
+      queryClient.removeQueries({
+        queryKey: ['draft', authorId, draftId, boardId],
+        exact: true
+      });
+      
+      // Invalidate drafts list
+      queryClient.invalidateQueries({
+        queryKey: ['drafts', authorId],
+      });
     }
 
-    // React Router automatically revalidates all loaders after actions!
-    // No manual cache invalidation needed!
+    // Invalidate posts cache so BoardPage shows the new post
+    queryClient.invalidateQueries({
+      queryKey: ['posts', boardId],
+    });
+
     return redirect(`/create/${boardId}/completion`);
   } catch (error) {
     console.error('게시물 작성 중 오류가 발생했습니다:', error);
