@@ -10,15 +10,6 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
   const authorName = formData.get('authorName') as string;
   const draftId = formData.get('draftId') as string | null;
 
-  // Debug log to see what we're getting
-  console.log('Form data received:', {
-    title: title?.length,
-    content: content?.length,
-    authorId,
-    authorName,
-    boardId
-  });
-
   // Validate required fields
   if (!title?.trim()) {
     return { error: '제목을 입력해주세요.' };
@@ -41,19 +32,13 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
   }
 
   try {
-    console.log('Starting post creation...');
-    
     // Import the actual functions
     const { createPost } = await import('@/post/utils/postUtils');
     const { deleteDraft } = await import('@/draft/utils/draftUtils');
     const { sendAnalyticsEvent, AnalyticsEvent } = await import('@/shared/utils/analyticsUtils');
 
-    console.log('Creating post with data:', { boardId, title: title.slice(0, 50), authorId, authorName });
-    
     // Create the post
     await createPost(boardId, title, content, authorId, authorName);
-    
-    console.log('Post created successfully');
     
     // Send analytics
     sendAnalyticsEvent(AnalyticsEvent.CREATE_POST, {
@@ -65,12 +50,9 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
 
     // Delete draft if it exists
     if (draftId) {
-      console.log('Deleting draft:', draftId);
       await deleteDraft(authorId, draftId);
     }
 
-    console.log('Redirecting to completion page');
-    
     // React Router automatically revalidates all loaders after actions!
     // No manual cache invalidation needed!
     return redirect(`/create/${boardId}/completion`);
