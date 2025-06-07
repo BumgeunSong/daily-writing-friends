@@ -1,9 +1,9 @@
 import { fetchBoardsWithUserPermissions } from '@/board/utils/boardUtils';
-import { requireAuthentication } from '@/shared/utils/authUtils';
+import { getCurrentUser } from '@/shared/utils/authUtils';
 
 export async function boardsLoader() {
-  // RouterAuthGuard ensures auth is initialized before this runs
-  const currentUser = requireAuthentication();
+  // PrivateRoutes ensures user is authenticated before this runs
+  const currentUser = getCurrentUser();
   
   try {
     const boards = await fetchBoardsWithUserPermissions(currentUser.uid);

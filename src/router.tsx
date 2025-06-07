@@ -7,8 +7,6 @@ import { NavigationProvider } from './shared/contexts/NavigationContext';
 
 // Layouts
 import { BottomNavigatorLayout } from '@/shared/components/BottomNavigatorLayout';
-import { PrivateRoutes } from './shared/components/route/PrivateRoutes';
-import { PublicRoutes } from './shared/components/route/PublicRoutes';
 
 // Pages
 import BoardListPage from '@/board/components/BoardListPage';
@@ -38,10 +36,10 @@ import LoginPage from '@/login/components/LoginPage';
 import { boardsLoader } from '@/board/hooks/useBoardsLoader';
 import { postDetailLoader } from '@/post/hooks/usePostDetailLoader';
 import { createPostAction } from '@/post/hooks/useCreatePostAction';
-import { requireAuthentication, getCurrentUser } from '@/shared/utils/authUtils';
 
-// Router components
-import { RouterAuthGuard } from '@/shared/components/RouterAuthGuard';
+// Auth guards and components
+import { PrivateRoutes, PublicRoutes } from '@/shared/components/auth/RouteGuards';
+import { RootRedirect } from '@/shared/components/auth/RootRedirect';
 
 // Error boundary
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
@@ -62,25 +60,6 @@ function RootLayout({ children }: { children?: React.ReactNode }) {
   );
 }
 
-// Auth utility functions for loaders
-function requireAuth() {
-  // RouterAuthGuard ensures auth is initialized before this runs
-  return requireAuthentication();
-}
-
-function redirectIfAuthenticated() {
-  const currentUser = getCurrentUser();
-  if (currentUser) {
-    throw redirect('/boards');
-  }
-  return null;
-}
-
-// Root redirect - RouterAuthGuard ensures auth is initialized
-function handleRootRedirect() {
-  const currentUser = getCurrentUser();
-  return redirect(currentUser ? '/boards' : '/login');
-}
 
 export const router = createBrowserRouter([
   {
@@ -92,47 +71,44 @@ export const router = createBrowserRouter([
       </ErrorBoundary>
     ),
     children: [
-      // Wrap all routes with auth guard
-      {
-        path: '',
-        element: <RouterAuthGuard />,
-        children: [
       // Root redirect
       {
         index: true,
-        loader: handleRootRedirect,
+        element: <RootRedirect />,
       },
       
       // Public routes
       {
-        path: 'login',
-        element: <LoginPage />,
-        loader: redirectIfAuthenticated,
-      },
-      
-      // Public post intro
-      {
-        path: 'board/:boardId/free-writing/intro',
-        element: (
-          <PublicRoutes>
-            <PostFreewritingIntro />
-          </PublicRoutes>
-        ),
+        path: '',
+        element: <PublicRoutes />,
+        children: [
+          {
+            path: 'login',
+            element: <LoginPage />,
+          },
+          {
+            path: 'join',
+            element: <JoinIntroPage />,
+          },
+          {
+            path: 'board/:boardId/free-writing/intro',
+            element: <PostFreewritingIntro />,
+          },
+        ],
       },
 
       // Private routes with bottom navigation
       {
-        path: '/',
-        element: (
-          <PrivateRoutes fallback="login" redirectAfterLogin="originalFromUser">
-            <BottomNavigatorLayout />
-          </PrivateRoutes>
-        ),
+        path: '',
+        element: <PrivateRoutes />,
         children: [
+          {
+            path: '',
+            element: <BottomNavigatorLayout />,
+            children: [
           {
             path: 'boards',
             element: <RecentBoard />,
-            loader: requireAuth,
           },
           {
             path: 'boards/list',
@@ -142,23 +118,19 @@ export const router = createBrowserRouter([
           {
             path: 'board/:boardId',
             element: <BoardPageWithGuard />,
-            loader: requireAuth,
           },
           {
             path: 'create/:boardId',
             element: <PostCreationPage />,
-            loader: requireAuth,
             action: createPostAction,
           },
           {
             path: 'create/:boardId/completion',
             element: <PostCompletionPage />,
-            loader: requireAuth,
           },
           {
             path: 'board/:boardId/topic-cards',
             element: <TopicCardCarouselPage />,
-            loader: requireAuth,
           },
           {
             path: 'board/:boardId/post/:postId',
@@ -173,96 +145,62 @@ export const router = createBrowserRouter([
           {
             path: 'notifications',
             element: <NotificationsPage />,
-            loader: requireAuth,
           },
           {
             path: 'notifications/settings',
             element: <NotificationSettingPage />,
-            loader: requireAuth,
           },
           {
             path: 'account/edit/:userId',
             element: <EditAccountPage />,
-            loader: requireAuth,
           },
           {
             path: 'stats',
             element: <StatsPage />,
-            loader: requireAuth,
           },
           {
             path: 'user',
             element: <UserPage />,
-            loader: requireAuth,
           },
           {
             path: 'user/:userId',
             element: <UserPage />,
-            loader: requireAuth,
           },
           {
             path: 'user/settings',
             element: <UserSettingPage />,
-            loader: requireAuth,
           },
           {
             path: 'user/blocked-users',
             element: <BlockedUsersPage />,
-            loader: requireAuth,
+          },
+            ],
+          },
+          
+          // Private routes without bottom navigation  
+          {
+            path: 'create/:boardId/free-writing',
+            element: <PostFreewritingPage />,
+          },
+          {
+            path: 'join/form',
+            element: <JoinFormPageForActiveOrNewUser />,
+          },
+          {
+            path: 'join/form/new-user',
+            element: <JoinFormPageForNewUser />,
+          },
+          {
+            path: 'join/form/active-user',
+            element: <JoinFormPageForActiveUser />,
           },
         ],
-      },
-
-      // Private routes without bottom navigation
-      {
-        path: 'create/:boardId/free-writing',
-        element: (
-          <PrivateRoutes fallback="login" redirectAfterLogin="predefined" predefinedPath="/boards">
-            <PostFreewritingPage />
-          </PrivateRoutes>
-        ),
-        loader: requireAuth,
-      },
-
-      // Join/onboarding routes
-      {
-        path: 'join',
-        element: <JoinIntroPage />,
-      },
-      {
-        path: 'join/form',
-        element: (
-          <PrivateRoutes fallback="join" redirectAfterLogin="originalFromUser">
-            <JoinFormPageForActiveOrNewUser />
-          </PrivateRoutes>
-        ),
-        loader: requireAuth,
-      },
-      {
-        path: 'join/form/new-user',
-        element: (
-          <PrivateRoutes fallback="join" redirectAfterLogin="predefined" predefinedPath="/join/form/new-user">
-            <JoinFormPageForNewUser />
-          </PrivateRoutes>
-        ),
-        loader: requireAuth,
-      },
-      {
-        path: 'join/form/active-user',
-        element: (
-          <PrivateRoutes fallback="join" redirectAfterLogin="predefined" predefinedPath="/join/form/active-user">
-            <JoinFormPageForActiveUser />
-          </PrivateRoutes>
-        ),
-        loader: requireAuth,
       },
 
       // Catch-all redirect
       {
         path: '*',
         loader: () => redirect('/'),
-      },
-        ],
       },
     ],
   },

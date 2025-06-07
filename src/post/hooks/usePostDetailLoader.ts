@@ -1,10 +1,10 @@
 import { LoaderFunctionArgs } from 'react-router-dom';
 import { fetchPost } from '@/post/utils/postUtils';
-import { requireAuthentication } from '@/shared/utils/authUtils';
+import { getCurrentUser } from '@/shared/utils/authUtils';
 
 export async function postDetailLoader({ params }: LoaderFunctionArgs) {
-  // RouterAuthGuard ensures auth is initialized before this runs
-  requireAuthentication();
+  // PrivateRoutes ensures user is authenticated before this runs
+  getCurrentUser(); // Ensure we have a user (throws if not)
   
   const { boardId, postId } = params;
   

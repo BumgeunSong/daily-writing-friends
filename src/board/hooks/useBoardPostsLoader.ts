@@ -1,7 +1,7 @@
 import { LoaderFunctionArgs } from 'react-router-dom';
 import { fetchPosts } from '@/post/api/post';
 import { getBlockedByUsers } from '@/user/api/user';
-import { requireAuthentication } from '@/shared/utils/authUtils';
+import { getCurrentUser } from '@/shared/utils/authUtils';
 
 export async function boardPostsLoader({ params }: LoaderFunctionArgs) {
   const { boardId } = params;
@@ -10,8 +10,8 @@ export async function boardPostsLoader({ params }: LoaderFunctionArgs) {
     throw new Response('Missing boardId parameter', { status: 400 });
   }
 
-  // RouterAuthGuard ensures auth is initialized before this runs
-  const currentUser = requireAuthentication();
+  // PrivateRoutes ensures user is authenticated before this runs
+  const currentUser = getCurrentUser();
 
   try {
     // Get blocked users first
