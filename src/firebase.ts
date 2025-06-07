@@ -7,7 +7,9 @@ import {
   signInWithPopup,
   signOut,
   UserCredential,
-  connectAuthEmulator
+  connectAuthEmulator,
+  setPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { getPerformance } from "firebase/performance";
@@ -35,6 +37,11 @@ const provider = new GoogleAuthProvider();
 const performance = getPerformance(app);
 const remoteConfig = getRemoteConfig(app);
 const analytics = getAnalytics(app);
+
+// Configure Firebase Auth persistence
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error('Failed to set Firebase Auth persistence:', error);
+});
 
 if (process.env.USE_FIREBASE_EMULATOR === 'true') {
   connectFirestoreEmulator(firestore, 'localhost', 8080);
