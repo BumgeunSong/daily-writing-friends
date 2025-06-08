@@ -60,6 +60,74 @@ function RootLayout({ children }: { children?: React.ReactNode }) {
   );
 }
 
+// --- Route Block 분리 ---
+
+// Root redirect
+const rootRedirectRoute = {
+  index: true,
+  element: <RootRedirect />,
+};
+
+// Catch-all redirect
+const catchAllRedirectRoute = {
+  path: '*',
+  loader: () => redirect('/'),
+};
+
+// Public routes
+const publicRoutes = {
+  path: '',
+  element: <PublicRoutes />,
+  children: [
+    { path: 'login', element: <LoginPage /> },
+    { path: 'join', element: <JoinIntroPage /> },
+    { path: 'board/:boardId/free-writing/intro', element: <PostFreewritingIntro /> },
+  ],
+};
+
+// Private routes with bottom navigation
+const privateRoutesWithNav = {
+  path: '',
+  element: <PrivateRoutes />,
+  children: [
+    {
+      path: '',
+      element: <BottomNavigatorLayout />,
+      children: [
+        { path: 'boards', element: <RecentBoard /> },
+        { path: 'boards/list', element: <BoardListPage />, loader: boardsLoader },
+        { path: 'board/:boardId', element: <BoardPageWithGuard /> },
+        { path: 'create/:boardId', element: <PostCreationPage />, action: createPostAction },
+        { path: 'create/:boardId/completion', element: <PostCompletionPage /> },
+        { path: 'board/:boardId/topic-cards', element: <TopicCardCarouselPage /> },
+        { path: 'board/:boardId/post/:postId', element: <PostDetailPage />, loader: postDetailLoader },
+        { path: 'board/:boardId/edit/:postId', element: <PostEditPage />, loader: postDetailLoader },
+        { path: 'notifications', element: <NotificationsPage /> },
+        { path: 'notifications/settings', element: <NotificationSettingPage /> },
+        { path: 'account/edit/:userId', element: <EditAccountPage /> },
+        { path: 'stats', element: <StatsPage /> },
+        { path: 'user', element: <UserPage /> },
+        { path: 'user/:userId', element: <UserPage /> },
+        { path: 'user/settings', element: <UserSettingPage /> },
+        { path: 'user/blocked-users', element: <BlockedUsersPage /> },
+      ],
+    },
+  ],
+};
+
+// Private routes without bottom navigation
+const privateRoutesWithoutNav = {
+  path: '',
+  element: <PrivateRoutes />,
+  children: [
+    { path: 'create/:boardId/free-writing', element: <PostFreewritingPage /> },
+    { path: 'join/form', element: <JoinFormPageForActiveOrNewUser /> },
+    { path: 'join/form/new-user', element: <JoinFormPageForNewUser /> },
+    { path: 'join/form/active-user', element: <JoinFormPageForActiveUser /> },
+  ],
+};
+
+// --- Router 생성 ---
 
 export const router = createBrowserRouter([
   {
@@ -71,137 +139,11 @@ export const router = createBrowserRouter([
       </ErrorBoundary>
     ),
     children: [
-      // Root redirect
-      {
-        index: true,
-        element: <RootRedirect />,
-      },
-      
-      // Public routes
-      {
-        path: '',
-        element: <PublicRoutes />,
-        children: [
-          {
-            path: 'login',
-            element: <LoginPage />,
-          },
-          {
-            path: 'join',
-            element: <JoinIntroPage />,
-          },
-          {
-            path: 'board/:boardId/free-writing/intro',
-            element: <PostFreewritingIntro />,
-          },
-        ],
-      },
-
-      // Private routes with bottom navigation
-      {
-        path: '',
-        element: <PrivateRoutes />,
-        children: [
-          {
-            path: '',
-            element: <BottomNavigatorLayout />,
-            children: [
-          {
-            path: 'boards',
-            element: <RecentBoard />,
-          },
-          {
-            path: 'boards/list',
-            element: <BoardListPage />,
-            loader: boardsLoader,
-          },
-          {
-            path: 'board/:boardId',
-            element: <BoardPageWithGuard />,
-          },
-          {
-            path: 'create/:boardId',
-            element: <PostCreationPage />,
-            action: createPostAction,
-          },
-          {
-            path: 'create/:boardId/completion',
-            element: <PostCompletionPage />,
-          },
-          {
-            path: 'board/:boardId/topic-cards',
-            element: <TopicCardCarouselPage />,
-          },
-          {
-            path: 'board/:boardId/post/:postId',
-            element: <PostDetailPage />,
-            loader: postDetailLoader,
-          },
-          {
-            path: 'board/:boardId/edit/:postId',
-            element: <PostEditPage />,
-            loader: postDetailLoader,
-          },
-          {
-            path: 'notifications',
-            element: <NotificationsPage />,
-          },
-          {
-            path: 'notifications/settings',
-            element: <NotificationSettingPage />,
-          },
-          {
-            path: 'account/edit/:userId',
-            element: <EditAccountPage />,
-          },
-          {
-            path: 'stats',
-            element: <StatsPage />,
-          },
-          {
-            path: 'user',
-            element: <UserPage />,
-          },
-          {
-            path: 'user/:userId',
-            element: <UserPage />,
-          },
-          {
-            path: 'user/settings',
-            element: <UserSettingPage />,
-          },
-          {
-            path: 'user/blocked-users',
-            element: <BlockedUsersPage />,
-          },
-            ],
-          },
-          
-          // Private routes without bottom navigation  
-          {
-            path: 'create/:boardId/free-writing',
-            element: <PostFreewritingPage />,
-          },
-          {
-            path: 'join/form',
-            element: <JoinFormPageForActiveOrNewUser />,
-          },
-          {
-            path: 'join/form/new-user',
-            element: <JoinFormPageForNewUser />,
-          },
-          {
-            path: 'join/form/active-user',
-            element: <JoinFormPageForActiveUser />,
-          },
-        ],
-      },
-
-      // Catch-all redirect
-      {
-        path: '*',
-        loader: () => redirect('/'),
-      },
+      rootRedirectRoute,
+      publicRoutes,
+      privateRoutesWithNav,
+      privateRoutesWithoutNav,
+      catchAllRedirectRoute,
     ],
   },
 ]);
