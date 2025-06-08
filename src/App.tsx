@@ -1,18 +1,31 @@
 import './index.css';
-import { useAuth } from '@/shared/hooks/useAuth';
-import { useRemoteConfigReady } from '@/shared/contexts/RemoteConfigContext';
+import { useRemoteConfigReady, RemoteConfigProvider } from '@/shared/contexts/RemoteConfigContext';
 import { Loader2 } from 'lucide-react';
-import { AppRouter } from './AppRouter';
+import { RouterProvider } from 'react-router-dom';
+import { router } from './router';
+import { NavigationProvider } from '@/shared/contexts/NavigationContext';
+import { BottomTabHandlerProvider } from '@/shared/contexts/BottomTabHandlerContext';
 
 export default function App() {
-  const { currentUser } = useAuth();
-  const remoteConfigReady = useRemoteConfigReady();
+  return (
+    <RemoteConfigProvider>
+      <AppWithProviders />
+    </RemoteConfigProvider>
+  );
+}
 
+function AppWithProviders() {
+  const remoteConfigReady = useRemoteConfigReady();
   if (!remoteConfigReady) {
     return <AppLoader />;
   }
-
-  return <AppRouter currentUser={currentUser} />;
+  return (
+    <NavigationProvider debounceTime={500} topThreshold={30} ignoreSmallChanges={10}>
+      <BottomTabHandlerProvider>
+        <RouterProvider router={router} />
+      </BottomTabHandlerProvider>
+    </NavigationProvider>
+  );
 }
 
 function AppLoader() {
