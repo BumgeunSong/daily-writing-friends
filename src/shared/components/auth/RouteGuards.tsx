@@ -40,16 +40,15 @@ export function PrivateRoutes() {
 export function PublicRoutes() {
   const { currentUser, loading, redirectPathAfterLogin, setRedirectPathAfterLogin } = useAuth();
 
-
-  // If user is authenticated (and not loading), redirect them away from public routes
-  if (!loading && currentUser) {
-    const redirectTo = redirectPathAfterLogin || '/';
-    
-    // Clear the redirect path
-    if (redirectPathAfterLogin) {
+  // 상태 변경은 useEffect에서만!
+  useEffect(() => {
+    if (!loading && currentUser && redirectPathAfterLogin) {
       setRedirectPathAfterLogin(null);
     }
-    
+  }, [loading, currentUser, redirectPathAfterLogin, setRedirectPathAfterLogin]);
+
+  if (!loading && currentUser) {
+    const redirectTo = redirectPathAfterLogin || '/';
     return <Navigate to={redirectTo} replace />;
   }
 
