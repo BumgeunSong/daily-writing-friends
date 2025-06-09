@@ -4,6 +4,8 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { useDraftLoader } from '@/draft/hooks/useDraftLoader';
 import { usePostEditor } from '@/post/hooks/usePostEditor';
 import { useAutoSaveDrafts } from '@/draft/hooks/useAutoSaveDrafts';
+import { DraftStatusIndicator } from '@/draft/components/DraftStatusIndicator';
+import { DraftsDrawer } from '@/draft/components/DraftsDrawer';
 import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
 import { Button } from '@/shared/ui/button';
@@ -88,7 +90,20 @@ export default function PostCreationPage() {
           onChange={setContent} 
         />
         
+        {/* 임시 저장 상태 표시 컴포넌트 */}
+        <DraftStatusIndicator
+          isSaving={isSaving}
+          savingError={savingError}
+          lastSavedAt={lastSavedAt}
+        />
         <div className='flex justify-end space-x-4'>
+          {currentUser && (
+            <DraftsDrawer userId={currentUser.uid} boardId={boardId}>
+              <Button variant="outline" size="default" className="flex items-center">
+                임시 저장 글
+              </Button>
+            </DraftsDrawer>
+          )}
           // DraftButton should be here
           
           <Button type="button" variant="outline" disabled={isSubmitting}>
