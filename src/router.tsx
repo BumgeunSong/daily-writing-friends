@@ -80,8 +80,7 @@ const publicRoutes = {
   element: <PublicRoutes />,
   children: [
     { path: 'login', element: <LoginPage /> },
-    { path: 'join', element: <JoinIntroPage /> },
-    { path: 'board/:boardId/free-writing/intro', element: <PostFreewritingIntro /> },
+    { path: 'join', element: <JoinIntroPage /> }
   ],
 };
 
@@ -120,6 +119,7 @@ const privateRoutesWithoutNav = {
   path: '',
   element: <PrivateRoutes />,
   children: [
+    { path: 'board/:boardId/free-writing/intro', element: <PostFreewritingIntro /> },
     { path: 'create/:boardId/free-writing', element: <PostFreewritingPage /> },
     { path: 'join/form', element: <JoinFormPageForActiveOrNewUser /> },
     { path: 'join/form/new-user', element: <JoinFormPageForNewUser /> },
