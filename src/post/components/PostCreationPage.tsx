@@ -2,6 +2,7 @@ import { useParams, Form, useNavigation, useActionData, useSearchParams } from '
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useDraftLoader } from '@/draft/hooks/useDraftLoader';
+import { usePostEditor } from '@/post/hooks/usePostEditor';
 import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
 import { Button } from '@/shared/ui/button';
@@ -33,8 +34,11 @@ export default function PostCreationPage() {
   const actionData = useActionData() as ActionData;
   
   // State for controlled form inputs
-  const [title, setTitle] = useState(initialTitle);
-  const [content, setContent] = useState(initialContent);
+  const { title, setTitle, content, setContent } = usePostEditor({
+    initialDraft: draft,
+    initialTitle,
+    initialContent,
+  });
   const [showErrorDialog, setShowErrorDialog] = useState(false);
 
   // Router automatically handles loading states during form submission
