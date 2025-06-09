@@ -75,6 +75,7 @@ export default function PostCreationPage() {
     <div className='mx-auto max-w-4xl px-6 py-8'>
       {/* React Router Form automatically submits to the route's action */}
       <Form method="post" className='space-y-6'>
+        <input type="hidden" name="draftId" value={autoDraftId || ''} />
         <input type="hidden" name="boardId" value={boardId} />
         <input type="hidden" name="authorId" value={currentUser?.uid} />
         <input type="hidden" name="authorName" value={currentUser?.displayName || currentUser?.email || 'Anonymous'} />
