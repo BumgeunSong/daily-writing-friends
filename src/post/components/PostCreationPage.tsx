@@ -35,8 +35,6 @@ export default function PostCreationPage() {
   
   return (
     <div className='mx-auto max-w-4xl px-6 py-8'>
-      <h1 className='mb-6 text-2xl font-bold'>새 글 작성</h1>
-      
       {/* React Router Form automatically submits to the route's action */}
       <Form method="post" className='space-y-6'>
         <input type="hidden" name="boardId" value={boardId} />
