@@ -105,11 +105,11 @@ export default function PostCreationPage() {
           {/* 임시 저장 상태 표시 컴포넌트 */}
           <DraftStatusIndicator
             isSaving={isSaving}
-            savingError={savingError}
+            savingError={draftError || savingError}
             lastSavedAt={lastSavedAt}
           />
           <div className='flex justify-end space-x-4'>
-            {currentUser && (
+            {currentUser && !isDraftLoading && !draftError && (
               <DraftsDrawer userId={currentUser.uid} boardId={boardId}>
                 <Button variant="outline" size="default" className="flex items-center">
                   임시 저장 글
