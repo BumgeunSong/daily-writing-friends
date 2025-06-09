@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useDraftLoader } from '@/draft/hooks/useDraftLoader';
 import { usePostEditor } from '@/post/hooks/usePostEditor';
+import { useAutoSaveDrafts } from '@/draft/hooks/useAutoSaveDrafts';
 import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
 import { Button } from '@/shared/ui/button';
@@ -51,6 +52,23 @@ export default function PostCreationPage() {
     }
   }, [actionData?.error]);
   
+  // 3단계: 자동 임시저장
+  // eslint-disable-next-line no-unused-vars
+  const {
+    draftId: autoDraftId,
+    lastSavedAt,
+    isSaving,
+    savingError,
+    manualSave
+  } = useAutoSaveDrafts({
+    boardId: boardId || '',
+    userId: currentUser?.uid,
+    title,
+    content,
+    initialDraftId: loadedDraftId || undefined,
+    autoSaveInterval: 10000,
+  });
+
   return (
     <div className='mx-auto max-w-4xl px-6 py-8'>
       {/* React Router Form automatically submits to the route's action */}
