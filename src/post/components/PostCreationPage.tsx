@@ -1,6 +1,7 @@
-import { useParams, Form, useNavigation, useActionData } from 'react-router-dom';
+import { useParams, Form, useNavigation, useActionData, useSearchParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { useDraftLoader } from '@/draft/hooks/useDraftLoader';
 import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
 import { Button } from '@/shared/ui/button';
@@ -13,14 +14,27 @@ interface ActionData {
 }
 
 export default function PostCreationPage() {
-  const { boardId } = useParams<{ boardId: string }>();
+  // 1단계: 임시저장글 불러오기
   const { currentUser } = useAuth();
+  const { boardId } = useParams<{ boardId: string }>();
+  const [searchParams] = useSearchParams();
+  const draftId = searchParams.get('draftId');
+  const initialTitle = searchParams.get('title') || '';
+  const initialContent = searchParams.get('content') || '';
+
+  // eslint-disable-next-line no-unused-vars
+  const { draft, draftId: loadedDraftId, isLoading: isDraftLoading, error: draftError } = useDraftLoader({
+    userId: currentUser?.uid,
+    boardId,
+    draftId,
+  });
+
   const navigation = useNavigation();
   const actionData = useActionData() as ActionData;
   
   // State for controlled form inputs
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [title, setTitle] = useState(initialTitle);
+  const [content, setContent] = useState(initialContent);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
 
   // Router automatically handles loading states during form submission
@@ -53,6 +67,8 @@ export default function PostCreationPage() {
         />
         
         <div className='flex justify-end space-x-4'>
+          // DraftButton should be here
+          
           <Button type="button" variant="outline" disabled={isSubmitting}>
             취소
           </Button>
