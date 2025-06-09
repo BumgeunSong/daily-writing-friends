@@ -10,6 +10,7 @@ import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
 import { Button } from '@/shared/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/shared/ui/alert-dialog';
+import { Loader2 } from 'lucide-react';
 
 // Type for action data (errors, success messages, etc.)
 interface ActionData {
@@ -73,48 +74,59 @@ export default function PostCreationPage() {
 
   return (
     <div className='mx-auto max-w-4xl px-6 py-8'>
-      {/* React Router Form automatically submits to the route's action */}
-      <Form method="post" className='space-y-6'>
-        <input type="hidden" name="draftId" value={autoDraftId || ''} />
-        <input type="hidden" name="boardId" value={boardId} />
-        <input type="hidden" name="authorId" value={currentUser?.uid} />
-        <input type="hidden" name="authorName" value={currentUser?.displayName || currentUser?.email || 'Anonymous'} />
-        <input type="hidden" name="title" value={title} />
-        <input type="hidden" name="content" value={content} />
-        
-        <PostTitleEditor 
-          value={title} 
-          onChange={(e) => setTitle(e.target.value)} 
-        />
-        <PostTextEditor 
-          value={content} 
-          onChange={setContent} 
-        />
-        
-        {/* 임시 저장 상태 표시 컴포넌트 */}
-        <DraftStatusIndicator
-          isSaving={isSaving}
-          savingError={savingError}
-          lastSavedAt={lastSavedAt}
-        />
-        <div className='flex justify-end space-x-4'>
-          {currentUser && (
-            <DraftsDrawer userId={currentUser.uid} boardId={boardId}>
-              <Button variant="outline" size="default" className="flex items-center">
-                임시 저장 글
-              </Button>
-            </DraftsDrawer>
-          )}
-          // DraftButton should be here
-          
-          <Button type="button" variant="outline" disabled={isSubmitting}>
-            취소
-          </Button>
-          <Button type="submit" disabled={isSubmitting || !title.trim() || !content.trim()}>
-            {isSubmitting ? '저장 중...' : '글 저장'}
-          </Button>
+      {/* draftId가 있을 때만 로딩 상태 표시 */}
+      {draftId && isDraftLoading ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="size-8 animate-spin text-primary" />
+          <span className="ml-2 text-gray-600">임시 저장 글을 불러오는 중...</span>
         </div>
-      </Form>
+      ) : draftError ? (
+        <div className="flex items-center justify-center py-8 text-red-500">
+          <span>임시 저장 글을 불러오는 중 오류가 발생했습니다.</span>
+        </div>
+      ) : (
+        <Form method="post" className='space-y-6'>
+          <input type="hidden" name="draftId" value={autoDraftId || ''} />
+          <input type="hidden" name="boardId" value={boardId} />
+          <input type="hidden" name="authorId" value={currentUser?.uid} />
+          <input type="hidden" name="authorName" value={currentUser?.displayName || currentUser?.email || 'Anonymous'} />
+          <input type="hidden" name="title" value={title} />
+          <input type="hidden" name="content" value={content} />
+          
+          <PostTitleEditor 
+            value={title} 
+            onChange={(e) => setTitle(e.target.value)} 
+          />
+          <PostTextEditor 
+            value={content} 
+            onChange={setContent} 
+          />
+          
+          {/* 임시 저장 상태 표시 컴포넌트 */}
+          <DraftStatusIndicator
+            isSaving={isSaving}
+            savingError={savingError}
+            lastSavedAt={lastSavedAt}
+          />
+          <div className='flex justify-end space-x-4'>
+            {currentUser && (
+              <DraftsDrawer userId={currentUser.uid} boardId={boardId}>
+                <Button variant="outline" size="default" className="flex items-center">
+                  임시 저장 글
+                </Button>
+              </DraftsDrawer>
+            )}
+            // DraftButton should be here
+            
+            <Button type="button" variant="outline" disabled={isSubmitting}>
+              취소
+            </Button>
+            <Button type="submit" disabled={isSubmitting || !title.trim() || !content.trim()}>
+              {isSubmitting ? '저장 중...' : '글 저장'}
+            </Button>
+          </div>
+        </Form>
+      )}
 
       {/* Error Dialog */}
       <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
