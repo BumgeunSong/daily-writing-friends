@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { auth } from '@/firebase';
 import { useToast } from '@/shared/hooks/use-toast';
 import { useClearCache } from '@/shared/hooks/useClearCache';
-import { LogOut, MessageCircle, Trash2, SquareArrowRight } from 'lucide-react';
+import { useTheme } from '@/shared/hooks/useTheme';
+import { LogOut, MessageCircle, Trash2, SquareArrowRight, Moon, Sun } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
+import { Switch } from '@/shared/ui/switch';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +23,7 @@ export default function UserSettingPage() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const clearCache = useClearCache();
+  const { theme, toggleTheme } = useTheme();
   const { value: blockUserFeatureEnabled } = useRemoteConfig('block_user_feature_enabled');
 
   // 로그아웃
@@ -63,9 +66,20 @@ export default function UserSettingPage() {
 
   return (
     <div className="min-h-screen w-full bg-background flex flex-col items-center justify-start">
-      <header className="w-full bg-black py-4 text-white">
+      <header className="w-full bg-primary py-4 text-primary-foreground">
         <div className="px-4">
-          <h2 className="text-xl font-bold text-left">설정</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-left">설정</h2>
+            <div className="flex items-center gap-2">
+              <Sun className="h-4 w-4" />
+              <Switch
+                checked={theme === 'dark'}
+                onCheckedChange={toggleTheme}
+                aria-label="다크 모드 토글"
+              />
+              <Moon className="h-4 w-4" />
+            </div>
+          </div>
         </div>
       </header>
       <div className="w-full flex flex-col gap-0">
@@ -87,7 +101,7 @@ export default function UserSettingPage() {
           <AlertDialogTrigger asChild>
             <Button
               variant="ghost"
-              className="w-full flex items-center justify-start gap-2 rounded-none text-red-500 border-b border-border text-base h-14"
+              className="w-full flex items-center justify-start gap-2 rounded-none text-destructive border-b border-border text-base h-14"
             >
               <Trash2 className="size-5" /> 캐시 삭제
             </Button>
@@ -98,7 +112,7 @@ export default function UserSettingPage() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>취소</AlertDialogCancel>
-              <AlertDialogAction onClick={handleClearCache} className="bg-red-500 hover:bg-red-600">
+              <AlertDialogAction onClick={handleClearCache} className="bg-destructive hover:bg-destructive/90">
                 삭제
               </AlertDialogAction>
             </AlertDialogFooter>
