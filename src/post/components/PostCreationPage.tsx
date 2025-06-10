@@ -71,7 +71,6 @@ export default function PostCreationPage() {
     initialDraftId: loadedDraftId || undefined,
     autoSaveInterval: 10000,
   });
-
   return (
     <div className='mx-auto max-w-4xl px-6 py-8'>
       <Form method="post" className='space-y-6'>
@@ -97,19 +96,12 @@ export default function PostCreationPage() {
           savingError={draftError || savingError}
           lastSavedAt={lastSavedAt}
         />
-        <div className='flex justify-end space-x-4'>
-          {currentUser && !isDraftLoading && !draftError && (
-            <DraftsDrawer userId={currentUser.uid} boardId={boardId}>
-              <Button variant="outline" size="default" className="flex items-center">
-                임시 저장 글
-              </Button>
-            </DraftsDrawer>
-          )}
-          // DraftButton should be here
-          
-          <Button type="button" variant="outline" disabled={isSubmitting}>
-            취소
-          </Button>
+        <div className='flex justify-between space-x-4'>
+          <DraftsDrawer userId={currentUser?.uid} boardId={boardId}>
+            <Button variant="outline" size="default" className="flex items-center">
+              임시 저장 글
+            </Button>
+          </DraftsDrawer>
           <Button type="submit" disabled={isSubmitting || !title.trim() || !content.trim()}>
             {isSubmitting ? '저장 중...' : '글 저장'}
           </Button>
