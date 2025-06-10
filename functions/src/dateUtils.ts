@@ -94,3 +94,42 @@ export function isSameDay(date1: Date, date2: Date, timeZone: TimeZone): boolean
         date1InTimeZone.getDate() === date2InTimeZone.getDate()
     );
 }
+
+/**
+ * 주어진 날짜를 현재 시각과 비교해 한국어 상대 시간 문자열(예: '3분 전', '2일 후')로 반환합니다.
+ * 10초 미만은 '방금 전'으로 처리합니다.
+ * @param date - 비교할 날짜
+ * @returns string - 한국어 상대 시간 문자열
+ */
+export function formatRelativeTimeKorean(date: Date): string {
+    const now = new Date();
+    const diffMs = date.getTime() - now.getTime();
+    const absDiffMs = Math.abs(diffMs);
+
+    // 10초 미만은 '방금 전'
+    if (absDiffMs < 10000) {
+        return '방금 전';
+    }
+
+    // 단위별 초/밀리초
+    const units: [Intl.RelativeTimeFormatUnit, number][] = [
+        ['year', 1000 * 60 * 60 * 24 * 365],
+        ['month', 1000 * 60 * 60 * 24 * 30],
+        ['week', 1000 * 60 * 60 * 24 * 7],
+        ['day', 1000 * 60 * 60 * 24],
+        ['hour', 1000 * 60 * 60],
+        ['minute', 1000 * 60],
+        ['second', 1000],
+    ];
+
+    for (const [unit, unitMs] of units) {
+        const diff = diffMs / unitMs;
+        if (Math.abs(diff) >= 1) {
+            const rounded = Math.round(diff);
+            const rtf = new Intl.RelativeTimeFormat('ko', { numeric: 'auto' });
+            return rtf.format(rounded, unit);
+        }
+    }
+    // fallback (이론상 도달 불가)
+    return '방금 전';
+}
