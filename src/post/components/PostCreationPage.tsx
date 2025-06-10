@@ -56,20 +56,18 @@ export default function PostCreationPage() {
   }, [actionData?.error]);
   
   // 3단계: 자동 임시저장
-  // eslint-disable-next-line no-unused-vars
   const {
     draftId: autoDraftId,
     lastSavedAt,
     isSaving,
-    savingError,
-    manualSave
+    savingError
   } = useAutoSaveDrafts({
     boardId: boardId || '',
     userId: currentUser?.uid,
     title,
     content,
     initialDraftId: loadedDraftId || undefined,
-    autoSaveInterval: 10000,
+    intervalMs: 10000,
   });
   return (
     <div className='mx-auto max-w-4xl px-6 py-8'>
