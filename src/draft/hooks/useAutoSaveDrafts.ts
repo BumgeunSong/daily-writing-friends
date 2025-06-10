@@ -1,7 +1,5 @@
-import { useState, useCallback } from 'react';
-import { usePreviousValue } from './usePreviousValue';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useDraftSaveMutation } from './useDraftSaveMutation';
-import { useIntervalAutoSave } from './useIntervalAutoSave';
 
 interface UseAutoSaveDraftsProps {
   boardId: string;
@@ -23,7 +21,7 @@ interface UseAutoSaveDraftsResult {
 /**
  * 임시 저장 초안(Draft)을 10초마다 자동으로 저장하는 커스텀 훅입니다.
  * 
- * - 10초마다 title/content가 이전 값과 다를 때만 저장하여 불필요한 API 호출을 방지합니다.
+ * - interval은 마운트 시 한 번만 등록되며, 10초마다 title/content가 마지막 저장값과 다를 때만 저장합니다.
  * - 수동 저장(manualSave) 함수도 제공합니다.
  * - react-query의 useMutation을 활용하여 저장 상태, 에러, 로딩을 관리합니다.
  * 
@@ -68,23 +66,27 @@ export function useAutoSaveDrafts({
 }: UseAutoSaveDraftsProps): UseAutoSaveDraftsResult {
   const [draftId, setDraftId] = useState<string | null>(initialDraftId || null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [lastSavedTitle, setLastSavedTitle] = useState<string>(title);
+  const [lastSavedContent, setLastSavedContent] = useState<string>(content);
 
-  const prevTitleRef = usePreviousValue(title);
-  const prevContentRef = usePreviousValue(content);
-
-  // 변경 감지
-  const hasChanged = title !== prevTitleRef.current || content !== prevContentRef.current;
+  // 최신 title/content를 ref로 추적
+  const titleRef = useRef(title);
+  const contentRef = useRef(content);
+  useEffect(() => { titleRef.current = title; }, [title]);
+  useEffect(() => { contentRef.current = content; }, [content]);
 
   // 저장 mutation
   const { mutateAsync: saveDraftMutate, isLoading, error } = useDraftSaveMutation({
     draftId,
     boardId,
     userId,
-    title,
-    content,
+    title: titleRef.current,
+    content: contentRef.current,
     onSaved: (savedDraft) => {
       setDraftId(savedDraft.id);
       setLastSavedAt(savedDraft.savedAt.toDate());
+      setLastSavedTitle(titleRef.current);
+      setLastSavedContent(contentRef.current);
     },
   });
 
@@ -93,8 +95,16 @@ export function useAutoSaveDrafts({
     await saveDraftMutate();
   }, [saveDraftMutate]);
 
-  // 10초 interval 저장
-  useIntervalAutoSave(hasChanged, saveDraftMutate, intervalMs);
+  // interval은 마운트 시 한 번만 등록
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const shouldSave = titleRef.current !== lastSavedTitle || contentRef.current !== lastSavedContent;
+      if (shouldSave) {
+        saveDraftMutate();
+      }
+    }, intervalMs);
+    return () => clearInterval(intervalId);
+  }, [intervalMs, lastSavedTitle, lastSavedContent, saveDraftMutate]);
 
   return {
     draftId,
