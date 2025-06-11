@@ -24,15 +24,15 @@ export function ContributionItem({ contribution, value, maxValue }: Contribution
                         className={cn(
                             "aspect-square w-full rounded-sm relative flex items-center justify-center border border-border/30",
                             intensity === 0 && "bg-muted/50",
-                            intensity === 1 && "bg-accent/60",
-                            intensity === 2 && "bg-accent/80",
-                            intensity === 3 && "bg-accent",
-                            intensity === 4 && "bg-ring/90"
+                            intensity === 1 && "bg-green-200 dark:bg-green-900/40",
+                            intensity === 2 && "bg-green-400 dark:bg-green-700/60",
+                            intensity === 3 && "bg-green-600 dark:bg-green-600/80",
+                            intensity === 4 && "bg-green-800 dark:bg-green-500"
                         )}
                     >
                         <span className={cn(
                             "text-[0.6rem] font-medium",
-                            intensity >= 3 ? "text-primary-foreground" : "text-muted-foreground"
+                            intensity >= 3 ? "text-white" : "text-muted-foreground"
                         )}>
                             {day}
                         </span>
