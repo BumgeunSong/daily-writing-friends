@@ -187,7 +187,7 @@ export function PostTextEditor({
 
   return (
     <div className='relative space-y-2 w-full'>
-      <div className='rounded-lg border border-border bg-background w-full'>
+      <div className='rounded-lg border border-border bg-background reading-shadow w-full'>
         <ReactQuill
           ref={quillRef}
           value={value}
@@ -202,9 +202,9 @@ export function PostTextEditor({
       
       {isUploading && (
         <div className='absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm'>
-          <div className='w-4/5 max-w-md'>
+          <div className='w-4/5 max-w-md space-y-3 p-4'>
             <Progress value={uploadProgress} className="h-2" />
-            <p className='mt-3 text-center text-sm font-medium'>
+            <p className='text-center text-sm font-medium text-foreground'>
               이미지 업로드 중... {uploadProgress}%
             </p>
           </div>
