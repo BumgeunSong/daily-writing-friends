@@ -26,26 +26,26 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
 
   return (
     <div className="fixed bottom-20 right-4 z-40 flex flex-col items-end space-y-2">
-      <div
+              <div
         className={cn(
-          "flex flex-col items-end space-y-2 transition-all duration-300 ease-in-out",
+          "flex flex-col items-end space-y-2 transition-all duration-200 ease-in-out",
           isExpanded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
         )}
       >
-        <Link
+        <        Link
           to={`/board/${boardId}/free-writing/intro`}
           className="group flex items-center"
           onClick={() => setIsExpanded(false)}
         >
           <span className={cn(
-            "mr-2 px-2 py-1 bg-card text-card-foreground rounded text-sm shadow-sm transition-opacity duration-200",
+            "mr-2 px-2 py-1 bg-card text-card-foreground rounded text-sm reading-shadow transition-opacity duration-200",
             isExpanded ? "opacity-100" : "opacity-0 md:group-hover:opacity-100"
           )}>
             프리라이팅
           </span>
           <Button
             size="sm"
-            className="size-10 rounded-full bg-secondary text-secondary-foreground shadow-md transition-transform hover:scale-110"
+            className="size-10 rounded-full bg-secondary text-secondary-foreground reading-shadow transition-all duration-200 hover:scale-110 reading-focus active:scale-[0.99]"
             aria-label="Start Freewriting"
           >
             <Sparkle className="size-4" />
@@ -58,14 +58,14 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
           onClick={() => setIsExpanded(false)}
         >
           <span className={cn(
-            "mr-2 px-2 py-1 bg-card text-card-foreground rounded text-sm shadow-sm transition-opacity duration-200",
+            "mr-2 px-2 py-1 bg-card text-card-foreground rounded text-sm reading-shadow transition-opacity duration-200",
             isExpanded ? "opacity-100" : "opacity-0 md:group-hover:opacity-100"
           )}>
             일반 글쓰기
           </span>
           <Button
             size="sm"
-            className="size-10 rounded-full bg-secondary text-secondary-foreground shadow-md transition-transform hover:scale-110"
+            className="size-10 rounded-full bg-secondary text-secondary-foreground reading-shadow transition-all duration-200 hover:scale-110 reading-focus active:scale-[0.99]"
             aria-label="Create Normal Post"
           >
             <PenSquare className="size-4" />
@@ -78,14 +78,14 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
           onClick={() => setIsExpanded(false)}
         >
           <span className={cn(
-            "mr-2 px-2 py-1 bg-card text-card-foreground rounded text-sm shadow-sm transition-opacity duration-200",
+            "mr-2 px-2 py-1 bg-card text-card-foreground rounded text-sm reading-shadow transition-opacity duration-200",
             isExpanded ? "opacity-100" : "opacity-0 md:group-hover:opacity-100"
           )}>
             글감 목록
           </span>
           <Button
             size="sm"
-            className="size-10 rounded-full bg-secondary text-secondary-foreground shadow-md transition-transform hover:scale-110"
+            className="size-10 rounded-full bg-secondary text-secondary-foreground reading-shadow transition-all duration-200 hover:scale-110 reading-focus active:scale-[0.99]"
             aria-label="Show Topic Cards"
           >
             <CookingPot className="size-4" />
@@ -95,7 +95,7 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
 
       <Button
         size="icon"
-        className="z-50 size-12 rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110"
+        className="z-50 size-12 rounded-full bg-primary text-primary-foreground reading-shadow transition-all duration-200 hover:scale-110 reading-focus active:scale-[0.99]"
         aria-label={isExpanded ? "Close Writing Options" : "Open Writing Options"}
         onClick={toggleExpand}
       >
