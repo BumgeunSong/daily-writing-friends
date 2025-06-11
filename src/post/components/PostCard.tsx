@@ -40,8 +40,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, isKn
   }
 
   return (
-    <Card className="reading-shadow border-border/50 transition-all duration-200 hover:border-border hover:bg-accent/30">
-      <CardHeader className="px-4 pb-2 pt-3">
+    <Card className="reading-shadow border-border/50 transition-all duration-200 hover:border-border reading-hover">
+      <CardHeader className="px-3 pb-2 pt-3 md:px-4">
         <div className="mb-2 flex items-center">
           <PostUserProfile
             authorData={authorData}
@@ -50,13 +50,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, isKn
             onClickProfile={handleProfileClick}
           />
         </div>
-        <h2 className="flex items-center text-xl font-semibold text-foreground leading-tight">
+        <h2 className="flex items-center text-lg font-semibold text-foreground leading-tight md:text-xl">
           {isPrivate && <Lock className="mr-1.5 size-4 shrink-0 text-muted-foreground" aria-label="비공개 글" />}
           {post.title}
         </h2>
       </CardHeader>
       <CardContent
-        className="px-4 pb-3 pt-1 cursor-pointer min-h-[44px] reading-hover rounded-lg mx-1 transition-all duration-200"
+        className="px-3 pb-3 pt-1 cursor-pointer min-h-[44px] reading-hover reading-focus rounded-lg mx-1 transition-all duration-200 active:scale-[0.99] md:px-4"
         onClick={handleCardClick}
         role="button"
         tabIndex={0}
@@ -81,7 +81,7 @@ max-w-none"
           />
         )}
         {!isPrivate && post.thumbnailImageURL && (
-          <div className="mt-3 aspect-video w-full overflow-hidden rounded-lg bg-muted notebook-shadow">
+          <div className="mt-3 aspect-video w-full overflow-hidden rounded-lg bg-muted reading-shadow">
             <img
               src={post.thumbnailImageURL || "/placeholder.svg"}
               alt="게시글 썸네일"
@@ -91,7 +91,7 @@ max-w-none"
         )}
       </CardContent>
       <CardFooter
-        className="flex justify-between border-t border-border/40 px-4 pb-3 pt-3 cursor-pointer min-h-[44px] reading-hover rounded-b-lg mx-1 transition-all duration-200"
+        className="flex justify-between border-t border-border/50 px-3 pb-3 pt-3 cursor-pointer min-h-[44px] reading-hover reading-focus rounded-b-lg mx-1 transition-all duration-200 active:scale-[0.99] md:px-4"
         onClick={handleCardClick}
         role="button"
         tabIndex={0}

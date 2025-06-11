@@ -27,14 +27,14 @@ export const BoardPageHeader: React.FC<BoardHeaderProps> = ({ boardId }) => {
   }
 
   return (
-    <header className="bg-card border-b border-border py-3">
-      <div className="container mx-auto flex items-center justify-between px-2">
+    <header className="bg-card py-3">
+      <div className="container mx-auto flex items-center justify-between px-3 md:px-4">
         <Link
           to="/boards/list"
-          className="flex items-center space-x-2 rounded-lg p-2 reading-hover reading-focus text-foreground"
+          className="flex items-center space-x-2 rounded-lg p-2 min-h-[44px] reading-hover reading-focus text-foreground transition-all duration-200 active:scale-[0.99]"
         >
-          <span className="text-2xl font-semibold tracking-tight">{title || "타이틀 없음"}</span>
-          <ChevronDown className="size-5" />
+          <span className="text-xl font-semibold tracking-tight md:text-2xl">{title || "타이틀 없음"}</span>
+          <ChevronDown className="size-4 md:size-5" />
         </Link>
       </div>
     </header>
