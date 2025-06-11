@@ -41,8 +41,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, isKn
 
   return (
     <Card className="reading-shadow border-border/50 transition-all duration-200 hover:border-border reading-hover">
-      <CardHeader className="px-3 pb-2 pt-3 md:px-4">
-        <div className="mb-2 flex items-center">
+      <CardHeader className="px-3 pb-1 pt-3 md:px-4">
+        <div className="mb-3 flex items-center">
           <PostUserProfile
             authorData={authorData}
             isLoading={isAuthorLoading}
@@ -56,7 +56,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, isKn
         </h2>
       </CardHeader>
       <CardContent
-        className="px-3 pb-3 pt-1 cursor-pointer min-h-[44px] reading-hover reading-focus rounded-lg mx-1 transition-all duration-200 active:scale-[0.99] md:px-4"
+        className="px-3 pb-3 pt-1 cursor-pointer min-h-[44px] reading-hover reading-focus rounded-lg transition-all duration-200 active:scale-[0.99] md:px-4"
         onClick={handleCardClick}
         role="button"
         tabIndex={0}
@@ -81,7 +81,7 @@ max-w-none"
           />
         )}
         {!isPrivate && post.thumbnailImageURL && (
-          <div className="mt-3 aspect-video w-full overflow-hidden rounded-lg bg-muted reading-shadow">
+          <div className="mt-4 aspect-video w-full overflow-hidden rounded-lg bg-muted reading-shadow">
             <img
               src={post.thumbnailImageURL || "/placeholder.svg"}
               alt="게시글 썸네일"
@@ -91,7 +91,7 @@ max-w-none"
         )}
       </CardContent>
       <CardFooter
-        className="flex justify-between border-t border-border/50 px-3 pb-3 pt-3 cursor-pointer min-h-[44px] reading-hover reading-focus rounded-b-lg mx-1 transition-all duration-200 active:scale-[0.99] md:px-4"
+        className="flex justify-between border-t border-border/50 px-3 pb-3 pt-3 cursor-pointer min-h-[44px] reading-hover reading-focus rounded-b-lg transition-all duration-200 active:scale-[0.99] md:px-4"
         onClick={handleCardClick}
         role="button"
         tabIndex={0}
@@ -104,7 +104,7 @@ max-w-none"
         </div>
         {post.weekDaysFromFirstDay !== undefined && (
           <Badge
-            className="h-5 border-border bg-secondary/80 px-2 py-0.5 text-xs font-medium text-muted-foreground reading-shadow"
+            className="h-6 border-border bg-secondary/80 px-2.5 py-1 text-xs font-medium text-muted-foreground reading-shadow"
             variant="outline"
           >
             {post.weekDaysFromFirstDay + 1}일차
