@@ -75,15 +75,17 @@ const NotificationsPage = () => {
 
   return (
     <NotificationsErrorBoundary>
-      <div className="flex h-[calc(100vh-4rem)] flex-col">
+      <div className="min-h-screen bg-background">
         <NotificationsHeader />
-        <NotificationsContent
-          scrollAreaId={NOTIFICATIONS_CONFIG.SCROLL_ID}
-          notifications={allNotifications}
-          scrollRef={scrollRef}
-          observerRef={observerRef}
-          isLoadingMore={isLoadingMore}
-        />
+        <main className="container mx-auto px-3 md:px-4 py-2">
+          <NotificationsContent
+            scrollAreaId={NOTIFICATIONS_CONFIG.SCROLL_ID}
+            notifications={allNotifications}
+            scrollRef={scrollRef}
+            observerRef={observerRef}
+            isLoadingMore={isLoadingMore}
+          />
+        </main>
       </div>
     </NotificationsErrorBoundary>
   );

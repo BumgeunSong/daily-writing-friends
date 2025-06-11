@@ -1,5 +1,4 @@
 import { Menu } from "lucide-react"
-import { Button } from "@/shared/ui/button"
 import { useNavigate } from "react-router-dom"
 
 interface UserPageHeaderProps {
@@ -13,23 +12,24 @@ export function UserPageHeader({ isMyPage }: UserPageHeaderProps) {
     navigate("/user/settings")
   }
 
+  if (!isMyPage) {
+    return null
+  }
+
   return (
-    <>
-      {isMyPage && (
-        <div className="flex justify-end border-b border-border/40 bg-black p-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-9 text-white transition focus:outline-none focus-visible:ring-2 focus-visible:ring-white active:bg-white/20"
-            aria-label="Go to user settings"
-            onClick={handleGoToSettings}
-            tabIndex={0}
-            style={{ WebkitTapHighlightColor: 'rgba(255,255,255,0.2)' }}
-          >
-            <Menu className="size-5 text-white" />
-          </Button>
+    <header className="bg-card py-3">
+      <div className="container mx-auto flex items-center justify-between px-3 md:px-4">
+        <div className="flex items-center space-x-2 rounded-lg p-2 min-h-[44px]">
+          <span className="text-xl font-semibold tracking-tight md:text-2xl text-foreground">내 프로필</span>
         </div>
-      )}
-    </>
+        <button
+          onClick={handleGoToSettings}
+          className="flex items-center space-x-2 rounded-lg p-2 min-h-[44px] reading-hover reading-focus text-foreground transition-all duration-200 active:scale-[0.99]"
+          aria-label="Go to user settings"
+        >
+          <Menu className="size-4 md:size-5" />
+        </button>
+      </div>
+    </header>
   )
 }

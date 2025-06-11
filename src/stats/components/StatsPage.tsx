@@ -54,7 +54,7 @@ export default function StatsPage() {
     return (
         <div className="flex min-h-screen flex-col bg-background">
             <StatsHeader />
-            <main className="container flex-1 px-3 md:px-4 py-4">
+            <main className="container flex-1 px-3 md:px-4 py-2">
                 <ScrollArea className="h-full" id={STATS_SCROLL_ID}>
                     <StatsNoticeBanner />
                     <Tabs value={tab} onValueChange={v => setTab(v as TabType)}>
@@ -103,7 +103,7 @@ function LoadingState() {
     return (
         <div className="flex min-h-screen flex-col bg-background">
             <StatsHeader />
-            <main className="container flex-1 px-3 md:px-4 py-4">
+            <main className="container flex-1 px-3 md:px-4 py-2">
                 <ScrollArea className="h-full" id={STATS_SCROLL_ID}>
                     <StatsNoticeBanner />
                     <div className="space-y-4 pb-20">

@@ -38,7 +38,7 @@ export default function BoardPage() {
   return (
     <div className="min-h-screen bg-background">
       <BoardPageHeader boardId={boardId} />
-      <main className="container mx-auto px-3 py-4 pb-24 md:px-4 md:py-6">
+      <main className="container mx-auto px-3 md:px-4 py-2 pb-24">
         <PostCardList boardId={boardId!} onPostClick={handlePostClick} onClickProfile={handleProfileClick} />
       </main>
       <WritingActionButton boardId={boardId} />

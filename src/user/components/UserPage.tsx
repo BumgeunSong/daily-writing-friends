@@ -22,22 +22,18 @@ export default function UserPage() {
   const isMyPage = currentUser?.uid === userId;
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-full flex-col bg-background pb-16">
-      {/* Header section with settings button */}
-      <header className="sticky top-0 z-10 border-b bg-background">
-        <UserPageHeader isMyPage={isMyPage} />
-
+    <div className="min-h-screen bg-background">
+      <UserPageHeader isMyPage={isMyPage} />
+      
+      <main className="container mx-auto px-3 md:px-4 py-2 pb-16">
         {/* User profile section */}
-        <div className="p-4">
+        <div className="mb-4">
           <UserProfile uid={userId} />
-
           {/* Known Buddy 정보 표시 */}
           {isMyPage && <UserKnownBuddy />}
         </div>
-      </header>
 
-      {/* Main content */}
-      <main className="flex-1 p-4">
+        {/* Posts content */}
         <UserPostsList userId={userId} />
       </main>
     </div>
