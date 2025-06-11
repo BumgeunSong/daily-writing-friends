@@ -38,6 +38,7 @@ const PostTitleEditor = React.forwardRef<
         'w-full resize-none overflow-hidden text-3xl sm:text-4xl font-bold leading-tight tracking-tight',
         'text-foreground placeholder:text-muted-foreground bg-transparent',
         'reading-focus transition-all duration-200',
+        'px-3 py-2 md:px-4 md:py-3',
         'mb-4',
         className,
       )}
