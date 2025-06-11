@@ -12,9 +12,9 @@ export function UserCommentStatsCard({ stats, onClick }: UserCommentStatsCardPro
     const { user, contributions } = stats
 
     return (
-      <Card className="w-full">
+      <Card className="w-full reading-shadow border-border/50">
         <CardContent
-          className="flex items-start gap-4 p-4 cursor-pointer hover:bg-muted/40 transition"
+          className="flex items-start gap-4 px-3 md:px-4 py-4 cursor-pointer reading-hover reading-focus active:scale-[0.99] transition-all duration-200"
           onClick={onClick}
           role={onClick ? 'button' : undefined}
           tabIndex={onClick ? 0 : undefined}
@@ -25,7 +25,7 @@ export function UserCommentStatsCard({ stats, onClick }: UserCommentStatsCardPro
               <AvatarFallback>{user.nickname?.[0] || user.realname?.[0] || "U"}</AvatarFallback>
             </Avatar>
             <div className="flex min-w-0 flex-col gap-1.5">
-              <h3 className="truncate font-semibold">
+              <h3 className="truncate font-medium text-foreground">
                 {user.nickname || user.realname || "Anonymous"}
               </h3>
               {/* bio 등 추가 정보 필요시 여기에 */}

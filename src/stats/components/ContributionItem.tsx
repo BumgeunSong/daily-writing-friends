@@ -22,17 +22,17 @@ export function ContributionItem({ contribution, value, maxValue }: Contribution
                 <TooltipTrigger asChild>
                     <div
                         className={cn(
-                            "aspect-square w-full rounded-sm relative flex items-center justify-center",
-                            intensity === 0 && "bg-gray-100",
-                            intensity === 1 && "bg-green-300",
-                            intensity === 2 && "bg-green-500",
-                            intensity === 3 && "bg-green-700",
-                            intensity === 4 && "bg-green-900"
+                            "aspect-square w-full rounded-sm relative flex items-center justify-center border border-border/30",
+                            intensity === 0 && "bg-muted/50",
+                            intensity === 1 && "bg-accent/60",
+                            intensity === 2 && "bg-accent/80",
+                            intensity === 3 && "bg-accent",
+                            intensity === 4 && "bg-ring/90"
                         )}
                     >
                         <span className={cn(
                             "text-[0.6rem] font-medium",
-                            intensity >= 2 ? "text-white/90" : "text-foreground/60"
+                            intensity >= 3 ? "text-primary-foreground" : "text-muted-foreground"
                         )}>
                             {day}
                         </span>

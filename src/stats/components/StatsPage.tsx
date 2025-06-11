@@ -54,15 +54,15 @@ export default function StatsPage() {
     return (
         <div className="flex min-h-screen flex-col bg-background">
             <StatsHeader />
-            <main className="container flex-1 p-4">
+            <main className="container flex-1 px-3 md:px-4 py-4">
                 <ScrollArea className="h-full" id={STATS_SCROLL_ID}>
                     <StatsNoticeBanner />
                     <Tabs value={tab} onValueChange={v => setTab(v as TabType)}>
                         <TabsList className="w-full flex justify-between mb-4 rounded-lg bg-muted">
-                            <TabsTrigger value="posting" className="flex-1 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg text-base p-2">글쓰기</TabsTrigger>
+                            <TabsTrigger value="posting" className="flex-1 data-[state=active]:bg-background data-[state=active]:reading-shadow rounded-lg text-base p-2 reading-hover reading-focus transition-all duration-200">글쓰기</TabsTrigger>
                             <TabsTrigger
                                 value="commenting"
-                                className="flex-1 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg text-base p-2 flex items-center justify-center gap-2"
+                                className="flex-1 data-[state=active]:bg-background data-[state=active]:reading-shadow rounded-lg text-base p-2 flex items-center justify-center gap-2 reading-hover reading-focus transition-all duration-200"
                             >
                                 댓글·답글
                                 {isLoadingCommenting && (
@@ -103,12 +103,12 @@ function LoadingState() {
     return (
         <div className="flex min-h-screen flex-col bg-background">
             <StatsHeader />
-            <main className="container flex-1 p-4">
+            <main className="container flex-1 px-3 md:px-4 py-4">
                 <ScrollArea className="h-full" id={STATS_SCROLL_ID}>
                     <StatsNoticeBanner />
-                    <div className="grid grid-cols-1 gap-4 pb-20 md:grid-cols-2">
+                    <div className="space-y-4 pb-20">
                         {[...Array(5)].map((_, index) => (
-                            <div key={index} className="w-full rounded-lg bg-card">
+                            <div key={index} className="w-full rounded-lg bg-card reading-shadow border border-border/50">
                                 <div className="flex items-start gap-4 p-4">
                                     <div className="flex flex-1 items-start gap-4">
                                         <div className="size-12 rounded-full bg-muted" />

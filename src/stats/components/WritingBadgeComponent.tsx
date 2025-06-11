@@ -10,7 +10,7 @@ export function WritingBadgeComponent({ badge }: WritingBadgeComponentProps) {
         <Badge 
             id={badge.name} 
             variant="secondary"
-            className="flex items-center gap-1 rounded-full px-2 py-1"
+            className="flex items-center gap-1 rounded-full px-2 py-0.5 bg-secondary/80 text-muted-foreground border-border/30"
         >
             <span className="text-xs leading-none">{badge.emoji}</span>
             <span className="text-xs font-normal leading-none">
