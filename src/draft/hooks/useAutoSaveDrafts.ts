@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { saveDraft } from '@/draft/utils/draftUtils';
+import { useState, useCallback, useRef } from 'react';
+import { useDraftSaveMutation } from './useDraftSaveMutation';
+import { useInterval } from 'react-simplikit';
 
 interface UseAutoSaveDraftsProps {
   boardId: string;
@@ -7,7 +8,7 @@ interface UseAutoSaveDraftsProps {
   title: string;
   content: string;
   initialDraftId?: string;
-  autoSaveInterval?: number; // 밀리초 단위
+  intervalMs?: number; // 주기적 저장 (기본 10000)
 }
 
 interface UseAutoSaveDraftsResult {
@@ -18,111 +19,97 @@ interface UseAutoSaveDraftsResult {
   manualSave: () => Promise<void>;
 }
 
+/**
+ * 임시 저장 초안(Draft)을 10초마다 자동으로 저장하는 커스텀 훅입니다.
+ * 
+ * - useInterval 훅을 사용해 10초마다 title/content가 마지막 저장값과 다를 때만 저장합니다.
+ * - 수동 저장(manualSave) 함수도 제공합니다.
+ * - react-query의 useMutation을 활용하여 저장 상태, 에러, 로딩을 관리합니다.
+ * 
+ * @param {Object} params - 훅에 전달할 파라미터 객체
+ * @param {string} params.boardId - 게시판 ID (필수)
+ * @param {string|undefined} params.userId - 사용자 ID (필수)
+ * @param {string} params.title - 현재 입력 중인 제목
+ * @param {string} params.content - 현재 입력 중인 본문
+ * @param {string} [params.initialDraftId] - 최초 draftId (있으면 해당 draft를 이어서 저장)
+ * @param {number} [params.intervalMs=10000] - 주기적 저장 간격(ms)
+ * 
+ * @returns {Object} 반환값 객체
+ * @returns {string|null} return.draftId - 현재 임시저장 draft의 ID
+ * @returns {Date|null} return.lastSavedAt - 마지막 저장 시각
+ * @returns {boolean} return.isSaving - 저장 중 여부(로딩 상태)
+ * @returns {Error|null} return.savingError - 저장 중 발생한 에러
+ * @returns {() => Promise<void>} return.manualSave - 수동 저장 함수
+ * 
+ * @example
+ * const {
+ *   draftId,
+ *   lastSavedAt,
+ *   isSaving,
+ *   savingError,
+ *   manualSave
+ * } = useAutoSaveDrafts({
+ *   boardId: 'board123',
+ *   userId: currentUser?.uid,
+ *   title,
+ *   content,
+ *   initialDraftId: loadedDraftId,
+ *   intervalMs: 10000,
+ * });
+ */
 export function useAutoSaveDrafts({
   boardId,
   userId,
   title,
   content,
   initialDraftId,
-  autoSaveInterval = 10000, // 기본값 10초
+  intervalMs = 10000,
 }: UseAutoSaveDraftsProps): UseAutoSaveDraftsResult {
-  // initialDraftId가 있으면 그것을 사용, 없으면 null
   const [draftId, setDraftId] = useState<string | null>(initialDraftId || null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [savingError, setSavingError] = useState<Error | null>(null);
-  
-  // 이전 값을 추적하기 위한 refs
-  const prevTitleRef = useRef<string>(title);
-  const prevContentRef = useRef<string>(content);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // initialDraftId가 변경되면 draftId 상태 업데이트
-  useEffect(() => {
-    if (initialDraftId) {
-      setDraftId(initialDraftId);
-    }
-  }, [initialDraftId]);
-  
-  // 초안 저장 함수
-  const saveDraftData = async () => {
-    if (!userId || (!title.trim() && !content.trim())) {
-      return;
-    }
-    
-    try {
-      setIsSaving(true);
-      setSavingError(null);
-      
-      const savedDraft = await saveDraft(
-        {
-          id: draftId || undefined, // draftId가 있으면 사용, 없으면 undefined
-          boardId,
-          title,
-          content,
-        },
-        userId
-      );
-      
-      // 첫 저장 시에만 ID 업데이트
-      if (!draftId) {
-        setDraftId(savedDraft.id);
-      }
-      
+  const [lastSavedTitle, setLastSavedTitle] = useState<string>(title);
+  const [lastSavedContent, setLastSavedContent] = useState<string>(content);
+
+  // 최신 title/content를 ref로 추적
+  const titleRef = useRef(title);
+  const contentRef = useRef(content);
+  // ref를 최신값으로 동기화
+  titleRef.current = title;
+  contentRef.current = content;
+
+  // 저장 mutation
+  const { mutateAsync: saveDraftMutate, isLoading, error } = useDraftSaveMutation({
+    draftId,
+    boardId,
+    userId,
+    title: titleRef.current,
+    content: contentRef.current,
+    onSaved: (savedDraft) => {
+      setDraftId(savedDraft.id);
       setLastSavedAt(savedDraft.savedAt.toDate());
-      
-      // 이전 값 업데이트
-      prevTitleRef.current = title;
-      prevContentRef.current = content;
-    } catch (error) {
-      setSavingError(error instanceof Error ? error : new Error('초안 저장 중 오류가 발생했습니다.'));
-    } finally {
-      setIsSaving(false);
+      setLastSavedTitle(titleRef.current);
+      setLastSavedContent(contentRef.current);
+    },
+  });
+
+  // 수동 저장
+  const manualSave = useCallback(async () => {
+    await saveDraftMutate();
+  }, [saveDraftMutate]);
+
+  // useInterval로 10초마다 자동 저장
+  useInterval(() => {
+    const shouldSave = titleRef.current !== lastSavedTitle || contentRef.current !== lastSavedContent;
+    if (shouldSave) {
+      saveDraftMutate();
     }
-  };
-  
-  // 수동 저장 함수
-  const manualSave = async () => {
-    await saveDraftData();
-  };
-  
-  // 변경 감지 및 자동 저장 설정
-  useEffect(() => {
-    // 사용자가 로그인하지 않았거나 게시판 ID가 없으면 자동 저장 비활성화
-    if (!userId || !boardId) {
-      return;
-    }
-    
-    // 내용이 변경되었는지 확인
-    const titleChanged = title !== prevTitleRef.current;
-    const contentChanged = content !== prevContentRef.current;
-    
-    // 변경된 경우에만 타이머 설정
-    if (titleChanged || contentChanged) {
-      // 이전 타이머가 있으면 취소
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-      
-      // 새 타이머 설정
-      timerRef.current = setTimeout(() => {
-        saveDraftData();
-      }, autoSaveInterval);
-    }
-    
-    // 컴포넌트 언마운트 시 타이머 정리
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-    };
-  }, [userId, boardId, title, content, autoSaveInterval]);
-  
+  }, intervalMs);
+
   return {
     draftId,
     lastSavedAt,
-    isSaving,
-    savingError,
+    isSaving: isLoading,
+    savingError: error as Error | null,
     manualSave,
   };
 }

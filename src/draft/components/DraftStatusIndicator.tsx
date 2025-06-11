@@ -1,4 +1,5 @@
 import { Loader2 } from 'lucide-react';
+import { formatRelativeTimeKorean } from '@/../functions/src/dateUtils';
 
 interface DraftStatusIndicatorProps {
   isSaving: boolean;
@@ -11,17 +12,8 @@ export function DraftStatusIndicator({
   savingError,
   lastSavedAt,
 }: DraftStatusIndicatorProps) {
-  // 마지막 저장 시간 포맷팅
-  const formattedLastSavedAt = lastSavedAt 
-    ? new Intl.DateTimeFormat('ko-KR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      }).format(lastSavedAt)
-    : null;
+  // 마지막 저장 시간 상대 포맷팅
+  const formattedLastSavedAt = lastSavedAt ? formatRelativeTimeKorean(lastSavedAt) : null;
 
   // 상태 메시지 생성
   const getStatusMessage = () => {
