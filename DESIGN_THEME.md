@@ -90,4 +90,47 @@
 50. **Quality Checks**: Regularly audit the application for inconsistent styling, hard-coded colors, or accessibility issues using automated tools and manual review.
 
 
+## Bear App Style Implementation (심플하고 프리미엄한 느낌)
+
+51. **Minimal Borders**: Remove unnecessary borders from headers and wrapper containers to achieve a clean, Bear-app-like aesthetic. Headers should use only `bg-card` without `border-b`.
+52. **Content-First Approach**: Eliminate redundant container wrappers that add extra borders, backgrounds, or shadows around content lists. Let individual cards provide their own elevation.
+53. **Visual Hierarchy Simplification**: Use only essential visual elements - each PostCard should have its own `reading-shadow` and `border-border/50`, while avoiding additional container decoration.
+54. **Premium Simplicity**: Follow the principle that less visual noise creates a more premium, focused reading experience. Remove borders that don't serve a clear functional purpose.
+55. **Natural Content Flow**: Allow content to flow naturally without artificial container boundaries, similar to Bear app's seamless content presentation.
+
+
+## 완료된 개선사항 (Migration Completed)
+
+### PostCard.tsx Improvements:
+- ✅ **Custom Class Removal**: Replaced `notebook-shadow` with `reading-shadow` utility class
+- ✅ **Hover State Unification**: Converted `hover:bg-accent/30` to `reading-hover` utility for consistency
+- ✅ **Border Consistency**: Standardized all borders to use `border-border/50` (50% opacity)
+- ✅ **Responsive Spacing**: Applied `px-3 md:px-4` responsive padding throughout
+- ✅ **Responsive Typography**: Used `text-lg md:text-xl` for scalable text sizes
+- ✅ **Accessibility Enhancement**: Added `reading-focus` and `active:scale-[0.99]` to all interactive elements
+- ✅ **Touch Target Compliance**: Ensured all interactive areas meet 44px minimum requirement
+
+### BoardPageHeader.tsx Improvements:
+- ✅ **Border Removal**: Eliminated `border-b` for Bear app-style simplicity
+- ✅ **Responsive Container**: Applied `px-3 md:px-4` for consistent mobile/desktop spacing
+- ✅ **Touch-Friendly Links**: Added `min-h-[44px]` and proper interaction states
+- ✅ **Typography Scaling**: Implemented `text-xl md:text-2xl` responsive sizing
+- ✅ **Icon Optimization**: Applied `size-4 md:size-5` for mobile-appropriate icon sizes
+
+### BoardPage.tsx Improvements:
+- ✅ **Container Simplification**: Removed unnecessary wrapper with borders, shadows, and background
+- ✅ **Direct Content Rendering**: PostCardList renders directly without decorative container
+- ✅ **Visual Noise Reduction**: Eliminated redundant styling that competed with individual card designs
+- ✅ **Bear-Style Layout**: Achieved clean, focused content presentation similar to premium apps
+
+
+## Migration Best Practices
+
+56. **One Component at a Time**: Migrate components systematically, completing each before moving to the next.
+57. **Custom Class Elimination**: Replace all custom classes (e.g., `notebook-shadow`, `notebook-gradient`) with utility classes.
+58. **Border Consistency**: Standardize border opacity - use `border-border/50` for subtle borders, `border-border` for prominent ones.
+59. **Responsive-First**: Always implement mobile-first responsive patterns with `px-3 md:px-4` and similar patterns.
+60. **Interaction States**: Ensure all interactive elements have `reading-hover`, `reading-focus`, and `active:scale-[0.99]` states.
+
+
 These guidelines provide a comprehensive framework for implementing the premium monochromatic reading theme consistently across your entire application, ensuring a cohesive, high-quality user experience optimized for reading and writing.
