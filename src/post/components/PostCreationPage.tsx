@@ -122,38 +122,6 @@ export default function PostCreationPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </main>
     </div>
   );
 }
-
-/*
-Key improvements with React Router actions:
-
-1. ❌ OLD WAY: Manual useMutation with loading states
-   const [isSubmitting, setIsSubmitting] = useState(false);
-   const createMutation = useMutation({
-     mutationFn: createPost,
-     onSuccess: () => {
-       queryClient.invalidateQueries(['posts', boardId]);
-       navigate(`/board/${boardId}`);
-     },
-     onError: (error) => {
-       setError(error.message);
-     }
-   });
-
-2. ✅ NEW WAY: Router handles everything
-   - Form submission goes to route action
-   - Loading state via useNavigation()
-   - Errors via useActionData()
-   - Automatic revalidation after mutations
-   - Automatic redirect on success
-
-This eliminates:
-- Manual cache invalidation
-- Manual loading state management  
-- Manual error handling in mutations
-- Manual navigation after success
-- Complex mutation logic in components
-*/

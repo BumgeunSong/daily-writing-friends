@@ -64,16 +64,16 @@ const quillStyles = `
 
 /* Toolbar styling */
 .ql-toolbar {
-  border-top-left-radius: 0.5rem;
-  border-top-right-radius: 0.5rem;
+  border-top-left-radius: 0.75rem;
+  border-top-right-radius: 0.75rem;
   border-color: hsl(var(--border));
-  background-color: hsl(var(--muted));
+  background-color: hsl(var(--card));
   padding: 0.75rem;
 }
 
 .ql-container {
-  border-bottom-left-radius: 0.5rem;
-  border-bottom-right-radius: 0.5rem;
+  border-bottom-left-radius: 0.75rem;
+  border-bottom-right-radius: 0.75rem;
   border-color: hsl(var(--border));
 }
 
@@ -87,12 +87,12 @@ const quillStyles = `
 }
 
 .ql-toolbar button:hover {
-  background-color: hsl(var(--muted-foreground) / 0.1);
+  background-color: hsl(var(--selection) / 0.6);
 }
 
 .ql-toolbar .ql-active {
-  background-color: hsl(var(--primary) / 0.1);
-  color: hsl(var(--primary));
+  background-color: hsl(var(--selection));
+  color: hsl(var(--foreground));
 }
 
 /* Placeholder styling - 모바일 환경에서도 작동하도록 수정 */
@@ -187,7 +187,7 @@ export function PostTextEditor({
 
   return (
     <div className='relative space-y-2 w-full'>
-      <div className='rounded-lg border border-border bg-background reading-shadow w-full'>
+      <div className='rounded-xl border border-border/50 bg-card reading-shadow w-full'>
         <ReactQuill
           ref={quillRef}
           value={value}
