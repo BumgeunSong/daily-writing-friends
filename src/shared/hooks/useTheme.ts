@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 type Theme = 'light' | 'dark'
 type ThemePreference = 'system' | 'light' | 'dark'
 
-const THEME_STORAGE_KEY = 'theme-preference'
+const THEME_STORAGE_KEY = 'theme-preference-v2'
 
 function getSystemTheme(): Theme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
@@ -11,6 +11,14 @@ function getSystemTheme(): Theme {
 
 function getStoredPreference(): ThemePreference {
   try {
+    // Clean up old theme keys to prevent conflicts
+    const oldKeys = ['theme-preference', 'theme', 'color-scheme']
+    oldKeys.forEach(key => {
+      if (localStorage.getItem(key)) {
+        localStorage.removeItem(key)
+      }
+    })
+    
     const stored = localStorage.getItem(THEME_STORAGE_KEY)
     if (stored === 'system' || stored === 'light' || stored === 'dark') {
       return stored
