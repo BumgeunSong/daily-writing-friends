@@ -59,8 +59,8 @@ Use pure white for background: hsl(0, 0%, 100%)
 	•	Dark: hsl(220, 8%, 25%) bg + hsl(220, 8%, 35%) border
 	•	Focus: blue accent border
 	9.	Selection and Highlight Colors
-	•	Light: hsl(210, 100%, 50%) @ 15%
-	•	Dark: hsl(210, 100%, 70%) @ 20%
+	•	Content highlights: Light hsl(210, 100%, 50%) @ 15% / Dark hsl(210, 100%, 70%) @ 20%
+	•	Navigation selection: Light hsl(0, 0%, 95%) / Dark hsl(220, 8%, 25%)
 	10.	Status Colors
 	•	Error: Light hsl(0, 65%, 50%) / Dark hsl(0, 70%, 65%)
 	•	Success: Light hsl(120, 45%, 40%) / Dark hsl(120, 50%, 60%)
@@ -167,6 +167,11 @@ Bear App Style Implementation (심플하고 프리미엄한 느낌)
 	58.	Visual Hierarchy Simplification: Only reading-shadow, border-border/50
 	59.	Premium Simplicity: Less visual noise = more premium feel
 	60.	Natural Content Flow: Avoid artificial boundaries
+	61.	Selection Color Strategy: Distinct accent vs selection colors
+		•	Blue accent (`hsl(210, 100%, 50%)` light / `hsl(210, 100%, 70%)` dark) for interactive elements, links, buttons
+		•	Neutral gray selection (`hsl(0, 0%, 95%)` light / `hsl(220, 8%, 25%)` dark) for navigation states
+		•	Purpose: Prevents visual competition, maintains distraction-free reading experience
+		•	Implementation: Use accent for content highlights, selection for sidebar/navigation active states
 
 ⸻
 
@@ -197,11 +202,12 @@ BoardPage.tsx
 ⸻
 
 Migration Best Practices
-	61.	Migrate one component at a time
-	62.	Eliminate custom classes (notebook-shadow, etc.)
-	63.	Use consistent borders: border-border/50, border-border
-	64.	Apply responsive-first classes
-	65.	Ensure all interactive states: reading-hover, reading-focus, active:scale-[0.99]
+	62.	Migrate one component at a time
+	63.	Eliminate custom classes (notebook-shadow, etc.)
+	64.	Use consistent borders: border-border/50, border-border
+	65.	Apply responsive-first classes
+	66.	Ensure all interactive states: reading-hover, reading-focus, active:scale-[0.99]
+	67.	Implement selection color strategy: accent for content, neutral for navigation
 
 ⸻
 

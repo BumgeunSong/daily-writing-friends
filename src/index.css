@@ -28,6 +28,7 @@
     --success-foreground: 0 0% 100%;
     --warning: 45 85% 45%;
     --warning-foreground: 0 0% 100%;
+    --selection: 0 0% 95%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -60,6 +61,7 @@
     --success-foreground: 220 8% 18%;
     --warning: 45 90% 65%;
     --warning-foreground: 220 8% 18%;
+    --selection: 220 8% 25%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -152,5 +154,27 @@
   
   .dark .input-dual {
     @apply border-border/70;
+  }
+  
+  /* Selection Color Utilities */
+  .bg-selection {
+    background-color: hsl(var(--selection));
+  }
+  
+  .text-selection {
+    color: hsl(var(--selection));
+  }
+  
+  /* Navigation Selection States */
+  .nav-selected {
+    background-color: hsl(var(--selection));
+  }
+  
+  .nav-hover {
+    @apply transition-colors duration-200;
+  }
+  
+  .nav-hover:hover {
+    background-color: hsl(var(--selection) / 0.6);
   }
 }
