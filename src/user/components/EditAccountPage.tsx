@@ -61,7 +61,7 @@ export default function EditAccountPage() {
 
   return (
     <div className='min-h-screen bg-background'>
-      <header className="bg-card py-3">
+      <header className="bg-background py-3">
         <div className="container mx-auto px-3 md:px-4">
           <h1 className='text-xl font-semibold tracking-tight md:text-2xl text-foreground'>내 정보 수정하기</h1>
         </div>
