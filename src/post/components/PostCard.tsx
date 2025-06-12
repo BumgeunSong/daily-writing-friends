@@ -40,7 +40,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, isKn
   }
 
   return (
-    <Card className="reading-shadow border-border/50 transition-all duration-200 hover:border-border reading-hover">
+    <Card className="reading-shadow border-border/50 transition-all duration-200 hover:border-border nav-hover">
       <CardHeader className="px-3 pb-1 pt-3 md:px-4">
         <div className="mb-3 flex items-center">
           <PostUserProfile
@@ -56,7 +56,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, isKn
         </h2>
       </CardHeader>
       <CardContent
-        className="px-3 pb-3 pt-1 cursor-pointer min-h-[44px] reading-hover reading-focus rounded-lg transition-all duration-200 active:scale-[0.99] md:px-4"
+        className="px-3 pb-3 pt-1 cursor-pointer min-h-[44px] reading-focus rounded-lg transition-all duration-200 active:scale-[0.99] md:px-4"
         onClick={handleCardClick}
         role="button"
         tabIndex={0}
@@ -91,7 +91,7 @@ max-w-none"
         )}
       </CardContent>
       <CardFooter
-        className="flex justify-between border-t border-border/50 px-3 pb-3 pt-3 cursor-pointer min-h-[44px] reading-hover reading-focus rounded-b-lg transition-all duration-200 active:scale-[0.99] md:px-4"
+        className="flex justify-between border-t border-border/50 px-3 pb-3 pt-3 cursor-pointer min-h-[44px] reading-focus rounded-b-lg transition-all duration-200 active:scale-[0.99] md:px-4"
         onClick={handleCardClick}
         role="button"
         tabIndex={0}

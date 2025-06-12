@@ -27,7 +27,7 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
   return (
     <Link to={getNotificationLink(notification)}>
       <div
-        className={`flex cursor-pointer items-start gap-3 border-b border-border/30 px-3 md:px-4 py-3 reading-hover reading-focus active:scale-[0.99] transition-all duration-200 ${!notification.read ? 'bg-accent/20' : ''
+        className={`flex cursor-pointer items-start gap-3 border-b border-border/30 px-3 md:px-4 py-3 nav-hover reading-focus active:scale-[0.99] transition-all duration-200 ${!notification.read ? 'bg-selection' : ''
           }`}
       >
         <Avatar className="size-10 shrink-0">
