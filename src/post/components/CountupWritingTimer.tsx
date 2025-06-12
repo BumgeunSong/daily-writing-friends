@@ -60,7 +60,7 @@ export default function CountupWritingTimer({
       <div className="container mx-auto max-w-3xl p-4">
         {/* 프리라이팅 모드 제목과 부제목 */}
         <div className="mb-3">
-          <h2 className="text-xl font-bold text-primary">프리라이팅 모드</h2>
+          <h2 className="text-xl font-bold text-foreground">프리라이팅 모드</h2>
           <p className="text-sm text-muted-foreground">
             이 글은 다른 사람에게 보여지지 않아요. 자유롭게 떠오르는 생각들을 써내려가보세요.
           </p>
@@ -68,7 +68,7 @@ export default function CountupWritingTimer({
 
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Clock className="size-5 text-primary" />
+            <Clock className="size-5 text-foreground" />
             <span className="text-lg font-medium">{formatTime(elapsedTime)}</span>
             <span className="text-sm text-muted-foreground">/ {formatTime(targetTime)}</span>
           </div>

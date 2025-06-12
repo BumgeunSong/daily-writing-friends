@@ -187,7 +187,7 @@ export function PostTextEditor({
 
   return (
     <div className='relative space-y-2 w-full'>
-      <div className='rounded-xl border border-border/50 bg-card reading-shadow w-full'>
+      <div className='rounded-xl border border-border/50 bg-card w-full'>
         <ReactQuill
           ref={quillRef}
           value={value}
