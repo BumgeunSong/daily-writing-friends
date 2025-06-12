@@ -54,7 +54,7 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
           <Button
             variant="ghost"
             size="sm"
-            className="h-auto px-0 text-sm font-normal text-muted-foreground nav-hover reading-focus transition-colors duration-200"
+            className="h-auto px-0 text-sm font-normal text-muted-foreground reading-focus transition-colors duration-200 hover:bg-selection/60 hover:text-foreground"
             onClick={toggleExpand}
           >
             {isExpanded ? "답글 접기" : `답글 ${replyCount}개`}
