@@ -34,8 +34,8 @@ export default function UserProfile({ uid }: UserProfileProps) {
   }
 
   return (
-    <div className="flex items-start gap-4 w-full">
-      <Avatar className="size-20 md:size-24 shrink-0 mt-1">
+    <div className="flex items-start gap-4 w-full p-4 bg-card reading-shadow border border-border/50 rounded-lg">
+      <Avatar className="size-16 md:size-20 shrink-0">
         {userData.profilePhotoURL ? (
           <AvatarImage src={userData.profilePhotoURL || "/placeholder.svg"} alt={`${userData.nickname}'s profile`} />
         ) : (
@@ -44,10 +44,10 @@ export default function UserProfile({ uid }: UserProfileProps) {
       </Avatar>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-medium">{userData.nickname}</h2>
+          <h2 className="text-lg md:text-xl font-semibold text-foreground tracking-tight">{userData.nickname}</h2>
           <UserProfileSettingsButton uid={uid} />
         </div>
-        <p className="line-clamp-2 text-sm text-muted-foreground mt-1">
+        <p className="line-clamp-2 text-sm text-reading text-muted-foreground mt-2">
           {userData.bio ||
             "아직 자기소개가 없어요 😅"}
         </p>
@@ -66,10 +66,10 @@ function UserProfileSettingsButton({ uid }: { uid: string }) {
       variant="ghost"
       size="icon"
       aria-label="설정"
-      className="ml-2 shrink-0"
+      className="ml-2 shrink-0 reading-hover reading-focus transition-all duration-200 active:scale-[0.99]"
       onClick={() => navigate(`/account/edit/${uid}`)}
     >
-      <Edit className="size-5 text-muted-foreground" />
+      <Edit className="size-4 md:size-5 text-muted-foreground" />
     </Button>
   )
 }

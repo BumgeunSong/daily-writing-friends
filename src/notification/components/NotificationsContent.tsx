@@ -24,21 +24,21 @@ export const NotificationsContent = ({
   isLoadingMore
 }: NotificationsContentProps) => {
   return (
-    <Card className="flex-1 overflow-hidden">
-      <ScrollArea className="h-full" id={scrollAreaId}>
-        <div ref={scrollRef}>
+    <div className="flex-1">
+      <ScrollArea className="h-[calc(100vh-8rem)]" id={scrollAreaId}>
+        <div ref={scrollRef} className="space-y-0">
           <NotificationsList notifications={notifications} />
           <div ref={observerRef} />
           {isLoadingMore && (
-            <div className="flex items-center justify-center p-4">
+            <div className="flex items-center justify-center py-4">
               <Loader2 
-                className="size-4 animate-spin"
+                className="size-4 animate-spin text-muted-foreground"
                 data-testid="loading-more-indicator"
               />
             </div>
           )}
         </div>
       </ScrollArea>
-    </Card>
+    </div>
   );
 }; 
