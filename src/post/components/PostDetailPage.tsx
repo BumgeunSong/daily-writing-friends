@@ -34,7 +34,7 @@ export default function PostDetailPage() {
   return (
     <div className='min-h-screen bg-background'>
       <PostMetaHelmet post={post} boardId={boardId} postId={postId} />
-      <main className="container mx-auto px-3 md:px-4 py-2 max-w-4xl">
+      <main className="container mx-auto px-4 md:px-6 py-2 max-w-4xl">
         <PostBackButton className='mb-4' />
         <article className='space-y-4'>
         <PostDetailHeader
@@ -69,7 +69,7 @@ export default function PostDetailPage() {
 function PostDetailSkeleton() {
   return (
     <div className='min-h-screen bg-background'>
-      <main className="container mx-auto px-3 md:px-4 py-2 max-w-4xl">
+      <main className="container mx-auto px-4 md:px-6 py-2 max-w-4xl">
         <Skeleton className='mb-4 h-12 w-3/4' />
         <Skeleton className='mb-2 h-4 w-full' />
         <Skeleton className='mb-2 h-4 w-full' />
