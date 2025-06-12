@@ -23,10 +23,10 @@ Implement a complete dual-theme system using CSS custom properties:
 
 .dark {
   /* Dark Graphite Mode */
-  --background: hsl(220, 8%, 18%);
-  --foreground: hsl(220, 8%, 92%);
-  --card: hsl(220, 8%, 22%);
-  --card-foreground: hsl(220, 8%, 92%);
+  --background: hsl(180, 4%, 12%);
+  --foreground: hsl(180, 3%, 92%);
+  --card: hsl(180, 4%, 16%);
+  --card-foreground: hsl(180, 3%, 92%);
   --accent: hsl(210, 100%, 70%);
 }
 
@@ -43,7 +43,7 @@ Use pure white for background: hsl(0, 0%, 100%)
 	•	Dark: hsl(210, 100%, 70%)
 	5.	Border and Separator System
 	•	Light: hsl(0, 0%, 90%) / hsl(0, 0%, 80%)
-	•	Dark: hsl(220, 8%, 28%) / hsl(220, 8%, 35%)
+	•	Dark: hsl(180, 4%, 22%) / hsl(180, 4%, 28%)
 	6.	Card and Surface Elevation
 	•	Light: white cards + subtle shadows
 	•	Dark: charcoal cards + darker shadows
@@ -56,11 +56,11 @@ Use pure white for background: hsl(0, 0%, 100%)
 	•	Dark focus: 2px ring
 	8.	Input Field Styling
 	•	Light: hsl(0, 0%, 98%) bg + hsl(0, 0%, 85%) border
-	•	Dark: hsl(220, 8%, 25%) bg + hsl(220, 8%, 35%) border
+	•	Dark: hsl(180, 4%, 18%) bg + hsl(180, 4%, 22%) border
 	•	Focus: blue accent border
 	9.	Selection and Highlight Colors
 	•	Content highlights: Light hsl(210, 100%, 50%) @ 15% / Dark hsl(210, 100%, 70%) @ 20%
-	•	Navigation selection: Light hsl(0, 0%, 95%) / Dark hsl(220, 8%, 25%)
+	•	Navigation selection: Light hsl(0, 0%, 95%) / Dark hsl(180, 4%, 18%)
 	10.	Status Colors
 	•	Error: Light hsl(0, 65%, 50%) / Dark hsl(0, 70%, 65%)
 	•	Success: Light hsl(120, 45%, 40%) / Dark hsl(120, 50%, 60%)
@@ -169,7 +169,7 @@ Bear App Style Implementation (심플하고 프리미엄한 느낌)
 	60.	Natural Content Flow: Avoid artificial boundaries
 	61.	Selection Color Strategy: Distinct accent vs selection colors
 		•	Blue accent (`hsl(210, 100%, 50%)` light / `hsl(210, 100%, 70%)` dark) for interactive elements, links, buttons
-		•	Neutral gray selection (`hsl(0, 0%, 95%)` light / `hsl(220, 8%, 25%)` dark) for navigation states
+		•	Neutral gray selection (`hsl(0, 0%, 95%)` light / `hsl(180, 4%, 18%)` dark) for navigation states
 		•	Purpose: Prevents visual competition, maintains distraction-free reading experience
 		•	Implementation: Use accent for content highlights, selection for sidebar/navigation active states
 
