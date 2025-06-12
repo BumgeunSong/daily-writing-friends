@@ -41,9 +41,8 @@ const Comments: React.FC<CommentsProps> = ({ boardId, postId, postAuthorId, post
   }
 
   return (
-    <section className="mt-12 space-y-8">
+    <section className="space-y-4">
       <div className="flex items-center">
-        <h2 className="text-2xl font-semibold">댓글</h2>
         <Suspense fallback={<LoadingIndicator />}>
           {/* Suspense fallback만 담당, 데이터 fetch는 CommentList 내부에서 */}
         </Suspense>
@@ -51,7 +50,7 @@ const Comments: React.FC<CommentsProps> = ({ boardId, postId, postAuthorId, post
       <Suspense fallback={null}>
         <CommentList boardId={boardId} postId={postId} currentUserId={currentUser?.uid} />
       </Suspense>
-      <div className="mt-6 space-y-4 border-t border-gray-200 pt-6 dark:border-gray-700">
+      <div className="mt-6 space-y-4 border-t border-border pt-6">
         <CommentPrompt postAuthorId={postAuthorId} postAuthorNickname={postAuthorNickname} />
         <CommentInput onSubmit={handleSubmit} />
       </div>

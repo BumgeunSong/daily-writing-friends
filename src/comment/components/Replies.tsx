@@ -54,7 +54,7 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
           <Button
             variant="ghost"
             size="sm"
-            className="h-auto px-0 text-sm font-normal text-muted-foreground hover:text-foreground"
+            className="h-auto px-0 text-sm font-normal text-muted-foreground nav-hover reading-focus transition-colors duration-200"
             onClick={toggleExpand}
           >
             {isExpanded ? "답글 접기" : `답글 ${replyCount}개`}
@@ -70,7 +70,7 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
       </div>
 
       {isExpanded && (
-        <div className="mt-6 border-l-2 border-gray-200 pl-4 dark:border-gray-700">
+        <div className="mt-6 border-l-2 border-border pl-4">
           <Suspense fallback={null}>
             <ReplyList boardId={boardId} postId={postId} commentId={commentId} currentUserId={currentUser?.uid} />
           </Suspense>
