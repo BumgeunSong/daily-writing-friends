@@ -33,6 +33,7 @@ export function PostSubmitButton({
 }: PostSubmitButtonProps) {
   return (
     <Button
+      variant="cta"
       type="submit"
       className={`rounded-xl shadow-sm transition-all hover:shadow-md ${className}`}
       disabled={isSubmitting || disabled}

@@ -46,6 +46,7 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter>
           <Button 
+            variant="cta"
             onClick={handleLogin} 
             className='w-full min-h-[44px] reading-hover reading-focus transition-all duration-200 active:scale-[0.99]'
           >

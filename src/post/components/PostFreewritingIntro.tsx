@@ -27,7 +27,7 @@ const PostFreewritingIntro: React.FC = () => {
       <div className="container mx-auto grow px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
         <div className="mx-auto max-w-3xl">
           <div className="mb-8 space-y-4">
-            <h1 className="text-3xl font-bold text-primary md:text-4xl">프리라이팅</h1>
+            <h1 className="text-3xl font-bold text-foreground md:text-4xl">프리라이팅</h1>
             <p className="max-w-md text-lg text-muted-foreground">머릿속의 편집자를 끄고 5분간 써보기</p>
           </div>
 
@@ -79,6 +79,7 @@ const PostFreewritingIntro: React.FC = () => {
       )}>
         <div className="container mx-auto max-w-3xl">
           <Button
+            variant="cta"
             className="w-full rounded-xl py-6 text-lg shadow-sm transition-all hover:shadow-md md:w-auto md:px-12"
             onClick={handleStartFreewriting}
           >
