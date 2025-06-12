@@ -60,12 +60,19 @@ export default function EditAccountPage() {
   };
 
   return (
-    <div className='relative flex min-h-screen items-start justify-center bg-gray-50 p-4'>
-      {isLoadingUpdate && <LoadingOverlay />}
-      <Card className={`w-full max-w-md ${isLoadingUpdate ? 'pointer-events-none opacity-50' : ''}`}>
-        <CardHeader>
-          <CardTitle className='text-center text-2xl font-bold'>내 정보 수정하기</CardTitle>
-        </CardHeader>
+    <div className='min-h-screen bg-background'>
+      <header className="bg-card py-3">
+        <div className="container mx-auto px-3 md:px-4">
+          <h1 className='text-xl font-semibold tracking-tight md:text-2xl text-foreground'>내 정보 수정하기</h1>
+        </div>
+      </header>
+      <main className="container mx-auto px-3 md:px-4 py-2">
+        <div className='relative flex items-start justify-center'>
+          {isLoadingUpdate && <LoadingOverlay />}
+          <Card className={`w-full max-w-md reading-shadow border-border/50 ${isLoadingUpdate ? 'pointer-events-none opacity-50' : ''}`}>
+            <CardHeader>
+              <CardTitle className='text-center text-lg font-semibold text-foreground'>프로필 정보</CardTitle>
+            </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className='space-y-6'>
             <ProfilePhotoUploader
@@ -102,22 +109,28 @@ export default function EditAccountPage() {
               />
             </div>
           </CardContent>
-          <CardFooter className='flex justify-between gap-4'>
-            <Button
-              type='button'
-              variant='outline'
-              className='w-full'
-              onClick={() => window.history.back()}
-              disabled={isLoadingUpdate}
-            >
-              취소
-            </Button>
-            <Button type='submit' className='w-full' disabled={isLoadingUpdate}>
-              {isLoadingUpdate ? <Loader2 className='size-4 animate-spin' /> : '저장하기'}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+            <CardFooter className='flex justify-between gap-4'>
+              <Button
+                type='button'
+                variant='outline'
+                className='w-full min-h-[44px] reading-hover reading-focus transition-all duration-200 active:scale-[0.99]'
+                onClick={() => window.history.back()}
+                disabled={isLoadingUpdate}
+              >
+                취소
+              </Button>
+              <Button 
+                type='submit' 
+                className='w-full min-h-[44px] reading-hover reading-focus transition-all duration-200 active:scale-[0.99]' 
+                disabled={isLoadingUpdate}
+              >
+                {isLoadingUpdate ? <Loader2 className='size-4 animate-spin' /> : '저장하기'}
+              </Button>
+            </CardFooter>
+          </form>
+          </Card>
+        </div>
+      </main>
     </div>
   );
 }

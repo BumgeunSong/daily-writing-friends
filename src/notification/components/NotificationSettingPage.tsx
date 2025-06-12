@@ -14,30 +14,37 @@ const NotificationSettingPage: React.FC = () => {
   const [emailNotification] = React.useState(false);
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col">
-      <div className='mb-4 flex h-16 items-center justify-between px-4'>
-        <div className='flex items-center gap-2'>
-          <Settings className='size-5' />
-          <h1 className='text-2xl font-bold'>알림 설정</h1>
+    <div className="min-h-screen bg-background">
+      <header className="bg-card py-3">
+        <div className="container mx-auto flex items-center justify-between px-3 md:px-4">
+          <div className="flex items-center space-x-2 rounded-lg p-2 min-h-[44px]">
+            <Settings className="size-4 md:size-5 text-foreground" />
+            <span className="text-xl font-semibold tracking-tight md:text-2xl text-foreground">알림 설정</span>
+          </div>
+          <Link 
+            to="/notifications" 
+            className="flex items-center space-x-2 rounded-lg p-2 min-h-[44px] reading-hover reading-focus text-foreground transition-all duration-200 active:scale-[0.99]"
+          >
+            <X className="size-4 md:size-5" />
+          </Link>
         </div>
-        <Link to="/notifications" className="ml-auto">
-          <X className='size-5' />
-        </Link>
-      </div>
-      <Card className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full">
-          <div className="space-y-4 p-4">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="in-app-notification">인앱 알림</Label>
+      </header>
+      <main className="container mx-auto px-3 md:px-4 py-2">
+        <div className="bg-card reading-shadow border border-border/50 rounded-lg overflow-hidden">
+          <div className="space-y-0 p-4">
+            <div className="flex items-center justify-between py-3 border-b border-border/30">
+              <Label htmlFor="in-app-notification" className="text-foreground">인앱 알림</Label>
               <Switch
                 id="in-app-notification"
                 checked={inAppNotification}
                 disabled={true}
               />
             </div>
-            <PushNotificationSwitch userId={currentUser?.uid || ''} />
-            <div className="flex items-center justify-between">
-              <Label htmlFor="email-notification">이메일 알림</Label>
+            <div className="py-3 border-b border-border/30">
+              <PushNotificationSwitch userId={currentUser?.uid || ''} />
+            </div>
+            <div className="flex items-center justify-between py-3">
+              <Label htmlFor="email-notification" className="text-foreground">이메일 알림</Label>
               <Switch
                 id="email-notification"
                 checked={emailNotification}
@@ -45,8 +52,8 @@ const NotificationSettingPage: React.FC = () => {
               />
             </div>
           </div>
-        </ScrollArea>
-      </Card>
+        </div>
+      </main>
     </div>
   );
 };

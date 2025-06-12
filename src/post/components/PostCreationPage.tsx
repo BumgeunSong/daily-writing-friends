@@ -104,24 +104,25 @@ export default function PostCreationPage() {
             {isSubmitting ? '저장 중...' : '글 저장'}
           </Button>
         </div>
-      </Form>
+        </Form>
 
-      {/* Error Dialog */}
-      <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>오류 발생</AlertDialogTitle>
-            <AlertDialogDescription>
-              {actionData?.error || '알 수 없는 오류가 발생했습니다.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowErrorDialog(false)}>
-              확인
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* Error Dialog */}
+        <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>오류 발생</AlertDialogTitle>
+              <AlertDialogDescription>
+                {actionData?.error || '알 수 없는 오류가 발생했습니다.'}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={() => setShowErrorDialog(false)}>
+                확인
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </main>
     </div>
   );
 }

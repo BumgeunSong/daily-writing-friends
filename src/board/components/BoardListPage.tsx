@@ -41,28 +41,35 @@ const BoardListPage: React.FC = () => {
   }
 
   return (
-    <div className='mx-auto max-w-3xl px-4 py-8'>
-      <h1 className='mb-4 text-2xl font-bold'>어디로 들어갈까요?</h1>
-      {boards.length === 0 ? (
-        <div className='text-center text-gray-600'>
-          <p>아직 초대받은 게시판이 없어요. 관리자에게 문의해주세요. 😔</p>
+    <div className='min-h-screen bg-background'>
+      <header className="bg-card py-3">
+        <div className="container mx-auto px-3 md:px-4">
+          <h1 className='text-xl font-semibold tracking-tight md:text-2xl text-foreground'>어디로 들어갈까요?</h1>
         </div>
-      ) : (
-        <ul className='space-y-4'>
-          {boards.map((board) => (
-            <Link
-              to={`/board/${board.id}`}
-              onClick={() => handleBoardClick(board.id)}
-              key={board.id}
-            >
-              <li className='rounded bg-white p-4 shadow transition hover:bg-gray-100'>
-                <h2 className='text-xl font-semibold'>{board.title}</h2>
-                <p className='text-gray-600'>{board.description}</p>
-              </li>
-            </Link>
-          ))}
-        </ul>
-      )}
+      </header>
+      <main className="container mx-auto px-3 md:px-4 py-2">
+        {boards.length === 0 ? (
+          <div className='text-center py-8'>
+            <p className="text-muted-foreground text-reading">아직 초대받은 게시판이 없어요. 관리자에게 문의해주세요. 😔</p>
+          </div>
+        ) : (
+          <div className='space-y-4'>
+            {boards.map((board) => (
+              <Link
+                to={`/board/${board.id}`}
+                onClick={() => handleBoardClick(board.id)}
+                key={board.id}
+                className="block reading-focus"
+              >
+                <div className='bg-card reading-shadow border border-border/50 rounded-lg p-4 reading-hover active:scale-[0.99] transition-all duration-200'>
+                  <h2 className='text-lg font-semibold text-foreground mb-1'>{board.title}</h2>
+                  <p className='text-muted-foreground text-reading text-sm'>{board.description}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </main>
     </div>
   );
 };
