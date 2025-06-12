@@ -27,7 +27,7 @@ export default function UserPage() {
       
       <main className="container mx-auto px-3 md:px-4 py-2 pb-16">
         {/* User profile section */}
-        <div className="mb-4">
+        <div className="mb-2">
           <UserProfile uid={userId} />
           {/* Known Buddy 정보 표시 */}
           {isMyPage && <UserKnownBuddy />}

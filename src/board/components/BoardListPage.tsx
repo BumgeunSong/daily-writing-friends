@@ -55,7 +55,7 @@ const BoardListPage: React.FC = () => {
             <p className="text-muted-foreground text-reading">아직 초대받은 게시판이 없어요. 관리자에게 문의해주세요. 😔</p>
           </div>
         ) : (
-          <div className='space-y-4'>
+          <div className='space-y-2'>
             {boards.map((board) => (
               <Link
                 to={`/board/${board.id}`}
