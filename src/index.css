@@ -85,11 +85,15 @@
   }
   
   .reading-hover {
-    @apply hover:bg-accent/8 transition-colors duration-200;
+    @apply transition-colors duration-200;
   }
   
-  .dark .reading-hover {
-    @apply hover:bg-accent/10;
+  .reading-hover:hover {
+    background-color: hsl(var(--accent) / 0.08);
+  }
+  
+  .dark .reading-hover:hover {
+    background-color: hsl(var(--accent) / 0.10);
   }
   
   .reading-focus {
