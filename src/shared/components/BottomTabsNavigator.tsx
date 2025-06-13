@@ -26,7 +26,7 @@ export default function BottomTabsNavigator() {
   return (
     <nav 
       className={cn(
-        "fixed inset-x-0 bottom-0 border-t border-border bg-background z-50 transition-transform duration-200 ease-out",
+        "fixed inset-x-0 bottom-0 border-t border-border bg-background z-50 transition-all duration-200 ease-out",
         isIOS && "pb-2",
         isNavVisible ? "translate-y-0" : "translate-y-full"
       )}
@@ -40,9 +40,10 @@ export default function BottomTabsNavigator() {
               e.preventDefault();
               handleTabAction(tab.name);
             }}
-            className={`flex flex-col items-center p-4 ${
+            className={cn(
+              "flex flex-col items-center p-4 min-h-[44px] transition-colors duration-200 reading-focus",
               location.pathname === tab.path ? 'text-primary' : 'text-muted-foreground'
-            }`}
+            )}
           >
             <tab.icon className='size-6' />
           </Link>

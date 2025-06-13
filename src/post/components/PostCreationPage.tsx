@@ -71,8 +71,8 @@ export default function PostCreationPage() {
   });
   return (
     <div className='mx-auto max-w-4xl px-6 py-8'>
+      {/* React Router Form automatically submits to the route's action */}
       <Form method="post" className='space-y-6'>
-        <input type="hidden" name="draftId" value={autoDraftId || ''} />
         <input type="hidden" name="boardId" value={boardId} />
         <input type="hidden" name="authorId" value={currentUser?.uid} />
         <input type="hidden" name="authorName" value={currentUser?.displayName || currentUser?.email || 'Anonymous'} />
@@ -104,55 +104,24 @@ export default function PostCreationPage() {
             {isSubmitting ? '저장 중...' : '글 저장'}
           </Button>
         </div>
-      </Form>
+        </Form>
 
-      {/* Error Dialog */}
-      <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>오류 발생</AlertDialogTitle>
-            <AlertDialogDescription>
-              {actionData?.error || '알 수 없는 오류가 발생했습니다.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setShowErrorDialog(false)}>
-              확인
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* Error Dialog */}
+        <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>오류 발생</AlertDialogTitle>
+              <AlertDialogDescription>
+                {actionData?.error || '알 수 없는 오류가 발생했습니다.'}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={() => setShowErrorDialog(false)}>
+                확인
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
     </div>
   );
 }
-
-/*
-Key improvements with React Router actions:
-
-1. ❌ OLD WAY: Manual useMutation with loading states
-   const [isSubmitting, setIsSubmitting] = useState(false);
-   const createMutation = useMutation({
-     mutationFn: createPost,
-     onSuccess: () => {
-       queryClient.invalidateQueries(['posts', boardId]);
-       navigate(`/board/${boardId}`);
-     },
-     onError: (error) => {
-       setError(error.message);
-     }
-   });
-
-2. ✅ NEW WAY: Router handles everything
-   - Form submission goes to route action
-   - Loading state via useNavigation()
-   - Errors via useActionData()
-   - Automatic revalidation after mutations
-   - Automatic redirect on success
-
-This eliminates:
-- Manual cache invalidation
-- Manual loading state management  
-- Manual error handling in mutations
-- Manual navigation after success
-- Complex mutation logic in components
-*/

@@ -32,10 +32,11 @@ export default function PostDetailPage() {
   const isAuthor = currentUser?.uid === post.authorId;
 
   return (
-    <div className='mx-auto max-w-4xl px-6 py-8 sm:px-8 lg:px-12'>
+    <div className='min-h-screen bg-background'>
       <PostMetaHelmet post={post} boardId={boardId} postId={postId} />
-      <PostBackButton className='mb-6' />
-      <article className='space-y-6'>
+      <main className="container mx-auto px-4 md:px-6 py-2 max-w-4xl">
+        <PostBackButton className='mb-4' />
+        <article className='space-y-4'>
         <PostDetailHeader
           post={post}
           authorNickname={authorNickname ?? undefined}
@@ -46,19 +47,20 @@ export default function PostDetailPage() {
           navigate={navigate}
         />
         <PostContent post={post} isAuthor={isAuthor} />
-      </article>
-      <div className='mt-12 border-t border-gray-200'></div>
-      {boardId && postId && <PostAdjacentButtons boardId={boardId} postId={postId} />}
-      <div className='mt-12'>
-        {boardId && postId && (
-          <Comments
-            boardId={boardId}
-            postId={postId}
-            postAuthorId={post.authorId}
-            postAuthorNickname={typeof authorNickname === 'string' ? authorNickname : null}
-          />
-        )}
-      </div>
+        </article>
+        <div className='mt-8 border-t border-border'></div>
+        {boardId && postId && <PostAdjacentButtons boardId={boardId} postId={postId} />}
+        <div className='mt-8'>
+          {boardId && postId && (
+            <Comments
+              boardId={boardId}
+              postId={postId}
+              postAuthorId={post.authorId}
+              postAuthorNickname={typeof authorNickname === 'string' ? authorNickname : null}
+            />
+          )}
+        </div>
+      </main>
     </div>
   );
 }
@@ -66,11 +68,13 @@ export default function PostDetailPage() {
 // 로딩 UI
 function PostDetailSkeleton() {
   return (
-    <div className='mx-auto max-w-4xl px-6 py-8 sm:px-8 lg:px-12'>
-      <Skeleton className='mb-4 h-12 w-3/4' />
-      <Skeleton className='mb-2 h-4 w-full' />
-      <Skeleton className='mb-2 h-4 w-full' />
-      <Skeleton className='h-4 w-2/3' />
+    <div className='min-h-screen bg-background'>
+      <main className="container mx-auto px-4 md:px-6 py-2 max-w-4xl">
+        <Skeleton className='mb-4 h-12 w-3/4' />
+        <Skeleton className='mb-2 h-4 w-full' />
+        <Skeleton className='mb-2 h-4 w-full' />
+        <Skeleton className='h-4 w-2/3' />
+      </main>
     </div>
   );
 }
@@ -78,9 +82,11 @@ function PostDetailSkeleton() {
 // 에러 UI
 function PostDetailError({ boardId }: { boardId?: string }) {
   return (
-    <div className='mx-auto max-w-4xl px-6 py-8 text-center sm:px-8 lg:px-12'>
-      <h1 className='mb-4 text-2xl font-bold'>게시물을 찾을 수 없습니다.</h1>
-      {boardId && <PostBackButton />}
+    <div className='min-h-screen bg-background'>
+      <main className="container mx-auto px-3 md:px-4 py-2 max-w-4xl text-center">
+        <h1 className='mb-4 text-xl md:text-2xl font-semibold text-foreground'>게시물을 찾을 수 없습니다.</h1>
+        {boardId && <PostBackButton />}
+      </main>
     </div>
   );
 }

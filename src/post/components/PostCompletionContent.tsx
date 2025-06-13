@@ -53,14 +53,14 @@ export function PostCompletionContent({
 
     if (showLoading) {
         return (
-            <div className="flex min-h-screen flex-col items-center justify-center bg-white px-4">
+            <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
                 <PostCreationLoading />
             </div>
         )
     }
 
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-white px-4">
+        <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
             <ConfettiEffect />
 
             <motion.div
@@ -151,7 +151,7 @@ export function CelebrationMessage({
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5, duration: 0.5 }}
-                className="mb-3 text-3xl font-bold"
+                className="mb-3 text-3xl font-bold text-foreground"
             >
                 {titleMessage}
             </motion.h1>
@@ -160,7 +160,7 @@ export function CelebrationMessage({
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.7, duration: 0.5 }}
-                className="mb-8 text-xl"
+                className="mb-8 text-xl text-foreground"
             >
                 {highlightMessageParts(contentMessage, highlight)}
             </motion.p>
@@ -181,7 +181,7 @@ export function ConfirmButton({ onConfirm }: ConfirmButtonProps) {
             transition={{ delay: 0.9, duration: 0.5 }}
             className="w-full"
         >
-            <Button onClick={onConfirm} className="w-full rounded-full bg-black py-6 text-lg text-white hover:bg-gray-800">
+            <Button variant="cta" onClick={onConfirm} className="w-full rounded-full py-6 text-lg">
                 <CheckCircle className="mr-2 size-5" />
                 다른 글 보러 가기
             </Button>

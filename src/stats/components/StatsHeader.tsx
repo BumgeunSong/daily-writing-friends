@@ -1,8 +1,10 @@
 const StatsHeader = () => {
     return (
-        <header className='bg-primary py-4 text-primary-foreground'>
-            <div className='container px-4'>
-                <h1 className='pl-2 text-2xl font-bold'>기록</h1>
+        <header className="bg-background py-3">
+            <div className="container mx-auto flex items-center justify-between px-3 md:px-4">
+                <div className="flex items-center space-x-2 rounded-lg p-2 min-h-[44px]">
+                    <span className="text-xl font-semibold tracking-tight md:text-2xl text-foreground">기록</span>
+                </div>
             </div>
         </header>
     );

@@ -4,15 +4,20 @@ import { Link } from 'react-router-dom';
 
 export const NotificationsHeader: React.FC = () => {
     return (
-        <div className='mb-4 flex h-16 items-center justify-between px-4'>
-            <div className='flex items-center gap-2'>
-                <Bell className='size-6' />
-                <h1 className='text-2xl font-bold'>알림</h1>
+        <header className="bg-background py-3">
+            <div className="container mx-auto flex items-center justify-between px-3 md:px-4">
+                <div className="flex items-center space-x-2 rounded-lg p-2 min-h-[44px]">
+                    <Bell className="size-4 md:size-5 text-foreground" />
+                    <span className="text-xl font-semibold tracking-tight md:text-2xl text-foreground">알림</span>
+                </div>
+                <Link 
+                    to="/notifications/settings" 
+                    className="flex items-center space-x-2 rounded-lg p-2 min-h-[44px] reading-hover reading-focus text-foreground transition-all duration-200 active:scale-[0.99]"
+                >
+                    <Settings className="size-4 md:size-5" />
+                </Link>
             </div>
-            <Link to="/notifications/settings" className='flex items-center'>
-                <Settings className='size-6 text-gray-600 transition-colors hover:text-gray-900' />
-            </Link>
-        </div>
+        </header>
     );
 };
 

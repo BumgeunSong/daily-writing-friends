@@ -47,7 +47,7 @@ export default function UserPostsList({ userId }: UserPostsListProps) {
   }
 
   return (
-    <div ref={scrollRef}>
+    <div ref={scrollRef} className="space-y-2">
       {allPosts.map((post) => (
         <PostItem key={post.id} post={post} />
       ))}

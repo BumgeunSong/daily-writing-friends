@@ -43,6 +43,7 @@ tasks/
 
 .cursor/
 .roo/
+.claude/
 
 # Playwright
 /test-results/

@@ -2,7 +2,7 @@ import { Loader2 } from "lucide-react"
 import { Suspense } from "react"
 import CommentInput from "@/comment/components/CommentInput"
 import CommentList from "@/comment/components/CommentList"
-import CommentPrompt from "@/comment/components/CommentPrompt"
+import { useActivity } from "@/comment/hooks/useActivity"
 import { useCreateComment } from "@/comment/hooks/useCreateComment"
 import { useAuth } from "@/shared/hooks/useAuth"
 import { sendAnalyticsEvent, AnalyticsEvent } from "@/shared/utils/analyticsUtils"
@@ -23,6 +23,17 @@ const LoadingIndicator: React.FC = () => (
 const Comments: React.FC<CommentsProps> = ({ boardId, postId, postAuthorId, postAuthorNickname }) => {
   const { currentUser } = useAuth()
   const addComment = useCreateComment(boardId, postId)
+  
+  // Activity data for dynamic placeholder
+  const fromDaysAgo = 7;
+  const { data: activity, isLoading } = useActivity(postAuthorId, fromDaysAgo);
+  const totalActivityCounts = (activity?.commentings || 0) + (activity?.replyings || 0);
+  const authorNickname = postAuthorNickname || "작성자";
+  
+  // Create dynamic placeholder
+  const placeholder = (!isLoading && totalActivityCounts > 0) 
+    ? `${authorNickname}님은 최근 ${fromDaysAgo}일간 나에게 ${totalActivityCounts}개의 댓글을 달아주었어요. 나도 댓글을 달아볼까요?`
+    : "재밌게 읽었다면 댓글로 글값을 남겨볼까요?";
 
   const handleSubmit = async (content: string) => {
     try {
@@ -41,9 +52,8 @@ const Comments: React.FC<CommentsProps> = ({ boardId, postId, postAuthorId, post
   }
 
   return (
-    <section className="mt-12 space-y-8">
+    <section className="space-y-4">
       <div className="flex items-center">
-        <h2 className="text-2xl font-semibold">댓글</h2>
         <Suspense fallback={<LoadingIndicator />}>
           {/* Suspense fallback만 담당, 데이터 fetch는 CommentList 내부에서 */}
         </Suspense>
@@ -51,9 +61,8 @@ const Comments: React.FC<CommentsProps> = ({ boardId, postId, postAuthorId, post
       <Suspense fallback={null}>
         <CommentList boardId={boardId} postId={postId} currentUserId={currentUser?.uid} />
       </Suspense>
-      <div className="mt-6 space-y-4 border-t border-gray-200 pt-6 dark:border-gray-700">
-        <CommentPrompt postAuthorId={postAuthorId} postAuthorNickname={postAuthorNickname} />
-        <CommentInput onSubmit={handleSubmit} />
+      <div className="mt-6 space-y-4 border-t border-border pt-6">
+        <CommentInput onSubmit={handleSubmit} placeholder={placeholder} />
       </div>
     </section>
   )

@@ -240,3 +240,6 @@ vi.mock('firebase/firestore', () => ({
 - Use Firestore listeners for live updates
 - Implement optimistic updates with React Query
 - Handle connection state and offline scenarios
+
+### 50 Detailed Guidelines for Implementing the Premium Reading Theme
+- Refer to 'DESIGN_THEME.md' for this

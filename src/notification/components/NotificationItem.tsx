@@ -27,20 +27,20 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
   return (
     <Link to={getNotificationLink(notification)}>
       <div
-        className={`flex cursor-pointer items-start gap-3 border-b px-4 py-3 transition-all hover:bg-accent/50 ${!notification.read ? 'bg-accent/30' : ''
+        className={`flex cursor-pointer items-start gap-3 border-b border-border/30 px-3 md:px-4 py-3 nav-hover reading-focus active:scale-[0.99] transition-all duration-200 ${!notification.read ? 'bg-card' : ''
           }`}
       >
-        <Avatar>
+        <Avatar className="size-10 shrink-0">
           <AvatarImage src={notification.fromUserProfileImage} alt="User Avatar" />
           <AvatarFallback>
             {notification.fromUserId.slice(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>
-        <div className='flex-1 space-y-1'>
-          <p className='text-sm font-medium leading-tight text-foreground'>
+        <div className='flex-1 space-y-1.5 min-w-0'>
+          <p className='text-sm font-medium text-reading text-foreground'>
             {message}
           </p>
-          <span className='text-[11px] text-muted-foreground/80'>
+          <span className='text-xs text-muted-foreground'>
             {notification.timestamp.toDate().toLocaleString()}
           </span>
         </div>
