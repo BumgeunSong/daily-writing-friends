@@ -36,10 +36,10 @@ const PostTitleEditor = React.forwardRef<
       placeholder={placeholder}
       className={cn(
         'w-full resize-none overflow-hidden text-3xl sm:text-4xl font-bold leading-tight tracking-tight',
-        'text-foreground placeholder:text-muted-foreground bg-card',
-        'reading-focus transition-all duration-200',
-        'px-3 py-2 md:px-4 md:py-3',
-        'mb-4 rounded-xl border border-border/50',
+        'text-foreground placeholder:text-muted-foreground bg-background',
+        'focus:outline-none',
+        'px-0 py-2 md:py-3',
+        'mb-4 rounded-xl border-0',
         className,
       )}
       rows={1}

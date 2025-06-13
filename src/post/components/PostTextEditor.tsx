@@ -22,11 +22,12 @@ const quillStyles = `
 }
 
 .ql-editor {
-  padding: 1.5rem;
+  padding: 1.5rem 0;
   color: hsl(var(--foreground));
   background-color: hsl(var(--background));
   width: 100%;
   max-width: none;
+  border: none !important;
 }
 
 .ql-editor p {
@@ -62,19 +63,21 @@ const quillStyles = `
   margin-bottom: 1.25rem;
 }
 
-/* Toolbar styling */
-.ql-toolbar {
+/* Remove all borders from Quill components */
+.ql-toolbar,
+.ql-toolbar.ql-snow {
+  border: none !important;
   border-top-left-radius: 0.75rem;
   border-top-right-radius: 0.75rem;
-  border-color: hsl(var(--border));
-  background-color: hsl(var(--card));
-  padding: 0.75rem;
+  background-color: hsl(var(--background));
+  padding: 0.75rem 0;
 }
 
-.ql-container {
+.ql-container,
+.ql-container.ql-snow {
+  border: none !important;
   border-bottom-left-radius: 0.75rem;
   border-bottom-right-radius: 0.75rem;
-  border-color: hsl(var(--border));
 }
 
 .ql-toolbar button {
@@ -84,15 +87,35 @@ const quillStyles = `
   align-items: center;
   justify-content: center;
   border-radius: 0.25rem;
+  color: hsl(var(--foreground) / 0.5);
+}
+
+.ql-toolbar button svg .ql-stroke,
+.ql-toolbar button svg .ql-fill {
+  stroke: hsl(var(--foreground) / 0.5);
+  fill: hsl(var(--foreground) / 0.5);
 }
 
 .ql-toolbar button:hover {
   background-color: hsl(var(--selection) / 0.6);
+  color: hsl(var(--foreground));
+}
+
+.ql-toolbar button:hover svg .ql-stroke,
+.ql-toolbar button:hover svg .ql-fill {
+  stroke: hsl(var(--foreground));
+  fill: hsl(var(--foreground));
 }
 
 .ql-toolbar .ql-active {
   background-color: hsl(var(--selection));
   color: hsl(var(--foreground));
+}
+
+.ql-toolbar .ql-active svg .ql-stroke,
+.ql-toolbar .ql-active svg .ql-fill {
+  stroke: hsl(var(--foreground));
+  fill: hsl(var(--foreground));
 }
 
 /* Placeholder styling - 모바일 환경에서도 작동하도록 수정 */
@@ -101,6 +124,7 @@ const quillStyles = `
   font-style: normal;
   pointer-events: none; /* 플레이스홀더가 터치 이벤트를 방해하지 않도록 함 */
   opacity: 0.7; /* 약간 투명하게 설정 */
+  padding-left: 0; /* Remove horizontal padding from placeholder */
 }
 
 /* 포커스 상태나 터치 시 플레이스홀더 숨기기 */
@@ -187,7 +211,7 @@ export function PostTextEditor({
 
   return (
     <div className='relative space-y-2 w-full'>
-      <div className='rounded-xl border border-border/50 bg-card w-full'>
+      <div className='rounded-xl border-0 bg-background w-full'>
         <ReactQuill
           ref={quillRef}
           value={value}
