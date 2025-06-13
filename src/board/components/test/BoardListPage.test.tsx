@@ -82,7 +82,7 @@ describe('BoardListPage', () => {
 
   it('renders error state', async () => {
     (fetchBoardsWithUserPermissions as unknown as Mock).mockImplementation(() => {
-      throw new Error('Error fetching data');
+      return Promise.reject(new Error('Error fetching data'));
     });
     const { findByText } = renderWithProviders(<BoardListPage />);
     expect(await findByText(/게시판을 불러오는 중에 문제가 생겼어요/)).toBeInTheDocument();
@@ -90,7 +90,7 @@ describe('BoardListPage', () => {
   });
 
   it('renders empty state when no boards are available', async () => {
-    (fetchBoardsWithUserPermissions as unknown as Mock).mockImplementation(() => []);
+    (fetchBoardsWithUserPermissions as unknown as Mock).mockImplementation(() => Promise.resolve([]));
     const { findByText } = renderWithProviders(<BoardListPage />);
     expect(await findByText(/아직 초대받은 게시판이 없어요/)).toBeInTheDocument();
     expect(fetchBoardsWithUserPermissions).toHaveBeenCalled();
@@ -101,7 +101,7 @@ describe('BoardListPage', () => {
       { id: '1', title: 'Board 1', description: 'First board', cohort: 1, createdAt: new Date(), waitingUsersIds: [] },
       { id: '2', title: 'Board 2', description: 'Second board', cohort: 2, createdAt: new Date(), waitingUsersIds: [] },
     ];
-    (fetchBoardsWithUserPermissions as unknown as Mock).mockImplementation(() => boardsMock);
+    (fetchBoardsWithUserPermissions as unknown as Mock).mockImplementation(() => Promise.resolve(boardsMock));
     const { findByText } = renderWithProviders(<BoardListPage />);
     expect(await findByText(/Board 1/)).toBeInTheDocument();
     expect(await findByText(/Board 2/)).toBeInTheDocument();
@@ -112,7 +112,7 @@ describe('BoardListPage', () => {
     const boardsMock: Board[] = [
       { id: '1', title: 'Board 1', description: 'First board', cohort: 1, createdAt: new Date(), waitingUsersIds: [] },
     ];
-    (fetchBoardsWithUserPermissions as unknown as Mock).mockImplementation(() => boardsMock);
+    (fetchBoardsWithUserPermissions as unknown as Mock).mockImplementation(() => Promise.resolve(boardsMock));
     const { findByText } = renderWithProviders(<BoardListPage />);
     expect(fetchBoardsWithUserPermissions).toHaveBeenCalled();
     const boardLink = (await findByText(/Board 1/)).closest('a');

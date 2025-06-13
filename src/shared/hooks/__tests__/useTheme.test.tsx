@@ -1,4 +1,5 @@
 import { renderHook, act } from '@testing-library/react'
+import { vi } from 'vitest'
 import React from 'react'
 import { useTheme, ThemeProvider } from '@/shared/contexts/ThemeContext'
 
@@ -12,18 +13,20 @@ const localStorageMock = {
 Object.defineProperty(window, 'localStorage', { value: localStorageMock })
 
 // Mock matchMedia
+const mockMatchMedia = vi.fn().mockImplementation(query => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addListener: vi.fn(),
+  removeListener: vi.fn(),
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  dispatchEvent: vi.fn(),
+}))
+
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
+  value: mockMatchMedia,
 })
 
 describe('useTheme', () => {
@@ -56,7 +59,16 @@ describe('useTheme', () => {
 
   it('should use OS preference when no stored preference exists', () => {
     localStorageMock.getItem.mockReturnValue(null)
-    window.matchMedia = vi.fn().mockReturnValue({ matches: true })
+    mockMatchMedia.mockImplementation(query => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }))
     
     const { result } = renderHook(() => useTheme(), { wrapper })
     
