@@ -71,19 +71,25 @@ export default function UserSettingPage() {
           <div className="flex items-center space-x-2 rounded-lg p-2 min-h-[44px]">
             <span className="text-xl font-semibold tracking-tight md:text-2xl text-foreground">설정</span>
           </div>
-          <div className="flex items-center gap-2 rounded-lg p-2 min-h-[44px]">
-            <Sun className="size-4 text-muted-foreground" />
+        </div>
+      </header>
+      <main className="container mx-auto px-3 md:px-4 py-2">
+        <div className="space-y-0 bg-card rounded-lg reading-shadow border border-border/50 overflow-hidden">
+          <div className="w-full flex items-center justify-between border-b border-border/30 h-14 px-4">
+            <div className="flex items-center gap-3">
+              {theme === 'dark' ? (
+                <Moon className="size-5 text-muted-foreground" />
+              ) : (
+                <Sun className="size-5 text-muted-foreground" />
+              )}
+              <span className="text-foreground text-base">다크 모드</span>
+            </div>
             <Switch
               checked={theme === 'dark'}
               onCheckedChange={toggleTheme}
               aria-label="다크 모드 토글"
             />
-            <Moon className="size-4 text-muted-foreground" />
           </div>
-        </div>
-      </header>
-      <main className="container mx-auto px-3 md:px-4 py-2">
-        <div className="space-y-0 bg-card rounded-lg reading-shadow border border-border/50 overflow-hidden">
           <Button
             variant="ghost"
             className="w-full flex items-center justify-start gap-3 rounded-none border-b border-border/30 text-base h-14 px-4 reading-hover reading-focus transition-all duration-200"
