@@ -83,7 +83,7 @@ const CommentRow: React.FC<CommentRowProps> = ({ boardId, postId, comment, isAut
         {isEditing ? (
           <CommentInput onSubmit={handleEditSubmit} initialValue={comment.content} />
         ) : (
-          <div className="prose whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
+          <div className="prose prose-slate dark:prose-invert whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
         )}
       </div>
       <ReactionList entity={{ type: "comment", boardId, postId, commentId: comment.id }} />
