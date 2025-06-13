@@ -1,5 +1,6 @@
 import { renderHook, act } from '@testing-library/react'
-import { useTheme } from '../useTheme'
+import React from 'react'
+import { useTheme, ThemeProvider } from '@/shared/contexts/ThemeContext'
 
 // Mock localStorage
 const localStorageMock = {
@@ -26,15 +27,19 @@ Object.defineProperty(window, 'matchMedia', {
 })
 
 describe('useTheme', () => {
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <ThemeProvider>{children}</ThemeProvider>
+  )
+
   beforeEach(() => {
     vi.clearAllMocks()
     document.documentElement.classList.remove('light', 'dark')
   })
 
-  it('should default to light theme when no preference is stored', () => {
+  it('should default to system theme when no preference is stored', () => {
     localStorageMock.getItem.mockReturnValue(null)
     
-    const { result } = renderHook(() => useTheme())
+    const { result } = renderHook(() => useTheme(), { wrapper })
     
     expect(result.current.theme).toBe('light')
     expect(document.documentElement.classList.contains('light')).toBe(true)
@@ -43,7 +48,7 @@ describe('useTheme', () => {
   it('should use stored preference from localStorage', () => {
     localStorageMock.getItem.mockReturnValue('dark')
     
-    const { result } = renderHook(() => useTheme())
+    const { result } = renderHook(() => useTheme(), { wrapper })
     
     expect(result.current.theme).toBe('dark')
     expect(document.documentElement.classList.contains('dark')).toBe(true)
@@ -53,7 +58,7 @@ describe('useTheme', () => {
     localStorageMock.getItem.mockReturnValue(null)
     window.matchMedia = vi.fn().mockReturnValue({ matches: true })
     
-    const { result } = renderHook(() => useTheme())
+    const { result } = renderHook(() => useTheme(), { wrapper })
     
     expect(result.current.theme).toBe('dark')
   })
@@ -61,26 +66,26 @@ describe('useTheme', () => {
   it('should toggle theme correctly', () => {
     localStorageMock.getItem.mockReturnValue('light')
     
-    const { result } = renderHook(() => useTheme())
+    const { result } = renderHook(() => useTheme(), { wrapper })
     
     act(() => {
       result.current.toggleTheme()
     })
     
     expect(result.current.theme).toBe('dark')
-    expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'dark')
+    expect(localStorageMock.setItem).toHaveBeenCalledWith('theme-preference-v2', 'dark')
     expect(document.documentElement.classList.contains('dark')).toBe(true)
     expect(document.documentElement.classList.contains('light')).toBe(false)
   })
 
   it('should set theme directly', () => {
-    const { result } = renderHook(() => useTheme())
+    const { result } = renderHook(() => useTheme(), { wrapper })
     
     act(() => {
       result.current.setTheme('dark')
     })
     
     expect(result.current.theme).toBe('dark')
-    expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'dark')
+    expect(localStorageMock.setItem).toHaveBeenCalledWith('theme-preference-v2', 'dark')
   })
 })
