@@ -53,7 +53,7 @@ export default function JoinFormPageForNewUser() {
     }
 
     return (
-        <div className="flex min-h-screen flex-col bg-gradient-to-b from-background to-slate-50">
+        <div className="flex min-h-screen flex-col bg-background">
             <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 lg:max-w-4xl">
                 <FormHeader title={title} subtitle={subtitle} />
                 <JoinFormCardForNewUser onSubmit={handleSubmit} />
