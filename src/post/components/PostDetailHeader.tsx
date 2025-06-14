@@ -65,7 +65,7 @@ export function PostDetailHeader({
                 </Link>
                 {boardId && postId && (
                   <Button
-                    variant='ghost'
+                    variant='destructive'
                     size='sm'
                     onClick={() => onDelete(boardId, postId, navigate)}
                     aria-label='삭제'

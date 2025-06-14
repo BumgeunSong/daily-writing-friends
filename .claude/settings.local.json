@@ -11,7 +11,8 @@
       "Bash(/Users/bumgeunsong/.nvm/versions/node/v22.14.0/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/arm64-darwin/rg \"bg-white|text-black|border-gray|text-gray-|bg-gray-\" --type tsx --max-count 5 src/)",
       "Bash(/Users/bumgeunsong/.nvm/versions/node/v22.14.0/lib/node_modules/@anthropic-ai/claude-code/vendor/ripgrep/arm64-darwin/rg \"bg-white|text-black|border-gray|text-gray-|bg-gray-\" --glob \"*.tsx\" --max-count 5 src/)",
       "Bash(npm run typecheck:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }

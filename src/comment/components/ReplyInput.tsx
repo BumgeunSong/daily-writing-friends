@@ -50,7 +50,7 @@ const ReplyInput: React.FC<ReplyInputProps> = ({ placeholder, initialValue = "",
         rows={3}
         disabled={mutation.isLoading}
       />
-      <Button type="submit" size="icon" disabled={mutation.isLoading}>
+      <Button type="submit" variant="default" size="icon" disabled={mutation.isLoading}>
         {mutation.isLoading ? (
           <Loader2 className="size-4 animate-spin" />
         ) : (

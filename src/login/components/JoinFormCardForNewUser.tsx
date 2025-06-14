@@ -84,6 +84,7 @@ export default function JoinFormCardForNewUser({ onSubmit }: JoinFormCardForNewU
       <div className="sticky inset-x-0 bottom-0 border-t bg-background p-4">
         <div className="mx-auto max-w-3xl lg:max-w-4xl">
           <Button
+            variant="cta"
             type="submit"
             form="join-form"
             className="w-full"

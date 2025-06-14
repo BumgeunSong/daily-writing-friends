@@ -79,8 +79,8 @@ const PostFreewritingIntro: React.FC = () => {
       )}>
         <div className="container mx-auto max-w-3xl">
           <Button
-            variant="cta"
-            className="w-full rounded-xl py-6 text-lg shadow-sm transition-all hover:shadow-md md:w-auto md:px-12"
+            variant="default"
+            className="w-full py-6 text-lg md:w-auto md:px-12"
             onClick={handleStartFreewriting}
           >
             시작하기

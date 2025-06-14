@@ -64,15 +64,15 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
               variant="ghost"
               size="sm"
               onClick={handleEditToggle}
-              className="h-6 px-2 text-muted-foreground hover:bg-transparent hover:text-primary"
+              className="h-6 px-2"
             >
               <EditIcon className="size-4" />
             </Button>
             <Button
-              variant="ghost"
+              variant="destructive"
               size="sm"
               onClick={handleDelete}
-              className="h-6 px-2 text-muted-foreground hover:bg-transparent hover:text-destructive"
+              className="h-6 px-2"
             >
               <Trash2 className="size-4" />
             </Button>

@@ -117,7 +117,7 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps> = ({
 
                     {/* CTA 버튼 */}
                     <Button
-                      variant="cta"
+                      variant="default"
                       size="lg"
                       className="w-full mt-6"
                       aria-label="글쓰기 시작"

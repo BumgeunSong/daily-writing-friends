@@ -109,11 +109,11 @@ export default function UserSettingPage() {
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
-                variant="ghost"
+                variant="destructive"
                 className="w-full flex items-center justify-start gap-3 rounded-none border-b border-border/30 text-base h-14 px-4 reading-hover reading-focus transition-all duration-200"
               >
-                <Trash2 className="size-5 text-destructive" /> 
-                <span className="text-destructive">캐시 삭제</span>
+                <Trash2 className="size-5" /> 
+                <span>캐시 삭제</span>
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>

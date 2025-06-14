@@ -5,7 +5,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { toast } from '@/shared/hooks/use-toast';
 import { Button } from '@/shared/ui/button';
-import { Card, CardHeader, CardContent, CardFooter } from '@/shared/ui/card';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { formatDate } from '@/shared/utils/dateUtils';
 import { fetchPost, updatePost } from '@/shared/utils/postUtils';
@@ -34,7 +33,7 @@ export default function PostEditPage() {
 // 로딩 상태 컴포넌트
 function LoadingState() {
   return (
-    <div className='mx-auto max-w-4xl px-6 py-8 sm:px-8 lg:px-12'>
+    <div className='mx-auto max-w-4xl px-6 py-8'>
       <Skeleton className='mb-4 h-12 w-3/4' />
       <Skeleton className='mb-2 h-4 w-full' />
       <Skeleton className='mb-2 h-4 w-full' />
@@ -47,9 +46,9 @@ function LoadingState() {
 function ErrorState({ error }: { error: Error }) {
   
   return (
-    <div className='mx-auto max-w-4xl px-6 py-8 text-center sm:px-8 lg:px-12'>
-      <h1 className='mb-4 text-2xl font-bold'>게시물을 찾을 수 없습니다.</h1>
-      <p className='mb-4 text-red-500'>{error.message}</p>
+    <div className='mx-auto max-w-4xl px-6 py-8 text-center'>
+      <h1 className='mb-4 text-xl md:text-2xl font-semibold'>게시물을 찾을 수 없습니다.</h1>
+      <p className='mb-4 text-destructive'>{error.message}</p>
     </div>
   );
 }
@@ -110,34 +109,36 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
   };
 
   return (
-    <div className='mx-auto max-w-4xl px-6 py-8 sm:px-8 lg:px-12'>
+    <div className='mx-auto max-w-4xl px-6 py-8'>
       <PostBackButton className='mb-2' />
-      <form onSubmit={handleSubmit}>
-        <Card>
-          <CardHeader className='flex flex-col space-y-2'>
-            <PostTitleEditor
-              value={editState.title}
-              onChange={setTitle}
-            />
-            <div className='flex items-center justify-between text-sm text-muted-foreground'>
-              <p>
-                작성자: {post?.authorName || '?'} | 작성일: {post?.createdAt ? formatDate(post.createdAt.toDate()) : '?'}
-              </p>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <PostTextEditor
-              value={editState.content}
-              onChange={setContent}
-              placeholder='내용을 수정하세요...'
-            />
-          </CardContent>
-          <CardFooter className='flex justify-end'>
-            <Button type='submit'>
-              <Save className='mr-2 size-4' /> 수정 완료
-            </Button>
-          </CardFooter>
-        </Card>
+      <form onSubmit={handleSubmit} className='space-y-6'>
+        <input type="hidden" value={post?.boardId} />
+        <input type="hidden" value={post?.authorId} />
+        <input type="hidden" value={post?.authorName} />
+        <input type="hidden" value={editState.title} />
+        <input type="hidden" value={editState.content} />
+        
+        <PostTitleEditor
+          value={editState.title}
+          onChange={setTitle}
+        />
+        <PostTextEditor
+          value={editState.content}
+          onChange={setContent}
+          placeholder='내용을 수정하세요...'
+        />
+        
+        <div className='flex items-center justify-between text-sm text-muted-foreground'>
+          <p>
+            작성자: {post?.authorName || '?'} | 작성일: {post?.createdAt ? formatDate(post.createdAt.toDate()) : '?'}
+          </p>
+        </div>
+        
+        <div className='flex justify-end'>
+          <Button variant="default" type='submit' disabled={!editState.title.trim() || !editState.content.trim()}>
+            <Save className='mr-2 size-4' /> 수정 완료
+          </Button>
+        </div>
       </form>
     </div>
   );

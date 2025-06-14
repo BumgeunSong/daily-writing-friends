@@ -41,7 +41,7 @@ const CommentInput: React.FC<CommentInputProps> = ({
         rows={3}
         className="flex-1 resize-none text-base"
       />
-      <Button type="submit" size="icon" disabled={mutation.isLoading}>
+      <Button type="submit" variant="default" size="icon" disabled={mutation.isLoading}>
         {mutation.isLoading ? (
           <Loader2 className="size-4 animate-spin" />
         ) : (
