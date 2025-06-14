@@ -120,7 +120,8 @@ export default function EditAccountPage() {
                 취소
               </Button>
               <Button 
-                type='submit' 
+                type='submit'
+                variant='default'
                 className='w-full min-h-[44px] reading-hover reading-focus transition-all duration-200 active:scale-[0.99]' 
                 disabled={isLoadingUpdate}
               >

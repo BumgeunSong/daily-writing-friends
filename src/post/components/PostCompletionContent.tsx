@@ -181,7 +181,7 @@ export function ConfirmButton({ onConfirm }: ConfirmButtonProps) {
             transition={{ delay: 0.9, duration: 0.5 }}
             className="w-full"
         >
-            <Button variant="cta" onClick={onConfirm} className="w-full rounded-full py-6 text-lg">
+            <Button variant="default" onClick={onConfirm} className="w-full py-6 text-lg">
                 <CheckCircle className="mr-2 size-5" />
                 다른 글 보러 가기
             </Button>

@@ -46,9 +46,9 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter>
           <Button 
-            variant="cta"
+            variant="default"
             onClick={handleLogin} 
-            className='w-full min-h-[44px] reading-hover reading-focus transition-all duration-200 active:scale-[0.99]'
+            className='w-full min-h-[44px]'
           >
             구글로 로그인하기
           </Button>

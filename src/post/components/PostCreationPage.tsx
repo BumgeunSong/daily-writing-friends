@@ -100,7 +100,7 @@ export default function PostCreationPage() {
               임시 저장 글
             </Button>
           </DraftsDrawer>
-          <Button type="submit" disabled={isSubmitting || !title.trim() || !content.trim()}>
+          <Button variant="default" type="submit" disabled={isSubmitting || !title.trim() || !content.trim()}>
             {isSubmitting ? '저장 중...' : '글 저장'}
           </Button>
         </div>

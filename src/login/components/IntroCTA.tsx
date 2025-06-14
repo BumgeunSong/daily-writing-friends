@@ -14,6 +14,7 @@ export default function IntroCTA({ onLogin, cohort, isLoading = false }: IntroCT
           구글 로그인이 필요해요
         </p>
         <Button 
+          variant="cta"
           onClick={onLogin} 
           className="w-full md:w-auto md:px-8" 
           size="lg"

@@ -27,6 +27,7 @@ export default function JoinCompletePage({ name, cohort }: JoinCompletePageProps
       <div className="border-t border-border p-6">
         <div className="mx-auto max-w-3xl lg:max-w-4xl">
           <Button
+            variant="default"
             onClick={() => navigate("/")}
             className="w-full"
             size="lg"
