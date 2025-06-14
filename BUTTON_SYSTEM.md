@@ -6,6 +6,7 @@
 **Purpose**: The most important button for critical user conversion actions
 **Use Cases**: 
 - **Join/Signup actions** (회원가입, 기수 신청하기)
+- **Main writing action button** (floating action button in WritingActionButton.tsx)
 - **Key conversion actions** that drive user engagement
 
 **Usage**: `<Button variant="cta">`
@@ -17,6 +18,7 @@
 - **Post saving** (글 저장)
 - **Start writing actions** (프리라이팅 시작하기, 글쓰기 시작)
 - **Topic card actions** (writing prompts)
+- **Sub-action buttons** in WritingActionButton (프리라이팅, 일반 글쓰기, 글감 목록)
 - **Form submissions** and navigation between states
 
 **Usage**: `<Button>` or `<Button variant="default">`
@@ -89,6 +91,19 @@ Based on `DESIGN_THEME.md`:
 <Button type="submit">글 저장</Button>
 ```
 
+### WritingActionButton.tsx
+```jsx
+// CTA for main writing action (floating action button)
+<Button variant="cta" size="icon">
+  <Plus className="size-5" />
+</Button>
+
+// Primary for sub-actions
+<Button variant="default" size="sm">
+  <Sparkle className="size-4" />
+</Button>
+```
+
 ### PostDetailPage.tsx
 ```jsx
 // Ghost for subtle edit actions
@@ -148,6 +163,7 @@ Based on `DESIGN_THEME.md`:
 
 ### **CTA Buttons** (Most Important - Accent Color)
 - Join/Signup actions (회원가입, 기수 신청하기)
+- Main writing action button (floating action button)
 - User conversion actions
 
 ### **Primary Buttons** (Important - Main Color)
@@ -155,6 +171,7 @@ Based on `DESIGN_THEME.md`:
 - Post saving (글 저장)
 - Start writing/freewriting (글쓰기 시작, 프리라이팅 시작하기)
 - Topic card actions
+- Sub-action buttons (프리라이팅, 일반 글쓰기, 글감 목록)
 - Form submissions
 
 ### **Secondary Buttons** (Supporting - Outline)

@@ -44,8 +44,9 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
             프리라이팅
           </span>
           <Button
+            variant="default"
             size="sm"
-            className="size-10 rounded-full bg-secondary text-secondary-foreground reading-shadow transition-all duration-200 hover:scale-110 reading-focus active:scale-[0.99]"
+            className="size-10 rounded-full reading-shadow transition-all duration-200 hover:scale-110 reading-focus active:scale-[0.99]"
             aria-label="Start Freewriting"
           >
             <Sparkle className="size-4" />
@@ -64,8 +65,9 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
             일반 글쓰기
           </span>
           <Button
+            variant="default"
             size="sm"
-            className="size-10 rounded-full bg-secondary text-secondary-foreground reading-shadow transition-all duration-200 hover:scale-110 reading-focus active:scale-[0.99]"
+            className="size-10 rounded-full reading-shadow transition-all duration-200 hover:scale-110 reading-focus active:scale-[0.99]"
             aria-label="Create Normal Post"
           >
             <PenSquare className="size-4" />
@@ -84,8 +86,9 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
             글감 목록
           </span>
           <Button
+            variant="default"
             size="sm"
-            className="size-10 rounded-full bg-secondary text-secondary-foreground reading-shadow transition-all duration-200 hover:scale-110 reading-focus active:scale-[0.99]"
+            className="size-10 rounded-full reading-shadow transition-all duration-200 hover:scale-110 reading-focus active:scale-[0.99]"
             aria-label="Show Topic Cards"
           >
             <CookingPot className="size-4" />
@@ -94,8 +97,9 @@ export function WritingActionButton({ boardId }: WritingActionButtonProps) {
       </div>
 
       <Button
+        variant="cta"
         size="icon"
-        className="z-50 size-12 rounded-full bg-primary text-primary-foreground reading-shadow transition-all duration-200 hover:scale-110 reading-focus active:scale-[0.99]"
+        className="z-50 size-12 rounded-full reading-shadow transition-all duration-200 hover:scale-110 reading-focus active:scale-[0.99]"
         aria-label={isExpanded ? "Close Writing Options" : "Open Writing Options"}
         onClick={toggleExpand}
       >
