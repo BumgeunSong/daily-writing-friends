@@ -41,7 +41,7 @@ export function useStatsPageData(tab: TabType) {
         data: commentingStats, 
         isLoading: isLoadingCommenting, 
         error: commentingError 
-    } = useCommentingStats(filteredActiveUsers.map(u => u.uid));
+    } = useCommentingStats(filteredActiveUsers.map(u => u.uid), currentUser?.uid);
     const isLoading = isLoadingUsers || isLoadingStats || isLoadingCommenting;
     const error = usersError || statsError || commentingError;
     // 통계 새로고침 핸들러
