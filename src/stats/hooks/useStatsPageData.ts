@@ -36,7 +36,7 @@ export function useStatsPageData(tab: TabType) {
         data: writingStats, 
         isLoading: isLoadingStats, 
         error: statsError 
-    } = useWritingStats(filteredActiveUsers.map(u => u.uid));
+    } = useWritingStats(filteredActiveUsers.map(u => u.uid), currentUser?.uid);
     const { 
         data: commentingStats, 
         isLoading: isLoadingCommenting, 

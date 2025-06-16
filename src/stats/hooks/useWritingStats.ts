@@ -15,10 +15,10 @@ import { calculateCurrentStreak } from '@/stats/utils/streakUtils';
 import { fetchUser } from '@/user/api/user';
 import { User } from '@/user/model/User';
 
-export function useWritingStats(userIds: string[]) {
+export function useWritingStats(userIds: string[], currentUserId?: string) {
     return useQuery({
-        queryKey: ['writingStatsV2', userIds],
-        queryFn: () => fetchMultipleUserStats(userIds),
+        queryKey: ['writingStats-v2', userIds, currentUserId],
+        queryFn: () => fetchMultipleUserStats(userIds, currentUserId),
         enabled: userIds.length > 0,
         // 캐시 설정
         staleTime: 1 * 60 * 1000, // 5분 동안 데이터를 'fresh'하게 유지
@@ -29,16 +29,27 @@ export function useWritingStats(userIds: string[]) {
     });
 }
 
-async function fetchMultipleUserStats(userIds: string[]): Promise<WritingStats[]> {
+async function fetchMultipleUserStats(userIds: string[], currentUserId?: string): Promise<WritingStats[]> {
     if (!userIds.length) return [];
 
     const statsPromises = userIds.map(fetchSingleUserStats);
     const results = await Promise.all(statsPromises);
-    return sort(results.filter((result): result is WritingStats => result !== null));
+    return sort(results.filter((result): result is WritingStats => result !== null), currentUserId);
 }
 
-function sort(writingStats: WritingStats[]): WritingStats[] {
+function sort(writingStats: WritingStats[], currentUserId?: string): WritingStats[] {
     return writingStats.sort((a, b) => {
+        // Current user always comes first
+        if (currentUserId) {
+            if (a.user.id === currentUserId && b.user.id !== currentUserId) {
+                return -1;
+            }
+            if (b.user.id === currentUserId && a.user.id !== currentUserId) {
+                return 1;
+            }
+        }
+
+        // Apply existing sorting logic for all other cases
         if (b.recentStreak !== a.recentStreak) {
             return b.recentStreak - a.recentStreak;
         }
