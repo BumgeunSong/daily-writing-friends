@@ -2,7 +2,7 @@
 // Use a consistent naming convention; fetchX() → read-only function, createX(), updateX() → write, cacheX() → caching helpers (if used outside)
 // Abstract repetitive Firebase logic into helpers
 
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, collection, getDocs, where, query, Timestamp, writeBatch, orderBy, CollectionReference, Query } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, collection, getDocs, where, query, Timestamp, writeBatch, orderBy, CollectionReference, Query, or } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, storage } from '@/firebase';
 import { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
@@ -40,23 +40,31 @@ export async function deleteUser(uid: string): Promise<void> {
     await deleteDoc(userDocRef);
 }
 
-// 특정 boardIds에 write 권한이 있는 모든 사용자 데이터 가져오기 (최적화됨)
+// 특정 boardIds에 write 권한이 있는 모든 사용자 데이터 가져오기
 export async function fetchUsersWithBoardPermission(boardIds: string[]): Promise<User[]> {
     try {
-        // 모든 사용자를 한 번에 가져온 후 클라이언트에서 필터링
-        const usersSnapshot = await getDocs(collection(firestore, 'users'));
+        if (boardIds.length === 0) return [];
+        
+        // Use OR query for multiple board permissions (Firestore v9+)
+        const conditions = boardIds.map(boardId => 
+            where(`boardPermissions.${boardId}`, '==', 'write')
+        );
+        
+        const q = query(
+            collection(firestore, 'users'),
+            or(...conditions)
+        );
+        
+        const snapshot = await getDocs(q);
         const users: User[] = [];
         
-        usersSnapshot.docs.forEach(doc => {
+        snapshot.docs.forEach(doc => {
             const userData = doc.data() as User;
-            // 해당 boardIds 중 하나라도 write 권한이 있는지 확인
-            const hasWritePermission = boardIds.some(boardId => 
-                userData.boardPermissions?.[boardId] === 'write'
-            );
-            
-            if (hasWritePermission) {
-                users.push(userData);
-            }
+            // Ensure document ID is included
+            users.push({ 
+                ...userData,
+                uid: doc.id // Override with actual document ID
+            });
         });
         
         return users;
