@@ -2,7 +2,7 @@
 // Use a consistent naming convention; fetchX() → read-only function, createX(), updateX() → write, cacheX() → caching helpers (if used outside)
 // Abstract repetitive Firebase logic into helpers
 
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, collection, getDocs, where, query, Timestamp, writeBatch, orderBy, CollectionReference, Query } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, collection, getDocs, where, query, Timestamp, writeBatch, orderBy, CollectionReference, Query, or } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, storage } from '@/firebase';
 import { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
@@ -43,21 +43,31 @@ export async function deleteUser(uid: string): Promise<void> {
 // 특정 boardIds에 write 권한이 있는 모든 사용자 데이터 가져오기
 export async function fetchUsersWithBoardPermission(boardIds: string[]): Promise<User[]> {
     try {
-        const queries = boardIds.map(boardId =>
-            query(
-                collection(firestore, 'users'),
-                where(`boardPermissions.${boardId}`, 'in', ['write'])
-            )
+        if (boardIds.length === 0) return [];
+        
+        // Use OR query for multiple board permissions (Firestore v9+)
+        const conditions = boardIds.map(boardId => 
+            where(`boardPermissions.${boardId}`, '==', 'write')
         );
-        const snapshots = await Promise.all(queries.map(q => getDocs(q)));
-        const userMap = new Map<string, User>();
-        snapshots.forEach(snapshot => {
-            snapshot.docs.forEach(doc => {
-                const userData = doc.data() as User;
-                userMap.set(doc.id, userData);
+        
+        const q = query(
+            collection(firestore, 'users'),
+            or(...conditions)
+        );
+        
+        const snapshot = await getDocs(q);
+        const users: User[] = [];
+        
+        snapshot.docs.forEach(doc => {
+            const userData = doc.data() as User;
+            // Ensure document ID is included
+            users.push({ 
+                ...userData,
+                uid: doc.id // Override with actual document ID
             });
         });
-        return Array.from(userMap.values());
+        
+        return users;
     } catch (error) {
         console.error('Error fetching users with board permission:', error);
         return [];

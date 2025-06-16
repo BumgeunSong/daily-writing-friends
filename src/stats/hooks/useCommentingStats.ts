@@ -15,7 +15,7 @@ export type UserCommentingStats = {
   contributions: CommentingContribution[];
 };
 
-async function fetchMultipleUserCommentingStats(userIds: string[]): Promise<UserCommentingStats[]> {
+async function fetchMultipleUserCommentingStats(userIds: string[], currentUserId?: string): Promise<UserCommentingStats[]> {
   if (!userIds.length) return [];
   const workingDays = getRecentWorkingDays();
   const start = workingDays[0];
@@ -41,13 +41,32 @@ async function fetchMultipleUserCommentingStats(userIds: string[]): Promise<User
     };
   });
   const results = await Promise.all(statsPromises);
-  return results.filter((r): r is UserCommentingStats => r !== null);
+  return sortCommentingStats(results.filter((r): r is UserCommentingStats => r !== null), currentUserId);
 }
 
-export function useCommentingStats(userIds: string[]) {
+function sortCommentingStats(stats: UserCommentingStats[], currentUserId?: string): UserCommentingStats[] {
+  return stats.sort((a, b) => {
+    // Current user always comes first
+    if (currentUserId) {
+      if (a.user.id === currentUserId && b.user.id !== currentUserId) {
+        return -1;
+      }
+      if (b.user.id === currentUserId && a.user.id !== currentUserId) {
+        return 1;
+      }
+    }
+
+    // Sort by total comment count (descending)
+    const aTotal = a.contributions.reduce((sum, c) => sum + c.count, 0);
+    const bTotal = b.contributions.reduce((sum, c) => sum + c.count, 0);
+    return bTotal - aTotal;
+  });
+}
+
+export function useCommentingStats(userIds: string[], currentUserId?: string) {
   return useQuery({
-    queryKey: ['commentingStats', userIds],
-    queryFn: () => fetchMultipleUserCommentingStats(userIds),
+    queryKey: ['commentingStats', userIds, currentUserId],
+    queryFn: () => fetchMultipleUserCommentingStats(userIds, currentUserId),
     enabled: userIds.length > 0,
     staleTime: 1 * 60 * 1000, // 1분
     cacheTime: 30 * 60 * 1000, // 30분
