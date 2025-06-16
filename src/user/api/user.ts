@@ -40,24 +40,26 @@ export async function deleteUser(uid: string): Promise<void> {
     await deleteDoc(userDocRef);
 }
 
-// 특정 boardIds에 write 권한이 있는 모든 사용자 데이터 가져오기
+// 특정 boardIds에 write 권한이 있는 모든 사용자 데이터 가져오기 (최적화됨)
 export async function fetchUsersWithBoardPermission(boardIds: string[]): Promise<User[]> {
     try {
-        const queries = boardIds.map(boardId =>
-            query(
-                collection(firestore, 'users'),
-                where(`boardPermissions.${boardId}`, 'in', ['write'])
-            )
-        );
-        const snapshots = await Promise.all(queries.map(q => getDocs(q)));
-        const userMap = new Map<string, User>();
-        snapshots.forEach(snapshot => {
-            snapshot.docs.forEach(doc => {
-                const userData = doc.data() as User;
-                userMap.set(doc.id, userData);
-            });
+        // 모든 사용자를 한 번에 가져온 후 클라이언트에서 필터링
+        const usersSnapshot = await getDocs(collection(firestore, 'users'));
+        const users: User[] = [];
+        
+        usersSnapshot.docs.forEach(doc => {
+            const userData = doc.data() as User;
+            // 해당 boardIds 중 하나라도 write 권한이 있는지 확인
+            const hasWritePermission = boardIds.some(boardId => 
+                userData.boardPermissions?.[boardId] === 'write'
+            );
+            
+            if (hasWritePermission) {
+                users.push(userData);
+            }
         });
-        return Array.from(userMap.values());
+        
+        return users;
     } catch (error) {
         console.error('Error fetching users with board permission:', error);
         return [];
