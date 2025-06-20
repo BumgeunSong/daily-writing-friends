@@ -5,7 +5,7 @@ import { usePostDelete } from '@/post/hooks/usePostDelete';
 import { fetchPost } from '@/post/utils/postUtils';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Skeleton } from '@/shared/ui/skeleton';
-import { useUserNickname } from '@/user/hooks/useUserNickname';
+import { useUser } from '@/user/hooks/useUser';
 import { PostAdjacentButtons } from './PostAdjacentButtons';
 import { PostBackButton } from './PostBackButton';
 import { PostContent } from './PostContent';
@@ -24,7 +24,9 @@ export default function PostDetailPage() {
     { enabled: !!boardId && !!postId }
   );
 
-  const { nickname: authorNickname } = useUserNickname(post?.authorId ?? null);
+  // PostCard에서 이미 캐시된 author 데이터 활용
+  const { userData: authorData } = useUser(post?.authorId ?? null);
+  const authorNickname = authorData?.nickname;
 
   if (isLoading) return <PostDetailSkeleton />;
   if (error || !post) return <PostDetailError boardId={boardId} />;
