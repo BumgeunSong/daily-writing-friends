@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
-import { fetchUser } from '@/user/api/user';
 import { aggregateCommentingContributions, CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
+import { createUserInfo, getDateRange, fetchUserSafely } from '@/stats/api/stats';
+import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
 
 export type UserCommentingStats = {
   user: {
@@ -17,32 +17,41 @@ export type UserCommentingStats = {
 
 async function fetchMultipleUserCommentingStats(userIds: string[], currentUserId?: string): Promise<UserCommentingStats[]> {
   if (!userIds.length) return [];
+  
   const workingDays = getRecentWorkingDays();
-  const start = workingDays[0];
-  const end = new Date(workingDays[workingDays.length - 1]);
-  end.setHours(23, 59, 59, 999); // 마지막 날의 끝까지 포함
-
-  const statsPromises = userIds.map(async (userId) => {
-    const [user, commentings, replyings] = await Promise.all([
-      fetchUser(userId),
-      fetchUserCommentingsByDateRange(userId, start, end),
-      fetchUserReplyingsByDateRange(userId, start, end),
-    ]);
-    if (!user) return null;
-    return {
-      user: {
-        id: user.uid,
-        nickname: user.nickname || null,
-        realname: user.realName || null,
-        profilePhotoURL: user.profilePhotoURL || null,
-        bio: user.bio || null,
-      },
-      contributions: aggregateCommentingContributions(commentings, replyings, workingDays),
-    };
-  });
+  const dateRange = getDateRange(workingDays);
+  
+  const statsPromises = userIds.map(userId => fetchSingleUserCommentingStats(userId, dateRange, workingDays));
   const results = await Promise.all(statsPromises);
+  
   return sortCommentingStats(results.filter((r): r is UserCommentingStats => r !== null), currentUserId);
 }
+
+
+async function fetchSingleUserCommentingStats(
+  userId: string, 
+  dateRange: { start: Date; end: Date }, 
+  workingDays: Date[]
+): Promise<UserCommentingStats | null> {
+  try {
+    const [user, commentings, replyings] = await Promise.all([
+      fetchUserSafely(userId),
+      fetchUserCommentingsByDateRange(userId, dateRange.start, dateRange.end),
+      fetchUserReplyingsByDateRange(userId, dateRange.start, dateRange.end),
+    ]);
+    
+    if (!user) return null;
+    
+    return {
+      user: createUserInfo(user),
+      contributions: aggregateCommentingContributions(commentings, replyings, workingDays),
+    };
+  } catch (error) {
+    console.error('Error fetching user commenting stats:', error);
+    return null;
+  }
+}
+
 
 function sortCommentingStats(stats: UserCommentingStats[], currentUserId?: string): UserCommentingStats[] {
   return stats.sort((a, b) => {
@@ -57,8 +66,8 @@ function sortCommentingStats(stats: UserCommentingStats[], currentUserId?: strin
     }
 
     // Sort by total comment count (descending)
-    const aTotal = a.contributions.reduce((sum, c) => sum + c.count, 0);
-    const bTotal = b.contributions.reduce((sum, c) => sum + c.count, 0);
+    const aTotal = a.contributions.reduce((sum, c) => sum + (c.countOfCommentAndReplies || 0), 0);
+    const bTotal = b.contributions.reduce((sum, c) => sum + (c.countOfCommentAndReplies || 0), 0);
     return bTotal - aTotal;
   });
 }

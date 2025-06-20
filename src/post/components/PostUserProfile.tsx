@@ -1,15 +1,18 @@
 import { Skeleton } from "@/shared/ui/skeleton";
 import KnownBuddyProfileAccessory from './KnownBuddyProfileAccessory';
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
+import { WritingBadgeComponent } from '@/stats/components/WritingBadgeComponent';
+import { WritingBadge } from '@/stats/model/WritingStats';
 
 interface PostUserProfileProps {
     authorData: any;
     isLoading: boolean;
     isKnownBuddy: boolean;
     onClickProfile: (e: React.MouseEvent) => void;
+    badges?: WritingBadge[];
   }
 
-export const PostUserProfile: React.FC<PostUserProfileProps> = ({ authorData, isLoading, isKnownBuddy, onClickProfile }) => (
+export const PostUserProfile: React.FC<PostUserProfileProps> = ({ authorData, isLoading, isKnownBuddy, onClickProfile, badges }) => (
     <div className="flex items-center">
       {isLoading ? (
         <Skeleton className="size-7 rounded-full" />
@@ -46,16 +49,25 @@ export const PostUserProfile: React.FC<PostUserProfileProps> = ({ authorData, is
         {isLoading ? (
           <Skeleton className="h-4 w-20" />
         ) : (
-          <p
-            className="text-sm font-medium text-foreground/90 cursor-pointer transition-colors duration-150 group-hover/profile:text-primary group-hover/profile:underline min-h-[44px] flex items-center active:text-primary"
-            onClick={onClickProfile}
-            role="button"
-            tabIndex={0}
-            aria-label="작성자 프로필로 이동"
-            onKeyDown={e => handleKeyDown(e, onClickProfile)}
-          >
-            {authorData?.nickname || "알 수 없음"}
-          </p>
+          <div className="flex flex-col gap-1">
+            <p
+              className="text-sm font-medium text-foreground/90 cursor-pointer transition-colors duration-150 group-hover/profile:text-primary group-hover/profile:underline flex items-center active:text-primary"
+              onClick={onClickProfile}
+              role="button"
+              tabIndex={0}
+              aria-label="작성자 프로필로 이동"
+              onKeyDown={e => handleKeyDown(e, onClickProfile)}
+            >
+              {authorData?.nickname || "알 수 없음"}
+            </p>
+            {badges && badges.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {badges.map((badge) => (
+                  <WritingBadgeComponent key={badge.name} badge={badge} />
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

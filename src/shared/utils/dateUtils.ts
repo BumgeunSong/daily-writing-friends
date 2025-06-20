@@ -6,11 +6,11 @@ const HOLIDAYS: Date[] = [
     new Date('2025-01-30T00:00:00Z')
 ];
 
-// functions to get 20 recent working days (return value's length should be 20
-export function getRecentWorkingDays(): Date[] {
+// functions to get recent working days (return value's length should be equal to numberOfDays)
+export function getRecentWorkingDays(numberOfDays: number = 20): Date[] {
     const workingDays: Date[] = [];
     const currentDate = new Date();
-    while (workingDays.length < 20) {
+    while (workingDays.length < numberOfDays) {
         if (isWorkingDay(currentDate)) {
             workingDays.push(new Date(currentDate));
         }
