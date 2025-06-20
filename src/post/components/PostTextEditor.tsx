@@ -176,7 +176,7 @@ export function PostTextEditor({
   } });  
 
   const formats = [
-    'bold', 'underline', 'strike',
+    'bold', 'italic', 'underline', 'strike',
     'blockquote', 'header',
     'list', 'link', 'image'
   ];
@@ -185,7 +185,7 @@ export function PostTextEditor({
     () => ({
       toolbar: {
         container: [
-          ['bold', 'underline', 'strike'],
+          ['bold', 'italic', 'underline', 'strike'],
           ['blockquote'],
           [{ 'header': 1 }, { 'header': 2 }],
           [{ 'list': 'ordered'}, { 'list': 'bullet' }],
