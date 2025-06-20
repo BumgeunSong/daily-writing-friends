@@ -38,12 +38,12 @@ async function fetchPostingData(userId: string): Promise<Posting[]> {
 function createStreakBadge(streak: number): WritingBadge[] {
     if (streak < 2) return [];
     if (streak > 20) return [{
-        name: `연속 20일 이상`,
+        name: `연속 20+일`,
         emoji: '🔥'
     }];
 
     return [{
-        name: `연속 ${streak}일차`,
+        name: `연속 ${streak}일`,
         emoji: '🔥'
     }];
 }
