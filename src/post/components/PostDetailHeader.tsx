@@ -28,7 +28,6 @@ export function PostDetailHeader({
       if (navigator.share) {
         navigator.share({
           title: post.title,
-          text: post.title,
           url: window.location.href,
         });
       } else {
