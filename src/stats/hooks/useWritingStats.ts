@@ -7,8 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { WritingStats, Contribution, WritingBadge } from '@/stats/model/WritingStats';
 import { getDateKey } from '@/stats/utils/streakUtils';
-import { calculateCurrentStreak } from '@/stats/utils/streakUtils';
-import { fetchPostingData, createUserInfo, fetchUserSafely } from '@/stats/api/stats';
+import { fetchPostingDataForContributions, createUserInfo, fetchUserSafely, calculateStreakWithPagination } from '@/stats/api/stats';
 import { User } from '@/user/model/User';
 import { Posting } from '@/post/model/Posting';
 
@@ -62,8 +61,13 @@ async function fetchSingleUserStats(userId: string): Promise<WritingStats | null
         const userData = await fetchUserSafely(userId);
         if (!userData) return null;
 
-        const postings = await fetchPostingData(userId);
-        return calculateWritingStats(userData, postings);
+        // Fetch data separately for different purposes
+        const [contributionPostings, streak] = await Promise.all([
+            fetchPostingDataForContributions(userId, 20), // Only 20 days for contributions
+            calculateStreakWithPagination(userId) // Paginated streak calculation
+        ]);
+
+        return calculateWritingStats(userData, contributionPostings, streak);
     } catch (error) {
         return null;
     }
@@ -103,10 +107,9 @@ function createStreakBadge(streak: number): WritingBadge[] {
     }];
 }
 
-function calculateWritingStats(user: User, postings: Posting[]): WritingStats {
-    const workingDays = getRecentWorkingDays();
-    const contributions = createContributions(postings, workingDays);
-    const streak = calculateCurrentStreak(postings);
+function calculateWritingStats(user: User, contributionPostings: Posting[], streak: number): WritingStats {
+    const workingDays = getRecentWorkingDays(20); // Only 20 days for contributions
+    const contributions = createContributions(contributionPostings, workingDays);
     const badges = createStreakBadge(streak);
 
     return {

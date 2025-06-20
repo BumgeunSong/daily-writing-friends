@@ -1,4 +1,4 @@
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit, startAfter, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { Posting } from '@/post/model/Posting';
 import { mapDocumentToPosting } from '@/shared/utils/postingUtils';
@@ -54,6 +54,96 @@ export function getDateRange(workingDays: Date[]): { start: Date; end: Date } {
     const end = new Date(workingDays[workingDays.length - 1]);
     end.setHours(23, 59, 59, 999); // Include end of last day
     return { start, end };
+}
+
+/**
+ * Fetches posting data with pagination for streak calculation
+ */
+export async function fetchPostingDataWithPagination(
+    userId: string, 
+    pageSize: number, 
+    lastDoc?: QueryDocumentSnapshot<DocumentData>
+): Promise<{ postings: Posting[], lastDoc?: QueryDocumentSnapshot<DocumentData> }> {
+    const postingsRef = collection(firestore, 'users', userId, 'postings');
+    let q = query(postingsRef, orderBy('createdAt', 'desc'), limit(pageSize));
+    
+    if (lastDoc) {
+        q = query(postingsRef, orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(pageSize));
+    }
+    
+    const querySnapshot = await getDocs(q);
+    const postings = querySnapshot.docs.map(doc => mapDocumentToPosting(doc));
+    
+    return {
+        postings,
+        lastDoc: querySnapshot.docs[querySnapshot.docs.length - 1]
+    };
+}
+
+/**
+ * Fetches posting data for contributions (limited to recent working days)
+ */
+export async function fetchPostingDataForContributions(userId: string, numberOfDays: number = 20): Promise<Posting[]> {
+    const workingDays = getRecentWorkingDays(numberOfDays);
+    const dateRange = getDateRange(workingDays);
+    
+    // For contributions, we still fetch all postings and filter by date range
+    // This ensures we get accurate contribution data for the specific time period
+    const postingsRef = collection(firestore, 'users', userId, 'postings');
+    const q = query(postingsRef, orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    
+    const allPostings = querySnapshot.docs.map(doc => mapDocumentToPosting(doc));
+    
+    // Filter postings to only include those within the date range
+    return allPostings.filter(posting => {
+        const postingDate = posting.createdAt.toDate();
+        return postingDate >= dateRange.start && postingDate <= dateRange.end;
+    });
+}
+
+/**
+ * Calculates current streak with optimized pagination
+ * Fetches posting data on-demand starting with 10 working days worth, extending as needed
+ */
+export async function calculateStreakWithPagination(userId: string): Promise<number> {
+    const initialPageSize = 20; // Start with more postings since we need to account for non-working days
+    let currentPageSize = initialPageSize;
+    let allPostings: Posting[] = [];
+    let lastDoc: QueryDocumentSnapshot<DocumentData> | undefined;
+    let shouldContinue = true;
+    let previousStreak = 0;
+    
+    while (shouldContinue) {
+        const { postings, lastDoc: newLastDoc } = await fetchPostingDataWithPagination(
+            userId, 
+            currentPageSize, 
+            lastDoc
+        );
+        
+        allPostings = [...allPostings, ...postings];
+        lastDoc = newLastDoc;
+        
+        // Calculate streak with current data
+        const { calculateCurrentStreak } = await import('@/stats/utils/streakUtils');
+        const currentStreak = calculateCurrentStreak(allPostings);
+        
+        // Decision logic:
+        // - If streak hasn't increased from previous iteration, we have enough data
+        // - If no more documents available, stop
+        // - If fetched fewer posts than requested, we've reached the end
+        if (currentStreak === previousStreak || !lastDoc || postings.length < currentPageSize) {
+            shouldContinue = false;
+        } else {
+            // The streak increased, so we might need more data
+            previousStreak = currentStreak;
+            // Increase page size for next iteration (but be more conservative)
+            currentPageSize = Math.min(currentPageSize + 20, 100); // Cap at 100
+        }
+    }
+    
+    const { calculateCurrentStreak } = await import('@/stats/utils/streakUtils');
+    return calculateCurrentStreak(allPostings);
 }
 
 /**
