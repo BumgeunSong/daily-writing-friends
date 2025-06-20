@@ -1,12 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { firestore } from '@/firebase';
-import { Posting } from '@/post/model/Posting';
-import { mapDocumentToPosting } from '@/shared/utils/postingUtils';
 import { WritingBadge } from '@/stats/model/WritingStats';
 import { calculateCurrentStreak } from '@/stats/utils/streakUtils';
-import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
-import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
+import { fetchPostingData, fetchCommentingData } from '@/stats/api/stats';
 
 export function usePostProfileBadges(userId: string) {
     return useQuery({
@@ -22,7 +17,7 @@ async function fetchUserBadges(userId: string): Promise<WritingBadge[]> {
     try {
         const [postings, commentingData] = await Promise.all([
             fetchPostingData(userId),
-            fetchCommentingData(userId)
+            fetchCommentingData(userId, 20)
         ]);
         
         const postingStreak = calculateCurrentStreak(postings);
@@ -36,27 +31,6 @@ async function fetchUserBadges(userId: string): Promise<WritingBadge[]> {
     }
 }
 
-async function fetchPostingData(userId: string): Promise<Posting[]> {
-    const postingsRef = collection(firestore, 'users', userId, 'postings');
-    const q = query(postingsRef, orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
-    
-    return querySnapshot.docs.map(doc => mapDocumentToPosting(doc));
-}
-
-async function fetchCommentingData(userId: string) {
-    const workingDays = getRecentWorkingDays();
-    const start = workingDays[0];
-    const end = new Date(workingDays[workingDays.length - 1]);
-    end.setHours(23, 59, 59, 999);
-
-    const [commentings, replyings] = await Promise.all([
-        fetchUserCommentingsByDateRange(userId, start, end),
-        fetchUserReplyingsByDateRange(userId, start, end)
-    ]);
-
-    return { commentings, replyings };
-}
 
 function createStreakBadge(streak: number): WritingBadge[] {
     if (streak < 2) return [];

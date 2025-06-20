@@ -4,16 +4,13 @@
 // 3. return stats
 
 import { useQuery } from '@tanstack/react-query';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { firestore } from '@/firebase';
-import { Posting } from '@/post/model/Posting';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
-import { mapDocumentToPosting } from '@/shared/utils/postingUtils';
 import { WritingStats, Contribution, WritingBadge } from '@/stats/model/WritingStats';
 import { getDateKey } from '@/stats/utils/streakUtils';
 import { calculateCurrentStreak } from '@/stats/utils/streakUtils';
-import { fetchUser } from '@/user/api/user';
+import { fetchPostingData, createUserInfo, fetchUserSafely } from '@/stats/api/stats';
 import { User } from '@/user/model/User';
+import { Posting } from '@/post/model/Posting';
 
 export function useWritingStats(userIds: string[], currentUserId?: string) {
     return useQuery({
@@ -62,7 +59,7 @@ function sort(writingStats: WritingStats[], currentUserId?: string): WritingStat
 
 async function fetchSingleUserStats(userId: string): Promise<WritingStats | null> {
     try {
-        const userData = await fetchUser(userId);
+        const userData = await fetchUserSafely(userId);
         if (!userData) return null;
 
         const postings = await fetchPostingData(userId);
@@ -72,13 +69,6 @@ async function fetchSingleUserStats(userId: string): Promise<WritingStats | null
     }
 }
 
-async function fetchPostingData(userId: string): Promise<Posting[]> {
-    const postingsRef = collection(firestore, 'users', userId, 'postings');
-    const q = query(postingsRef, orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
-    
-    return querySnapshot.docs.map(doc => mapDocumentToPosting(doc));
-}
 
 
 function createContributions(postings: Posting[], workingDays: Date[]): Contribution[] {
@@ -99,15 +89,6 @@ function createContributions(postings: Posting[], workingDays: Date[]): Contribu
     }));
 }
 
-function createUserInfo(user: User) {
-    return {
-        id: user.uid,
-        nickname: user.nickname || null,
-        realname: user.realName || null,
-        profilePhotoURL: user.profilePhotoURL || null,
-        bio: user.bio || null
-    };
-}
 
 function createStreakBadge(streak: number): WritingBadge[] {
     if (streak < 2) return [];

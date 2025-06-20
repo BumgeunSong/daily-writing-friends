@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
-import { fetchUser } from '@/user/api/user';
 import { aggregateCommentingContributions, CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
+import { createUserInfo, getDateRange, fetchUserSafely } from '@/stats/api/stats';
+import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
 
 export type UserCommentingStats = {
   user: {
@@ -27,12 +27,6 @@ async function fetchMultipleUserCommentingStats(userIds: string[], currentUserId
   return sortCommentingStats(results.filter((r): r is UserCommentingStats => r !== null), currentUserId);
 }
 
-function getDateRange(workingDays: Date[]): { start: Date; end: Date } {
-  const start = workingDays[0];
-  const end = new Date(workingDays[workingDays.length - 1]);
-  end.setHours(23, 59, 59, 999); // 마지막 날의 끝까지 포함
-  return { start, end };
-}
 
 async function fetchSingleUserCommentingStats(
   userId: string, 
@@ -41,7 +35,7 @@ async function fetchSingleUserCommentingStats(
 ): Promise<UserCommentingStats | null> {
   try {
     const [user, commentings, replyings] = await Promise.all([
-      fetchUser(userId),
+      fetchUserSafely(userId),
       fetchUserCommentingsByDateRange(userId, dateRange.start, dateRange.end),
       fetchUserReplyingsByDateRange(userId, dateRange.start, dateRange.end),
     ]);
@@ -58,15 +52,6 @@ async function fetchSingleUserCommentingStats(
   }
 }
 
-function createUserInfo(user: any) {
-  return {
-    id: user.uid,
-    nickname: user.nickname || null,
-    realname: user.realName || null,
-    profilePhotoURL: user.profilePhotoURL || null,
-    bio: user.bio || null,
-  };
-}
 
 function sortCommentingStats(stats: UserCommentingStats[], currentUserId?: string): UserCommentingStats[] {
   return stats.sort((a, b) => {
