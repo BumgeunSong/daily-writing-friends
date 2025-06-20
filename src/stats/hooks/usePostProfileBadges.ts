@@ -8,9 +8,9 @@ import { calculateCurrentStreak } from '@/stats/utils/streakUtils';
 import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 
-export function useWritingBadges(userId: string) {
+export function usePostProfileBadges(userId: string) {
     return useQuery({
-        queryKey: ['writingBadges', userId],
+        queryKey: ['postProfileBadges', userId],
         queryFn: () => fetchUserBadges(userId),
         enabled: !!userId,
         staleTime: 2 * 60 * 1000, // 2분 동안 데이터를 'fresh'하게 유지
