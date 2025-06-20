@@ -48,10 +48,17 @@ export function useCompletionMessage(): CompletionMessageResult {
   let highlight: CompletionHighlight = { keywords: [], color: "" };
   let iconType: "trophy" | "sparkles" = "trophy";
 
-  if (streak > 3) {
-    titleMessage = `연속 글쓰기 ${streak}일`;
-    contentMessage = `꾸준하게 글쓰는 모습 멋있어요!`;
-    highlight = { keywords: [`${streak}일`], color: "yellow" };
+  const streakToBe = streak + 1
+  const streakMessages = {
+    2: "이틀 연속! 내일도 함께 써봐요.",
+    3: "와! 벌써 3일 연속이네요. 대단해요!",
+    default: "꾸준하게 글쓰는 모습 멋있어요!"
+  } as const;
+
+  if (streakToBe >= 1) {
+    titleMessage = `연속 글쓰기 ${streakToBe}일`;
+    contentMessage = streakMessages[streakToBe as keyof typeof streakMessages] || streakMessages.default;
+    highlight = { keywords: [`${streakToBe}일`], color: "yellow" };
     iconType = "trophy";
   } else {
     // 올리고 나면 하나 늘어나므로 +1을 해준다
