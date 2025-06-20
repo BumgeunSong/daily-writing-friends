@@ -113,13 +113,58 @@ const convertBulletListToUl = (html: string): string => {
   return tempDiv.innerHTML;
 };
 
+/**
+ * ">" 기호로 시작하는 라인들을 HTML blockquote로 변환
+ * 
+ * @param content - 변환할 텍스트 콘텐츠
+ * @returns blockquote가 적용된 HTML 문자열
+ */
+const convertQuotesToBlockquotes = (content: string): string => {
+  const lines = content.split('\n');
+  const result: string[] = [];
+  let quoteLines: string[] = [];
+  
+  const flushQuoteLines = () => {
+    if (quoteLines.length > 0) {
+      const quotedContent = quoteLines
+        .map(line => line.replace(/^>\s*/, '')) // ">" 및 공백 제거
+        .join('\n');
+      result.push(`<blockquote>${quotedContent}</blockquote>`);
+      quoteLines = [];
+    }
+  };
+  
+  lines.forEach((line) => {
+    if (line.trim().startsWith('>')) {
+      quoteLines.push(line);
+    } else {
+      flushQuoteLines();
+      // blockquote 직후 텍스트인 경우 줄바꿈 제거해서 댓글이 불필요하게 길어지지 않게 함 
+      if (result.length > 0 && result[result.length - 1].endsWith('</blockquote>') && line.trim() !== '') {
+        result[result.length - 1] += line;
+      } else {
+        result.push(line);
+      }
+    }
+  });
+  
+  // 마지막에 남은 인용문 처리
+  flushQuoteLines();
+  
+  return result.join('\n');
+};
+
 // 댓글/답글용 DOMPurify 설정 (게시글과 동일하게 적용)
 const sanitizeCommentContent = (content: string): string => {
-  const sanitized = DOMPurify.sanitize(convertUrlsToLinks(content), {
+  // 1. 인용문 변환 적용
+  const contentWithQuotes = convertQuotesToBlockquotes(content);
+  
+  // 2. URL을 링크로 변환하고 DOMPurify로 정제
+  const sanitized = DOMPurify.sanitize(convertUrlsToLinks(contentWithQuotes), {
     USE_PROFILES: { html: true }
   });
   
-  // 댓글에도 글머리 기호 목록 변환 적용
+  // 3. 댓글에도 글머리 기호 목록 변환 적용
   return convertQuillBulletListsInHtml(sanitized);
 };
 
