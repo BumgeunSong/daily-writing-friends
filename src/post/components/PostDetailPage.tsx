@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import Comments from '@/comment/components/Comments';
@@ -25,6 +26,11 @@ export default function PostDetailPage() {
   );
 
   const { nickname: authorNickname } = useUserNickname(post?.authorId ?? null);
+
+  // 게시글 상세 페이지는 항상 맨 위부터 시작
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [postId]);
 
   if (isLoading) return <PostDetailSkeleton />;
   if (error || !post) return <PostDetailError boardId={boardId} />;
