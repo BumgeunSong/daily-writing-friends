@@ -6,6 +6,7 @@ import { getContentPreview } from "@/post/utils/contentUtils"
 import { Badge } from "@/shared/ui/badge"
 import { Card, CardContent, CardFooter, CardHeader } from "@/shared/ui/card"
 import { useUser } from "@/user/hooks/useUser"
+import { useWritingBadges } from "@/stats/hooks/useWritingBadges"
 import { PostUserProfile } from "./PostUserProfile"
 import type React from "react"
 
@@ -25,6 +26,7 @@ function handleKeyDown(e: React.KeyboardEvent, onClick: (e: any) => void) {
 
 const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, isKnownBuddy }) => {
   const { userData: authorData, isLoading: isAuthorLoading } = useUser(post.authorId)
+  const { data: badges } = useWritingBadges(post.authorId)
   const isPrivate = post.visibility === PostVisibility.PRIVATE
   const contentPreview = !isPrivate ? getContentPreview(post.content) : null
 
@@ -48,6 +50,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, isKn
             isLoading={isAuthorLoading}
             isKnownBuddy={isKnownBuddy}
             onClickProfile={handleProfileClick}
+            badges={badges}
           />
         </div>
         <h2 className="flex items-center text-lg font-semibold text-foreground leading-tight md:text-xl">
