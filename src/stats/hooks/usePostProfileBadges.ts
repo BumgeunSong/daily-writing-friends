@@ -13,7 +13,7 @@ export function usePostProfileBadges(userId: string) {
         queryKey: ['postProfileBadges', userId],
         queryFn: () => fetchUserBadges(userId),
         enabled: !!userId,
-        staleTime: 2 * 60 * 1000, // 2분 동안 데이터를 'fresh'하게 유지
+        staleTime: 5 * 60 * 1000, // 5분 동안 데이터를 'fresh'하게 유지
         cacheTime: 10 * 60 * 1000, // 10분 동안 캐시 유지
     });
 }
@@ -67,28 +67,39 @@ function createStreakBadge(streak: number): WritingBadge[] {
     }];
 }
 
-function createCommentingBadges(commentingData: { commentings: any[], replyings: any[] }): WritingBadge[] {
-    // TODO: Implement commenting badge creation logic
-    // - Calculate total comments + replies count
-    // - Create badges based on activity level (e.g., 활발한 댓글러, 소통왕 등)
-    // - Consider recent activity patterns
-    // - Maybe add badges for helpful comments or community engagement
-    
-    const { commentings, replyings } = commentingData;
-    const totalActivity = commentings.length + replyings.length;
-    
-    // Placeholder logic - replace with actual badge criteria
-    if (totalActivity >= 50) {
-        return [{
-            name: '소통왕',
-            emoji: '💬'
-        }];
-    } else if (totalActivity >= 20) {
-        return [{
-            name: '활발한 댓글러',
-            emoji: '🗨️'
-        }];
+function calculateCommentTemperature(commentCount: number): number {
+    if (commentCount === 0) {
+        return 0.0;
     }
     
-    return [];
+    if (commentCount >= 1 && commentCount <= 10) {
+        return 36.5;
+    }
+    
+    // Calculate temperature for comments > 10
+    // Each block of 10 comments (11-20, 21-30, etc.) adds 0.5℃
+    const additionalBlocks = Math.floor((commentCount - 1) / 10);
+    const temperature = 36.5 + (additionalBlocks * 0.5);
+    
+    // Cap at 100.0
+    const cappedTemperature = Math.min(temperature, 100.0);
+    
+    return Math.round(cappedTemperature * 10) / 10; // Round to 1 decimal place
+}
+
+function createCommentingBadges(commentingData: { commentings: any[], replyings: any[] }): WritingBadge[] {
+    const { commentings, replyings } = commentingData;
+    const totalComments = commentings.length + replyings.length;
+    const temperature = calculateCommentTemperature(totalComments);
+    
+    const badges: WritingBadge[] = [];
+    
+    if (temperature > 0) {
+        badges.push({
+            name: `댓글 온도 ${temperature}℃`,
+            emoji: '🌡️'
+        });
+    }
+    
+    return badges;
 }
