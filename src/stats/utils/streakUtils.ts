@@ -93,6 +93,39 @@ export function calculateCurrentStreak(postings: Posting[]): number {
     return streakDays.length
 }
 
+/**
+ * Determines if more posting data is needed for accurate streak calculation
+ * This is a pure function that makes pagination decisions based on streak patterns
+ */
+export function shouldFetchMoreForStreak(
+    currentStreak: number,
+    previousStreak: number,
+    hasMoreData: boolean,
+    fetchedCount: number,
+    requestedCount: number
+): boolean {
+    // If no more data is available, stop
+    if (!hasMoreData || fetchedCount < requestedCount) {
+        return false;
+    }
+    
+    // If streak hasn't increased from previous iteration, we have enough data
+    if (currentStreak === previousStreak) {
+        return false;
+    }
+    
+    // The streak increased, so we might need more data
+    return true;
+}
+
+/**
+ * Calculates the next page size for streak pagination
+ * Gradually increases page size but caps it to prevent excessive fetching
+ */
+export function getNextPageSize(currentPageSize: number, maxPageSize: number = 100): number {
+    return Math.min(currentPageSize + 20, maxPageSize);
+}
+
 // 현재는 KST로 고정하지만 나중에는 해당 User의 timezone을 반환하도록 해야 함
 export function getUserTimeZone(): string {
     return 'Asia/Seoul';

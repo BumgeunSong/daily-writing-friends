@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { WritingBadge } from '@/stats/model/WritingStats';
-import { calculateCurrentStreak } from '@/stats/utils/streakUtils';
-import { fetchPostingData, fetchCommentingData } from '@/stats/api/stats';
+import { fetchCommentingData, calculateStreakWithPagination } from '@/stats/api/stats';
 
 export function usePostProfileBadges(userId: string) {
     return useQuery({
@@ -15,12 +14,11 @@ export function usePostProfileBadges(userId: string) {
 
 async function fetchUserBadges(userId: string): Promise<WritingBadge[]> {
     try {
-        const [postings, commentingData] = await Promise.all([
-            fetchPostingData(userId),
+        const [postingStreak, commentingData] = await Promise.all([
+            calculateStreakWithPagination(userId),
             fetchCommentingData(userId, 20)
         ]);
         
-        const postingStreak = calculateCurrentStreak(postings);
         const postingBadges = createStreakBadge(postingStreak);
         const commentingBadges = createCommentingBadges(commentingData);
         
