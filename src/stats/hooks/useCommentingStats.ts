@@ -17,31 +17,55 @@ export type UserCommentingStats = {
 
 async function fetchMultipleUserCommentingStats(userIds: string[], currentUserId?: string): Promise<UserCommentingStats[]> {
   if (!userIds.length) return [];
+  
   const workingDays = getRecentWorkingDays();
+  const dateRange = getDateRange(workingDays);
+  
+  const statsPromises = userIds.map(userId => fetchSingleUserCommentingStats(userId, dateRange, workingDays));
+  const results = await Promise.all(statsPromises);
+  
+  return sortCommentingStats(results.filter((r): r is UserCommentingStats => r !== null), currentUserId);
+}
+
+function getDateRange(workingDays: Date[]): { start: Date; end: Date } {
   const start = workingDays[0];
   const end = new Date(workingDays[workingDays.length - 1]);
   end.setHours(23, 59, 59, 999); // 마지막 날의 끝까지 포함
+  return { start, end };
+}
 
-  const statsPromises = userIds.map(async (userId) => {
+async function fetchSingleUserCommentingStats(
+  userId: string, 
+  dateRange: { start: Date; end: Date }, 
+  workingDays: Date[]
+): Promise<UserCommentingStats | null> {
+  try {
     const [user, commentings, replyings] = await Promise.all([
       fetchUser(userId),
-      fetchUserCommentingsByDateRange(userId, start, end),
-      fetchUserReplyingsByDateRange(userId, start, end),
+      fetchUserCommentingsByDateRange(userId, dateRange.start, dateRange.end),
+      fetchUserReplyingsByDateRange(userId, dateRange.start, dateRange.end),
     ]);
+    
     if (!user) return null;
+    
     return {
-      user: {
-        id: user.uid,
-        nickname: user.nickname || null,
-        realname: user.realName || null,
-        profilePhotoURL: user.profilePhotoURL || null,
-        bio: user.bio || null,
-      },
+      user: createUserInfo(user),
       contributions: aggregateCommentingContributions(commentings, replyings, workingDays),
     };
-  });
-  const results = await Promise.all(statsPromises);
-  return sortCommentingStats(results.filter((r): r is UserCommentingStats => r !== null), currentUserId);
+  } catch (error) {
+    console.error('Error fetching user commenting stats:', error);
+    return null;
+  }
+}
+
+function createUserInfo(user: any) {
+  return {
+    id: user.uid,
+    nickname: user.nickname || null,
+    realname: user.realName || null,
+    profilePhotoURL: user.profilePhotoURL || null,
+    bio: user.bio || null,
+  };
 }
 
 function sortCommentingStats(stats: UserCommentingStats[], currentUserId?: string): UserCommentingStats[] {
@@ -57,8 +81,8 @@ function sortCommentingStats(stats: UserCommentingStats[], currentUserId?: strin
     }
 
     // Sort by total comment count (descending)
-    const aTotal = a.contributions.reduce((sum, c) => sum + c.count, 0);
-    const bTotal = b.contributions.reduce((sum, c) => sum + c.count, 0);
+    const aTotal = a.contributions.reduce((sum, c) => sum + (c.countOfCommentAndReplies || 0), 0);
+    const bTotal = b.contributions.reduce((sum, c) => sum + (c.countOfCommentAndReplies || 0), 0);
     return bTotal - aTotal;
   });
 }
