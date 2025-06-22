@@ -5,12 +5,14 @@ import UserPostsList from "@/user/components/UserPostList"
 import UserProfile from "@/user/components/UserProfile"
 import { useAuth } from "@/shared/hooks/useAuth"
 import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
+import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext"
 import { useCallback } from "react"
 import { UserKnownBuddy } from './UserKnownBuddy'
 
 export default function UserPage() {
   const { userId: paramUserId } = useParams()
   const { currentUser } = useAuth()
+  const { value: secretBuddyEnabled } = useRemoteConfig('secret_buddy_enabled')
   const userId = paramUserId || currentUser?.uid
 
   useRegisterTabHandler('User', useCallback(() => window.scrollTo({ top: 0, behavior: 'smooth' }), [userId]));
@@ -30,7 +32,7 @@ export default function UserPage() {
         <div className="mb-2">
           <UserProfile uid={userId} />
           {/* Known Buddy 정보 표시 */}
-          {isMyPage && <UserKnownBuddy />}
+          {isMyPage && secretBuddyEnabled && <UserKnownBuddy />}
         </div>
 
         {/* Posts content */}
