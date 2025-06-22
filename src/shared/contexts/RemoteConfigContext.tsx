@@ -9,7 +9,8 @@ export type RemoteConfigKey =
   | 'user_cache_version'
   | 'free_writing_target_time'
   | 'stats_notice_banner_text'
-  | 'block_user_feature_enabled';
+  | 'block_user_feature_enabled'
+  | 'secret_buddy_enabled';
 
 // 각 key별 타입 정의
 interface RemoteConfigValueTypes {
@@ -19,6 +20,7 @@ interface RemoteConfigValueTypes {
   free_writing_target_time: number;
   stats_notice_banner_text: string;
   block_user_feature_enabled: boolean;
+  secret_buddy_enabled: boolean;
 }
 
 export const REMOTE_CONFIG_DEFAULTS: RemoteConfigValueTypes = {
@@ -28,6 +30,7 @@ export const REMOTE_CONFIG_DEFAULTS: RemoteConfigValueTypes = {
   free_writing_target_time: 300,
   stats_notice_banner_text: '',
   block_user_feature_enabled: false,
+  secret_buddy_enabled: true,
 };
 
 interface RemoteConfigContextValue {
@@ -61,6 +64,7 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
           stats_notice_banner_text: getValue(remoteConfig, 'stats_notice_banner_text').asString() || REMOTE_CONFIG_DEFAULTS.stats_notice_banner_text,
           free_writing_target_time: getValue(remoteConfig, 'free_writing_target_time').asNumber() || REMOTE_CONFIG_DEFAULTS.free_writing_target_time,
           block_user_feature_enabled: getValue(remoteConfig, 'block_user_feature_enabled').asBoolean(),
+          secret_buddy_enabled: getValue(remoteConfig, 'secret_buddy_enabled').asBoolean(),
         });
       })
       .catch((err) => {
