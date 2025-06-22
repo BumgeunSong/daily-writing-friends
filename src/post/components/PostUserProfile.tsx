@@ -1,5 +1,4 @@
 import { Skeleton } from "@/shared/ui/skeleton";
-import KnownBuddyProfileAccessory from './KnownBuddyProfileAccessory';
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import { WritingBadgeComponent } from '@/stats/components/WritingBadgeComponent';
 import { WritingBadge } from '@/stats/model/WritingStats';
@@ -7,30 +6,14 @@ import { WritingBadge } from '@/stats/model/WritingStats';
 interface PostUserProfileProps {
     authorData: any;
     isLoading: boolean;
-    isKnownBuddy: boolean;
     onClickProfile: (e: React.MouseEvent) => void;
     badges?: WritingBadge[];
   }
 
-export const PostUserProfile: React.FC<PostUserProfileProps> = ({ authorData, isLoading, isKnownBuddy, onClickProfile, badges }) => (
+export const PostUserProfile: React.FC<PostUserProfileProps> = ({ authorData, isLoading, onClickProfile, badges }) => (
     <div className="flex items-center">
       {isLoading ? (
         <Skeleton className="size-7 rounded-full" />
-      ) : isKnownBuddy ? (
-        <KnownBuddyProfileAccessory>
-          <ComposedAvatar
-            src={authorData?.profilePhotoURL}
-            alt={authorData?.realName || 'User'}
-            fallback={authorData?.realName?.[0] || 'U'}
-            size={36}
-            className="cursor-pointer transition-all duration-150 group/profile min-w-[44px] min-h-[44px] active:scale-95 active:bg-accent/20"
-            onClick={onClickProfile}
-            role="button"
-            tabIndex={0}
-            aria-label="작성자 프로필로 이동"
-            onKeyDown={e => handleKeyDown(e, onClickProfile)}
-          />
-        </KnownBuddyProfileAccessory>
       ) : (
         <ComposedAvatar
           src={authorData?.profilePhotoURL}
