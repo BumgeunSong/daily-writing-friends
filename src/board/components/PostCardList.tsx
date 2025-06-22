@@ -82,7 +82,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
   }
 
   if (allPosts.length === 0) {
-    return <StatusMessage error errorMessage="글이 하나도 없어요." />
+    return <StatusMessage error errorMessage="아직 글이 없어요." />
   }
 
   return (
