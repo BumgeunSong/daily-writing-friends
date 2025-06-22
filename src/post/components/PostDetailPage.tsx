@@ -29,7 +29,7 @@ export default function PostDetailPage() {
 
   // 게시글 상세 페이지는 항상 맨 위부터 시작
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }, [postId]);
 
   if (isLoading) return <PostDetailSkeleton />;
