@@ -1,5 +1,5 @@
 import React from 'react';
-import { useRouteError, isRouteErrorResponse } from 'react-router-dom';
+import { useRouteError, isRouteErrorResponse, useNavigate } from 'react-router-dom';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -12,6 +12,7 @@ import {
 
 export function PermissionErrorBoundary() {
   const error = useRouteError();
+  const navigate = useNavigate();
   const [open, setOpen] = React.useState(true);
 
   // Check if it's a 403 permission error
@@ -26,7 +27,7 @@ export function PermissionErrorBoundary() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => { setOpen(false); window.history.back(); }}>확인</AlertDialogAction>
+            <AlertDialogAction onClick={() => { setOpen(false); navigate(-1); }}>확인</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -44,7 +45,7 @@ export function PermissionErrorBoundary() {
         }
       </p>
       <button 
-        onClick={() => window.history.back()}
+        onClick={() => navigate(-1)}
         className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
       >
         돌아가기
