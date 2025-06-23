@@ -1,28 +1,24 @@
 import { LoaderFunctionArgs } from 'react-router-dom';
-import { fetchPost } from '@/post/utils/postUtils';
 import { getCurrentUser } from '@/shared/utils/authUtils';
 import { fetchUser } from '@/user/api/user';
 
-export async function postDetailLoader({ params }: LoaderFunctionArgs) {
-  // NOTE: Auth checking is handled by PrivateRoutes component
-  // This loader only runs when user is already authenticated
-  const { boardId, postId } = params;
+export async function boardLoader({ params }: LoaderFunctionArgs) {
+  const { boardId } = params;
   
-  if (!boardId || !postId) {
-    throw new Response('Missing required parameters', { status: 400 });
+  if (!boardId) {
+    throw new Response('Missing board ID', { status: 400 });
   }
 
   try {
-    // Wait for auth to be available, but don't fail if not authenticated
-    // The route guard will handle redirects
+    // Get current user
     const user = await getCurrentUser();
     
     if (!user) {
       // Return empty data instead of throwing, let route guard handle auth
-      return { post: null, boardId, postId };
+      return { boardId };
     }
     
-    // Check board permissions before fetching post
+    // Check board permissions before allowing access
     const userData = await fetchUser(user.uid);
     if (!userData) {
       throw new Response('User data not found', { status: 403 });
@@ -33,13 +29,12 @@ export async function postDetailLoader({ params }: LoaderFunctionArgs) {
       throw new Response('Access denied - insufficient board permissions', { status: 403 });
     }
     
-    const post = await fetchPost(boardId, postId);
-    return { post, boardId, postId };
+    return { boardId };
   } catch (error) {
-    console.error('Failed to fetch post:', error);
+    console.error('Failed to validate board access:', error);
     if (error instanceof Response) {
       throw error; // Re-throw Response errors (permission/auth errors)
     }
-    throw new Response('Post not found', { status: 404 });
+    throw new Response('Board access validation failed', { status: 500 });
   }
 }

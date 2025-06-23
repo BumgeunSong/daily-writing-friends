@@ -11,7 +11,7 @@ import { BottomNavigatorLayout } from '@/shared/components/BottomNavigatorLayout
 // Pages
 import BoardListPage from '@/board/components/BoardListPage';
 import RecentBoard from '@/board/components/RecentBoard';
-import BoardPageWithGuard from '@/board/components/BoardPageWithGuard';
+import BoardPage from '@/board/components/BoardPage';
 import TopicCardCarouselPage from './board/components/TopicCardCarouselPage';
 import PostCreationPage from '@/post/components/PostCreationPage';
 import PostCompletionPage from '@/post/components/PostCompletionPage';
@@ -34,6 +34,7 @@ import LoginPage from '@/login/components/LoginPage';
 
 // Loaders and actions from feature hooks
 import { boardsLoader } from '@/board/hooks/useBoardsLoader';
+import { boardLoader } from '@/board/hooks/useBoardLoader';
 import { postDetailLoader } from '@/post/hooks/usePostDetailLoader';
 import { createPostAction } from '@/post/hooks/useCreatePostAction';
 
@@ -43,6 +44,7 @@ import { RootRedirect } from '@/shared/components/auth/RootRedirect';
 
 // Error boundary
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
+import { PermissionErrorBoundary } from '@/shared/components/PermissionErrorBoundary';
 import StatusMessage from '@/shared/components/StatusMessage';
 
 // Root layout component with router-dependent providers
@@ -95,12 +97,12 @@ const privateRoutesWithNav = {
       children: [
         { path: 'boards', element: <RecentBoard /> },
         { path: 'boards/list', element: <BoardListPage />, loader: boardsLoader },
-        { path: 'board/:boardId', element: <BoardPageWithGuard /> },
+        { path: 'board/:boardId', element: <BoardPage />, loader: boardLoader, errorElement: <PermissionErrorBoundary /> },
         { path: 'create/:boardId', element: <PostCreationPage />, action: createPostAction },
         { path: 'create/:boardId/completion', element: <PostCompletionPage /> },
         { path: 'board/:boardId/topic-cards', element: <TopicCardCarouselPage /> },
-        { path: 'board/:boardId/post/:postId', element: <PostDetailPage />, loader: postDetailLoader },
-        { path: 'board/:boardId/edit/:postId', element: <PostEditPage />, loader: postDetailLoader },
+        { path: 'board/:boardId/post/:postId', element: <PostDetailPage />, loader: postDetailLoader, errorElement: <PermissionErrorBoundary /> },
+        { path: 'board/:boardId/edit/:postId', element: <PostEditPage />, loader: postDetailLoader, errorElement: <PermissionErrorBoundary /> },
         { path: 'notifications', element: <NotificationsPage /> },
         { path: 'notifications/settings', element: <NotificationSettingPage /> },
         { path: 'account/edit/:userId', element: <EditAccountPage /> },
