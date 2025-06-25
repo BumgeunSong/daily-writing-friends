@@ -4,7 +4,7 @@ import { storage } from '@/firebase';
 import { useToast } from '@/shared/hooks/use-toast';
 
 interface UseImageUploadProps {
-    insertImage: (url: string) => boolean;
+    insertImage: (url: string) => void;
 }
 
 export function useImageUpload({ insertImage }: UseImageUploadProps) {
@@ -65,16 +65,7 @@ export function useImageUpload({ insertImage }: UseImageUploadProps) {
         setUploadProgress(90);
 
         // 에디터에 이미지 삽입
-        const insertSuccess = insertImage(downloadURL);
-        
-        if (!insertSuccess) {
-          toast({
-            title: "오류",
-            description: "이미지 삽입에 실패했습니다.",
-            variant: "destructive",
-          });
-          return;
-        }
+        insertImage(downloadURL);
 
         setUploadProgress(100);
         toast({
