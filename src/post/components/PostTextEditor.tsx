@@ -1,5 +1,6 @@
-import { useEffect, useRef, useMemo, useCallback } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import ReactQuill from 'react-quill-new';
+import { useToast } from '@/shared/hooks/use-toast';
 import { Progress } from '@/shared/ui/progress';
 import 'react-quill-new/dist/quill.snow.css';
 import { useImageUpload } from '@/post/hooks/useImageUpload';
@@ -167,25 +168,12 @@ export function PostTextEditor({
   placeholder = '내용을 입력하세요...', 
 }: PostTextEditorProps) {
   const quillRef = useRef<any>(null);
-  const insertImage = useCallback((url: string) => {
+  const { toast } = useToast();
+  const { imageHandler, isUploading, uploadProgress } = useImageUpload({ insertImage: (url: string) => {
     const editor = quillRef.current?.getEditor();
-    if (!editor) {
-      console.warn('Editor not available for image insertion');
-      return false;
-    }
-    
-    try {
-      const range = editor.getSelection(true);
-      const index = range?.index ?? editor.getLength();
-      editor.insertEmbed(index, 'image', url);
-      return true;
-    } catch (error) {
-      console.error('Failed to insert image:', error);
-      return false;
-    }
-  }, []);
-
-  const { imageHandler, isUploading, uploadProgress } = useImageUpload({ insertImage });
+    const range = editor?.getSelection(true);
+    editor?.insertEmbed(range?.index, 'image', url);
+  } });  
 
   const formats = [
     'bold', 'italic', 'underline', 'strike',
@@ -208,7 +196,7 @@ export function PostTextEditor({
         },
       },
     }),
-    [imageHandler]
+    [toast]
   );
 
   useEffect(() => {
