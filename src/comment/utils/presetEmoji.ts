@@ -16,10 +16,10 @@ export const presetEmojis = [
           skins: [{ src: "🥰" }],
         },
         {
-          id: "joy",
-          name: "Face with Tears of Joy",
-          keywords: ["joy", "tears"],
-          skins: [{ src: "😂" }],
+          id: "touching",
+          name: "Face Holding Back Tears",
+          keywords: ["touching", "cry"],
+          skins: [{ src: "🥹" }],
         },
         {
           id: "rofl",
