@@ -1,7 +1,7 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useState } from 'react';
 import { storage } from '@/firebase';
-import { useToast } from '@/shared/hooks/use-toast';
+import { toast } from 'sonner';
 import heic2any from 'heic2any';
 
 interface UseImageUploadProps {
@@ -11,7 +11,6 @@ interface UseImageUploadProps {
 export function useImageUpload({ insertImage }: UseImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const { toast } = useToast();
 
   const imageHandler = async () => {
     console.log("🚀 ~ imageHandler ~ imageHandler:", imageHandler);
@@ -33,10 +32,8 @@ export function useImageUpload({ insertImage }: UseImageUploadProps) {
         // 파일 크기 체크 (5MB)
         if (file.size > 5 * 1024 * 1024) {
           console.log("File size exceeds 5MB limit.");
-          toast({
-            title: "오류",
-            description: "파일 크기는 5MB를 초과할 수 없습니다.",
-            variant: "destructive",
+          toast.error("파일 크기는 5MB를 초과할 수 없습니다.", {
+            position: 'bottom-center',
           });
           return;
         }
@@ -61,10 +58,8 @@ export function useImageUpload({ insertImage }: UseImageUploadProps) {
             console.log("HEIC conversion completed.");
           } catch (conversionError) {
             console.error('HEIC conversion failed:', conversionError);
-            toast({
-              title: "오류",
-              description: "HEIC 파일 변환에 실패했습니다.",
-              variant: "destructive",
+            toast.error("HEIC 파일 변환에 실패했습니다.", {
+              position: 'bottom-center',
             });
             return;
           }
@@ -73,10 +68,8 @@ export function useImageUpload({ insertImage }: UseImageUploadProps) {
         // 파일 타입 체크 (변환된 파일 기준)
         if (!processedFile.type.startsWith('image/')) {
           console.log("File type is not an image.");
-          toast({
-            title: "오류",
-            description: "이미지 파일만 업로드할 수 있습니다.",
-            variant: "destructive",
+          toast.error("이미지 파일만 업로드할 수 있습니다.", {
+            position: 'bottom-center',
           });
           return;
         }
@@ -107,17 +100,14 @@ export function useImageUpload({ insertImage }: UseImageUploadProps) {
         insertImage(downloadURL);
 
         setUploadProgress(100);
-        toast({
-          title: "성공",
-          description: "이미지가 업로드되었습니다.",
+        toast.success("이미지가 업로드되었습니다.", {
+          position: 'bottom-center',
         });
 
       } catch (error) {
         console.error('Image upload error:', error);
-        toast({
-          title: "오류",
-          description: "이미지 업로드에 실패했습니다.",
-          variant: "destructive",
+        toast.error("이미지 업로드에 실패했습니다.", {
+          position: 'bottom-center',
         });
       } finally {
         // 약간의 딜레이 후 로딩 상태 초기화
