@@ -1,4 +1,6 @@
+import { Star, X, Quote } from "lucide-react"
 import * as React from "react"
+import { Button } from "@/shared/ui/button"
 import {
   Carousel,
   CarouselContent,
@@ -7,8 +9,6 @@ import {
   CarouselNext,
   type CarouselApi,
 } from "@/shared/ui/Carousel"
-import { Star, X, Quote } from "lucide-react"
-import { Button } from "@/shared/ui/button"
 import { TopicCard } from "../../board/model/TopicCard"
 
 interface TopicCardState {
@@ -60,7 +60,7 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps> = ({
     <div className="w-full">
       <div className="relative">
         <Carousel
-          className="w-full max-w-full px-2 sm:px-0 rounded-2xl overflow-visible"
+          className="w-full max-w-full overflow-visible rounded-2xl px-2 sm:px-0"
           opts={{ loop: true }}
           setApi={handleSetApi}
         >
@@ -70,47 +70,47 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps> = ({
               return (
                 <CarouselItem
                   key={card.id}
-                  className="basis-full max-w-full flex-shrink-0 flex-grow-0 flex items-center justify-center overflow-visible"
+                  className="flex max-w-full shrink-0 grow-0 basis-full items-center justify-center overflow-visible"
                 >
-                  <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl flex flex-col justify-between items-center h-[420px] sm:h-[480px] min-h-[420px] sm:min-h-[480px] w-full max-w-[360px] mx-auto p-6 transition-shadow duration-200 mx-4 sm:mx-0">
+                  <div className="relative mx-auto flex h-[420px] min-h-[420px] w-full max-w-[360px] flex-col items-center justify-between rounded-2xl border border-zinc-200 bg-white p-6 transition-shadow duration-200 dark:border-zinc-800 dark:bg-zinc-900 sm:mx-0 sm:h-[480px] sm:min-h-[480px]">
                     {/* 액션 버튼 그룹 */}
-                    <div className="absolute top-3 right-3 flex gap-2 z-10">
+                    <div className="absolute right-3 top-3 z-10 flex gap-2">
                       <button
                         type="button"
                         aria-label={state.bookmarked ? "북마크 해제" : "북마크"}
-                        className="w-11 h-11 flex items-center justify-center rounded-full bg-white/90 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow hover:bg-zinc-100 dark:hover:bg-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-400 transition"
+                        className="flex size-11 items-center justify-center rounded-full border border-zinc-200 bg-white/90 shadow transition hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700"
                         onClick={() => onBookmarkClick?.(card.id)}
                         tabIndex={0}
                         aria-pressed={!!state.bookmarked}
                         disabled={isBookmarking}
                       >
                         {state.bookmarked ? (
-                          <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
+                          <Star className="size-6 fill-yellow-400 text-yellow-400" />
                         ) : (
-                          <Star className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
+                          <Star className="size-6 text-zinc-400 dark:text-zinc-500" />
                         )}
                       </button>
                       <button
                         type="button"
                         aria-label="숨김"
-                        className="w-11 h-11 flex items-center justify-center rounded-full bg-white/90 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow hover:bg-zinc-100 dark:hover:bg-zinc-700 focus-visible:ring-2 focus-visible:ring-destructive/60 transition"
+                        className="flex size-11 items-center justify-center rounded-full border border-zinc-200 bg-white/90 shadow transition hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-destructive/60 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700"
                         onClick={() => onHideClick?.(card.id)}
                         tabIndex={0}
                         aria-pressed={!!state.deleted}
                         disabled={isHiding}
                       >
-                        <X className="w-6 h-6 text-zinc-400 dark:text-zinc-500" />
+                        <X className="size-6 text-zinc-400 dark:text-zinc-500" />
                       </button>
                     </div>
                     {/* Quote 아이콘 */}
-                    <Quote className="w-8 h-8 text-zinc-300 dark:text-zinc-600 mb-2" />
+                    <Quote className="mb-2 size-8 text-zinc-300 dark:text-zinc-600" />
 
                     {/* 타이틀/설명 */}
-                    <div className="flex-1 flex flex-col items-center justify-center w-full">
-                      <h3 className="text-lg sm:text-xl font-bold text-center text-zinc-900 dark:text-white mb-2 break-words">
+                    <div className="flex w-full flex-1 flex-col items-center justify-center">
+                      <h3 className="mb-2 break-words text-center text-lg font-bold text-zinc-900 dark:text-white sm:text-xl">
                         {card.title}
                       </h3>
-                      <p className="text-sm sm:text-base text-zinc-500 dark:text-zinc-400 text-center break-words">
+                      <p className="break-words text-center text-sm text-zinc-500 dark:text-zinc-400 sm:text-base">
                         {card.description}
                       </p>
                     </div>
@@ -119,7 +119,7 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps> = ({
                     <Button
                       variant="default"
                       size="lg"
-                      className="w-full mt-6"
+                      className="mt-6 w-full"
                       aria-label="글쓰기 시작"
                       onClick={() => onStartWriting?.(card)}
                     >
@@ -138,16 +138,16 @@ export const TopicCardCarousel: React.FC<TopicCardCarouselProps> = ({
         </Carousel>
         {/* Dot Indicator */}
         {topicCards.length > 1 && (
-          <div className="absolute left-0 right-0 flex justify-center gap-2 mt-4 sm:mt-6 bottom-[-32px] sm:bottom-[-40px] z-20 pointer-events-none select-none">
+          <div className="pointer-events-none absolute inset-x-0 bottom-[-32px] z-20 mt-4 flex select-none justify-center gap-2 sm:bottom-[-40px] sm:mt-6">
             {topicCards.map((_, idx) => (
               <button
                 key={idx}
                 type="button"
                 aria-label={`슬라이드 ${idx + 1}로 이동`}
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-200 border border-zinc-300 dark:border-zinc-700 focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+                className={`size-2.5 rounded-full border border-zinc-300 transition-all duration-200 focus-visible:ring-2 focus-visible:ring-zinc-400 dark:border-zinc-700 ${
                   selectedIndex === idx
-                    ? "bg-zinc-900 dark:bg-white scale-110 shadow"
-                    : "bg-zinc-200 dark:bg-zinc-700 opacity-60"
+                    ? "scale-110 bg-zinc-900 shadow dark:bg-white"
+                    : "bg-zinc-200 opacity-60 dark:bg-zinc-700"
                 } pointer-events-auto`}
                 onClick={() => handleDotClick(idx)}
                 tabIndex={0}

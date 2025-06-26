@@ -1,16 +1,16 @@
-import { useParams, Form, useNavigation, useActionData, useSearchParams } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/shared/hooks/useAuth';
+import { useParams, Form, useNavigation, useActionData, useSearchParams } from 'react-router-dom';
+import { DraftsDrawer } from '@/draft/components/DraftsDrawer';
+import { DraftStatusIndicator } from '@/draft/components/DraftStatusIndicator';
+import { useAutoSaveDrafts } from '@/draft/hooks/useAutoSaveDrafts';
 import { useDraftLoader } from '@/draft/hooks/useDraftLoader';
 import { usePostEditor } from '@/post/hooks/usePostEditor';
-import { useAutoSaveDrafts } from '@/draft/hooks/useAutoSaveDrafts';
-import { DraftStatusIndicator } from '@/draft/components/DraftStatusIndicator';
-import { DraftsDrawer } from '@/draft/components/DraftsDrawer';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/shared/ui/alert-dialog';
+import { Button } from '@/shared/ui/button';
 import { PostTextEditor } from './PostTextEditor';
 import { PostTitleEditor } from './PostTitleEditor';
-import { Button } from '@/shared/ui/button';
-import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/shared/ui/alert-dialog';
-import { Loader2 } from 'lucide-react';
 
 // Type for action data (errors, success messages, etc.)
 interface ActionData {

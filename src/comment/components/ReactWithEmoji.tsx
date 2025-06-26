@@ -4,8 +4,8 @@ import { Loader2, SmilePlus } from "lucide-react"
 import { useState } from "react"
 import { Button } from "@/shared/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover"
-import type React from "react"
 import PresetEmojiPicker from "./PresetEmojiPicker"
+import type React from "react"
 
 interface ReactWithEmojiProps {
   onCreate: (emoji: string) => Promise<void>

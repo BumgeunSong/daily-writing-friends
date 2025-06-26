@@ -27,7 +27,7 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
   return (
     <Link to={getNotificationLink(notification)}>
       <div
-        className={`flex cursor-pointer items-start gap-3 border-b border-border/30 px-3 md:px-4 py-3 nav-hover reading-focus active:scale-[0.99] transition-all duration-200 ${!notification.read ? 'bg-card' : ''
+        className={`nav-hover reading-focus flex cursor-pointer items-start gap-3 border-b border-border/30 p-3 transition-all duration-200 active:scale-[0.99] md:px-4 ${!notification.read ? 'bg-card' : ''
           }`}
       >
         <Avatar className="size-10 shrink-0">
@@ -36,8 +36,8 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
             {notification.fromUserId.slice(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>
-        <div className='flex-1 space-y-1.5 min-w-0'>
-          <p className='text-sm font-medium text-reading text-foreground'>
+        <div className='min-w-0 flex-1 space-y-1.5'>
+          <p className='text-reading text-sm font-medium text-foreground'>
             {message}
           </p>
           <span className='text-xs text-muted-foreground'>

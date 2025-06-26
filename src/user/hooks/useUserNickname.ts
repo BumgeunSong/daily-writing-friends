@@ -1,9 +1,9 @@
 import * as Sentry from '@sentry/react';
 import { useQuery } from "@tanstack/react-query";
+import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext";
 import { fetchUser } from "../api/user";
 import { getCachedUserData } from "../cache/userCache";
 import { cacheUserData } from "../cache/userCache";
-import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext";
 
 // uid로 닉네임만 가져오는 React Query 훅 (에러 처리, Sentry 연동, 일관된 반환)
 export function useUserNickname(uid: string | null) {

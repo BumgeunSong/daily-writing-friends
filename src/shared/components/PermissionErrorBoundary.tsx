@@ -36,9 +36,9 @@ export function PermissionErrorBoundary() {
 
   // For other errors, show a generic error message
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <h2 className="text-xl font-semibold mb-2">문제가 발생했습니다</h2>
-      <p className="text-gray-600 mb-4">
+    <div className="flex min-h-screen flex-col items-center justify-center p-4">
+      <h2 className="mb-2 text-xl font-semibold">문제가 발생했습니다</h2>
+      <p className="mb-4 text-gray-600">
         {isRouteErrorResponse(error) 
           ? `오류 ${error.status}: ${error.data || error.statusText}`
           : '알 수 없는 오류가 발생했습니다.'
@@ -46,7 +46,7 @@ export function PermissionErrorBoundary() {
       </p>
       <button 
         onClick={() => navigate(-1)}
-        className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+        className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
       >
         돌아가기
       </button>

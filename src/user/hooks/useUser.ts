@@ -1,9 +1,9 @@
 import * as Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
+import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { fetchUser } from '@/user/api/user';
 import { getCachedUserData, cacheUserData } from '@/user/cache/userCache';
 import { User } from '@/user/model/User';
-import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 
 // uid로 User를 가져오는 React Query 훅 (캐시 우선)
 export function useUser(uid: string | null | undefined) {

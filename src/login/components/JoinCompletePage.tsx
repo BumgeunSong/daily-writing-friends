@@ -16,7 +16,7 @@ export default function JoinCompletePage({ name, cohort }: JoinCompletePageProps
           <h1 className="text-2xl font-semibold text-foreground lg:text-3xl">
             {`${name}님, 신청이 완료되었습니다`}
           </h1>
-          <p className="text-muted-foreground leading-relaxed lg:text-lg">
+          <p className="leading-relaxed text-muted-foreground lg:text-lg">
             {`${cohort}기가 시작하기 하루 전 연락을 드려요.`}
             <br />
             {`조금만 기다려주세요!`}

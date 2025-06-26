@@ -1,9 +1,9 @@
 import { useState } from "react"
+import { toast } from "sonner"
 import { Board } from "@/board/model/Board"
 import { showErrorToast } from "@/login/components/showErrorToast"
 import { useUpcomingBoard } from "@/login/hooks/useUpcomingBoard"
 import { JoinFormDataForNewUser } from "@/login/model/join"
-import { toast } from "sonner"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"
 import { updateUser, createUserIfNotExists } from "@/user/api/user"

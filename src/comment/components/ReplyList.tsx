@@ -1,6 +1,6 @@
+import React from 'react';
 import { useReplies } from '@/comment/hooks/useReplies';
 import { Reply } from '@/comment/model/Reply';
-import React from 'react';
 import ReplyRow from './ReplyRow';
 
 interface ReplyListProps {

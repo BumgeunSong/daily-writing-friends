@@ -1,11 +1,11 @@
+import { useEffect } from "react"
+import { ErrorBoundary } from "@/shared/components/ErrorBoundary"
 import { useAuth } from "@/shared/hooks/useAuth"
 import { Skeleton } from "@/shared/ui/skeleton"
-import { ErrorBoundary } from "@/shared/components/ErrorBoundary"
-import { TopicCardCarouselContainer } from "./TopicCardCarouselContainer"
-import { useAllTopicCards } from "../hooks/useAllTopicCards"
 import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
-import { useEffect } from "react"
+import { TopicCardCarouselContainer } from "./TopicCardCarouselContainer"
+import { useAllTopicCards } from "../hooks/useAllTopicCards"
 
 function TopicCardCarouselContent() {
   const { currentUser } = useAuth()
@@ -16,8 +16,8 @@ function TopicCardCarouselContent() {
   }
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <Skeleton className="h-40 w-full rounded-2xl mb-4" />
+      <div className="flex flex-1 items-center justify-center">
+        <Skeleton className="mb-4 h-40 w-full rounded-2xl" />
         <Skeleton className="h-40 w-full rounded-2xl" />
       </div>
     )
@@ -32,7 +32,7 @@ function TopicCardCarouselContent() {
     <TopicCardCarouselContainer
       userId={currentUser.uid}
       topicCards={topicCards}
-      className="w-full h-full flex-1 flex flex-col justify-center items-center"
+      className="flex size-full flex-1 flex-col items-center justify-center"
     />
   )
 }
@@ -44,7 +44,7 @@ export default function TopicCardCarouselPage() {
   }, [])
 
   return (
-    <div className="w-full h-full min-h-0 flex flex-col bg-background">
+    <div className="flex size-full min-h-0 flex-col bg-background">
       <ErrorBoundary fallback={<div className="p-8 text-center text-red-500">글감 정보를 불러오지 못했습니다.</div>}>
         <TopicCardCarouselContent />
       </ErrorBoundary>

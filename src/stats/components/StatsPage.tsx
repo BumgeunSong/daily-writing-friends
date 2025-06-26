@@ -1,15 +1,15 @@
+import { Loader2 } from "lucide-react"
 import { useState } from "react"
+import React from "react"
+import { useNavigate } from "react-router-dom"
 import { usePerformanceMonitoring } from "@/shared/hooks/usePerformanceMonitoring"
 import { ScrollArea } from "@/shared/ui/scroll-area"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs"
 import StatsHeader from "@/stats/components/StatsHeader"
 import { StatsNoticeBanner } from "@/stats/components/StatsNoticeBanner"
-import { useStatsPageData } from "@/stats/hooks/useStatsPageData"
-import { UserPostingStatsCardList } from "@/stats/components/UserPostingStatsCardList"
 import { UserCommentStatsCardList } from "@/stats/components/UserCommentStatsCardList"
-import React from "react"
-import { Loader2 } from "lucide-react"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/shared/ui/tabs"
-import { useNavigate } from "react-router-dom"
+import { UserPostingStatsCardList } from "@/stats/components/UserPostingStatsCardList"
+import { useStatsPageData } from "@/stats/hooks/useStatsPageData"
 
 // 통계 페이지 스크롤 영역의 고유 ID
 const STATS_SCROLL_ID = 'stats-scroll';
@@ -54,19 +54,19 @@ export default function StatsPage() {
     return (
         <div className="flex min-h-screen flex-col bg-background">
             <StatsHeader />
-            <main className="container flex-1 px-3 md:px-4 py-2">
+            <main className="container flex-1 px-3 py-2 md:px-4">
                 <ScrollArea className="h-full" id={STATS_SCROLL_ID}>
                     <StatsNoticeBanner />
                     <Tabs value={tab} onValueChange={v => setTab(v as TabType)}>
-                        <TabsList className="w-full flex justify-between mb-4 rounded-lg bg-muted">
-                            <TabsTrigger value="posting" className="flex-1 data-[state=active]:bg-background data-[state=active]:reading-shadow rounded-lg text-base p-2 reading-hover reading-focus transition-all duration-200">글쓰기</TabsTrigger>
+                        <TabsList className="mb-4 flex w-full justify-between rounded-lg bg-muted">
+                            <TabsTrigger value="posting" className="data-[state=active]:reading-shadow reading-hover reading-focus flex-1 rounded-lg p-2 text-base transition-all duration-200 data-[state=active]:bg-background">글쓰기</TabsTrigger>
                             <TabsTrigger
                                 value="commenting"
-                                className="flex-1 data-[state=active]:bg-background data-[state=active]:reading-shadow rounded-lg text-base p-2 flex items-center justify-center gap-2 reading-hover reading-focus transition-all duration-200"
+                                className="data-[state=active]:reading-shadow reading-hover reading-focus flex flex-1 items-center justify-center gap-2 rounded-lg p-2 text-base transition-all duration-200 data-[state=active]:bg-background"
                             >
                                 댓글·답글
                                 {isLoadingCommenting && (
-                                    <Loader2 className="ml-1 h-4 w-4 animate-spin text-muted-foreground" />
+                                    <Loader2 className="ml-1 size-4 animate-spin text-muted-foreground" />
                                 )}
                             </TabsTrigger>
                         </TabsList>
@@ -103,12 +103,12 @@ function LoadingState() {
     return (
         <div className="flex min-h-screen flex-col bg-background">
             <StatsHeader />
-            <main className="container flex-1 px-3 md:px-4 py-2">
+            <main className="container flex-1 px-3 py-2 md:px-4">
                 <ScrollArea className="h-full" id={STATS_SCROLL_ID}>
                     <StatsNoticeBanner />
                     <div className="space-y-4 pb-20">
                         {[...Array(5)].map((_, index) => (
-                            <div key={index} className="w-full rounded-lg bg-card reading-shadow border border-border/50">
+                            <div key={index} className="reading-shadow w-full rounded-lg border border-border/50 bg-card">
                                 <div className="flex items-start gap-4 p-4">
                                     <div className="flex flex-1 items-start gap-4">
                                         <div className="size-12 rounded-full bg-muted" />

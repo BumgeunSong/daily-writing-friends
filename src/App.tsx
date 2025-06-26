@@ -1,10 +1,10 @@
 import './index.css';
-import { useRemoteConfigReady, RemoteConfigProvider } from '@/shared/contexts/RemoteConfigContext';
 import { Loader2 } from 'lucide-react';
 import { RouterProvider } from 'react-router-dom';
-import { router } from './router';
-import { NavigationProvider } from '@/shared/contexts/NavigationContext';
 import { BottomTabHandlerProvider } from '@/shared/contexts/BottomTabHandlerContext';
+import { NavigationProvider } from '@/shared/contexts/NavigationContext';
+import { useRemoteConfigReady, RemoteConfigProvider } from '@/shared/contexts/RemoteConfigContext';
+import { router } from './router';
 
 export default function App() {
   return (

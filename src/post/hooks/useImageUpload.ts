@@ -1,9 +1,9 @@
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { useState } from 'react';
 import * as Sentry from '@sentry/react';
-import { storage } from '@/firebase';
-import { toast } from 'sonner';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import heic2any from 'heic2any';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { storage } from '@/firebase';
 
 interface UseImageUploadProps {
     insertImage: (url: string) => void;

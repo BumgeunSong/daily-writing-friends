@@ -2,11 +2,11 @@ import * as Sentry from '@sentry/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateProfile } from 'firebase/auth';
 import { toast } from "sonner"
+import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { updateUser, uploadUserProfilePhoto } from '@/user/api/user';
-import { User } from '../model/User';
 import { removeCachedUserData } from '@/user/cache/userCache';
-import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
+import { User } from '../model/User';
 
 interface UpdateUserDataParams {
   userId: string;

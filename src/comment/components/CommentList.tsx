@@ -1,7 +1,7 @@
-import { useComments } from '@/comment/hooks/useComments';
-import { Comment } from '@/comment/model/Comment';
 import React from 'react';
 import CommentRow from '@/comment/components/CommentRow';
+import { useComments } from '@/comment/hooks/useComments';
+import { Comment } from '@/comment/model/Comment';
 
 interface CommentListProps {
   boardId: string;

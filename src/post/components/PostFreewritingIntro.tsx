@@ -1,13 +1,13 @@
 import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
+import { useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 
 import { Button } from '@/shared/ui/button'
+import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
+import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { cn } from "@/shared/utils/cn"
 import type React from "react"
-import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
-import { useEffect } from "react"
-import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 
 const PostFreewritingIntro: React.FC = () => {
   const navigate = useNavigate()

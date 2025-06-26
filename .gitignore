@@ -44,9 +44,11 @@ tasks/
 .cursor/
 .roo/
 .claude/
+.claude/settings.local.json
 
 # Playwright
 /test-results/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+

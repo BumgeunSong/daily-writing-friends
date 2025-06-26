@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { WritingBadge } from '@/stats/model/WritingStats';
 import { fetchCommentingData, calculateStreakWithPagination } from '@/stats/api/stats';
+import { WritingBadge } from '@/stats/model/WritingStats';
 
 export function usePostProfileBadges(userId: string) {
     return useQuery({

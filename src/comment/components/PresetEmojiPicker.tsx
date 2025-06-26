@@ -33,7 +33,7 @@ const PresetEmojiPicker: React.FC<PresetEmojiPickerProps> = ({
         <button
           key={emoji}
           type="button"
-          className="text-2xl flex items-center justify-center rounded-full w-10 h-10 transition-colors hover:bg-muted active:bg-accent focus:outline-none focus:ring-2 focus:ring-primary"
+          className="flex size-10 items-center justify-center rounded-full text-2xl transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary active:bg-accent"
           aria-label={emoji}
           disabled={loading || disabled}
           tabIndex={0}

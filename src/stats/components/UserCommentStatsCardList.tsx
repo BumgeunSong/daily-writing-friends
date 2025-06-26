@@ -1,5 +1,5 @@
-import { UserCommentStatsCard } from './UserCommentStatsCard'
 import { UserCommentingStats } from '@/stats/hooks/useCommentingStats'
+import { UserCommentStatsCard } from './UserCommentStatsCard'
 
 interface UserCommentStatsCardListProps {
   stats: UserCommentingStats[]

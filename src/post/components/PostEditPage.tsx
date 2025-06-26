@@ -47,7 +47,7 @@ function ErrorState({ error }: { error: Error }) {
   
   return (
     <div className='mx-auto max-w-4xl px-6 py-8 text-center'>
-      <h1 className='mb-4 text-xl md:text-2xl font-semibold'>게시물을 찾을 수 없습니다.</h1>
+      <h1 className='mb-4 text-xl font-semibold md:text-2xl'>게시물을 찾을 수 없습니다.</h1>
       <p className='mb-4 text-destructive'>{error.message}</p>
     </div>
   );

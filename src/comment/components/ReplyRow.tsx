@@ -83,7 +83,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
         {isEditing ? (
           <ReplyInput onSubmit={handleEditSubmit} initialValue={reply.content} />
         ) : (
-          <div className="prose prose-slate dark:prose-invert whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
+          <div className="prose prose-slate whitespace-pre-wrap dark:prose-invert" dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
         )}
       </div>
       
