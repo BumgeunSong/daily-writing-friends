@@ -1,5 +1,6 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useState } from 'react';
+import * as Sentry from '@sentry/react';
 import { storage } from '@/firebase';
 import { toast } from 'sonner';
 import heic2any from 'heic2any';
@@ -13,7 +14,6 @@ export function useImageUpload({ insertImage }: UseImageUploadProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const imageHandler = async () => {
-    console.log("🚀 ~ imageHandler ~ imageHandler:", imageHandler);
 
     const input = document.createElement('input');
     input.setAttribute('type', 'file');
@@ -24,24 +24,24 @@ export function useImageUpload({ insertImage }: UseImageUploadProps) {
       const file = input.files?.[0];
       if (!file) return;
 
+      // Declare processedFile outside try block for catch block access
+      let processedFile = file;
+
       try {
-        console.log("File selected:", file.name, "Size:", file.size, "Type:", file.type);
         setIsUploading(true);
         setUploadProgress(0);
 
         // 파일 크기 체크 (5MB)
         if (file.size > 5 * 1024 * 1024) {
-          console.log("File size exceeds 5MB limit.");
           toast.error("파일 크기는 5MB를 초과할 수 없습니다.", {
             position: 'bottom-center',
           });
+          setIsUploading(false);
           return;
         }
 
         // HEIC 파일 변환 처리
-        let processedFile = file;
         if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
-          console.log("Converting HEIC file to JPEG...");
           try {
             const convertedBlob = await heic2any({
               blob: file,
@@ -55,28 +55,30 @@ export function useImageUpload({ insertImage }: UseImageUploadProps) {
               type: 'image/jpeg',
               lastModified: Date.now()
             });
-            console.log("HEIC conversion completed.");
           } catch (conversionError) {
-            console.error('HEIC conversion failed:', conversionError);
+            Sentry.captureException(conversionError, {
+              tags: { feature: 'image_upload', operation: 'heic_conversion' },
+              extra: { fileName: file.name, fileSize: file.size, fileType: file.type }
+            });
             toast.error("HEIC 파일 변환에 실패했습니다.", {
               position: 'bottom-center',
             });
+            setIsUploading(false);
             return;
           }
         }
 
         // 파일 타입 체크 (변환된 파일 기준)
         if (!processedFile.type.startsWith('image/')) {
-          console.log("File type is not an image.");
           toast.error("이미지 파일만 업로드할 수 있습니다.", {
             position: 'bottom-center',
           });
+          setIsUploading(false);
           return;
         }
 
         // 업로드 시작 표시
         setUploadProgress(20);
-        console.log("Upload started.");
 
         // 날짜 기반 파일 경로 생성
         const now = new Date();
@@ -86,15 +88,12 @@ export function useImageUpload({ insertImage }: UseImageUploadProps) {
 
         // 파일 업로드
         setUploadProgress(40);
-        console.log("Uploading file to storage...");
         const snapshot = await uploadBytes(storageRef, processedFile);
         setUploadProgress(70);
-        console.log("File uploaded successfully.");
 
         // URL 가져오기
         const downloadURL = await getDownloadURL(snapshot.ref);
         setUploadProgress(90);
-        console.log("Download URL obtained:", downloadURL);
 
         // 에디터에 이미지 삽입
         insertImage(downloadURL);
@@ -105,7 +104,11 @@ export function useImageUpload({ insertImage }: UseImageUploadProps) {
         });
 
       } catch (error) {
-        console.error('Image upload error:', error);
+        setIsUploading(false);
+        Sentry.captureException(error, {
+          tags: { feature: 'image_upload', operation: 'upload_process' },
+          extra: { fileName: processedFile?.name, fileSize: processedFile?.size, fileType: processedFile?.type }
+        });
         toast.error("이미지 업로드에 실패했습니다.", {
           position: 'bottom-center',
         });
@@ -114,7 +117,6 @@ export function useImageUpload({ insertImage }: UseImageUploadProps) {
         setTimeout(() => {
           setIsUploading(false);
           setUploadProgress(0);
-          console.log("Upload process completed.");
         }, 500);
       }
     };
