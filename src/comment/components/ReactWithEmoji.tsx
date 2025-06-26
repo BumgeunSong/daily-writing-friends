@@ -7,25 +7,25 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/shared/ui/popover"
 import type React from "react"
 import PresetEmojiPicker from "./PresetEmojiPicker"
 
-interface ReactWithEmojiProps {
-  onCreate: (emoji: string) => Promise<void>
-  disabled?: boolean
-}
-
-const PRESET_EMOJIS = [
+const EMOJI_PRESET = [
   "😍", // Smiling Face with Heart-Eyes
   "🥰", // Smiling Face with Hearts
-  "❤️", // Red Heart
-  "😂", // Face with Tears of Joy
+  "🥹", // Face Holding Back Tears
   "🤣", // Rolling on the Floor Laughing
   "😊", // Smiling Face with Smiling Eyes
   "🙏", // Folded Hands
   "🔥", // Fire
   "😭", // Loudly Crying Face
-  "👏", // Clapping Hand
+  "👏", // Clapping Hands
   "👍", // Thumbs Up
   "💪", // Fist Bump
+  "💯", // Hundred Points
 ]
+
+interface ReactWithEmojiProps {
+  onCreate: (emoji: string) => Promise<void>
+  disabled?: boolean
+}
 
 const ReactWithEmoji: React.FC<ReactWithEmojiProps> = ({ onCreate, disabled = false }) => {
   const [open, setOpen] = useState(false)
@@ -58,7 +58,7 @@ const ReactWithEmoji: React.FC<ReactWithEmojiProps> = ({ onCreate, disabled = fa
       </PopoverTrigger>
       <PopoverContent className="w-64 p-2" align="start" sideOffset={5}>
         <PresetEmojiPicker
-          emojis={PRESET_EMOJIS}
+          emojis={EMOJI_PRESET}
           onSelect={handleEmojiClick}
           loading={loading}
           disabled={disabled}
