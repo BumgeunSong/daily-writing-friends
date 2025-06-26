@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query"
 import { Send, Loader2 } from "lucide-react"
 import { useState } from "react"
-import { useToast } from "@/shared/hooks/use-toast"
+import { toast } from "sonner"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { Button } from "@/shared/ui/button"
 import { Textarea } from "@/shared/ui/textarea"
@@ -16,7 +16,6 @@ interface ReplyInputProps {
 const ReplyInput: React.FC<ReplyInputProps> = ({ placeholder, initialValue = "", onSubmit }) => {
   const [newReply, setNewReply] = useState(initialValue)
   const { currentUser } = useAuth()
-  const { toast } = useToast()
 
   const mutation = useMutation({
     mutationFn: (content: string) => onSubmit(content),
@@ -25,11 +24,7 @@ const ReplyInput: React.FC<ReplyInputProps> = ({ placeholder, initialValue = "",
     },
     onError: (error) => {
       console.error("답글 추가 오류:", error)
-      toast({
-        title: "오류 발생",
-        description: "답글을 등록하는 중 문제가 발생했습니다. 다시 시도해 주세요.",
-        variant: "destructive",
-      })
+      toast.error("답글을 등록하는 중 문제가 발생했습니다. 다시 시도해 주세요.", {position: 'bottom-center'})
     }
   })
 

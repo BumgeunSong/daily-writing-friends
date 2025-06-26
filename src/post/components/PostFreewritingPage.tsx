@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { PostVisibility } from '@/post/model/Post'
 import { createPost } from '@/post/utils/postUtils'
-import { useToast } from "@/shared/hooks/use-toast"
+import { toast } from "sonner"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext"
 import { WritingStatus } from "@/stats/model/WritingStatus"
@@ -18,7 +18,6 @@ export default function PostFreewritingPage() {
   const { currentUser } = useAuth()
   const navigate = useNavigate()
   const { boardId } = useParams<{ boardId: string }>()
-  const { toast } = useToast()
   const { nickname: userNickname } = useUserNickname(currentUser?.uid);
   const { value: freeWritingTargetTime } = useRemoteConfig('free_writing_target_time')
 
@@ -35,11 +34,7 @@ export default function PostFreewritingPage() {
   // 타이머 목표 시간 도달 처리
   const handleTimerReach = useCallback(() => {
     setIsReached(true)
-    toast({
-      title: "프리라이팅 성공!",
-      description: "목표 시간을 달성했습니다. 이제 글을 업로드할 수 있어요.",
-      variant: "default",
-    })
+    toast.success("목표 시간을 달성했습니다. 이제 글을 업로드할 수 있어요.", {position: 'bottom-center'})
   }, [toast])
 
   // 텍스트 변경 시 타이핑 감지
@@ -76,11 +71,7 @@ export default function PostFreewritingPage() {
     if (!currentUser || !boardId) return
 
     if (!POST_TITLE.trim() || !content.trim()) {
-      toast({
-        title: "입력 오류",
-        description: "제목과 내용을 모두 입력해주세요.",
-        variant: "destructive",
-      })
+      toast.error("제목과 내용을 모두 입력해주세요.", {position: 'bottom-center'})
       return
     }
 
@@ -89,21 +80,14 @@ export default function PostFreewritingPage() {
     try {
       await createPost(boardId, POST_TITLE, content, currentUser.uid, userNickname ?? '', PostVisibility.PRIVATE)
 
-      toast({
-        title: "업로드 완료",
-        description: "프리라이팅으로 쓴 글은 다른 사람에게 보이지 않아요.",
-      })
+      toast.success("프리라이팅으로 쓴 글은 다른 사람에게 보이지 않아요.", {position: 'bottom-center'})
 
       sendAnalyticsEvent(AnalyticsEvent.FINISH_FREE_WRITING, { boardId })
 
       navigate(`/boards/${boardId}`)
     } catch (error) {
       console.error("게시 중 오류:", error)
-      toast({
-        title: "업로드 실패",
-        description: "글을 업로드하는 중 오류가 발생했습니다. 다시 시도해주세요.",
-        variant: "destructive",
-      })
+      toast.error("글을 업로드하는 중 오류가 발생했습니다. 다시 시도해주세요.", {position: 'bottom-center'})
     } finally {
       setIsSubmitting(false)
     }

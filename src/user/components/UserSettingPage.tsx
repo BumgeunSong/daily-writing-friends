@@ -1,7 +1,7 @@
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '@/firebase';
-import { useToast } from '@/shared/hooks/use-toast';
+import { toast } from 'sonner';
 import { useClearCache } from '@/shared/hooks/useClearCache';
 import { useTheme } from '@/shared/hooks/useTheme';
 import { LogOut, MessageCircle, Trash2, SquareArrowRight, Moon, Sun } from 'lucide-react';
@@ -20,7 +20,6 @@ import {
 import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 
 export default function UserSettingPage() {
-  const { toast } = useToast();
   const navigate = useNavigate();
   const clearCache = useClearCache();
   const { theme, toggleTheme } = useTheme();
@@ -32,10 +31,7 @@ export default function UserSettingPage() {
       await signOut(auth);
       navigate('/login');
     } catch (error) {
-      toast({
-        variant: 'destructive',
-        description: '로그아웃에 실패했습니다. 다시 시도해주세요.',
-      });
+      toast.error('로그아웃에 실패했습니다. 다시 시도해주세요.', {position: 'bottom-center'});
     }
   };
 
@@ -55,12 +51,9 @@ export default function UserSettingPage() {
       clearLocalStorage: true,
     });
     if (result.success) {
-      toast({ description: '캐시가 성공적으로 삭제되었습니다.' });
+      toast.success('캐시가 성공적으로 삭제되었습니다.', {position: 'bottom-center'});
     } else {
-      toast({
-        variant: 'destructive',
-        description: '캐시 삭제에 실패했습니다. 다시 시도해주세요.',
-      });
+      toast.error('캐시 삭제에 실패했습니다. 다시 시도해주세요.', {position: 'bottom-center'});
     }
   };
 

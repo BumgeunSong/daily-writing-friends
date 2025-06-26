@@ -1,7 +1,9 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useState } from 'react';
+import * as Sentry from '@sentry/react';
 import { storage } from '@/firebase';
-import { useToast } from '@/shared/hooks/use-toast';
+import { toast } from 'sonner';
+import heic2any from 'heic2any';
 
 interface UseImageUploadProps {
     insertImage: (url: string) => void;
@@ -10,9 +12,9 @@ interface UseImageUploadProps {
 export function useImageUpload({ insertImage }: UseImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const { toast } = useToast();
 
   const imageHandler = async () => {
+
     const input = document.createElement('input');
     input.setAttribute('type', 'file');
     input.setAttribute('accept', 'image/*');
@@ -22,27 +24,56 @@ export function useImageUpload({ insertImage }: UseImageUploadProps) {
       const file = input.files?.[0];
       if (!file) return;
 
+      // Declare processedFile outside try block for catch block access
+      let processedFile = file;
+
       try {
         setIsUploading(true);
         setUploadProgress(0);
 
         // 파일 크기 체크 (5MB)
         if (file.size > 5 * 1024 * 1024) {
-          toast({
-            title: "오류",
-            description: "파일 크기는 5MB를 초과할 수 없습니다.",
-            variant: "destructive",
+          toast.error("파일 크기는 5MB를 초과할 수 없습니다.", {
+            position: 'bottom-center',
           });
+          setIsUploading(false);
           return;
         }
 
-        // 파일 타입 체크
-        if (!file.type.startsWith('image/')) {
-          toast({
-            title: "오류",
-            description: "이미지 파일만 업로드할 수 있습니다.",
-            variant: "destructive",
+        // HEIC 파일 변환 처리
+        if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+          try {
+            const convertedBlob = await heic2any({
+              blob: file,
+              toType: 'image/jpeg',
+              quality: 0.8
+            }) as Blob;
+            
+            // Convert blob to file with proper name
+            const convertedFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+            processedFile = new File([convertedBlob], convertedFileName, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+          } catch (conversionError) {
+            Sentry.captureException(conversionError, {
+              tags: { feature: 'image_upload', operation: 'heic_conversion' },
+              extra: { fileName: file.name, fileSize: file.size, fileType: file.type }
+            });
+            toast.error("HEIC 파일 변환에 실패했습니다.", {
+              position: 'bottom-center',
+            });
+            setIsUploading(false);
+            return;
+          }
+        }
+
+        // 파일 타입 체크 (변환된 파일 기준)
+        if (!processedFile.type.startsWith('image/')) {
+          toast.error("이미지 파일만 업로드할 수 있습니다.", {
+            position: 'bottom-center',
           });
+          setIsUploading(false);
           return;
         }
 
@@ -52,14 +83,14 @@ export function useImageUpload({ insertImage }: UseImageUploadProps) {
         // 날짜 기반 파일 경로 생성
         const now = new Date();
         const { dateFolder, timePrefix } = formatDate(now);
-        const fileName = `${timePrefix}_${file.name}`;
+        const fileName = `${timePrefix}_${processedFile.name}`;
         const storageRef = ref(storage, `postImages/${dateFolder}/${fileName}`);
 
         // 파일 업로드
         setUploadProgress(40);
-        const snapshot = await uploadBytes(storageRef, file);
+        const snapshot = await uploadBytes(storageRef, processedFile);
         setUploadProgress(70);
-        
+
         // URL 가져오기
         const downloadURL = await getDownloadURL(snapshot.ref);
         setUploadProgress(90);
@@ -68,17 +99,18 @@ export function useImageUpload({ insertImage }: UseImageUploadProps) {
         insertImage(downloadURL);
 
         setUploadProgress(100);
-        toast({
-          title: "성공",
-          description: "이미지가 업로드되었습니다.",
+        toast.success("이미지가 업로드되었습니다.", {
+          position: 'bottom-center',
         });
 
       } catch (error) {
-        console.error('Image upload error:', error);
-        toast({
-          title: "오류",
-          description: "이미지 업로드에 실패했습니다.",
-          variant: "destructive",
+        setIsUploading(false);
+        Sentry.captureException(error, {
+          tags: { feature: 'image_upload', operation: 'upload_process' },
+          extra: { fileName: processedFile?.name, fileSize: processedFile?.size, fileType: processedFile?.type }
+        });
+        toast.error("이미지 업로드에 실패했습니다.", {
+          position: 'bottom-center',
         });
       } finally {
         // 약간의 딜레이 후 로딩 상태 초기화
