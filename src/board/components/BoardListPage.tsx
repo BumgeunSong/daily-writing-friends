@@ -44,15 +44,15 @@ const BoardListPage: React.FC = () => {
     <div className='min-h-screen bg-background'>
       <header className="bg-background py-3">
         <div className="container mx-auto flex items-center justify-between px-3 md:px-4">
-          <div className="flex items-center space-x-2 rounded-lg p-2 min-h-[44px]">
-            <span className='text-xl font-semibold tracking-tight md:text-2xl text-foreground'>어디로 들어갈까요?</span>
+          <div className="flex min-h-[44px] items-center space-x-2 rounded-lg p-2">
+            <span className='text-xl font-semibold tracking-tight text-foreground md:text-2xl'>어디로 들어갈까요?</span>
           </div>
         </div>
       </header>
-      <main className="container mx-auto px-3 md:px-4 py-2">
+      <main className="container mx-auto px-3 py-2 md:px-4">
         {boards.length === 0 ? (
-          <div className='text-center py-8'>
-            <p className="text-muted-foreground text-reading">아직 초대받은 게시판이 없어요. 관리자에게 문의해주세요. 😔</p>
+          <div className='py-8 text-center'>
+            <p className="text-reading text-muted-foreground">아직 초대받은 게시판이 없어요. 관리자에게 문의해주세요. 😔</p>
           </div>
         ) : (
           <div className='space-y-2'>
@@ -61,11 +61,11 @@ const BoardListPage: React.FC = () => {
                 to={`/board/${board.id}`}
                 onClick={() => handleBoardClick(board.id)}
                 key={board.id}
-                className="block reading-focus"
+                className="reading-focus block"
               >
-                <div className='bg-card reading-shadow border border-border/50 rounded-lg p-4 reading-hover active:scale-[0.99] transition-all duration-200'>
-                  <h2 className='text-lg font-semibold text-foreground mb-1'>{board.title}</h2>
-                  <p className='text-muted-foreground text-reading text-sm'>{board.description}</p>
+                <div className='reading-shadow reading-hover rounded-lg border border-border/50 bg-card p-4 transition-all duration-200 active:scale-[0.99]'>
+                  <h2 className='mb-1 text-lg font-semibold text-foreground'>{board.title}</h2>
+                  <p className='text-reading text-sm text-muted-foreground'>{board.description}</p>
                 </div>
               </Link>
             ))}

@@ -4,12 +4,12 @@
 // 3. return stats
 
 import { useQuery } from '@tanstack/react-query';
+import { Posting } from '@/post/model/Posting';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
+import { fetchPostingDataForContributions, createUserInfo, fetchUserSafely, calculateStreakWithPagination } from '@/stats/api/stats';
 import { WritingStats, Contribution, WritingBadge } from '@/stats/model/WritingStats';
 import { getDateKey } from '@/stats/utils/streakUtils';
-import { fetchPostingDataForContributions, createUserInfo, fetchUserSafely, calculateStreakWithPagination } from '@/stats/api/stats';
 import { User } from '@/user/model/User';
-import { Posting } from '@/post/model/Posting';
 
 export function useWritingStats(userIds: string[], currentUserId?: string) {
     return useQuery({

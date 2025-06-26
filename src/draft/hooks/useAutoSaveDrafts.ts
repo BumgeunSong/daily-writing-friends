@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
-import { useDraftSaveMutation } from './useDraftSaveMutation';
 import { useInterval } from 'react-simplikit';
+import { useDraftSaveMutation } from './useDraftSaveMutation';
 
 interface UseAutoSaveDraftsProps {
   boardId: string;

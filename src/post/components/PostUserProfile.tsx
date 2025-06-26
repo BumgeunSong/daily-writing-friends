@@ -1,5 +1,5 @@
-import { Skeleton } from "@/shared/ui/skeleton";
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
+import { Skeleton } from "@/shared/ui/skeleton";
 import { WritingBadgeComponent } from '@/stats/components/WritingBadgeComponent';
 import { WritingBadge } from '@/stats/model/WritingStats';
 
@@ -20,7 +20,7 @@ export const PostUserProfile: React.FC<PostUserProfileProps> = ({ authorData, is
           alt={authorData?.realName || 'User'}
           fallback={authorData?.realName?.[0] || 'U'}
           size={36}
-          className="cursor-pointer transition-all duration-150 group/profile min-w-[44px] min-h-[44px] active:scale-95 active:bg-accent/20"
+          className="group/profile min-h-[44px] min-w-[44px] cursor-pointer transition-all duration-150 active:scale-95 active:bg-accent/20"
           onClick={onClickProfile}
           role="button"
           tabIndex={0}
@@ -34,7 +34,7 @@ export const PostUserProfile: React.FC<PostUserProfileProps> = ({ authorData, is
         ) : (
           <div className="flex flex-col gap-1">
             <p
-              className="text-sm font-medium text-foreground/90 cursor-pointer transition-colors duration-150 group-hover/profile:text-primary group-hover/profile:underline flex items-center active:text-primary"
+              className="flex cursor-pointer items-center text-sm font-medium text-foreground/90 transition-colors duration-150 active:text-primary group-hover/profile:text-primary group-hover/profile:underline"
               onClick={onClickProfile}
               role="button"
               tabIndex={0}

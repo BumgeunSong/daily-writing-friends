@@ -1,17 +1,17 @@
 "use client"
 
 import { useQueryClient } from "@tanstack/react-query"
-import type React from "react"
 import { useEffect, useState, useCallback } from "react"
 import { useInView } from "react-intersection-observer"
+import PostCard from "@/post/components/PostCard"
+import { usePosts } from "@/post/hooks/usePosts"
 import { useScrollRestoration } from "@/post/hooks/useScrollRestoration"
 import StatusMessage from "@/shared/components/StatusMessage"
 import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
 import { usePerformanceMonitoring } from "@/shared/hooks/usePerformanceMonitoring"
 import PostCardSkeleton from "@/shared/ui/PostCardSkeleton"
-import PostCard from "@/post/components/PostCard"
-import { usePosts } from "@/post/hooks/usePosts"
 import { useCurrentUserKnownBuddy } from "@/user/hooks/useCurrentUserKnownBuddy"
+import type React from "react"
 
 interface PostCardListProps {
   boardId: string
@@ -98,7 +98,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
       ))}
       <div ref={inViewRef} />
       {isFetchingNextPage && (
-        <div className="flex items-center justify-center p-6 text-muted-foreground text-reading-sm">
+        <div className="text-reading-sm flex items-center justify-center p-6 text-muted-foreground">
           <span>글을 불러오는 중...</span>
         </div>
       )}

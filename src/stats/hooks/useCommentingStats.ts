@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { aggregateCommentingContributions, CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { createUserInfo, getDateRange, fetchUserSafely } from '@/stats/api/stats';
+import { aggregateCommentingContributions, CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
 
 export type UserCommentingStats = {

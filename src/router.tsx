@@ -2,23 +2,13 @@ import { createBrowserRouter, redirect, Outlet } from 'react-router-dom';
 import './index.css';
 
 // Providers that need router context
-import { BottomTabHandlerProvider } from './shared/contexts/BottomTabHandlerContext';
-import { NavigationProvider } from './shared/contexts/NavigationContext';
 
 // Layouts
-import { BottomNavigatorLayout } from '@/shared/components/BottomNavigatorLayout';
 
 // Pages
 import BoardListPage from '@/board/components/BoardListPage';
-import RecentBoard from '@/board/components/RecentBoard';
 import BoardPage from '@/board/components/BoardPage';
-import TopicCardCarouselPage from './board/components/TopicCardCarouselPage';
-import PostCreationPage from '@/post/components/PostCreationPage';
-import PostCompletionPage from '@/post/components/PostCompletionPage';
-import PostDetailPage from '@/post/components/PostDetailPage';
-import PostEditPage from '@/post/components/PostEditPage';
-import PostFreewritingIntro from '@/post/components/PostFreewritingIntro';
-import PostFreewritingPage from '@/post/components/PostFreewritingPage';
+import RecentBoard from '@/board/components/RecentBoard';
 import NotificationsPage from '@/notification/components/NotificationsPage';
 import NotificationSettingPage from '@/notification/components/NotificationSettingPage';
 import StatsPage from '@/stats/components/StatsPage';
@@ -35,17 +25,27 @@ import LoginPage from '@/login/components/LoginPage';
 // Loaders and actions from feature hooks
 import { boardsLoader } from '@/board/hooks/useBoardsLoader';
 import { boardLoader } from '@/board/hooks/useBoardLoader';
-import { postDetailLoader } from '@/post/hooks/usePostDetailLoader';
+import PostCompletionPage from '@/post/components/PostCompletionPage';
+import PostCreationPage from '@/post/components/PostCreationPage';
+import PostDetailPage from '@/post/components/PostDetailPage';
+import PostEditPage from '@/post/components/PostEditPage';
+import PostFreewritingIntro from '@/post/components/PostFreewritingIntro';
+import PostFreewritingPage from '@/post/components/PostFreewritingPage';
 import { createPostAction } from '@/post/hooks/useCreatePostAction';
+import { postDetailLoader } from '@/post/hooks/usePostDetailLoader';
 
 // Auth guards and components
-import { PrivateRoutes, PublicRoutes } from '@/shared/components/auth/RouteGuards';
 import { RootRedirect } from '@/shared/components/auth/RootRedirect';
+import { PrivateRoutes, PublicRoutes } from '@/shared/components/auth/RouteGuards';
+import { BottomNavigatorLayout } from '@/shared/components/BottomNavigatorLayout';
 
 // Error boundary
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { PermissionErrorBoundary } from '@/shared/components/PermissionErrorBoundary';
 import StatusMessage from '@/shared/components/StatusMessage';
+import TopicCardCarouselPage from './board/components/TopicCardCarouselPage';
+import { BottomTabHandlerProvider } from './shared/contexts/BottomTabHandlerContext';
+import { NavigationProvider } from './shared/contexts/NavigationContext';
 
 // Root layout component with router-dependent providers
 function RootLayout({ children }: { children?: React.ReactNode }) {

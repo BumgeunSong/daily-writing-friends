@@ -77,7 +77,7 @@ const NotificationsPage = () => {
     <NotificationsErrorBoundary>
       <div className="min-h-screen bg-background">
         <NotificationsHeader />
-        <main className="container mx-auto px-3 md:px-4 py-2">
+        <main className="container mx-auto px-3 py-2 md:px-4">
           <NotificationsContent
             scrollAreaId={NOTIFICATIONS_CONFIG.SCROLL_ID}
             notifications={allNotifications}

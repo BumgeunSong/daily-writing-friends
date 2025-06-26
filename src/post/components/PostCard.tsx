@@ -5,8 +5,8 @@ import { type Post, PostVisibility } from "@/post/model/Post"
 import { getContentPreview } from "@/post/utils/contentUtils"
 import { Badge } from "@/shared/ui/badge"
 import { Card, CardContent, CardFooter, CardHeader } from "@/shared/ui/card"
-import { useUser } from "@/user/hooks/useUser"
 import { usePostProfileBadges } from "@/stats/hooks/usePostProfileBadges"
+import { useUser } from "@/user/hooks/useUser"
 import { PostUserProfile } from "./PostUserProfile"
 import type React from "react"
 
@@ -42,7 +42,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, isKn
   }
 
   return (
-    <Card className="reading-shadow border-border/50 transition-all duration-200 hover:border-border nav-hover">
+    <Card className="reading-shadow nav-hover border-border/50 transition-all duration-200 hover:border-border">
       <CardHeader className="px-3 pb-1 pt-3 md:px-4">
         <div className="mb-3 flex items-center">
           <PostUserProfile
@@ -53,13 +53,13 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, isKn
             badges={badges}
           />
         </div>
-        <h2 className="flex items-center text-lg font-semibold text-foreground leading-tight md:text-xl">
+        <h2 className="flex items-center text-lg font-semibold leading-tight text-foreground md:text-xl">
           {isPrivate && <Lock className="mr-1.5 size-4 shrink-0 text-muted-foreground" aria-label="비공개 글" />}
           {post.title}
         </h2>
       </CardHeader>
       <CardContent
-        className="px-3 pb-3 pt-1 cursor-pointer min-h-[44px] reading-focus rounded-lg transition-all duration-200 active:scale-[0.99] md:px-4"
+        className="reading-focus min-h-[44px] cursor-pointer rounded-lg px-3 pb-3 pt-1 transition-all duration-200 active:scale-[0.99] md:px-4"
         onClick={handleCardClick}
         role="button"
         tabIndex={0}
@@ -69,32 +69,32 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, isKn
         {!isPrivate && contentPreview && (
           <div
             className="
-prose prose-sm line-clamp-3 
-text-reading-sm
+text-reading-sm prose prose-sm 
+line-clamp-3
+max-w-none
 text-foreground/85
 dark:prose-invert
-prose-p:my-1.5
-prose-ol:my-1.5
-prose-ul:my-1.5
 prose-headings:text-foreground
-prose-strong:text-foreground/90
+prose-p:my-1.5
 prose-a:text-ring
-max-w-none"
+prose-strong:text-foreground/90
+prose-ol:my-1.5
+prose-ul:my-1.5"
             dangerouslySetInnerHTML={{ __html: contentPreview }}
           />
         )}
         {!isPrivate && post.thumbnailImageURL && (
-          <div className="mt-4 aspect-video w-full overflow-hidden rounded-lg bg-muted reading-shadow">
+          <div className="reading-shadow mt-4 aspect-video w-full overflow-hidden rounded-lg bg-muted">
             <img
               src={post.thumbnailImageURL || "/placeholder.svg"}
               alt="게시글 썸네일"
-              className="w-full h-full object-cover"
+              className="size-full object-cover"
             />
           </div>
         )}
       </CardContent>
       <CardFooter
-        className="flex justify-between border-t border-border/50 px-3 pb-3 pt-3 cursor-pointer min-h-[44px] reading-focus rounded-b-lg transition-all duration-200 active:scale-[0.99] md:px-4"
+        className="reading-focus flex min-h-[44px] cursor-pointer justify-between rounded-b-lg border-t border-border/50 p-3 transition-all duration-200 active:scale-[0.99] md:px-4"
         onClick={handleCardClick}
         role="button"
         tabIndex={0}
@@ -107,7 +107,7 @@ max-w-none"
         </div>
         {post.weekDaysFromFirstDay !== undefined && (
           <Badge
-            className="h-6 border-border bg-secondary/80 px-2.5 py-1 text-xs font-medium text-muted-foreground reading-shadow"
+            className="reading-shadow h-6 border-border bg-secondary/80 px-2.5 py-1 text-xs font-medium text-muted-foreground"
             variant="outline"
           >
             {post.weekDaysFromFirstDay + 1}일차

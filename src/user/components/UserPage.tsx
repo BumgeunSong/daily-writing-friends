@@ -1,12 +1,12 @@
+import { useCallback } from "react"
 import { useParams } from "react-router-dom"
 import StatusMessage from "@/shared/components/StatusMessage"
+import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
+import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext"
+import { useAuth } from "@/shared/hooks/useAuth"
 import { UserPageHeader } from "@/user/components/UserPageHeader"
 import UserPostsList from "@/user/components/UserPostList"
 import UserProfile from "@/user/components/UserProfile"
-import { useAuth } from "@/shared/hooks/useAuth"
-import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
-import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext"
-import { useCallback } from "react"
 import { UserKnownBuddy } from './UserKnownBuddy'
 
 export default function UserPage() {
@@ -27,7 +27,7 @@ export default function UserPage() {
     <div className="min-h-screen bg-background">
       <UserPageHeader isMyPage={isMyPage} />
       
-      <main className="container mx-auto px-3 md:px-4 py-2 pb-16">
+      <main className="container mx-auto px-3 py-2 pb-16 md:px-4">
         {/* User profile section */}
         <div className="mb-2">
           <UserProfile uid={userId} />

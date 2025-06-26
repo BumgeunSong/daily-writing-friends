@@ -22,11 +22,11 @@ const ProfileAccessory: React.FC<ProfileAccessoryProps> = ({
   const innerSize = size - 8; // border 두께 4px 기준
   return (
     <span
-      className={`block rounded-full flex items-center justify-center ${gradientClassName}`}
+      className={`block flex items-center justify-center rounded-full ${gradientClassName}`}
       style={{ width: size, height: size }}
     >
       <span
-        className={`block rounded-full bg-white flex items-center justify-center overflow-hidden ${className}`}
+        className={`block flex items-center justify-center overflow-hidden rounded-full bg-white ${className}`}
         style={{ width: innerSize, height: innerSize }}
       >
         {children}

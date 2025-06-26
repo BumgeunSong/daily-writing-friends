@@ -1,10 +1,10 @@
 import * as Sentry from '@sentry/react';
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useState, useEffect } from 'react';
+import { fetchPosts } from '@/post/api/post';
+import { Post } from '@/post/model/Post';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { getBlockedByUsers } from '@/user/api/user';
-import { Post } from '@/post/model/Post';
-import { fetchPosts } from '@/post/api/post';
-import { useState, useEffect } from 'react';
 
 /**
  * 게시글 목록을 불러오는 커스텀 훅 (blockedBy 기반 서버사이드 필터링)

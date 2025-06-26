@@ -1,12 +1,12 @@
 import * as React from "react"
+import { useNavigate, useParams } from "react-router-dom"
+import { toast } from "sonner"
+import { type CarouselApi } from "@/shared/ui/Carousel"
+import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
+import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { TopicCardCarousel } from "./TopicCardCarousel"
 import { useTopicCardStates } from "../../board/hooks/useTopicCardStates"
 import { TopicCard } from "../../board/model/TopicCard"
-import { toast } from "sonner"
-import { type CarouselApi } from "@/shared/ui/Carousel"
-import { useNavigate, useParams } from "react-router-dom"
-import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
-import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 
 interface TopicCardCarouselContainerProps {
   userId: string
@@ -16,20 +16,20 @@ interface TopicCardCarouselContainerProps {
 
 // 개선된 Skeleton 컴포넌트
 const TopicCardSkeleton: React.FC = () => (
-  <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl flex flex-col justify-between items-center h-[420px] sm:h-[480px] min-h-[420px] sm:min-h-[480px] w-full max-w-[360px] mx-auto p-6 animate-pulse overflow-hidden">
+  <div className="relative mx-auto flex h-[420px] min-h-[420px] w-full max-w-[360px] animate-pulse flex-col items-center justify-between overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 sm:h-[480px] sm:min-h-[480px]">
     {/* 액션 버튼 자리 */}
-    <div className="absolute top-3 right-3 flex gap-2 z-10">
-      <div className="w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-800" />
-      <div className="w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-800" />
+    <div className="absolute right-3 top-3 z-10 flex gap-2">
+      <div className="size-11 rounded-full bg-zinc-100 dark:bg-zinc-800" />
+      <div className="size-11 rounded-full bg-zinc-100 dark:bg-zinc-800" />
     </div>
     {/* Quote 아이콘 자리 */}
-    <div className="w-8 h-8 rounded bg-zinc-100 dark:bg-zinc-800 mb-2" />
+    <div className="mb-2 size-8 rounded bg-zinc-100 dark:bg-zinc-800" />
     {/* 타이틀/설명 자리 */}
-    <div className="flex-1 flex flex-col items-center justify-center w-full">
-      <div className="h-6 bg-zinc-100 dark:bg-zinc-800 rounded w-2/3 mb-2" />
-      <div className="h-4 bg-zinc-100 dark:bg-zinc-800 rounded w-full mb-1" />
-      <div className="h-4 bg-zinc-100 dark:bg-zinc-800 rounded w-5/6 mb-1" />
-      <div className="h-4 bg-zinc-100 dark:bg-zinc-800 rounded w-1/2" />
+    <div className="flex w-full flex-1 flex-col items-center justify-center">
+      <div className="mb-2 h-6 w-2/3 rounded bg-zinc-100 dark:bg-zinc-800" />
+      <div className="mb-1 h-4 w-full rounded bg-zinc-100 dark:bg-zinc-800" />
+      <div className="mb-1 h-4 w-5/6 rounded bg-zinc-100 dark:bg-zinc-800" />
+      <div className="h-4 w-1/2 rounded bg-zinc-100 dark:bg-zinc-800" />
     </div>
     {/* CTA 버튼 자리 */}
     <div className="mt-6 h-11 w-full rounded bg-zinc-100 dark:bg-zinc-800" />
@@ -103,7 +103,7 @@ export const TopicCardCarouselContainer: React.FC<TopicCardCarouselContainerProp
     // 에러 메시지 카드
     return (
       <div className={className + " flex-1 flex flex-col justify-center items-center min-h-[calc(100vh-80px)]"}>
-        <div className="max-w-[90vw] sm:max-w-xs md:max-w-sm lg:max-w-md bg-red-50 border border-red-200 rounded-2xl shadow-md p-4 h-[180px] flex items-center justify-center text-red-600">
+        <div className="flex h-[180px] max-w-[90vw] items-center justify-center rounded-2xl border border-red-200 bg-red-50 p-4 text-red-600 shadow-md sm:max-w-xs md:max-w-sm lg:max-w-md">
           글감 정보를 불러오지 못했습니다. 새로고침 해주세요.
         </div>
       </div>

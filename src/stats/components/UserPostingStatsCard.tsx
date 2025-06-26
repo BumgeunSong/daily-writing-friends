@@ -13,9 +13,9 @@ export function UserPostingStatsCard({ stats, onClick }: UserPostingStatsCardPro
     const { user, contributions } = stats
 
     return (
-      <Card className="w-full reading-shadow border-border/50">
+      <Card className="reading-shadow w-full border-border/50">
         <CardContent
-          className="flex items-start gap-4 px-3 md:px-4 py-4 cursor-pointer reading-hover reading-focus active:scale-[0.99] transition-all duration-200"
+          className="reading-hover reading-focus flex cursor-pointer items-start gap-4 px-3 py-4 transition-all duration-200 active:scale-[0.99] md:px-4"
           onClick={onClick}
           role={onClick ? 'button' : undefined}
           tabIndex={onClick ? 0 : undefined}

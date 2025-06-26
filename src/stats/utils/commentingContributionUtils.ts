@@ -1,6 +1,6 @@
+import { getDateKey } from '@/stats/utils/streakUtils';
 import { Commenting } from '@/user/model/Commenting';
 import { Replying } from '@/user/model/Replying';
-import { getDateKey } from '@/stats/utils/streakUtils';
 
 export type CommentingContribution = {
   createdAt: string; // YYYY-MM-DD
