@@ -1,6 +1,6 @@
 import type React from "react"
 import { useState, useEffect, useMemo, useRef, Suspense } from "react"
-import { useToast } from "@/shared/hooks/use-toast"
+import { toast } from "sonner"
 import { Button } from "@/shared/ui/button"
 import { Input } from "@/shared/ui/input"
 import { Avatar, AvatarImage, AvatarFallback } from "@/shared/ui/avatar"
@@ -98,7 +98,6 @@ function SuggestionsDropdown({
 
 export default function BlockedUsersPage() {
   const { currentUser } = useAuth()
-  const { toast } = useToast()
   const [blockedUsers, setBlockedUsers] = useState<any[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -187,12 +186,9 @@ export default function BlockedUsersPage() {
       setBlockedUsers((prev) => [...prev, user])
       setSearchQuery("")
       setShowSuggestions(false)
-      toast({ description: `${user.nickname}님을 비공개 사용자로 설정했습니다.` })
+      toast.success(`${user.nickname}님을 비공개 사용자로 설정했습니다.`, {position: 'bottom-center'})
     } catch (error) {
-      toast({
-        description: "비공개 사용자 설정 중 오류가 발생했습니다.",
-        variant: "destructive",
-      })
+      toast.error("비공개 사용자 설정 중 오류가 발생했습니다.", {position: 'bottom-center'})
     }
     setLoading(false)
   }
@@ -206,12 +202,9 @@ export default function BlockedUsersPage() {
       const user = blockedUsers.find((u) => u.uid === uid)
       setBlockedUsers((prev) => prev.filter((u) => u.uid !== uid))
       setConfirmUnblockUid(null)
-      toast({ description: `${user?.nickname}님의 비공개 설정을 해제했습니다.` })
+      toast.success(`${user?.nickname}님의 비공개 설정을 해제했습니다.`, {position: 'bottom-center'})
     } catch (error) {
-      toast({
-        description: "비공개 설정 해제 중 오류가 발생했습니다.",
-        variant: "destructive",
-      })
+      toast.error("비공개 설정 해제 중 오류가 발생했습니다.", {position: 'bottom-center'})
     }
     setLoading(false)
   }

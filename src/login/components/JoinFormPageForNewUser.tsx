@@ -3,7 +3,7 @@ import { Board } from "@/board/model/Board"
 import { showErrorToast } from "@/login/components/showErrorToast"
 import { useUpcomingBoard } from "@/login/hooks/useUpcomingBoard"
 import { JoinFormDataForNewUser } from "@/login/model/join"
-import { useToast } from "@/shared/hooks/use-toast"
+import { toast } from "sonner"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"
 import { updateUser, createUserIfNotExists } from "@/user/api/user"
@@ -16,7 +16,6 @@ import FormHeader from "./JoinFormHeader"
  */
 export default function JoinFormPageForNewUser() {
     const { currentUser } = useAuth()
-    const { toast } = useToast()
     const { data: upcomingBoard } = useUpcomingBoard()
     const [isComplete, setIsComplete] = useState(false)
     const [completeInfo, setCompleteInfo] = useState<{ name: string, cohort: number } | null>(null)

@@ -14,10 +14,8 @@ export const showErrorToast = (toast: any, error: unknown) => {
         errorMessage = error.message;
     }
 
-    toast({
-        title: "신청 중 오류가 발생했습니다",
-        description: errorMessage,
-        variant: "destructive",
+    toast.error(errorMessage, {
+        position: 'bottom-center',
         duration: 5000, // 5초 동안 표시
     });
 };
