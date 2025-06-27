@@ -1,5 +1,7 @@
 import { NotificationType } from "../types/Notification";
 
+const MAX_CONTENT_LENGTH = 30;
+
 export const generateMessage = (notificationType: NotificationType, userName: string, contentTitle: string) => {
     const contentSnippet = generateContentSnippet(contentTitle);
     switch (notificationType) { 
@@ -13,8 +15,8 @@ export const generateMessage = (notificationType: NotificationType, userName: st
 }
 
 const generateContentSnippet = (contentTitle: string) => {
-    if (contentTitle.length > 12) {
-        return contentTitle.slice(0, 12) + "...";
+    if (contentTitle.length > MAX_CONTENT_LENGTH) {
+        return contentTitle.slice(0, MAX_CONTENT_LENGTH) + "...";
     }
     return contentTitle;
 }
