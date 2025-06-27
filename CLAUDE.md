@@ -175,28 +175,216 @@ import { PostCardSkeleton } from '@/shared/ui/PostCardSkeleton'
 
 ## Firebase Functions Patterns
 
-### Function Structure
+### Directory Structure
+```
+functions/
+├── src/
+│   ├── admin.ts                    # Firebase Admin SDK setup
+│   ├── index.ts                    # Function exports
+│   ├── dateUtils.ts                # Date utilities
+│   ├── notifications/              # Notification system functions
+│   │   ├── commentOnPost.ts        # Comment notifications
+│   │   ├── replyOnComment.ts       # Reply notifications
+│   │   ├── replyOnPost.ts          # Post reply notifications
+│   │   ├── sendMessageOnNotification.ts # FCM message sending
+│   │   ├── messageGenerator.ts     # Notification message templates
+│   │   ├── shouldGenerateNotification.ts # Notification rules
+│   │   ├── incrementCommentCount.ts # Comment count updates
+│   │   ├── incrementRepliesCount.ts # Reply count updates
+│   │   └── updateDaysFromFirstDay.ts # Writing streak calculations
+│   ├── postings/                   # Post activity tracking
+│   │   ├── createPosting.ts        # Track post creation
+│   │   └── updatePosting.ts        # Track post updates
+│   ├── commentings/                # Comment activity tracking
+│   │   ├── createCommenting.ts     # Track comment creation
+│   │   └── updateCommenting.ts     # Track comment updates
+│   ├── replyings/                  # Reply activity tracking
+│   │   ├── createReplying.ts       # Track reply creation
+│   │   └── updateReplying.ts       # Track reply updates
+│   ├── writingHistory/             # Writing statistics
+│   │   ├── createWritingHistoryOnPostCreated.ts
+│   │   ├── deleteWritingHistoryOnPostDeleted.ts
+│   │   ├── getWritingStats.ts      # HTTP function for stats
+│   │   ├── createBadges.ts         # Achievement system
+│   │   ├── createContributions.ts  # Contribution tracking
+│   │   └── updateWritingHistoryByBatch.ts
+│   ├── types/                      # TypeScript interfaces
+│   │   ├── Post.ts, Comment.ts, Reply.ts
+│   │   ├── User.ts, Board.ts
+│   │   ├── Notification.ts
+│   │   ├── Posting.ts, Commenting.ts, Replying.ts
+│   │   ├── WritingHistory.ts
+│   │   └── FirebaseMessagingToken.ts
+│   └── oneTimeScript/              # Administrative functions
+│       └── allocateSecretBuddy.ts
+├── package.json                    # Dependencies and scripts
+└── tsconfig.json                   # TypeScript configuration
+```
+
+### Function Structure Pattern
 ```typescript
 import { onDocumentCreated } from 'firebase-functions/v2/firestore'
-import { getFirestore } from 'firebase-admin/firestore'
+import admin from '../admin'
+import { Post } from '../types/Post'
 
-export const onPostCreated = onDocumentCreated(
+export const createPosting = onDocumentCreated(
   'boards/{boardId}/posts/{postId}',
   async (event) => {
+    const postData = event.data?.data() as Post
     const { boardId, postId } = event.params
-    const postData = event.data?.data()
     
-    // Function logic here
+    // Always validate data exists
+    if (!postData) {
+      console.error('No post data found.')
+      return null
+    }
+    
+    // Extract required fields
+    const { authorId, title, content, createdAt } = postData
+    
+    // Perform operations with error handling
+    try {
+      await admin.firestore()
+        .collection('users')
+        .doc(authorId)
+        .collection('postings')
+        .add(postingData)
+      
+      console.log(`Created posting activity for user ${authorId}`)
+    } catch (error) {
+      console.error('Error writing posting activity:', error)
+    }
+    
+    return null
   }
 )
 ```
 
-### Notification Functions
-Follow the pattern in `functions/src/notifications/`:
-- Generate notification data
-- Check notification preferences
-- Send FCM messages
-- Create Firestore notification documents
+### Key Function Categories
+
+#### 1. Activity Tracking Functions
+- **createPosting**: Tracks post creation in user's posting history
+- **createCommenting**: Tracks comment creation in user's commenting history  
+- **createReplying**: Tracks reply creation in user's replying history
+- **updatePosting/updateCommenting/updateReplying**: Handle activity updates
+
+#### 2. Notification Functions
+```typescript
+// Notification creation pattern
+import { shouldGenerateNotification } from './shouldGenerateNotification'
+import { generateMessage } from './messageGenerator'
+
+export const onCommentCreated = onDocumentCreated(
+  'boards/{boardId}/posts/{postId}/comments/{commentId}',
+  async (event) => {
+    const comment = event.data?.data() as Comment
+    const { boardId, postId, commentId } = event.params
+    
+    // Get post data to find post author
+    const postSnapshot = await admin
+      .firestore()
+      .doc(`boards/${boardId}/posts/${postId}`)
+      .get()
+    const postData = postSnapshot.data() as Post
+    
+    // Generate notification message
+    const message = generateMessage(
+      NotificationType.COMMENT_ON_POST, 
+      comment.userName, 
+      postData.title
+    )
+    
+    // Check if notification should be sent
+    if (shouldGenerateNotification(
+      NotificationType.COMMENT_ON_POST, 
+      postData.authorId, 
+      comment.userId
+    )) {
+      // Create notification in user's subcollection
+      await admin
+        .firestore()
+        .collection(`users/${postData.authorId}/notifications`)
+        .add(notification)
+    }
+  }
+)
+```
+
+#### 3. Count Update Functions
+- **incrementCommentCount/decrementCommentCount**: Update post comment counts
+- **incrementRepliesCount/decrementRepliesCount**: Update comment reply counts
+- **updateCommentRepliesCounts**: Batch update reply counts
+
+#### 4. Writing History Functions
+- **createWritingHistoryOnPostCreated**: Track daily writing activity
+- **deleteWritingHistoryOnPostDeleted**: Remove writing history when post deleted
+- **getWritingStats**: HTTP function returning user writing statistics
+- **createBadges**: Generate achievement badges based on writing activity
+- **updateWritingHistoryByBatch**: Batch update writing histories
+
+#### 5. Real-time Update Functions
+- **updateDaysFromFirstDay**: Calculate writing streak days
+- **sendMessageOnNotification**: Send FCM push notifications
+
+### TypeScript Interfaces
+All functions use strongly typed interfaces from `functions/src/types/`:
+```typescript
+// Example from functions/src/types/Post.ts
+export interface Post {
+  id: string
+  boardId: string
+  title: string
+  content: string
+  authorId: string
+  authorName: string
+  createdAt?: Timestamp
+  countOfComments: number
+  countOfReplies: number
+  weekDaysFromFirstDay?: number
+}
+```
+
+### Admin SDK Setup
+```typescript
+// functions/src/admin.ts
+import * as admin from "firebase-admin"
+
+admin.initializeApp({
+  credential: admin.credential.applicationDefault(),
+})
+
+export default admin
+```
+
+### Development Commands
+```bash
+# Build functions
+npm run build
+
+# Run emulator
+npm run serve
+
+# Deploy functions
+npm run deploy
+
+# Run tests
+npm run test
+
+# Watch mode
+npm run build:watch
+```
+
+### Error Handling Pattern
+Always include proper error handling and logging:
+```typescript
+try {
+  await admin.firestore().collection('...').add(data)
+  console.log(`Successfully created ${resourceType}`)
+} catch (error) {
+  console.error(`Error creating ${resourceType}:`, error)
+  // Don't throw - let function complete gracefully
+}
+```
 
 ## Testing Patterns
 
