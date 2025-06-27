@@ -1,6 +1,6 @@
 import { NotificationType } from "../types/Notification";
 
-const MAX_CONTENT_LENGTH = 35;
+const MAX_CONTENT_LENGTH = 30;
 
 export const generateMessage = (notificationType: NotificationType, userName: string, contentTitle: string) => {
     const contentSnippet = generateContentSnippet(contentTitle);
