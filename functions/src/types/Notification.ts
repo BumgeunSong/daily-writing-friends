@@ -19,4 +19,5 @@ export enum NotificationType {
   REPLY_ON_COMMENT = 'reply_on_comment',
   REPLY_ON_POST = 'reply_on_post',
   REACTION_ON_COMMENT = 'reaction_on_comment',
+  REACTION_ON_REPLY = 'reaction_on_reply',
 }

@@ -17,6 +17,8 @@ export const generateMessage = (
       return `${userName}님이 ${contentSnippet} 글에 답글을 달았어요.`;
     case NotificationType.REACTION_ON_COMMENT:
       return `${userName}님이 댓글에 반응을 남겼어요.`;
+    case NotificationType.REACTION_ON_REPLY:
+      return `${userName}님이 답글에 반응을 남겼어요.`;
   }
 };
 

@@ -167,6 +167,8 @@ function getNotificationTitle({ notificationType }: NotificationTitleProps): str
       return `답글 알림`;
     case NotificationType.REACTION_ON_COMMENT:
       return `반응 알림`;
+    case NotificationType.REACTION_ON_REPLY:
+      return `반응 알림`;
   }
 }
 
@@ -197,5 +199,7 @@ function getNotificationMessage({
       return `${fromUserNickName}님이 '${postTitleSnippet(postTitle)}' 글에 답글을 달았어요.`;
     case NotificationType.REACTION_ON_COMMENT:
       return `${fromUserNickName}님이 댓글에 반응을 남겼어요.`;
+    case NotificationType.REACTION_ON_REPLY:
+      return `${fromUserNickName}님이 답글에 반응을 남겼어요.`;
   }
 }
