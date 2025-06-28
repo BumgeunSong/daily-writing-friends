@@ -115,13 +115,33 @@ Firestore Database Schema
         - userName (string)
         - userProfileImage (string)
         - createdAt (Timestamp)
+      - Subcollections:
+        - reactions
+          - Document ID: {reactionId}
+          - Fields:
+            - content (string): 이모지(예: "👍")
+            - createdAt (Timestamp)
+            - reactionUser (map):
+                - userId (string)
+                - userName (string)
+                - userProfileImage (string)
 
-      - replies
-        - Document ID: {replyId}
-        - Fields:
-          - id (string)
-          - content (string)
-          - userId (string)
-          - userName (string)
-          - userProfileImage (string)
-          - createdAt (Timestamp)
+    - replies
+      - Document ID: {replyId}
+      - Fields:
+        - id (string)
+        - content (string)
+        - userId (string)
+        - userName (string)
+        - userProfileImage (string)
+        - createdAt (Timestamp)
+      - Subcollections:
+        - reactions
+          - Document ID: {reactionId}
+          - Fields:
+            - content (string): 이모지(예: "😂")
+            - createdAt (Timestamp)
+            - reactionUser (map):
+                - userId (string)
+                - userName (string)
+                - userProfileImage (string)
