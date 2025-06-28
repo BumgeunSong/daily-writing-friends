@@ -1,6 +1,12 @@
 import { onCommentCreated } from './notifications/commentOnPost';
-import { decrementCommentCountOnCommentDeleted, incrementCommentCountOnCommentCreated } from './notifications/incrementCommentCount';
-import { decrementRepliesCountOnReplyDeleted, incrementRepliesCountOnReplyCreated } from './notifications/incrementRepliesCount';
+import {
+  decrementCommentCountOnCommentDeleted,
+  incrementCommentCountOnCommentCreated,
+} from './notifications/incrementCommentCount';
+import {
+  decrementRepliesCountOnReplyDeleted,
+  incrementRepliesCountOnReplyCreated,
+} from './notifications/incrementRepliesCount';
 import { onReplyCreatedOnComment } from './notifications/replyOnComment';
 import { onReplyCreatedOnPost } from './notifications/replyOnPost';
 import { onNotificationCreated } from './notifications/sendMessageOnNotification';
@@ -17,6 +23,10 @@ import { updateCommenting } from './commentings/updateCommenting';
 import { createReplying } from './replyings/createReplying';
 import { updateReplying } from './replyings/updateReplying';
 import { allocateSecretBuddy } from './oneTimeScript/allocateSecretBuddy';
+import {
+  onReactionCreatedOnComment,
+  onReactionCreatedOnReply,
+} from './notifications/reactionOnComment';
 
 export {
   onCommentCreated,
@@ -39,5 +49,7 @@ export {
   updateCommenting,
   createReplying,
   updateReplying,
-  allocateSecretBuddy
+  allocateSecretBuddy,
+  onReactionCreatedOnComment,
+  onReactionCreatedOnReply,
 };

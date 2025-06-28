@@ -1,14 +1,14 @@
-import { Timestamp } from "firebase-admin/firestore";
-import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import admin from "../admin";
-import { generateMessage } from "./messageGenerator";
-import { shouldGenerateNotification } from "./shouldGenerateNotification";
-import { Comment } from "../types/Comment";
-import { Notification, NotificationType } from "../types/Notification";
-import { Reply } from "../types/Reply";
+import { Timestamp } from 'firebase-admin/firestore';
+import { onDocumentCreated } from 'firebase-functions/v2/firestore';
+import admin from '../admin';
+import { generateMessage } from './messageGenerator';
+import { shouldGenerateNotification } from './shouldGenerateNotification';
+import { Comment } from '../types/Comment';
+import { Notification, NotificationType } from '../types/Notification';
+import { Reply } from '../types/Reply';
 
 export const onReplyCreatedOnComment = onDocumentCreated(
-  "boards/{boardId}/posts/{postId}/comments/{commentId}/replies/{replyId}",
+  'boards/{boardId}/posts/{postId}/comments/{commentId}/replies/{replyId}',
   async (event) => {
     const reply = event.data?.data() as Reply;
 
@@ -27,10 +27,16 @@ export const onReplyCreatedOnComment = onDocumentCreated(
     const commentData = commentSnapshot.data() as Comment;
     const commentAuthorId = commentData.userId;
 
-    const message = generateMessage(NotificationType.REPLY_ON_COMMENT, reply.userName, commentData.content);
+    const message = generateMessage(
+      NotificationType.REPLY_ON_COMMENT,
+      reply.userName,
+      commentData.content,
+    );
 
     // 댓글 작성자에게 알림 생성
-    if (shouldGenerateNotification(NotificationType.REPLY_ON_COMMENT, commentAuthorId, replyAuthorId)) {
+    if (
+      shouldGenerateNotification(NotificationType.REPLY_ON_COMMENT, commentAuthorId, replyAuthorId)
+    ) {
       const notification: Notification = {
         type: NotificationType.REPLY_ON_COMMENT,
         fromUserId: replyAuthorId,
@@ -49,5 +55,5 @@ export const onReplyCreatedOnComment = onDocumentCreated(
         .collection(`users/${commentAuthorId}/notifications`)
         .add(notification);
     }
-  }
+  },
 );
