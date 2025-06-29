@@ -37,14 +37,6 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
         )
       : null;
 
-  // snippet 생성 함수
-  const getSnippet = (content: string | null | undefined) => {
-    if (!content) return '';
-    return content.length > MAX_CONTENT_LENGTH
-      ? content.slice(0, MAX_CONTENT_LENGTH) + '...'
-      : content;
-  };
-
   const commentSnippet = commentContentObj ? getSnippet(commentContentObj.content) : '';
   const replySnippet = replyContentObj ? getSnippet(replyContentObj.content) : '';
 
@@ -85,7 +77,7 @@ const generateMessage = async (
   commentSnippet?: string,
   replySnippet?: string,
 ): Promise<string> => {
-  const postTitleSnippet = generateTitleSnippet(postTitle || '');
+  const postTitleSnippet = getSnippet(postTitle || '');
 
   switch (notification.type) {
     case NotificationType.COMMENT_ON_POST:
@@ -102,10 +94,10 @@ const generateMessage = async (
 };
 
 const MAX_CONTENT_LENGTH = 30;
-
-const generateTitleSnippet = (contentTitle: string) => {
-  if (contentTitle.length > MAX_CONTENT_LENGTH) {
-    return contentTitle.slice(0, MAX_CONTENT_LENGTH) + '...';
-  }
-  return contentTitle;
+// snippet 생성 함수
+const getSnippet = (content: string | null | undefined) => {
+  if (!content) return '';
+  return content.length > MAX_CONTENT_LENGTH
+    ? content.slice(0, MAX_CONTENT_LENGTH) + '...'
+    : content;
 };
