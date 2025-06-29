@@ -67,9 +67,11 @@ const generateMessage = async (
   }
 };
 
+const MAX_CONTENT_LENGTH = 30;
+
 const generateTitleSnippet = (contentTitle: string) => {
-  if (contentTitle.length > 12) {
-    return contentTitle.slice(0, 12) + '...';
+  if (contentTitle.length > MAX_CONTENT_LENGTH) {
+    return contentTitle.slice(0, MAX_CONTENT_LENGTH) + '...';
   }
   return contentTitle;
 };
