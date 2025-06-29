@@ -1,4 +1,14 @@
-import { collection, getDocs, getCountFromServer, addDoc, doc, serverTimestamp, updateDoc, deleteDoc } from 'firebase/firestore';
+import {
+  collection,
+  getDocs,
+  getCountFromServer,
+  addDoc,
+  doc,
+  serverTimestamp,
+  updateDoc,
+  deleteDoc,
+  getDoc,
+} from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { Reply } from '@/comment/model/Reply';
 import { buildNotInQuery } from '@/user/api/user';
@@ -59,24 +69,27 @@ export async function fetchRepliesOnce(
   boardId: string,
   postId: string,
   commentId: string,
-  blockedByUsers: string[] = []
+  blockedByUsers: string[] = [],
 ): Promise<Reply[]> {
   const repliesRef = collection(
-    firestore, 
-    'boards', 
-    boardId, 
-    'posts', 
-    postId, 
+    firestore,
+    'boards',
+    boardId,
+    'posts',
+    postId,
     'comments',
     commentId,
-    'replies'
+    'replies',
   );
   const q = buildNotInQuery(repliesRef, 'userId', blockedByUsers, ['createdAt', 'asc']);
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  } as Reply));
+  return snapshot.docs.map(
+    (doc) =>
+      ({
+        id: doc.id,
+        ...doc.data(),
+      }) as Reply,
+  );
 }
 
 /**
@@ -86,19 +99,44 @@ export async function fetchReplyCountOnce(
   boardId: string,
   postId: string,
   commentId: string,
-  blockedByUsers: string[] = []
+  blockedByUsers: string[] = [],
 ): Promise<number> {
   const repliesRef = collection(
-    firestore, 
-    'boards', 
-    boardId, 
-    'posts', 
-    postId, 
+    firestore,
+    'boards',
+    boardId,
+    'posts',
+    postId,
     'comments',
     commentId,
-    'replies'
+    'replies',
   );
   const q = buildNotInQuery(repliesRef, 'userId', blockedByUsers, ['createdAt', 'asc']);
   const snapshot = await getCountFromServer(q);
   return snapshot.data().count;
+}
+
+/**
+ * 답글 단일 조회
+ */
+export async function fetchReplyById(
+  boardId: string,
+  postId: string,
+  commentId: string,
+  replyId: string,
+): Promise<Reply | null> {
+  const replyRef = doc(
+    firestore,
+    'boards',
+    boardId,
+    'posts',
+    postId,
+    'comments',
+    commentId,
+    'replies',
+    replyId,
+  );
+  const snapshot = await getDoc(replyRef);
+  if (!snapshot.exists()) return null;
+  return { id: snapshot.id, ...snapshot.data() } as Reply;
 }
