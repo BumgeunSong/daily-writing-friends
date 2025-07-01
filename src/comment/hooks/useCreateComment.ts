@@ -1,10 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createComment, updateCommentToPost, deleteCommentToPost } from '@/comment/api/comment';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { useUser } from '@/user/hooks/useUser';
 
 export function useCreateComment(boardId: string, postId: string) {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
+  const { userData } = useUser(currentUser?.uid);
 
   return useMutation(
     async (content: string) => {
@@ -14,15 +16,15 @@ export function useCreateComment(boardId: string, postId: string) {
         postId,
         content,
         currentUser.uid,
-        currentUser.displayName,
-        currentUser.photoURL,
+        userData?.nickname ?? currentUser.displayName,
+        userData?.profilePhotoURL ?? currentUser.photoURL,
       );
     },
     {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] });
       },
-    }
+    },
   );
 }
 
@@ -34,18 +36,15 @@ export function useEditComment(boardId: string, postId: string, commentId: strin
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] });
       },
-    }
+    },
   );
 }
 
 export function useDeleteComment(boardId: string, postId: string, commentId: string) {
   const queryClient = useQueryClient();
-  return useMutation(
-    () => deleteCommentToPost(boardId, postId, commentId),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] });
-      },
-    }
-  );
-} 
+  return useMutation(() => deleteCommentToPost(boardId, postId, commentId), {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] });
+    },
+  });
+}
