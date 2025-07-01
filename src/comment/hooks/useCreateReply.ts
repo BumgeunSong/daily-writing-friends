@@ -1,10 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createReply, updateReplyToComment, deleteReplyToComment } from '@/comment/api/reply';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { useUser } from '@/user/hooks/useUser';
 
 export function useCreateReply(boardId: string, postId: string, commentId: string) {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
+  const { userData } = useUser(currentUser?.uid);
 
   return useMutation(
     async (content: string) => {
@@ -15,8 +17,8 @@ export function useCreateReply(boardId: string, postId: string, commentId: strin
         commentId,
         content,
         currentUser.uid,
-        currentUser.displayName,
-        currentUser.photoURL,
+        userData?.nickname ?? currentUser.displayName,
+        userData?.profilePhotoURL ?? currentUser.photoURL,
       );
     },
     {
@@ -24,7 +26,7 @@ export function useCreateReply(boardId: string, postId: string, commentId: strin
         queryClient.invalidateQueries({ queryKey: ['replies', boardId, postId, commentId] });
         queryClient.invalidateQueries({ queryKey: ['replyCount', boardId, postId, commentId] });
       },
-    }
+    },
   );
 }
 
@@ -37,19 +39,21 @@ export function useEditReply(boardId: string, postId: string, commentId: string,
         queryClient.invalidateQueries({ queryKey: ['replies', boardId, postId, commentId] });
         queryClient.invalidateQueries({ queryKey: ['replyCount', boardId, postId, commentId] });
       },
-    }
+    },
   );
 }
 
-export function useDeleteReply(boardId: string, postId: string, commentId: string, replyId: string) {
+export function useDeleteReply(
+  boardId: string,
+  postId: string,
+  commentId: string,
+  replyId: string,
+) {
   const queryClient = useQueryClient();
-  return useMutation(
-    () => deleteReplyToComment(boardId, postId, commentId, replyId),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['replies', boardId, postId, commentId] });
-        queryClient.invalidateQueries({ queryKey: ['replyCount', boardId, postId, commentId] });
-      },
-    }
-  );
-} 
+  return useMutation(() => deleteReplyToComment(boardId, postId, commentId, replyId), {
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['replies', boardId, postId, commentId] });
+      queryClient.invalidateQueries({ queryKey: ['replyCount', boardId, postId, commentId] });
+    },
+  });
+}
