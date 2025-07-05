@@ -102,6 +102,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-tailwindcss": "^3.15.1",
     "jsdom": "^26.0.0",
+    "json": "^11.0.0",
     "path": "^0.12.7",
     "postcss": "^8.4.47",
     "prettier": "^3.3.3",
