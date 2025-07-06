@@ -10,7 +10,6 @@ import { useUserNickname } from '@/user/hooks/useUserNickname'
 import CountupWritingTimer from "./CountupWritingTimer"
 import { PostSubmitButton } from "./PostSubmitButton"
 import { PostTextEditor } from "./PostTextEditor"
-import { CopyErrorBoundary } from './CopyErrorBoundary';
 import type React from "react"
 import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
@@ -107,9 +106,7 @@ export default function PostFreewritingPage() {
       <div className="container mx-auto max-w-3xl grow px-4 py-6 sm:px-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="overflow-hidden rounded-xl border bg-card">
-            <CopyErrorBoundary>
-              <PostTextEditor value={content} onChange={handleContentChange} />
-            </CopyErrorBoundary>
+            <PostTextEditor value={content} onChange={handleContentChange} />
           </div>
 
           <div className="flex items-center justify-end pt-2">

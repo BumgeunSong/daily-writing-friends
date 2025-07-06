@@ -7,7 +7,6 @@ import { useAutoSaveDrafts } from '@/draft/hooks/useAutoSaveDrafts';
 import { DraftStatusIndicator } from '@/draft/components/DraftStatusIndicator';
 import { DraftsDrawer } from '@/draft/components/DraftsDrawer';
 import { PostTextEditor } from './PostTextEditor';
-import { CopyErrorBoundary } from './CopyErrorBoundary';
 import { PostTitleEditor } from './PostTitleEditor';
 import { Button } from '@/shared/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/shared/ui/alert-dialog';
@@ -84,12 +83,10 @@ export default function PostCreationPage() {
           value={title} 
           onChange={(e) => setTitle(e.target.value)} 
         />
-        <CopyErrorBoundary>
-          <PostTextEditor 
-            value={content} 
-            onChange={setContent} 
-          />
-        </CopyErrorBoundary>
+        <PostTextEditor 
+          value={content} 
+          onChange={setContent} 
+        />
         
         {/* 임시 저장 상태 표시 컴포넌트 */}
         <DraftStatusIndicator

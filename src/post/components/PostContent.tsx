@@ -5,6 +5,7 @@ import { sanitizePostContent } from '@/post/utils/contentUtils';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { Post, PostVisibility } from '@/post/model/Post';
 import { useCopyHandler } from '@/post/hooks/useCopyHandler';
+import { CopyErrorBoundary } from './CopyErrorBoundary';
 
 // PostContent 컴포넌트
 interface PostContentProps {
@@ -52,26 +53,28 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
     try {
         const sanitizedContent = sanitizePostContent(post.content);
         return (
-            <div className="relative">
-                {isPrivateAndAuthor && (
-                    <div className="mb-4 flex items-center">
-                        <span className="inline-flex items-center rounded-md bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600 ring-1 ring-inset ring-gray-300">
-                            <Lock className="mr-1 size-3" /> 비공개 글
-                        </span>
-                    </div>
-                )}
-                <div
-                    ref={contentRef}
-                    dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-                    className="prose prose-lg prose-slate mt-6 max-w-none dark:prose-invert
-                        prose-h1:text-3xl prose-h1:font-semibold 
-                        prose-h2:text-2xl prose-h2:font-semibold
-                        prose-p:my-2
-                        prose-ol:my-4
-                        prose-ul:my-4
-                    "
-                />
-            </div>
+            <CopyErrorBoundary>
+                <div className="relative">
+                    {isPrivateAndAuthor && (
+                        <div className="mb-4 flex items-center">
+                            <span className="inline-flex items-center rounded-md bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600 ring-1 ring-inset ring-gray-300">
+                                <Lock className="mr-1 size-3" /> 비공개 글
+                            </span>
+                        </div>
+                    )}
+                    <div
+                        ref={contentRef}
+                        dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+                        className="prose prose-lg prose-slate mt-6 max-w-none dark:prose-invert
+                            prose-h1:text-3xl prose-h1:font-semibold 
+                            prose-h2:text-2xl prose-h2:font-semibold
+                            prose-p:my-2
+                            prose-ol:my-4
+                            prose-ul:my-4
+                        "
+                    />
+                </div>
+            </CopyErrorBoundary>
         );
     } catch (error) {
         const err = error instanceof Error ? error : new Error('알 수 없는 렌더링 오류가 발생했습니다.');

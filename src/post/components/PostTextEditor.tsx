@@ -5,6 +5,7 @@ import { Progress } from '@/shared/ui/progress';
 import 'react-quill-new/dist/quill.snow.css';
 import { useImageUpload } from '@/post/hooks/useImageUpload';
 import { useCopyHandler } from '@/post/hooks/useCopyHandler';
+import { CopyErrorBoundary } from './CopyErrorBoundary';
 
 interface PostTextEditorProps {
   value: string;
@@ -250,31 +251,33 @@ export function PostTextEditor({
   useCopyHandler(getSelectedHtml, editorElementRef.current);
 
   return (
-    <div className='relative space-y-2 w-full'>
-      <div className='rounded-xl border-0 bg-background w-full'>
-        <ReactQuill
-          ref={quillRef}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          theme="snow"
-          modules={modules}
-          formats={formats}
-          className="prose prose-lg prose-slate dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold max-w-none w-full"
-        />
-      </div>
-      
-      {isUploading && (
-        <div className='absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm'>
-          <div className='w-4/5 max-w-md space-y-3 p-4'>
-            <Progress value={uploadProgress} className="h-2" />
-            <p className='text-center text-sm font-medium text-foreground'>
-              이미지 업로드 중... {uploadProgress}%
-            </p>
-          </div>
+    <CopyErrorBoundary>
+      <div className='relative space-y-2 w-full'>
+        <div className='rounded-xl border-0 bg-background w-full'>
+          <ReactQuill
+            ref={quillRef}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            theme="snow"
+            modules={modules}
+            formats={formats}
+            className="prose prose-lg prose-slate dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold max-w-none w-full"
+          />
         </div>
-      )}
-    </div>
+        
+        {isUploading && (
+          <div className='absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm'>
+            <div className='w-4/5 max-w-md space-y-3 p-4'>
+              <Progress value={uploadProgress} className="h-2" />
+              <p className='text-center text-sm font-medium text-foreground'>
+                이미지 업로드 중... {uploadProgress}%
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </CopyErrorBoundary>
   );
 }
 
