@@ -1,9 +1,11 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useCallback } from 'react';
 import ReactQuill from 'react-quill-new';
 import { toast } from 'sonner';
 import { Progress } from '@/shared/ui/progress';
 import 'react-quill-new/dist/quill.snow.css';
 import { useImageUpload } from '@/post/hooks/useImageUpload';
+import { useCopyHandler } from '@/post/hooks/useCopyHandler';
+import { CopyErrorBoundary } from './CopyErrorBoundary';
 
 interface PostTextEditorProps {
   value: string;
@@ -15,7 +17,7 @@ const quillStyles = `
 .ql-container {
   font-family: var(--font-sans);
   font-size: 1.125rem;
-  line-height: 1.75;
+  line-height: 1.5;
   min-height: 300px;
   width: 100%;
   max-width: none;
@@ -31,7 +33,12 @@ const quillStyles = `
 }
 
 .ql-editor p {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Ensure consistent paragraph spacing for better copy-paste behavior */
+.ql-editor p:last-child {
+  margin-bottom: 0;
 }
 
 .ql-editor strong {
@@ -134,11 +141,16 @@ const quillStyles = `
   transition: opacity 0.2s ease;
 }
 
-/* Matching prose styles */
+/* Matching prose styles - Important declarations to override Tailwind prose */
 .ql-editor {
   max-width: none;
-  font-size: 1.125rem;
-  line-height: 1.75;
+  font-size: 1.125rem !important;
+  line-height: 1.5 !important;
+}
+
+/* Override Tailwind prose-lg line-height */
+.prose-lg .ql-editor {
+  line-height: 1.5 !important;
 }
 
 /* List styling */
@@ -168,6 +180,7 @@ export function PostTextEditor({
   placeholder = '내용을 입력하세요...', 
 }: PostTextEditorProps) {
   const quillRef = useRef<any>(null);
+  const editorElementRef = useRef<HTMLElement | null>(null);
   const { imageHandler, isUploading, uploadProgress } = useImageUpload({ insertImage: (url: string) => {
     const editor = quillRef.current?.getEditor();
     const range = editor?.getSelection(true);
@@ -208,32 +221,63 @@ export function PostTextEditor({
     };
   }, []);
 
+
+  // 선택된 HTML을 가져오는 함수
+  const getSelectedHtml = useCallback(() => {
+    const editor = quillRef.current?.getEditor();
+    if (!editor) return '';
+    
+    const selection = editor.getSelection();
+    if (!selection || selection.length === 0) return '';
+    
+    return editor.getSemanticHTML(selection.index, selection.length);
+  }, []);
+
+  // 에디터 요소 참조 업데이트
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const editorElement = quillRef.current?.getEditor()?.root;
+      if (editorElement) {
+        editorElementRef.current = editorElement;
+      }
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, []);
+
+  // 커스텀 복사 핸들러 적용
+  useCopyHandler(getSelectedHtml, editorElementRef.current);
+
   return (
-    <div className='relative space-y-2 w-full'>
-      <div className='rounded-xl border-0 bg-background w-full'>
-        <ReactQuill
-          ref={quillRef}
-          value={value}
-          onChange={onChange}
-          placeholder={placeholder}
-          theme="snow"
-          modules={modules}
-          formats={formats}
-          className="prose prose-lg prose-slate dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold max-w-none w-full"
-        />
-      </div>
-      
-      {isUploading && (
-        <div className='absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm'>
-          <div className='w-4/5 max-w-md space-y-3 p-4'>
-            <Progress value={uploadProgress} className="h-2" />
-            <p className='text-center text-sm font-medium text-foreground'>
-              이미지 업로드 중... {uploadProgress}%
-            </p>
-          </div>
+    <CopyErrorBoundary>
+      <div className='relative space-y-2 w-full'>
+        <div className='rounded-xl border-0 bg-background w-full'>
+          <ReactQuill
+            ref={quillRef}
+            value={value}
+            onChange={onChange}
+            placeholder={placeholder}
+            theme="snow"
+            modules={modules}
+            formats={formats}
+            className="prose prose-lg prose-slate dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold max-w-none w-full"
+          />
         </div>
-      )}
-    </div>
+        
+        {isUploading && (
+          <div className='absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm'>
+            <div className='w-4/5 max-w-md space-y-3 p-4'>
+              <Progress value={uploadProgress} className="h-2" />
+              <p className='text-center text-sm font-medium text-foreground'>
+                이미지 업로드 중... {uploadProgress}%
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </CopyErrorBoundary>
   );
 }
 
