@@ -1,10 +1,10 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useCallback } from 'react';
 import ReactQuill from 'react-quill-new';
 import { toast } from 'sonner';
 import { Progress } from '@/shared/ui/progress';
 import 'react-quill-new/dist/quill.snow.css';
 import { useImageUpload } from '@/post/hooks/useImageUpload';
-import { convertHtmlToText } from '@/post/utils/contentUtils';
+import { useCopyHandler } from '@/post/hooks/useCopyHandler';
 
 interface PostTextEditorProps {
   value: string;
@@ -179,6 +179,7 @@ export function PostTextEditor({
   placeholder = '내용을 입력하세요...', 
 }: PostTextEditorProps) {
   const quillRef = useRef<any>(null);
+  const editorElementRef = useRef<HTMLElement | null>(null);
   const { imageHandler, isUploading, uploadProgress } = useImageUpload({ insertImage: (url: string) => {
     const editor = quillRef.current?.getEditor();
     const range = editor?.getSelection(true);
@@ -220,42 +221,33 @@ export function PostTextEditor({
   }, []);
 
 
-  // 커스텀 복사 이벤트 핸들러
-  useEffect(() => {
-    const handleCopy = (e: ClipboardEvent) => {
-      const editor = quillRef.current?.getEditor();
-      if (!editor) return;
-      
-      const selection = editor.getSelection();
-      if (!selection || selection.length === 0) return;
-      
-      // 선택된 HTML 가져오기
-      const selectedHtml = editor.getSemanticHTML(selection.index, selection.length);
-      
-      // HTML을 텍스트로 변환
-      const plainText = convertHtmlToText(selectedHtml);
-      
-      // 클립보드에 텍스트만 설정
-      e.clipboardData?.setData('text/plain', plainText);
-      e.preventDefault();
-    };
+  // 선택된 HTML을 가져오는 함수
+  const getSelectedHtml = useCallback(() => {
+    const editor = quillRef.current?.getEditor();
+    if (!editor) return '';
+    
+    const selection = editor.getSelection();
+    if (!selection || selection.length === 0) return '';
+    
+    return editor.getSemanticHTML(selection.index, selection.length);
+  }, []);
 
-    // 에디터 마운트 후 이벤트 리스너 등록
+  // 에디터 요소 참조 업데이트
+  useEffect(() => {
     const timer = setTimeout(() => {
       const editorElement = quillRef.current?.getEditor()?.root;
       if (editorElement) {
-        editorElement.addEventListener('copy', handleCopy);
+        editorElementRef.current = editorElement;
       }
     }, 100);
 
     return () => {
       clearTimeout(timer);
-      const editorElement = quillRef.current?.getEditor()?.root;
-      if (editorElement) {
-        editorElement.removeEventListener('copy', handleCopy);
-      }
     };
   }, []);
+
+  // 커스텀 복사 핸들러 적용
+  useCopyHandler(getSelectedHtml, editorElementRef.current);
 
   return (
     <div className='relative space-y-2 w-full'>
