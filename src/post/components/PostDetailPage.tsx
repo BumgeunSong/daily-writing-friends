@@ -10,6 +10,7 @@ import { useUser } from '@/user/hooks/useUser';
 import { PostAdjacentButtons } from './PostAdjacentButtons';
 import { PostBackButton } from './PostBackButton';
 import { PostContent } from './PostContent';
+import { CopyErrorBoundary } from './CopyErrorBoundary';
 import { PostDetailHeader } from './PostDetailHeader';
 import { PostMetaHelmet } from './PostMetaHelmet';
 
@@ -54,7 +55,9 @@ export default function PostDetailPage() {
           onDelete={handleDelete}
           navigate={navigate}
         />
-        <PostContent post={post} isAuthor={isAuthor} />
+        <CopyErrorBoundary>
+          <PostContent post={post} isAuthor={isAuthor} />
+        </CopyErrorBoundary>
         </article>
         <div className='mt-8 border-t border-border'></div>
         {boardId && postId && <PostAdjacentButtons boardId={boardId} postId={postId} />}

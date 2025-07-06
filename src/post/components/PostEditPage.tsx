@@ -10,6 +10,7 @@ import { formatDate } from '@/shared/utils/dateUtils';
 import { fetchPost, updatePost } from '@/shared/utils/postUtils';
 import { PostBackButton } from './PostBackButton';
 import { PostTextEditor } from './PostTextEditor';
+import { CopyErrorBoundary } from './CopyErrorBoundary';
 import { PostTitleEditor } from './PostTitleEditor';
 
 // 메인 컴포넌트
@@ -122,11 +123,13 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
           value={editState.title}
           onChange={setTitle}
         />
-        <PostTextEditor
-          value={editState.content}
-          onChange={setContent}
-          placeholder='내용을 수정하세요...'
-        />
+        <CopyErrorBoundary>
+          <PostTextEditor
+            value={editState.content}
+            onChange={setContent}
+            placeholder='내용을 수정하세요...'
+          />
+        </CopyErrorBoundary>
         
         <div className='flex items-center justify-between text-sm text-muted-foreground'>
           <p>
