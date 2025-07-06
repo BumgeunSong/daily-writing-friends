@@ -272,30 +272,45 @@ const getContentPreview = (content: string): string => {
 
 /**
  * HTML을 텍스트로 변환하는 함수 (복사-붙여넣기용)
+ * 정규식 기반으로 성능 최적화 및 에러 처리 개선
  * 
  * @param html - 변환할 HTML 문자열
  * @returns 순수 텍스트 문자열
  */
 const convertHtmlToText = (html: string): string => {
-  // 임시 div 요소 생성하여 HTML 파싱 
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = html;
+  try {
+    if (!html || typeof html !== 'string') {
+      return '';
+    }
 
-  // <p> 태그를 줄바꿈으로 변환
-  const paragraphs = tempDiv.querySelectorAll('p');
-  paragraphs.forEach((p, index) => {
-      if (index > 0) {
-          p.insertAdjacentText('beforebegin', '\n');
-      }
-  });
-
-  // <br> 태그를 줄바꿈으로 변환
-  const breaks = tempDiv.querySelectorAll('br');
-  breaks.forEach((br) => {
-      br.insertAdjacentText('afterend', '\n');
-  });
-  
-  return tempDiv.textContent || tempDiv.innerText || '';
+    // 정규식으로 HTML 태그 제거 및 변환 (DOM 조작보다 빠름)
+    let text = html
+      // </p><p> 사이를 줄바꿈으로 변환 (단락 구분)
+      .replace(/<\/p>\s*<p[^>]*>/gi, '\n')
+      // <br> 태그를 줄바꿈으로 변환
+      .replace(/<br\s*\/?>/gi, '\n')
+      // 모든 HTML 태그 제거
+      .replace(/<[^>]*>/g, '')
+      // HTML 엔티티 디코딩
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      // 연속된 공백을 단일 공백으로 변환 (줄바꿈 제외)
+      .replace(/[ \t]+/g, ' ')
+      // 연속된 줄바꿈을 최대 2개까지만 허용
+      .replace(/\n\s*\n\s*\n/g, '\n\n')
+      // 앞뒤 공백 제거
+      .trim();
+    
+    return text;
+  } catch (error) {
+    console.error('HTML to text conversion failed:', error);
+    // fallback으로 입력값 그대로 반환
+    return html || '';
+  }
 };
 
 export {
