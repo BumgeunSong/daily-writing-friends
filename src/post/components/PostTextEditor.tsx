@@ -15,7 +15,7 @@ const quillStyles = `
 .ql-container {
   font-family: var(--font-sans);
   font-size: 1.125rem;
-  line-height: 1.75;
+  line-height: 1.5;
   min-height: 300px;
   width: 100%;
   max-width: none;
@@ -31,7 +31,12 @@ const quillStyles = `
 }
 
 .ql-editor p {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Ensure consistent paragraph spacing for better copy-paste behavior */
+.ql-editor p:last-child {
+  margin-bottom: 0;
 }
 
 .ql-editor strong {
@@ -134,11 +139,16 @@ const quillStyles = `
   transition: opacity 0.2s ease;
 }
 
-/* Matching prose styles */
+/* Matching prose styles - Important declarations to override Tailwind prose */
 .ql-editor {
   max-width: none;
-  font-size: 1.125rem;
-  line-height: 1.75;
+  font-size: 1.125rem !important;
+  line-height: 1.5 !important;
+}
+
+/* Override Tailwind prose-lg line-height */
+.prose-lg .ql-editor {
+  line-height: 1.5 !important;
 }
 
 /* List styling */
@@ -207,6 +217,7 @@ export function PostTextEditor({
       styleTag.remove();
     };
   }, []);
+
 
   return (
     <div className='relative space-y-2 w-full'>

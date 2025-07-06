@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/react';
 import { AlertCircle, Lock } from 'lucide-react';
 import { sanitizePostContent } from '@/post/utils/contentUtils';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
-import { Post, PostVisibility } from '@post/model/Post';
+import { Post, PostVisibility } from '@/post/model/Post';
 
 // PostContent 컴포넌트
 interface PostContentProps {
@@ -47,7 +47,7 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
                     className="prose prose-lg prose-slate mt-6 max-w-none dark:prose-invert
                         prose-h1:text-3xl prose-h1:font-semibold 
                         prose-h2:text-2xl prose-h2:font-semibold
-                        prose-p:my-4
+                        prose-p:my-2
                         prose-ol:my-4
                         prose-ul:my-4
                     "
