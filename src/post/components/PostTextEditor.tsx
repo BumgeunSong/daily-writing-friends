@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Progress } from '@/shared/ui/progress';
 import 'react-quill-new/dist/quill.snow.css';
 import { useImageUpload } from '@/post/hooks/useImageUpload';
+import { convertHtmlToText } from '@/post/utils/contentUtils';
 
 interface PostTextEditorProps {
   value: string;
@@ -218,6 +219,43 @@ export function PostTextEditor({
     };
   }, []);
 
+
+  // 커스텀 복사 이벤트 핸들러
+  useEffect(() => {
+    const handleCopy = (e: ClipboardEvent) => {
+      const editor = quillRef.current?.getEditor();
+      if (!editor) return;
+      
+      const selection = editor.getSelection();
+      if (!selection || selection.length === 0) return;
+      
+      // 선택된 HTML 가져오기
+      const selectedHtml = editor.getSemanticHTML(selection.index, selection.length);
+      
+      // HTML을 텍스트로 변환
+      const plainText = convertHtmlToText(selectedHtml);
+      
+      // 클립보드에 텍스트만 설정
+      e.clipboardData?.setData('text/plain', plainText);
+      e.preventDefault();
+    };
+
+    // 에디터 마운트 후 이벤트 리스너 등록
+    const timer = setTimeout(() => {
+      const editorElement = quillRef.current?.getEditor()?.root;
+      if (editorElement) {
+        editorElement.addEventListener('copy', handleCopy);
+      }
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      const editorElement = quillRef.current?.getEditor()?.root;
+      if (editorElement) {
+        editorElement.removeEventListener('copy', handleCopy);
+      }
+    };
+  }, []);
 
   return (
     <div className='relative space-y-2 w-full'>

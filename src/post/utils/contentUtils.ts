@@ -270,9 +270,38 @@ const getContentPreview = (content: string): string => {
   return tempDiv.innerHTML;
 };
 
+/**
+ * HTML을 텍스트로 변환하는 함수 (복사-붙여넣기용)
+ * 
+ * @param html - 변환할 HTML 문자열
+ * @returns 순수 텍스트 문자열
+ */
+const convertHtmlToText = (html: string): string => {
+  // 임시 div 요소 생성하여 HTML 파싱 
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+
+  // <p> 태그를 줄바꿈으로 변환
+  const paragraphs = tempDiv.querySelectorAll('p');
+  paragraphs.forEach((p, index) => {
+      if (index > 0) {
+          p.insertAdjacentText('beforebegin', '\n');
+      }
+  });
+
+  // <br> 태그를 줄바꿈으로 변환
+  const breaks = tempDiv.querySelectorAll('br');
+  breaks.forEach((br) => {
+      br.insertAdjacentText('afterend', '\n');
+  });
+  
+  return tempDiv.textContent || tempDiv.innerText || '';
+};
+
 export {
   convertUrlsToLinks,
   getContentPreview,
   sanitizePostContent,
-  sanitizeCommentContent
+  sanitizeCommentContent,
+  convertHtmlToText
 };
