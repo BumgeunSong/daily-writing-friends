@@ -16,7 +16,6 @@ import { createPosting } from './postings/createPosting';
 import { updatePosting } from './postings/updatePosting';
 import { createWritingHistoryOnPostCreated } from './writingHistory/createWritingHistoryOnPostCreated';
 import { deleteWritingHistoryOnPostDeleted } from './writingHistory/deleteWritingHistoryOnPostDeleted';
-import { getWritingStats } from './writingHistory/getWritingStats';
 import { updateWritingHistoryByBatch } from './writingHistory/updateWritingHistoryByBatch';
 import { createCommenting } from './commentings/createCommenting';
 import { updateCommenting } from './commentings/updateCommenting';
@@ -40,7 +39,6 @@ export {
   incrementRepliesCountOnReplyCreated,
   decrementRepliesCountOnReplyDeleted,
   updateWritingHistoryByBatch,
-  getWritingStats,
   createWritingHistoryOnPostCreated,
   deleteWritingHistoryOnPostDeleted,
   createPosting,
