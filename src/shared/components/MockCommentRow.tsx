@@ -3,7 +3,6 @@ import { MessageCircle } from 'lucide-react';
 import { sanitizeCommentContent } from '@/post/utils/contentUtils';
 import { AvatarFallback, AvatarImage, Avatar } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
-import { Card, CardContent } from '@/shared/ui/card';
 import { Comment } from '@/comment/model/Comment';
 
 export const mockComment: Comment = {
