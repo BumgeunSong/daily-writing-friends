@@ -41,6 +41,13 @@ const SystemPostCard: React.FC<SystemPostCardProps> = ({
     }
   };
 
+  const badges = isOnlyForCurrentUser
+    ? [
+        { name: '운영진', emoji: '👑' },
+        { name: '나에게만 보이는 글', emoji: '' },
+      ]
+    : [{ name: '운영진', emoji: '👑' }];
+
   return (
     <Card className='reading-shadow border-border/50 transition-all duration-200 hover:border-border nav-hover'>
       <CardHeader className='px-3 pb-1 pt-3 md:px-4'>
@@ -49,10 +56,7 @@ const SystemPostCard: React.FC<SystemPostCardProps> = ({
             authorData={authorData}
             isLoading={false}
             onClickProfile={handleProfileClick}
-            badges={[
-              { name: '운영진', emoji: '👑' },
-              { name: '나에게만 보이는 글', emoji: '' },
-            ]}
+            badges={badges}
           />
         </div>
         <h2 className='flex items-center text-lg font-semibold text-foreground leading-tight md:text-xl'>
