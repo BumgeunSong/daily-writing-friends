@@ -42,7 +42,7 @@ const SystemPostCard: React.FC<SystemPostCardProps> = ({
   };
 
   return (
-    <Card className='reading-shadow border-accent/30 bg-gradient-to-br from-accent/5 to-accent/10 transition-all duration-200 hover:border-accent/50 hover:shadow-lg'>
+    <Card className='reading-shadow border-border/50 transition-all duration-200 hover:border-border nav-hover'>
       <CardHeader className='px-3 pb-1 pt-3 md:px-4'>
         <div className='mb-3 flex items-center justify-between'>
           <PostUserProfile
@@ -54,14 +54,6 @@ const SystemPostCard: React.FC<SystemPostCardProps> = ({
               { name: '나에게만 보이는 글', emoji: '' },
             ]}
           />
-          <div className='flex items-center gap-2'>
-            {isOnlyForCurrentUser && (
-              <Badge variant='secondary' className='text-xs font-medium'>
-                나에게만 보이는 글
-              </Badge>
-            )}
-            <Crown className='size-4 text-accent' aria-label='시스템 공지' />
-          </div>
         </div>
         <h2 className='flex items-center text-lg font-semibold text-foreground leading-tight md:text-xl'>
           {title}
@@ -75,7 +67,22 @@ const SystemPostCard: React.FC<SystemPostCardProps> = ({
         aria-label='시스템 공지 상세로 이동'
         onKeyDown={(e) => handleKeyDown(e, handleContentClick)}
       >
-        <div className='text-sm text-foreground/85 leading-relaxed'>{content}</div>
+        <div
+          className='
+prose prose-sm line-clamp-3 
+text-reading-sm
+text-foreground/85
+dark:prose-invert
+prose-p:my-1.5
+prose-ol:my-1.5
+prose-ul:my-1.5
+prose-headings:text-foreground
+prose-strong:text-foreground/90
+prose-a:text-ring
+max-w-none'
+        >
+          {content}
+        </div>
       </CardContent>
     </Card>
   );
