@@ -1,13 +1,11 @@
 'use client';
 
-import { Crown } from 'lucide-react';
-import { Badge } from '@/shared/ui/badge';
 import { Card, CardContent, CardHeader } from '@/shared/ui/card';
 import { PostUserProfile, type PostAuthorData } from './PostUserProfile';
 import type React from 'react';
 
 interface SystemPostCardProps {
-  onClickContent: () => void;
+  onClickContent?: () => void;
   onClickProfile?: (userId: string) => void;
   isOnlyForCurrentUser: boolean;
   authorData: PostAuthorData;
@@ -31,12 +29,14 @@ const SystemPostCard: React.FC<SystemPostCardProps> = ({
   content,
 }) => {
   const handleContentClick = () => {
-    onClickContent();
+    if (onClickContent) {
+      onClickContent();
+    }
   };
 
   const handleProfileClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (onClickProfile && authorData.id) {
+    if (onClickProfile) {
       onClickProfile(authorData.id);
     }
   };
@@ -60,12 +60,16 @@ const SystemPostCard: React.FC<SystemPostCardProps> = ({
         </h2>
       </CardHeader>
       <CardContent
-        className='px-3 pb-4 pt-1 cursor-pointer min-h-[44px] reading-focus rounded-lg transition-all duration-200 active:scale-[0.99] md:px-4'
-        onClick={handleContentClick}
-        role='button'
-        tabIndex={0}
-        aria-label='시스템 공지 상세로 이동'
-        onKeyDown={(e) => handleKeyDown(e, handleContentClick)}
+        className={`px-3 pb-4 pt-1 min-h-[44px] md:px-4 ${
+          onClickContent
+            ? 'cursor-pointer reading-focus rounded-lg transition-all duration-200 active:scale-[0.99]'
+            : ''
+        }`}
+        onClick={onClickContent ? handleContentClick : undefined}
+        role={onClickContent ? 'button' : undefined}
+        tabIndex={onClickContent ? 0 : undefined}
+        aria-label={onClickContent ? '시스템 공지 상세로 이동' : undefined}
+        onKeyDown={onClickContent ? (e) => handleKeyDown(e, handleContentClick) : undefined}
       >
         <div
           className='

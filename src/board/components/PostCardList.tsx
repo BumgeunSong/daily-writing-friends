@@ -94,8 +94,6 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
   return (
     <div className='space-y-4'>
       <SystemPostCard
-        onClickContent={() => console.log('System post clicked')}
-        onClickProfile={onClickProfile}
         isOnlyForCurrentUser={true}
         authorData={{
           id: 'system',
