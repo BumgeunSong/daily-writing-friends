@@ -4,6 +4,27 @@ import { Card, CardContent, CardHeader } from '@/shared/ui/card';
 import { PostUserProfile, type PostAuthorData } from './PostUserProfile';
 import type React from 'react';
 
+const SYSTEM_BADGES = {
+  ADMIN: { name: '운영진', emoji: '👑' },
+  PRIVATE: { name: '나에게만 보이는 글', emoji: '' },
+} as const;
+
+const CONTENT_PROSE_CLASSES = `
+prose prose-sm line-clamp-3 
+text-reading-sm
+text-foreground/85
+dark:prose-invert
+prose-p:my-1.5
+prose-ol:my-1.5
+prose-ul:my-1.5
+prose-headings:text-foreground
+prose-strong:text-foreground/90
+prose-a:text-ring
+max-w-none`.trim();
+
+const CLICKABLE_CONTENT_CLASSES =
+  'cursor-pointer reading-focus rounded-lg transition-all duration-200 active:scale-[0.99]';
+
 interface SystemPostCardProps {
   onClickContent?: () => void;
   onClickProfile?: (userId: string) => void;
@@ -13,14 +34,7 @@ interface SystemPostCardProps {
   content: string;
 }
 
-function handleKeyDown(e: React.KeyboardEvent, onClick: (e: any) => void) {
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault();
-    onClick(e);
-  }
-}
-
-const SystemPostCard: React.FC<SystemPostCardProps> = ({
+export const SystemPostCard: React.FC<SystemPostCardProps> = ({
   onClickContent,
   onClickProfile,
   isOnlyForCurrentUser,
@@ -28,25 +42,14 @@ const SystemPostCard: React.FC<SystemPostCardProps> = ({
   title,
   content,
 }) => {
-  const handleContentClick = () => {
-    if (onClickContent) {
-      onClickContent();
-    }
-  };
+  const { handleContentClick, handleProfileClick } = useSystemPostCardHandlers(
+    onClickContent,
+    onClickProfile,
+    authorData,
+  );
 
-  const handleProfileClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onClickProfile) {
-      onClickProfile(authorData.id);
-    }
-  };
-
-  const badges = isOnlyForCurrentUser
-    ? [
-        { name: '운영진', emoji: '👑' },
-        { name: '나에게만 보이는 글', emoji: '' },
-      ]
-    : [{ name: '운영진', emoji: '👑' }];
+  const badges = getSystemBadges(isOnlyForCurrentUser);
+  const contentProps = getContentProps(onClickContent, handleContentClick);
 
   return (
     <Card className='reading-shadow border-border/50 transition-all duration-200 hover:border-border nav-hover'>
@@ -63,37 +66,57 @@ const SystemPostCard: React.FC<SystemPostCardProps> = ({
           {title}
         </h2>
       </CardHeader>
-      <CardContent
-        className={`px-3 pb-4 pt-1 min-h-[44px] md:px-4 ${
-          onClickContent
-            ? 'cursor-pointer reading-focus rounded-lg transition-all duration-200 active:scale-[0.99]'
-            : ''
-        }`}
-        onClick={onClickContent ? handleContentClick : undefined}
-        role={onClickContent ? 'button' : undefined}
-        tabIndex={onClickContent ? 0 : undefined}
-        aria-label={onClickContent ? '시스템 공지 상세로 이동' : undefined}
-        onKeyDown={onClickContent ? (e) => handleKeyDown(e, handleContentClick) : undefined}
-      >
-        <div
-          className='
-prose prose-sm line-clamp-3 
-text-reading-sm
-text-foreground/85
-dark:prose-invert
-prose-p:my-1.5
-prose-ol:my-1.5
-prose-ul:my-1.5
-prose-headings:text-foreground
-prose-strong:text-foreground/90
-prose-a:text-ring
-max-w-none'
-        >
-          {content}
-        </div>
+      <CardContent {...contentProps}>
+        <div className={CONTENT_PROSE_CLASSES}>{content}</div>
       </CardContent>
     </Card>
   );
 };
 
-export default SystemPostCard;
+function useSystemPostCardHandlers(
+  onClickContent?: () => void,
+  onClickProfile?: (userId: string) => void,
+  authorData: PostAuthorData,
+) {
+  const handleContentClick = () => {
+    onClickContent?.();
+  };
+
+  const handleProfileClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onClickProfile) {
+      onClickProfile(authorData.id);
+    }
+  };
+
+  return { handleContentClick, handleProfileClick };
+}
+
+function handleKeyDown(e: React.KeyboardEvent, onClick: (e: any) => void) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    onClick(e);
+  }
+}
+
+function getSystemBadges(isOnlyForCurrentUser: boolean) {
+  return isOnlyForCurrentUser
+    ? [SYSTEM_BADGES.ADMIN, SYSTEM_BADGES.PRIVATE]
+    : [SYSTEM_BADGES.ADMIN];
+}
+
+function getContentProps(onClickContent?: () => void, handleContentClick?: () => void) {
+  const isClickable = Boolean(onClickContent);
+
+  return {
+    className: `px-3 pb-4 pt-1 min-h-[44px] md:px-4 ${isClickable ? CLICKABLE_CONTENT_CLASSES : ''}`,
+    onClick: isClickable ? handleContentClick : undefined,
+    role: isClickable ? 'button' : undefined,
+    tabIndex: isClickable ? 0 : undefined,
+    'aria-label': isClickable ? '시스템 공지 상세로 이동' : undefined,
+    onKeyDown:
+      isClickable && handleContentClick
+        ? (e: React.KeyboardEvent) => handleKeyDown(e, handleContentClick)
+        : undefined,
+  };
+}
