@@ -3,18 +3,14 @@
 import { Crown } from 'lucide-react';
 import { Badge } from '@/shared/ui/badge';
 import { Card, CardContent, CardHeader } from '@/shared/ui/card';
-import { PostUserProfile } from './PostUserProfile';
+import { PostUserProfile, type PostAuthorData } from './PostUserProfile';
 import type React from 'react';
 
 interface SystemPostCardProps {
   onClickContent: () => void;
   onClickProfile?: (userId: string) => void;
   isOnlyForCurrentUser: boolean;
-  authorData: {
-    id: string;
-    displayName: string;
-    profileImageURL?: string;
-  };
+  authorData: PostAuthorData;
   title: string;
   content: string;
 }

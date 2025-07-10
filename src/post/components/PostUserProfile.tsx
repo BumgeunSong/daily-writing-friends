@@ -3,8 +3,17 @@ import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import { WritingBadgeComponent } from '@/stats/components/WritingBadgeComponent';
 import { WritingBadge } from '@/stats/model/WritingStats';
 
+export interface PostAuthorData {
+  id: string;
+  displayName?: string;
+  nickname?: string;
+  realName?: string;
+  profileImageURL?: string;
+  profilePhotoURL?: string;
+}
+
 interface PostUserProfileProps {
-    authorData: any;
+    authorData: PostAuthorData | null;
     isLoading: boolean;
     onClickProfile: (e: React.MouseEvent) => void;
     badges?: WritingBadge[];
@@ -16,9 +25,9 @@ export const PostUserProfile: React.FC<PostUserProfileProps> = ({ authorData, is
         <Skeleton className="size-7 rounded-full" />
       ) : (
         <ComposedAvatar
-          src={authorData?.profilePhotoURL}
-          alt={authorData?.realName || 'User'}
-          fallback={authorData?.realName?.[0] || 'U'}
+          src={authorData?.profilePhotoURL || authorData?.profileImageURL}
+          alt={authorData?.realName || authorData?.displayName || 'User'}
+          fallback={authorData?.realName?.[0] || authorData?.displayName?.[0] || 'U'}
           size={36}
           className="cursor-pointer transition-all duration-150 group/profile min-w-[44px] min-h-[44px] active:scale-95 active:bg-accent/20"
           onClick={onClickProfile}
@@ -41,7 +50,7 @@ export const PostUserProfile: React.FC<PostUserProfileProps> = ({ authorData, is
               aria-label="작성자 프로필로 이동"
               onKeyDown={e => handleKeyDown(e, onClickProfile)}
             >
-              {authorData?.nickname || "알 수 없음"}
+              {authorData?.nickname || authorData?.displayName || "알 수 없음"}
             </p>
             {badges && badges.length > 0 && (
               <div className="flex flex-wrap gap-1">
