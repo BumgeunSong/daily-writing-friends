@@ -10,7 +10,6 @@ import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext
 import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
 import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
 import PostCard from '@/post/components/PostCard';
-import SystemPostCard from '@/post/components/SystemPostCard';
 import { usePosts } from '@/post/hooks/usePosts';
 import { useCurrentUserKnownBuddy } from '@/user/hooks/useCurrentUserKnownBuddy';
 
@@ -93,16 +92,6 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
 
   return (
     <div className='space-y-4'>
-      <SystemPostCard
-        isOnlyForCurrentUser={true}
-        authorData={{
-          id: 'system',
-          displayName: '매글푸들',
-          profileImageURL: '/admin-poodle-icon.webp',
-        }}
-        title='새로운 기능이 추가되었습니다!'
-        content='이제 시스템 공지사항을 포스트 피드에서 자연스럽게 확인하실 수 있습니다. 더 나은 서비스를 위해 계속 노력하겠습니다.'
-      />
       {allPosts.map((post) => (
         <PostCard
           key={post.id}
