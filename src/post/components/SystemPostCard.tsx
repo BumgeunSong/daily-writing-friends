@@ -92,7 +92,7 @@ function useSystemPostCardHandlers(
   return { handleContentClick, handleProfileClick };
 }
 
-function handleKeyDown(e: React.KeyboardEvent, onClick: (e: any) => void) {
+function handleKeyDown(e: React.KeyboardEvent, onClick: (e: React.KeyboardEvent) => void) {
   if (e.key === 'Enter' || e.key === ' ') {
     e.preventDefault();
     onClick(e);
