@@ -25,24 +25,27 @@ const RECOVERY_MESSAGES = {
 } as const;
 
 export function RecoveryBanner({ boardId: _ }: RecoveryBannerProps) {
-  const { user } = useAuth();
-  const { recoveryStatus, isLoading } = useUserRecoveryStatus(user?.uid || '');
-  const { data: writingStats } = useWritingStats(user?.uid ? [user.uid] : [], user?.uid);
-  
-  if (!user || isLoading) return null;
-  
+  const { currentUser } = useAuth();
+  const { recoveryStatus, isLoading } = useUserRecoveryStatus(currentUser?.uid || '');
+  const { data: writingStats } = useWritingStats(
+    currentUser?.uid ? [currentUser.uid] : [],
+    currentUser?.uid,
+  );
+
+  if (!currentUser || isLoading) return null;
+
   // Only show banner for eligible, partial, and success states
   if (recoveryStatus === 'none') return null;
-  
+
   const message = RECOVERY_MESSAGES[recoveryStatus];
-  
+
   // For success status, show the current streak in the content
-  let content = message.content;
+  let content: string = message.content;
   if (recoveryStatus === 'success') {
     const currentStreak = writingStats?.[0]?.recentStreak || 0;
     content = `연속 ${currentStreak}일로 복구되었어요.`;
   }
-  
+
   return (
     <SystemPostCard
       title={message.title}
@@ -50,9 +53,8 @@ export function RecoveryBanner({ boardId: _ }: RecoveryBannerProps) {
       isOnlyForCurrentUser={true}
       authorData={{
         id: 'system',
-        profileImageUrl: '',
-        name: '시스템',
-        position: '운영진',
+        profileImageURL: '',
+        displayName: '매글푸들',
       }}
     />
   );
