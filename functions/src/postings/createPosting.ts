@@ -1,43 +1,8 @@
-import { Timestamp } from "firebase-admin/firestore";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import admin from "../admin";
 import { Post } from "../types/Post";
 import { Posting } from "../types/Posting";
-import { calculateAndUpdateRecoveryStatus } from "../recoveryStatus/updateRecoveryStatus";
-
-// Helper function to convert Date to Asia/Seoul timezone
-function toSeoulDate(date: Date): Date {
-  const seoulTime = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
-  return seoulTime;
-}
-
-// Helper function to check if a date is a working day (Mon-Fri) in Asia/Seoul timezone
-function isWorkingDay(date: Date): boolean {
-  const seoulDate = toSeoulDate(date);
-  const day = seoulDate.getDay();
-  return day >= 1 && day <= 5; // Monday = 1, Friday = 5
-}
-
-// Helper function to get previous working day in Asia/Seoul timezone
-function getPreviousWorkingDay(date: Date): Date {
-  const seoulDate = toSeoulDate(date);
-  let prevDate = new Date(seoulDate);
-  prevDate.setDate(prevDate.getDate() - 1);
-  
-  while (!isWorkingDay(prevDate)) {
-    prevDate.setDate(prevDate.getDate() - 1);
-  }
-  
-  return prevDate;
-}
-
-// Helper function to get current user's recovery status
-async function getUserRecoveryStatus(userId: string): Promise<string> {
-  const userRef = admin.firestore().collection('users').doc(userId);
-  const userDoc = await userRef.get();
-  const userData = userDoc.data();
-  return userData?.recoveryStatus || 'none';
-}
+import { handlePostingRecovery, updateRecoveryStatusAfterPosting } from "./postingRecoveryHandler";
 
 export const createPosting = onDocumentCreated(
   'boards/{boardId}/posts/{postId}',
@@ -65,25 +30,8 @@ export const createPosting = onDocumentCreated(
     // Compute the content length for our posting record.
     const contentLength = content.length;
     
-    // Convert createdAt to Date for timezone handling (Asia/Seoul)
-    const postCreatedAt = createdAt ? toSeoulDate(createdAt.toDate()) : toSeoulDate(new Date());
-
-    // Get current user's recovery status
-    const currentRecoveryStatus = await getUserRecoveryStatus(authorId);
-
-    let postingCreatedAt = createdAt || Timestamp.now();
-    let isRecovered = false;
-
-    // If current status is 'partial', this is the 2nd post for recovery
-    if (currentRecoveryStatus === 'partial') {
-      // This is the 2nd post today and we're in recovery mode
-      const prevWorkingDay = getPreviousWorkingDay(postCreatedAt);
-      // Set the posting date to the previous working day for recovery
-      postingCreatedAt = Timestamp.fromDate(prevWorkingDay);
-      isRecovered = true;
-      
-      console.log(`Recovery post detected for user ${authorId}: posting will be backdated to ${prevWorkingDay.toISOString()}`);
-    }
+    // Handle recovery logic
+    const { postingCreatedAt, isRecovered } = await handlePostingRecovery(authorId, createdAt);
 
     // Build the posting data model.
     const postingData: Posting = {
@@ -103,8 +51,9 @@ export const createPosting = onDocumentCreated(
 
       console.log(`Created posting activity for user ${authorId} for post ${postId}${isRecovered ? ' (recovery post)' : ''}`);
 
-      // Calculate and update recovery status after posting creation
-      await calculateAndUpdateRecoveryStatus(authorId, postCreatedAt);
+      // Update recovery status after posting creation
+      const postCreatedAt = createdAt ? createdAt.toDate() : new Date();
+      await updateRecoveryStatusAfterPosting(authorId, postCreatedAt);
       
     } catch (error) {
       console.error('Error writing posting activity:', error);
