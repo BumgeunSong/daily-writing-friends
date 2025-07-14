@@ -7,10 +7,11 @@ import { handlePostingRecovery, updateRecoveryStatusAfterPosting } from "./posti
 export const createPosting = onDocumentCreated(
   'boards/{boardId}/posts/{postId}',
   async (event) => {
+    console.log(`[CreatePosting] 🎬 Function triggered for new post creation`);
     
     const postData = event.data?.data() as Post;
     if (!postData) {
-      console.error('No post data found.');
+      console.error('[CreatePosting] ❌ No post data found in event');
       return null;
     }
 
@@ -22,16 +23,28 @@ export const createPosting = onDocumentCreated(
     const createdAt = postData.createdAt;
     const authorId = postData.authorId;
 
+    console.log(`[CreatePosting] 📝 Post details:`, {
+      boardId,
+      postId,
+      postTitle: postTitle.substring(0, 50) + (postTitle.length > 50 ? '...' : ''),
+      contentLength: content.length,
+      authorId,
+      createdAt: createdAt?.toDate()?.toISOString()
+    });
+
     if (!authorId) {
-      console.error('Post is missing an authorId.');
+      console.error('[CreatePosting] ❌ Post is missing an authorId');
       return null;
     }
 
     // Compute the content length for our posting record.
     const contentLength = content.length;
+    console.log(`[CreatePosting] Content length: ${contentLength} characters`);
     
     // Handle recovery logic
+    console.log(`[CreatePosting] 🔄 Starting recovery logic check...`);
     const { postingCreatedAt, isRecovered } = await handlePostingRecovery(authorId, createdAt);
+    console.log(`[CreatePosting] Recovery result: isRecovered=${isRecovered}, finalTimestamp=${postingCreatedAt.toDate().toISOString()}`);
 
     // Build the posting data model.
     const postingData: Posting = {
@@ -41,23 +54,43 @@ export const createPosting = onDocumentCreated(
       ...(isRecovered && { isRecovered: true }),
     };
 
+    console.log(`[CreatePosting] 📊 Posting data model:`, {
+      boardId: postingData.board.id,
+      postId: postingData.post.id,
+      contentLength: postingData.post.contentLength,
+      createdAt: postingData.createdAt.toDate().toISOString(),
+      isRecovered: postingData.isRecovered || false
+    });
+
     try {
       // Create the posting record
-      await admin.firestore()
+      console.log(`[CreatePosting] 💾 Writing posting record to Firestore...`);
+      const docRef = await admin.firestore()
         .collection('users')
         .doc(authorId)
         .collection('postings')
         .add(postingData);
 
-      console.log(`Created posting activity for user ${authorId} for post ${postId}${isRecovered ? ' (recovery post)' : ''}`);
+      console.log(`[CreatePosting] ✅ Created posting activity for user ${authorId} for post ${postId}${isRecovered ? ' (recovery post)' : ''}`);
+      console.log(`[CreatePosting] Posting document ID: ${docRef.id}`);
 
       // Update recovery status after posting creation
+      console.log(`[CreatePosting] 🔄 Updating recovery status after posting creation...`);
       const postCreatedAt = createdAt ? createdAt.toDate() : new Date();
       await updateRecoveryStatusAfterPosting(authorId, postCreatedAt);
       
+      console.log(`[CreatePosting] 🎉 All operations completed successfully for post ${postId}`);
+      
     } catch (error) {
-      console.error('Error writing posting activity:', error);
+      console.error(`[CreatePosting] ❌ Error in posting creation process:`, error);
+      console.error(`[CreatePosting] Error details:`, {
+        authorId,
+        postId,
+        boardId,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
 
+    console.log(`[CreatePosting] 🏁 Function execution completed for post ${postId}`);
     return null;
   });

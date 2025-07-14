@@ -41,24 +41,48 @@ function getDateKey(date: Date): string {
 
 // Helper function to get postings count for a specific date
 async function getPostingsCountForDate(userId: string, dateKey: string): Promise<number> {
+  console.log(`[UpdateRecoveryStatus] Getting postings count for user ${userId} on date ${dateKey}`);
+  
   const postingsRef = admin.firestore().collection('users').doc(userId).collection('postings');
   const startOfDay = new Date(dateKey + 'T00:00:00+09:00');
   const endOfDay = new Date(dateKey + 'T23:59:59+09:00');
+  
+  console.log(`[UpdateRecoveryStatus] Query range: ${startOfDay.toISOString()} to ${endOfDay.toISOString()}`);
   
   const q = postingsRef
     .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(startOfDay))
     .where('createdAt', '<=', admin.firestore.Timestamp.fromDate(endOfDay));
   
   const snapshot = await q.get();
-  return snapshot.size;
+  const count = snapshot.size;
+  
+  console.log(`[UpdateRecoveryStatus] Found ${count} postings for user ${userId} on ${dateKey}`);
+  
+  if (count > 0) {
+    console.log(`[UpdateRecoveryStatus] Posting details for ${dateKey}:`, 
+      snapshot.docs.map(doc => ({
+        id: doc.id,
+        createdAt: doc.data().createdAt?.toDate()?.toISOString(),
+        isRecovered: doc.data().isRecovered || false
+      }))
+    );
+  }
+  
+  return count;
 }
 
 // Helper function to check if previous working day has postings
 async function hasPreviousWorkingDayPosting(userId: string, currentDate: Date): Promise<boolean> {
   const prevWorkingDay = getPreviousWorkingDay(currentDate);
   const prevDateKey = getDateKey(prevWorkingDay);
+  
+  console.log(`[UpdateRecoveryStatus] Checking previous working day: ${prevWorkingDay.toISOString()} (${prevDateKey}) for user ${userId}`);
+  
   const count = await getPostingsCountForDate(userId, prevDateKey);
-  return count > 0;
+  const hasPosting = count > 0;
+  
+  console.log(`[UpdateRecoveryStatus] Previous working day ${prevDateKey} has ${count} postings: ${hasPosting}`);
+  return hasPosting;
 }
 
 /**
@@ -68,28 +92,44 @@ async function hasPreviousWorkingDayPosting(userId: string, currentDate: Date): 
  * @returns RecoveryStatus
  */
 export async function calculateRecoveryStatus(userId: string, currentDate: Date = new Date()): Promise<RecoveryStatus> {
+  console.log(`[UpdateRecoveryStatus] 🔄 Starting recovery status calculation for user: ${userId}`);
+  console.log(`[UpdateRecoveryStatus] Current date input: ${currentDate.toISOString()}`);
+  
   // Convert to Seoul timezone for consistent calculation
   const seoulDate = toSeoulDate(currentDate);
   const todayKey = getDateKey(seoulDate);
   
+  console.log(`[UpdateRecoveryStatus] Seoul date: ${seoulDate.toISOString()} (${todayKey})`);
+  
   // Check if previous working day has postings
   const hasPrevPosting = await hasPreviousWorkingDayPosting(userId, seoulDate);
   
+  console.log(`[UpdateRecoveryStatus] Previous working day has posting: ${hasPrevPosting}`);
+  
   // If previous working day has posting, no recovery needed
   if (hasPrevPosting) {
+    console.log(`[UpdateRecoveryStatus] ✅ No recovery needed - previous working day has posting`);
     return 'none';
   }
   
   // Previous working day has no posting - check today's postings
+  console.log(`[UpdateRecoveryStatus] Previous working day has no posting - checking today's postings`);
   const todayPostingsCount = await getPostingsCountForDate(userId, todayKey);
   
+  let status: RecoveryStatus;
   if (todayPostingsCount === 0) {
-    return 'eligible';
+    status = 'eligible';
+    console.log(`[UpdateRecoveryStatus] 📝 Status: ELIGIBLE (0 posts today)`);
   } else if (todayPostingsCount === 1) {
-    return 'partial';
+    status = 'partial';
+    console.log(`[UpdateRecoveryStatus] 📝 Status: PARTIAL (1 post today, need 1 more)`);
   } else {
-    return 'success';
+    status = 'success';
+    console.log(`[UpdateRecoveryStatus] 🎉 Status: SUCCESS (${todayPostingsCount} posts today - recovery complete)`);
   }
+  
+  console.log(`[UpdateRecoveryStatus] Final recovery status for user ${userId}: ${status}`);
+  return status;
 }
 
 /**
@@ -98,15 +138,23 @@ export async function calculateRecoveryStatus(userId: string, currentDate: Date 
  * @param recoveryStatus - New recovery status
  */
 export async function updateUserRecoveryStatus(userId: string, recoveryStatus: RecoveryStatus): Promise<void> {
+  console.log(`[UpdateRecoveryStatus] 💾 Updating recovery status for user ${userId} to: ${recoveryStatus}`);
+  
   try {
     const userRef = admin.firestore().collection('users').doc(userId);
+    
+    // First, get current status for comparison
+    const userDoc = await userRef.get();
+    const currentStatus = userDoc.data()?.recoveryStatus || 'none';
+    console.log(`[UpdateRecoveryStatus] Previous status: ${currentStatus} -> New status: ${recoveryStatus}`);
+    
     await userRef.update({
       recoveryStatus: recoveryStatus,
     });
     
-    console.log(`Updated recovery status for user ${userId} to ${recoveryStatus}`);
+    console.log(`[UpdateRecoveryStatus] ✅ Successfully updated recovery status for user ${userId} to ${recoveryStatus}`);
   } catch (error) {
-    console.error(`Error updating recovery status for user ${userId}:`, error);
+    console.error(`[UpdateRecoveryStatus] ❌ Error updating recovery status for user ${userId}:`, error);
     throw error;
   }
 }
@@ -117,6 +165,15 @@ export async function updateUserRecoveryStatus(userId: string, recoveryStatus: R
  * @param currentDate - Current date (defaults to now in Asia/Seoul timezone)
  */
 export async function calculateAndUpdateRecoveryStatus(userId: string, currentDate: Date = new Date()): Promise<void> {
-  const recoveryStatus = await calculateRecoveryStatus(userId, currentDate);
-  await updateUserRecoveryStatus(userId, recoveryStatus);
+  console.log(`[UpdateRecoveryStatus] 🚀 Starting calculate and update recovery status for user: ${userId}`);
+  
+  try {
+    const recoveryStatus = await calculateRecoveryStatus(userId, currentDate);
+    await updateUserRecoveryStatus(userId, recoveryStatus);
+    
+    console.log(`[UpdateRecoveryStatus] 🎯 Complete! User ${userId} recovery status process finished with status: ${recoveryStatus}`);
+  } catch (error) {
+    console.error(`[UpdateRecoveryStatus] 💥 Fatal error in calculateAndUpdateRecoveryStatus for user ${userId}:`, error);
+    throw error;
+  }
 }
