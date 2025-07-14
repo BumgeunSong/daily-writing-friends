@@ -12,6 +12,7 @@ import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
 import PostCard from '@/post/components/PostCard';
 import { usePosts } from '@/post/hooks/usePosts';
 import { useCurrentUserKnownBuddy } from '@/user/hooks/useCurrentUserKnownBuddy';
+import { RecoveryBanner } from './RecoveryBanner';
 
 interface PostCardListProps {
   boardId: string;
@@ -92,6 +93,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
 
   return (
     <div className='space-y-4'>
+      <RecoveryBanner boardId={boardId} />
       {allPosts.map((post) => (
         <PostCard
           key={post.id}
