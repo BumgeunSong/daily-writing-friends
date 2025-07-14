@@ -5,15 +5,23 @@ import { Post } from "../types/Post";
 import { Posting } from "../types/Posting";
 import { calculateAndUpdateRecoveryStatus } from "../recoveryStatus/updateRecoveryStatus";
 
-// Helper function to check if a date is a working day (Mon-Fri)
+// Helper function to convert Date to Asia/Seoul timezone
+function toSeoulDate(date: Date): Date {
+  const seoulTime = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  return seoulTime;
+}
+
+// Helper function to check if a date is a working day (Mon-Fri) in Asia/Seoul timezone
 function isWorkingDay(date: Date): boolean {
-  const day = date.getDay();
+  const seoulDate = toSeoulDate(date);
+  const day = seoulDate.getDay();
   return day >= 1 && day <= 5; // Monday = 1, Friday = 5
 }
 
-// Helper function to get previous working day
+// Helper function to get previous working day in Asia/Seoul timezone
 function getPreviousWorkingDay(date: Date): Date {
-  let prevDate = new Date(date);
+  const seoulDate = toSeoulDate(date);
+  let prevDate = new Date(seoulDate);
   prevDate.setDate(prevDate.getDate() - 1);
   
   while (!isWorkingDay(prevDate)) {
@@ -57,8 +65,8 @@ export const createPosting = onDocumentCreated(
     // Compute the content length for our posting record.
     const contentLength = content.length;
     
-    // Convert createdAt to Date for timezone handling
-    const postCreatedAt = createdAt ? createdAt.toDate() : new Date();
+    // Convert createdAt to Date for timezone handling (Asia/Seoul)
+    const postCreatedAt = createdAt ? toSeoulDate(createdAt.toDate()) : toSeoulDate(new Date());
 
     // Get current user's recovery status
     const currentRecoveryStatus = await getUserRecoveryStatus(authorId);

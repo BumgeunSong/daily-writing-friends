@@ -1,15 +1,23 @@
 import admin from "../admin";
 import { RecoveryStatus } from "../types/User";
 
-// Helper function to check if a date is a working day (Mon-Fri)
+// Helper function to convert Date to Asia/Seoul timezone
+function toSeoulDate(date: Date): Date {
+  const seoulTime = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  return seoulTime;
+}
+
+// Helper function to check if a date is a working day (Mon-Fri) in Asia/Seoul timezone
 function isWorkingDay(date: Date): boolean {
-  const day = date.getDay();
+  const seoulDate = toSeoulDate(date);
+  const day = seoulDate.getDay();
   return day >= 1 && day <= 5; // Monday = 1, Friday = 5
 }
 
-// Helper function to get previous working day
+// Helper function to get previous working day in Asia/Seoul timezone
 function getPreviousWorkingDay(date: Date): Date {
-  let prevDate = new Date(date);
+  const seoulDate = toSeoulDate(date);
+  let prevDate = new Date(seoulDate);
   prevDate.setDate(prevDate.getDate() - 1);
   
   while (!isWorkingDay(prevDate)) {
@@ -56,14 +64,16 @@ async function hasPreviousWorkingDayPosting(userId: string, currentDate: Date): 
 /**
  * Calculate recovery status for a user
  * @param userId - User ID
- * @param currentDate - Current date (defaults to now)
+ * @param currentDate - Current date (defaults to now in Asia/Seoul timezone)
  * @returns RecoveryStatus
  */
 export async function calculateRecoveryStatus(userId: string, currentDate: Date = new Date()): Promise<RecoveryStatus> {
-  const todayKey = getDateKey(currentDate);
+  // Convert to Seoul timezone for consistent calculation
+  const seoulDate = toSeoulDate(currentDate);
+  const todayKey = getDateKey(seoulDate);
   
   // Check if previous working day has postings
-  const hasPrevPosting = await hasPreviousWorkingDayPosting(userId, currentDate);
+  const hasPrevPosting = await hasPreviousWorkingDayPosting(userId, seoulDate);
   
   // If previous working day has posting, no recovery needed
   if (hasPrevPosting) {
@@ -104,7 +114,7 @@ export async function updateUserRecoveryStatus(userId: string, recoveryStatus: R
 /**
  * Calculate and update recovery status for a user
  * @param userId - User ID
- * @param currentDate - Current date (defaults to now)
+ * @param currentDate - Current date (defaults to now in Asia/Seoul timezone)
  */
 export async function calculateAndUpdateRecoveryStatus(userId: string, currentDate: Date = new Date()): Promise<void> {
   const recoveryStatus = await calculateRecoveryStatus(userId, currentDate);
