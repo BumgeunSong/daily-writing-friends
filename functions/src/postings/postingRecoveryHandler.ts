@@ -1,6 +1,7 @@
 import { Timestamp } from "firebase-admin/firestore";
 import admin from "../admin";
 import { calculateAndUpdateRecoveryStatus } from "../recoveryStatus/updateRecoveryStatus";
+import { RecoveryStatus } from "../types/User";
 
 // Helper function to convert Date to Asia/Seoul timezone
 function toSeoulDate(date: Date): Date {
@@ -29,13 +30,13 @@ function getPreviousWorkingDay(date: Date): Date {
 }
 
 // Helper function to get current user's recovery status
-async function getUserRecoveryStatus(userId: string): Promise<string> {
+async function getUserRecoveryStatus(userId: string): Promise<RecoveryStatus> {
   console.log(`[RecoveryHandler] Getting recovery status for user: ${userId}`);
   
   const userRef = admin.firestore().collection('users').doc(userId);
   const userDoc = await userRef.get();
   const userData = userDoc.data();
-  const recoveryStatus = userData?.recoveryStatus || 'none';
+  const recoveryStatus = (userData?.recoveryStatus as RecoveryStatus) || 'none';
   
   console.log(`[RecoveryHandler] User ${userId} current recovery status: ${recoveryStatus}`);
   return recoveryStatus;
