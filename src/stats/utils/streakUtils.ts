@@ -126,6 +126,38 @@ export function getNextPageSize(currentPageSize: number, maxPageSize: number = 1
     return Math.min(currentPageSize + 20, maxPageSize);
 }
 
+/**
+ * Get the previous working day from a given date
+ */
+export function getPreviousWorkingDay(date: Date): Date {
+    let prevDate = getPreviousDate(date);
+    while (!isWorkingDay(prevDate)) {
+        prevDate = getPreviousDate(prevDate);
+    }
+    return prevDate;
+}
+
+/**
+ * Convert postings array to a Set of date strings (YYYY-MM-DD)
+ */
+export function getPostingDaysSet(postings: Posting[]): Set<string> {
+    return buildPostingDaysSet(postings);
+}
+
+/**
+ * Count the number of postings on a specific date
+ * @param date - The date to check
+ * @param postings - Array of postings
+ * @returns Number of postings on the given date
+ */
+export function getPostingCountOnDate(date: Date, postings: Posting[]): number {
+    const dateKey = getDateKey(date);
+    return postings.filter(posting => {
+        const postingKey = getDateKey(posting.createdAt.toDate());
+        return postingKey === dateKey;
+    }).length;
+}
+
 // 현재는 KST로 고정하지만 나중에는 해당 User의 timezone을 반환하도록 해야 함
 export function getUserTimeZone(): string {
     return 'Asia/Seoul';

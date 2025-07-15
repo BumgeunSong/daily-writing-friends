@@ -1,3 +1,5 @@
+export type RecoveryStatus = 'none' | 'eligible' | 'partial' | 'success';
+
 export interface User {
     uid: string; // Unique identifier for the user
     realName: string | null;
@@ -8,4 +10,5 @@ export interface User {
     boardPermissions: {
       [boardId: string]: 'read' | 'write'; // Permissions for each board
     };
+    recoveryStatus?: RecoveryStatus;
   }

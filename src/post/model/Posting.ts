@@ -10,5 +10,6 @@ export interface Posting {
       contentLength: number;
     };
     createdAt: Timestamp;
+    isRecovered?: boolean;
   }
   
