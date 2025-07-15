@@ -86,7 +86,9 @@ export const MONITORING_CHECKLIST = {
   POST_BACKDATING: [
     'Recovery posts have different timestamps',
     'isRecovered flag is set correctly',
-    'Previous working day calculation is accurate'
+    'Previous working day calculation is accurate',
+    'Posting record uses backdated timestamp',
+    'Status calculation uses actual post time (not backdated)'
   ],
   
   ERROR_HANDLING: [
@@ -130,6 +132,11 @@ export const TEST_SCENARIOS = {
   SCENARIO_6_WEEKEND_POSTS: {
     description: 'User posts on weekends',
     expected: 'Weekend posts count toward recovery if in recovery window'
+  },
+  
+  SCENARIO_7_TIMESTAMP_HANDLING: {
+    description: 'Verify timestamp handling in recovery posts',
+    expected: 'Posting record backdated to missed day, status calculation uses actual post time'
   }
 };
 

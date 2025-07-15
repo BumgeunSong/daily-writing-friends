@@ -76,8 +76,12 @@ export const createPosting = onDocumentCreated(
 
       // Update recovery status after posting creation
       console.log(`[CreatePosting] 🔄 Updating recovery status after posting creation...`);
-      const postCreatedAt = createdAt ? createdAt.toDate() : new Date();
-      await updateRecoveryStatusAfterPosting(authorId, postCreatedAt);
+      // Important: Use original createdAt (when user actually posted) for status calculation,
+      // NOT the potentially backdated postingCreatedAt used for the posting record
+      const actualPostTime = createdAt ? createdAt.toDate() : new Date();
+      console.log(`[CreatePosting] Using actual post time for status calculation: ${actualPostTime.toISOString()}`);
+      console.log(`[CreatePosting] Posting record uses: ${postingCreatedAt.toDate().toISOString()} (${isRecovered ? 'backdated for recovery' : 'same as actual'})`);
+      await updateRecoveryStatusAfterPosting(authorId, actualPostTime);
       
       console.log(`[CreatePosting] 🎉 All operations completed successfully for post ${postId}`);
       
