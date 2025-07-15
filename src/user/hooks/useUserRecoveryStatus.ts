@@ -3,22 +3,26 @@ import { useUser } from './useUser';
 import { RecoveryStatus } from '../model/User';
 
 export function useUserRecoveryStatus(userId: string) {
-    const { data: user, isLoading: isUserLoading } = useUser(userId);
+  const { userData, isLoading: isUserLoading } = useUser(userId);
 
-    const { data: recoveryStatus, isLoading: isRecoveryLoading, error } = useQuery({
-        queryKey: ['recoveryStatus', userId],
-        queryFn: () => {
-            if (!user) return null;
-            return user.recoveryStatus || 'none';
-        },
-        enabled: !!user && !!userId,
-        staleTime: 30 * 1000, // 30 seconds
-        cacheTime: 2 * 60 * 1000, // 2 minutes
-    });
+  const {
+    data: recoveryStatus,
+    isLoading: isRecoveryLoading,
+    error,
+  } = useQuery({
+    queryKey: ['recoveryStatus', userId],
+    queryFn: () => {
+      if (!userData) return null;
+      return userData.recoveryStatus || 'none';
+    },
+    enabled: !!userData && !!userId,
+    staleTime: 30 * 1000, // 30 seconds
+    cacheTime: 2 * 60 * 1000, // 2 minutes
+  });
 
-    return {
-        recoveryStatus: recoveryStatus as RecoveryStatus || 'none',
-        isLoading: isUserLoading || isRecoveryLoading,
-        error,
-    };
+  return {
+    recoveryStatus: (recoveryStatus as RecoveryStatus) || 'none',
+    isLoading: isUserLoading || isRecoveryLoading,
+    error,
+  };
 }
