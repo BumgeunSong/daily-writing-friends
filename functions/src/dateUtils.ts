@@ -66,6 +66,58 @@ function normalizeToMidnight(date: Date): Date {
 }
 
 /**
+ * 주어진 날짜의 이전 영업일을 찾는 순수 함수
+ * @param date - 기준 날짜
+ * @returns Date - 이전 영업일
+ */
+export function getPreviousWorkingDay(date: Date): Date {
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+        throw new Error('Invalid Date object');
+    }
+
+    let previousDate = getPreviousDate(date);
+    
+    while (!isWorkingDay(previousDate)) {
+        previousDate = getPreviousDate(previousDate);
+    }
+    
+    return previousDate;
+}
+
+/**
+ * 주어진 날짜를 KST 기준으로 YYYY-MM-DD 형식의 문자열로 변환하는 순수 함수
+ * @param date - 변환할 날짜
+ * @returns string - YYYY-MM-DD 형식의 날짜 문자열
+ */
+export function getDateKey(date: Date): string {
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+        throw new Error('Invalid Date object');
+    }
+
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: TimeZone.KST,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    });
+    const parts = formatter.format(date).split('/');
+    return `${parts[2]}-${parts[0]}-${parts[1]}`;
+}
+
+/**
+ * Date 객체를 KST 시간대로 변환하는 순수 함수
+ * @param date - 변환할 날짜
+ * @returns Date - KST로 변환된 날짜
+ */
+export function toSeoulDate(date: Date): Date {
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+        throw new Error('Invalid Date object');
+    }
+
+    return new Date(date.toLocaleString('en-US', { timeZone: TimeZone.KST }));
+}
+
+/**
  * 최근 근무일 배열을 생성하는 순수 함수
  */
 export function getRecentWorkingDays(count: number): Date[] {

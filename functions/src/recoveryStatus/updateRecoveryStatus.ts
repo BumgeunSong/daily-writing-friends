@@ -1,43 +1,10 @@
 import admin from "../admin";
 import { RecoveryStatus } from "../types/User";
-
-// Helper function to convert Date to Asia/Seoul timezone
-function toSeoulDate(date: Date): Date {
-  const seoulTime = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
-  return seoulTime;
-}
-
-// Helper function to check if a date is a working day (Mon-Fri) in Asia/Seoul timezone
-function isWorkingDay(date: Date): boolean {
-  const seoulDate = toSeoulDate(date);
-  const day = seoulDate.getDay();
-  return day >= 1 && day <= 5; // Monday = 1, Friday = 5
-}
-
-// Helper function to get previous working day in Asia/Seoul timezone
-function getPreviousWorkingDay(date: Date): Date {
-  const seoulDate = toSeoulDate(date);
-  let prevDate = new Date(seoulDate);
-  prevDate.setDate(prevDate.getDate() - 1);
-  
-  while (!isWorkingDay(prevDate)) {
-    prevDate.setDate(prevDate.getDate() - 1);
-  }
-  
-  return prevDate;
-}
-
-// Helper function to get date key in YYYY-MM-DD format (KST)
-function getDateKey(date: Date): string {
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-  const parts = formatter.format(date).split('/');
-  return `${parts[2]}-${parts[0]}-${parts[1]}`;
-}
+import { 
+  toSeoulDate, 
+  getPreviousWorkingDay, 
+  getDateKey 
+} from "../dateUtils";
 
 // Helper function to get postings count for a specific date
 async function getPostingsCountForDate(userId: string, dateKey: string): Promise<number> {
@@ -45,13 +12,13 @@ async function getPostingsCountForDate(userId: string, dateKey: string): Promise
   
   const postingsRef = admin.firestore().collection('users').doc(userId).collection('postings');
   const startOfDay = new Date(dateKey + 'T00:00:00+09:00');
-  const endOfDay = new Date(dateKey + 'T23:59:59+09:00');
+  const startOfNextDay = new Date(new Date(startOfDay).getTime() + 24 * 60 * 60 * 1000);
   
-  console.log(`[UpdateRecoveryStatus] Query range: ${startOfDay.toISOString()} to ${endOfDay.toISOString()}`);
+  console.log(`[UpdateRecoveryStatus] Query range: ${startOfDay.toISOString()} to ${startOfNextDay.toISOString()} (exclusive)`);
   
   const q = postingsRef
     .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(startOfDay))
-    .where('createdAt', '<=', admin.firestore.Timestamp.fromDate(endOfDay));
+    .where('createdAt', '<', admin.firestore.Timestamp.fromDate(startOfNextDay));
   
   const snapshot = await q.get();
   const count = snapshot.size;
@@ -85,6 +52,32 @@ async function hasPreviousWorkingDayPosting(userId: string, currentDate: Date): 
   return hasPosting;
 }
 
+// Helper function to check if user missed multiple consecutive working days
+async function hasMissedMultipleWorkingDays(userId: string, currentDate: Date): Promise<boolean> {
+  const seoulDate = toSeoulDate(currentDate);
+  const prevWorkingDay = getPreviousWorkingDay(seoulDate);
+  const prevPrevWorkingDay = getPreviousWorkingDay(prevWorkingDay);
+  
+  console.log(`[UpdateRecoveryStatus] Checking consecutive misses for user ${userId}`);
+  console.log(`[UpdateRecoveryStatus] Previous working day: ${getDateKey(prevWorkingDay)}`);
+  console.log(`[UpdateRecoveryStatus] Day before previous: ${getDateKey(prevPrevWorkingDay)}`);
+  
+  // Check if both previous working day and the one before it have no postings
+  const [prevDayCount, prevPrevDayCount] = await Promise.all([
+    getPostingsCountForDate(userId, getDateKey(prevWorkingDay)),
+    getPostingsCountForDate(userId, getDateKey(prevPrevWorkingDay))
+  ]);
+  
+  const missedMultiple = prevDayCount === 0 && prevPrevDayCount === 0;
+  
+  console.log(`[UpdateRecoveryStatus] User ${userId} consecutive miss check:`);
+  console.log(`[UpdateRecoveryStatus] - ${getDateKey(prevPrevWorkingDay)}: ${prevPrevDayCount} posts`);
+  console.log(`[UpdateRecoveryStatus] - ${getDateKey(prevWorkingDay)}: ${prevDayCount} posts`);
+  console.log(`[UpdateRecoveryStatus] - Missed multiple consecutive days: ${missedMultiple}`);
+  
+  return missedMultiple;
+}
+
 /**
  * Calculate recovery status for a user
  * @param userId - User ID
@@ -112,17 +105,25 @@ export async function calculateRecoveryStatus(userId: string, currentDate: Date 
     return 'none';
   }
   
-  // Previous working day has no posting - check today's postings
-  console.log(`[UpdateRecoveryStatus] Previous working day has no posting - checking today's postings`);
+  // Previous working day has no posting - check if user missed multiple consecutive days
+  const missedMultiple = await hasMissedMultipleWorkingDays(userId, seoulDate);
+  
+  if (missedMultiple) {
+    console.log(`[UpdateRecoveryStatus] ❌ User missed multiple consecutive working days - no recovery allowed`);
+    return 'none';
+  }
+  
+  // Previous working day has no posting, but only 1 day missed - check today's postings for recovery
+  console.log(`[UpdateRecoveryStatus] Previous working day has no posting (single miss) - checking today's postings for recovery`);
   const todayPostingsCount = await getPostingsCountForDate(userId, todayKey);
   
   let status: RecoveryStatus;
   if (todayPostingsCount === 0) {
     status = 'eligible';
-    console.log(`[UpdateRecoveryStatus] 📝 Status: ELIGIBLE (0 posts today)`);
+    console.log(`[UpdateRecoveryStatus] 📝 Status: ELIGIBLE (0 posts today, can start recovery)`);
   } else if (todayPostingsCount === 1) {
     status = 'partial';
-    console.log(`[UpdateRecoveryStatus] 📝 Status: PARTIAL (1 post today, need 1 more)`);
+    console.log(`[UpdateRecoveryStatus] 📝 Status: PARTIAL (1 post today, need 1 more for recovery)`);
   } else {
     status = 'success';
     console.log(`[UpdateRecoveryStatus] 🎉 Status: SUCCESS (${todayPostingsCount} posts today - recovery complete)`);

@@ -26,6 +26,7 @@ import {
   onReactionCreatedOnComment,
   onReactionCreatedOnReply,
 } from './notifications/reactionOnComment';
+import { updateRecoveryStatusOnMidnight } from './recoveryStatus/updateRecoveryStatusOnMidnight';
 
 export {
   onCommentCreated,
@@ -50,4 +51,5 @@ export {
   allocateSecretBuddy,
   onReactionCreatedOnComment,
   onReactionCreatedOnReply,
+  updateRecoveryStatusOnMidnight,
 };
