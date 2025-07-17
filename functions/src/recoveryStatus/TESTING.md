@@ -39,18 +39,14 @@ npm test -- midnightUpdateHelpers.test.ts
 
 # Run tests in watch mode
 npm run test:watch
-
-# Run tests with coverage
-npm run test:coverage
 ```
 
 ## 📊 **Test Results**
 
-### **Current Coverage**
+### **Current Status**
 - **43 tests** passing
-- **100% statement coverage**
-- **95.83% branch coverage**
-- **100% function coverage**
+- **2 test suites** 
+- **Fast execution** (< 3 seconds)
 
 ### **Test Categories**
 1. **Pure Function Tests** (33 tests) - `midnightUpdateHelpers.test.ts`
@@ -225,14 +221,13 @@ This testing setup is ready for CI/CD pipelines:
     cd functions
     npm ci
     npm test
-    npm run test:coverage
 ```
 
 **Key advantages:**
 - ✅ **No Firebase emulator** needed
 - ✅ **Fast execution** (< 3 seconds)
 - ✅ **Reliable results** with mocked dependencies
-- ✅ **Coverage reporting** for quality gates
+- ✅ **Clean output** without coverage noise
 
 ## 📚 **Adding New Tests**
 
