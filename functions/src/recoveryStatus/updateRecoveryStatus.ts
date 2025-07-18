@@ -38,14 +38,81 @@ async function getPostingsCountForDate(userId: string, dateKey: string): Promise
   return count;
 }
 
+/**
+ * Optimized function to get postings count for multiple dates in a single query
+ * This reduces Firestore round trips from N queries to 1 query per user
+ * @param userId - User ID
+ * @param dateKeys - Array of date keys in YYYY-MM-DD format
+ * @returns Map of dateKey -> posting count
+ */
+async function getPostingsCountForDateRange(userId: string, dateKeys: string[]): Promise<Map<string, number>> {
+  if (dateKeys.length === 0) {
+    return new Map();
+  }
+
+  console.log(`[UpdateRecoveryStatus] Getting postings count for user ${userId} for dates: ${dateKeys.join(', ')}`);
+  
+  // Find the earliest and latest dates to create a range query
+  const sortedDates = dateKeys.sort();
+  const earliestDate = sortedDates[0];
+  const latestDate = sortedDates[sortedDates.length - 1];
+  
+  const startOfRange = new Date(earliestDate + 'T00:00:00+09:00');
+  const endOfRange = new Date(new Date(latestDate + 'T00:00:00+09:00').getTime() + 24 * 60 * 60 * 1000);
+  
+  console.log(`[UpdateRecoveryStatus] Range query: ${startOfRange.toISOString()} to ${endOfRange.toISOString()} (exclusive)`);
+  
+  const postingsRef = admin.firestore().collection('users').doc(userId).collection('postings');
+  const q = postingsRef
+    .where('createdAt', '>=', admin.firestore.Timestamp.fromDate(startOfRange))
+    .where('createdAt', '<', admin.firestore.Timestamp.fromDate(endOfRange));
+  
+  const snapshot = await q.get();
+  
+  // Initialize count map with 0 for all requested dates
+  const countMap = new Map<string, number>();
+  dateKeys.forEach(dateKey => countMap.set(dateKey, 0));
+  
+  // Count postings by date
+  snapshot.docs.forEach(doc => {
+    const data = doc.data();
+    const createdAt = data.createdAt?.toDate();
+    if (createdAt) {
+      const dateKey = getDateKey(createdAt);
+      if (countMap.has(dateKey)) {
+        countMap.set(dateKey, (countMap.get(dateKey) || 0) + 1);
+      }
+    }
+  });
+  
+  console.log(`[UpdateRecoveryStatus] Batch result for user ${userId}:`, 
+    Array.from(countMap.entries()).map(([date, count]) => `${date}: ${count} posts`).join(', ')
+  );
+  
+  // Log detailed posting information if any postings found
+  if (snapshot.size > 0) {
+    const postingDetails = snapshot.docs.map(doc => ({
+      id: doc.id,
+      createdAt: doc.data().createdAt?.toDate()?.toISOString(),
+      dateKey: getDateKey(doc.data().createdAt?.toDate()),
+      isRecovered: doc.data().isRecovered || false
+    }));
+    console.log(`[UpdateRecoveryStatus] Posting details:`, postingDetails);
+  }
+  
+  return countMap;
+}
+
 // Helper function to check if previous working day has postings
+// Now uses batch query for better performance
 async function hasPreviousWorkingDayPosting(userId: string, currentDate: Date): Promise<boolean> {
   const prevWorkingDay = getPreviousWorkingDay(currentDate);
   const prevDateKey = getDateKey(prevWorkingDay);
   
   console.log(`[UpdateRecoveryStatus] Checking previous working day: ${prevWorkingDay.toISOString()} (${prevDateKey}) for user ${userId}`);
   
-  const count = await getPostingsCountForDate(userId, prevDateKey);
+  const countMap = await getPostingsCountForDateRange(userId, [prevDateKey]);
+  const count = countMap.get(prevDateKey) || 0;
   const hasPosting = count > 0;
   
   console.log(`[UpdateRecoveryStatus] Previous working day ${prevDateKey} has ${count} postings: ${hasPosting}`);
@@ -53,26 +120,29 @@ async function hasPreviousWorkingDayPosting(userId: string, currentDate: Date): 
 }
 
 // Helper function to check if user missed multiple consecutive working days
+// Now uses batch query for better performance
 async function hasMissedMultipleWorkingDays(userId: string, currentDate: Date): Promise<boolean> {
   const seoulDate = toSeoulDate(currentDate);
   const prevWorkingDay = getPreviousWorkingDay(seoulDate);
   const prevPrevWorkingDay = getPreviousWorkingDay(prevWorkingDay);
   
-  console.log(`[UpdateRecoveryStatus] Checking consecutive misses for user ${userId}`);
-  console.log(`[UpdateRecoveryStatus] Previous working day: ${getDateKey(prevWorkingDay)}`);
-  console.log(`[UpdateRecoveryStatus] Day before previous: ${getDateKey(prevPrevWorkingDay)}`);
+  const prevDateKey = getDateKey(prevWorkingDay);
+  const prevPrevDateKey = getDateKey(prevPrevWorkingDay);
   
-  // Check if both previous working day and the one before it have no postings
-  const [prevDayCount, prevPrevDayCount] = await Promise.all([
-    getPostingsCountForDate(userId, getDateKey(prevWorkingDay)),
-    getPostingsCountForDate(userId, getDateKey(prevPrevWorkingDay))
-  ]);
+  console.log(`[UpdateRecoveryStatus] Checking consecutive misses for user ${userId}`);
+  console.log(`[UpdateRecoveryStatus] Previous working day: ${prevDateKey}`);
+  console.log(`[UpdateRecoveryStatus] Day before previous: ${prevPrevDateKey}`);
+  
+  // Check if both previous working day and the one before it have no postings using batch query
+  const countMap = await getPostingsCountForDateRange(userId, [prevDateKey, prevPrevDateKey]);
+  const prevDayCount = countMap.get(prevDateKey) || 0;
+  const prevPrevDayCount = countMap.get(prevPrevDateKey) || 0;
   
   const missedMultiple = prevDayCount === 0 && prevPrevDayCount === 0;
   
   console.log(`[UpdateRecoveryStatus] User ${userId} consecutive miss check:`);
-  console.log(`[UpdateRecoveryStatus] - ${getDateKey(prevPrevWorkingDay)}: ${prevPrevDayCount} posts`);
-  console.log(`[UpdateRecoveryStatus] - ${getDateKey(prevWorkingDay)}: ${prevDayCount} posts`);
+  console.log(`[UpdateRecoveryStatus] - ${prevPrevDateKey}: ${prevPrevDayCount} posts`);
+  console.log(`[UpdateRecoveryStatus] - ${prevDateKey}: ${prevDayCount} posts`);
   console.log(`[UpdateRecoveryStatus] - Missed multiple consecutive days: ${missedMultiple}`);
   
   return missedMultiple;
