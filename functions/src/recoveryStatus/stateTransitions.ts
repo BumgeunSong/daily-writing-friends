@@ -7,7 +7,7 @@ import {
   getOrCreateStreakInfo,
   updateStreakInfo
 } from "./streakUtils";
-import { StreakInfo } from "./types/StreakInfo";
+import { StreakInfo } from "./StreakInfo";
 
 /**
  * 1. onStreak → eligible : at midnight after user missed a working day

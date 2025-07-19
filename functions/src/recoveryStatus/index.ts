@@ -6,4 +6,4 @@ export * from './stateTransitions';
 export * from './streakUtils';
 
 // Types
-export * from './types/StreakInfo';
+export * from './StreakInfo';
