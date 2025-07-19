@@ -11,8 +11,8 @@ import * as streakUtils from '../streakUtils';
 
 // Mock all streak utilities
 jest.mock('../streakUtils');
-jest.mock('../../admin');
-jest.mock('../../dateUtils', () => ({
+jest.mock('../../shared/admin');
+jest.mock('../../shared/dateUtils', () => ({
   toSeoulDate: jest.fn((date: Date) => date),
 }));
 

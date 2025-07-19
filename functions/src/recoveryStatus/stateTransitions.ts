@@ -1,4 +1,4 @@
-import { toSeoulDate } from "../dateUtils";
+import { toSeoulDate } from "../shared/dateUtils";
 import { 
   didUserMissYesterday, 
   calculateRecoveryRequirement, 
@@ -7,7 +7,7 @@ import {
   getOrCreateStreakInfo,
   updateStreakInfo
 } from "./streakUtils";
-import { StreakInfo } from "../types/StreakInfo";
+import { StreakInfo } from "./types/StreakInfo";
 
 /**
  * 1. onStreak → eligible : at midnight after user missed a working day

@@ -1,10 +1,10 @@
 import { Message } from 'firebase-admin/lib/messaging/messaging-api';
 import { onDocumentCreated } from 'firebase-functions/firestore';
-import admin from '../admin';
-import { FirebaseMessagingToken } from '../types/FirebaseMessagingToken';
-import { Notification, NotificationType } from '../types/Notification';
-import { Post } from '../types/Post';
-import { User } from '../types/User';
+import admin from '../shared/admin';
+import { FirebaseMessagingToken } from '../shared/types/FirebaseMessagingToken';
+import { Notification, NotificationType } from '../shared/types/Notification';
+import { Post } from '../shared/types/Post';
+import { User } from '../shared/types/User';
 
 // Send cloud message via FCM tokens to user when notification is created
 // firebase messaging token is subcollection of users

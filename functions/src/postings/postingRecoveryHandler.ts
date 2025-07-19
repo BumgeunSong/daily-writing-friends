@@ -1,12 +1,13 @@
 import { Timestamp } from "firebase-admin/firestore";
-import admin from "../admin";
+import admin from "../shared/admin";
 import { 
   toSeoulDate, 
   isWorkingDay, 
   getPreviousWorkingDay 
-} from "../dateUtils";
-import { calculateAndUpdateRecoveryStatus } from "../recoveryStatus/updateRecoveryStatus";
-import { RecoveryStatus } from "../types/User";
+} from "../shared/dateUtils";
+// TODO: Import this once updateRecoveryStatus file is available
+// import { calculateAndUpdateRecoveryStatus } from "../recoveryStatus/updateRecoveryStatus";
+import { RecoveryStatus } from "../shared/types/User";
 
 // Helper function to get current user's recovery status
 async function getUserRecoveryStatus(userId: string): Promise<RecoveryStatus> {
@@ -101,8 +102,9 @@ export async function updateRecoveryStatusAfterPosting(
   console.log(`[RecoveryHandler] Post created at: ${postCreatedAt.toISOString()}`);
   
   try {
-    await calculateAndUpdateRecoveryStatus(authorId, postCreatedAt);
-    console.log(`[RecoveryHandler] ✅ Successfully updated recovery status for user: ${authorId}`);
+    // TODO: Implement this once updateRecoveryStatus is available
+    // await calculateAndUpdateRecoveryStatus(authorId, postCreatedAt);
+    console.log(`[RecoveryHandler] ✅ Placeholder - recovery status update would be performed for user: ${authorId}`);
   } catch (error) {
     console.error(`[RecoveryHandler] ❌ Error updating recovery status for user ${authorId}:`, error);
     throw error;

@@ -1,6 +1,6 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import admin from "../admin";
-import { toSeoulDate } from "../dateUtils";
+import admin from "../shared/admin";
+import { toSeoulDate } from "../shared/dateUtils";
 import { processMidnightTransitions } from "./stateTransitions";
 
 /**

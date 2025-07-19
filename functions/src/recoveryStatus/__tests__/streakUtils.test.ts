@@ -7,7 +7,7 @@ import {
 } from '../streakUtils';
 
 // Mock dateUtils
-jest.mock('../../dateUtils', () => ({
+jest.mock('../../shared/dateUtils', () => ({
   isWorkingDay: jest.fn((date: Date) => {
     const day = date.getDay();
     return day >= 1 && day <= 5; // Monday to Friday

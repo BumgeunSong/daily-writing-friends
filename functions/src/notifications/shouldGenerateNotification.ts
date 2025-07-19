@@ -1,4 +1,4 @@
-import { NotificationType } from '../types/Notification';
+import { NotificationType } from '../shared/types/Notification';
 
 export const shouldGenerateNotification = (
   notificationType: NotificationType,

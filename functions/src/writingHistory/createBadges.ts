@@ -1,5 +1,5 @@
-import { isSameDay, TimeZone } from "../dateUtils";
-import { WritingHistory } from "../types/WritingHistory";
+import { isSameDay, TimeZone } from "../shared/dateUtils";
+import { WritingHistory } from "./WritingHistory";
 
 interface WritingBadge {
     name: string

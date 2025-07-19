@@ -16,7 +16,11 @@
       "Bash(mv:*)",
       "Bash(npm install:*)",
       "Bash(npm test:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(firebase emulators:start:*)",
+      "Bash(pkill:*)"
     ],
     "deny": []
   }

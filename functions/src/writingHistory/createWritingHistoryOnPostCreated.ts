@@ -1,7 +1,7 @@
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { createWritingHistoryData } from "./updateWritingHistoryByBatch";
-import admin from "../admin";
-import { Post } from "../types/Post";
+import admin from "../shared/admin";
+import { Post } from "../shared/types/Post";
 
 export const createWritingHistoryOnPostCreated = onDocumentCreated(
     "boards/{boardId}/posts/{postId}",

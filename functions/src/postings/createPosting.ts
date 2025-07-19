@@ -1,7 +1,7 @@
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import admin from "../admin";
-import { Post } from "../types/Post";
-import { Posting } from "../types/Posting";
+import admin from "../shared/admin";
+import { Post } from "../shared/types/Post";
+import { Posting } from "./Posting";
 
 export const createPosting = onDocumentCreated(
   'boards/{boardId}/posts/{postId}',

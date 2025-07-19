@@ -1,7 +1,7 @@
 import { Timestamp } from "firebase-admin/firestore";
-import admin from "../admin";
-import { toSeoulDate, isWorkingDay } from "../dateUtils";
-import { RecoveryRequirement, StreakInfo } from "../types/StreakInfo";
+import admin from "../shared/admin";
+import { toSeoulDate, isWorkingDay } from "../shared/dateUtils";
+import { RecoveryRequirement, StreakInfo } from "./types/StreakInfo";
 
 /**
  * Format date to YYYY-MM-DD string

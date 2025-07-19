@@ -1,5 +1,5 @@
 import { onDocumentCreated, onDocumentDeleted } from "firebase-functions/firestore";
-import admin from "../admin";
+import admin from "../shared/admin";
 
 // 답글 생성 시
 export const incrementRepliesCountOnReplyCreated = onDocumentCreated(  
