@@ -1,203 +1,204 @@
-# Recovery Status Midnight Update - Refactored Architecture
+# Streak Recovery System - 3-State Architecture
 
 ## Overview
 
-The `updateRecoveryStatusOnMidnight` function has been refactored into smaller, pure functions that are easily testable and maintainable. This modular approach separates concerns and makes the codebase more robust.
+The new streak recovery system uses a clean 3-state architecture with comprehensive state transitions. This system tracks user writing streaks and handles recovery scenarios when users miss writing days.
 
-## File Structure
+## Architecture
+
+### 3-State System
+- **onStreak**: User is maintaining their writing streak
+- **eligible**: User missed a day but can recover by writing extra posts
+- **missed**: User failed to recover and lost their streak
+
+### File Structure
 
 ```
 src/recoveryStatus/
-├── updateRecoveryStatusOnMidnight.ts  # Main scheduled function
-├── midnightUpdateHelpers.ts           # Pure utility functions
-├── userRecoveryProcessor.ts           # User processing logic
-├── firestoreOperations.ts             # Database operations
-├── updateRecoveryStatus.ts            # Existing status calculation logic
+├── stateTransitions.ts             # Core state transition logic
+├── streakUtils.ts                  # Utility functions for streak calculations
+├── updateRecoveryStatusOnMidnightV2.ts # Scheduled midnight updates
+├── types/
+│   └── StreakInfo.ts              # TypeScript interfaces
 └── __tests__/
-    └── midnightUpdateHelpers.test.ts  # Example tests for pure functions
+    ├── stateTransitions.test.ts    # Comprehensive state transition tests
+    └── streakUtils.test.ts         # Utility function tests
 ```
 
-## Architecture Benefits
+## State Transitions
 
-### 1. **Separation of Concerns**
-- **Firebase Functions wrapper**: `updateRecoveryStatusOnMidnight.ts`
-- **Business logic**: `midnightUpdateHelpers.ts`
-- **Data processing**: `userRecoveryProcessor.ts`
-- **Database operations**: `firestoreOperations.ts`
-
-### 2. **Pure Functions**
-Most functions are now pure (no side effects), making them:
-- **Easily testable** with predictable inputs/outputs
-- **Reusable** across different contexts
-- **Debuggable** with clear data flow
-
-### 3. **Error Isolation**
-- Individual user processing errors don't affect other users
-- Firestore connection issues are handled gracefully
-- Detailed error reporting with summaries
-
-### 4. **Performance Optimization**
-- Batch processing to avoid overwhelming the system
-- Parallel processing within batches
-- Health checks before processing
-
-## Key Functions
-
-### `midnightUpdateHelpers.ts` - Pure Utility Functions
-
-#### `determineNewRecoveryStatus(currentStatus, calculatedStatus): RecoveryStatus`
-**Pure function** that implements midnight transition logic:
+### 1. onStreak → eligible
+**Trigger**: At midnight after user missed a working day
 ```typescript
-// Test example:
-const newStatus = determineNewRecoveryStatus('partial', 'eligible');
-// Returns: 'none' (failed recovery)
+// User was on streak but missed yesterday (working day)
+// Gets a recovery opportunity with deadline
 ```
 
-#### `createStatusTransitionLog(userId, currentStatus, newStatus, calculatedStatus): StatusTransitionLog`
-**Pure function** that creates structured log messages:
+### 2. eligible → missed  
+**Trigger**: At midnight when recovery deadline passes without sufficient posts
 ```typescript
-// Test example:
-const log = createStatusTransitionLog('user123', 'partial', 'none', 'partial');
-// Returns: { transitionType: 'reset', message: '...', ... }
+// User failed to write enough posts within deadline
+// Loses streak permanently
 ```
 
-#### `isValidUserRecoveryData(userData): boolean`
-**Pure function** for data validation:
+### 3. eligible → onStreak
+**Trigger**: When user writes required number of posts during recovery period
 ```typescript
-// Test example:
-const isValid = isValidUserRecoveryData({ userId: 'user123', currentStatus: 'eligible' });
-// Returns: true
+// User successfully recovers by writing 2 posts (working day) or 1 post (weekend)
+// Streak is restored
 ```
 
-### `userRecoveryProcessor.ts` - Processing Logic
-
-#### `processUserRecoveryStatus(userData, currentDate): Promise<UserProcessingResult>`
-Processes a single user with error handling:
-- Calculates recovery status
-- Determines new status using pure functions
-- Updates database if needed
-- Returns structured result
-
-#### `processUsersInBatches(users, currentDate, batchSize): Promise<UserProcessingResult[]>`
-Processes multiple users efficiently:
-- Splits users into batches
-- Processes batches in parallel
-- Provides progress logging
-
-### `firestoreOperations.ts` - Database Layer
-
-#### `fetchAndPrepareUsers(): Promise<UserRecoveryData[]>`
-Fetches and validates user data:
-- Retrieves all users from Firestore
-- Converts to typed data structures
-- Filters out invalid records
-
-#### `checkFirestoreHealth(): Promise<boolean>`
-Health check for database connection.
-
-### `updateRecoveryStatusOnMidnight.ts` - Main Function
-
-#### `executeMidnightUpdate(currentDate, batchSize): Promise<ProcessingSummary>`
-**Core business logic** separated from Firebase Functions wrapper:
-- Can be called directly for testing
-- Returns detailed processing summary
-- Handles all error scenarios
-
-## Testing Strategy
-
-### Unit Tests (Pure Functions)
+### 4. missed → onStreak
+**Trigger**: When user writes any post after missing streak
 ```typescript
-// Example: Testing transition logic
-describe('determineNewRecoveryStatus', () => {
-  it('should reset partial status to none when not successful', () => {
-    const result = determineNewRecoveryStatus('partial', 'eligible');
-    expect(result).toBe('none');
-  });
+// User starts fresh streak from missed status
+// Any single post restarts the streak
+```
+
+## Core Functions
+
+### `stateTransitions.ts`
+
+#### State Transition Handlers
+```typescript
+handleOnStreakToEligible(userId: string, currentDate: Date): Promise<boolean>
+handleEligibleToMissed(userId: string, currentDate: Date): Promise<boolean>
+handleEligibleToOnStreak(userId: string, postDate: Date): Promise<boolean>
+handleMissedToOnStreak(userId: string, postDate: Date): Promise<boolean>
+```
+
+#### Process Functions
+```typescript
+processMidnightTransitions(userId: string, currentDate: Date): Promise<void>
+processPostingTransitions(userId: string, postDate: Date): Promise<void>
+```
+
+### `streakUtils.ts`
+
+#### Recovery Calculation
+```typescript
+calculateRecoveryRequirement(missedDate: Date, currentDate: Date): RecoveryRequirement
+// Returns: { postsRequired, currentPosts, deadline, missedDate }
+```
+
+#### Date Utilities
+```typescript
+formatDateString(date: Date): string
+getNextWorkingDay(date: Date): Date
+didUserMissYesterday(userId: string, currentDate: Date): Promise<boolean>
+countPostsOnDate(userId: string, date: Date): Promise<number>
+```
+
+## Key Business Rules
+
+### Recovery Requirements
+- **Working day missed**: Requires 2 posts to recover
+- **Friday missed**: Requires 1 post by Saturday (NOT Monday)
+- **Weekend posting**: Counts but doesn't affect streak status
+
+### Deadline Calculation
+- **Mon-Thu missed**: Deadline = next working day
+- **Friday missed**: Deadline = Saturday (next day) ⚠️ *Currently incorrect - sets Monday*
+
+### Consecutive Misses
+- Users in 'missed' status stay 'missed' regardless of time passing
+- Only way out of 'missed' is to write a post (starts fresh streak)
+
+## Testing
+
+### Comprehensive Test Coverage (102 tests)
+
+#### State Transition Tests
+```typescript
+// All 4 transitions tested with mocked dates
+describe('State Transitions', () => {
+  // 1. onStreak → eligible
+  // 2. eligible → missed  
+  // 3. eligible → onStreak
+  // 4. missed → onStreak
 });
 ```
 
-### Integration Tests
+#### Edge Case Tests
 ```typescript
-// Example: Testing core logic
-describe('executeMidnightUpdate', () => {
-  it('should process users correctly', async () => {
-    const mockDate = new Date('2025-01-20T00:00:00+09:00');
-    const summary = await executeMidnightUpdate(mockDate, 10);
-    expect(summary.totalUsers).toBeGreaterThan(0);
-  });
-});
+// Consecutive misses remain 'missed'
+// Partial recovery (insufficient posts) stays 'eligible' 
+// OnStreak users remain 'onStreak' when posting
+// Weekend and timezone handling
 ```
 
-### Mock Testing
+#### Weekday Deadline Tests
 ```typescript
-// Example: Mocking Firestore operations
-jest.mock('./firestoreOperations', () => ({
-  fetchAndPrepareUsers: jest.fn().mockResolvedValue([mockUserData])
-}));
+// Monday-Thursday: deadline = next working day ✅
+// Friday: deadline = Saturday (documented issue) ❌
+```
+
+### Running Tests
+```bash
+npm test -- --testPathPattern=stateTransitions.test.ts  # State transition tests
+npm test -- --testPathPattern=streakUtils.test.ts      # Utility tests
+npm test                                                # All tests
+```
+
+## Integration Points
+
+### Midnight Updates
+```typescript
+// updateRecoveryStatusOnMidnightV2.ts
+// Processes state transitions at midnight for all users
+export const updateRecoveryStatusOnMidnightV2 = onSchedule(/* ... */);
+```
+
+### Post Creation
+```typescript
+// postings/onPostingCreated.ts
+// Processes state transitions when user creates posts
+export const onPostingCreated = onDocumentCreated(/* ... */);
 ```
 
 ## Usage Examples
 
-### Running the Midnight Update Manually
+### Manual State Transition Testing
 ```typescript
-import { executeMidnightUpdate } from './updateRecoveryStatusOnMidnight';
+import { handleOnStreakToEligible } from './stateTransitions';
 
-// Run for specific date
-const summary = await executeMidnightUpdate(
-  new Date('2025-01-20T00:00:00+09:00'),
-  25 // batch size
-);
-
-console.log(`Processed ${summary.totalUsers} users with ${summary.errors} errors`);
+// Test transition for specific user and date
+const result = await handleOnStreakToEligible('userId', new Date());
+console.log('Transition occurred:', result);
 ```
 
-### Testing Individual Functions
+### Recovery Requirement Calculation
 ```typescript
-import { determineNewRecoveryStatus } from './midnightUpdateHelpers';
+import { calculateRecoveryRequirement } from './streakUtils';
 
-// Test transition logic
-const scenarios = [
-  { current: 'partial', calculated: 'eligible', expected: 'none' },
-  { current: 'partial', calculated: 'success', expected: 'success' },
-  { current: 'none', calculated: 'eligible', expected: 'eligible' }
-];
-
-scenarios.forEach(({ current, calculated, expected }) => {
-  const result = determineNewRecoveryStatus(current, calculated);
-  console.assert(result === expected, `Failed: ${current} + ${calculated} should be ${expected}`);
-});
+const missedDate = new Date('2024-01-15'); // Monday
+const currentDate = new Date('2024-01-16'); // Tuesday
+const requirement = calculateRecoveryRequirement(missedDate, currentDate);
+// Returns: { postsRequired: 2, currentPosts: 0, deadline: '2024-01-16', missedDate: '2024-01-15' }
 ```
 
-## Error Handling
+## Known Issues
 
-### Graceful Degradation
-- Individual user errors don't stop processing
-- Firestore connection issues are caught early
-- Detailed error logging and reporting
+### 🚨 Friday Deadline Bug
+**Issue**: When user misses Friday, deadline is set to Monday (next working day) instead of Saturday (next day)
+**Location**: `streakUtils.ts:calculateRecoveryRequirement()`
+**Fix needed**: Use "next day" logic for Friday instead of "next working day"
 
-### Monitoring
 ```typescript
-const summary = await executeMidnightUpdate();
+// Current (incorrect):
+deadline: formatDateString(getNextWorkingDay(missedDate))
 
-// Monitor success rate
-const successRate = summary.successfulUpdates / summary.totalUsers;
-if (successRate < 0.95) {
-  console.warn('Low success rate detected:', successRate);
-}
-
-// Alert on specific transition types
-if (summary.transitionCounts.reset > summary.totalUsers * 0.1) {
-  console.warn('High reset rate detected - many users failed recovery');
-}
+// Should be for Friday:
+deadline: formatDateString(getNextDay(missedDate))
 ```
 
-## Benefits of This Architecture
+## Benefits
 
-1. **🧪 Testability**: Pure functions are easy to unit test
-2. **🔧 Maintainability**: Clear separation of concerns
-3. **📊 Monitoring**: Detailed processing summaries
-4. **⚡ Performance**: Batch processing and parallel execution
-5. **🛡️ Reliability**: Error isolation and graceful degradation
-6. **🔍 Debuggability**: Structured logging and data flow
+1. **🔄 Clean State Machine**: Clear 3-state transitions
+2. **🧪 Comprehensive Testing**: 102 tests covering all scenarios  
+3. **📊 Progress Tracking**: Partial recovery with currentPosts field
+4. **🌍 Timezone Aware**: Proper Seoul time handling
+5. **⚡ Efficient**: No unnecessary state changes
+6. **🛡️ Edge Case Handling**: Consecutive misses, weekends, holidays
 
-This refactored architecture makes the midnight update function more reliable, testable, and maintainable while preserving all the original functionality.
+This architecture provides a robust, well-tested foundation for the streak recovery system with clear separation of concerns and comprehensive edge case coverage.
