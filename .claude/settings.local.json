@@ -14,7 +14,9 @@
       "Bash(npm run:*)",
       "Bash(find:*)",
       "Bash(mv:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npm test:*)",
+      "Bash(git restore:*)"
     ],
     "deny": []
   }

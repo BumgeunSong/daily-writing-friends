@@ -101,21 +101,266 @@
 
 ---
 
-## 9. 예시 시나리오
+## 8. Recovery Status 전환 로직
 
-### 9.1 정상 복구
+### 8.1 상태 전환 알고리즘
 
-- 목요일 글 미작성 → 금요일 2개 글 작성 → streak 복구
-- 금요일 글 미작성 → 토/일/월 중 2개 글 작성 → streak 복구
+Recovery Status는 다음 로직에 따라 계산됩니다:
 
-### 9.2 복구 실패
+```typescript
+// 1. 이전 working day에 posting이 있는지 확인
+if (hasPreviousWorkingDayPosting) {
+  return 'none'; // 복구 필요 없음
+}
 
-- 목요일 글 미작성 → 금요일 1개만 작성 → 금요일에만 글을 쓴 것으로 저장됨. 목요일에는 글을 쓰지 않은 것으로 저장됨 -> Streak 초기화
-- 금요일 글 미작성 → 토/일/월 모두 2개 글 미작성 → streak 초기화
+// 2. 연속으로 여러 working day를 놓쳤는지 확인
+if (hasMissedMultipleWorkingDays) {
+  return 'none'; // 복구 불가 (연속 miss)
+}
+
+// 3. 단일 working day miss의 경우, 오늘 posting 수에 따라 결정
+if (todayPostingsCount === 0) return 'eligible';
+if (todayPostingsCount === 1) return 'partial';
+if (todayPostingsCount >= 2) return 'success';
+```
+
+### 8.2 Midnight Function 동작
+
+매일 00:00 KST에 실행되는 `updateRecoveryStatusOnMidnight` 함수는:
+
+1. **모든 사용자의 Recovery Status를 재계산**
+2. **복구 기간 만료 처리**: `'partial'` 또는 `'eligible'` 상태에서 복구를 완료하지 못한 사용자를 `'none'`으로 변경
+3. **새로운 복구 기회 생성**: 어제 working day를 놓친 사용자를 `'none'`에서 `'eligible'`로 변경
+
+### 8.3 연속 Miss 감지 로직
+
+`hasMissedMultipleWorkingDays` 함수는 다음을 확인합니다:
+- 이전 working day (prevWorkingDay) posting 수
+- 그 전 working day (prevPrevWorkingDay) posting 수
+- 둘 다 0이면 연속 miss로 판단 → 복구 불가
+
+### 8.4 상태 전환 테이블
+
+| 현재 상태 | 조건 | 다음 상태 | 설명 |
+|----------|------|----------|------|
+| `none` | 이전 working day에 posting 있음 | `none` | 복구 필요 없음 |
+| `none` | 연속 miss 감지됨 | `none` | 복구 불가 |
+| `none` | 단일 miss + 오늘 0 posts | `eligible` | 복구 기회 시작 |
+| `eligible` | 오늘 1 post 작성 | `partial` | 복구 진행 중 |
+| `eligible` | 오늘 2+ posts 작성 | `success` | 복구 완료 |
+| `eligible` | 복구 기간 만료 (midnight) | `none` | 복구 실패 |
+| `partial` | 오늘 추가 post 작성 | `success` | 복구 완료 |
+| `partial` | 복구 기간 만료 (midnight) | `none` | 복구 실패 |
+| `success` | 다음날 midnight | `none` | 정상 상태로 복귀 |
 
 ---
 
-## 10. 참고/추가 구현 노트
+## 9. 예시 시나리오
+
+### 9.1 평일 간 복구 시나리오
+
+#### ✅ 시나리오 1: 단일 평일 Miss → 정상 복구
+```
+월요일: 1+ posts ✅
+화요일: 0 posts ❌ (missed)
+수요일 00:00: 'none' → 'eligible' (복구 기회 생성)
+수요일: 1 post → 'eligible' → 'partial'
+수요일: 2nd post → 'partial' → 'success' (복구 완료)
+```
+
+#### ❌ 시나리오 2: 단일 평일 Miss → 복구 실패
+```
+월요일: 1+ posts ✅
+화요일: 0 posts ❌ (missed)
+수요일 00:00: 'none' → 'eligible'
+수요일: 1 post → 'eligible' → 'partial'
+목요일 00:00: 'partial' → 'none' (복구 기간 만료)
+```
+
+#### ❌ 시나리오 3: 연속 평일 Miss → 복구 불가
+```
+월요일: 1+ posts ✅
+화요일: 0 posts ❌ (missed)
+수요일: 0 posts ❌ (missed)
+목요일 00:00: 'none' → 'none' (연속 miss, 복구 불가)
+```
+
+### 9.2 주말 경계 복구 시나리오
+
+#### ✅ 시나리오 4: 금요일 Miss → 주말 복구 성공
+```
+목요일: 1+ posts ✅
+금요일: 0 posts ❌ (missed)
+토요일 00:00: 'none' → 'eligible' (복구 기간 시작)
+토요일: 1 post → 'eligible' → 'partial'
+토요일: 2nd post → 'partial' → 'success' (주말 복구 완료)
+```
+
+#### ✅ 시나리오 5: 금요일 Miss → 월요일 복구 성공
+```
+목요일: 1+ posts ✅
+금요일: 0 posts ❌ (missed)
+토요일 00:00: 'none' → 'eligible'
+일요일 00:00: 'eligible' → 'eligible' (복구 기간 유지)
+월요일 00:00: 'eligible' → 'eligible' (마지막 복구 기회)
+월요일: 2 posts → 'eligible' → 'success' (복구 완료)
+```
+
+#### ❌ 시나리오 6: 금요일 Miss → 복구 기간 만료
+```
+목요일: 1+ posts ✅
+금요일: 0 posts ❌ (missed)
+토요일 00:00: 'none' → 'eligible'
+일요일 00:00: 'eligible' → 'eligible'
+월요일 00:00: 'eligible' → 'eligible' (마지막 기회)
+월요일: 0 posts (복구 시도 안함)
+화요일 00:00: 'eligible' → 'none' (복구 기간 만료)
+```
+
+#### ❌ 시나리오 7: 목요일+금요일 Miss → 복구 불가
+```
+수요일: 1+ posts ✅
+목요일: 0 posts ❌ (missed)
+금요일: 0 posts ❌ (missed)
+토요일 00:00: 'none' → 'none' (연속 miss, 복구 불가)
+월요일 00:00: 'none' → 'none' (여전히 복구 불가)
+```
+
+### 9.3 특수 상황 시나리오
+
+#### ✅ 시나리오 8: 부분 복구 후 기간 만료
+```
+화요일: 0 posts ❌ (missed)
+수요일: 1 post → 'partial' (부분 복구)
+목요일 00:00: 'partial' → 'none' (복구 미완료로 만료)
+```
+
+#### ✅ 시나리오 9: 복구 완료 후 정상 전환
+```
+화요일: 0 posts ❌ (missed)
+수요일: 2 posts → 'success' (복구 완료)
+목요일 00:00: 'success' → 'none' (정상 상태로 복귀)
+```
+
+### 9.4 주요 설계 원칙 확인
+
+#### 🔍 Working Day 계산
+- `getPreviousWorkingDay(월요일)` → 금요일 (주말 건너뜀)
+- `getPreviousWorkingDay(화요일)` → 월요일
+- 한국 공휴일도 working day에서 제외
+
+#### 🔍 연속 Miss 판정
+- 월요일 체크 시: 금요일(이전) + 목요일(그 전) 확인
+- 금요일 miss + 목요일 post → 단일 miss (복구 가능)
+- 금요일 miss + 목요일 miss → 연속 miss (복구 불가)
+
+#### 🔍 복구 기간 정의
+- 금요일 miss → 토요일~월요일이 복구 기간
+- 화요일 00:00에 복구 기간 만료
+- 주말에도 복구 posting 가능
+
+---
+
+## 10. 기술적 구현 분석
+
+### 10.1 주말 시나리오 로직 검증
+
+#### 테스트 케이스: 금요일 Miss → 월요일 체크
+- **목요일**: 사용자 포스팅 (working day) ✅
+- **금요일**: 사용자 미포스팅 (working day) ❌
+- **토요일/일요일**: 주말 (non-working days)
+- **월요일**: 복구 상태 체크 (아직 포스팅 안함)
+
+#### 단계별 로직 추적
+
+**Step 1: `getPreviousWorkingDay(Monday)`**
+```typescript
+// Monday = 2025-01-20 (예시)
+getPreviousWorkingDay(new Date('2025-01-20'))
+```
+
+**처리 과정:**
+1. 월요일(2025-01-20)에서 시작
+2. 이전 날짜: 일요일(2025-01-19)
+3. `isWorkingDay(Sunday)` 체크: **false** (주말)
+4. 이전 날짜: 토요일(2025-01-18)
+5. `isWorkingDay(Saturday)` 체크: **false** (주말)
+6. 이전 날짜: 금요일(2025-01-17)
+7. `isWorkingDay(Friday)` 체크: **true** (working day)
+
+**결과:** 금요일(2025-01-17) 반환 ✅
+
+**Step 2: `hasPreviousWorkingDayPosting(userId, Monday)`**
+```typescript
+hasPreviousWorkingDayPosting(userId, new Date('2025-01-20'))
+```
+
+**처리 과정:**
+1. `getPreviousWorkingDay(Monday)` 호출 → **금요일**
+2. 날짜 키 생성: `"2025-01-17"`
+3. 금요일 포스팅 조회
+4. 사용자가 금요일 미포스팅: **0개 발견**
+
+**결과:** **false** 반환 ✅
+
+**Step 3: `hasMissedMultipleWorkingDays(userId, Monday)`**
+```typescript
+hasMissedMultipleWorkingDays(userId, new Date('2025-01-20'))
+```
+
+**처리 과정:**
+1. Seoul 날짜로 변환: 월요일
+2. 이전 working day: `getPreviousWorkingDay(Monday)` → **금요일**
+3. 그 전 working day: `getPreviousWorkingDay(Friday)` → **목요일**
+4. 두 날짜 포스팅 조회:
+   - 금요일(2025-01-17): **0개 포스팅** (missed)
+   - 목요일(2025-01-16): **1+ 포스팅** (사용자 포스팅함)
+5. 연속 miss 체크: `prevDayCount === 0 && prevPrevDayCount === 0`
+   - 금요일 count: 0 ✓
+   - 목요일 count: 1+ ✗
+
+**결과:** **false** 반환 (연속 miss 아님) ✅
+
+### 10.2 로직 정확성 검증
+
+#### ✅ 올바른 동작 확인
+이 로직은 **단일 working day miss** 시나리오를 올바르게 식별합니다:
+
+1. **금요일이 월요일의 이전 working day로 올바르게 식별됨**
+2. **목요일 포스팅이 발견되어 연속 miss가 아님을 확인**
+3. **금요일 miss에 대한 복구 기회가 제공되어야 함**
+
+#### 예상되는 복구 상태 플로우
+```typescript
+// 월요일, 포스팅 전:
+const status = await calculateRecoveryStatus(userId, new Date('2025-01-20'))
+// 반환값: 'eligible' (2개 포스팅으로 복구 시작 가능)
+
+// 월요일 첫 번째 포스팅 후:
+// 반환값: 'partial' (1개 더 필요)
+
+// 월요일 두 번째 포스팅 후:
+// 반환값: 'success' (복구 완료)
+```
+
+### 10.3 핵심 인사이트
+
+#### 주말 처리 ✅
+- **주말을 올바르게 건너뛰고** 이전 working day를 찾음
+- **주말 간격에도 불구하고 금요일 miss를 적절히 감지**
+- **목요일 포스팅이 "연속 miss" 분류를 방지**
+
+#### 엣지 케이스 커버리지 ✅
+로직이 주말 전환을 올바르게 처리:
+- 금요일 miss + 주말 → 월요일 체크 = 단일 miss (복구 가능)
+- 목요일 miss + 금요일 miss + 주말 → 월요일 체크 = 연속 miss (복구 불가)
+
+#### 결론
+복구 로직이 주말 시나리오를 올바르게 처리합니다. 목요일에 포스팅하고 금요일을 놓친 후 월요일에 체크하는 사용자는 'eligible' 복구 상태를 가지며, 이는 단일 working day miss에 대한 예상 동작입니다.
+
+---
+
+## 11. 참고/추가 구현 노트
 
 - RecoveryStatus, getRecoveryStatus 등은 streakUtils.ts에 구현
 - RecoveryBanner는 boardPage에서만 노출

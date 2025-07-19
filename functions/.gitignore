@@ -14,3 +14,7 @@ node_modules/
 
 # Test
 service-account.json
+
+# Jest Coverage Reports
+coverage/
+*.lcov

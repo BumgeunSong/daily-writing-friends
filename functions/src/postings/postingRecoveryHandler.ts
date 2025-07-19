@@ -1,33 +1,12 @@
 import { Timestamp } from "firebase-admin/firestore";
 import admin from "../admin";
+import { 
+  toSeoulDate, 
+  isWorkingDay, 
+  getPreviousWorkingDay 
+} from "../dateUtils";
 import { calculateAndUpdateRecoveryStatus } from "../recoveryStatus/updateRecoveryStatus";
 import { RecoveryStatus } from "../types/User";
-
-// Helper function to convert Date to Asia/Seoul timezone
-function toSeoulDate(date: Date): Date {
-  const seoulTime = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
-  return seoulTime;
-}
-
-// Helper function to check if a date is a working day (Mon-Fri) in Asia/Seoul timezone
-function isWorkingDay(date: Date): boolean {
-  const seoulDate = toSeoulDate(date);
-  const day = seoulDate.getDay();
-  return day >= 1 && day <= 5; // Monday = 1, Friday = 5
-}
-
-// Helper function to get previous working day in Asia/Seoul timezone
-function getPreviousWorkingDay(date: Date): Date {
-  const seoulDate = toSeoulDate(date);
-  let prevDate = new Date(seoulDate);
-  prevDate.setDate(prevDate.getDate() - 1);
-  
-  while (!isWorkingDay(prevDate)) {
-    prevDate.setDate(prevDate.getDate() - 1);
-  }
-  
-  return prevDate;
-}
 
 // Helper function to get current user's recovery status
 async function getUserRecoveryStatus(userId: string): Promise<RecoveryStatus> {

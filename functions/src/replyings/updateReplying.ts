@@ -1,7 +1,7 @@
 import { onRequest } from "firebase-functions/v2/https";
 import admin from "../admin";
-import { Post } from "../types/Post";
 import { Comment } from "../types/Comment";
+import { Post } from "../types/Post";
 import { Reply } from "../types/Reply";
 import { Replying } from "../types/Replying";
 

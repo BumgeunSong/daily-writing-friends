@@ -1,7 +1,7 @@
 import { onRequest } from "firebase-functions/v2/https";
 import admin from "../admin";
-import { Posting } from "../types/Posting";
 import { Post } from "../types/Post";
+import { Posting } from "../types/Posting";
 
 /**
  * updatePosting is a one-time migration function.
