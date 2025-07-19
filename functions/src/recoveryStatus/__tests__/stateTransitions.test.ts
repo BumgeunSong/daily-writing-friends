@@ -854,6 +854,344 @@ describe('State Transitions', () => {
     });
   });
 
+  describe('Partial recovery and status preservation', () => {
+    describe('partial recovery (insufficient posts)', () => {
+      it('should remain eligible when user creates posts but not enough for recovery', async () => {
+        const postDate = new Date('2024-01-17T14:00:00Z'); // Wednesday afternoon
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-13',
+            lastCalculated: {} as any,
+            status: {
+              type: 'eligible',
+              postsRequired: 2, // Requires 2 posts
+              currentPosts: 0,
+              deadline: '2024-01-17',
+              missedDate: '2024-01-15'
+            }
+          }
+        });
+        
+        // User has written only 1 post (insufficient)
+        mockStreakUtils.countPostsOnDate.mockResolvedValue(1);
+        mockStreakUtils.updateStreakInfo.mockResolvedValue();
+        
+        const result = await handleEligibleToOnStreak(userId, postDate);
+        
+        expect(result).toBe(false); // No transition occurred
+        expect(mockStreakUtils.updateStreakInfo).toHaveBeenCalledWith(userId, {
+          status: {
+            type: 'eligible', // Still eligible
+            postsRequired: 2,
+            currentPosts: 1, // Progress updated
+            deadline: '2024-01-17',
+            missedDate: '2024-01-15'
+          }
+        });
+      });
+
+      it('should update progress incrementally as user creates more posts', async () => {
+        const postDate = new Date('2024-01-17T14:00:00Z');
+        
+        // Test progression: 0 → 1 → 2 posts
+        const progressScenarios = [
+          { currentPosts: 0, description: 'no posts to 1 post' },
+          { currentPosts: 1, description: '1 post to 2 posts (complete)' }
+        ];
+        
+        for (let i = 0; i < progressScenarios.length; i++) {
+          const scenario = progressScenarios[i];
+          
+          mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+            doc: {} as any,
+            data: {
+              lastContributionDate: '2024-01-13',
+              lastCalculated: {} as any,
+              status: {
+                type: 'eligible',
+                postsRequired: 2,
+                currentPosts: scenario.currentPosts,
+                deadline: '2024-01-17',
+                missedDate: '2024-01-15'
+              }
+            }
+          });
+          
+          const newPostCount = scenario.currentPosts + 1;
+          mockStreakUtils.countPostsOnDate.mockResolvedValue(newPostCount);
+          
+          if (newPostCount < 2) {
+            // Still insufficient - should remain eligible
+            mockStreakUtils.updateStreakInfo.mockResolvedValue();
+            
+            const result = await handleEligibleToOnStreak(userId, postDate);
+            expect(result).toBe(false);
+            expect(mockStreakUtils.updateStreakInfo).toHaveBeenCalledWith(userId, {
+              status: {
+                type: 'eligible',
+                postsRequired: 2,
+                currentPosts: newPostCount,
+                deadline: '2024-01-17',
+                missedDate: '2024-01-15'
+              }
+            });
+          } else {
+            // Sufficient posts - should transition to onStreak
+            mockStreakUtils.formatDateString.mockReturnValue('2024-01-17');
+            mockStreakUtils.updateStreakInfo.mockResolvedValue();
+            
+            const result = await handleEligibleToOnStreak(userId, postDate);
+            expect(result).toBe(true);
+            expect(mockStreakUtils.updateStreakInfo).toHaveBeenCalledWith(userId, {
+              lastContributionDate: '2024-01-17',
+              status: { type: 'onStreak' }
+            });
+          }
+          
+          // Reset mocks for next iteration
+          jest.clearAllMocks();
+        }
+      });
+
+      it('should handle processPostingTransitions correctly for partial recovery', async () => {
+        const postDate = new Date('2024-01-17T14:00:00Z');
+        
+        // User in eligible status with insufficient posts
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-13',
+            lastCalculated: {} as any,
+            status: {
+              type: 'eligible',
+              postsRequired: 2,
+              currentPosts: 0,
+              deadline: '2024-01-17',
+              missedDate: '2024-01-15'
+            }
+          }
+        });
+        
+        mockStreakUtils.countPostsOnDate.mockResolvedValue(1); // Insufficient
+        mockStreakUtils.updateStreakInfo.mockResolvedValue();
+        
+        // Process posting transitions - should update progress but not transition
+        await processPostingTransitions(userId, postDate);
+        
+        // Should only call updateStreakInfo once for progress update (eligible → eligible)
+        expect(mockStreakUtils.updateStreakInfo).toHaveBeenCalledTimes(1);
+        expect(mockStreakUtils.updateStreakInfo).toHaveBeenCalledWith(userId, {
+          status: {
+            type: 'eligible',
+            postsRequired: 2,
+            currentPosts: 1,
+            deadline: '2024-01-17',
+            missedDate: '2024-01-15'
+          }
+        });
+      });
+
+      it('should handle weekend recovery with 1 post requirement', async () => {
+        const postDate = new Date('2024-01-20T14:00:00Z'); // Saturday afternoon
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-18',
+            lastCalculated: {} as any,
+            status: {
+              type: 'eligible',
+              postsRequired: 1, // Weekend requirement
+              currentPosts: 0,
+              deadline: '2024-01-20',
+              missedDate: '2024-01-19'
+            }
+          }
+        });
+        
+        mockStreakUtils.countPostsOnDate.mockResolvedValue(1); // Exactly what's needed
+        mockStreakUtils.formatDateString.mockReturnValue('2024-01-20');
+        mockStreakUtils.updateStreakInfo.mockResolvedValue();
+        
+        const result = await handleEligibleToOnStreak(userId, postDate);
+        
+        expect(result).toBe(true); // Should complete recovery
+        expect(mockStreakUtils.updateStreakInfo).toHaveBeenCalledWith(userId, {
+          lastContributionDate: '2024-01-20',
+          status: { type: 'onStreak' }
+        });
+      });
+    });
+
+    describe('onStreak status preservation', () => {
+      it('should remain onStreak when user already on streak creates posts', async () => {
+        const postDate = new Date('2024-01-17T14:00:00Z');
+        
+        // User is already on streak
+        mockStreakUtils.getOrCreateStreakInfo
+          .mockResolvedValueOnce({ // First call for eligible → onStreak (should fail)
+            doc: {} as any,
+            data: {
+              lastContributionDate: '2024-01-16',
+              lastCalculated: {} as any,
+              status: { type: 'onStreak' } // Already on streak
+            }
+          })
+          .mockResolvedValueOnce({ // Second call for missed → onStreak (should also fail)
+            doc: {} as any,
+            data: {
+              lastContributionDate: '2024-01-16',
+              lastCalculated: {} as any,
+              status: { type: 'onStreak' }
+            }
+          });
+        
+        // Process posting transitions
+        await processPostingTransitions(userId, postDate);
+        
+        // No state updates should occur - user remains onStreak
+        expect(mockStreakUtils.updateStreakInfo).not.toHaveBeenCalled();
+      });
+
+      it('should not interfere with onStreak users in handleEligibleToOnStreak', async () => {
+        const postDate = new Date('2024-01-17T14:00:00Z');
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-16',
+            lastCalculated: {} as any,
+            status: { type: 'onStreak' }
+          }
+        });
+        
+        const result = await handleEligibleToOnStreak(userId, postDate);
+        
+        expect(result).toBe(false); // No transition for onStreak users
+        expect(mockStreakUtils.countPostsOnDate).not.toHaveBeenCalled(); // Should exit early
+        expect(mockStreakUtils.updateStreakInfo).not.toHaveBeenCalled();
+      });
+
+      it('should not interfere with onStreak users in handleMissedToOnStreak', async () => {
+        const postDate = new Date('2024-01-17T14:00:00Z');
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-16',
+            lastCalculated: {} as any,
+            status: { type: 'onStreak' }
+          }
+        });
+        
+        const result = await handleMissedToOnStreak(userId, postDate);
+        
+        expect(result).toBe(false); // No transition for onStreak users
+        expect(mockStreakUtils.updateStreakInfo).not.toHaveBeenCalled();
+      });
+
+      it('should handle multiple posts from onStreak user without state changes', async () => {
+        const postDates = [
+          new Date('2024-01-17T10:00:00Z'), // Morning post
+          new Date('2024-01-17T14:00:00Z'), // Afternoon post
+          new Date('2024-01-17T18:00:00Z')  // Evening post
+        ];
+        
+        // User is consistently on streak
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-16',
+            lastCalculated: {} as any,
+            status: { type: 'onStreak' }
+          }
+        });
+        
+        // Process multiple posts
+        for (const postDate of postDates) {
+          await processPostingTransitions(userId, postDate);
+        }
+        
+        // No state updates should occur for any of the posts
+        expect(mockStreakUtils.updateStreakInfo).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('comprehensive posting scenarios', () => {
+      it('should handle all status types correctly in processPostingTransitions', async () => {
+        const postDate = new Date('2024-01-17T14:00:00Z');
+        
+        const statusScenarios = [
+          {
+            status: { type: 'onStreak' as const },
+            description: 'onStreak user posting',
+            expectUpdate: false
+          },
+          {
+            status: { 
+              type: 'eligible' as const,
+              postsRequired: 2,
+              currentPosts: 0,
+              deadline: '2024-01-17',
+              missedDate: '2024-01-15'
+            },
+            description: 'eligible user with insufficient posts',
+            expectUpdate: true,
+            mockPostCount: 1
+          },
+          {
+            status: { 
+              type: 'eligible' as const,
+              postsRequired: 2,
+              currentPosts: 1,
+              deadline: '2024-01-17',
+              missedDate: '2024-01-15'
+            },
+            description: 'eligible user with sufficient posts',
+            expectUpdate: true,
+            mockPostCount: 2
+          },
+          {
+            status: { type: 'missed' as const },
+            description: 'missed user posting',
+            expectUpdate: true
+          }
+        ];
+        
+        for (const scenario of statusScenarios) {
+          // Reset mocks
+          jest.clearAllMocks();
+          
+          mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+            doc: {} as any,
+            data: {
+              lastContributionDate: '2024-01-15',
+              lastCalculated: {} as any,
+              status: scenario.status
+            }
+          });
+          
+          if (scenario.mockPostCount) {
+            mockStreakUtils.countPostsOnDate.mockResolvedValue(scenario.mockPostCount);
+          }
+          
+          mockStreakUtils.formatDateString.mockReturnValue('2024-01-17');
+          mockStreakUtils.updateStreakInfo.mockResolvedValue();
+          
+          await processPostingTransitions(userId, postDate);
+          
+          if (scenario.expectUpdate) {
+            expect(mockStreakUtils.updateStreakInfo).toHaveBeenCalled();
+          } else {
+            expect(mockStreakUtils.updateStreakInfo).not.toHaveBeenCalled();
+          }
+        }
+      });
+    });
+  });
+
   describe('Error handling and edge cases', () => {
     it('should handle missing streak info gracefully', async () => {
       const currentDate = new Date('2024-01-16T09:00:00Z');
