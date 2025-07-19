@@ -17,7 +17,7 @@ Handles reply and reaction activity tracking when users create or update replies
 
 ## Types
 - `Replying`: Interface for reply activity tracking data
-- `Reaction`: Interface for reaction data (likes, hearts, etc.)
+- `Reaction`: Interface for reaction data (likes, hearts, etc.) - Located in `shared/types/Reaction`
 
 ## Usage
 ```typescript

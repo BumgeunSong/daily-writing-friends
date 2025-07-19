@@ -11,7 +11,6 @@ Handles post activity tracking and integration with the streak recovery system w
 
 ### Event Handlers  
 - **`onPostingCreated`**: Processes streak recovery state transitions when posts are created
-- **`postingRecoveryHandler`**: Handles recovery-related logic for posting events
 
 ## Integration with Recovery System
 The postings feature is tightly integrated with the recovery status system:

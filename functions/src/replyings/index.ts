@@ -6,4 +6,4 @@ export { updateReplying } from './updateReplying';
 
 // Types
 export * from './Replying';
-export * from './Reaction';
+export * from '../shared/types/Reaction';
