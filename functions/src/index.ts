@@ -20,8 +20,10 @@ import { updateCommentRepliesCounts } from './notifications/updateCommentReplies
 import { updatePostDaysFromFirstDay } from './notifications/updateDaysFromFirstDay';
 import { allocateSecretBuddy } from './oneTimeScript/allocateSecretBuddy';
 import { createPosting } from './postings/createPosting';
+import { onPostingCreated } from './postings/onPostingCreated';
 import { updatePosting } from './postings/updatePosting';
 import { updateRecoveryStatusOnMidnight } from './recoveryStatus/updateRecoveryStatusOnMidnight';
+import { updateRecoveryStatusOnMidnightV2 } from './recoveryStatus/updateRecoveryStatusOnMidnightV2';
 import { createReplying } from './replyings/createReplying';
 import { updateReplying } from './replyings/updateReplying';
 import { createWritingHistoryOnPostCreated } from './writingHistory/createWritingHistoryOnPostCreated';
@@ -43,6 +45,7 @@ export {
   createWritingHistoryOnPostCreated,
   deleteWritingHistoryOnPostDeleted,
   createPosting,
+  onPostingCreated,
   updatePosting,
   createCommenting,
   updateCommenting,
@@ -52,4 +55,5 @@ export {
   onReactionCreatedOnComment,
   onReactionCreatedOnReply,
   updateRecoveryStatusOnMidnight,
+  updateRecoveryStatusOnMidnightV2,
 };
