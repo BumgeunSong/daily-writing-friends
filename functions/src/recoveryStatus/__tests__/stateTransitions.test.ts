@@ -603,7 +603,258 @@ describe('State Transitions', () => {
     });
   });
 
-  describe('Edge cases and error handling', () => {
+  describe('Consecutive misses and edge cases', () => {
+    describe('consecutive misses (should remain missed)', () => {
+      it('should not transition when user is already missed and midnight passes', async () => {
+        const currentDate = new Date('2024-01-22T09:00:00Z'); // Monday
+        
+        // User is already in missed status
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-15',
+            lastCalculated: {} as any,
+            status: { type: 'missed' } // Already missed
+          }
+        });
+        
+        // Test all transition functions - none should apply to 'missed' status
+        const onStreakToEligible = await handleOnStreakToEligible(userId, currentDate);
+        const eligibleToMissed = await handleEligibleToMissed(userId, currentDate);
+        
+        expect(onStreakToEligible).toBe(false); // Only works for 'onStreak' status
+        expect(eligibleToMissed).toBe(false);   // Only works for 'eligible' status
+        expect(mockStreakUtils.updateStreakInfo).not.toHaveBeenCalled();
+      });
+
+      it('should remain missed when processMidnightTransitions runs on missed user', async () => {
+        const currentDate = new Date('2024-01-22T09:00:00Z'); // Monday
+        
+        // User is already in missed status
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-15',
+            lastCalculated: {} as any,
+            status: { type: 'missed' }
+          }
+        });
+        
+        // Process midnight transitions - should not change missed status
+        await processMidnightTransitions(userId, currentDate);
+        
+        // No state update should occur for missed users
+        expect(mockStreakUtils.updateStreakInfo).not.toHaveBeenCalled();
+      });
+
+      it('should handle multiple consecutive missed days correctly', async () => {
+        // Simulate 3 consecutive missed days
+        const dates = [
+          new Date('2024-01-22T09:00:00Z'), // Monday
+          new Date('2024-01-23T09:00:00Z'), // Tuesday  
+          new Date('2024-01-24T09:00:00Z')  // Wednesday
+        ];
+        
+        // User starts in missed status
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-19',
+            lastCalculated: {} as any,
+            status: { type: 'missed' }
+          }
+        });
+        
+        // Process midnight transitions for each day
+        for (const date of dates) {
+          await processMidnightTransitions(userId, date);
+        }
+        
+        // No state updates should occur - user remains missed
+        expect(mockStreakUtils.updateStreakInfo).not.toHaveBeenCalled();
+      });
+
+      it('should only allow missed → onStreak transition through posting', async () => {
+        const postDate = new Date('2024-01-22T14:00:00Z'); // Monday afternoon
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-15',
+            lastCalculated: {} as any,
+            status: { type: 'missed' }
+          }
+        });
+        
+        mockStreakUtils.formatDateString.mockReturnValue('2024-01-22');
+        mockStreakUtils.updateStreakInfo.mockResolvedValue();
+        
+        const result = await handleMissedToOnStreak(userId, postDate);
+        
+        expect(result).toBe(true);
+        expect(mockStreakUtils.updateStreakInfo).toHaveBeenCalledWith(userId, {
+          lastContributionDate: '2024-01-22',
+          status: { type: 'onStreak' }
+        });
+      });
+    });
+
+    describe('complex transition scenarios', () => {
+      it('should handle eligible timeout followed by more misses', async () => {
+        // Day 1: User misses, becomes eligible
+        const day1 = new Date('2024-01-16T09:00:00Z'); // Tuesday
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-14',
+            lastCalculated: {} as any,
+            status: { type: 'onStreak' }
+          }
+        });
+        
+        mockStreakUtils.didUserMissYesterday.mockResolvedValue(true);
+        mockStreakUtils.calculateRecoveryRequirement.mockReturnValue({
+          postsRequired: 2,
+          currentPosts: 0,
+          deadline: '2024-01-17',
+          missedDate: '2024-01-15'
+        });
+        mockStreakUtils.updateStreakInfo.mockResolvedValue();
+        
+        const eligibleResult = await handleOnStreakToEligible(userId, day1);
+        expect(eligibleResult).toBe(true);
+        
+        // Day 2: Deadline passes, becomes missed
+        const day2 = new Date('2024-01-18T09:00:00Z'); // Thursday (after deadline)
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-14',
+            lastCalculated: {} as any,
+            status: {
+              type: 'eligible',
+              postsRequired: 2,
+              currentPosts: 0,
+              deadline: '2024-01-17',
+              missedDate: '2024-01-15'
+            }
+          }
+        });
+        
+        mockStreakUtils.formatDateString.mockReturnValue('2024-01-18');
+        
+        const missedResult = await handleEligibleToMissed(userId, day2);
+        expect(missedResult).toBe(true);
+        
+        // Day 3+: More missed days should not change status (remains missed)
+        const day3 = new Date('2024-01-19T09:00:00Z'); // Friday
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-14',
+            lastCalculated: {} as any,
+            status: { type: 'missed' }
+          }
+        });
+        
+        await processMidnightTransitions(userId, day3);
+        
+        // Should have been called twice: once for eligible, once for missed
+        // But NOT for the third day (missed status doesn't change)
+        expect(mockStreakUtils.updateStreakInfo).toHaveBeenCalledTimes(2);
+      });
+
+      it('should handle weekend misses correctly', async () => {
+        // Friday: User is on streak
+        // Saturday-Sunday: Weekend (no working days, so no transitions expected)
+        // Monday: Check if weekend affected anything
+        
+        const mondayDate = new Date('2024-01-22T09:00:00Z'); // Monday
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-19', // Friday
+            lastCalculated: {} as any,
+            status: { type: 'onStreak' }
+          }
+        });
+        
+        // Weekend days don't count as working days
+        mockStreakUtils.didUserMissYesterday.mockResolvedValue(false);
+        
+        const result = await handleOnStreakToEligible(userId, mondayDate);
+        
+        expect(result).toBe(false); // No transition because weekend doesn't count
+        expect(mockStreakUtils.updateStreakInfo).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('posting transitions with missed status', () => {
+      it('should allow recovery from missed status through posting', async () => {
+        const postDate = new Date('2024-01-22T14:00:00Z'); // Monday afternoon
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-18',
+            lastCalculated: {} as any,
+            status: { type: 'missed' }
+          }
+        });
+        
+        mockStreakUtils.formatDateString.mockReturnValue('2024-01-22');
+        mockStreakUtils.updateStreakInfo.mockResolvedValue();
+        
+        // Process posting transitions (missed → onStreak)
+        await processPostingTransitions(userId, postDate);
+        
+        expect(mockStreakUtils.updateStreakInfo).toHaveBeenCalledWith(userId, {
+          lastContributionDate: '2024-01-22',
+          status: { type: 'onStreak' }
+        });
+      });
+
+      it('should not affect missed status when eligible → onStreak fails', async () => {
+        const postDate = new Date('2024-01-22T14:00:00Z'); // Monday afternoon
+        
+        // User is in missed status
+        mockStreakUtils.getOrCreateStreakInfo
+          .mockResolvedValueOnce({ // First call for eligible → onStreak
+            doc: {} as any,
+            data: {
+              lastContributionDate: '2024-01-18',
+              lastCalculated: {} as any,
+              status: { type: 'missed' }
+            }
+          })
+          .mockResolvedValueOnce({ // Second call for missed → onStreak
+            doc: {} as any,
+            data: {
+              lastContributionDate: '2024-01-18',
+              lastCalculated: {} as any,
+              status: { type: 'missed' }
+            }
+          });
+        
+        mockStreakUtils.formatDateString.mockReturnValue('2024-01-22');
+        mockStreakUtils.updateStreakInfo.mockResolvedValue();
+        
+        await processPostingTransitions(userId, postDate);
+        
+        // Should be called once for missed → onStreak transition
+        expect(mockStreakUtils.updateStreakInfo).toHaveBeenCalledWith(userId, {
+          lastContributionDate: '2024-01-22',
+          status: { type: 'onStreak' }
+        });
+      });
+    });
+  });
+
+  describe('Error handling and edge cases', () => {
     it('should handle missing streak info gracefully', async () => {
       const currentDate = new Date('2024-01-16T09:00:00Z');
       
