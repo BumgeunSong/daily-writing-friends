@@ -2,10 +2,10 @@
 
 import { Timestamp } from 'firebase-admin/firestore';
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
-import admin from '../admin';
-import { isWorkingDay } from '../dateUtils';
-import { TimeZone } from '../dateUtils';
-import { Board } from '../types/Board';
+import admin from '../shared/admin';
+import { isWorkingDay } from '../shared/dateUtils';
+import { TimeZone } from '../shared/dateUtils';
+import { Board } from '../shared/types/Board';
 
 export const updatePostDaysFromFirstDay = onDocumentCreated('/boards/{boardId}/posts/{postId}', async (event) => {
   const postId = event.params.postId;

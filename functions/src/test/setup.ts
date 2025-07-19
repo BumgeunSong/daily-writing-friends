@@ -2,7 +2,7 @@
 import { jest } from '@jest/globals';
 
 // Mock Firebase Admin SDK
-jest.mock('../admin', () => ({
+jest.mock('../shared/admin', () => ({
   __esModule: true,
   default: {
     firestore: jest.fn(() => ({

@@ -1,7 +1,7 @@
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { Posting } from "../types/Posting";
+import { Posting } from "./Posting";
 import { processPostingTransitions } from "../recoveryStatus/stateTransitions";
-import { toSeoulDate } from "../dateUtils";
+import { toSeoulDate } from "../shared/dateUtils";
 
 export const onPostingCreated = onDocumentCreated(
   'users/{userId}/postings/{postingId}',

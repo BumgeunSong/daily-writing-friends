@@ -1,9 +1,9 @@
 import { Timestamp } from 'firebase-admin/firestore';
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
-import admin from '../admin';
+import admin from '../shared/admin';
 import { shouldGenerateNotification } from './shouldGenerateNotification';
-import { Notification, NotificationType } from '../types/Notification';
-import { Reaction } from '../types/Reaction';
+import { Notification, NotificationType } from '../shared/types/Notification';
+import { Reaction } from '../shared/types/Reaction';
 
 export const onReactionCreatedOnComment = onDocumentCreated(
   'boards/{boardId}/posts/{postId}/comments/{commentId}/reactions/{reactionId}',

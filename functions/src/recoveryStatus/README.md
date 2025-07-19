@@ -18,8 +18,7 @@ src/recoveryStatus/
 ├── stateTransitions.ts             # Core state transition logic
 ├── streakUtils.ts                  # Utility functions for streak calculations
 ├── updateRecoveryStatusOnMidnightV2.ts # Scheduled midnight updates
-├── types/
-│   └── StreakInfo.ts              # TypeScript interfaces
+├── StreakInfo.ts                   # TypeScript interfaces
 └── __tests__/
     ├── stateTransitions.test.ts    # Comprehensive state transition tests
     └── streakUtils.test.ts         # Utility function tests

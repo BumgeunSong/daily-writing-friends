@@ -1,5 +1,5 @@
 import * as functions from 'firebase-functions';
-import admin from '../admin';
+import admin from '../shared/admin';
 
 // Remote Config에서 active_board_id 가져오기
 async function getActiveBoardId(): Promise<string> {
