@@ -25,6 +25,8 @@ module.exports = {
   ignorePatterns: [
     "/lib/**/*", // Ignore built files.
     "/generated/**/*", // Ignore generated files.
+    "**/*.test.ts", // Ignore test files.
+    "**/__tests__/**/*", // Ignore test directories.
   ],
   plugins: [
     "react",
