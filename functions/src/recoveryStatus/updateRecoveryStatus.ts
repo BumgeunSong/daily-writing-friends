@@ -1,10 +1,10 @@
 import admin from "../admin";
-import { RecoveryStatus } from "../types/User";
 import { 
   toSeoulDate, 
   getPreviousWorkingDay, 
   getDateKey 
 } from "../dateUtils";
+import { RecoveryStatus } from "../types/User";
 
 // Helper function to get postings count for a specific date
 async function getPostingsCountForDate(userId: string, dateKey: string): Promise<number> {

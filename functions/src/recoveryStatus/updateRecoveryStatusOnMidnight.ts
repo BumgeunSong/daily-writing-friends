@@ -12,7 +12,7 @@ import { processUsersInBatches, generateProcessingSummary } from "./userRecovery
  */
 export async function executeMidnightUpdate(
   currentDate: Date = new Date(),
-  batchSize: number = 50
+  batchSize = 50
 ) {
   const seoulNow = toSeoulDate(currentDate);
   const todayKey = getDateKey(seoulNow);

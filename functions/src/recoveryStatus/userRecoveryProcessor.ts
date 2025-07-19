@@ -1,4 +1,3 @@
-import { calculateRecoveryStatus, updateUserRecoveryStatus } from "./updateRecoveryStatus";
 import {
   UserRecoveryData,
   determineNewRecoveryStatus,
@@ -6,6 +5,7 @@ import {
   createStatusTransitionLog,
   StatusTransitionLog
 } from "./midnightUpdateHelpers";
+import { calculateRecoveryStatus, updateUserRecoveryStatus } from "./updateRecoveryStatus";
 
 /**
  * Result of processing a single user's recovery status
@@ -119,7 +119,7 @@ export async function processUsersInParallel(
 export async function processUsersInBatches(
   users: UserRecoveryData[],
   currentDate: Date,
-  batchSize: number = 50
+  batchSize = 50
 ): Promise<UserProcessingResult[]> {
   console.log(`[UserProcessor] Processing ${users.length} users in batches of ${batchSize}`);
   

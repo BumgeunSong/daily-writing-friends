@@ -1,10 +1,10 @@
 import { Timestamp } from "firebase-admin/firestore";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import admin from "../admin";
+import { Comment } from "../types/Comment";
+import { Post } from "../types/Post";
 import { Reply } from "../types/Reply";
 import { Replying } from "../types/Replying";
-import { Post } from "../types/Post";
-import { Comment } from "../types/Comment";
 
 export const createReplying = onDocumentCreated(
     'boards/{boardId}/posts/{postId}/comments/{commentId}/replies/{replyId}',

@@ -1,8 +1,8 @@
 import { onRequest } from "firebase-functions/v2/https";
 import admin from "../admin";
+import { Comment } from "../types/Comment";
 import { Commenting } from "../types/Commenting";
 import { Post } from "../types/Post";
-import { Comment } from "../types/Comment";
 /**
  * updateCommenting is a one-time migration function.
  * It takes a boardId as a parameter, fetches every comment in that board,

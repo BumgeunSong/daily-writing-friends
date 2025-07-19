@@ -1,8 +1,8 @@
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import admin from "../admin";
+import { handlePostingRecovery, updateRecoveryStatusAfterPosting } from "./postingRecoveryHandler";
 import { Post } from "../types/Post";
 import { Posting } from "../types/Posting";
-import { handlePostingRecovery, updateRecoveryStatusAfterPosting } from "./postingRecoveryHandler";
 
 export const createPosting = onDocumentCreated(
   'boards/{boardId}/posts/{postId}',
