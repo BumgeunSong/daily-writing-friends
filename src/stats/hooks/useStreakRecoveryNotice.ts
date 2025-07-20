@@ -72,7 +72,7 @@ function createRecoveryNotice(streakInfo: StreakInfo | null): StreakRecoveryNoti
     return {
       show: true,
       title: '딱 하나 남았어요!',
-      content: '글을 하나만 더 쓰면 연속 일수가 다시 되살아나요.'
+      content: `글을 ${currentPosts}개 쓰셨네요. 이제 ${postsNeeded}개만 더 쓰면 연속 일수가 다시 되살아나요. 글 쓰고 연속 일수 살리러 가기 >`,
     };
   }
 
@@ -80,7 +80,7 @@ function createRecoveryNotice(streakInfo: StreakInfo | null): StreakRecoveryNoti
     return {
       show: true,
       title: '아직 죽지 않았어요!',
-      content: `매일 글쓰기를 놓치셨네요 ㅜ 하지만 ${deadlineText}까지 ${postsNeeded}개의 글을 쓰면 연속일수를 되살릴 수 있어요. 글 쓰고 연속 일수 살리러 가기 >`
+      content: `매일 글쓰기를 놓치셨네요 ㅜ 하지만 ${deadlineText}까지 ${postsNeeded}개의 글을 쓰면 연속일수를 되살릴 수 있어요. 글 쓰고 연속 일수 살리러 가기 >`,
     };
   }
 
@@ -109,7 +109,9 @@ function formatDeadline(deadline?: string): string {
   } else if (deadlineDate.getTime() === tomorrow.getTime()) {
     return '내일';
   } else {
-    const daysFromNow = Math.ceil((deadlineDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+    const daysFromNow = Math.ceil(
+      (deadlineDate.getTime() - today.getTime()) / (24 * 60 * 60 * 1000),
+    );
     if (daysFromNow > 0) {
       return `${daysFromNow}일 후`;
     } else {
