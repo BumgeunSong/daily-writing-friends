@@ -5,6 +5,7 @@ import {
   calculateRecoveryRequirement, 
   countPostsOnDate,
   formatDateString,
+  isDateAfter,
   getOrCreateStreakInfo,
   updateStreakInfo
 } from "./streakUtils";
@@ -86,7 +87,9 @@ export async function calculateEligibleToMissed(userId: string, currentDate: Dat
   const currentDateString = formatDateString(seoulDate);
   
   // Check if deadline has passed
-  if (!streakInfo.status.deadline || currentDateString < streakInfo.status.deadline) {
+  // Note: We use isDateAfter to check if current date is AFTER the deadline
+  // This means posts written ON the deadline day are still valid
+  if (!streakInfo.status.deadline || !isDateAfter(currentDateString, streakInfo.status.deadline)) {
     return null;
   }
   
