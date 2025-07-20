@@ -86,7 +86,7 @@ export async function calculateEligibleToMissed(userId: string, currentDate: Dat
   const currentDateString = formatDateString(seoulDate);
   
   // Check if deadline has passed
-  if (!streakInfo.status.deadline || currentDateString <= streakInfo.status.deadline) {
+  if (!streakInfo.status.deadline || currentDateString < streakInfo.status.deadline) {
     return null;
   }
   

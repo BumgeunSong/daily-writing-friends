@@ -164,6 +164,38 @@ describe('State Transitions - Output-Based Testing', () => {
       expect(result).toBeNull();
     });
 
+    it('should return DBUpdate when current date equals deadline (deadline day)', async () => {
+      const currentDate = new Date('2024-01-17T09:00:00Z'); // Deadline day itself
+      
+      mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+        doc: {} as any,
+        data: {
+          lastContributionDate: '2024-01-13',
+          lastCalculated: {} as any,
+          status: {
+            type: 'eligible',
+            postsRequired: 2,
+            currentPosts: 0,
+            deadline: '2024-01-17', // Same as current date
+            missedDate: '2024-01-15'
+          }
+        }
+      });
+      
+      mockStreakUtils.formatDateString.mockReturnValue('2024-01-17');
+      
+      const result = await calculateEligibleToMissed(userId, currentDate);
+      
+      expect(result).toEqual({
+        userId,
+        updates: {
+          status: { type: 'missed' },
+          lastCalculated: expect.any(Object)
+        },
+        reason: 'eligible → missed (deadline 2024-01-17 passed)'
+      });
+    });
+
     it('should return null when user is not in eligible status', async () => {
       const currentDate = new Date('2024-01-18T09:00:00Z');
       
