@@ -25,9 +25,8 @@
       "mcp__ide__getDiagnostics",
       "Bash(curl:*)",
       "Bash(gcloud functions logs read:*)",
-      "Bash(firebase functions:log:*)"
-      "Bash(ls:*)",
-      "Bash(cat:*)"
+      "Bash(firebase functions:log:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": []
   }
