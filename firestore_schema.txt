@@ -1,4 +1,5 @@
 Firestore Database Schema
+Last Updated: July 2025 (includes streak tracking system)
 
 1. users Collection
 - Document ID: {userId}
@@ -76,6 +77,25 @@ Firestore Database Schema
       - reply.id (string)
       - createdAt (Timestamp)
 
+  - streakInfo
+    - Document ID: "current" (fixed document name)
+    - Fields:
+      - lastContributionDate (string): YYYY-MM-DD format of last posting
+      - lastCalculated (Timestamp): When streak was last calculated
+      - currentStreak (number): Current consecutive working day streak
+      - longestStreak (number): All-time longest streak achieved
+      - status (object): Recovery status information
+        - type (enum): "onStreak" | "eligible" | "missed"
+        - postsRequired (number | optional): Required posts for recovery (eligible/missed states)
+        - currentPosts (number | optional): Current posts towards recovery (eligible/missed states)
+        - deadline (string | optional): YYYY-MM-DD deadline for recovery (eligible/missed states)
+
+    Note: The streakInfo system tracks user writing consistency:
+    - Automatically updates on post creation and midnight transitions
+    - Counts only working days (Monday-Friday, excluding holidays)
+    - Supports streak recovery by writing multiple posts after missing a day
+    - Historical streak data calculated from posting activity
+
 2. boards Collection
 - Document ID: {boardId}
 - Fields:
@@ -106,6 +126,7 @@ Firestore Database Schema
       - weekDaysFromFirstDay (number | optional)
       - visibility (enum | optional): Post visibility (PUBLIC, PRIVATE)
 
+    Subcollections:
     - comments
       - Document ID: {commentId}
       - Fields:
@@ -115,27 +136,30 @@ Firestore Database Schema
         - userName (string)
         - userProfileImage (string)
         - createdAt (Timestamp)
-      - Subcollections:
-        - reactions
-          - Document ID: {reactionId}
-          - Fields:
-            - content (string): 이모지(예: "👍")
-            - createdAt (Timestamp)
-            - reactionUser (map):
-                - userId (string)
-                - userName (string)
-                - userProfileImage (string)
+        - countOfReplies (number): Number of replies to this comment
+      
+      Subcollections:
+      - reactions
+        - Document ID: {reactionId}
+        - Fields:
+          - content (string): 이모지(예: "👍")
+          - createdAt (Timestamp)
+          - reactionUser (map):
+              - userId (string)
+              - userName (string)
+              - userProfileImage (string)
 
-    - replies
-      - Document ID: {replyId}
-      - Fields:
-        - id (string)
-        - content (string)
-        - userId (string)
-        - userName (string)
-        - userProfileImage (string)
-        - createdAt (Timestamp)
-      - Subcollections:
+      - replies
+        - Document ID: {replyId}
+        - Fields:
+          - id (string)
+          - content (string)
+          - userId (string)
+          - userName (string)
+          - userProfileImage (string)
+          - createdAt (Timestamp)
+        
+        Subcollections:
         - reactions
           - Document ID: {reactionId}
           - Fields:
@@ -145,3 +169,34 @@ Firestore Database Schema
                 - userId (string)
                 - userName (string)
                 - userProfileImage (string)
+
+3. Cloud Functions Operations
+
+The following Cloud Functions automatically maintain data consistency:
+
+- Posting Activity Tracking:
+  - createPosting: Creates posting records when posts are created
+  - updatePosting: Updates posting records when posts are modified
+
+- Comment & Reply Tracking:
+  - createCommenting: Tracks comment creation activity
+  - createReplying: Tracks reply creation activity
+  - incrementCommentCount: Updates post comment counts
+  - incrementRepliesCount: Updates comment reply counts
+
+- Notification System:
+  - onCommentCreated: Sends notifications for new comments
+  - onReplyCreatedOnComment: Sends notifications for replies to comments  
+  - onReplyCreatedOnPost: Sends notifications for replies to posts
+  - sendMessageOnNotification: Handles FCM push notifications
+
+- Streak Management:
+  - updateRecoveryStatusOnMidnightV2: Updates streak status at midnight
+  - Automatic streak calculation on post creation
+  - Historical streak data migration (initializeUserStreaks)
+
+- Writing Statistics:
+  - createWritingHistoryOnPostCreated: Tracks daily writing activity
+  - getWritingStats: Provides user writing statistics
+  - createBadges: Generates achievement badges
+  - updateDaysFromFirstDay: Calculates days from board start date
