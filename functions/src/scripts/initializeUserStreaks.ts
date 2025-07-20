@@ -142,13 +142,24 @@ async function getAllUserIds(): Promise<string[]> {
 /**
  * Main migration logic to initialize user streaks
  */
-export async function executeStreakMigration(): Promise<MigrationResult> {
+export async function executeStreakMigration(options: {
+  dryRun?: boolean;
+  maxUsers?: number;
+} = {}): Promise<MigrationResult> {
+  const { dryRun = false, maxUsers } = options;
   const startTime = Date.now();
-  console.log('[StreakMigration] Starting user streak initialization migration...');
+  console.log(`[StreakMigration] Starting user streak initialization migration... (dryRun: ${dryRun})`);
   
   try {
     // Get all user IDs
-    const userIds = await getAllUserIds();
+    let userIds = await getAllUserIds();
+    
+    // Limit users if maxUsers is specified
+    if (maxUsers && maxUsers > 0) {
+      userIds = userIds.slice(0, maxUsers);
+      console.log(`[StreakMigration] Limited to first ${maxUsers} users for testing`);
+    }
+    
     console.log(`[StreakMigration] Found ${userIds.length} users to process`);
     
     if (userIds.length === 0) {
@@ -188,8 +199,12 @@ export async function executeStreakMigration(): Promise<MigrationResult> {
       allErrors.push(...errors);
       totalProcessed += userBatches[i].length;
       
-      // Apply updates for this batch
-      await applyStreakUpdates(updates);
+      // Apply updates for this batch (skip if dry run)
+      if (!dryRun) {
+        await applyStreakUpdates(updates);
+      } else {
+        console.log(`[StreakMigration] DRY RUN: Would apply ${updates.length} updates`);
+      }
       totalUpdated += updates.length;
       totalSkipped += userBatches[i].length - updates.length - errors.length;
       
@@ -250,7 +265,12 @@ export const initializeUserStreaks = onRequest(
     }
     
     try {
-      const result = await executeStreakMigration();
+      // Parse request body for options
+      const { dryRun = false, maxUsers } = req.body || {};
+      
+      console.log('[StreakMigration] Executing with options:', { dryRun, maxUsers });
+      
+      const result = await executeStreakMigration({ dryRun, maxUsers });
       
       res.status(200).json({
         success: true,
