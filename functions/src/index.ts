@@ -37,9 +37,3 @@ export {
 export { 
   allocateSecretBuddy
 } from './scripts';
-
-export { 
-  createWritingHistoryOnPostCreated,
-  deleteWritingHistoryOnPostDeleted,
-  updateWritingHistoryByBatch
-} from './writingHistory';
