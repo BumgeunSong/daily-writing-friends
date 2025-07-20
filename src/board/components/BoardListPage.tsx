@@ -6,9 +6,12 @@ import { Board } from '@/board/model/Board';
 import { fetchBoardsWithUserPermissions } from '@/board/utils/boardUtils';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 
 const BoardListPage: React.FC = () => {
   const { currentUser } = useAuth();
+  const { value: activeBoardId } = useRemoteConfig("active_board_id");
+  
   const { data: boards = [], isLoading, error } = useQuery<Board[]>(
     ['boards', currentUser?.uid],
     () => fetchBoardsWithUserPermissions(currentUser!.uid),
@@ -17,12 +20,16 @@ const BoardListPage: React.FC = () => {
       staleTime: 1000 * 60 * 5, // 5분 동안 데이터가 신선하다고 간주
       cacheTime: 1000 * 60 * 30, // 10분 동안 캐시 유지
       select: (data) => {
-        // 코호트 순으로 정렬
+
         return [...data].sort((a, b) => {
-          // cohort가 없는 경우 맨 뒤로
+          // 1. 활성화된 게시판을 맨 위로
+          if (a.id === activeBoardId && b.id !== activeBoardId) return -1;
+          if (b.id === activeBoardId && a.id !== activeBoardId) return 1;
+          
+          // 2. cohort 최근 순으로 정렬, cohort가 없는 경우 맨 뒤로
           if (!a.cohort) return 1;
           if (!b.cohort) return -1;
-          return a.cohort - b.cohort;
+          return b.cohort - a.cohort;
         });
       },
     }
