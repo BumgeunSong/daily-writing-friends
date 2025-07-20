@@ -7,6 +7,7 @@ import { fetchBoardsWithUserPermissions } from '@/board/utils/boardUtils';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
+import { Badge } from '@/shared/ui/badge';
 
 const BoardListPage: React.FC = () => {
   const { currentUser } = useAuth();
@@ -63,19 +64,36 @@ const BoardListPage: React.FC = () => {
           </div>
         ) : (
           <div className='space-y-2'>
-            {boards.map((board) => (
-              <Link
-                to={`/board/${board.id}`}
-                onClick={() => handleBoardClick(board.id)}
-                key={board.id}
-                className="block reading-focus"
-              >
-                <div className='bg-card reading-shadow border border-border/50 rounded-lg p-4 reading-hover active:scale-[0.99] transition-all duration-200'>
-                  <h2 className='text-lg font-semibold text-foreground mb-1'>{board.title}</h2>
-                  <p className='text-muted-foreground text-reading text-sm'>{board.description}</p>
-                </div>
-              </Link>
-            ))}
+            {boards.map((board) => {
+              const isActiveBoard = board.id === activeBoardId;
+              return (
+                <Link
+                  to={`/board/${board.id}`}
+                  onClick={() => handleBoardClick(board.id)}
+                  key={board.id}
+                  className="block reading-focus"
+                >
+                  <div className={`bg-card reading-shadow border rounded-lg p-4 reading-hover active:scale-[0.99] transition-all duration-200 ${
+                    isActiveBoard 
+                      ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20' 
+                      : 'border-border/50'
+                  }`}>
+                    <div className="flex items-center justify-between mb-1">
+                      <h2 className='text-lg font-semibold text-foreground'>{board.title}</h2>
+                      {isActiveBoard && (
+                        <Badge 
+                          variant="default" 
+                          className="bg-primary/10 text-primary border-primary/20 pointer-events-none"
+                        >
+                          진행 중인 게시판
+                        </Badge>
+                      )}
+                    </div>
+                    <p className='text-muted-foreground text-reading text-sm'>{board.description}</p>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         )}
       </main>
