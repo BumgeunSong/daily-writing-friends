@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { useAuthContext } from '@/auth/hooks/useAuthContext';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { fetchStreakInfo } from '../api/streakInfo';
 import type { StreakInfo } from '../model/StreakInfo';
+import { useAuth } from '@/shared/hooks/useAuth';
 
 interface StreakRecoveryNotice {
   show: boolean;
@@ -14,36 +15,30 @@ interface StreakRecoveryNotice {
  * Returns notice data for SystemPostCard or null if no notice needed
  */
 export function useStreakRecoveryNotice(): StreakRecoveryNotice | null {
-  const { user } = useAuthContext();
-  const [notice, setNotice] = useState<StreakRecoveryNotice | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { currentUser } = useAuth();
+  const userId = currentUser?.uid;
 
-  useEffect(() => {
-    async function checkRecoveryStatus() {
-      if (!user?.uid) {
-        setNotice(null);
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const streakInfo = await fetchStreakInfo(user.uid);
-        const recoveryNotice = createRecoveryNotice(streakInfo);
-        setNotice(recoveryNotice);
-      } catch (error) {
-        console.error('Error checking recovery status:', error);
-        setNotice(null);
-      } finally {
-        setIsLoading(false);
-      }
+  const {
+    data: streakInfo,
+    isLoading,
+    error
+  } = useQuery(
+    ['streakInfo', userId],
+    () => fetchStreakInfo(userId!),
+    {
+      enabled: !!userId,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 10 * 60 * 1000, // 10 minutes
+      retry: 2,
     }
+  );
 
-    checkRecoveryStatus();
-  }, [user?.uid]);
-
-  if (isLoading) {
-    return null;
-  }
+  const notice = useMemo(() => {
+    if (isLoading || error || !streakInfo) {
+      return null;
+    }
+    return createRecoveryNotice(streakInfo);
+  }, [streakInfo, isLoading, error]);
 
   return notice;
 }

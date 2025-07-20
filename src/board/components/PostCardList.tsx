@@ -12,6 +12,8 @@ import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
 import PostCard from '@/post/components/PostCard';
 import { usePosts } from '@/post/hooks/usePosts';
 import { useCurrentUserKnownBuddy } from '@/user/hooks/useCurrentUserKnownBuddy';
+import { StreakRecoveryNotice } from '@/stats/components/StreakRecoveryNotice';
+import { useNavigate } from 'react-router-dom';
 
 interface PostCardListProps {
   boardId: string;
@@ -23,6 +25,7 @@ interface PostCardListProps {
  * 게시글 목록 컴포넌트 (내 컨텐츠 숨김 유저 필터링)
  */
 const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onClickProfile }) => {
+  const navigate = useNavigate();
   const [inViewRef, inView] = useInView();
   const [limitCount] = useState(7);
   usePerformanceMonitoring('PostCardList');
@@ -92,6 +95,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
 
   return (
     <div className='space-y-4'>
+      <StreakRecoveryNotice onClickContent={() => navigate('/write')} />
       {allPosts.map((post) => (
         <PostCard
           key={post.id}
