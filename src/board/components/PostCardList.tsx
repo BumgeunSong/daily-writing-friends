@@ -92,7 +92,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
 
   if (allPosts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-center">
+      <div className="flex flex-col items-center justify-start p-8 text-center pt-16">
         <div className="text-6xl mb-4 text-muted-foreground">
           텅~
         </div>
