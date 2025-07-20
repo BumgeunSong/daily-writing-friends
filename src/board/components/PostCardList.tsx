@@ -4,6 +4,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import type React from 'react';
 import { useEffect, useState, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
+import { useNavigate } from 'react-router-dom';
+import { PenSquare } from 'lucide-react';
 import { useScrollRestoration } from '@/post/hooks/useScrollRestoration';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
@@ -12,6 +14,7 @@ import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
 import PostCard from '@/post/components/PostCard';
 import { usePosts } from '@/post/hooks/usePosts';
 import { useCurrentUserKnownBuddy } from '@/user/hooks/useCurrentUserKnownBuddy';
+import { Button } from '@/shared/ui/button';
 
 interface PostCardListProps {
   boardId: string;
@@ -28,6 +31,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
   usePerformanceMonitoring('PostCardList');
   const queryClient = useQueryClient();
   const { knownBuddy } = useCurrentUserKnownBuddy();
+  const navigate = useNavigate();
 
   const {
     data: postPages,
@@ -87,7 +91,24 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
   }
 
   if (allPosts.length === 0) {
-    return <StatusMessage error errorMessage='아직 글이 없어요.' />;
+    return (
+      <div className="flex flex-col items-center justify-center p-8 text-center">
+        <div className="text-6xl mb-4 text-muted-foreground">
+          텅~
+        </div>
+        <div className="text-muted-foreground mb-6">게시판이 비어있어요</div>
+        <h3 className="text-lg font-semibold text-foreground mb-6">
+          첫 글의 주인공이 되어 볼까요?
+        </h3>
+        <Button 
+          onClick={() => navigate(`/create/${boardId}`)}
+          className="flex items-center gap-2"
+        >
+          <PenSquare className="size-4" />
+          글 쓰러 가기
+        </Button>
+      </div>
+    );
   }
 
   return (
