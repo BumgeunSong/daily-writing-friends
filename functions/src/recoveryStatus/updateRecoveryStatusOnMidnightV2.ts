@@ -3,6 +3,10 @@ import admin from "../shared/admin";
 import { toSeoulDate } from "../shared/dateUtils";
 import { calculateMidnightTransitions, DBUpdate } from "./stateTransitions";
 
+// Configuration constants for batch processing
+const USER_PROCESSING_BATCH_SIZE = 100; // Number of users to process in parallel
+const FIRESTORE_BATCH_SIZE = 500; // Firestore batch limit for writes
+
 interface ProcessingResult {
   updates: DBUpdate[];
   processedCount: number;
@@ -100,8 +104,7 @@ async function processBatchOfUsers(
  * Process all users in parallel batches
  */
 async function processAllUsers(userIds: string[], currentDate: Date): Promise<ProcessingResult> {
-  const batchSize = 100;
-  const userBatches = chunkArray(userIds, batchSize);
+  const userBatches = chunkArray(userIds, USER_PROCESSING_BATCH_SIZE);
   
   const allUpdates: DBUpdate[] = [];
   let totalProcessed = 0;
@@ -136,8 +139,7 @@ async function applyDBUpdates(updates: DBUpdate[]): Promise<void> {
   }
 
   const db = admin.firestore();
-  const batchSize = 500; // Firestore batch limit
-  const updateBatches = chunkArray(updates, batchSize);
+  const updateBatches = chunkArray(updates, FIRESTORE_BATCH_SIZE);
   
   for (let i = 0; i < updateBatches.length; i++) {
     const batch = db.batch();
