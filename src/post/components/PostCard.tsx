@@ -42,7 +42,14 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, isKn
   }
 
   return (
-    <Card className="reading-shadow border-border/50 transition-all duration-200 hover:border-border nav-hover">
+    <Card 
+      className="reading-shadow border-border/50 transition-all duration-200 hover:border-border nav-hover cursor-pointer reading-focus active:scale-[0.99]"
+      onClick={handleCardClick}
+      role="button"
+      tabIndex={0}
+      aria-label="게시글 상세로 이동"
+      onKeyDown={(e) => handleKeyDown(e, handleCardClick)}
+    >
       <CardHeader className="px-3 pb-1 pt-3 md:px-4">
         <div className="mb-3 flex items-center">
           <PostUserProfile
@@ -59,12 +66,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, isKn
         </h2>
       </CardHeader>
       <CardContent
-        className="px-3 pb-3 pt-1 cursor-pointer min-h-[44px] reading-focus rounded-lg transition-all duration-200 active:scale-[0.99] md:px-4"
-        onClick={handleCardClick}
-        role="button"
-        tabIndex={0}
-        aria-label="게시글 상세로 이동"
-        onKeyDown={(e) => handleKeyDown(e, handleCardClick)}
+        className="px-3 pb-3 pt-1 min-h-[44px] md:px-4"
       >
         {!isPrivate && contentPreview && (
           <div
@@ -94,12 +96,7 @@ max-w-none"
         )}
       </CardContent>
       <CardFooter
-        className="flex justify-between border-t border-border/50 px-3 pb-3 pt-3 cursor-pointer min-h-[44px] reading-focus rounded-b-lg transition-all duration-200 active:scale-[0.99] md:px-4"
-        onClick={handleCardClick}
-        role="button"
-        tabIndex={0}
-        aria-label="게시글 상세로 이동"
-        onKeyDown={(e) => handleKeyDown(e, handleCardClick)}
+        className="flex justify-between border-t border-border/50 px-3 pb-3 pt-3 min-h-[44px] md:px-4"
       >
         <div className="flex items-center text-muted-foreground">
           <MessageCircle className="mr-1.5 size-4" />
