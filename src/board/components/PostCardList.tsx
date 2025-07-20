@@ -114,7 +114,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
 
   return (
     <div className='space-y-4'>
-      <StreakRecoveryNotice onClickContent={() => navigate('/write')} />
+      <StreakRecoveryNotice onClickContent={() => navigate(`/create/${boardId}`)} />
       {allPosts.map((post) => (
         <PostCard
           key={post.id}
