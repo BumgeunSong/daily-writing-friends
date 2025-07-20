@@ -1,25 +1,28 @@
 import { useQuery } from '@tanstack/react-query';
 import { WritingBadge } from '@/stats/model/WritingStats';
-import { fetchCommentingData, calculateStreakWithPagination } from '@/stats/api/stats';
+import { fetchCommentingData } from '@/stats/api/stats';
+import { fetchStreakInfo } from '@/stats/api/streakInfo';
 
 export function usePostProfileBadges(userId: string) {
-    return useQuery({
-        queryKey: ['postProfileBadges', userId],
-        queryFn: () => fetchUserBadges(userId),
-        enabled: !!userId,
-        staleTime: 5 * 60 * 1000, // 5분 동안 데이터를 'fresh'하게 유지
-        cacheTime: 10 * 60 * 1000, // 10분 동안 캐시 유지
-    });
+    return useQuery(
+        ['postProfileBadges', userId],
+        () => fetchUserBadges(userId),
+        {
+            enabled: !!userId,
+            staleTime: 5 * 60 * 1000, // 5분 동안 데이터를 'fresh'하게 유지
+            cacheTime: 10 * 60 * 1000, // 10분 동안 캐시 유지
+        }
+    );
 }
 
 async function fetchUserBadges(userId: string): Promise<WritingBadge[]> {
     try {
-        const [postingStreak, commentingData] = await Promise.all([
-            calculateStreakWithPagination(userId),
+        const [streakInfo, commentingData] = await Promise.all([
+            fetchStreakInfo(userId),
             fetchCommentingData(userId, 20)
         ]);
         
-        const postingBadges = createStreakBadge(postingStreak);
+        const postingBadges = createStreakBadge(streakInfo?.currentStreak || 0);
         const commentingBadges = createCommentingBadges(commentingData);
         
         return [...postingBadges, ...commentingBadges];
