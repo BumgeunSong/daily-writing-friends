@@ -23,7 +23,16 @@ export const onPostingCreated = onDocumentCreated(
 
     try {
       // Get posting creation date and convert to Seoul timezone
-      const postCreatedAt = postingData.createdAt ? postingData.createdAt.toDate() : new Date();
+      let postCreatedAt: Date;
+      
+      if (postingData.createdAt) {
+        postCreatedAt = postingData.createdAt.toDate();
+      } else {
+        console.warn(`[PostingCreated] Warning: createdAt is missing for posting ${postingId}, using current Seoul time as fallback`);
+        // Use Seoul time for consistency instead of server local time
+        postCreatedAt = toSeoulDate(new Date());
+      }
+      
       const seoulDate = toSeoulDate(postCreatedAt);
       
       console.log(`[PostingCreated] Post created at: ${seoulDate.toISOString()} (Seoul timezone)`);

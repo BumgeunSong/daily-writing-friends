@@ -20,7 +20,8 @@
       "Bash(mkdir:*)",
       "Bash(cp:*)",
       "Bash(firebase emulators:start:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(node:*)"
     ],
     "deny": []
   }

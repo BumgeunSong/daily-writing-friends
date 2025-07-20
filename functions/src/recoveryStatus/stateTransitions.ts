@@ -1,29 +1,37 @@
+import { Timestamp } from "firebase-admin/firestore";
 import { toSeoulDate } from "../shared/dateUtils";
 import { 
   didUserMissYesterday, 
   calculateRecoveryRequirement, 
   countPostsOnDate,
   formatDateString,
+  isDateAfter,
   getOrCreateStreakInfo,
   updateStreakInfo
 } from "./streakUtils";
 import { StreakInfo } from "./StreakInfo";
 
+export interface DBUpdate {
+  userId: string;
+  updates: Partial<StreakInfo> & { lastCalculated: Timestamp };
+  reason: string;
+}
+
 /**
- * 1. onStreak → eligible : at midnight after user missed a working day
+ * 1. onStreak → eligible : at midnight after user missed a working day (PURE)
  */
-export async function handleOnStreakToEligible(userId: string, currentDate: Date): Promise<boolean> {
+export async function calculateOnStreakToEligible(userId: string, currentDate: Date): Promise<DBUpdate | null> {
   const { data: streakInfo } = await getOrCreateStreakInfo(userId);
   
   if (!streakInfo || streakInfo.status.type !== 'onStreak') {
-    return false;
+    return null;
   }
   
   // Check if user missed yesterday (working day)
   const missedYesterday = await didUserMissYesterday(userId, currentDate);
   
   if (!missedYesterday) {
-    return false;
+    return null;
   }
   
   // Calculate recovery requirement
@@ -33,67 +41,99 @@ export async function handleOnStreakToEligible(userId: string, currentDate: Date
   
   const recoveryReq = calculateRecoveryRequirement(yesterday, seoulDate);
   
-  // Update to eligible status
-  const updatedStreakInfo: Partial<StreakInfo> = {
-    status: {
-      type: 'eligible',
-      postsRequired: recoveryReq.postsRequired,
-      currentPosts: recoveryReq.currentPosts,
-      deadline: recoveryReq.deadline,
-      missedDate: recoveryReq.missedDate
-    }
+  // Return DB update instead of performing it
+  return {
+    userId,
+    updates: {
+      status: {
+        type: 'eligible',
+        postsRequired: recoveryReq.postsRequired,
+        currentPosts: recoveryReq.currentPosts,
+        deadline: recoveryReq.deadline,
+        missedDate: recoveryReq.missedDate
+      },
+      lastCalculated: Timestamp.now()
+    },
+    reason: `onStreak → eligible (missed ${recoveryReq.missedDate})`
   };
+}
+
+/**
+ * 1. onStreak → eligible : at midnight after user missed a working day (LEGACY)
+ */
+export async function handleOnStreakToEligible(userId: string, currentDate: Date): Promise<boolean> {
+  const dbUpdate = await calculateOnStreakToEligible(userId, currentDate);
   
-  await updateStreakInfo(userId, updatedStreakInfo);
+  if (!dbUpdate) {
+    return false;
+  }
   
-  console.log(`[StateTransition] User ${userId}: onStreak → eligible (missed ${recoveryReq.missedDate})`);
+  await updateStreakInfo(userId, dbUpdate.updates);
+  console.log(`[StateTransition] User ${userId}: ${dbUpdate.reason}`);
   return true;
 }
 
 /**
- * 2. eligible → missed : at midnight of recovery deadline without recovery
+ * 2. eligible → missed : at midnight of recovery deadline without recovery (PURE)
  */
-export async function handleEligibleToMissed(userId: string, currentDate: Date): Promise<boolean> {
+export async function calculateEligibleToMissed(userId: string, currentDate: Date): Promise<DBUpdate | null> {
   const { data: streakInfo } = await getOrCreateStreakInfo(userId);
   
   if (!streakInfo || streakInfo.status.type !== 'eligible') {
-    return false;
+    return null;
   }
   
   const seoulDate = toSeoulDate(currentDate);
   const currentDateString = formatDateString(seoulDate);
   
   // Check if deadline has passed
-  if (!streakInfo.status.deadline || currentDateString <= streakInfo.status.deadline) {
+  // Note: We use isDateAfter to check if current date is AFTER the deadline
+  // This means posts written ON the deadline day are still valid
+  if (!streakInfo.status.deadline || !isDateAfter(currentDateString, streakInfo.status.deadline)) {
+    return null;
+  }
+  
+  // Return DB update instead of performing it
+  return {
+    userId,
+    updates: {
+      status: {
+        type: 'missed'
+      },
+      lastCalculated: Timestamp.now()
+    },
+    reason: `eligible → missed (deadline ${streakInfo.status.deadline} passed)`
+  };
+}
+
+/**
+ * 2. eligible → missed : at midnight of recovery deadline without recovery (LEGACY)
+ */
+export async function handleEligibleToMissed(userId: string, currentDate: Date): Promise<boolean> {
+  const dbUpdate = await calculateEligibleToMissed(userId, currentDate);
+  
+  if (!dbUpdate) {
     return false;
   }
   
-  // Update to missed status
-  const updatedStreakInfo: Partial<StreakInfo> = {
-    status: {
-      type: 'missed'
-    }
-  };
-  
-  await updateStreakInfo(userId, updatedStreakInfo);
-  
-  console.log(`[StateTransition] User ${userId}: eligible → missed (deadline ${streakInfo.status.deadline} passed)`);
+  await updateStreakInfo(userId, dbUpdate.updates);
+  console.log(`[StateTransition] User ${userId}: ${dbUpdate.reason}`);
   return true;
 }
 
 /**
- * 3. eligible → onStreak : when user writes required number of posts
+ * 3. eligible → onStreak : when user writes required number of posts (PURE)
  */
-export async function handleEligibleToOnStreak(userId: string, postDate: Date): Promise<boolean> {
+export async function calculateEligibleToOnStreak(userId: string, postDate: Date): Promise<DBUpdate | null> {
   const { data: streakInfo } = await getOrCreateStreakInfo(userId);
   
   if (!streakInfo || streakInfo.status.type !== 'eligible') {
-    return false;
+    return null;
   }
   
   if (!streakInfo.status.postsRequired) {
     console.error(`[StateTransition] User ${userId} eligible status missing postsRequired`);
-    return false;
+    return null;
   }
   
   // Count posts written today
@@ -102,62 +142,117 @@ export async function handleEligibleToOnStreak(userId: string, postDate: Date): 
   
   // Check if required posts completed
   if (todayPostCount < streakInfo.status.postsRequired) {
-    // Update current progress
-    const updatedStreakInfo: Partial<StreakInfo> = {
-      status: {
-        ...streakInfo.status,
-        currentPosts: todayPostCount
-      }
+    // Return progress update
+    return {
+      userId,
+      updates: {
+        status: {
+          ...streakInfo.status,
+          currentPosts: todayPostCount
+        },
+        lastCalculated: Timestamp.now()
+      },
+      reason: `eligible progress updated (${todayPostCount}/${streakInfo.status.postsRequired})`
     };
-    
-    await updateStreakInfo(userId, updatedStreakInfo);
-    
-    console.log(`[StateTransition] User ${userId}: eligible progress updated (${todayPostCount}/${streakInfo.status.postsRequired})`);
-    return false;
   }
   
-  // Recovery completed! Update to onStreak
-  const updatedStreakInfo: Partial<StreakInfo> = {
-    lastContributionDate: formatDateString(seoulDate),
-    status: {
-      type: 'onStreak'
-    }
+  // Recovery completed! Return onStreak update
+  return {
+    userId,
+    updates: {
+      lastContributionDate: formatDateString(seoulDate),
+      status: {
+        type: 'onStreak'
+      },
+      lastCalculated: Timestamp.now()
+    },
+    reason: `eligible → onStreak (recovery completed with ${todayPostCount} posts)`
   };
-  
-  await updateStreakInfo(userId, updatedStreakInfo);
-  
-  console.log(`[StateTransition] User ${userId}: eligible → onStreak (recovery completed with ${todayPostCount} posts)`);
-  return true;
 }
 
 /**
- * 4. missed → onStreak : when user writes a post (starts new streak)
+ * 3. eligible → onStreak : when user writes required number of posts (LEGACY)
  */
-export async function handleMissedToOnStreak(userId: string, postDate: Date): Promise<boolean> {
+export async function handleEligibleToOnStreak(userId: string, postDate: Date): Promise<boolean> {
+  const dbUpdate = await calculateEligibleToOnStreak(userId, postDate);
+  
+  if (!dbUpdate) {
+    return false;
+  }
+  
+  await updateStreakInfo(userId, dbUpdate.updates);
+  console.log(`[StateTransition] User ${userId}: ${dbUpdate.reason}`);
+  
+  // Return true only if fully recovered (not just progress update)
+  return dbUpdate.reason.includes('recovery completed');
+}
+
+/**
+ * 4. missed → onStreak : when user writes a post (starts new streak) (PURE)
+ */
+export async function calculateMissedToOnStreak(userId: string, postDate: Date): Promise<DBUpdate | null> {
   const { data: streakInfo } = await getOrCreateStreakInfo(userId);
   
   if (!streakInfo || streakInfo.status.type !== 'missed') {
-    return false;
+    return null;
   }
   
   const seoulDate = toSeoulDate(postDate);
   
   // Any post starts a fresh streak
-  const updatedStreakInfo: Partial<StreakInfo> = {
-    lastContributionDate: formatDateString(seoulDate),
-    status: {
-      type: 'onStreak'
-    }
+  return {
+    userId,
+    updates: {
+      lastContributionDate: formatDateString(seoulDate),
+      status: {
+        type: 'onStreak'
+      },
+      lastCalculated: Timestamp.now()
+    },
+    reason: 'missed → onStreak (fresh start)'
   };
+}
+
+/**
+ * 4. missed → onStreak : when user writes a post (starts new streak) (LEGACY)
+ */
+export async function handleMissedToOnStreak(userId: string, postDate: Date): Promise<boolean> {
+  const dbUpdate = await calculateMissedToOnStreak(userId, postDate);
   
-  await updateStreakInfo(userId, updatedStreakInfo);
+  if (!dbUpdate) {
+    return false;
+  }
   
-  console.log(`[StateTransition] User ${userId}: missed → onStreak (fresh start)`);
+  await updateStreakInfo(userId, dbUpdate.updates);
+  console.log(`[StateTransition] User ${userId}: ${dbUpdate.reason}`);
   return true;
 }
 
 /**
- * Process all state transitions for midnight update
+ * Calculate all state transitions for midnight update (PURE)
+ */
+export async function calculateMidnightTransitions(userId: string, currentDate: Date): Promise<DBUpdate | null> {
+  try {
+    // Try onStreak → eligible first
+    const eligibleUpdate = await calculateOnStreakToEligible(userId, currentDate);
+    
+    if (eligibleUpdate) {
+      return eligibleUpdate;
+    }
+    
+    // If not transitioned to eligible, check eligible → missed
+    const missedUpdate = await calculateEligibleToMissed(userId, currentDate);
+    
+    return missedUpdate;
+    
+  } catch (error) {
+    console.error(`[StateTransition] Error calculating midnight transitions for user ${userId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Process all state transitions for midnight update (LEGACY)
  */
 export async function processMidnightTransitions(userId: string, currentDate: Date): Promise<void> {
   try {
@@ -176,7 +271,30 @@ export async function processMidnightTransitions(userId: string, currentDate: Da
 }
 
 /**
- * Process state transitions triggered by posting creation
+ * Calculate all state transitions for posting creation (PURE)
+ */
+export async function calculatePostingTransitions(userId: string, postDate: Date): Promise<DBUpdate | null> {
+  try {
+    // Try eligible → onStreak first
+    const eligibleUpdate = await calculateEligibleToOnStreak(userId, postDate);
+    
+    if (eligibleUpdate) {
+      return eligibleUpdate;
+    }
+    
+    // If not in eligible state, check missed → onStreak
+    const missedUpdate = await calculateMissedToOnStreak(userId, postDate);
+    
+    return missedUpdate;
+    
+  } catch (error) {
+    console.error(`[StateTransition] Error calculating posting transitions for user ${userId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Process state transitions triggered by posting creation (LEGACY)
  */
 export async function processPostingTransitions(userId: string, postDate: Date): Promise<void> {
   try {
@@ -192,4 +310,55 @@ export async function processPostingTransitions(userId: string, postDate: Date):
     console.error(`[StateTransition] Error processing posting transitions for user ${userId}:`, error);
     throw error;
   }
+}
+
+// Re-export batch processing types and interfaces for convenience
+export interface BatchProcessingResult {
+  updates: DBUpdate[];
+  processedCount: number;
+  errorCount: number;
+}
+
+export interface UserTransitionResult {
+  userId: string;
+  update: DBUpdate | null;
+}
+
+/**
+ * Pure function to process a single user's transition with error wrapping
+ */
+export async function processUserTransitionSafe<T extends Date>(
+  userId: string, 
+  date: T,
+  calculateFn: (userId: string, date: T) => Promise<DBUpdate | null>
+): Promise<UserTransitionResult> {
+  try {
+    const update = await calculateFn(userId, date);
+    return { userId, update };
+  } catch (error) {
+    throw new Error(`User ${userId}: ${error instanceof Error ? error.message : error}`);
+  }
+}
+
+/**
+ * Pure function to collect results from Promise.allSettled for any transition type
+ */
+export function collectTransitionResults(results: PromiseSettledResult<UserTransitionResult>[]): BatchProcessingResult {
+  const updates: DBUpdate[] = [];
+  let processedCount = 0;
+  let errorCount = 0;
+
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      const { update } = result.value;
+      if (update) {
+        updates.push(update);
+      }
+      processedCount++;
+    } else {
+      errorCount++;
+    }
+  }
+
+  return { updates, processedCount, errorCount };
 }

@@ -18,6 +18,65 @@ export function parseDateString(dateString: string): Date {
 }
 
 /**
+ * Create a Date object from YYYY-MM-DD string (robust version)
+ */
+export function createDateFromString(dateString: string): Date {
+  return new Date(dateString + 'T00:00:00.000Z');
+}
+
+/**
+ * Compare two YYYY-MM-DD date strings using timestamp comparison
+ * @param date1 First date string (YYYY-MM-DD)
+ * @param date2 Second date string (YYYY-MM-DD)
+ * @returns Negative if date1 < date2, 0 if equal, positive if date1 > date2
+ */
+export function compareDateStrings(date1: string, date2: string): number {
+  return createDateFromString(date1).getTime() - createDateFromString(date2).getTime();
+}
+
+/**
+ * Check if a date string is before another date string
+ * @param date1 First date string (YYYY-MM-DD)
+ * @param date2 Second date string (YYYY-MM-DD)
+ * @returns true if date1 is before date2
+ */
+export function isDateBefore(date1: string, date2: string): boolean {
+  return compareDateStrings(date1, date2) < 0;
+}
+
+/**
+ * Check if a date string is after another date string
+ * @param date1 First date string (YYYY-MM-DD)
+ * @param date2 Second date string (YYYY-MM-DD)
+ * @returns true if date1 is after date2
+ */
+export function isDateAfter(date1: string, date2: string): boolean {
+  return compareDateStrings(date1, date2) > 0;
+}
+
+/**
+ * Check if a date string equals another date string
+ * @param date1 First date string (YYYY-MM-DD)
+ * @param date2 Second date string (YYYY-MM-DD)
+ * @returns true if dates are equal
+ */
+export function isDateEqual(date1: string, date2: string): boolean {
+  return compareDateStrings(date1, date2) === 0;
+}
+
+/**
+ * Check if a date/time is before or equal to the end of a given date
+ * This is useful for deadline checking where posts written on the deadline day should count
+ * @param dateTime The date/time to check (as Date object)
+ * @param dateString The deadline date string (YYYY-MM-DD)
+ * @returns true if dateTime is on or before the end of dateString day
+ */
+export function isDateTimeBeforeOrOnDate(dateTime: Date, dateString: string): boolean {
+  const endOfDeadlineDay = new Date(dateString + 'T23:59:59.999Z');
+  return dateTime.getTime() <= endOfDeadlineDay.getTime();
+}
+
+/**
  * Get the next working day after the given date
  */
 export function getNextWorkingDay(date: Date): Date {
