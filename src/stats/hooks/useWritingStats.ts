@@ -7,7 +7,8 @@ import { useQuery } from '@tanstack/react-query';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { WritingStats, Contribution, WritingBadge } from '@/stats/model/WritingStats';
 import { getDateKey } from '@/stats/utils/streakUtils';
-import { fetchPostingDataForContributions, createUserInfo, fetchUserSafely, calculateStreakWithPagination } from '@/stats/api/stats';
+import { fetchPostingDataForContributions, createUserInfo, fetchUserSafely } from '@/stats/api/stats';
+import { fetchStreakInfo } from '@/stats/api/streakInfo';
 import { User } from '@/user/model/User';
 import { Posting } from '@/post/model/Posting';
 
@@ -62,12 +63,12 @@ async function fetchSingleUserStats(userId: string): Promise<WritingStats | null
         if (!userData) return null;
 
         // Fetch data separately for different purposes
-        const [contributionPostings, streak] = await Promise.all([
+        const [contributionPostings, streakInfo] = await Promise.all([
             fetchPostingDataForContributions(userId, 20), // Only 20 days for contributions
-            calculateStreakWithPagination(userId) // Paginated streak calculation
+            fetchStreakInfo(userId) // Server-side streak info
         ]);
 
-        return calculateWritingStats(userData, contributionPostings, streak);
+        return calculateWritingStats(userData, contributionPostings, streakInfo?.currentStreak || 0);
     } catch (error) {
         return null;
     }
