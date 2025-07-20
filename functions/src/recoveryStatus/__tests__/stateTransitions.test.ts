@@ -35,7 +35,9 @@ describe('State Transitions - Output-Based Testing', () => {
         data: {
           lastContributionDate: '2024-01-13',
           lastCalculated: {} as any,
-          status: { type: 'onStreak' }
+          status: { type: 'onStreak' },
+          currentStreak: 0,
+          longestStreak: 0
         }
       });
       
@@ -76,7 +78,9 @@ describe('State Transitions - Output-Based Testing', () => {
         data: {
           lastContributionDate: '2024-01-15',
           lastCalculated: {} as any,
-          status: { type: 'onStreak' }
+          status: { type: 'onStreak' },
+          currentStreak: 0,
+          longestStreak: 0
         }
       });
       
@@ -95,7 +99,9 @@ describe('State Transitions - Output-Based Testing', () => {
         data: {
           lastContributionDate: '2024-01-15',
           lastCalculated: {} as any,
-          status: { type: 'eligible', postsRequired: 2, currentPosts: 0, deadline: '2024-01-17', missedDate: '2024-01-15' }
+          status: { type: 'eligible', postsRequired: 2, currentPosts: 0, deadline: '2024-01-17', missedDate: '2024-01-15' },
+          currentStreak: 0,
+          longestStreak: 0
         }
       });
       
@@ -120,7 +126,9 @@ describe('State Transitions - Output-Based Testing', () => {
             currentPosts: 0,
             deadline: '2024-01-17', // Deadline passed
             missedDate: '2024-01-15'
-          }
+          },
+          currentStreak: 0,
+          longestStreak: 0
         }
       });
       
@@ -153,7 +161,9 @@ describe('State Transitions - Output-Based Testing', () => {
             currentPosts: 0,
             deadline: '2024-01-17',
             missedDate: '2024-01-15'
-          }
+          },
+          currentStreak: 0,
+          longestStreak: 0
         }
       });
       
@@ -180,7 +190,9 @@ describe('State Transitions - Output-Based Testing', () => {
             currentPosts: 0,
             deadline: '2024-01-17', // Same as current date
             missedDate: '2024-01-15'
-          }
+          },
+          currentStreak: 0,
+          longestStreak: 0
         }
       });
       
@@ -206,7 +218,9 @@ describe('State Transitions - Output-Based Testing', () => {
             currentPosts: 0,
             deadline: '2024-01-17', // Before current date
             missedDate: '2024-01-15'
-          }
+          },
+          currentStreak: 0,
+          longestStreak: 0
         }
       });
       
@@ -233,7 +247,9 @@ describe('State Transitions - Output-Based Testing', () => {
         data: {
           lastContributionDate: '2024-01-17',
           lastCalculated: {} as any,
-          status: { type: 'onStreak' }
+          status: { type: 'onStreak' },
+          currentStreak: 0,
+          longestStreak: 0
         }
       });
       
@@ -258,7 +274,9 @@ describe('State Transitions - Output-Based Testing', () => {
             currentPosts: 0,
             deadline: '2024-01-17',
             missedDate: '2024-01-15'
-          }
+          },
+          currentStreak: 0,
+          longestStreak: 0
         }
       });
       
@@ -293,7 +311,9 @@ describe('State Transitions - Output-Based Testing', () => {
             currentPosts: 0,
             deadline: '2024-01-17',
             missedDate: '2024-01-15'
-          }
+          },
+          currentStreak: 0,
+          longestStreak: 0
         }
       });
       
@@ -326,7 +346,9 @@ describe('State Transitions - Output-Based Testing', () => {
         data: {
           lastContributionDate: '2024-01-17',
           lastCalculated: {} as any,
-          status: { type: 'onStreak' }
+          status: { type: 'onStreak' },
+          currentStreak: 0,
+          longestStreak: 0
         }
       });
       
@@ -349,7 +371,9 @@ describe('State Transitions - Output-Based Testing', () => {
             currentPosts: 0,
             deadline: '2024-01-17',
             missedDate: '2024-01-15'
-          }
+          },
+          currentStreak: 0,
+          longestStreak: 0
         }
       });
       
@@ -368,7 +392,9 @@ describe('State Transitions - Output-Based Testing', () => {
         data: {
           lastContributionDate: '2024-01-13',
           lastCalculated: {} as any,
-          status: { type: 'missed' }
+          status: { type: 'missed' },
+          currentStreak: 0,
+          longestStreak: 0
         }
       });
       
@@ -395,7 +421,9 @@ describe('State Transitions - Output-Based Testing', () => {
         data: {
           lastContributionDate: '2024-01-18',
           lastCalculated: {} as any,
-          status: { type: 'onStreak' }
+          status: { type: 'onStreak' },
+          currentStreak: 0,
+          longestStreak: 0
         }
       });
       
@@ -416,7 +444,9 @@ describe('State Transitions - Output-Based Testing', () => {
           data: {
             lastContributionDate: '2024-01-13',
             lastCalculated: {} as any,
-            status: { type: 'onStreak' }
+            status: { type: 'onStreak' },
+            currentStreak: 0,
+            longestStreak: 0
           }
         });
         
@@ -457,7 +487,9 @@ describe('State Transitions - Output-Based Testing', () => {
             data: {
               lastContributionDate: '2024-01-13',
               lastCalculated: {} as any,
-              status: { type: 'eligible', postsRequired: 2, currentPosts: 0, deadline: '2024-01-17', missedDate: '2024-01-15' }
+              status: { type: 'eligible', postsRequired: 2, currentPosts: 0, deadline: '2024-01-17', missedDate: '2024-01-15' },
+              currentStreak: 0,
+              longestStreak: 0
             }
           })
           .mockResolvedValueOnce({
@@ -465,7 +497,9 @@ describe('State Transitions - Output-Based Testing', () => {
             data: {
               lastContributionDate: '2024-01-13',
               lastCalculated: {} as any,
-              status: { type: 'eligible', postsRequired: 2, currentPosts: 0, deadline: '2024-01-17', missedDate: '2024-01-15' }
+              status: { type: 'eligible', postsRequired: 2, currentPosts: 0, deadline: '2024-01-17', missedDate: '2024-01-15' },
+              currentStreak: 0,
+              longestStreak: 0
             }
           });
         
@@ -493,7 +527,9 @@ describe('State Transitions - Output-Based Testing', () => {
           data: {
             lastContributionDate: '2024-01-13',
             lastCalculated: {} as any,
-            status: { type: 'missed' }
+            status: { type: 'missed' },
+            currentStreak: 0,
+            longestStreak: 0
           }
         });
         
@@ -518,7 +554,9 @@ describe('State Transitions - Output-Based Testing', () => {
               currentPosts: 0,
               deadline: '2024-01-17',
               missedDate: '2024-01-15'
-            }
+            },
+            currentStreak: 0,
+            longestStreak: 0
           }
         });
         
@@ -549,7 +587,9 @@ describe('State Transitions - Output-Based Testing', () => {
             data: {
               lastContributionDate: '2024-01-13',
               lastCalculated: {} as any,
-              status: { type: 'missed' }
+              status: { type: 'missed' },
+              currentStreak: 0,
+              longestStreak: 0
             }
           })
           .mockResolvedValueOnce({
@@ -557,7 +597,9 @@ describe('State Transitions - Output-Based Testing', () => {
             data: {
               lastContributionDate: '2024-01-13',
               lastCalculated: {} as any,
-              status: { type: 'missed' }
+              status: { type: 'missed' },
+              currentStreak: 0,
+              longestStreak: 0
             }
           });
         
@@ -585,7 +627,9 @@ describe('State Transitions - Output-Based Testing', () => {
           data: {
             lastContributionDate: '2024-01-16',
             lastCalculated: {} as any,
-            status: { type: 'onStreak' }
+            status: { type: 'onStreak' },
+            currentStreak: 0,
+            longestStreak: 0
           }
         });
         
@@ -611,7 +655,9 @@ describe('State Transitions - Output-Based Testing', () => {
         data: {
           lastContributionDate: '2024-01-13',
           lastCalculated: {} as any,
-          status: { type: 'onStreak' }
+          status: { type: 'onStreak' },
+          currentStreak: 0,
+          longestStreak: 0
         }
       });
       
@@ -656,7 +702,9 @@ describe('State Transitions - Output-Based Testing', () => {
             currentPosts: 0,
             deadline: '2024-01-17', // Deadline is today
             missedDate: '2024-01-15'
-          }
+          },
+          currentStreak: 0,
+          longestStreak: 0
         }
       });
       
@@ -684,7 +732,9 @@ describe('State Transitions - Output-Based Testing', () => {
             currentPosts: 0,
             deadline: '2024-01-17', // Deadline was yesterday
             missedDate: '2024-01-15'
-          }
+          },
+          currentStreak: 0,
+          longestStreak: 0
         }
       });
       

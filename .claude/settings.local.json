@@ -22,6 +22,10 @@
       "Bash(firebase emulators:start:*)",
       "Bash(pkill:*)",
       "Bash(node:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(curl:*)",
+      "Bash(gcloud functions logs read:*)",
+      "Bash(firebase functions:log:*)"
       "Bash(ls:*)",
       "Bash(cat:*)"
     ],

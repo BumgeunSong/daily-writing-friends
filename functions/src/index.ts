@@ -35,5 +35,6 @@ export {
 } from './replyings';
 
 export { 
-  allocateSecretBuddy
+  allocateSecretBuddy,
+  initializeUserStreaks
 } from './scripts';
