@@ -125,6 +125,7 @@ describe('State Transitions - Output-Based Testing', () => {
       });
       
       mockStreakUtils.formatDateString.mockReturnValue('2024-01-18');
+      mockStreakUtils.isDateAfter.mockReturnValue(true); // Current date is after deadline
       
       const result = await calculateEligibleToMissed(userId, currentDate);
       
@@ -158,13 +159,14 @@ describe('State Transitions - Output-Based Testing', () => {
       
       // Mock formatDateString to return the current date as string
       mockStreakUtils.formatDateString.mockReturnValue('2024-01-16');
+      mockStreakUtils.isDateAfter.mockReturnValue(false); // Current date is not after deadline
       
       const result = await calculateEligibleToMissed(userId, currentDate);
       
       expect(result).toBeNull();
     });
 
-    it('should return DBUpdate when current date equals deadline (deadline day)', async () => {
+    it('should return null when current date equals deadline (deadline day posts are valid)', async () => {
       const currentDate = new Date('2024-01-17T09:00:00Z'); // Deadline day itself
       
       mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
@@ -183,6 +185,33 @@ describe('State Transitions - Output-Based Testing', () => {
       });
       
       mockStreakUtils.formatDateString.mockReturnValue('2024-01-17');
+      mockStreakUtils.isDateAfter.mockReturnValue(false); // Current date is NOT after deadline
+      
+      const result = await calculateEligibleToMissed(userId, currentDate);
+      
+      expect(result).toBeNull(); // No transition on deadline day
+    });
+
+    it('should return DBUpdate when current date is after deadline', async () => {
+      const currentDate = new Date('2024-01-18T09:00:00Z'); // Day after deadline
+      
+      mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+        doc: {} as any,
+        data: {
+          lastContributionDate: '2024-01-13',
+          lastCalculated: {} as any,
+          status: {
+            type: 'eligible',
+            postsRequired: 2,
+            currentPosts: 0,
+            deadline: '2024-01-17', // Before current date
+            missedDate: '2024-01-15'
+          }
+        }
+      });
+      
+      mockStreakUtils.formatDateString.mockReturnValue('2024-01-18');
+      mockStreakUtils.isDateAfter.mockReturnValue(true); // Current date is after deadline
       
       const result = await calculateEligibleToMissed(userId, currentDate);
       
@@ -441,6 +470,7 @@ describe('State Transitions - Output-Based Testing', () => {
           });
         
         mockStreakUtils.formatDateString.mockReturnValue('2024-01-18');
+        mockStreakUtils.isDateAfter.mockReturnValue(true); // Current date is after deadline
         
         const result = await calculateMidnightTransitions(userId, currentDate);
         
@@ -605,6 +635,72 @@ describe('State Transitions - Output-Based Testing', () => {
           })
         }),
         reason: expect.stringContaining('onStreak → eligible')
+      });
+    });
+  });
+
+  describe('Deadline behavior validation', () => {
+    it('should validate that posts on deadline day do not trigger missed status', async () => {
+      // Test scenario: User has until 2024-01-17 to recover
+      // On 2024-01-17 (deadline day), they should still be eligible, not missed
+      const deadlineDay = new Date('2024-01-17T23:59:00Z'); // Late on deadline day
+      
+      mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+        doc: {} as any,
+        data: {
+          lastContributionDate: '2024-01-13',
+          lastCalculated: {} as any,
+          status: {
+            type: 'eligible',
+            postsRequired: 2,
+            currentPosts: 0,
+            deadline: '2024-01-17', // Deadline is today
+            missedDate: '2024-01-15'
+          }
+        }
+      });
+      
+      mockStreakUtils.formatDateString.mockReturnValue('2024-01-17');
+      mockStreakUtils.isDateAfter.mockReturnValue(false); // Same day, not after
+      
+      const result = await calculateEligibleToMissed(userId, deadlineDay);
+      
+      // Should NOT transition to missed on deadline day itself
+      expect(result).toBeNull();
+    });
+
+    it('should validate that posts after deadline day trigger missed status', async () => {
+      // Test scenario: User missed the deadline, now it's the next day
+      const dayAfterDeadline = new Date('2024-01-18T00:01:00Z'); // Just after deadline
+      
+      mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+        doc: {} as any,
+        data: {
+          lastContributionDate: '2024-01-13',
+          lastCalculated: {} as any,
+          status: {
+            type: 'eligible',
+            postsRequired: 2,
+            currentPosts: 0,
+            deadline: '2024-01-17', // Deadline was yesterday
+            missedDate: '2024-01-15'
+          }
+        }
+      });
+      
+      mockStreakUtils.formatDateString.mockReturnValue('2024-01-18');
+      mockStreakUtils.isDateAfter.mockReturnValue(true); // Day after deadline
+      
+      const result = await calculateEligibleToMissed(userId, dayAfterDeadline);
+      
+      // Should transition to missed after deadline
+      expect(result).toEqual({
+        userId,
+        updates: {
+          status: { type: 'missed' },
+          lastCalculated: expect.any(Object)
+        },
+        reason: 'eligible → missed (deadline 2024-01-17 passed)'
       });
     });
   });
