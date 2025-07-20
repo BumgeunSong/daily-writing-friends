@@ -35,11 +35,6 @@ export {
 } from './replyings';
 
 export { 
-  allocateSecretBuddy
+  allocateSecretBuddy,
+  initializeUserStreaks
 } from './scripts';
-
-export { 
-  createWritingHistoryOnPostCreated,
-  deleteWritingHistoryOnPostDeleted,
-  updateWritingHistoryByBatch
-} from './writingHistory';
