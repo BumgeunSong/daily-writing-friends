@@ -18,7 +18,6 @@ src/
 ├── postings/               # Post activity tracking
 ├── recoveryStatus/         # Streak recovery system
 ├── replyings/              # Reply activity tracking
-├── writingHistory/         # Daily writing analytics
 ├── scripts/                # One-time administrative scripts
 └── test/                   # Global test utilities
 ```
@@ -63,11 +62,6 @@ Reply and reaction activity tracking.
 - `updateReplying`: Handles reply modifications
 - Reaction data management
 
-### 📊 [Writing History](./src/writingHistory/README.md)
-Daily writing analytics and achievement system.
-- Daily writing statistics
-- Badge and achievement generation
-- Contribution tracking analytics
 
 ### ⚙️ [Scripts](./src/scripts/README.md)
 Administrative functions and one-time scripts.

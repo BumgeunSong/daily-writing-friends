@@ -21,7 +21,9 @@
       "Bash(cp:*)",
       "Bash(firebase emulators:start:*)",
       "Bash(pkill:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

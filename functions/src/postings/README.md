@@ -46,5 +46,4 @@ npm test -- --testPathPattern=postings
 
 ## Related Features
 - **recoveryStatus**: Streak recovery system integration
-- **writingHistory**: Daily writing statistics
 - **notifications**: Post-related notifications
