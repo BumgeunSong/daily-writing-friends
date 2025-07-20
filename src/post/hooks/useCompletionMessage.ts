@@ -55,7 +55,7 @@ export function useCompletionMessage(): CompletionMessageResult {
     default: "꾸준하게 글쓰는 모습 멋있어요!"
   } as const;
 
-  if (streakToBe >= 1) {
+  if (streakToBe >= 2) {
     titleMessage = `연속 글쓰기 ${streakToBe}일`;
     contentMessage = streakMessages[streakToBe as keyof typeof streakMessages] || streakMessages.default;
     highlight = { keywords: [`${streakToBe}일`], color: "yellow" };
