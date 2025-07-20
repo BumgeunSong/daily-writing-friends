@@ -10,11 +10,51 @@ import {
   updateStreakInfo
 } from "./streakUtils";
 import { StreakInfo } from "./StreakInfo";
+import { calculateUserStreaks, calculateStreaksAfterNewPosting } from "./streakCalculations";
 
 export interface DBUpdate {
   userId: string;
   updates: Partial<StreakInfo> & { lastCalculated: Timestamp };
   reason: string;
+}
+
+/**
+ * Helper function to add streak calculations to DB updates
+ */
+async function addStreakCalculations(
+  userId: string, 
+  baseUpdates: Partial<StreakInfo> & { lastCalculated: Timestamp },
+  isNewPosting = false
+): Promise<Partial<StreakInfo> & { lastCalculated: Timestamp }> {
+  try {
+    const { data: currentStreakInfo } = await getOrCreateStreakInfo(userId);
+    
+    let streakData;
+    if (isNewPosting && currentStreakInfo) {
+      // Optimized calculation for new postings
+      streakData = await calculateStreaksAfterNewPosting(
+        userId,
+        currentStreakInfo.currentStreak || 0,
+        currentStreakInfo.longestStreak || 0
+      );
+    } else {
+      // Full recalculation
+      streakData = await calculateUserStreaks(userId);
+    }
+    
+    return {
+      ...baseUpdates,
+      currentStreak: streakData.currentStreak,
+      longestStreak: streakData.longestStreak,
+      ...(streakData.lastContributionDate && {
+        lastContributionDate: streakData.lastContributionDate
+      })
+    };
+  } catch (error) {
+    console.error(`[StreakCalculation] Error calculating streaks for user ${userId}:`, error);
+    // Return base updates without streak data if calculation fails
+    return baseUpdates;
+  }
 }
 
 /**
@@ -156,16 +196,20 @@ export async function calculateEligibleToOnStreak(userId: string, postDate: Date
     };
   }
   
-  // Recovery completed! Return onStreak update
+  // Recovery completed! Return onStreak update with streak calculations
+  const baseUpdates = {
+    lastContributionDate: formatDateString(seoulDate),
+    status: {
+      type: 'onStreak' as const
+    },
+    lastCalculated: Timestamp.now()
+  };
+  
+  const updatesWithStreaks = await addStreakCalculations(userId, baseUpdates, true);
+  
   return {
     userId,
-    updates: {
-      lastContributionDate: formatDateString(seoulDate),
-      status: {
-        type: 'onStreak'
-      },
-      lastCalculated: Timestamp.now()
-    },
+    updates: updatesWithStreaks,
     reason: `eligible → onStreak (recovery completed with ${todayPostCount} posts)`
   };
 }
@@ -199,16 +243,20 @@ export async function calculateMissedToOnStreak(userId: string, postDate: Date):
   
   const seoulDate = toSeoulDate(postDate);
   
-  // Any post starts a fresh streak
+  // Any post starts a fresh streak with updated streak calculations
+  const baseUpdates = {
+    lastContributionDate: formatDateString(seoulDate),
+    status: {
+      type: 'onStreak' as const
+    },
+    lastCalculated: Timestamp.now()
+  };
+  
+  const updatesWithStreaks = await addStreakCalculations(userId, baseUpdates, true);
+  
   return {
     userId,
-    updates: {
-      lastContributionDate: formatDateString(seoulDate),
-      status: {
-        type: 'onStreak'
-      },
-      lastCalculated: Timestamp.now()
-    },
+    updates: updatesWithStreaks,
     reason: 'missed → onStreak (fresh start)'
   };
 }
@@ -229,6 +277,46 @@ export async function handleMissedToOnStreak(userId: string, postDate: Date): Pr
 }
 
 /**
+ * Calculate streak updates for midnight recalculation (PURE)
+ */
+export async function calculateMidnightStreakUpdate(userId: string, _currentDate: Date): Promise<DBUpdate | null> {
+  try {
+    const { data: streakInfo } = await getOrCreateStreakInfo(userId);
+    
+    if (!streakInfo) {
+      return null;
+    }
+    
+    // Calculate updated streaks
+    const streakData = await calculateUserStreaks(userId);
+    
+    // Only create update if streaks have changed
+    if (streakData.currentStreak !== streakInfo.currentStreak || 
+        streakData.longestStreak !== streakInfo.longestStreak) {
+      
+      return {
+        userId,
+        updates: {
+          currentStreak: streakData.currentStreak,
+          longestStreak: streakData.longestStreak,
+          ...(streakData.lastContributionDate && {
+            lastContributionDate: streakData.lastContributionDate
+          }),
+          lastCalculated: Timestamp.now()
+        },
+        reason: `midnight streak update (current: ${streakData.currentStreak}, longest: ${streakData.longestStreak})`
+      };
+    }
+    
+    return null;
+    
+  } catch (error) {
+    console.error(`[StreakCalculation] Error calculating midnight streaks for user ${userId}:`, error);
+    return null;
+  }
+}
+
+/**
  * Calculate all state transitions for midnight update (PURE)
  */
 export async function calculateMidnightTransitions(userId: string, currentDate: Date): Promise<DBUpdate | null> {
@@ -237,13 +325,28 @@ export async function calculateMidnightTransitions(userId: string, currentDate: 
     const eligibleUpdate = await calculateOnStreakToEligible(userId, currentDate);
     
     if (eligibleUpdate) {
-      return eligibleUpdate;
+      // Add streak calculations to the status transition
+      const updatesWithStreaks = await addStreakCalculations(userId, eligibleUpdate.updates);
+      return {
+        ...eligibleUpdate,
+        updates: updatesWithStreaks
+      };
     }
     
     // If not transitioned to eligible, check eligible → missed
     const missedUpdate = await calculateEligibleToMissed(userId, currentDate);
     
-    return missedUpdate;
+    if (missedUpdate) {
+      // Add streak calculations to the status transition
+      const updatesWithStreaks = await addStreakCalculations(userId, missedUpdate.updates);
+      return {
+        ...missedUpdate,
+        updates: updatesWithStreaks
+      };
+    }
+    
+    // If no status transitions, check if streak updates are needed
+    return await calculateMidnightStreakUpdate(userId, currentDate);
     
   } catch (error) {
     console.error(`[StateTransition] Error calculating midnight transitions for user ${userId}:`, error);

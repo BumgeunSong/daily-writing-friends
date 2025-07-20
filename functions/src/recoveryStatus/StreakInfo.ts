@@ -24,6 +24,8 @@ export interface StreakInfo {
   lastContributionDate: string;  // YYYY-MM-DD format
   lastCalculated: Timestamp;     // When this was last calculated
   status: RecoveryStatus;
+  currentStreak: number;         // Current consecutive writing streak (working days)
+  longestStreak: number;         // All-time longest streak achieved
 }
 
 /**

@@ -185,7 +185,9 @@ export async function getOrCreateStreakInfo(userId: string): Promise<{ doc: Fire
       lastCalculated: Timestamp.now(),
       status: {
         type: 'onStreak'
-      }
+      },
+      currentStreak: 0,
+      longestStreak: 0
     };
     
     await streakInfoRef.set(defaultStreakInfo);

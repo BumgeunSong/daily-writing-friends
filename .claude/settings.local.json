@@ -21,7 +21,8 @@
       "Bash(cp:*)",
       "Bash(firebase emulators:start:*)",
       "Bash(pkill:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": []
   }
