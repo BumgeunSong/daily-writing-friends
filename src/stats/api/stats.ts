@@ -1,4 +1,4 @@
-import { collection, getDocs, query, orderBy, limit, startAfter, QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { Posting } from '@/post/model/Posting';
 import { mapDocumentToPosting } from '@/shared/utils/postingUtils';
@@ -56,29 +56,6 @@ export function getDateRange(workingDays: Date[]): { start: Date; end: Date } {
     return { start, end };
 }
 
-/**
- * Fetches posting data with pagination for streak calculation
- */
-export async function fetchPostingDataWithPagination(
-    userId: string, 
-    pageSize: number, 
-    lastDoc?: QueryDocumentSnapshot<DocumentData>
-): Promise<{ postings: Posting[], lastDoc?: QueryDocumentSnapshot<DocumentData> }> {
-    const postingsRef = collection(firestore, 'users', userId, 'postings');
-    let q = query(postingsRef, orderBy('createdAt', 'desc'), limit(pageSize));
-    
-    if (lastDoc) {
-        q = query(postingsRef, orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(pageSize));
-    }
-    
-    const querySnapshot = await getDocs(q);
-    const postings = querySnapshot.docs.map(doc => mapDocumentToPosting(doc));
-    
-    return {
-        postings,
-        lastDoc: querySnapshot.docs[querySnapshot.docs.length - 1]
-    };
-}
 
 /**
  * Fetches posting data for contributions (limited to recent working days)
@@ -102,48 +79,6 @@ export async function fetchPostingDataForContributions(userId: string, numberOfD
     });
 }
 
-/**
- * Calculates current streak with optimized pagination
- * Fetches posting data on-demand starting with 20 postings, extending as needed
- */
-export async function calculateStreakWithPagination(userId: string): Promise<number> {
-    const { calculateCurrentStreak, shouldFetchMoreForStreak, getNextPageSize } = await import('@/stats/utils/streakUtils');
-    
-    let currentPageSize = 20;
-    let allPostings: Posting[] = [];
-    let lastDoc: QueryDocumentSnapshot<DocumentData> | undefined;
-    let previousStreak = 0;
-    
-    while (true) {
-        const { postings, lastDoc: newLastDoc } = await fetchPostingDataWithPagination(
-            userId, 
-            currentPageSize, 
-            lastDoc
-        );
-        
-        allPostings = [...allPostings, ...postings];
-        lastDoc = newLastDoc;
-        
-        const currentStreak = calculateCurrentStreak(allPostings);
-        
-        const needMoreData = shouldFetchMoreForStreak(
-            currentStreak,
-            previousStreak,
-            !!lastDoc,
-            postings.length,
-            currentPageSize
-        );
-        
-        if (!needMoreData) {
-            break;
-        }
-        
-        previousStreak = currentStreak;
-        currentPageSize = getNextPageSize(currentPageSize);
-    }
-    
-    return calculateCurrentStreak(allPostings);
-}
 
 /**
  * Fetches user data with error handling
