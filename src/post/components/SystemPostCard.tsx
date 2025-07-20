@@ -43,9 +43,9 @@ export const SystemPostCard: React.FC<SystemPostCardProps> = ({
   content,
 }) => {
   const { handleContentClick, handleProfileClick } = useSystemPostCardHandlers(
+    authorData.id,
     onClickContent,
     onClickProfile,
-    authorData,
   );
 
   const badges = getSystemBadges(isOnlyForCurrentUser);
@@ -74,9 +74,9 @@ export const SystemPostCard: React.FC<SystemPostCardProps> = ({
 };
 
 function useSystemPostCardHandlers(
+  userId: string,
   onClickContent?: () => void,
   onClickProfile?: (userId: string) => void,
-  authorData: PostAuthorData,
 ) {
   const handleContentClick = () => {
     onClickContent?.();
@@ -85,7 +85,7 @@ function useSystemPostCardHandlers(
   const handleProfileClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onClickProfile) {
-      onClickProfile(authorData.id);
+      onClickProfile(userId);
     }
   };
 
