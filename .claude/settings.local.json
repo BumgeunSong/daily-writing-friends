@@ -27,6 +27,9 @@
       "Bash(gcloud functions logs read:*)",
       "Bash(firebase functions:log:*)",
       "Bash(npx tsc:*)"
+      "Bash(firebase functions:log:*)"
+      "Bash(ls:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

@@ -96,44 +96,162 @@ export function calculateCurrentStreak(postings: PostingData[]): number {
 
 /**
  * Calculate the longest streak from all posting data
- * This is computationally expensive and should be used sparingly
+ * Optimized version that limits search range and uses efficient algorithm
  */
 export function calculateLongestStreak(postings: PostingData[]): number {
   if (postings.length === 0) return 0;
 
-  const postingDays = buildPostingDaysSet(postings);
+  // Limit search to last 2 years to prevent excessive computation
+  const twoYearsAgo = new Date();
+  twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+
+  // Filter postings to last 2 years and sort by date
+  const recentPostings = postings
+    .filter((posting) => posting.createdAt >= twoYearsAgo)
+    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+  if (recentPostings.length === 0) return 0;
+
   let longestStreak = 0;
   let currentStreakCount = 0;
 
-  // Sort postings by date (oldest first)
-  const sortedPostings = [...postings].sort(
-    (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
-  );
+  // Get all working days with postings, sorted chronologically and deduplicated
+  const workingDaysWithPostings = recentPostings
+    .map((posting) => toSeoulDate(posting.createdAt))
+    .filter((date) => isWorkingDay(date))
+    .map((date) => getDateKey(date))
+    .filter((dateKey, index, array) => array.indexOf(dateKey) === index) // Deduplicate
+    .sort();
 
-  // Find the earliest posting date
-  const earliestDate = sortedPostings[0].createdAt;
-  const today = toSeoulDate(new Date());
+  if (workingDaysWithPostings.length === 0) return 0;
 
-  // Iterate through all working days from earliest posting to today
-  let currentDate = toSeoulDate(earliestDate);
+  // Find consecutive sequences
+  for (let i = 0; i < workingDaysWithPostings.length; i++) {
+    if (i === 0) {
+      currentStreakCount = 1;
+    } else {
+      const currentDate = new Date(workingDaysWithPostings[i]);
+      const previousDate = new Date(workingDaysWithPostings[i - 1]);
 
-  while (currentDate <= today) {
-    if (isWorkingDay(currentDate)) {
-      const dateKey = getDateKey(currentDate);
+      // Check if dates are consecutive working days
+      const daysDiff = Math.floor(
+        (currentDate.getTime() - previousDate.getTime()) / (1000 * 60 * 60 * 24),
+      );
 
-      if (postingDays.has(dateKey)) {
+      if (daysDiff === 1) {
+        // Consecutive days
         currentStreakCount++;
-        longestStreak = Math.max(longestStreak, currentStreakCount);
       } else {
-        currentStreakCount = 0;
+        // Check if there are working days between them
+        let tempDate = new Date(previousDate);
+        tempDate.setDate(tempDate.getDate() + 1);
+        let hasGap = false;
+
+        while (tempDate < currentDate) {
+          if (isWorkingDay(tempDate)) {
+            hasGap = true;
+            break;
+          }
+          tempDate.setDate(tempDate.getDate() + 1);
+        }
+
+        if (hasGap) {
+          // Gap found, reset streak
+          longestStreak = Math.max(longestStreak, currentStreakCount);
+          currentStreakCount = 1;
+        } else {
+          // No gap, continue streak
+          currentStreakCount++;
+        }
       }
     }
 
-    currentDate = new Date(currentDate);
-    currentDate.setDate(currentDate.getDate() + 1);
+    longestStreak = Math.max(longestStreak, currentStreakCount);
   }
 
   return longestStreak;
+}
+
+/**
+ * Ultra-optimized longest streak calculation for very large datasets
+ * Uses sliding window approach and early termination
+ */
+export function calculateLongestStreakOptimized(postings: PostingData[]): number {
+  if (postings.length === 0) return 0;
+
+  // Limit to last 1 year for ultra-fast performance
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+  const recentPostings = postings
+    .filter((posting) => posting.createdAt >= oneYearAgo)
+    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+  if (recentPostings.length === 0) return 0;
+
+  // Convert to working days only and sort
+  const workingDays = recentPostings
+    .map((posting) => toSeoulDate(posting.createdAt))
+    .filter((date) => isWorkingDay(date))
+    .map((date) => getDateKey(date))
+    .sort();
+
+  if (workingDays.length === 0) return 0;
+
+  let maxStreak = 1;
+  let currentStreak = 1;
+
+  // Use sliding window to find consecutive sequences
+  for (let i = 1; i < workingDays.length; i++) {
+    const currentDate = new Date(workingDays[i]);
+    const previousDate = new Date(workingDays[i - 1]);
+
+    // Calculate days difference
+    const daysDiff = Math.floor(
+      (currentDate.getTime() - previousDate.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    if (daysDiff === 1) {
+      // Consecutive working days
+      currentStreak++;
+      maxStreak = Math.max(maxStreak, currentStreak);
+    } else {
+      // Check for gaps in working days
+      let hasWorkingDayGap = false;
+      let tempDate = new Date(previousDate);
+      tempDate.setDate(tempDate.getDate() + 1);
+
+      // Only check up to a reasonable limit to prevent infinite loops
+      let checkCount = 0;
+      const maxChecks = 10; // Reasonable limit for gap checking
+
+      while (tempDate < currentDate && checkCount < maxChecks) {
+        if (isWorkingDay(tempDate)) {
+          hasWorkingDayGap = true;
+          break;
+        }
+        tempDate.setDate(tempDate.getDate() + 1);
+        checkCount++;
+      }
+
+      if (hasWorkingDayGap) {
+        // Gap found, reset streak
+        currentStreak = 1;
+      } else {
+        // No gap, continue streak
+        currentStreak++;
+        maxStreak = Math.max(maxStreak, currentStreak);
+      }
+    }
+
+    // Early termination: if current streak is already longer than remaining possible days
+    const remainingDays = workingDays.length - i;
+    if (currentStreak + remainingDays <= maxStreak) {
+      break;
+    }
+  }
+
+  return maxStreak;
 }
 
 /**
@@ -201,10 +319,11 @@ export async function calculateStreaksAfterNewPosting(
 
   const currentStreak = calculateCurrentStreak(postings);
 
-  // Only recalculate longest streak if current streak might have exceeded it
+  // If current streak exceeds previous longest, it becomes the new longest
+  // No need to recalculate the entire longest streak
   let longestStreak = previousLongestStreak;
   if (currentStreak > previousLongestStreak) {
-    longestStreak = Math.max(currentStreak, calculateLongestStreak(postings));
+    longestStreak = currentStreak;
   }
 
   const mostRecentPosting = postings.reduce((latest, posting) =>
