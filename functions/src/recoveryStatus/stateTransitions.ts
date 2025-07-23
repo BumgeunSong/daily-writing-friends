@@ -277,6 +277,51 @@ export async function handleMissedToOnStreak(userId: string, postDate: Date): Pr
 }
 
 /**
+ * 5. onStreak → onStreak : when user writes another post while on streak (PURE)
+ */
+export async function calculateOnStreakToOnStreak(userId: string, postDate: Date): Promise<DBUpdate | null> {
+  const { data: streakInfo } = await getOrCreateStreakInfo(userId);
+  
+  if (!streakInfo || streakInfo.status.type !== 'onStreak') {
+    return null;
+  }
+  
+  const seoulDate = toSeoulDate(postDate);
+  
+  // Update lastContributionDate and recalculate streaks
+  const baseUpdates = {
+    lastContributionDate: formatDateString(seoulDate),
+    status: {
+      type: 'onStreak' as const
+    },
+    lastCalculated: Timestamp.now()
+  };
+  
+  const updatesWithStreaks = await addStreakCalculations(userId, baseUpdates, true);
+  
+  return {
+    userId,
+    updates: updatesWithStreaks,
+    reason: 'onStreak → onStreak (streak maintained)'
+  };
+}
+
+/**
+ * 5. onStreak → onStreak : when user writes another post while on streak (LEGACY)
+ */
+export async function handleOnStreakToOnStreak(userId: string, postDate: Date): Promise<boolean> {
+  const dbUpdate = await calculateOnStreakToOnStreak(userId, postDate);
+  
+  if (!dbUpdate) {
+    return false;
+  }
+  
+  await updateStreakInfo(userId, dbUpdate.updates);
+  console.log(`[StateTransition] User ${userId}: ${dbUpdate.reason}`);
+  return true;
+}
+
+/**
  * Calculate streak updates for midnight recalculation (PURE)
  */
 export async function calculateMidnightStreakUpdate(userId: string, _currentDate: Date): Promise<DBUpdate | null> {
@@ -388,7 +433,14 @@ export async function calculatePostingTransitions(userId: string, postDate: Date
     // If not in eligible state, check missed → onStreak
     const missedUpdate = await calculateMissedToOnStreak(userId, postDate);
     
-    return missedUpdate;
+    if (missedUpdate) {
+      return missedUpdate;
+    }
+    
+    // If not in missed state, check onStreak → onStreak (maintain streak)
+    const onStreakUpdate = await calculateOnStreakToOnStreak(userId, postDate);
+    
+    return onStreakUpdate;
     
   } catch (error) {
     console.error(`[StateTransition] Error calculating posting transitions for user ${userId}:`, error);
@@ -406,7 +458,12 @@ export async function processPostingTransitions(userId: string, postDate: Date):
     
     if (!recoveryCompleted) {
       // If not in eligible state, check missed → onStreak  
-      await handleMissedToOnStreak(userId, postDate);
+      const freshStart = await handleMissedToOnStreak(userId, postDate);
+      
+      if (!freshStart) {
+        // If not in missed state, check onStreak → onStreak (maintain streak)
+        await handleOnStreakToOnStreak(userId, postDate);
+      }
     }
     
   } catch (error) {
