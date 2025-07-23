@@ -22,12 +22,21 @@ export function useStreakRecoveryNotice(): StreakRecoveryNotice | null {
     data: streakInfo,
     isLoading,
     error,
-  } = useQuery(['streakInfo', userId], () => fetchStreakInfo(userId!), {
-    enabled: !!userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
-    retry: 2,
-  });
+  } = useQuery(
+    ['streakInfo', userId],
+    () => {
+      if (!userId) {
+        throw new Error('User ID is required to fetch streak info');
+      }
+      return fetchStreakInfo(userId);
+    },
+    {
+      enabled: !!userId,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      cacheTime: 10 * 60 * 1000, // 10 minutes
+      retry: 2,
+    },
+  );
 
   const notice = useMemo(() => {
     if (isLoading || error || !streakInfo) {
