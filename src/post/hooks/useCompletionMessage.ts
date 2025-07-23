@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext";
 import { fetchPostingData } from "@/shared/utils/postingUtils";
-import { calculateCurrentStreak } from "@/stats/utils/streakUtils";
+import { fetchStreakInfo } from "@/stats/api/streakInfo";
 
 export interface CompletionHighlight {
   keywords: string[];
@@ -34,14 +34,30 @@ export function useCompletionMessage(): CompletionMessageResult {
     enabled: !!userId,
   });
 
+  const {
+    data: streakInfo,
+    isLoading: isStreakLoading,
+    error: streakError,
+  } = useQuery({
+    queryKey: ["streakInfo", userId],
+    queryFn: () => (userId ? fetchStreakInfo(userId) : Promise.resolve(null)),
+    enabled: !!userId,
+    staleTime: 1 * 60 * 1000, // 1 minute - fresh data for completion message
+    cacheTime: 5 * 60 * 1000, // 5 minutes cache
+  });
+
   const { streak, boardPostCount } = useMemo(() => {
     if (!postings || !activeBoardId) return { streak: 0, boardPostCount: 0 };
-    const streak = calculateCurrentStreak(postings);
+    
+    // Use server-side streak calculation, defaulting to 0 if not available
+    const currentStreak = streakInfo?.currentStreak || 0;
+    
     const boardPostCount = postings.filter(
       (p) => p.board?.id === activeBoardId
     ).length;
-    return { streak, boardPostCount };
-  }, [postings, activeBoardId]);
+    
+    return { streak: currentStreak, boardPostCount };
+  }, [postings, activeBoardId, streakInfo]);
 
   let titleMessage = "";
   let contentMessage = "";
@@ -69,7 +85,7 @@ export function useCompletionMessage(): CompletionMessageResult {
     iconType = "sparkles";
   }
 
-  const isLoading = isPostingsLoading;
+  const isLoading = isPostingsLoading || isStreakLoading;
 
   return {
     titleMessage,
@@ -77,6 +93,6 @@ export function useCompletionMessage(): CompletionMessageResult {
     highlight,
     iconType,
     isLoading,
-    error: postingsError,
+    error: postingsError || streakError,
   };
 } 

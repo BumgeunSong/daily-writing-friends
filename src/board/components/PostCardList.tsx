@@ -4,7 +4,6 @@ import { useQueryClient } from '@tanstack/react-query';
 import type React from 'react';
 import { useEffect, useState, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
-import { useNavigate } from 'react-router-dom';
 import { PenSquare } from 'lucide-react';
 import { useScrollRestoration } from '@/post/hooks/useScrollRestoration';
 import StatusMessage from '@/shared/components/StatusMessage';
@@ -15,6 +14,8 @@ import PostCard from '@/post/components/PostCard';
 import { usePosts } from '@/post/hooks/usePosts';
 import { useCurrentUserKnownBuddy } from '@/user/hooks/useCurrentUserKnownBuddy';
 import { Button } from '@/shared/ui/button';
+import { StreakRecoveryNotice } from '@/stats/components/StreakRecoveryNotice';
+import { useNavigate } from 'react-router-dom';
 
 interface PostCardListProps {
   boardId: string;
@@ -26,12 +27,12 @@ interface PostCardListProps {
  * 게시글 목록 컴포넌트 (내 컨텐츠 숨김 유저 필터링)
  */
 const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onClickProfile }) => {
+  const navigate = useNavigate();
   const [inViewRef, inView] = useInView();
   const [limitCount] = useState(7);
   usePerformanceMonitoring('PostCardList');
   const queryClient = useQueryClient();
   const { knownBuddy } = useCurrentUserKnownBuddy();
-  const navigate = useNavigate();
 
   const {
     data: postPages,
@@ -113,6 +114,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
 
   return (
     <div className='space-y-4'>
+      <StreakRecoveryNotice onClickContent={() => navigate(`/create/${boardId}`)} />
       {allPosts.map((post) => (
         <PostCard
           key={post.id}

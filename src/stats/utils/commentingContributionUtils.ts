@@ -1,6 +1,6 @@
 import { Commenting } from '@/user/model/Commenting';
 import { Replying } from '@/user/model/Replying';
-import { getDateKey } from '@/stats/utils/streakUtils';
+import { getDateKey } from '@/shared/utils/dateUtils';
 
 export type CommentingContribution = {
   createdAt: string; // YYYY-MM-DD
@@ -10,7 +10,7 @@ export type CommentingContribution = {
 export function aggregateCommentingContributions(
   commentings: Commenting[],
   replyings: Replying[],
-  workingDays: Date[]
+  workingDays: Date[],
 ): CommentingContribution[] {
   const countMap = new Map<string, number>();
 
@@ -23,11 +23,11 @@ export function aggregateCommentingContributions(
     countMap.set(key, (countMap.get(key) ?? 0) + 1);
   }
 
-  return workingDays.map(day => {
+  return workingDays.map((day) => {
     const key = getDateKey(day);
     return {
       createdAt: key,
       countOfCommentAndReplies: countMap.get(key) ?? null,
     };
   });
-} 
+}
