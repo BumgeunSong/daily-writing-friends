@@ -1,12 +1,15 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { Timestamp } from 'firebase-admin/firestore';
 import {
   calculateOnStreakToEligible,
   calculateEligibleToMissed,
   calculateEligibleToOnStreak,
   calculateMissedToOnStreak,
   calculateMidnightTransitions,
-  calculatePostingTransitions
+  calculatePostingTransitions,
+  calculateOnStreakToOnStreak
 } from '../stateTransitions';
+import { RecoveryStatusType, StreakInfo } from '../StreakInfo';
 import * as streakUtils from '../streakUtils';
 
 // Mock all streak utilities
@@ -35,7 +38,7 @@ describe('State Transitions - Output-Based Testing', () => {
         data: {
           lastContributionDate: '2024-01-13',
           lastCalculated: {} as any,
-          status: { type: 'onStreak' },
+          status: { type: RecoveryStatusType.ON_STREAK },
           currentStreak: 0,
           longestStreak: 0
         }
@@ -58,7 +61,7 @@ describe('State Transitions - Output-Based Testing', () => {
         userId,
         updates: {
           status: {
-            type: 'eligible',
+            type: RecoveryStatusType.ELIGIBLE,
             postsRequired: 2,
             currentPosts: 0,
             deadline: '2024-01-17',
@@ -78,7 +81,7 @@ describe('State Transitions - Output-Based Testing', () => {
         data: {
           lastContributionDate: '2024-01-15',
           lastCalculated: {} as any,
-          status: { type: 'onStreak' },
+          status: { type: RecoveryStatusType.ON_STREAK },
           currentStreak: 0,
           longestStreak: 0
         }
@@ -99,7 +102,7 @@ describe('State Transitions - Output-Based Testing', () => {
         data: {
           lastContributionDate: '2024-01-15',
           lastCalculated: {} as any,
-          status: { type: 'eligible', postsRequired: 2, currentPosts: 0, deadline: '2024-01-17', missedDate: '2024-01-15' },
+          status: { type: RecoveryStatusType.ELIGIBLE, postsRequired: 2, currentPosts: 0, deadline: '2024-01-17', missedDate: '2024-01-15' },
           currentStreak: 0,
           longestStreak: 0
         }
@@ -121,7 +124,7 @@ describe('State Transitions - Output-Based Testing', () => {
           lastContributionDate: '2024-01-13',
           lastCalculated: {} as any,
           status: {
-            type: 'eligible',
+            type: RecoveryStatusType.ELIGIBLE,
             postsRequired: 2,
             currentPosts: 0,
             deadline: '2024-01-17', // Deadline passed
@@ -140,7 +143,7 @@ describe('State Transitions - Output-Based Testing', () => {
       expect(result).toEqual({
         userId,
         updates: {
-          status: { type: 'missed' },
+          status: { type: RecoveryStatusType.MISSED },
           lastCalculated: expect.any(Object)
         },
         reason: 'eligible → missed (deadline 2024-01-17 passed)'
@@ -156,7 +159,7 @@ describe('State Transitions - Output-Based Testing', () => {
           lastContributionDate: '2024-01-13',
           lastCalculated: {} as any,
           status: {
-            type: 'eligible',
+            type: RecoveryStatusType.ELIGIBLE,
             postsRequired: 2,
             currentPosts: 0,
             deadline: '2024-01-17',
@@ -185,7 +188,7 @@ describe('State Transitions - Output-Based Testing', () => {
           lastContributionDate: '2024-01-13',
           lastCalculated: {} as any,
           status: {
-            type: 'eligible',
+            type: RecoveryStatusType.ELIGIBLE,
             postsRequired: 2,
             currentPosts: 0,
             deadline: '2024-01-17', // Same as current date
@@ -213,7 +216,7 @@ describe('State Transitions - Output-Based Testing', () => {
           lastContributionDate: '2024-01-13',
           lastCalculated: {} as any,
           status: {
-            type: 'eligible',
+            type: RecoveryStatusType.ELIGIBLE,
             postsRequired: 2,
             currentPosts: 0,
             deadline: '2024-01-17', // Before current date
@@ -232,7 +235,7 @@ describe('State Transitions - Output-Based Testing', () => {
       expect(result).toEqual({
         userId,
         updates: {
-          status: { type: 'missed' },
+          status: { type: RecoveryStatusType.MISSED },
           lastCalculated: expect.any(Object)
         },
         reason: 'eligible → missed (deadline 2024-01-17 passed)'
@@ -247,7 +250,7 @@ describe('State Transitions - Output-Based Testing', () => {
         data: {
           lastContributionDate: '2024-01-17',
           lastCalculated: {} as any,
-          status: { type: 'onStreak' },
+          status: { type: RecoveryStatusType.ON_STREAK },
           currentStreak: 0,
           longestStreak: 0
         }
@@ -269,7 +272,7 @@ describe('State Transitions - Output-Based Testing', () => {
           lastContributionDate: '2024-01-13',
           lastCalculated: {} as any,
           status: {
-            type: 'eligible',
+            type: RecoveryStatusType.ELIGIBLE,
             postsRequired: 2,
             currentPosts: 0,
             deadline: '2024-01-17',
@@ -290,7 +293,7 @@ describe('State Transitions - Output-Based Testing', () => {
         userId,
         updates: {
           lastContributionDate: '2024-01-17',
-          status: { type: 'onStreak' },
+          status: { type: RecoveryStatusType.ON_STREAK },
           lastCalculated: expect.any(Object)
         },
         reason: 'eligible → onStreak (recovery completed with 2 posts)'
@@ -306,7 +309,7 @@ describe('State Transitions - Output-Based Testing', () => {
           lastContributionDate: '2024-01-13',
           lastCalculated: {} as any,
           status: {
-            type: 'eligible',
+            type: RecoveryStatusType.ELIGIBLE,
             postsRequired: 2,
             currentPosts: 0,
             deadline: '2024-01-17',
@@ -326,7 +329,7 @@ describe('State Transitions - Output-Based Testing', () => {
         userId,
         updates: {
           status: {
-            type: 'eligible',
+            type: RecoveryStatusType.ELIGIBLE,
             postsRequired: 2,
             currentPosts: 1,
             deadline: '2024-01-17',
@@ -346,7 +349,7 @@ describe('State Transitions - Output-Based Testing', () => {
         data: {
           lastContributionDate: '2024-01-17',
           lastCalculated: {} as any,
-          status: { type: 'onStreak' },
+          status: { type: RecoveryStatusType.ON_STREAK },
           currentStreak: 0,
           longestStreak: 0
         }
@@ -366,7 +369,7 @@ describe('State Transitions - Output-Based Testing', () => {
           lastContributionDate: '2024-01-13',
           lastCalculated: {} as any,
           status: {
-            type: 'eligible',
+            type: RecoveryStatusType.ELIGIBLE,
             // Missing postsRequired
             currentPosts: 0,
             deadline: '2024-01-17',
@@ -392,7 +395,7 @@ describe('State Transitions - Output-Based Testing', () => {
         data: {
           lastContributionDate: '2024-01-13',
           lastCalculated: {} as any,
-          status: { type: 'missed' },
+          status: { type: RecoveryStatusType.MISSED },
           currentStreak: 0,
           longestStreak: 0
         }
@@ -406,7 +409,7 @@ describe('State Transitions - Output-Based Testing', () => {
         userId,
         updates: {
           lastContributionDate: '2024-01-18',
-          status: { type: 'onStreak' },
+          status: { type: RecoveryStatusType.ON_STREAK },
           lastCalculated: expect.any(Object)
         },
         reason: 'missed → onStreak (fresh start)'
@@ -421,7 +424,7 @@ describe('State Transitions - Output-Based Testing', () => {
         data: {
           lastContributionDate: '2024-01-18',
           lastCalculated: {} as any,
-          status: { type: 'onStreak' },
+          status: { type: RecoveryStatusType.ON_STREAK },
           currentStreak: 0,
           longestStreak: 0
         }
@@ -444,7 +447,7 @@ describe('State Transitions - Output-Based Testing', () => {
           data: {
             lastContributionDate: '2024-01-13',
             lastCalculated: {} as any,
-            status: { type: 'onStreak' },
+            status: { type: RecoveryStatusType.ON_STREAK },
             currentStreak: 0,
             longestStreak: 0
           }
@@ -464,7 +467,7 @@ describe('State Transitions - Output-Based Testing', () => {
           userId,
           updates: {
             status: {
-              type: 'eligible',
+              type: RecoveryStatusType.ELIGIBLE,
               postsRequired: 2,
               currentPosts: 0,
               deadline: '2024-01-17',
@@ -487,7 +490,7 @@ describe('State Transitions - Output-Based Testing', () => {
             data: {
               lastContributionDate: '2024-01-13',
               lastCalculated: {} as any,
-              status: { type: 'eligible', postsRequired: 2, currentPosts: 0, deadline: '2024-01-17', missedDate: '2024-01-15' },
+              status: { type: RecoveryStatusType.ELIGIBLE, postsRequired: 2, currentPosts: 0, deadline: '2024-01-17', missedDate: '2024-01-15' },
               currentStreak: 0,
               longestStreak: 0
             }
@@ -497,7 +500,7 @@ describe('State Transitions - Output-Based Testing', () => {
             data: {
               lastContributionDate: '2024-01-13',
               lastCalculated: {} as any,
-              status: { type: 'eligible', postsRequired: 2, currentPosts: 0, deadline: '2024-01-17', missedDate: '2024-01-15' },
+              status: { type: RecoveryStatusType.ELIGIBLE, postsRequired: 2, currentPosts: 0, deadline: '2024-01-17', missedDate: '2024-01-15' },
               currentStreak: 0,
               longestStreak: 0
             }
@@ -511,7 +514,7 @@ describe('State Transitions - Output-Based Testing', () => {
         expect(result).toEqual({
           userId,
           updates: {
-            status: { type: 'missed' },
+            status: { type: RecoveryStatusType.MISSED },
             lastCalculated: expect.any(Object)
           },
           reason: 'eligible → missed (deadline 2024-01-17 passed)'
@@ -527,7 +530,7 @@ describe('State Transitions - Output-Based Testing', () => {
           data: {
             lastContributionDate: '2024-01-13',
             lastCalculated: {} as any,
-            status: { type: 'missed' },
+            status: { type: RecoveryStatusType.MISSED },
             currentStreak: 0,
             longestStreak: 0
           }
@@ -549,7 +552,7 @@ describe('State Transitions - Output-Based Testing', () => {
             lastContributionDate: '2024-01-13',
             lastCalculated: {} as any,
             status: {
-              type: 'eligible',
+              type: RecoveryStatusType.ELIGIBLE,
               postsRequired: 2,
               currentPosts: 0,
               deadline: '2024-01-17',
@@ -569,7 +572,7 @@ describe('State Transitions - Output-Based Testing', () => {
           userId,
           updates: {
             lastContributionDate: '2024-01-17',
-            status: { type: 'onStreak' },
+            status: { type: RecoveryStatusType.ON_STREAK },
             lastCalculated: expect.any(Object)
           },
           reason: 'eligible → onStreak (recovery completed with 2 posts)'
@@ -587,7 +590,7 @@ describe('State Transitions - Output-Based Testing', () => {
             data: {
               lastContributionDate: '2024-01-13',
               lastCalculated: {} as any,
-              status: { type: 'missed' },
+              status: { type: RecoveryStatusType.MISSED },
               currentStreak: 0,
               longestStreak: 0
             }
@@ -597,7 +600,7 @@ describe('State Transitions - Output-Based Testing', () => {
             data: {
               lastContributionDate: '2024-01-13',
               lastCalculated: {} as any,
-              status: { type: 'missed' },
+              status: { type: RecoveryStatusType.MISSED },
               currentStreak: 0,
               longestStreak: 0
             }
@@ -611,23 +614,23 @@ describe('State Transitions - Output-Based Testing', () => {
           userId,
           updates: {
             lastContributionDate: '2024-01-18',
-            status: { type: 'onStreak' },
+            status: { type: RecoveryStatusType.ON_STREAK },
             lastCalculated: expect.any(Object)
           },
           reason: 'missed → onStreak (fresh start)'
         });
       });
 
-      it('should return null when no posting transitions apply', async () => {
+      it('should return onStreak → onStreak update when user is already onStreak', async () => {
         const postDate = new Date('2024-01-17T14:00:00Z');
         
-        // User already on streak - no posting transitions needed
+        // User already on streak - should get onStreak → onStreak transition (bug fix!)
         mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
           doc: {} as any,
           data: {
             lastContributionDate: '2024-01-16',
             lastCalculated: {} as any,
-            status: { type: 'onStreak' },
+            status: { type: RecoveryStatusType.ON_STREAK },
             currentStreak: 0,
             longestStreak: 0
           }
@@ -635,7 +638,10 @@ describe('State Transitions - Output-Based Testing', () => {
         
         const result = await calculatePostingTransitions(userId, postDate);
         
-        expect(result).toBeNull();
+        // Should return onStreak → onStreak transition, not null (this was the bug!)
+        expect(result).not.toBeNull();
+        expect(result?.reason).toBe('onStreak → onStreak (streak maintained)');
+        expect(result?.updates.status?.type).toBe(RecoveryStatusType.ON_STREAK);
       });
     });
   });
@@ -655,7 +661,7 @@ describe('State Transitions - Output-Based Testing', () => {
         data: {
           lastContributionDate: '2024-01-13',
           lastCalculated: {} as any,
-          status: { type: 'onStreak' },
+          status: { type: RecoveryStatusType.ON_STREAK },
           currentStreak: 0,
           longestStreak: 0
         }
@@ -676,7 +682,7 @@ describe('State Transitions - Output-Based Testing', () => {
         userId,
         updates: expect.objectContaining({
           status: expect.objectContaining({
-            type: 'eligible',
+            type: RecoveryStatusType.ELIGIBLE,
             postsRequired: 2
           })
         }),
@@ -697,7 +703,7 @@ describe('State Transitions - Output-Based Testing', () => {
           lastContributionDate: '2024-01-13',
           lastCalculated: {} as any,
           status: {
-            type: 'eligible',
+            type: RecoveryStatusType.ELIGIBLE,
             postsRequired: 2,
             currentPosts: 0,
             deadline: '2024-01-17', // Deadline is today
@@ -727,7 +733,7 @@ describe('State Transitions - Output-Based Testing', () => {
           lastContributionDate: '2024-01-13',
           lastCalculated: {} as any,
           status: {
-            type: 'eligible',
+            type: RecoveryStatusType.ELIGIBLE,
             postsRequired: 2,
             currentPosts: 0,
             deadline: '2024-01-17', // Deadline was yesterday
@@ -747,10 +753,113 @@ describe('State Transitions - Output-Based Testing', () => {
       expect(result).toEqual({
         userId,
         updates: {
-          status: { type: 'missed' },
+          status: { type: RecoveryStatusType.MISSED },
           lastCalculated: expect.any(Object)
         },
         reason: 'eligible → missed (deadline 2024-01-17 passed)'
+      });
+    });
+  });
+
+  describe('Bug Regression Tests', () => {
+    describe('onStreak → onStreak transition bug fix', () => {
+      // Regression test for the bug where onStreak users writing posts 
+      // were not getting their streaks updated
+
+      it('should handle onStreak user writing another post', async () => {
+        const postDate = new Date('2024-01-15T10:00:00Z');
+        const mockStreakInfo: StreakInfo = {
+          lastContributionDate: '2024-01-14',
+          lastCalculated: Timestamp.now(),
+          status: {
+            type: RecoveryStatusType.ON_STREAK
+          },
+          currentStreak: 5,
+          longestStreak: 10
+        };
+
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: mockStreakInfo
+        });
+        
+        mockStreakUtils.formatDateString.mockReturnValue('2024-01-15');
+
+        const result = await calculateOnStreakToOnStreak(userId, postDate);
+
+        // Should return a valid update, not null (this was the bug!)
+        expect(result).not.toBeNull();
+        expect(result?.reason).toBe('onStreak → onStreak (streak maintained)');
+        expect(result?.updates.status?.type).toBe(RecoveryStatusType.ON_STREAK);
+        expect(result?.updates.lastContributionDate).toBe('2024-01-15');
+      });
+
+      it('should process onStreak user through calculatePostingTransitions', async () => {
+        const postDate = new Date('2024-01-15T10:00:00Z');
+        const mockStreakInfo: StreakInfo = {
+          lastContributionDate: '2024-01-14',
+          lastCalculated: Timestamp.now(),
+          status: {
+            type: RecoveryStatusType.ON_STREAK
+          },
+          currentStreak: 5,
+          longestStreak: 10
+        };
+
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: mockStreakInfo
+        });
+        
+        mockStreakUtils.formatDateString.mockReturnValue('2024-01-15');
+
+        const result = await calculatePostingTransitions(userId, postDate);
+
+        // The orchestrator should route onStreak users to the onStreak → onStreak transition
+        expect(result).not.toBeNull();
+        expect(result?.reason).toBe('onStreak → onStreak (streak maintained)');
+        expect(result?.updates.status?.type).toBe(RecoveryStatusType.ON_STREAK);
+      });
+
+      it('should process onStreak user through modern calculate pattern', async () => {
+        const postDate = new Date('2024-01-15T10:00:00Z');
+        const mockStreakInfo: StreakInfo = {
+          lastContributionDate: '2024-01-14',
+          lastCalculated: Timestamp.now(),
+          status: {
+            type: RecoveryStatusType.ON_STREAK
+          },
+          currentStreak: 5,
+          longestStreak: 10
+        };
+
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: mockStreakInfo
+        });
+        
+        mockStreakUtils.formatDateString.mockReturnValue('2024-01-15');
+        mockStreakUtils.updateStreakInfo.mockResolvedValue(undefined);
+
+        // Mock console.log to verify logging
+        const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+        // Test the modern pattern like in onPostingCreated.ts
+        const dbUpdate = await calculatePostingTransitions(userId, postDate);
+        if (dbUpdate) {
+          await mockStreakUtils.updateStreakInfo(userId, dbUpdate.updates);
+          console.log(`[StateTransition] User ${userId}: ${dbUpdate.reason}`);
+        }
+
+        // Verify updateStreakInfo was called (proving the bug is fixed)
+        expect(mockStreakUtils.updateStreakInfo).toHaveBeenCalled();
+        
+        // Verify logging occurred with the onStreak → onStreak message
+        expect(consoleSpy).toHaveBeenCalledWith(
+          expect.stringContaining(`[StateTransition] User ${userId}: onStreak → onStreak (streak maintained)`)
+        );
+
+        consoleSpy.mockRestore();
       });
     });
   });
