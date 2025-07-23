@@ -21,17 +21,13 @@ export function useStreakRecoveryNotice(): StreakRecoveryNotice | null {
   const {
     data: streakInfo,
     isLoading,
-    error
-  } = useQuery(
-    ['streakInfo', userId],
-    () => fetchStreakInfo(userId!),
-    {
-      enabled: !!userId,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      cacheTime: 10 * 60 * 1000, // 10 minutes
-      retry: 2,
-    }
-  );
+    error,
+  } = useQuery(['streakInfo', userId], () => fetchStreakInfo(userId!), {
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+    retry: 2,
+  });
 
   const notice = useMemo(() => {
     if (isLoading || error || !streakInfo) {
@@ -66,7 +62,7 @@ function createRecoveryNotice(streakInfo: StreakInfo | null): StreakRecoveryNoti
   if (postsNeeded === 1) {
     return {
       show: true,
-      title: '딱 하나 남았어요!',
+      title: '연속일수 복구까지 딱 하나 남았어요!',
       content: `글을 ${currentPosts}개 쓰셨네요. 이제 ${postsNeeded}개만 더 쓰면 연속 일수가 다시 되살아나요. 글 쓰고 연속 일수 살리러 가기 >`,
     };
   }

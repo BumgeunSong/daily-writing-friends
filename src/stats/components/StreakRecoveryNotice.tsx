@@ -26,7 +26,7 @@ export function StreakRecoveryNotice({ onClickContent }: StreakRecoveryNoticePro
   return (
     <SystemPostCard
       onClickContent={onClickContent}
-      isOnlyForCurrentUser={false}
+      isOnlyForCurrentUser={true}
       authorData={POODLE_AUTHOR_DATA}
       title={notice.title}
       content={notice.content}
