@@ -1,7 +1,7 @@
 import { Timestamp } from "firebase-admin/firestore";
 import admin from "../shared/admin";
 import { toSeoulDate, isWorkingDay } from "../shared/dateUtils";
-import { RecoveryRequirement, StreakInfo } from "./StreakInfo";
+import { RecoveryRequirement, StreakInfo, RecoveryStatusType } from "./StreakInfo";
 
 /**
  * Format date to YYYY-MM-DD string
@@ -184,7 +184,7 @@ export async function getOrCreateStreakInfo(userId: string): Promise<{ doc: Fire
       lastContributionDate: formatDateString(new Date()),
       lastCalculated: Timestamp.now(),
       status: {
-        type: 'onStreak'
+        type: RecoveryStatusType.ON_STREAK
       },
       currentStreak: 0,
       longestStreak: 0
