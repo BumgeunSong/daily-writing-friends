@@ -5,8 +5,7 @@ import {
   countPostsOnDate,
   formatDateString,
   isDateAfter,
-  getOrCreateStreakInfo,
-  updateStreakInfo
+  getOrCreateStreakInfo
 } from "./streakUtils";
 import { RecoveryStatusType } from "./StreakInfo";
 import { DBUpdate, addStreakCalculations, validateUserState, createBaseUpdate } from "./transitionHelpers";
@@ -312,80 +311,6 @@ async function calculateMidnightStreakUpdate(userId: string, _currentDate: Date)
   }
 }
 
-// ===== LEGACY WRAPPER FUNCTIONS =====
-
-export async function handleOnStreakToEligible(userId: string, currentDate: Date): Promise<boolean> {
-  const dbUpdate = await calculateOnStreakToEligible(userId, currentDate);
-  if (!dbUpdate) return false;
-  
-  await updateStreakInfo(userId, dbUpdate.updates);
-  console.log(`[StateTransition] User ${userId}: ${dbUpdate.reason}`);
-  return true;
-}
-
-export async function handleEligibleToMissed(userId: string, currentDate: Date): Promise<boolean> {
-  const dbUpdate = await calculateEligibleToMissed(userId, currentDate);
-  if (!dbUpdate) return false;
-  
-  await updateStreakInfo(userId, dbUpdate.updates);
-  console.log(`[StateTransition] User ${userId}: ${dbUpdate.reason}`);
-  return true;
-}
-
-export async function handleEligibleToOnStreak(userId: string, postDate: Date): Promise<boolean> {
-  const dbUpdate = await calculateEligibleToOnStreak(userId, postDate);
-  if (!dbUpdate) return false;
-  
-  await updateStreakInfo(userId, dbUpdate.updates);
-  console.log(`[StateTransition] User ${userId}: ${dbUpdate.reason}`);
-  
-  return dbUpdate.reason.includes('recovery completed');
-}
-
-export async function handleMissedToOnStreak(userId: string, postDate: Date): Promise<boolean> {
-  const dbUpdate = await calculateMissedToOnStreak(userId, postDate);
-  if (!dbUpdate) return false;
-  
-  await updateStreakInfo(userId, dbUpdate.updates);
-  console.log(`[StateTransition] User ${userId}: ${dbUpdate.reason}`);
-  return true;
-}
-
-export async function handleOnStreakToOnStreak(userId: string, postDate: Date): Promise<boolean> {
-  const dbUpdate = await calculateOnStreakToOnStreak(userId, postDate);
-  if (!dbUpdate) return false;
-  
-  await updateStreakInfo(userId, dbUpdate.updates);
-  console.log(`[StateTransition] User ${userId}: ${dbUpdate.reason}`);
-  return true;
-}
-
-export async function processMidnightTransitions(userId: string, currentDate: Date): Promise<void> {
-  try {
-    const transitionedToEligible = await handleOnStreakToEligible(userId, currentDate);
-    
-    if (!transitionedToEligible) {
-      await handleEligibleToMissed(userId, currentDate);
-    }
-  } catch (error) {
-    console.error(`[StateTransition] Error processing midnight transitions for user ${userId}:`, error);
-    throw error;
-  }
-}
-
-export async function processPostingTransitions(userId: string, postDate: Date): Promise<void> {
-  try {
-    const dbUpdate = await calculatePostingTransitions(userId, postDate);
-    
-    if (dbUpdate) {
-      await updateStreakInfo(userId, dbUpdate.updates);
-      console.log(`[StateTransition] User ${userId}: ${dbUpdate.reason}`);
-    }
-  } catch (error) {
-    console.error(`[StateTransition] Error processing posting transitions for user ${userId}:`, error);
-    throw error;
-  }
-}
 
 // ===== BATCH PROCESSING UTILITIES =====
 
