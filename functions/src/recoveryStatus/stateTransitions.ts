@@ -1,42 +1,54 @@
-import { toSeoulDate } from "../shared/dateUtils";
-import { 
-  didUserMissYesterday, 
-  calculateRecoveryRequirement, 
+import { toSeoulDate } from '../shared/dateUtils';
+import {
+  didUserMissYesterday,
+  calculateRecoveryRequirement,
   countPostsOnDate,
   formatDateString,
   isDateAfter,
-  getOrCreateStreakInfo
-} from "./streakUtils";
-import { RecoveryStatusType } from "./StreakInfo";
-import { DBUpdate, addStreakCalculations, validateUserState, createBaseUpdate } from "./transitionHelpers";
+  getOrCreateStreakInfo,
+} from './streakUtils';
+import { RecoveryStatusType } from './StreakInfo';
+import {
+  DBUpdate,
+  addStreakCalculations,
+  validateUserState,
+  createBaseUpdate,
+} from './transitionHelpers';
+import { calculateUserStreaks } from './streakCalculations';
 
 // Re-export DBUpdate for backward compatibility
-export { DBUpdate } from "./transitionHelpers";
+export { DBUpdate } from './transitionHelpers';
 
 // ===== CORE TRANSITION CALCULATORS (PURE FUNCTIONS) =====
 
 /**
  * Calculate onStreak → eligible transition
  */
-export async function calculateOnStreakToEligible(userId: string, currentDate: Date): Promise<DBUpdate | null> {
+export async function calculateOnStreakToEligible(
+  userId: string,
+  currentDate: Date,
+): Promise<DBUpdate | null> {
   const { data: streakInfo } = await getOrCreateStreakInfo(userId);
-  
+
   if (!validateUserState(streakInfo, RecoveryStatusType.ON_STREAK)) {
     return null;
   }
-  
+
   const missedYesterday = await didUserMissYesterday(userId, currentDate);
   if (!missedYesterday) {
     return null;
   }
-  
+
   const seoulDate = toSeoulDate(currentDate);
   const yesterday = new Date(seoulDate);
   yesterday.setDate(yesterday.getDate() - 1);
-  
+
   const recoveryReq = calculateRecoveryRequirement(yesterday, seoulDate);
-  const baseUpdate = createBaseUpdate(userId, `onStreak → eligible (missed ${recoveryReq.missedDate})`);
-  
+  const baseUpdate = createBaseUpdate(
+    userId,
+    `onStreak → eligible (missed ${recoveryReq.missedDate})`,
+  );
+
   return {
     ...baseUpdate,
     updates: {
@@ -46,147 +58,178 @@ export async function calculateOnStreakToEligible(userId: string, currentDate: D
         postsRequired: recoveryReq.postsRequired,
         currentPosts: recoveryReq.currentPosts,
         deadline: recoveryReq.deadline,
-        missedDate: recoveryReq.missedDate
-      }
-    }
+        missedDate: recoveryReq.missedDate,
+      },
+    },
   };
 }
 
 /**
  * Calculate eligible → missed transition
  */
-export async function calculateEligibleToMissed(userId: string, currentDate: Date): Promise<DBUpdate | null> {
+export async function calculateEligibleToMissed(
+  userId: string,
+  currentDate: Date,
+): Promise<DBUpdate | null> {
   const { data: streakInfo } = await getOrCreateStreakInfo(userId);
-  
+
   if (!validateUserState(streakInfo, RecoveryStatusType.ELIGIBLE)) {
     return null;
   }
-  
-  const seoulDate = toSeoulDate(currentDate);
-  const currentDateString = formatDateString(seoulDate);
-  
-  if (!streakInfo!.status.deadline || !isDateAfter(currentDateString, streakInfo!.status.deadline)) {
+
+  if (!streakInfo) {
     return null;
   }
-  
-  const baseUpdate = createBaseUpdate(userId, `eligible → missed (deadline ${streakInfo!.status.deadline} passed)`);
-  
+
+  const seoulDate = toSeoulDate(currentDate);
+  const currentDateString = formatDateString(seoulDate);
+
+  const status = streakInfo.status;
+  if (!status.deadline || !isDateAfter(currentDateString, status.deadline)) {
+    return null;
+  }
+
+  const baseUpdate = createBaseUpdate(
+    userId,
+    `eligible → missed (deadline ${status.deadline} passed)`,
+  );
+
   return {
     ...baseUpdate,
     updates: {
       ...baseUpdate.updates,
       status: {
-        type: RecoveryStatusType.MISSED
-      }
-    }
+        type: RecoveryStatusType.MISSED,
+      },
+    },
   };
 }
 
 /**
  * Calculate eligible → onStreak transition
  */
-export async function calculateEligibleToOnStreak(userId: string, postDate: Date): Promise<DBUpdate | null> {
+export async function calculateEligibleToOnStreak(
+  userId: string,
+  postDate: Date,
+): Promise<DBUpdate | null> {
   const { data: streakInfo } = await getOrCreateStreakInfo(userId);
-  
+
   if (!validateUserState(streakInfo, RecoveryStatusType.ELIGIBLE)) {
     return null;
   }
-  
-  if (!streakInfo!.status.postsRequired) {
+
+  if (!streakInfo) {
+    return null;
+  }
+
+  const status = streakInfo.status;
+  if (!status.postsRequired) {
     console.error(`[StateTransition] User ${userId} eligible status missing postsRequired`);
     return null;
   }
-  
+
   const seoulDate = toSeoulDate(postDate);
   const todayPostCount = await countPostsOnDate(userId, seoulDate);
-  
+
   // Return progress update if not yet completed
-  if (todayPostCount < streakInfo!.status.postsRequired) {
-    const baseUpdate = createBaseUpdate(userId, `eligible progress updated (${todayPostCount}/${streakInfo!.status.postsRequired})`);
-    
+  if (todayPostCount < status.postsRequired) {
+    const baseUpdate = createBaseUpdate(
+      userId,
+      `eligible progress updated (${todayPostCount}/${status.postsRequired})`,
+    );
+
     return {
       ...baseUpdate,
       updates: {
         ...baseUpdate.updates,
         status: {
-          ...streakInfo!.status,
-          currentPosts: todayPostCount
-        }
-      }
+          ...status,
+          currentPosts: todayPostCount,
+        },
+      },
     };
   }
-  
+
   // Recovery completed
-  const baseUpdate = createBaseUpdate(userId, `eligible → onStreak (recovery completed with ${todayPostCount} posts)`);
+  const baseUpdate = createBaseUpdate(
+    userId,
+    `eligible → onStreak (recovery completed with ${todayPostCount} posts)`,
+  );
   const baseUpdates = {
     ...baseUpdate.updates,
     lastContributionDate: formatDateString(seoulDate),
     status: {
-      type: RecoveryStatusType.ON_STREAK
-    }
+      type: RecoveryStatusType.ON_STREAK,
+    },
   };
-  
+
   const updatesWithStreaks = await addStreakCalculations(userId, baseUpdates, true);
-  
+
   return {
     ...baseUpdate,
-    updates: updatesWithStreaks
+    updates: updatesWithStreaks,
   };
 }
 
 /**
  * Calculate missed → onStreak transition
  */
-export async function calculateMissedToOnStreak(userId: string, postDate: Date): Promise<DBUpdate | null> {
+export async function calculateMissedToOnStreak(
+  userId: string,
+  postDate: Date,
+): Promise<DBUpdate | null> {
   const { data: streakInfo } = await getOrCreateStreakInfo(userId);
-  
+
   if (!validateUserState(streakInfo, RecoveryStatusType.MISSED)) {
     return null;
   }
-  
+
   const seoulDate = toSeoulDate(postDate);
   const baseUpdate = createBaseUpdate(userId, 'missed → onStreak (fresh start)');
   const baseUpdates = {
     ...baseUpdate.updates,
     lastContributionDate: formatDateString(seoulDate),
     status: {
-      type: RecoveryStatusType.ON_STREAK
-    }
+      type: RecoveryStatusType.ON_STREAK,
+    },
   };
-  
+
   const updatesWithStreaks = await addStreakCalculations(userId, baseUpdates, true);
-  
+
   return {
     ...baseUpdate,
-    updates: updatesWithStreaks
+    updates: updatesWithStreaks,
   };
 }
 
 /**
  * Calculate onStreak → onStreak transition (maintain streak)
  */
-export async function calculateOnStreakToOnStreak(userId: string, postDate: Date): Promise<DBUpdate | null> {
+export async function calculateOnStreakToOnStreak(
+  userId: string,
+  postDate: Date,
+): Promise<DBUpdate | null> {
   const { data: streakInfo } = await getOrCreateStreakInfo(userId);
-  
+
   if (!validateUserState(streakInfo, RecoveryStatusType.ON_STREAK)) {
     return null;
   }
-  
+
   const seoulDate = toSeoulDate(postDate);
   const baseUpdate = createBaseUpdate(userId, 'onStreak → onStreak (streak maintained)');
   const baseUpdates = {
     ...baseUpdate.updates,
     lastContributionDate: formatDateString(seoulDate),
     status: {
-      type: RecoveryStatusType.ON_STREAK
-    }
+      type: RecoveryStatusType.ON_STREAK,
+    },
   };
-  
+
   const updatesWithStreaks = await addStreakCalculations(userId, baseUpdates, true);
-  
+
   return {
     ...baseUpdate,
-    updates: updatesWithStreaks
+    updates: updatesWithStreaks,
   };
 }
 
@@ -195,30 +238,36 @@ export async function calculateOnStreakToOnStreak(userId: string, postDate: Date
 /**
  * Calculate all possible posting transitions using switch statement
  */
-export async function calculatePostingTransitions(userId: string, postDate: Date): Promise<DBUpdate | null> {
+export async function calculatePostingTransitions(
+  userId: string,
+  postDate: Date,
+): Promise<DBUpdate | null> {
   try {
     const { data: streakInfo } = await getOrCreateStreakInfo(userId);
-    
+
     if (!streakInfo) {
       return null;
     }
-    
+
     switch (streakInfo.status.type) {
       case RecoveryStatusType.ELIGIBLE:
         return await calculateEligibleToOnStreak(userId, postDate);
-        
+
       case RecoveryStatusType.MISSED:
         return await calculateMissedToOnStreak(userId, postDate);
-        
+
       case RecoveryStatusType.ON_STREAK:
         return await calculateOnStreakToOnStreak(userId, postDate);
-        
+
       default:
         console.warn(`[StateTransition] Unknown status type: ${streakInfo.status.type}`);
         return null;
     }
   } catch (error) {
-    console.error(`[StateTransition] Error calculating posting transitions for user ${userId}:`, error);
+    console.error(
+      `[StateTransition] Error calculating posting transitions for user ${userId}:`,
+      error,
+    );
     throw error;
   }
 }
@@ -226,14 +275,17 @@ export async function calculatePostingTransitions(userId: string, postDate: Date
 /**
  * Calculate all possible midnight transitions using switch statement
  */
-export async function calculateMidnightTransitions(userId: string, currentDate: Date): Promise<DBUpdate | null> {
+export async function calculateMidnightTransitions(
+  userId: string,
+  currentDate: Date,
+): Promise<DBUpdate | null> {
   try {
     const { data: streakInfo } = await getOrCreateStreakInfo(userId);
-    
+
     if (!streakInfo) {
       return null;
     }
-    
+
     switch (streakInfo.status.type) {
       case RecoveryStatusType.ON_STREAK: {
         const eligibleUpdate = await calculateOnStreakToEligible(userId, currentDate);
@@ -243,7 +295,7 @@ export async function calculateMidnightTransitions(userId: string, currentDate: 
         }
         break;
       }
-      
+
       case RecoveryStatusType.ELIGIBLE: {
         const missedUpdate = await calculateEligibleToMissed(userId, currentDate);
         if (missedUpdate) {
@@ -252,21 +304,23 @@ export async function calculateMidnightTransitions(userId: string, currentDate: 
         }
         break;
       }
-      
+
       case RecoveryStatusType.MISSED:
         // No automatic transitions from missed state at midnight
         break;
-        
+
       default:
         console.warn(`[StateTransition] Unknown status type: ${streakInfo.status.type}`);
         return null;
     }
-    
+
     // If no status transitions, check if streak updates are needed
     return await calculateMidnightStreakUpdate(userId, currentDate);
-    
   } catch (error) {
-    console.error(`[StateTransition] Error calculating midnight transitions for user ${userId}:`, error);
+    console.error(
+      `[StateTransition] Error calculating midnight transitions for user ${userId}:`,
+      error,
+    );
     throw error;
   }
 }
@@ -274,22 +328,29 @@ export async function calculateMidnightTransitions(userId: string, currentDate: 
 /**
  * Calculate streak updates for midnight recalculation
  */
-async function calculateMidnightStreakUpdate(userId: string, _currentDate: Date): Promise<DBUpdate | null> {
+async function calculateMidnightStreakUpdate(
+  userId: string,
+  _currentDate: Date,
+): Promise<DBUpdate | null> {
   try {
     const { data: streakInfo } = await getOrCreateStreakInfo(userId);
-    
+
     if (!streakInfo) {
       return null;
     }
-    
+
     const streakData = await calculateUserStreaks(userId);
-    
+
     // Only create update if streaks have changed
-    if (streakData.currentStreak !== streakInfo.currentStreak || 
-        streakData.longestStreak !== streakInfo.longestStreak) {
-      
-      const baseUpdate = createBaseUpdate(userId, `midnight streak update (current: ${streakData.currentStreak}, longest: ${streakData.longestStreak})`);
-      
+    if (
+      streakData.currentStreak !== streakInfo.currentStreak ||
+      streakData.longestStreak !== streakInfo.longestStreak
+    ) {
+      const baseUpdate = createBaseUpdate(
+        userId,
+        `midnight streak update (current: ${streakData.currentStreak}, longest: ${streakData.longestStreak})`,
+      );
+
       return {
         ...baseUpdate,
         updates: {
@@ -297,20 +358,21 @@ async function calculateMidnightStreakUpdate(userId: string, _currentDate: Date)
           currentStreak: streakData.currentStreak,
           longestStreak: streakData.longestStreak,
           ...(streakData.lastContributionDate && {
-            lastContributionDate: streakData.lastContributionDate
-          })
-        }
+            lastContributionDate: streakData.lastContributionDate,
+          }),
+        },
       };
     }
-    
+
     return null;
-    
   } catch (error) {
-    console.error(`[StreakCalculation] Error calculating midnight streaks for user ${userId}:`, error);
+    console.error(
+      `[StreakCalculation] Error calculating midnight streaks for user ${userId}:`,
+      error,
+    );
     return null;
   }
 }
-
 
 // ===== BATCH PROCESSING UTILITIES =====
 
@@ -326,9 +388,9 @@ export interface UserTransitionResult {
 }
 
 export async function processUserTransitionSafe<T extends Date>(
-  userId: string, 
+  userId: string,
   date: T,
-  calculateFn: (userId: string, date: T) => Promise<DBUpdate | null>
+  calculateFn: (userId: string, date: T) => Promise<DBUpdate | null>,
 ): Promise<UserTransitionResult> {
   try {
     const update = await calculateFn(userId, date);
@@ -338,7 +400,9 @@ export async function processUserTransitionSafe<T extends Date>(
   }
 }
 
-export function collectTransitionResults(results: PromiseSettledResult<UserTransitionResult>[]): BatchProcessingResult {
+export function collectTransitionResults(
+  results: PromiseSettledResult<UserTransitionResult>[],
+): BatchProcessingResult {
   const updates: DBUpdate[] = [];
   let processedCount = 0;
   let errorCount = 0;
@@ -357,6 +421,3 @@ export function collectTransitionResults(results: PromiseSettledResult<UserTrans
 
   return { updates, processedCount, errorCount };
 }
-
-// Re-export the missing function that may be needed elsewhere
-import { calculateUserStreaks } from "./streakCalculations";
