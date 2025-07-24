@@ -12,6 +12,18 @@ const SUNDAY = 0
 const SATURDAY = 6
 const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24
 
+// Helper function to filter contributions within time range
+function filterContributionsInTimeRange<T extends { createdAt: any }>(
+  contributions: T[],
+  startDate: Date,
+  endDate: Date
+): T[] {
+  return contributions.filter(c => {
+    const contributionDate = new Date(c.createdAt);
+    return contributionDate >= startDate && contributionDate <= endDate;
+  });
+}
+
 // 도메인별 union props
 export type ContributionGraphProps =
   | { type: 'posting'; contributions: Contribution[]; className?: string }
@@ -33,10 +45,7 @@ export function ContributionGraph(props: ContributionGraphProps) {
       weeksAgo.setDate(today.getDate() - (WEEKS_TO_DISPLAY * DAYS_PER_WEEK - 1));
       
       // Filter contributions within the last weeks
-      const recentContributions = contributions.filter(c => {
-        const contributionDate = new Date(c.createdAt);
-        return contributionDate >= weeksAgo && contributionDate <= today;
-      });
+      const recentContributions = filterContributionsInTimeRange(contributions, weeksAgo, today);
       
       // Place each contribution in the correct week/weekday position
       recentContributions.forEach(contribution => {
@@ -72,10 +81,7 @@ export function ContributionGraph(props: ContributionGraphProps) {
       const weeksAgo = new Date(today);
       weeksAgo.setDate(today.getDate() - (WEEKS_TO_DISPLAY * DAYS_PER_WEEK - 1));
       
-      const recentContributions = contributions.filter(c => {
-        const contributionDate = new Date(c.createdAt);
-        return contributionDate >= weeksAgo && contributionDate <= today;
-      });
+      const recentContributions = filterContributionsInTimeRange(contributions, weeksAgo, today);
       
       recentContributions.forEach(contribution => {
         const date = new Date(contribution.createdAt);
