@@ -3,7 +3,11 @@ import { Timestamp } from "firebase-admin/firestore";
 /**
  * Recovery status types for the 3-state system
  */
-export type RecoveryStatusType = 'onStreak' | 'eligible' | 'missed';
+export enum RecoveryStatusType {
+  ON_STREAK = 'onStreak',
+  ELIGIBLE = 'eligible', 
+  MISSED = 'missed'
+}
 
 /**
  * Status information for recovery system

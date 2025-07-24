@@ -1,6 +1,7 @@
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { Posting } from "./Posting";
-import { processPostingTransitions } from "../recoveryStatus/stateTransitions";
+import { calculatePostingTransitions } from "../recoveryStatus/stateTransitions";
+import { updateStreakInfo } from "../recoveryStatus/streakUtils";
 import { toSeoulDate } from "../shared/dateUtils";
 
 export const onPostingCreated = onDocumentCreated(
@@ -38,7 +39,11 @@ export const onPostingCreated = onDocumentCreated(
       console.log(`[PostingCreated] Post created at: ${seoulDate.toISOString()} (Seoul timezone)`);
       
       // Process state transitions based on posting creation
-      await processPostingTransitions(userId, seoulDate);
+      const dbUpdate = await calculatePostingTransitions(userId, seoulDate);
+      if (dbUpdate) {
+        await updateStreakInfo(userId, dbUpdate.updates);
+        console.log(`[StateTransition] User ${userId}: ${dbUpdate.reason}`, JSON.stringify(dbUpdate, null, 2));
+      }
       
       console.log(`[PostingCreated] Successfully processed transitions for user: ${userId}`);
       
