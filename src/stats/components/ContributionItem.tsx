@@ -28,10 +28,10 @@ export function ContributionItem({ contribution, value, maxValue }: Contribution
                             "aspect-square w-full rounded-sm relative flex items-center justify-center border border-border/30",
                             // Apply background colors based on contribution intensity (GitHub-style)
                             intensity === 0 && "bg-muted/50",
-                            intensity === 1 && "bg-green-200 dark:bg-green-900/40",
-                            intensity === 2 && "bg-green-400 dark:bg-green-700/60",
-                            intensity === 3 && "bg-green-600 dark:bg-green-600/80",
-                            intensity === 4 && "bg-green-800 dark:bg-green-500"
+                            intensity === 1 && "bg-green-200 dark:bg-green-800/60",
+                            intensity === 2 && "bg-green-400 dark:bg-green-600/70",
+                            intensity === 3 && "bg-green-600 dark:bg-green-500/80",
+                            intensity === 4 && "bg-green-800 dark:bg-green-400"
                         )}
                     >
                         <span className={cn(
