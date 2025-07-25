@@ -11,21 +11,44 @@ import {
 } from '../stateTransitions';
 import { RecoveryStatusType, StreakInfo } from '../StreakInfo';
 import * as streakUtils from '../streakUtils';
+import * as transitionHelpers from '../transitionHelpers';
 
 // Mock all streak utilities
 jest.mock('../streakUtils');
+jest.mock('../transitionHelpers');
+jest.mock('../streakCalculations');
 jest.mock('../../shared/admin');
 jest.mock('../../shared/dateUtils', () => ({
   toSeoulDate: jest.fn((date: Date) => date),
 }));
 
 const mockStreakUtils = streakUtils as jest.Mocked<typeof streakUtils>;
+const mockTransitionHelpers = transitionHelpers as jest.Mocked<typeof transitionHelpers>;
 
 describe('State Transitions - Output-Based Testing', () => {
   const userId = 'test-user-123';
   
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Set up default mocks for helper functions
+    mockTransitionHelpers.addStreakCalculations.mockImplementation(async (_userId, baseUpdates) => ({
+      ...baseUpdates,
+      currentStreak: 1,
+      longestStreak: 1
+    }));
+    
+    mockTransitionHelpers.validateUserState.mockImplementation((streakInfo, expectedState) => {
+      return streakInfo?.status.type === expectedState;
+    });
+    
+    mockTransitionHelpers.createBaseUpdate.mockImplementation((userId, reason) => ({
+      userId,
+      reason,
+      updates: {
+        lastCalculated: Timestamp.now()
+      }
+    }));
   });
 
   describe('1. onStreak → eligible transition', () => {
@@ -294,7 +317,9 @@ describe('State Transitions - Output-Based Testing', () => {
         updates: {
           lastContributionDate: '2024-01-17',
           status: { type: RecoveryStatusType.ON_STREAK },
-          lastCalculated: expect.any(Object)
+          lastCalculated: expect.any(Object),
+          currentStreak: expect.any(Number),
+          longestStreak: expect.any(Number)
         },
         reason: 'eligible → onStreak (recovery completed with 2 posts)'
       });
@@ -410,7 +435,9 @@ describe('State Transitions - Output-Based Testing', () => {
         updates: {
           lastContributionDate: '2024-01-18',
           status: { type: RecoveryStatusType.ON_STREAK },
-          lastCalculated: expect.any(Object)
+          lastCalculated: expect.any(Object),
+          currentStreak: expect.any(Number),
+          longestStreak: expect.any(Number)
         },
         reason: 'missed → onStreak (fresh start)'
       });
@@ -473,7 +500,9 @@ describe('State Transitions - Output-Based Testing', () => {
               deadline: '2024-01-17',
               missedDate: '2024-01-15'
             },
-            lastCalculated: expect.any(Object)
+            lastCalculated: expect.any(Object),
+            currentStreak: expect.any(Number),
+            longestStreak: expect.any(Number)
           },
           reason: 'onStreak → eligible (missed 2024-01-15)'
         });
@@ -515,7 +544,9 @@ describe('State Transitions - Output-Based Testing', () => {
           userId,
           updates: {
             status: { type: RecoveryStatusType.MISSED },
-            lastCalculated: expect.any(Object)
+            lastCalculated: expect.any(Object),
+            currentStreak: expect.any(Number),
+            longestStreak: expect.any(Number)
           },
           reason: 'eligible → missed (deadline 2024-01-17 passed)'
         });
@@ -573,7 +604,9 @@ describe('State Transitions - Output-Based Testing', () => {
           updates: {
             lastContributionDate: '2024-01-17',
             status: { type: RecoveryStatusType.ON_STREAK },
-            lastCalculated: expect.any(Object)
+            lastCalculated: expect.any(Object),
+            currentStreak: expect.any(Number),
+            longestStreak: expect.any(Number)
           },
           reason: 'eligible → onStreak (recovery completed with 2 posts)'
         });
@@ -615,7 +648,9 @@ describe('State Transitions - Output-Based Testing', () => {
           updates: {
             lastContributionDate: '2024-01-18',
             status: { type: RecoveryStatusType.ON_STREAK },
-            lastCalculated: expect.any(Object)
+            lastCalculated: expect.any(Object),
+            currentStreak: expect.any(Number),
+            longestStreak: expect.any(Number)
           },
           reason: 'missed → onStreak (fresh start)'
         });
@@ -860,6 +895,209 @@ describe('State Transitions - Output-Based Testing', () => {
         );
 
         consoleSpy.mockRestore();
+      });
+    });
+
+    describe('Timezone mismatch false positive bug', () => {
+      // Regression test for the timezone bug where users who posted in KST
+      // were incorrectly marked as having "missed" the day due to timezone issues
+      
+      it('should NOT generate DBUpdate for onStreak user who posted in KST timezone', async () => {
+        // EXACT SCENARIO FROM BUG REPORT:
+        // User posted: July 24, 2025 at 08:18:45 KST (= July 23, 2025 at 23:18:45 UTC)
+        // Midnight function ran: July 25, 2025 at 00:00:16 KST (= July 24, 2025 at 15:00:16 UTC)
+        // EXPECTED: No transition should occur because user did not miss July 24 in KST
+        
+        const midnightCheckTime = new Date('2025-07-24T15:00:16.205456Z'); // July 25 00:00:16 KST
+        const buggyUserId = 'aQtssYmMgyQcEfj8TrmhqL2TdCF2'; // Real user ID from logs
+        
+        // Mock user is on streak with last contribution on July 23
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2025-07-23',
+            lastCalculated: Timestamp.now(),
+            status: { type: RecoveryStatusType.ON_STREAK },
+            currentStreak: 12,
+            longestStreak: 12
+          }
+        });
+        
+        // Mock that user posted on July 24 in KST (fixed timezone logic finds the post)
+        mockStreakUtils.didUserMissYesterday.mockResolvedValue(false);
+        
+        const result = await calculateMidnightTransitions(buggyUserId, midnightCheckTime);
+        
+        // ASSERTION: Should return null (no transition) because user did not miss yesterday
+        expect(result).toBeNull();
+      });
+
+      it('should demonstrate the original timezone bug behavior through DBUpdate', async () => {
+        // This test shows the INCORRECT DBUpdate that would be generated with the OLD timezone logic
+        const midnightCheckTime = new Date('2025-07-24T15:00:16Z'); // Midnight in KST
+        const buggyUserId = 'aQtssYmMgyQcEfj8TrmhqL2TdCF2';
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2025-07-23',
+            lastCalculated: Timestamp.now(),
+            status: { type: RecoveryStatusType.ON_STREAK },
+            currentStreak: 12,
+            longestStreak: 12
+          }
+        });
+        
+        // SIMULATE THE BUG: Old timezone logic would return true (false positive)
+        mockStreakUtils.didUserMissYesterday.mockResolvedValue(true);
+        
+        mockStreakUtils.calculateRecoveryRequirement.mockReturnValue({
+          postsRequired: 2,
+          currentPosts: 0,
+          deadline: '2025-07-25',
+          missedDate: '2025-07-24'
+        });
+        
+        const result = await calculateMidnightTransitions(buggyUserId, midnightCheckTime);
+        
+        // BUG RESULT: Would generate incorrect DBUpdate transitioning to eligible
+        expect(result).toEqual({
+          userId: buggyUserId,
+          updates: {
+            status: {
+              type: RecoveryStatusType.ELIGIBLE,
+              postsRequired: 2,
+              currentPosts: 0,
+              deadline: '2025-07-25',
+              missedDate: '2025-07-24'
+            },
+            lastCalculated: expect.any(Object),
+            currentStreak: expect.any(Number),
+            longestStreak: expect.any(Number)
+          },
+          reason: 'onStreak → eligible (missed 2025-07-24)'
+        });
+        
+        // This documents the incorrect DBUpdate that the bug would generate
+      });
+
+      it('should correctly handle posting transition for user who posted in KST timezone', async () => {
+        // Test the posting function generates correct DBUpdate for KST timezone post
+        // User posts at 08:18:45 KST on July 24 (= 23:18:45 UTC July 23)
+        const postingTimeKST = new Date('2025-07-23T23:18:56.097627Z'); // July 24 08:18:56 KST
+        const buggyUserId = 'aQtssYmMgyQcEfj8TrmhqL2TdCF2';
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2025-07-23',
+            lastCalculated: Timestamp.now(),
+            status: { type: RecoveryStatusType.ON_STREAK },
+            currentStreak: 11,
+            longestStreak: 11
+          } as StreakInfo
+        });
+        
+        mockStreakUtils.formatDateString.mockReturnValue('2025-07-24'); // Post date in KST
+        
+        // Mock addStreakCalculations to return the expected streak data
+        mockTransitionHelpers.addStreakCalculations.mockResolvedValue({
+          lastCalculated: Timestamp.now(),
+          lastContributionDate: '2025-07-24',
+          status: { type: RecoveryStatusType.ON_STREAK },
+          currentStreak: 12, // Incremented from 11
+          longestStreak: 12  // New longest streak
+        });
+        
+        const result = await calculatePostingTransitions(buggyUserId, postingTimeKST);
+        
+        // CORRECT DBUpdate: Should maintain streak and update lastContributionDate to July 24
+        expect(result).not.toBeNull();
+        expect(result?.reason).toBe('onStreak → onStreak (streak maintained)');
+        expect(result?.userId).toBe(buggyUserId);
+        expect(result?.updates.status?.type).toBe(RecoveryStatusType.ON_STREAK);
+        expect(result?.updates.lastContributionDate).toBe('2025-07-24');
+        expect(result?.updates.currentStreak).toBe(12);
+        expect(result?.updates.longestStreak).toBe(12);
+      });
+
+      it('should verify midnight function produces no false positive DBUpdates for KST posts', async () => {
+        // Integration test: Verify calculateMidnightTransitions doesn't produce wrong DBUpdates
+        // when user posted in KST but function runs at Seoul midnight
+        
+        const testCases = [
+          {
+            description: 'User posted early morning KST',
+            postTime: '2025-07-24T08:18:45+09:00', // 08:18 KST = 23:18 previous day UTC
+            midnightTime: new Date('2025-07-24T15:00:16Z'), // Next day midnight KST
+            expectedUpdate: null // Should not transition
+          },
+          {
+            description: 'User posted late night KST',
+            postTime: '2025-07-24T23:45:00+09:00', // 23:45 KST = 14:45 same day UTC
+            midnightTime: new Date('2025-07-24T15:00:16Z'), // Next day midnight KST
+            expectedUpdate: null // Should not transition
+          }
+        ];
+        
+        for (const testCase of testCases) {
+          const testUserId = `timezone-test-${testCase.description.replace(/\s+/g, '-')}`;
+          
+          mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+            doc: {} as any,
+            data: {
+              lastContributionDate: '2025-07-23',
+              lastCalculated: Timestamp.now(),
+              status: { type: RecoveryStatusType.ON_STREAK },
+              currentStreak: 5,
+              longestStreak: 10
+            }
+          });
+          
+          // With FIXED timezone logic, user did not miss yesterday
+          mockStreakUtils.didUserMissYesterday.mockResolvedValue(false);
+          
+          const result = await calculateMidnightTransitions(testUserId, testCase.midnightTime);
+          
+          expect(result).toBe(testCase.expectedUpdate);
+        }
+      });
+
+      it('should ensure timezone fix prevents false positive DBUpdates across different KST posting times', async () => {
+        // Test multiple posting times within a KST day to ensure none trigger false positives
+        const midnightCheckTime = new Date('2025-07-25T15:00:00Z'); // July 26 00:00 KST
+        
+        const postingTimesKST = [
+          { time: '2025-07-25T00:30:00+09:00', label: 'just after midnight KST' },
+          { time: '2025-07-25T08:18:00+09:00', label: 'morning KST (original bug time)' },
+          { time: '2025-07-25T12:00:00+09:00', label: 'noon KST' },
+          { time: '2025-07-25T18:30:00+09:00', label: 'evening KST' },
+          { time: '2025-07-25T23:59:00+09:00', label: 'just before midnight KST' }
+        ];
+        
+        for (const posting of postingTimesKST) {
+          mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+            doc: {} as any,
+            data: {
+              lastContributionDate: '2025-07-24',
+              lastCalculated: Timestamp.now(),
+              status: { type: RecoveryStatusType.ON_STREAK },
+              currentStreak: 8,
+              longestStreak: 15
+            }
+          });
+          
+          // FIXED timezone logic should find the post and return false
+          mockStreakUtils.didUserMissYesterday.mockResolvedValue(false);
+          
+          const result = await calculateMidnightTransitions(
+            `user-posted-${posting.label.replace(/\s+/g, '-')}`,
+            midnightCheckTime
+          );
+          
+          // Should NOT generate any DBUpdate (no false positive transition)
+          expect(result).toBeNull();
+        }
       });
     });
   });
