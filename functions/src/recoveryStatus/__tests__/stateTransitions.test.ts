@@ -317,7 +317,9 @@ describe('State Transitions - Output-Based Testing', () => {
         updates: {
           lastContributionDate: '2024-01-17',
           status: { type: RecoveryStatusType.ON_STREAK },
-          lastCalculated: expect.any(Object)
+          lastCalculated: expect.any(Object),
+          currentStreak: expect.any(Number),
+          longestStreak: expect.any(Number)
         },
         reason: 'eligible → onStreak (recovery completed with 2 posts)'
       });
@@ -433,7 +435,9 @@ describe('State Transitions - Output-Based Testing', () => {
         updates: {
           lastContributionDate: '2024-01-18',
           status: { type: RecoveryStatusType.ON_STREAK },
-          lastCalculated: expect.any(Object)
+          lastCalculated: expect.any(Object),
+          currentStreak: expect.any(Number),
+          longestStreak: expect.any(Number)
         },
         reason: 'missed → onStreak (fresh start)'
       });
@@ -496,7 +500,9 @@ describe('State Transitions - Output-Based Testing', () => {
               deadline: '2024-01-17',
               missedDate: '2024-01-15'
             },
-            lastCalculated: expect.any(Object)
+            lastCalculated: expect.any(Object),
+            currentStreak: expect.any(Number),
+            longestStreak: expect.any(Number)
           },
           reason: 'onStreak → eligible (missed 2024-01-15)'
         });
@@ -538,7 +544,9 @@ describe('State Transitions - Output-Based Testing', () => {
           userId,
           updates: {
             status: { type: RecoveryStatusType.MISSED },
-            lastCalculated: expect.any(Object)
+            lastCalculated: expect.any(Object),
+            currentStreak: expect.any(Number),
+            longestStreak: expect.any(Number)
           },
           reason: 'eligible → missed (deadline 2024-01-17 passed)'
         });
@@ -596,7 +604,9 @@ describe('State Transitions - Output-Based Testing', () => {
           updates: {
             lastContributionDate: '2024-01-17',
             status: { type: RecoveryStatusType.ON_STREAK },
-            lastCalculated: expect.any(Object)
+            lastCalculated: expect.any(Object),
+            currentStreak: expect.any(Number),
+            longestStreak: expect.any(Number)
           },
           reason: 'eligible → onStreak (recovery completed with 2 posts)'
         });
@@ -638,7 +648,9 @@ describe('State Transitions - Output-Based Testing', () => {
           updates: {
             lastContributionDate: '2024-01-18',
             status: { type: RecoveryStatusType.ON_STREAK },
-            lastCalculated: expect.any(Object)
+            lastCalculated: expect.any(Object),
+            currentStreak: expect.any(Number),
+            longestStreak: expect.any(Number)
           },
           reason: 'missed → onStreak (fresh start)'
         });
