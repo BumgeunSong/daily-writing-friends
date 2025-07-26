@@ -34,6 +34,10 @@ export async function calculateOnStreakToEligible(
     return null;
   }
 
+  if (!streakInfo) {
+    return null;
+  }
+
   const missedYesterday = await didUserMissYesterday(userId, currentDate);
   if (!missedYesterday) {
     return null;
@@ -59,6 +63,7 @@ export async function calculateOnStreakToEligible(
         currentPosts: recoveryReq.currentPosts,
         deadline: recoveryReq.deadline,
         missedDate: recoveryReq.missedDate,
+        originalStreak: streakInfo.currentStreak, // Store current streak for restoration
       },
     },
   };
@@ -155,7 +160,10 @@ export async function calculateEligibleToOnStreak(
     userId,
     `eligible → onStreak (recovery completed with ${todayPostCount} posts)`,
   );
-  const baseUpdates = {
+  
+  // Restore original streak if it was stored during eligible transition
+  const originalStreak = status.originalStreak;
+  let baseUpdates = {
     ...baseUpdate.updates,
     lastContributionDate: formatDateString(seoulDate),
     status: {
@@ -163,7 +171,19 @@ export async function calculateEligibleToOnStreak(
     },
   };
 
+  // Add streak calculations, but override currentStreak if we have originalStreak
   const updatesWithStreaks = await addStreakCalculations(userId, baseUpdates, true);
+  
+  // If we have an originalStreak, add it to the new streak and update longestStreak if needed
+  if (originalStreak !== undefined) {
+    const currentStreakFromCalculation = updatesWithStreaks.currentStreak || 0;
+    const restoredStreak = originalStreak + currentStreakFromCalculation;
+    updatesWithStreaks.currentStreak = restoredStreak;
+    // Update longestStreak if the restored streak is a new record
+    if (restoredStreak > (updatesWithStreaks.longestStreak || 0)) {
+      updatesWithStreaks.longestStreak = restoredStreak;
+    }
+  }
 
   return {
     ...baseUpdate,

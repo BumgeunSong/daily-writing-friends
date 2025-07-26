@@ -18,6 +18,7 @@ export interface RecoveryStatus {
   currentPosts?: number;     // Only for 'eligible' status  
   deadline?: string;         // Only for 'eligible' status (YYYY-MM-DD format)
   missedDate?: string;       // Only for 'eligible' status (YYYY-MM-DD format)
+  originalStreak?: number;   // Only for 'eligible' status - stores the pre-miss streak value
 }
 
 /**
