@@ -1,0 +1,217 @@
+# Server-Side Contribution Grid System Implementation
+
+## Overview
+Move contribution grid calculation from client to Firebase Cloud Functions to eliminate timezone bugs and improve performance. This system will pre-calculate GitHub-style contribution grids and store them in Firestore for direct client consumption.
+
+## Problem Statement
+Currently, contribution grids are calculated on the client side, leading to:
+- Timezone conversion bugs: Late-night UTC postings get categorized as next day in KST
+- Performance issues: Complex calculations on every render
+- Inconsistent logic: Calendar logic duplicated between frontend and backend
+- Data mismatch: Different users see different results due to client-side processing
+
+## Solution Architecture
+
+### Data Structure
+New Firestore Collection: `contributionGrids`
+- users/{userId}/contributionGrids/postingGrid
+- users/{userId}/contributionGrids/commentingGrid
+
+Document Schema:
+- contributions: ContributionDay[] (Flat list of daily contributions with grid positions)
+- maxValue: number (Maximum value across all days)
+- lastUpdated: Timestamp
+- timeRange: { startDate: string, endDate: string }
+
+ContributionDay:
+- day: string (YYYY-MM-DD, server-calculated in KST)
+- value: number (Activity count/content length for this day)
+- week: number (0-3, which week in the 4-week grid)
+- column: number (0-4, Mon=0, Tue=1, Wed=2, Thu=3, Fri=4)
+
+### Backend Functions
+Real-time Update Functions:
+- updatePostingContributionGrid: Triggered on users/{userId}/postings/{postingId} creation
+- updateCommentingContributionGrid: Triggered on users/{userId}/commentings/{commentingId} creation
+
+Midnight Scheduler Function:
+- updateContributionGridsOnMidnight: Runs daily at 00:00 KST
+
+Core Logic Functions:
+- updateContributionGridRealtime: Updates specific grid cell for new activity
+- rebuildContributionGrid: Rebuilds entire grid from source data
+- buildGridFromActivities: Constructs grid matrix from activity data
+
+### Grid Calculation Logic
+Time Window:
+- Duration: 4 weeks (28 calendar days)
+- Start: Monday of the week that was 4 weeks ago
+- End: Current date (today)
+- Timezone: All calculations in Korea Standard Time (KST)
+
+Grid Structure:
+- Dimensions: 4 weeks × 5 weekdays = 4×5 matrix
+- Days included: Monday through Friday only
+- Weekend handling: Excluded from grid display
+
+Value Calculation:
+- Posting Grid: Sum of post.contentLength per day
+- Commenting Grid: Count of comments/replies per day (1 point each)
+- Aggregation: Multiple activities on same day are summed
+
+### Update Triggers
+Real-time Updates (Immediate):
+- User creates a post → Update postingGrid
+- User creates a comment → Update commentingGrid
+- User creates a reply → Update commentingGrid
+
+Midnight Updates (Daily at 00:00 KST):
+- Shift time window forward by 1 day
+- Rebuild all grids from source data
+- Process all users in batches (100 users per batch)
+
+### Client Integration
+New Hook: useContributionGrid
+- Fetches pre-calculated grid data from Firestore
+- Real-time updates via Firestore listeners
+- Calendar-agnostic frontend rendering
+
+Updated Component: ContributionGraph
+- Renders grid from server data
+- No client-side date calculations
+- Perfect grid alignment with server pre-calculated positions
+
+### Performance Optimizations
+Batch Processing:
+- Process users in batches of 100 during midnight updates
+- Use Firestore batch writes (500 operations per batch)
+- Parallel processing with Promise.allSettled
+
+Smart Updates:
+- Real-time updates only if activity falls within current 4-week window
+- Rebuild grid only when necessary (midnight or missing data)
+- Cache frequently accessed data
+
+Error Handling:
+- Continue processing other users if individual updates fail
+- Log errors for debugging without breaking entire batch
+- Self-healing: rebuild grid from source data on errors
+
+### Migration Strategy
+Phase 1: Deploy Functions
+- Deploy new cloud functions alongside existing client logic
+- No client changes yet
+- Test with subset of users
+
+Phase 2: Backfill Data
+- Run one-time script to create initial grids for all users
+- Verify data consistency between old and new systems
+
+Phase 3: Client Migration
+- Update components to use new useContributionGrid hook
+- Remove old contribution calculation logic
+- A/B test to ensure consistency
+
+Phase 4: Cleanup
+- Remove deprecated client-side calculation functions
+- Remove unused imports and dependencies
+- Update documentation
+
+### File Structure
+functions/src/contributionGrids/
+- index.ts (Export all functions)
+- updateContributionGrids.ts (Real-time update triggers)
+- midnightGridUpdater.ts (Midnight scheduler)
+- userGridUpdater.ts (Individual user updates)
+- gridBuilder.ts (Grid construction logic)
+- realtimeUpdater.ts (Real-time update logic)
+- types.ts (TypeScript interfaces)
+
+src/stats/
+- hooks/useContributionGrid.ts (New client hook)
+- components/ContributionGraph.tsx (Updated component)
+
+### Testing Requirements
+Unit Tests:
+- Grid calculation logic with various timezone scenarios
+- Batch processing with error conditions
+- Matrix construction from activity data
+
+Integration Tests:
+- End-to-end flow from posting creation to grid update
+- Midnight update with real user data
+- Client component rendering with new data structure
+
+Performance Tests:
+- Large user base midnight updates (10,000+ users)
+- Concurrent real-time updates
+- Memory usage during batch processing
+
+### Monitoring & Observability
+Metrics to Track:
+- Midnight update completion time
+- Error rates per user batch
+- Grid update latency for real-time triggers
+- Client fetch performance
+
+Logging Strategy:
+- Detailed logs for midnight batch processing
+- Error tracking with user context
+- Performance metrics for optimization
+
+### Benefits
+Eliminated Issues:
+- No more timezone conversion bugs
+- No client-side date calculation complexity
+- Consistent results across all users
+- Improved performance with pre-calculated data
+
+New Capabilities:
+- Real-time grid updates via Firestore listeners
+- Scalable to large user bases
+- Easy to maintain and debug
+- Centralized calendar logic
+- Calendar-agnostic frontend
+- Perfect grid alignment
+- Future-proof with empty cells for upcoming days
+
+### Acceptance Criteria
+Functional Requirements:
+- Grids update immediately when users post/comment
+- Grids shift time window daily at midnight KST
+- All dates calculated consistently in Seoul timezone
+- Support both posting and commenting activity types
+- Handle edge cases (no data, first-time users, etc.)
+
+Performance Requirements:
+- Real-time updates complete within 5 seconds
+- Midnight updates complete within 30 minutes for 10K users
+- Client grid rendering with <100ms load time
+- Error rate <1% for all operations
+
+Quality Requirements:
+- Comprehensive test coverage >90%
+- Clear error messages and logging
+- Graceful degradation on failures
+- Backward compatibility during migration
+
+### Implementation Approach
+Test-Driven Development (TDD):
+- Write tests first for each component
+- Output-based testing following stateTransitions.test.ts pattern
+- Pure function testing for calculation logic
+- Integration testing for Cloud Functions
+- Performance testing for batch operations
+
+Development Phases:
+1. Basic types and interfaces definition
+2. Core calculation logic (pure functions)
+3. Database helper functions
+4. Cloud Functions implementation
+5. Client integration and migration
+
+Each phase follows TDD methodology:
+1. Write failing tests
+2. Implement minimal code to pass tests
+3. Refactor and optimize
+4. Move to next phase 
