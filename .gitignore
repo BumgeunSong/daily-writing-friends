@@ -37,10 +37,6 @@ node_modules/
 # Environment variables
 .vscode
 # OS specific
-# Task files
-tasks.json
-tasks/ 
-
 .cursor/
 .roo/
 .claude/
@@ -50,3 +46,11 @@ tasks/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Task files
+# tasks.json
+# tasks/
+
+# Added by Claude Task Master
+tasks.json
+tasks/ 
