@@ -88,7 +88,8 @@ describe('State Transitions - Output-Based Testing', () => {
             postsRequired: 2,
             currentPosts: 0,
             deadline: '2024-01-17',
-            missedDate: '2024-01-15'
+            missedDate: '2024-01-15',
+            originalStreak: 0
           },
           lastCalculated: expect.any(Object)
         },
@@ -498,7 +499,8 @@ describe('State Transitions - Output-Based Testing', () => {
               postsRequired: 2,
               currentPosts: 0,
               deadline: '2024-01-17',
-              missedDate: '2024-01-15'
+              missedDate: '2024-01-15',
+              originalStreak: 0
             },
             lastCalculated: expect.any(Object),
             currentStreak: expect.any(Number),
@@ -969,7 +971,8 @@ describe('State Transitions - Output-Based Testing', () => {
               postsRequired: 2,
               currentPosts: 0,
               deadline: '2025-07-25',
-              missedDate: '2025-07-24'
+              missedDate: '2025-07-24',
+              originalStreak: 12
             },
             lastCalculated: expect.any(Object),
             currentStreak: expect.any(Number),
@@ -1098,6 +1101,455 @@ describe('State Transitions - Output-Based Testing', () => {
           // Should NOT generate any DBUpdate (no false positive transition)
           expect(result).toBeNull();
         }
+      });
+    });
+  });
+
+  describe('Streak Restoration During Recovery', () => {
+    // TDD Tests for streak restoration when eligible → onStreak
+    
+    describe('onStreak → eligible transition should store original streak', () => {
+      it('should store originalStreak when user transitions from onStreak to eligible', async () => {
+        const currentDate = new Date('2024-01-16T09:00:00Z'); // Tuesday morning
+        const testUserId = 'user-with-5-day-streak';
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-13', // Saturday (3 days ago)
+            lastCalculated: Timestamp.now(),
+            status: { type: RecoveryStatusType.ON_STREAK },
+            currentStreak: 5, // User had 5-day streak
+            longestStreak: 8
+          }
+        });
+        
+        // Mock that user missed yesterday (Monday)
+        mockStreakUtils.didUserMissYesterday.mockResolvedValue(true);
+        
+        mockStreakUtils.calculateRecoveryRequirement.mockReturnValue({
+          postsRequired: 2,
+          currentPosts: 0,
+          deadline: '2024-01-17',
+          missedDate: '2024-01-15'
+        });
+        
+        const result = await calculateOnStreakToEligible(testUserId, currentDate);
+        
+        // Should store the original streak value in eligible status
+        expect(result).toEqual({
+          userId: testUserId,
+          updates: {
+            status: {
+              type: RecoveryStatusType.ELIGIBLE,
+              postsRequired: 2,
+              currentPosts: 0,
+              deadline: '2024-01-17',
+              missedDate: '2024-01-15',
+              originalStreak: 5 // NEW: Should store original streak
+            },
+            lastCalculated: expect.any(Object)
+          },
+          reason: 'onStreak → eligible (missed 2024-01-15)'
+        });
+      });
+
+      it('should store originalStreak as 0 when user had no streak', async () => {
+        const currentDate = new Date('2024-01-16T09:00:00Z');
+        const testUserId = 'new-user-no-streak';
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-15',
+            lastCalculated: Timestamp.now(),
+            status: { type: RecoveryStatusType.ON_STREAK },
+            currentStreak: 0, // New user with no streak
+            longestStreak: 0
+          }
+        });
+        
+        mockStreakUtils.didUserMissYesterday.mockResolvedValue(true);
+        
+        mockStreakUtils.calculateRecoveryRequirement.mockReturnValue({
+          postsRequired: 2,
+          currentPosts: 0,
+          deadline: '2024-01-17',
+          missedDate: '2024-01-15'
+        });
+        
+        const result = await calculateOnStreakToEligible(testUserId, currentDate);
+        
+        expect(result?.updates.status).toEqual({
+          type: RecoveryStatusType.ELIGIBLE,
+          postsRequired: 2,
+          currentPosts: 0,
+          deadline: '2024-01-17',
+          missedDate: '2024-01-15',
+          originalStreak: 0 // Should store 0 for new users
+        });
+      });
+    });
+
+    describe('eligible → onStreak transition should restore original streak', () => {
+      it('should restore currentStreak to originalStreak value when recovery is completed', async () => {
+        const postDate = new Date('2024-01-17T14:00:00Z'); // Recovery day
+        const testUserId = 'user-recovering-5-day-streak';
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-13',
+            lastCalculated: Timestamp.now(),
+            status: {
+              type: RecoveryStatusType.ELIGIBLE,
+              postsRequired: 2,
+              currentPosts: 1, // User has made some progress
+              deadline: '2024-01-17',
+              missedDate: '2024-01-15',
+              originalStreak: 5 // The streak to restore
+            },
+            currentStreak: 0, // Will be incorrect from standard calculation
+            longestStreak: 8
+          }
+        });
+        
+        // Mock that user has completed recovery (written 2 posts)
+        mockStreakUtils.countPostsOnDate.mockResolvedValue(2);
+        mockStreakUtils.formatDateString.mockReturnValue('2024-01-17');
+        
+        // Mock addStreakCalculations to return standard calculation (would be wrong)
+        mockTransitionHelpers.addStreakCalculations.mockResolvedValue({
+          lastCalculated: Timestamp.now(),
+          lastContributionDate: '2024-01-17',
+          status: { type: RecoveryStatusType.ON_STREAK },
+          currentStreak: 1, // Standard calculation would give wrong result
+          longestStreak: 8
+        });
+        
+        const result = await calculateEligibleToOnStreak(testUserId, postDate);
+        
+        // Should restore the original streak PLUS new streak: 5 + 1 = 6
+        expect(result).toEqual({
+          userId: testUserId,
+          updates: {
+            lastContributionDate: '2024-01-17',
+            status: { type: RecoveryStatusType.ON_STREAK },
+            lastCalculated: expect.any(Object),
+            currentStreak: 6, // 5 (original) + 1 (new) = 6
+            longestStreak: 8
+          },
+          reason: 'eligible → onStreak (recovery completed with 2 posts)'
+        });
+      });
+
+      it('should restore streak and update longestStreak if recovery creates new record', async () => {
+        const postDate = new Date('2024-01-17T14:00:00Z');
+        const testUserId = 'user-with-record-breaking-recovery';
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-13',
+            lastCalculated: Timestamp.now(),
+            status: {
+              type: RecoveryStatusType.ELIGIBLE,
+              postsRequired: 2,
+              currentPosts: 0,
+              deadline: '2024-01-17',
+              missedDate: '2024-01-15',
+              originalStreak: 10 // Restoring a 10-day streak
+            },
+            currentStreak: 0,
+            longestStreak: 8 // Current record is 8
+          }
+        });
+        
+        mockStreakUtils.countPostsOnDate.mockResolvedValue(2);
+        mockStreakUtils.formatDateString.mockReturnValue('2024-01-17');
+        
+        // Mock standard calculation
+        mockTransitionHelpers.addStreakCalculations.mockResolvedValue({
+          lastCalculated: Timestamp.now(),
+          lastContributionDate: '2024-01-17',
+          status: { type: RecoveryStatusType.ON_STREAK },
+          currentStreak: 1, // Would be wrong
+          longestStreak: 8  // Wouldn't be updated
+        });
+        
+        const result = await calculateEligibleToOnStreak(testUserId, postDate);
+        
+        // Should restore streak AND update longest streak since 11 > 8
+        expect(result?.updates).toEqual({
+          lastContributionDate: '2024-01-17',
+          status: { type: RecoveryStatusType.ON_STREAK },
+          lastCalculated: expect.any(Object),
+          currentStreak: 11, // 10 (original) + 1 (new) = 11
+          longestStreak: 11  // Updated because 11 > 8
+        });
+      });
+
+      it('should not update longestStreak if restored streak is not a new record', async () => {
+        const postDate = new Date('2024-01-17T14:00:00Z');
+        const testUserId = 'user-with-non-record-recovery';
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-13',
+            lastCalculated: Timestamp.now(),
+            status: {
+              type: RecoveryStatusType.ELIGIBLE,
+              postsRequired: 2,
+              currentPosts: 0,
+              deadline: '2024-01-17',
+              missedDate: '2024-01-15',
+              originalStreak: 5 // Restoring a 5-day streak
+            },
+            currentStreak: 0,
+            longestStreak: 10 // Current record is 10
+          }
+        });
+        
+        mockStreakUtils.countPostsOnDate.mockResolvedValue(2);
+        mockStreakUtils.formatDateString.mockReturnValue('2024-01-17');
+        
+        mockTransitionHelpers.addStreakCalculations.mockResolvedValue({
+          lastCalculated: Timestamp.now(),
+          lastContributionDate: '2024-01-17',
+          status: { type: RecoveryStatusType.ON_STREAK },
+          currentStreak: 1,
+          longestStreak: 10 // Stays the same
+        });
+        
+        const result = await calculateEligibleToOnStreak(testUserId, postDate);
+        
+        expect(result?.updates).toEqual({
+          lastContributionDate: '2024-01-17',
+          status: { type: RecoveryStatusType.ON_STREAK },
+          lastCalculated: expect.any(Object),
+          currentStreak: 6,  // 5 (original) + 1 (new) = 6
+          longestStreak: 10  // Unchanged because 6 < 10
+        });
+      });
+
+      it('should handle recovery when originalStreak is missing (backwards compatibility)', async () => {
+        const postDate = new Date('2024-01-17T14:00:00Z');
+        const testUserId = 'legacy-user-no-original-streak';
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-13',
+            lastCalculated: Timestamp.now(),
+            status: {
+              type: RecoveryStatusType.ELIGIBLE,
+              postsRequired: 2,
+              currentPosts: 0,
+              deadline: '2024-01-17',
+              missedDate: '2024-01-15'
+              // originalStreak is missing (legacy data)
+            },
+            currentStreak: 3, // Whatever the current value is
+            longestStreak: 8
+          }
+        });
+        
+        mockStreakUtils.countPostsOnDate.mockResolvedValue(2);
+        mockStreakUtils.formatDateString.mockReturnValue('2024-01-17');
+        
+        mockTransitionHelpers.addStreakCalculations.mockResolvedValue({
+          lastCalculated: Timestamp.now(),
+          lastContributionDate: '2024-01-17',
+          status: { type: RecoveryStatusType.ON_STREAK },
+          currentStreak: 1, // Standard calculation
+          longestStreak: 8
+        });
+        
+        const result = await calculateEligibleToOnStreak(testUserId, postDate);
+        
+        // Should use standard calculation when originalStreak is missing
+        expect(result?.updates.currentStreak).toBe(1); // Uses calculated value
+      });
+
+      it('should work with progress updates (not affecting streak restoration)', async () => {
+        const postDate = new Date('2024-01-17T14:00:00Z');
+        const testUserId = 'user-making-progress';
+        
+        mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+          doc: {} as any,
+          data: {
+            lastContributionDate: '2024-01-13',
+            lastCalculated: Timestamp.now(),
+            status: {
+              type: RecoveryStatusType.ELIGIBLE,
+              postsRequired: 2,
+              currentPosts: 0,
+              deadline: '2024-01-17',
+              missedDate: '2024-01-15',
+              originalStreak: 7 // Will be restored later
+            },
+            currentStreak: 0,
+            longestStreak: 10
+          }
+        });
+        
+        // User has only written 1 post (not complete recovery yet)
+        mockStreakUtils.countPostsOnDate.mockResolvedValue(1);
+        
+        const result = await calculateEligibleToOnStreak(testUserId, postDate);
+        
+        // Should return progress update, not full recovery
+        expect(result?.updates.status).toEqual({
+          type: RecoveryStatusType.ELIGIBLE,
+          postsRequired: 2,
+          currentPosts: 1, // Updated progress
+          deadline: '2024-01-17',
+          missedDate: '2024-01-15',
+          originalStreak: 7 // Preserved for future recovery
+        });
+        
+        // No streak restoration yet since recovery is not complete
+        expect(result?.reason).toBe('eligible progress updated (1/2)');
+      });
+
+      describe('Additive streak restoration (original + new)', () => {
+        it('should create new streak of 1 when user writes first post but does not complete recovery', async () => {
+          const postDate = new Date('2024-01-17T14:00:00Z');
+          const testUserId = 'user-partial-recovery-new-streak';
+          
+          mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+            doc: {} as any,
+            data: {
+              lastContributionDate: '2024-01-13',
+              lastCalculated: Timestamp.now(),
+              status: {
+                type: RecoveryStatusType.ELIGIBLE,
+                postsRequired: 2,
+                currentPosts: 0,
+                deadline: '2024-01-17',
+                missedDate: '2024-01-15',
+                originalStreak: 5 // Had 5-day streak before missing
+              },
+              currentStreak: 0,
+              longestStreak: 8
+            }
+          });
+          
+          // User writes 1 post (incomplete recovery)
+          mockStreakUtils.countPostsOnDate.mockResolvedValue(1);
+          mockStreakUtils.formatDateString.mockReturnValue('2024-01-17');
+          
+          const result = await calculateEligibleToOnStreak(testUserId, postDate);
+          
+          // Should return progress update (not complete recovery)
+          expect(result?.updates.status).toEqual({
+            type: RecoveryStatusType.ELIGIBLE,
+            postsRequired: 2,
+            currentPosts: 1,
+            deadline: '2024-01-17',
+            missedDate: '2024-01-15',
+            originalStreak: 5
+          });
+          expect(result?.reason).toContain('eligible progress updated (1/2)');
+        });
+
+        it('should add new streak (1) to original streak when user completes recovery', async () => {
+          const postDate = new Date('2024-01-17T14:00:00Z');
+          const testUserId = 'user-complete-recovery-additive-streak';
+          
+          mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+            doc: {} as any,
+            data: {
+              lastContributionDate: '2024-01-13',
+              lastCalculated: Timestamp.now(),
+              status: {
+                type: RecoveryStatusType.ELIGIBLE,
+                postsRequired: 2,
+                currentPosts: 0,
+                deadline: '2024-01-17',
+                missedDate: '2024-01-15',
+                originalStreak: 5 // Had 5-day streak before missing
+              },
+              currentStreak: 0,
+              longestStreak: 8
+            }
+          });
+          
+          // User writes 2 posts (complete recovery)
+          mockStreakUtils.countPostsOnDate.mockResolvedValue(2);
+          mockStreakUtils.formatDateString.mockReturnValue('2024-01-17');
+          
+          // Mock standard calculation
+          mockTransitionHelpers.addStreakCalculations.mockResolvedValue({
+            lastCalculated: Timestamp.now(),
+            lastContributionDate: '2024-01-17',
+            status: { type: RecoveryStatusType.ON_STREAK },
+            currentStreak: 1, // Would calculate as 1 (new streak)
+            longestStreak: 8
+          });
+          
+          const result = await calculateEligibleToOnStreak(testUserId, postDate);
+          
+          // Should restore original streak PLUS new streak: 5 + 1 = 6
+          expect(result?.updates).toEqual({
+            lastContributionDate: '2024-01-17',
+            status: { type: RecoveryStatusType.ON_STREAK },
+            lastCalculated: expect.any(Object),
+            currentStreak: 6, // 5 (original) + 1 (new) = 6
+            longestStreak: 8  // Not updated since 6 < 8
+          });
+          expect(result?.reason).toContain('eligible → onStreak (recovery completed with 2 posts)');
+        });
+
+        it('should update longestStreak when additive recovery creates new record', async () => {
+          const postDate = new Date('2024-01-17T14:00:00Z');
+          const testUserId = 'user-additive-recovery-new-record';
+          
+          mockStreakUtils.getOrCreateStreakInfo.mockResolvedValue({
+            doc: {} as any,
+            data: {
+              lastContributionDate: '2024-01-13',
+              lastCalculated: Timestamp.now(),
+              status: {
+                type: RecoveryStatusType.ELIGIBLE,
+                postsRequired: 2,
+                currentPosts: 0,
+                deadline: '2024-01-17',
+                missedDate: '2024-01-15',
+                originalStreak: 10 // Had 10-day streak before missing
+              },
+              currentStreak: 0,
+              longestStreak: 8 // Current record is 8
+            }
+          });
+          
+          // User writes 2 posts (complete recovery)
+          mockStreakUtils.countPostsOnDate.mockResolvedValue(2);
+          mockStreakUtils.formatDateString.mockReturnValue('2024-01-17');
+          
+          // Mock standard calculation
+          mockTransitionHelpers.addStreakCalculations.mockResolvedValue({
+            lastCalculated: Timestamp.now(),
+            lastContributionDate: '2024-01-17',
+            status: { type: RecoveryStatusType.ON_STREAK },
+            currentStreak: 1, // Would calculate as 1 (new streak)
+            longestStreak: 8
+          });
+          
+          const result = await calculateEligibleToOnStreak(testUserId, postDate);
+          
+          // Should restore original streak PLUS new streak: 10 + 1 = 11
+          // Should update longestStreak since 11 > 8
+          expect(result?.updates).toEqual({
+            lastContributionDate: '2024-01-17',
+            status: { type: RecoveryStatusType.ON_STREAK },
+            lastCalculated: expect.any(Object),
+            currentStreak: 11, // 10 (original) + 1 (new) = 11
+            longestStreak: 11  // Updated because 11 > 8
+          });
+          expect(result?.reason).toContain('eligible → onStreak (recovery completed with 2 posts)');
+        });
       });
     });
   });
