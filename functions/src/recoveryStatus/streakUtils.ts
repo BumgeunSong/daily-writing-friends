@@ -119,24 +119,23 @@ export async function didUserMissYesterday(userId: string, currentDate: Date): P
     return false;
   }
   
-  // yesterdayKey could be used for logging if needed
-  // const yesterdayKey = formatDateString(yesterday);
-  
   // Check if user had any postings on that working day
   const postingsRef = admin.firestore()
     .collection('users')
     .doc(userId)
     .collection('postings');
     
-  const startOfDay = new Date(yesterday);
-  startOfDay.setHours(0, 0, 0, 0);
+  // Create Seoul timezone date boundaries for yesterday
+  // Use formatDateString to get YYYY-MM-DD format, then create proper Seoul timezone boundaries
+  const yesterdayDateString = formatDateString(yesterday);
   
-  const endOfDay = new Date(yesterday);
-  endOfDay.setHours(23, 59, 59, 999);
+  // Create start and end of day in Seoul timezone
+  const startOfDaySeoul = new Date(`${yesterdayDateString}T00:00:00+09:00`);
+  const endOfDaySeoul = new Date(`${yesterdayDateString}T23:59:59.999+09:00`);
   
   const postingsSnapshot = await postingsRef
-    .where('createdAt', '>=', Timestamp.fromDate(startOfDay))
-    .where('createdAt', '<=', Timestamp.fromDate(endOfDay))
+    .where('createdAt', '>=', Timestamp.fromDate(startOfDaySeoul))
+    .where('createdAt', '<=', Timestamp.fromDate(endOfDaySeoul))
     .limit(1)
     .get();
     
@@ -147,11 +146,13 @@ export async function didUserMissYesterday(userId: string, currentDate: Date): P
  * Count posts written by user on a specific date
  */
 export async function countPostsOnDate(userId: string, date: Date): Promise<number> {
-  const startOfDay = new Date(date);
-  startOfDay.setHours(0, 0, 0, 0);
+  // Create Seoul timezone date boundaries
+  // Use formatDateString to get YYYY-MM-DD format, then create proper Seoul timezone boundaries
+  const dateString = formatDateString(date);
   
-  const endOfDay = new Date(date);
-  endOfDay.setHours(23, 59, 59, 999);
+  // Create start and end of day in Seoul timezone
+  const startOfDaySeoul = new Date(`${dateString}T00:00:00+09:00`);
+  const endOfDaySeoul = new Date(`${dateString}T23:59:59.999+09:00`);
   
   const postingsRef = admin.firestore()
     .collection('users')
@@ -159,8 +160,8 @@ export async function countPostsOnDate(userId: string, date: Date): Promise<numb
     .collection('postings');
     
   const postingsSnapshot = await postingsRef
-    .where('createdAt', '>=', Timestamp.fromDate(startOfDay))
-    .where('createdAt', '<=', Timestamp.fromDate(endOfDay))
+    .where('createdAt', '>=', Timestamp.fromDate(startOfDaySeoul))
+    .where('createdAt', '<=', Timestamp.fromDate(endOfDaySeoul))
     .get();
     
   return postingsSnapshot.size;
