@@ -19,6 +19,7 @@
   },
   "main": "lib/index.js",
   "dependencies": {
+    "date-fns-tz": "^3.2.0",
     "firebase-admin": "^12.7.0",
     "firebase-functions": "^6.4.0"
   },
