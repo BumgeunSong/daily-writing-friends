@@ -106,6 +106,18 @@ export function placeContributionInGrid(
   }
 }
 
+/**
+ * Filters contributions to only include weekdays (excludes weekends)
+ * This is used to calculate maxValue only from contributions that actually get placed in the grid
+ */
+export function filterWeekdayContributions<T extends { createdAt: any }>(contributions: T[]): T[] {
+  return contributions.filter(c => {
+    const date = new Date(c.createdAt)
+    const dayOfWeek = date.getDay()
+    return dayOfWeek !== SUNDAY && dayOfWeek !== SATURDAY // Exclude weekends
+  })
+}
+
 // Type-specific contribution processing functions
 export function processPostingContributions(contributions: Contribution[]): GridResult {
   const matrices = createEmptyMatrices()
@@ -123,11 +135,7 @@ export function processPostingContributions(contributions: Contribution[]): Grid
   })
 
   // Calculate maxValue only from contributions that actually get placed (weekdays only)
-  const weekdayContributions = recentContributions.filter(c => {
-    const date = new Date(c.createdAt)
-    const dayOfWeek = date.getDay()
-    return dayOfWeek !== 0 && dayOfWeek !== 6 // Exclude weekends
-  })
+  const weekdayContributions = filterWeekdayContributions(recentContributions)
   const maxValue = Math.max(...weekdayContributions.map((c) => c.contentLength ?? 0), 0)
 
   return {
@@ -153,11 +161,7 @@ export function processCommentingContributions(contributions: CommentingContribu
   })
 
   // Calculate maxValue only from contributions that actually get placed (weekdays only)
-  const weekdayContributions = recentContributions.filter(c => {
-    const date = new Date(c.createdAt)
-    const dayOfWeek = date.getDay()
-    return dayOfWeek !== 0 && dayOfWeek !== 6 // Exclude weekends
-  })
+  const weekdayContributions = filterWeekdayContributions(recentContributions)
   const maxValue = Math.max(...weekdayContributions.map((c) => c.countOfCommentAndReplies ?? 0), 0)
 
   return {
