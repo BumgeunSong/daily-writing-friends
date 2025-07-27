@@ -1,32 +1,68 @@
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import { cn } from '@/shared/utils/cn';
 import { ContributionItem } from '@/stats/components/ContributionItem';
 import { Contribution } from '@/stats/model/WritingStats';
 import { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
-import {
-  processPostingContributions,
-  processCommentingContributions,
-  WEEKS_TO_DISPLAY,
-} from '@/stats/utils/contributionGridUtils';
+import { WEEKS_TO_DISPLAY } from '@/stats/utils/contributionGridUtils';
+import { useContributionGridData, type ContributionType } from '@/stats/hooks/useContributionGrid';
 
-// Main component props
 export type ContributionGraphProps =
   | { type: 'posting'; contributions: Contribution[]; className?: string; userId?: string }
-  | {
-      type: 'commenting';
-      contributions: CommentingContribution[];
-      className?: string;
-    };
+  | { type: 'commenting'; contributions: CommentingContribution[]; className?: string };
 
-export function ContributionGraph(props: ContributionGraphProps) {
-  // Use useMemo to prevent unnecessary recalculations
-  const result = useMemo(() => {
-    return props.type === 'posting'
-      ? processPostingContributions(props.contributions as Contribution[])
-      : processCommentingContributions(props.contributions as CommentingContribution[]);
-  }, [props.type, props.contributions]);
+/**
+ * Renders a single week row in the contribution grid
+ */
+function ContributionGraphWeekRow({
+  row,
+  weeklyContributions,
+  maxValue,
+  rowIndex,
+}: {
+  row: (number | null)[];
+  weeklyContributions: ((Contribution | CommentingContribution) | null)[];
+  maxValue: number;
+  rowIndex: number;
+}) {
+  return (
+    <div className='flex gap-1'>
+      {row.map((value, colIndex) => {
+        const contribution = weeklyContributions[colIndex] || undefined;
+        return (
+          <ContributionItem
+            key={`${rowIndex}-${colIndex}`}
+            contribution={contribution}
+            value={value}
+            maxValue={maxValue}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
-  const { matrix, maxValue, weeklyContributions } = result;
+/**
+ * Main ContributionGraph component
+ * Displays a GitHub-style contribution grid showing activity over the past 4 weeks
+ */
+function ContributionGraphInner(props: ContributionGraphProps) {
+  const { matrix, maxValue, weeklyContributions } = useContributionGridData(
+    props.contributions,
+    props.type as ContributionType,
+  );
+
+  // Memoize the grid rendering to prevent unnecessary re-renders
+  const gridContent = useMemo(() => {
+    return matrix.map((row, rowIndex) => (
+      <ContributionGraphWeekRow
+        key={rowIndex}
+        row={row}
+        weeklyContributions={weeklyContributions[rowIndex]}
+        maxValue={maxValue}
+        rowIndex={rowIndex}
+      />
+    ));
+  }, [matrix, weeklyContributions, maxValue]);
 
   return (
     <div
@@ -35,22 +71,10 @@ export function ContributionGraph(props: ContributionGraphProps) {
         props.className,
       )}
     >
-      {matrix.map((row, rowIndex) => (
-        <div key={rowIndex} className='flex gap-1'>
-          {row.map((value, colIndex) => {
-            // Get contribution data from the weekly contributions matrix
-            const contribution = weeklyContributions[rowIndex][colIndex] || undefined;
-            return (
-              <ContributionItem
-                key={`${rowIndex}-${colIndex}`}
-                contribution={contribution}
-                value={value}
-                maxValue={maxValue}
-              />
-            );
-          })}
-        </div>
-      ))}
+      {gridContent}
     </div>
   );
 }
+
+// Export memoized component to prevent unnecessary re-renders
+export const ContributionGraph = memo(ContributionGraphInner);

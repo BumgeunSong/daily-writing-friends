@@ -167,5 +167,16 @@ export function processCommentingContributions(contributions: CommentingContribu
   }
 }
 
+/**
+ * Creates an empty grid result for when there are no contributions
+ */
+export function createEmptyGridResult(): GridResult {
+  return {
+    matrix: Array.from({ length: WEEKS_TO_DISPLAY }, () => Array(5).fill(null)),
+    weeklyContributions: Array.from({ length: WEEKS_TO_DISPLAY }, () => Array(5).fill(null)),
+    maxValue: 0
+  }
+}
+
 // Export constants for use in other files
 export { WEEKS_TO_DISPLAY }
