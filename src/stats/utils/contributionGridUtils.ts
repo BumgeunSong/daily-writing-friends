@@ -56,8 +56,8 @@ function getKoreanToday(): Date {
   const now = new Date();
   const koreaDateStr = formatDateInKoreanTimezone(now);
 
-  // Create date at midnight Korean time
-  return new Date(`${koreaDateStr}T00:00:00.000Z`);
+  // Create date at midnight Korean time (using local date parsing, not UTC)
+  return new Date(koreaDateStr);
 }
 
 export function getTimeRange(): { weeksAgo: Date; today: Date } {
@@ -151,21 +151,23 @@ export function filterWeekdayContributions<T extends { createdAt: any }>(contrib
 
 /**
  * Creates a properly typed placeholder contribution for posting
+ * Uses 0 instead of null to match the processing logic (c.contentLength ?? 0)
  */
 function createPostingPlaceholder(dateStr: string): Contribution {
   return {
     createdAt: dateStr,
-    contentLength: null
+    contentLength: 0
   };
 }
 
 /**
  * Creates a properly typed placeholder contribution for commenting
+ * Uses 0 instead of null to match the processing logic (c.countOfCommentAndReplies ?? 0)
  */
 function createCommentingPlaceholder(dateStr: string): CommentingContribution {
   return {
     createdAt: dateStr,
-    countOfCommentAndReplies: null
+    countOfCommentAndReplies: 0
   };
 }
 
@@ -181,7 +183,10 @@ export function initializeGridWithPlaceholders(
   for (let weekRow = 0; weekRow < WEEKS_TO_DISPLAY; weekRow++) {
     for (let weekdayColumn = 0; weekdayColumn < WEEKDAYS_COUNT; weekdayColumn++) {
       const date = new Date(weeksAgo);
-      date.setDate(weeksAgo.getDate() + weekRow * DAYS_PER_WEEK + weekdayColumn); // weekdayColumn 0 = Monday, 1 = Tuesday, etc.
+      // Grid layout: weekdayColumn maps to weekdays only (skipping weekends)
+      // weekdayColumn 0 = Monday, 1 = Tuesday, 2 = Wednesday, 3 = Thursday, 4 = Friday
+      // We add weekdayColumn directly since we only iterate through 0-4 for Mon-Fri
+      date.setDate(weeksAgo.getDate() + weekRow * DAYS_PER_WEEK + weekdayColumn);
       date.setHours(0, 0, 0, 0); // Normalize to start of day
 
       // Only create placeholder for dates up to today (inclusive)
