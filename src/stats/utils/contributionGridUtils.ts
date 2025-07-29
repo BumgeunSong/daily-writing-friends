@@ -24,7 +24,6 @@ export interface GridResult {
   maxValue: number;
 }
 
-// Grid calculation utilities
 export function createEmptyMatrices(): {
   matrix: ContributionMatrix;
   weeklyContributions: ContributionDataMatrix;
@@ -37,9 +36,6 @@ export function createEmptyMatrices(): {
   };
 }
 
-/**
- * Formats date as YYYY-MM-DD string in Korean timezone
- */
 function formatDateInKoreanTimezone(date: Date): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Seoul',
@@ -49,33 +45,33 @@ function formatDateInKoreanTimezone(date: Date): string {
   }).format(date);
 }
 
-/**
- * Gets the current date in Korean timezone using Intl.DateTimeFormat
- */
 function getKoreanToday(): Date {
   const now = new Date();
   const koreaDateStr = formatDateInKoreanTimezone(now);
-
-  // Create date at midnight Korean time (using local date parsing, not UTC)
   return new Date(koreaDateStr);
 }
 
-export function getTimeRange(): { weeksAgo: Date; today: Date } {
-  const today = getKoreanToday();
-
-  // Find the Monday of the current week
+function findCurrentWeekMonday(today: Date): Date {
   const todayDayOfWeek = today.getDay();
-  const daysToCurrentMonday = todayDayOfWeek === 0 ? 6 : todayDayOfWeek - 1; // Sunday=0 needs 6 days back, others dayOfWeek-1
+  const daysToCurrentMonday = todayDayOfWeek === 0 ? 6 : todayDayOfWeek - 1;
   const currentMonday = new Date(today);
   currentMonday.setDate(today.getDate() - daysToCurrentMonday);
   currentMonday.setHours(0, 0, 0, 0);
+  return currentMonday;
+}
 
-  // Go back (WEEKS_TO_DISPLAY - 1) weeks from current Monday to get the start Monday
+function calculateGridStartMonday(currentMonday: Date): Date {
   const weeksBack = WEEKS_TO_DISPLAY - 1;
   const mondayStart = new Date(currentMonday);
   mondayStart.setDate(currentMonday.getDate() - weeksBack * DAYS_PER_WEEK);
   mondayStart.setHours(0, 0, 0, 0);
+  return mondayStart;
+}
 
+export function getTimeRange(): { weeksAgo: Date; today: Date } {
+  const today = getKoreanToday();
+  const currentMonday = findCurrentWeekMonday(today);
+  const mondayStart = calculateGridStartMonday(currentMonday);
   return { weeksAgo: mondayStart, today };
 }
 
@@ -90,31 +86,58 @@ export function filterContributionsInTimeRange<T extends { createdAt: any }>(
   });
 }
 
-export function calculateGridPosition(date: Date, weeksAgo: Date): GridPosition | null {
-  const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
+function isWeekendDay(dayOfWeek: number): boolean {
+  return dayOfWeek === SUNDAY || dayOfWeek === SATURDAY;
+}
 
-  // Skip weekends
-  if (dayOfWeek === SUNDAY || dayOfWeek === SATURDAY) {
-    return null;
-  }
+function convertToWeekdayColumn(dayOfWeek: number): number {
+  return dayOfWeek - 1;
+}
 
-  // Convert to Monday=0, Tuesday=1, Wednesday=2, Thursday=3, Friday=4
-  const weekdayColumn = dayOfWeek - 1;
+function calculateDaysDifferenceFromStart(date: Date, startDate: Date): number {
+  return Math.floor((date.getTime() - startDate.getTime()) / MILLISECONDS_PER_DAY);
+}
 
-  const daysDifference = Math.floor((date.getTime() - weeksAgo.getTime()) / MILLISECONDS_PER_DAY);
-  const weekRow = Math.floor(daysDifference / DAYS_PER_WEEK);
-
-  // Ensure within bounds
-  if (
+function isPositionWithinGridBounds(weekRow: number, weekdayColumn: number): boolean {
+  return (
     weekRow >= 0 &&
     weekRow < WEEKS_TO_DISPLAY &&
     weekdayColumn >= 0 &&
     weekdayColumn < WEEKDAYS_COUNT
-  ) {
+  );
+}
+
+export function calculateGridPosition(date: Date, weeksAgo: Date): GridPosition | null {
+  const dayOfWeek = date.getDay();
+
+  if (isWeekendDay(dayOfWeek)) {
+    return null;
+  }
+
+  const weekdayColumn = convertToWeekdayColumn(dayOfWeek);
+  const daysDifference = calculateDaysDifferenceFromStart(date, weeksAgo);
+  const weekRow = Math.floor(daysDifference / DAYS_PER_WEEK);
+
+  if (isPositionWithinGridBounds(weekRow, weekdayColumn)) {
     return { weekRow, weekdayColumn };
   }
 
   return null;
+}
+
+function normalizeToMidnight(date: Date): void {
+  date.setHours(0, 0, 0, 0);
+}
+
+function updateMatricesAtPosition(
+  matrices: { matrix: ContributionMatrix; weeklyContributions: ContributionDataMatrix },
+  position: GridPosition,
+  contribution: ContributionData,
+  value: number
+): void {
+  const { weekRow, weekdayColumn } = position;
+  matrices.matrix[weekRow][weekdayColumn] = value;
+  matrices.weeklyContributions[weekRow][weekdayColumn] = contribution;
 }
 
 export function placeContributionInGrid(
@@ -124,56 +147,59 @@ export function placeContributionInGrid(
   weeksAgo: Date,
 ): void {
   const date = new Date(contribution.createdAt);
-  // Normalize to start of day for consistent calculations
-  date.setHours(0, 0, 0, 0);
+  normalizeToMidnight(date);
 
   const position = calculateGridPosition(date, weeksAgo);
 
   if (position) {
-    const { weekRow, weekdayColumn } = position;
     const value = getValue(contribution);
-    matrices.matrix[weekRow][weekdayColumn] = value;
-    matrices.weeklyContributions[weekRow][weekdayColumn] = contribution;
+    updateMatricesAtPosition(matrices, position, contribution, value);
   }
 }
 
-/**
- * Filters contributions to only include weekdays (excludes weekends)
- * This is used to calculate maxValue only from contributions that actually get placed in the grid
- */
-export function filterWeekdayContributions<T extends { createdAt: any }>(contributions: T[]): T[] {
-  return contributions.filter((c) => {
-    const date = new Date(c.createdAt);
-    const dayOfWeek = date.getDay();
-    return dayOfWeek !== SUNDAY && dayOfWeek !== SATURDAY; // Exclude weekends
-  });
+function isWeekdayContribution<T extends { createdAt: any }>(contribution: T): boolean {
+  const date = new Date(contribution.createdAt);
+  const dayOfWeek = date.getDay();
+  return !isWeekendDay(dayOfWeek);
 }
 
-/**
- * Creates a properly typed placeholder contribution for posting
- * Uses 0 instead of null to match the processing logic (c.contentLength ?? 0)
- */
-function createPostingPlaceholder(dateStr: string): Contribution {
+export function filterWeekdayContributions<T extends { createdAt: any }>(contributions: T[]): T[] {
+  return contributions.filter(isWeekdayContribution);
+}
+
+function createPostingPlaceholderWithZeroContent(dateStr: string): Contribution {
   return {
     createdAt: dateStr,
     contentLength: 0
   };
 }
 
-/**
- * Creates a properly typed placeholder contribution for commenting
- * Uses 0 instead of null to match the processing logic (c.countOfCommentAndReplies ?? 0)
- */
-function createCommentingPlaceholder(dateStr: string): CommentingContribution {
+function createCommentingPlaceholderWithZeroCount(dateStr: string): CommentingContribution {
   return {
     createdAt: dateStr,
     countOfCommentAndReplies: 0
   };
 }
 
-/**
- * Pure function to initialize grid with placeholder objects for dates up to today
- */  
+function calculateGridPositionDate(weeksAgo: Date, weekRow: number, weekdayColumn: number): Date {
+  const date = new Date(weeksAgo);
+  date.setDate(weeksAgo.getDate() + weekRow * DAYS_PER_WEEK + weekdayColumn);
+  normalizeToMidnight(date);
+  return date;
+}
+
+function isDateWithinTodayInclusive(date: Date, today: Date): boolean {
+  const dateStr = formatDateInKoreanTimezone(date);
+  const todayStr = formatDateInKoreanTimezone(today);
+  return dateStr <= todayStr;
+}
+
+function createPlaceholderByType(contributionType: 'posting' | 'commenting', dateStr: string): ContributionData {
+  return contributionType === 'posting' 
+    ? createPostingPlaceholderWithZeroContent(dateStr)
+    : createCommentingPlaceholderWithZeroCount(dateStr);
+}
+
 export function initializeGridWithPlaceholders(
   matrices: { matrix: ContributionMatrix; weeklyContributions: ContributionDataMatrix },
   weeksAgo: Date,
@@ -182,34 +208,36 @@ export function initializeGridWithPlaceholders(
 ): void {
   for (let weekRow = 0; weekRow < WEEKS_TO_DISPLAY; weekRow++) {
     for (let weekdayColumn = 0; weekdayColumn < WEEKDAYS_COUNT; weekdayColumn++) {
-      const date = new Date(weeksAgo);
-      // Grid layout: weekdayColumn maps to weekdays only (skipping weekends)
-      // weekdayColumn 0 = Monday, 1 = Tuesday, 2 = Wednesday, 3 = Thursday, 4 = Friday
-      // We add weekdayColumn directly since we only iterate through 0-4 for Mon-Fri
-      date.setDate(weeksAgo.getDate() + weekRow * DAYS_PER_WEEK + weekdayColumn);
-      date.setHours(0, 0, 0, 0); // Normalize to start of day
-
-      // Only create placeholder for dates up to today (inclusive)
-      // Use Intl.DateTimeFormat for consistent timezone handling
-      const dateStr = formatDateInKoreanTimezone(date);
-      const todayStr = formatDateInKoreanTimezone(today);
-
-      if (dateStr <= todayStr) {
-        const dayOfWeek = date.getDay();
-        if (dayOfWeek !== SUNDAY && dayOfWeek !== SATURDAY) {
-          const placeholder = contributionType === 'posting' 
-            ? createPostingPlaceholder(dateStr)
-            : createCommentingPlaceholder(dateStr);
-          matrices.weeklyContributions[weekRow][weekdayColumn] = placeholder;
-        }
+      const date = calculateGridPositionDate(weeksAgo, weekRow, weekdayColumn);
+      
+      if (isDateWithinTodayInclusive(date, today)) {
+        const dateStr = formatDateInKoreanTimezone(date);
+        const placeholder = createPlaceholderByType(contributionType, dateStr);
+        matrices.weeklyContributions[weekRow][weekdayColumn] = placeholder;
       }
     }
   }
 }
 
-/**
- * Pure function to process contributions and place them in the grid
- */
+function placeAllContributionsInGrid<T extends ContributionData>(
+  contributions: T[],
+  matrices: { matrix: ContributionMatrix; weeklyContributions: ContributionDataMatrix },
+  weeksAgo: Date,
+  getValue: (contribution: T) => number
+): void {
+  contributions.forEach((contribution) => {
+    placeContributionInGrid(contribution, (c) => getValue(c as T), matrices, weeksAgo);
+  });
+}
+
+function calculateMaxValueFromWeekdayContributions<T extends ContributionData>(
+  contributions: T[],
+  getValue: (contribution: T) => number
+): number {
+  const weekdayContributions = filterWeekdayContributions(contributions);
+  return Math.max(...weekdayContributions.map(getValue), 0);
+}
+
 export function processContributionsInGrid<T extends ContributionData>(
   contributions: T[],
   matrices: { matrix: ContributionMatrix; weeklyContributions: ContributionDataMatrix },
@@ -217,36 +245,27 @@ export function processContributionsInGrid<T extends ContributionData>(
   today: Date,
   getValue: (contribution: T) => number,
 ): { processedContributions: T[]; maxValue: number } {
-  // Filter contributions within time range
   const recentContributions = filterContributionsInTimeRange(contributions, weeksAgo, today);
-
-  // Place actual contributions, overwriting placeholders
-  recentContributions.forEach((contribution) => {
-    placeContributionInGrid(contribution, (c) => getValue(c as T), matrices, weeksAgo);
-  });
-
-  // Calculate maxValue only from contributions that actually get placed (weekdays only)
-  const weekdayContributions = filterWeekdayContributions(recentContributions);
-  const maxValue = Math.max(...weekdayContributions.map(getValue), 0);
-
+  placeAllContributionsInGrid(recentContributions, matrices, weeksAgo, getValue);
+  const maxValue = calculateMaxValueFromWeekdayContributions(recentContributions, getValue);
   return { processedContributions: recentContributions, maxValue };
 }
 
-// Type-specific contribution processing functions
+function extractContentLengthValue(contribution: Contribution): number {
+  return contribution.contentLength ?? 0;
+}
+
 export function processPostingContributions(contributions: Contribution[]): GridResult {
   const matrices = createEmptyMatrices();
   const { weeksAgo, today } = getTimeRange();
 
-  // Initialize grid with posting-specific placeholders
   initializeGridWithPlaceholders(matrices, weeksAgo, today, 'posting');
-
-  // Process contributions and calculate maxValue
   const { maxValue } = processContributionsInGrid(
     contributions,
     matrices,
     weeksAgo,
     today,
-    (c) => c.contentLength ?? 0,
+    extractContentLengthValue,
   );
 
   return {
@@ -254,6 +273,10 @@ export function processPostingContributions(contributions: Contribution[]): Grid
     weeklyContributions: matrices.weeklyContributions,
     maxValue,
   };
+}
+
+function extractCommentAndRepliesCount(contribution: CommentingContribution): number {
+  return contribution.countOfCommentAndReplies ?? 0;
 }
 
 export function processCommentingContributions(
@@ -262,16 +285,13 @@ export function processCommentingContributions(
   const matrices = createEmptyMatrices();
   const { weeksAgo, today } = getTimeRange();
 
-  // Initialize grid with commenting-specific placeholders
   initializeGridWithPlaceholders(matrices, weeksAgo, today, 'commenting');
-
-  // Process contributions and calculate maxValue
   const { maxValue } = processContributionsInGrid(
     contributions,
     matrices,
     weeksAgo,
     today,
-    (c) => c.countOfCommentAndReplies ?? 0,
+    extractCommentAndRepliesCount,
   );
 
   return {
@@ -281,9 +301,6 @@ export function processCommentingContributions(
   };
 }
 
-/**
- * Creates an empty grid result for when there are no contributions
- */
 export function createEmptyGridResult(): GridResult {
   return {
     matrix: Array.from({ length: WEEKS_TO_DISPLAY }, () => Array(5).fill(null)),
