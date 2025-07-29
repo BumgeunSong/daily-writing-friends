@@ -150,13 +150,33 @@ export function filterWeekdayContributions<T extends { createdAt: any }>(contrib
 }
 
 /**
- * Pure function to initialize grid with placeholder objects for dates up to today
+ * Creates a properly typed placeholder contribution for posting
  */
-export function initializeGridWithPlaceholders<T extends ContributionData>(
+function createPostingPlaceholder(dateStr: string): Contribution {
+  return {
+    createdAt: dateStr,
+    contentLength: null
+  };
+}
+
+/**
+ * Creates a properly typed placeholder contribution for commenting
+ */
+function createCommentingPlaceholder(dateStr: string): CommentingContribution {
+  return {
+    createdAt: dateStr,
+    countOfCommentAndReplies: null
+  };
+}
+
+/**
+ * Pure function to initialize grid with placeholder objects for dates up to today
+ */  
+export function initializeGridWithPlaceholders(
   matrices: { matrix: ContributionMatrix; weeklyContributions: ContributionDataMatrix },
   weeksAgo: Date,
   today: Date,
-  createPlaceholder: (dateStr: string) => T,
+  contributionType: 'posting' | 'commenting',
 ): void {
   for (let weekRow = 0; weekRow < WEEKS_TO_DISPLAY; weekRow++) {
     for (let weekdayColumn = 0; weekdayColumn < WEEKDAYS_COUNT; weekdayColumn++) {
@@ -172,7 +192,10 @@ export function initializeGridWithPlaceholders<T extends ContributionData>(
       if (dateStr <= todayStr) {
         const dayOfWeek = date.getDay();
         if (dayOfWeek !== SUNDAY && dayOfWeek !== SATURDAY) {
-          matrices.weeklyContributions[weekRow][weekdayColumn] = createPlaceholder(dateStr);
+          const placeholder = contributionType === 'posting' 
+            ? createPostingPlaceholder(dateStr)
+            : createCommentingPlaceholder(dateStr);
+          matrices.weeklyContributions[weekRow][weekdayColumn] = placeholder;
         }
       }
     }
@@ -210,12 +233,7 @@ export function processPostingContributions(contributions: Contribution[]): Grid
   const { weeksAgo, today } = getTimeRange();
 
   // Initialize grid with posting-specific placeholders
-  initializeGridWithPlaceholders(
-    matrices,
-    weeksAgo,
-    today,
-    (dateStr) => ({ createdAt: dateStr, contentLength: null }) as Contribution,
-  );
+  initializeGridWithPlaceholders(matrices, weeksAgo, today, 'posting');
 
   // Process contributions and calculate maxValue
   const { maxValue } = processContributionsInGrid(
@@ -240,12 +258,7 @@ export function processCommentingContributions(
   const { weeksAgo, today } = getTimeRange();
 
   // Initialize grid with commenting-specific placeholders
-  initializeGridWithPlaceholders(
-    matrices,
-    weeksAgo,
-    today,
-    (dateStr) => ({ createdAt: dateStr, countOfCommentAndReplies: null }) as CommentingContribution,
-  );
+  initializeGridWithPlaceholders(matrices, weeksAgo, today, 'commenting');
 
   // Process contributions and calculate maxValue
   const { maxValue } = processContributionsInGrid(
