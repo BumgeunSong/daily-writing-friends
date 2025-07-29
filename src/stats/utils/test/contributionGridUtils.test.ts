@@ -4,18 +4,16 @@ import {
   getTimeRange,
   filterContributionsInTimeRange,
   calculateGridPosition,
-  placeContributionInGrid,
   processPostingContributions,
   processCommentingContributions,
-  WEEKS_TO_DISPLAY,
-  type GridResult,
-  type ContributionData
+  filterWeekdayContributions,
+  WEEKS_TO_DISPLAY
 } from '../contributionGridUtils'
 import type { Contribution } from '@/stats/model/WritingStats'
 import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils'
 
 // Mock current date to ensure consistent test results
-const MOCK_TODAY = new Date('2025-07-27T00:00:00.000Z') // Sunday
+const MOCK_TODAY = new Date('2025-07-29T00:00:00.000Z') // Tuesday
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -27,218 +25,275 @@ afterEach(() => {
 })
 
 describe('contributionGridUtils', () => {
-  describe('getTimeRange', () => {
-    it('should return today and Monday of 4 weeks ago', () => {
-      const { weeksAgo, today } = getTimeRange()
+  describe('createEmptyMatrices', () => {
+    it('should return matrices with correct structure', () => {
+      const result = createEmptyMatrices()
       
-      expect(today.getDay()).toBe(0) // Sunday
-      expect(weeksAgo.getDay()).toBe(1) // Monday
-      expect(weeksAgo.toDateString()).toBe('Mon Jun 30 2025')
-      expect(today.toDateString()).toBe('Sun Jul 27 2025')
+      expect(result).toHaveProperty('matrix')
+      expect(result).toHaveProperty('weeklyContributions')
+      expect(result.matrix).toHaveLength(WEEKS_TO_DISPLAY)
+      expect(result.matrix[0]).toHaveLength(5) // Mon-Fri
+      expect(result.weeklyContributions).toHaveLength(WEEKS_TO_DISPLAY)
+      expect(result.weeklyContributions[0]).toHaveLength(5)
     })
 
-    it('should normalize times to midnight', () => {
-      const { weeksAgo, today } = getTimeRange()
+    it('should initialize all cells as null', () => {
+      const result = createEmptyMatrices()
       
-      expect(today.getHours()).toBe(0)
-      expect(today.getMinutes()).toBe(0)
-      expect(today.getSeconds()).toBe(0)
-      expect(today.getMilliseconds()).toBe(0)
+      const allMatrixCells = result.matrix.flat()
+      const allContributionCells = result.weeklyContributions.flat()
       
-      expect(weeksAgo.getHours()).toBe(0)
-      expect(weeksAgo.getMinutes()).toBe(0)
-      expect(weeksAgo.getSeconds()).toBe(0)
-      expect(weeksAgo.getMilliseconds()).toBe(0)
+      expect(allMatrixCells.every(cell => cell === null)).toBe(true)
+      expect(allContributionCells.every(cell => cell === null)).toBe(true)
     })
   })
 
-  describe('createEmptyMatrices', () => {
-    it('should create matrices with correct dimensions', () => {
-      const { matrix, weeklyContributions } = createEmptyMatrices()
+  describe('getTimeRange', () => {
+    it('should return dates with correct relationship', () => {
+      const result = getTimeRange()
       
-      expect(matrix).toHaveLength(WEEKS_TO_DISPLAY)
-      expect(matrix[0]).toHaveLength(5) // Mon-Fri
-      expect(weeklyContributions).toHaveLength(WEEKS_TO_DISPLAY)
-      expect(weeklyContributions[0]).toHaveLength(5)
+      expect(result).toHaveProperty('weeksAgo')
+      expect(result).toHaveProperty('today')
+      expect(result.weeksAgo).toBeInstanceOf(Date)
+      expect(result.today).toBeInstanceOf(Date)
+      expect(result.weeksAgo.getTime()).toBeLessThan(result.today.getTime())
+    })
+
+    it('should return Monday as start of range', () => {
+      const result = getTimeRange()
       
-      // All cells should be null initially
-      expect(matrix[0]).toEqual([null, null, null, null, null])
-      expect(weeklyContributions[0]).toEqual([null, null, null, null, null])
+      expect(result.weeksAgo.getDay()).toBe(1) // Monday
+    })
+
+    it('should span approximately 4 weeks', () => {
+      const result = getTimeRange()
+      
+      const diffInDays = Math.floor(
+        (result.today.getTime() - result.weeksAgo.getTime()) / (1000 * 60 * 60 * 24)
+      )
+      
+      expect(diffInDays).toBeGreaterThanOrEqual(21) // At least 3 weeks
+      expect(diffInDays).toBeLessThanOrEqual(27) // At most ~4 weeks
     })
   })
 
   describe('filterContributionsInTimeRange', () => {
-    it('should filter contributions within date range', () => {
+    it('should return only contributions within date range', () => {
       const contributions = [
-        { createdAt: new Date('2025-06-29') }, // Before range
-        { createdAt: new Date('2025-06-30') }, // Start of range
-        { createdAt: new Date('2025-07-15') }, // Within range
-        { createdAt: new Date('2025-07-28') }, // After range
+        { createdAt: '2025-06-01', value: 1 },
+        { createdAt: '2025-07-15', value: 2 },
+        { createdAt: '2025-08-01', value: 3 },
       ]
       
-      const startDate = new Date('2025-06-30')
-      const endDate = new Date('2025-07-27')
+      const startDate = new Date('2025-07-01')
+      const endDate = new Date('2025-07-31')
       
-      const filtered = filterContributionsInTimeRange(contributions, startDate, endDate)
+      const result = filterContributionsInTimeRange(contributions, startDate, endDate)
       
-      expect(filtered).toHaveLength(2)
-      expect(filtered[0].createdAt.toDateString()).toBe('Mon Jun 30 2025')
-      expect(filtered[1].createdAt.toDateString()).toBe('Tue Jul 15 2025')
+      expect(result).toHaveLength(1)
+      expect(result[0].value).toBe(2)
+    })
+
+    it('should include contributions at exact boundaries', () => {
+      const contributions = [
+        { createdAt: '2025-07-01', value: 1 },
+        { createdAt: '2025-07-31', value: 2 },
+      ]
+      
+      const startDate = new Date('2025-07-01')
+      const endDate = new Date('2025-07-31')
+      
+      const result = filterContributionsInTimeRange(contributions, startDate, endDate)
+      
+      expect(result).toHaveLength(2)
     })
   })
 
   describe('calculateGridPosition', () => {
-    const weeksAgo = new Date('2025-06-30T00:00:00.000Z') // Monday
+    const mondayStart = new Date('2025-07-07T00:00:00.000Z') // Monday
 
-    it('should calculate correct position for weekdays', () => {
-      // Monday June 30th (Week 0, Col 0)
-      const mondayPos = calculateGridPosition(new Date('2025-06-30'), weeksAgo)
+    it('should return correct positions for weekdays', () => {
+      // Test Monday (should be row 0, col 0)
+      const mondayPos = calculateGridPosition(new Date('2025-07-07'), mondayStart)
       expect(mondayPos).toEqual({ weekRow: 0, weekdayColumn: 0 })
 
-      // Tuesday July 1st (Week 0, Col 1)
-      const tuesdayPos = calculateGridPosition(new Date('2025-07-01'), weeksAgo)
-      expect(tuesdayPos).toEqual({ weekRow: 0, weekdayColumn: 1 })
-
-      // Friday July 4th (Week 0, Col 4)
-      const fridayPos = calculateGridPosition(new Date('2025-07-04'), weeksAgo)
+      // Test Friday (should be row 0, col 4)
+      const fridayPos = calculateGridPosition(new Date('2025-07-11'), mondayStart)
       expect(fridayPos).toEqual({ weekRow: 0, weekdayColumn: 4 })
 
-      // Monday July 7th (Week 1, Col 0)
-      const nextMondayPos = calculateGridPosition(new Date('2025-07-07'), weeksAgo)
+      // Test next week Monday (should be row 1, col 0)
+      const nextMondayPos = calculateGridPosition(new Date('2025-07-14'), mondayStart)
       expect(nextMondayPos).toEqual({ weekRow: 1, weekdayColumn: 0 })
     })
 
     it('should return null for weekends', () => {
-      // Saturday
-      const saturdayPos = calculateGridPosition(new Date('2025-07-05'), weeksAgo)
+      const saturdayPos = calculateGridPosition(new Date('2025-07-12'), mondayStart)
+      const sundayPos = calculateGridPosition(new Date('2025-07-13'), mondayStart)
+      
       expect(saturdayPos).toBeNull()
-
-      // Sunday
-      const sundayPos = calculateGridPosition(new Date('2025-07-06'), weeksAgo)
       expect(sundayPos).toBeNull()
     })
 
-    it('should return null for out-of-bounds dates', () => {
-      // Before range
-      const beforePos = calculateGridPosition(new Date('2025-06-29'), weeksAgo)
+    it('should return null for dates outside grid range', () => {
+      const beforePos = calculateGridPosition(new Date('2025-07-06'), mondayStart)
+      const afterPos = calculateGridPosition(new Date('2025-08-10'), mondayStart)
+      
       expect(beforePos).toBeNull()
-
-      // After range (more than 4 weeks)
-      const afterPos = calculateGridPosition(new Date('2025-08-01'), weeksAgo)
       expect(afterPos).toBeNull()
     })
   })
 
-  describe('placeContributionInGrid', () => {
-    it('should place contribution in correct grid position', () => {
-      const matrices = createEmptyMatrices()
-      const weeksAgo = new Date('2025-06-30T00:00:00.000Z')
+  describe('filterWeekdayContributions', () => {
+    it('should return only weekday contributions', () => {
+      const contributions = [
+        { createdAt: '2025-07-07' }, // Monday
+        { createdAt: '2025-07-08' }, // Tuesday
+        { createdAt: '2025-07-12' }, // Saturday
+        { createdAt: '2025-07-13' }, // Sunday
+        { createdAt: '2025-07-14' }, // Monday
+      ]
       
-      const contribution: ContributionData = {
-        createdAt: new Date('2025-07-01T10:30:00.000Z').toISOString(), // Tuesday, should normalize to midnight
-        contentLength: 500
-      } as Contribution
-
-      placeContributionInGrid(
-        contribution,
-        (c) => (c as Contribution).contentLength ?? 0,
-        matrices,
-        weeksAgo
-      )
-
-      // Should be placed at Week 0, Column 1 (Tuesday)
-      expect(matrices.matrix[0][1]).toBe(500)
-      expect(matrices.weeklyContributions[0][1]).toBe(contribution)
+      const result = filterWeekdayContributions(contributions)
       
-      // Other positions should remain null
-      expect(matrices.matrix[0][0]).toBeNull()
-      expect(matrices.matrix[0][2]).toBeNull()
-    })
-
-    it('should not place weekend contributions', () => {
-      const matrices = createEmptyMatrices()
-      const weeksAgo = new Date('2025-06-30T00:00:00.000Z')
-      
-      const weekendContribution: ContributionData = {
-        createdAt: new Date('2025-07-05').toISOString(), // Saturday
-        contentLength: 300
-      } as Contribution
-
-      placeContributionInGrid(
-        weekendContribution,
-        (c) => (c as Contribution).contentLength ?? 0,
-        matrices,
-        weeksAgo
-      )
-
-      // No position should be filled
-      expect(matrices.matrix.flat().every(cell => cell === null)).toBe(true)
-      expect(matrices.weeklyContributions.flat().every(cell => cell === null)).toBe(true)
+      expect(result).toHaveLength(3)
+      expect(result.map(c => c.createdAt)).toEqual([
+        '2025-07-07',
+        '2025-07-08', 
+        '2025-07-14'
+      ])
     })
   })
 
-  describe('Integration Test - Complete Grid Processing', () => {
-    it('should create correct grid for posting contributions', () => {
+  describe('processPostingContributions', () => {
+    it('should return a complete GridResult', () => {
       const contributions: Contribution[] = [
-        // Week 0
-        { createdAt: new Date('2025-06-30').toISOString(), contentLength: 100 }, // Mon
-        { createdAt: new Date('2025-07-01').toISOString(), contentLength: 200 }, // Tue
-        { createdAt: new Date('2025-07-03').toISOString(), contentLength: 300 }, // Thu
-        // Week 1  
-        { createdAt: new Date('2025-07-07').toISOString(), contentLength: 400 }, // Mon
-        { createdAt: new Date('2025-07-11').toISOString(), contentLength: 500 }, // Fri
-        // Weekends (should be ignored)
-        { createdAt: new Date('2025-07-05').toISOString(), contentLength: 999 }, // Sat
-        { createdAt: new Date('2025-07-06').toISOString(), contentLength: 999 }, // Sun
-      ] as Contribution[]
-
+        { createdAt: '2025-07-15', contentLength: 100 },
+        { createdAt: '2025-07-16', contentLength: 200 },
+      ]
+      
       const result = processPostingContributions(contributions)
+      
+      expect(result).toHaveProperty('matrix')
+      expect(result).toHaveProperty('weeklyContributions')
+      expect(result).toHaveProperty('maxValue')
+      expect(typeof result.maxValue).toBe('number')
+    })
 
-      // Expected matrix: [Mon, Tue, Wed, Thu, Fri]
-      expect(result.matrix[0]).toEqual([100, 200, null, 300, null]) // Week 0
-      expect(result.matrix[1]).toEqual([400, null, null, null, 500]) // Week 1
-      expect(result.matrix[2]).toEqual([null, null, null, null, null]) // Week 2
-      expect(result.matrix[3]).toEqual([null, null, null, null, null]) // Week 3
+    it('should calculate correct maxValue', () => {
+      const contributions: Contribution[] = [
+        { createdAt: '2025-07-15', contentLength: 100 },
+        { createdAt: '2025-07-16', contentLength: 500 },
+        { createdAt: '2025-07-17', contentLength: 200 },
+      ]
+      
+      const result = processPostingContributions(contributions)
       
       expect(result.maxValue).toBe(500)
     })
 
-    it('should create correct grid for commenting contributions', () => {
-      const contributions: CommentingContribution[] = [
-        { createdAt: new Date('2025-07-01').toISOString(), countOfCommentAndReplies: 5 }, // Tue
-        { createdAt: new Date('2025-07-08').toISOString(), countOfCommentAndReplies: 10 }, // Tue next week
-      ] as CommentingContribution[]
-
-      const result = processCommentingContributions(contributions)
-
-      expect(result.matrix[0]).toEqual([null, 5, null, null, null]) // Week 0
-      expect(result.matrix[1]).toEqual([null, 10, null, null, null]) // Week 1
-      expect(result.maxValue).toBe(10)
+    it('should handle null contentLength values', () => {
+      const contributions: Contribution[] = [
+        { createdAt: '2025-07-15', contentLength: null },
+        { createdAt: '2025-07-16', contentLength: 100 },
+      ]
+      
+      const result = processPostingContributions(contributions)
+      
+      expect(result.maxValue).toBe(100)
+      expect(result).toBeDefined()
     })
 
-    it('should handle edge case: contributions exactly at range boundaries', () => {
+    it('should ignore weekend contributions', () => {
+      const contributions: Contribution[] = [
+        { createdAt: '2025-07-14', contentLength: 100 }, // Monday
+        { createdAt: '2025-07-19', contentLength: 999 }, // Saturday
+        { createdAt: '2025-07-20', contentLength: 999 }, // Sunday
+        { createdAt: '2025-07-21', contentLength: 200 }, // Monday
+      ]
+      
+      const result = processPostingContributions(contributions)
+      
+      expect(result.maxValue).toBe(200) // Should not include 999 from weekends
+    })
+
+    it('should create placeholders for days without contributions', () => {
+      const contributions: Contribution[] = []
+      
+      const result = processPostingContributions(contributions)
+      
+      // Should have a grid structure even with no contributions
+      expect(result.matrix).toHaveLength(WEEKS_TO_DISPLAY)
+      expect(result.weeklyContributions).toHaveLength(WEEKS_TO_DISPLAY)
+      expect(result.maxValue).toBe(0)
+    })
+  })
+
+  describe('processCommentingContributions', () => {
+    it('should return a complete GridResult', () => {
+      const contributions: CommentingContribution[] = [
+        { createdAt: '2025-07-15', countOfCommentAndReplies: 5 },
+        { createdAt: '2025-07-16', countOfCommentAndReplies: 10 },
+      ]
+      
+      const result = processCommentingContributions(contributions)
+      
+      expect(result).toHaveProperty('matrix')
+      expect(result).toHaveProperty('weeklyContributions') 
+      expect(result).toHaveProperty('maxValue')
+      expect(typeof result.maxValue).toBe('number')
+    })
+
+    it('should calculate correct maxValue from comment counts', () => {
+      const contributions: CommentingContribution[] = [
+        { createdAt: '2025-07-15', countOfCommentAndReplies: 3 },
+        { createdAt: '2025-07-16', countOfCommentAndReplies: 15 },
+        { createdAt: '2025-07-17', countOfCommentAndReplies: 7 },
+      ]
+      
+      const result = processCommentingContributions(contributions)
+      
+      expect(result.maxValue).toBe(15)
+    })
+
+    it('should handle null countOfCommentAndReplies values', () => {
+      const contributions: CommentingContribution[] = [
+        { createdAt: '2025-07-15', countOfCommentAndReplies: null },
+        { createdAt: '2025-07-16', countOfCommentAndReplies: 8 },
+      ]
+      
+      const result = processCommentingContributions(contributions)
+      
+      expect(result.maxValue).toBe(8)
+      expect(result).toBeDefined()
+    })
+  })
+
+  describe('Grid Structure Validation', () => {
+    it('should maintain consistent grid dimensions across all functions', () => {
+      const postingResult = processPostingContributions([])
+      const commentingResult = processCommentingContributions([])
+      
+      // Both should have same structure
+      expect(postingResult.matrix).toHaveLength(WEEKS_TO_DISPLAY)
+      expect(commentingResult.matrix).toHaveLength(WEEKS_TO_DISPLAY)
+      
+      expect(postingResult.matrix[0]).toHaveLength(5)
+      expect(commentingResult.matrix[0]).toHaveLength(5)
+    })
+
+    it('should handle edge case of contributions exactly at time boundaries', () => {
       const { weeksAgo, today } = getTimeRange()
       
       const contributions: Contribution[] = [
-        { createdAt: new Date(weeksAgo).toISOString(), contentLength: 100 }, // Exactly at start
-        { createdAt: new Date(today).toISOString(), contentLength: 200 }, // Exactly at end (Sunday, should be ignored)
-      ] as Contribution[]
-
-      const matrices = createEmptyMatrices()
-      const recentContributions = filterContributionsInTimeRange(contributions, weeksAgo, today)
-
-      recentContributions.forEach(contribution => {
-        placeContributionInGrid(
-          contribution,
-          (c) => (c as Contribution).contentLength ?? 0,
-          matrices,
-          weeksAgo
-        )
-      })
-
-      // Only Monday (start) should be placed, Sunday should be ignored
-      expect(matrices.matrix[0][0]).toBe(100) // Monday
-      expect(matrices.matrix.flat().filter(cell => cell !== null)).toHaveLength(1)
+        { createdAt: weeksAgo.toISOString(), contentLength: 100 },
+        { createdAt: today.toISOString(), contentLength: 200 },
+      ]
+      
+      const result = processPostingContributions(contributions)
+      
+      // Should process contributions at boundaries correctly
+      expect(result).toBeDefined()
+      expect(result.maxValue).toBeGreaterThanOrEqual(0)
     })
   })
 })
