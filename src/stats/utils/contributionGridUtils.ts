@@ -32,26 +32,29 @@ export function createEmptyMatrices(): { matrix: ContributionMatrix; weeklyContr
   }
 }
 
+
 export function getTimeRange(): { weeksAgo: Date; today: Date } {
-  // Normalize today to start of day (00:00:00)
+  // Use Korean timezone to get the correct date
   const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const koreaOffset = 9 * 60 // Korea is UTC+9
+  const localOffset = today.getTimezoneOffset()
+  const koreaTime = new Date(today.getTime() + (koreaOffset + localOffset) * 60 * 1000)
+  koreaTime.setHours(0, 0, 0, 0)
   
-  // Calculate the Monday of the week that's WEEKS_TO_DISPLAY weeks ago
-  const daysAgo = WEEKS_TO_DISPLAY * DAYS_PER_WEEK - 1
-  const startDate = new Date(today)
-  startDate.setDate(today.getDate() - daysAgo)
+  // Find the Monday of the current week
+  const todayDayOfWeek = koreaTime.getDay()
+  const daysToCurrentMonday = todayDayOfWeek === 0 ? 6 : todayDayOfWeek - 1  // Sunday=0 needs 6 days back, others dayOfWeek-1
+  const currentMonday = new Date(koreaTime)
+  currentMonday.setDate(koreaTime.getDate() - daysToCurrentMonday)
+  currentMonday.setHours(0, 0, 0, 0)
   
-  // Find the Monday of that week
-  const dayOfWeek = startDate.getDay()
-  const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1  // Sunday=0 needs 6 days back, others dayOfWeek-1
-  const mondayStart = new Date(startDate)
-  mondayStart.setDate(startDate.getDate() - daysToMonday)
-  
-  // Normalize to start of day (00:00:00)
+  // Go back (WEEKS_TO_DISPLAY - 1) weeks from current Monday to get the start Monday
+  const weeksBack = WEEKS_TO_DISPLAY - 1
+  const mondayStart = new Date(currentMonday)
+  mondayStart.setDate(currentMonday.getDate() - (weeksBack * DAYS_PER_WEEK))
   mondayStart.setHours(0, 0, 0, 0)
   
-  return { weeksAgo: mondayStart, today }
+  return { weeksAgo: mondayStart, today: koreaTime }
 }
 
 export function filterContributionsInTimeRange<T extends { createdAt: any }>(
@@ -101,7 +104,8 @@ export function placeContributionInGrid(
   
   if (position) {
     const { weekRow, weekdayColumn } = position
-    matrices.matrix[weekRow][weekdayColumn] = getValue(contribution)
+    const value = getValue(contribution)
+    matrices.matrix[weekRow][weekdayColumn] = value
     matrices.weeklyContributions[weekRow][weekdayColumn] = contribution
   }
 }
@@ -118,17 +122,53 @@ export function filterWeekdayContributions<T extends { createdAt: any }>(contrib
   })
 }
 
-// Type-specific contribution processing functions
-export function processPostingContributions(contributions: Contribution[]): GridResult {
-  const matrices = createEmptyMatrices()
-  const { weeksAgo, today } = getTimeRange()
+/**
+ * Pure function to initialize grid with placeholder objects for dates up to today
+ */
+export function initializeGridWithPlaceholders<T extends ContributionData>(
+  matrices: { matrix: ContributionMatrix; weeklyContributions: ContributionDataMatrix },
+  weeksAgo: Date,
+  today: Date,
+  createPlaceholder: (dateStr: string) => T
+): void {
+  for (let weekRow = 0; weekRow < WEEKS_TO_DISPLAY; weekRow++) {
+    for (let weekdayColumn = 0; weekdayColumn < WEEKDAYS_COUNT; weekdayColumn++) {
+      const date = new Date(weeksAgo)
+      date.setDate(weeksAgo.getDate() + (weekRow * DAYS_PER_WEEK) + weekdayColumn + 1) // +1 because Monday is weekdayColumn 0
+      date.setHours(0, 0, 0, 0) // Normalize to start of day
+      
+      // Only create placeholder for dates up to today (inclusive)
+      // Compare date strings instead of timestamps to avoid timezone issues
+      const dateStr = date.toISOString().split('T')[0]
+      const todayStr = today.toISOString().split('T')[0]
+      if (dateStr <= todayStr) {
+        const dayOfWeek = date.getDay()
+        if (dayOfWeek !== SUNDAY && dayOfWeek !== SATURDAY) {
+          matrices.weeklyContributions[weekRow][weekdayColumn] = createPlaceholder(dateStr)
+        }
+      }
+    }
+  }
+}
 
+/**
+ * Pure function to process contributions and place them in the grid
+ */
+export function processContributionsInGrid<T extends ContributionData>(
+  contributions: T[],
+  matrices: { matrix: ContributionMatrix; weeklyContributions: ContributionDataMatrix },
+  weeksAgo: Date,
+  today: Date,
+  getValue: (contribution: T) => number
+): { processedContributions: T[]; maxValue: number } {
+  // Filter contributions within time range
   const recentContributions = filterContributionsInTimeRange(contributions, weeksAgo, today)
 
+  // Place actual contributions, overwriting placeholders
   recentContributions.forEach((contribution) => {
     placeContributionInGrid(
       contribution,
-      (c) => (c as Contribution).contentLength ?? 0,
+      (c) => getValue(c as T),
       matrices,
       weeksAgo
     )
@@ -136,7 +176,32 @@ export function processPostingContributions(contributions: Contribution[]): Grid
 
   // Calculate maxValue only from contributions that actually get placed (weekdays only)
   const weekdayContributions = filterWeekdayContributions(recentContributions)
-  const maxValue = Math.max(...weekdayContributions.map((c) => c.contentLength ?? 0), 0)
+  const maxValue = Math.max(...weekdayContributions.map(getValue), 0)
+
+  return { processedContributions: recentContributions, maxValue }
+}
+
+// Type-specific contribution processing functions
+export function processPostingContributions(contributions: Contribution[]): GridResult {
+  const matrices = createEmptyMatrices()
+  const { weeksAgo, today } = getTimeRange()
+
+  // Initialize grid with posting-specific placeholders
+  initializeGridWithPlaceholders(
+    matrices,
+    weeksAgo,
+    today,
+    (dateStr) => ({ createdAt: dateStr, contentLength: null } as Contribution)
+  )
+
+  // Process contributions and calculate maxValue
+  const { maxValue } = processContributionsInGrid(
+    contributions,
+    matrices,
+    weeksAgo,
+    today,
+    (c) => c.contentLength ?? 0
+  )
 
   return {
     matrix: matrices.matrix,
@@ -149,20 +214,22 @@ export function processCommentingContributions(contributions: CommentingContribu
   const matrices = createEmptyMatrices()
   const { weeksAgo, today } = getTimeRange()
 
-  const recentContributions = filterContributionsInTimeRange(contributions, weeksAgo, today)
+  // Initialize grid with commenting-specific placeholders
+  initializeGridWithPlaceholders(
+    matrices,
+    weeksAgo,
+    today,
+    (dateStr) => ({ createdAt: dateStr, countOfCommentAndReplies: null } as CommentingContribution)
+  )
 
-  recentContributions.forEach((contribution) => {
-    placeContributionInGrid(
-      contribution,
-      (c) => (c as CommentingContribution).countOfCommentAndReplies ?? 0,
-      matrices,
-      weeksAgo
-    )
-  })
-
-  // Calculate maxValue only from contributions that actually get placed (weekdays only)
-  const weekdayContributions = filterWeekdayContributions(recentContributions)
-  const maxValue = Math.max(...weekdayContributions.map((c) => c.countOfCommentAndReplies ?? 0), 0)
+  // Process contributions and calculate maxValue
+  const { maxValue } = processContributionsInGrid(
+    contributions,
+    matrices,
+    weeksAgo,
+    today,
+    (c) => c.countOfCommentAndReplies ?? 0
+  )
 
   return {
     matrix: matrices.matrix,
