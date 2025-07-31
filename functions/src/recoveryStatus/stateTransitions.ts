@@ -1,20 +1,19 @@
-import { 
-  formatSeoulDate,
-  didUserMissYesterday,
-  calculateRecoveryRequirement, 
-  countSeoulDatePosts,
-  hasDeadlinePassed,
-  getSeoulYesterday
-} from '../shared/calendar';
-import {
-  getOrCreateStreakInfo,
-} from './streakUtils';
 import { RecoveryStatusType } from './StreakInfo';
+import { getOrCreateStreakInfo } from './streakUtils';
+import {
+  didUserMissYesterday,
+  calculateRecoveryRequirement,
+  countSeoulDatePosts,
+  formatSeoulDate,
+  getSeoulYesterday,
+  hasDeadlinePassed,
+} from '../shared/calendar';
 import {
   DBUpdate,
   addStreakCalculations,
   validateUserState,
   createBaseUpdate,
+  calculateRestoredStreak,
 } from './transitionHelpers';
 import { calculateUserStreaks } from './streakCalculations';
 
@@ -59,6 +58,7 @@ export async function calculateOnStreakToEligible(
         currentPosts: recoveryReq.currentPosts,
         deadline: recoveryReq.deadline,
         missedDate: recoveryReq.missedDate,
+        originalStreak: streakInfo ? streakInfo.currentStreak : 0, // Store the original streak value
       },
     },
   };
@@ -131,7 +131,7 @@ export async function calculateEligibleToOnStreak(
   if (todayPostCount < status.postsRequired) {
     const baseUpdate = createBaseUpdate(
       userId,
-      `eligible progress updated (${todayPostCount}/${status.postsRequired})`,
+      `eligible → eligible (progress: ${todayPostCount}/${status.postsRequired})`,
     );
 
     return {
@@ -146,24 +146,22 @@ export async function calculateEligibleToOnStreak(
     };
   }
 
-  // Recovery completed
-  const baseUpdate = createBaseUpdate(
-    userId,
-    `eligible → onStreak (recovery completed with ${todayPostCount} posts)`,
-  );
-  const baseUpdates = {
-    ...baseUpdate.updates,
-    lastContributionDate: formatSeoulDate(postDate),
-    status: {
-      type: RecoveryStatusType.ON_STREAK,
-    },
-  };
+  // Recovery completed - transition to onStreak
+  const originalStreak = status.originalStreak || 0;
+  const restoredStreak = calculateRestoredStreak(originalStreak, postDate);
+  const newLongestStreak = Math.max(streakInfo.longestStreak || 0, restoredStreak);
 
-  const updatesWithStreaks = await addStreakCalculations(userId, baseUpdates, true);
+  const baseUpdate = createBaseUpdate(userId, `eligible → onStreak (recovery completed)`);
 
   return {
     ...baseUpdate,
-    updates: updatesWithStreaks,
+    updates: {
+      ...baseUpdate.updates,
+      status: { type: RecoveryStatusType.ON_STREAK },
+      currentStreak: restoredStreak,
+      longestStreak: newLongestStreak,
+      lastContributionDate: formatSeoulDate(postDate),
+    },
   };
 }
 
