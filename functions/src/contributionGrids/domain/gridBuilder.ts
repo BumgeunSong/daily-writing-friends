@@ -1,11 +1,10 @@
 import { ContributionDay, ActivityType, DateRange } from './models';
-import { 
-  formatDate, 
-  isWeekend, 
-  calculateWeekAndColumn, 
+import {
+  formatDate,
+  calculateWeekAndColumn,
   createContributionDay,
   calculatePostingValue,
-  calculateCommentingValue
+  calculateCommentingValue,
 } from './gridCalculator';
 
 /**
@@ -25,11 +24,6 @@ function processActivity(
 ): void {
   const activityDate = activity.createdAt.toDate();
 
-  // Skip weekend activities
-  if (isWeekend(activityDate)) {
-    return;
-  }
-
   // Skip activities outside window
   if (activityDate < startDate || activityDate > endDate) {
     return;
@@ -45,12 +39,20 @@ function processActivity(
     value = calculateCommentingValue();
   }
 
+  // Calculate grid position (returns null for weekends)
+  const gridPosition = calculateWeekAndColumn(activityDate, startDate);
+
+  // Skip if weekend or invalid position
+  if (!gridPosition) {
+    return;
+  }
+
   // Aggregate values for same day
   if (contributions.has(dayKey)) {
     const existing = contributions.get(dayKey)!;
     existing.value += value;
   } else {
-    const { week, column } = calculateWeekAndColumn(activityDate, startDate);
+    const { week, column } = gridPosition;
     contributions.set(dayKey, createContributionDay(dayKey, value, week, column));
   }
 }

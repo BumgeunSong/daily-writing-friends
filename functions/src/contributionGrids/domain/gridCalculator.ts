@@ -1,11 +1,11 @@
 import { Timestamp } from 'firebase-admin/firestore';
-import { 
-  ContributionDay, 
-  ContributionGrid, 
-  ContributionGridUpdate, 
+import {
+  ContributionDay,
+  ContributionGrid,
+  ContributionGridUpdate,
   ActivityType,
   DateRange,
-  GridPosition 
+  GridPosition,
 } from './models';
 import { Posting } from '../../postings/Posting';
 import { Commenting } from '../../commentings/Commenting';
@@ -61,7 +61,7 @@ export function addWeeks(date: Date, weeks: number): Date {
  */
 export function getWindowRange(now: Date): DateRange {
   const KST_TIMEZONE = 'Asia/Seoul';
-  
+
   // Convert to KST using Intl.DateTimeFormat
   const kstFormatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: KST_TIMEZONE,
@@ -92,19 +92,22 @@ export function getWindowRange(now: Date): DateRange {
 
 /**
  * Calculate week and column for a date within a date range
+ * Returns null for weekend dates (Saturday/Sunday)
  */
-export function calculateWeekAndColumn(
-  activityDate: Date,
-  startDate: Date,
-): GridPosition {
+export function calculateWeekAndColumn(activityDate: Date, startDate: Date): GridPosition | null {
+  const dayOfWeek = activityDate.getDay();
+
+  // Skip weekends (Sunday = 0, Saturday = 6)
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    return null;
+  }
+
   const week = Math.floor(
     (activityDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000),
   );
 
-  // 월요일(1)~금요일(5): 0~4, 일요일(0)은 -1, 토요일(6)은 5
-  let column = activityDate.getDay() - 1;
-  if (column < 0) column = 6; // 일요일은 6으로
-  if (column > 4) column = 4; // 토요일은 4로 클램프
+  // Monday(1)~Friday(5): 0~4
+  const column = dayOfWeek - 1;
 
   return {
     week: Math.max(0, Math.min(3, week)), // Clamp to 0-3
