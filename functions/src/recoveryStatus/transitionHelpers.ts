@@ -77,9 +77,26 @@ export function createBaseUpdate(
 
 /**
  * Calculate restored streak when completing recovery
- * @param originalStreak - The streak value before transition to eligible
+ *
+ * Business Logic:
+ * - When recovery is completed on a working day (Mon-Fri):
+ *   - Add 1 to the original streak (today's post counts toward streak)
+ * - When recovery is completed on a weekend (Sat-Sun):
+ *   - Preserve the original streak (weekend posts don't count toward streak)
+ *
+ * This ensures that users who miss a working day and recover on a weekend
+ * don't get an unfair advantage by having their weekend post count toward streak.
+ *
+ * @param originalStreak - The streak value before transition to eligible status
  * @param recoveryDate - The date when recovery is completed
- * @returns The restored streak value
+ * @returns The restored streak value based on recovery completion day
+ *
+ * @example
+ * // User had 10-day streak, missed Friday, recovered on Saturday
+ * calculateRestoredStreak(10, new Date('2024-01-13')) // Returns 10 (weekend recovery)
+ *
+ * // User had 10-day streak, missed Friday, recovered on Monday
+ * calculateRestoredStreak(10, new Date('2024-01-15')) // Returns 11 (working day recovery)
  */
 export function calculateRestoredStreak(originalStreak: number, recoveryDate: Date): number {
   const isRecoveryDayWorkingDay = isSeoulWorkingDay(recoveryDate);
