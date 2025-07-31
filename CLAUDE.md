@@ -386,31 +386,366 @@ try {
 }
 ```
 
-## Testing Patterns
+## Test Writing Standards
 
-### Component Testing
+### Core Testing Principles
+
+**CRITICAL: Test behavior, NOT implementation details**
+- ❌ Don't test: Mock call counts, internal method calls, private state
+- ✅ Do test: User-facing behavior, business outcomes, API contracts
+
+**Test Naming Convention:**
 ```typescript
-import { render, screen } from '@testing-library/react'
-import { renderWithProviders } from '@/test/utils/renderWithProviders'
-import { PostCard } from '../PostCard'
-
-test('renders post title', () => {
-  const mockPost = { title: 'Test Post', ... }
-  renderWithProviders(<PostCard post={mockPost} />)
-  expect(screen.getByText('Test Post')).toBeInTheDocument()
-})
+describe('Feature Area', () => {
+  describe('when specific condition exists', () => {
+    it('produces expected outcome', () => {
+      // Test implementation
+    });
+  });
+});
 ```
 
-### API Testing
-Mock Firebase operations in tests:
-```typescript
-import { vi } from 'vitest'
-import { createPost } from '../api/post'
+### Behavior-Focused Test Structure
 
-vi.mock('firebase/firestore', () => ({
-  addDoc: vi.fn().mockResolvedValue({ id: 'mock-id' })
-}))
+**❌ BAD - Implementation Testing:**
+```typescript
+it('should call Firebase with correct parameters', () => {
+  // Testing HOW it works (implementation details)
+  expect(mockFirestore.collection).toHaveBeenCalledWith('users');
+  expect(mockFirestore.where).toHaveBeenCalledTimes(2);
+});
 ```
+
+**✅ GOOD - Behavior Testing:**
+```typescript
+describe('when user has posts on a date', () => {
+  it('returns the correct post count', async () => {
+    // Testing WHAT it does (business behavior)
+    const result = await countPostsOnDate('user123', testDate);
+    expect(result).toBe(3);
+  });
+});
+```
+
+### Test Quality Requirements
+
+#### 1. No Branching Logic in Tests
+**❌ Avoid:**
+```typescript
+it('handles different scenarios', () => {
+  if (condition) {
+    expect(result).toBe(valueA);
+  } else {
+    expect(result).toBe(valueB);
+  }
+});
+```
+
+**✅ Instead:**
+```typescript
+describe('when condition is true', () => {
+  it('returns value A', () => {
+    expect(result).toBe(valueA);
+  });
+});
+
+describe('when condition is false', () => {
+  it('returns value B', () => {
+    expect(result).toBe(valueB);
+  });
+});
+```
+
+#### 2. Small, Focused Tests
+- **One behavior per test**
+- **Single assertion per test** (when possible)
+- **Clear arrange-act-assert structure**
+
+```typescript
+describe('Recovery Requirements', () => {
+  describe('when recovery happens on working day', () => {
+    it('requires 2 posts for recovery', () => {
+      // Arrange
+      const missedDate = new Date('2024-01-16T10:00:00Z');
+      const currentDate = new Date('2024-01-17T10:00:00Z');
+      
+      // Act
+      const result = calculateRecoveryRequirement(missedDate, currentDate);
+      
+      // Assert
+      expect(result.postsRequired).toBe(2);
+    });
+  });
+});
+```
+
+#### 3. Clear Test Names
+**Pattern:** `when [condition]` → `it [expected outcome]`
+
+```typescript
+describe('Post Counting', () => {
+  describe('when user has posts on date', () => {
+    it('returns correct post count', () => { /* ... */ });
+    it('includes all posts from that date', () => { /* ... */ });
+  });
+  
+  describe('when user has no posts on date', () => {
+    it('returns zero', () => { /* ... */ });
+  });
+  
+  describe('when database query fails', () => {
+    it('propagates the error', () => { /* ... */ });
+  });
+});
+```
+
+### Mocking Strategy
+
+#### Mock External Dependencies Only
+```typescript
+// ✅ Mock external services
+jest.mock('../shared/admin');
+jest.mock('../shared/calendar');
+
+// ❌ Don't mock units under test
+// jest.mock('../streakUtils'); // If testing streakUtils
+```
+
+#### Focus on Data Flow, Not Method Calls
+```typescript
+// ✅ Set up mock data
+mockCalendar.didUserMissYesterday.mockResolvedValue(true);
+mockCalendar.calculateRecoveryRequirement.mockReturnValue({
+  postsRequired: 2
+});
+
+// ❌ Don't verify mock calls unless absolutely necessary
+// expect(mockCalendar.didUserMissYesterday).toHaveBeenCalledTimes(1);
+```
+
+### Test File Organization
+
+#### Behavior-Focused File Naming
+- `feature.behavior.test.ts` - Tests business behavior
+- `component.test.tsx` - Tests UI component behavior  
+- `api.integration.test.ts` - Tests API integration behavior
+
+#### Test Structure Template
+```typescript
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { functionUnderTest } from '../module';
+
+// Mock external dependencies
+jest.mock('../external-dependency');
+
+describe('Module Behavior Tests', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('Core Feature', () => {
+    describe('when normal conditions exist', () => {
+      it('produces expected outcome', () => {
+        // Arrange
+        // Act  
+        // Assert
+      });
+    });
+
+    describe('when edge case occurs', () => {
+      it('handles gracefully', () => {
+        // Arrange
+        // Act
+        // Assert
+      });
+    });
+
+    describe('when error conditions exist', () => {
+      it('propagates errors appropriately', () => {
+        // Arrange
+        // Act & Assert
+        expect(() => functionUnderTest()).toThrow('Expected error');
+      });
+    });
+  });
+});
+```
+
+### Error Testing Patterns
+
+```typescript
+describe('Error Handling', () => {
+  describe('when given invalid input', () => {
+    it('throws descriptive error', () => {
+      expect(() => functionUnderTest(invalidInput))
+        .toThrow('Expected specific error message');
+    });
+  });
+
+  describe('when external service fails', () => {
+    it('propagates service errors', async () => {
+      mockService.method.mockRejectedValue(new Error('Service unavailable'));
+      
+      await expect(functionUnderTest())
+        .rejects.toThrow('Service unavailable');
+    });
+  });
+});
+```
+
+### React Component Testing
+
+#### Test User Interactions, Not Implementation
+```typescript
+describe('PostEditor Component', () => {
+  describe('when user types in editor', () => {
+    it('updates the content', () => {
+      render(<PostEditor />);
+      
+      const editor = screen.getByRole('textbox');
+      fireEvent.change(editor, { target: { value: 'New content' } });
+      
+      expect(editor).toHaveValue('New content');
+    });
+  });
+
+  describe('when user clicks save', () => {
+    it('calls onSave with current content', () => {
+      const mockOnSave = jest.fn();
+      render(<PostEditor onSave={mockOnSave} />);
+      
+      fireEvent.click(screen.getByRole('button', { name: /save/i }));
+      
+      expect(mockOnSave).toHaveBeenCalledWith(expect.any(String));
+    });
+  });
+});
+```
+
+### Firebase Functions Testing
+
+```typescript
+describe('Cloud Function Behavior', () => {
+  describe('when document is created', () => {
+    it('processes the document correctly', async () => {
+      // Arrange
+      const mockEvent = {
+        data: { data: () => ({ title: 'Test Post' }) },
+        params: { userId: 'user123' }
+      };
+      
+      // Act
+      const result = await cloudFunction(mockEvent);
+      
+      // Assert - Test the business outcome
+      expect(result).toEqual(expectedResult);
+    });
+  });
+});
+```
+
+### Code Testability and Test Value
+
+#### When Code is Hard to Test with Output-Based Tests
+
+If you find it difficult to write tests that compare actual return values to expected values, this often indicates a design issue. Consider refactoring:
+
+**❌ Hard to Test (Side Effects, No Clear Output):**
+```typescript
+function updateUserStreakStatus(userId: string, date: Date): void {
+  // Complex logic with multiple side effects
+  // No clear return value to assert on
+  const user = getUserFromDatabase(userId);
+  if (shouldUpdateStreak(user, date)) {
+    updateDatabase(userId, calculateNewStatus(user));
+    sendNotification(userId, getNotificationMessage(user));
+    logAnalyticsEvent('streak_updated', { userId });
+  }
+}
+```
+
+**✅ Easy to Test (Pure Functions with Clear Outputs):**
+```typescript
+function calculateStreakUpdate(user: User, date: Date): StreakUpdateResult {
+  // Pure function that returns observable data
+  return {
+    shouldUpdate: shouldUpdateStreak(user, date),
+    newStatus: shouldUpdateStreak(user, date) ? calculateNewStatus(user) : user.status,
+    notificationMessage: shouldUpdateStreak(user, date) ? getNotificationMessage(user) : null,
+    analyticsEvent: shouldUpdateStreak(user, date) ? { event: 'streak_updated', userId: user.id } : null
+  };
+}
+
+// Separate function for side effects
+function applyStreakUpdate(userId: string, update: StreakUpdateResult): void {
+  if (update.shouldUpdate) {
+    updateDatabase(userId, update.newStatus);
+    if (update.notificationMessage) sendNotification(userId, update.notificationMessage);
+    if (update.analyticsEvent) logAnalyticsEvent(update.analyticsEvent.event, { userId });
+  }
+}
+```
+
+#### Removing Non-Valuable Tests
+
+Delete tests that don't add value:
+
+**❌ Non-Valuable Tests to Remove:**
+```typescript
+// Testing library code or framework behavior
+it('should call useState', () => {
+  render(<Component />);
+  expect(React.useState).toHaveBeenCalled(); // Testing React, not your code
+});
+
+// Testing mocks instead of behavior
+it('should call mock function', () => {
+  mockFunction();
+  expect(mockFunction).toHaveBeenCalled(); // Only testing the mock
+});
+
+// Testing trivial assignments
+it('should set property correctly', () => {
+  const obj = { prop: 'value' };
+  expect(obj.prop).toBe('value'); // No business logic tested
+});
+
+// Duplicate tests with no additional value
+it('should return true when valid', () => { /* ... */ });
+it('should return true for valid input', () => { /* Same test, different name */ });
+```
+
+**✅ Valuable Tests to Keep:**
+```typescript
+// Tests business logic and user-facing behavior
+describe('when user completes recovery requirement', () => {
+  it('transitions from eligible to on-streak status', async () => {
+    const result = await processRecoveryCompletion(userId, requiredPosts);
+    expect(result.newStatus).toBe('onStreak');
+  });
+});
+
+// Tests edge cases and error conditions
+describe('when recovery deadline has passed', () => {
+  it('prevents status transition and returns error', async () => {
+    await expect(processRecoveryCompletion(userId, posts, expiredDeadline))
+      .rejects.toThrow('Recovery deadline has passed');
+  });
+});
+```
+
+### Key Testing Rules Summary
+
+1. **Test behavior outcomes, not implementation details**
+2. **Use descriptive test names following `when [condition]` → `it [outcome]` pattern**
+3. **No branching logic in tests - separate test cases instead**
+4. **Keep tests small and focused - one behavior per test**
+5. **Mock external dependencies, not units under test**
+6. **Focus on user-facing behavior and business logic**
+7. **Test error conditions with specific error messages**
+8. **Use clear arrange-act-assert structure**
+9. **If code is hard to write output-based tests for (comparing actual return values to expected values), consider refactoring the code to make observable outcomes easier to test**
+10. **Remove any non-valuable tests that don't meaningfully verify behavior or catch regressions**
 
 ## Key Business Logic
 

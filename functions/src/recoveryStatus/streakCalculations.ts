@@ -1,6 +1,10 @@
 import admin from '../shared/admin';
-import { toSeoulDate, isWorkingDay } from '../shared/dateUtils';
-import { formatDateString } from './streakUtils';
+import {
+  getSeoulDateKey,
+  generateSeoulWorkingDaysBackward,
+  isSeoulWorkingDay,
+  getCurrentSeoulDate,
+} from '../shared/calendar';
 
 /**
  * Interface for posting data used in streak calculations
@@ -17,36 +21,6 @@ export interface StreakCalculationResult {
   currentStreak: number;
   longestStreak: number;
   lastContributionDate: string | null;
-}
-
-/**
- * Convert date to YYYY-MM-DD key for streak calculations
- */
-export function getDateKey(date: Date): string {
-  return formatDateString(toSeoulDate(date));
-}
-
-/**
- * Get the previous date
- */
-export function getPreviousDate(date: Date, days = 1): Date {
-  const newDate = new Date(date);
-  newDate.setDate(newDate.getDate() - days);
-  return newDate;
-}
-
-/**
- * Generator that yields working days going backward from a start date
- */
-function* workingDaysBackward(startDate: Date): Generator<Date> {
-  let currentDate = new Date(startDate);
-
-  while (true) {
-    if (isWorkingDay(currentDate)) {
-      yield new Date(currentDate);
-    }
-    currentDate = getPreviousDate(currentDate);
-  }
 }
 
 /**
@@ -70,68 +44,51 @@ export function buildPostingDaysSet(postings: PostingData[]): Set<string> {
   return new Set(
     postings
       .filter((posting) => posting.createdAt && !isNaN(posting.createdAt.getTime()))
-      .map((posting) => getDateKey(posting.createdAt)),
+      .map((posting) => getSeoulDateKey(posting.createdAt)),
   );
 }
 
-/**
- * Calculate current streak based on posting data
- * Uses the same logic as frontend: working days only, backward from today/yesterday
- */
-export function calculateCurrentStreak(postings: PostingData[]): number {
-  const postingDays = buildPostingDaysSet(postings);
-  const today = toSeoulDate(new Date());
+// ===== PURE BUSINESS LOGIC FUNCTIONS =====
 
+/**
+ * Pure function: Calculate current streak from posting days set and current date
+ * @param postingDays - Set of posting date strings (YYYY-MM-DD)
+ * @param currentDate - The current date to calculate streak from
+ * @returns Current streak length
+ */
+export function calculateCurrentStreakPure(postingDays: Set<string>, currentDate: Date): number {
   // Start from today if it's a working day and has a posting, otherwise start from yesterday
   const startDay =
-    isWorkingDay(today) && postingDays.has(getDateKey(today)) ? today : getPreviousDate(today);
+    isSeoulWorkingDay(currentDate) && postingDays.has(getSeoulDateKey(currentDate))
+      ? currentDate
+      : new Date(currentDate.getTime() - 24 * 60 * 60 * 1000); // yesterday
 
   // Count consecutive working days with postings, going backward
-  const streakDays = takeWhile(workingDaysBackward(startDay), (date) =>
-    postingDays.has(getDateKey(date)),
+  const streakDays = takeWhile(generateSeoulWorkingDaysBackward(startDay), (date) =>
+    postingDays.has(getSeoulDateKey(date)),
   );
 
   return streakDays.length;
 }
 
 /**
- * Calculate the longest streak from all posting data
- * Optimized version that limits search range and uses efficient algorithm
+ * Pure function: Calculate longest streak from posting days set
+ * @param postingDays - Array of posting date strings (YYYY-MM-DD) sorted chronologically
+ * @returns Longest streak length
  */
-export function calculateLongestStreak(postings: PostingData[]): number {
-  if (postings.length === 0) return 0;
-
-  // Limit search to last 2 years to prevent excessive computation
-  const twoYearsAgo = new Date();
-  twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
-
-  // Filter postings to last 2 years and sort by date
-  const recentPostings = postings
-    .filter((posting) => posting.createdAt >= twoYearsAgo)
-    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-
-  if (recentPostings.length === 0) return 0;
+export function calculateLongestStreakPure(postingDays: string[]): number {
+  if (postingDays.length === 0) return 0;
 
   let longestStreak = 0;
   let currentStreakCount = 0;
 
-  // Get all working days with postings, sorted chronologically and deduplicated
-  const workingDaysWithPostings = recentPostings
-    .map((posting) => toSeoulDate(posting.createdAt))
-    .filter((date) => isWorkingDay(date))
-    .map((date) => getDateKey(date))
-    .filter((dateKey, index, array) => array.indexOf(dateKey) === index) // Deduplicate
-    .sort();
-
-  if (workingDaysWithPostings.length === 0) return 0;
-
   // Find consecutive sequences
-  for (let i = 0; i < workingDaysWithPostings.length; i++) {
+  for (let i = 0; i < postingDays.length; i++) {
     if (i === 0) {
       currentStreakCount = 1;
     } else {
-      const currentDate = new Date(workingDaysWithPostings[i]);
-      const previousDate = new Date(workingDaysWithPostings[i - 1]);
+      const currentDate = new Date(postingDays[i]);
+      const previousDate = new Date(postingDays[i - 1]);
 
       // Check if dates are consecutive working days
       const daysDiff = Math.floor(
@@ -148,7 +105,7 @@ export function calculateLongestStreak(postings: PostingData[]): number {
         let hasGap = false;
 
         while (tempDate < currentDate) {
-          if (isWorkingDay(tempDate)) {
+          if (isSeoulWorkingDay(tempDate)) {
             hasGap = true;
             break;
           }
@@ -172,6 +129,47 @@ export function calculateLongestStreak(postings: PostingData[]): number {
   return longestStreak;
 }
 
+// ===== DATABASE LAYER FUNCTIONS (with side effects) =====
+
+/**
+ * Calculate current streak based on posting data
+ * Uses the same logic as frontend: working days only, backward from today/yesterday
+ */
+export function calculateCurrentStreak(postings: PostingData[]): number {
+  const postingDays = buildPostingDaysSet(postings);
+  const today = getCurrentSeoulDate();
+  return calculateCurrentStreakPure(postingDays, today);
+}
+
+/**
+ * Calculate the longest streak from all posting data
+ * Optimized version that limits search range and uses efficient algorithm
+ */
+export function calculateLongestStreak(postings: PostingData[]): number {
+  if (postings.length === 0) return 0;
+
+  // Limit search to last 2 years to prevent excessive computation
+  const twoYearsAgo = new Date();
+  twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+
+  // Filter postings to last 2 years and sort by date
+  const recentPostings = postings
+    .filter((posting) => posting.createdAt >= twoYearsAgo)
+    .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+  if (recentPostings.length === 0) return 0;
+
+  // Get all working days with postings, sorted chronologically and deduplicated
+  const workingDaysWithPostings = recentPostings
+    .map((posting) => posting.createdAt)
+    .filter((date) => isSeoulWorkingDay(date))
+    .map((date) => getSeoulDateKey(date))
+    .filter((dateKey, index, array) => array.indexOf(dateKey) === index) // Deduplicate
+    .sort();
+
+  return calculateLongestStreakPure(workingDaysWithPostings);
+}
+
 /**
  * Ultra-optimized longest streak calculation for very large datasets
  * Uses sliding window approach and early termination
@@ -191,9 +189,9 @@ export function calculateLongestStreakOptimized(postings: PostingData[]): number
 
   // Convert to working days only and sort
   const workingDays = recentPostings
-    .map((posting) => toSeoulDate(posting.createdAt))
-    .filter((date) => isWorkingDay(date))
-    .map((date) => getDateKey(date))
+    .map((posting) => posting.createdAt)
+    .filter((date) => isSeoulWorkingDay(date))
+    .map((date) => getSeoulDateKey(date))
     .sort();
 
   if (workingDays.length === 0) return 0;
@@ -226,7 +224,7 @@ export function calculateLongestStreakOptimized(postings: PostingData[]): number
       const maxChecks = 10; // Reasonable limit for gap checking
 
       while (tempDate < currentDate && checkCount < maxChecks) {
-        if (isWorkingDay(tempDate)) {
+        if (isSeoulWorkingDay(tempDate)) {
           hasWorkingDayGap = true;
           break;
         }
@@ -294,7 +292,7 @@ export async function calculateUserStreaks(userId: string): Promise<StreakCalcul
   return {
     currentStreak,
     longestStreak,
-    lastContributionDate: getDateKey(mostRecentPosting.createdAt),
+    lastContributionDate: getSeoulDateKey(mostRecentPosting.createdAt),
   };
 }
 
@@ -333,6 +331,6 @@ export async function calculateStreaksAfterNewPosting(
   return {
     currentStreak,
     longestStreak,
-    lastContributionDate: getDateKey(mostRecentPosting.createdAt),
+    lastContributionDate: getSeoulDateKey(mostRecentPosting.createdAt),
   };
 }
