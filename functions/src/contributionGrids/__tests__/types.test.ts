@@ -3,9 +3,11 @@ import { Timestamp } from 'firebase-admin/firestore';
 import {
   ContributionDay,
   ContributionGrid,
+} from '../domain/models';
+import {
   validateContributionDay,
   validateContributionGrid,
-} from '../types';
+} from '../domain/validators';
 
 describe('ContributionGrid Types', () => {
   describe('ContributionDay', () => {

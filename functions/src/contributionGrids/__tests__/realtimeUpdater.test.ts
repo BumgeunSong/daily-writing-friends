@@ -3,10 +3,10 @@ import { Timestamp } from 'firebase-admin/firestore';
 import {
   calculatePostingContributionUpdate,
   calculateCommentingContributionUpdate,
-} from '../realtimeUpdater';
+} from '../domain/gridCalculator';
 import { Posting } from '../../postings/Posting';
 import { Commenting } from '../../commentings/Commenting';
-import { ActivityType, ContributionGrid } from '../types';
+import { ActivityType, ContributionGrid } from '../domain/models';
 
 // Mock Firebase Admin
 const mockFirestore = {
