@@ -1,17 +1,17 @@
 /**
  * Centralized Calendar Module
- * 
+ *
  * This module consolidates ALL calendar-dependent logic to prevent timezone and
  * date calculation bugs. No other module should directly manipulate dates or
  * perform calendar calculations - everything must go through this layer.
- * 
+ *
  * Key Responsibilities:
  * 1. Working day calculations (Seoul timezone)
  * 2. Date arithmetic and comparisons
- * 3. Recovery deadline calculations  
+ * 3. Recovery deadline calculations
  * 4. Posting date queries
  * 5. Streak date calculations
- * 
+ *
  * Design Principles:
  * - All operations use Seoul timezone
  * - Immutable date operations (no mutation)
@@ -22,12 +22,12 @@
 
 import admin from './admin';
 import { isWorkingDay } from './dateUtils';
-import { 
-  getSeoulDateBoundariesAsTimestamps, 
+import {
+  getSeoulDateBoundariesAsTimestamps,
   formatSeoulDateString,
   convertToSeoulTime,
   isSameDateInSeoul,
-  parseSeoulDateString
+  parseSeoulDateString,
 } from './seoulTime';
 
 // ===== WORKING DAY OPERATIONS =====
@@ -40,7 +40,7 @@ export function isSeoulWorkingDay(date: Date): boolean {
   if (!(date instanceof Date) || isNaN(date.getTime())) {
     throw new Error('Invalid Date object provided to isSeoulWorkingDay');
   }
-  
+
   // Convert to Seoul timezone first, then check working day
   const seoulDate = convertToSeoulTime(date);
   return isWorkingDay(seoulDate);
@@ -58,12 +58,12 @@ export function getNextSeoulWorkingDay(date: Date): Date {
   const seoulDate = convertToSeoulTime(date);
   let nextDay = new Date(seoulDate);
   nextDay.setDate(nextDay.getDate() + 1);
-  
+
   // Keep advancing until we find a working day
   while (!isWorkingDay(nextDay)) {
     nextDay.setDate(nextDay.getDate() + 1);
   }
-  
+
   return nextDay;
 }
 
@@ -78,11 +78,11 @@ export function getPreviousSeoulWorkingDay(date: Date): Date {
   const seoulDate = convertToSeoulTime(date);
   let previousDay = new Date(seoulDate);
   previousDay.setDate(previousDay.getDate() - 1);
-  
+
   while (!isWorkingDay(previousDay)) {
     previousDay.setDate(previousDay.getDate() - 1);
   }
-  
+
   return previousDay;
 }
 
@@ -112,13 +112,79 @@ export function formatSeoulDate(date: Date): string {
 }
 
 /**
+ * Create a Date object from YYYY-MM-DD string (robust version)
+ * Creates date in Seoul timezone
+ */
+export function createSeoulDateFromString(dateString: string): Date {
+  if (!isValidDateString(dateString)) {
+    throw new Error(`Invalid date string format. Expected YYYY-MM-DD, got: ${dateString}`);
+  }
+  return new Date(dateString + 'T00:00:00.000Z');
+}
+
+/**
+ * Compare two YYYY-MM-DD date strings using timestamp comparison
+ * @param date1 First date string (YYYY-MM-DD)
+ * @param date2 Second date string (YYYY-MM-DD)
+ * @returns Negative if date1 < date2, 0 if equal, positive if date1 > date2
+ */
+export function compareSeoulDateStrings(date1: string, date2: string): number {
+  return createSeoulDateFromString(date1).getTime() - createSeoulDateFromString(date2).getTime();
+}
+
+/**
+ * Check if a date string is before another date string
+ * @param date1 First date string (YYYY-MM-DD)
+ * @param date2 Second date string (YYYY-MM-DD)
+ * @returns true if date1 is before date2
+ */
+export function isSeoulDateStringBefore(date1: string, date2: string): boolean {
+  return compareSeoulDateStrings(date1, date2) < 0;
+}
+
+/**
+ * Check if a date string is after another date string
+ * @param date1 First date string (YYYY-MM-DD)
+ * @param date2 Second date string (YYYY-MM-DD)
+ * @returns true if date1 is after date2
+ */
+export function isSeoulDateStringAfter(date1: string, date2: string): boolean {
+  return compareSeoulDateStrings(date1, date2) > 0;
+}
+
+/**
+ * Check if a date string equals another date string
+ * @param date1 First date string (YYYY-MM-DD)
+ * @param date2 Second date string (YYYY-MM-DD)
+ * @returns true if dates are equal
+ */
+export function isSeoulDateStringEqual(date1: string, date2: string): boolean {
+  return compareSeoulDateStrings(date1, date2) === 0;
+}
+
+/**
+ * Check if a date/time is before or equal to the end of a given date
+ * This is useful for deadline checking where posts written on the deadline day should count
+ * @param dateTime The date/time to check (as Date object)
+ * @param dateString The deadline date string (YYYY-MM-DD)
+ * @returns true if dateTime is on or before the end of dateString day
+ */
+export function isSeoulDateTimeBeforeOrOnDate(dateTime: Date, dateString: string): boolean {
+  if (!isValidDateString(dateString)) {
+    throw new Error(`Invalid date string format. Expected YYYY-MM-DD, got: ${dateString}`);
+  }
+  const endOfDeadlineDay = new Date(dateString + 'T23:59:59.999Z');
+  return dateTime.getTime() <= endOfDeadlineDay.getTime();
+}
+
+/**
  * Compare two dates in Seoul timezone
  * Returns: -1 if date1 < date2, 0 if equal, 1 if date1 > date2
  */
 export function compareSeoulDates(date1: Date, date2: Date): number {
   const dateString1 = formatSeoulDate(date1);
   const dateString2 = formatSeoulDate(date2);
-  
+
   if (dateString1 < dateString2) return -1;
   if (dateString1 > dateString2) return 1;
   return 0;
@@ -132,7 +198,7 @@ export function isSeoulDateAfter(date1: Date, date2: Date): boolean {
 }
 
 /**
- * Check if date1 is before date2 in Seoul timezone  
+ * Check if date1 is before date2 in Seoul timezone
  */
 export function isSeoulDateBefore(date1: Date, date2: Date): boolean {
   return compareSeoulDates(date1, date2) < 0;
@@ -162,8 +228,8 @@ export interface RecoveryRequirement {
  * Centralizes the recovery business logic
  */
 export function calculateRecoveryRequirement(
-  missedDate: Date, 
-  currentDate: Date
+  missedDate: Date,
+  currentDate: Date,
 ): RecoveryRequirement {
   if (!(missedDate instanceof Date) || isNaN(missedDate.getTime())) {
     throw new Error('Invalid missedDate provided to calculateRecoveryRequirement');
@@ -174,15 +240,15 @@ export function calculateRecoveryRequirement(
 
   const seoulCurrentDate = convertToSeoulTime(currentDate);
   const seoulMissedDate = convertToSeoulTime(missedDate);
-  
+
   const isCurrentWorkingDay = isSeoulWorkingDay(seoulCurrentDate);
   const nextWorkingDay = getNextSeoulWorkingDay(seoulMissedDate);
-  
+
   return {
-    postsRequired: isCurrentWorkingDay ? 2 : 1,  // 2 for working day, 1 for weekend
+    postsRequired: isCurrentWorkingDay ? 2 : 1, // 2 for working day, 1 for weekend
     currentPosts: 0,
     deadline: formatSeoulDate(nextWorkingDay),
-    missedDate: formatSeoulDate(seoulMissedDate)
+    missedDate: formatSeoulDate(seoulMissedDate),
   };
 }
 
@@ -194,7 +260,7 @@ export function hasDeadlinePassed(deadlineString: string, currentDate: Date): bo
   if (!/^\d{4}-\d{2}-\d{2}$/.test(deadlineString)) {
     throw new Error(`Invalid deadline format. Expected YYYY-MM-DD, got: ${deadlineString}`);
   }
-  
+
   const currentDateString = formatSeoulDate(currentDate);
   return currentDateString > deadlineString;
 }
@@ -206,8 +272,8 @@ export function hasDeadlinePassed(deadlineString: string, currentDate: Date): bo
  * Returns Firebase QuerySnapshot for the date boundaries
  */
 export async function queryPostingsForSeoulDate(
-  userId: string, 
-  date: Date
+  userId: string,
+  date: Date,
 ): Promise<FirebaseFirestore.QuerySnapshot> {
   if (!userId) {
     throw new Error('userId is required for queryPostingsForSeoulDate');
@@ -217,12 +283,9 @@ export async function queryPostingsForSeoulDate(
   }
 
   const { startTimestamp, endTimestamp } = getSeoulDateBoundariesAsTimestamps(date);
-  
-  const postingsRef = admin.firestore()
-    .collection('users')
-    .doc(userId)
-    .collection('postings');
-    
+
+  const postingsRef = admin.firestore().collection('users').doc(userId).collection('postings');
+
   return await postingsRef
     .where('createdAt', '>=', startTimestamp)
     .where('createdAt', '<=', endTimestamp)
@@ -257,12 +320,12 @@ export function didUserMissYesterdayPure(currentDate: Date, hadPostsYesterday: b
   }
 
   const yesterday = getSeoulYesterday(currentDate);
-  
+
   // Only working days count as "missable"
   if (!isSeoulWorkingDay(yesterday)) {
     return false;
   }
-  
+
   // True if no postings on working day = missed
   return !hadPostsYesterday;
 }
@@ -283,18 +346,15 @@ export async function countSeoulDatePosts(userId: string, date: Date): Promise<n
  */
 export async function hasSeoulDatePosts(userId: string, date: Date): Promise<boolean> {
   const { startTimestamp, endTimestamp } = getSeoulDateBoundariesAsTimestamps(date);
-  
-  const postingsRef = admin.firestore()
-    .collection('users')
-    .doc(userId)
-    .collection('postings');
-    
+
+  const postingsRef = admin.firestore().collection('users').doc(userId).collection('postings');
+
   const querySnapshot = await postingsRef
     .where('createdAt', '>=', startTimestamp)
     .where('createdAt', '<=', endTimestamp)
     .limit(1)
     .get();
-    
+
   return hasPostsFromQueryResult(querySnapshot);
 }
 
@@ -311,12 +371,12 @@ export async function didUserMissYesterday(userId: string, currentDate: Date): P
   }
 
   const yesterday = getSeoulYesterday(currentDate);
-  
+
   // Only working days count as "missable"
   if (!isSeoulWorkingDay(yesterday)) {
     return false;
   }
-  
+
   // Check if user had any postings on that working day
   const hasPosts = await hasSeoulDatePosts(userId, yesterday);
   return didUserMissYesterdayPure(currentDate, hasPosts);
@@ -364,15 +424,15 @@ export function areConsecutiveSeoulWorkingDays(earlierDate: Date, laterDate: Dat
 
   const seoulEarlierDate = convertToSeoulTime(earlierDate);
   const seoulLaterDate = convertToSeoulTime(laterDate);
-  
+
   // Check if both are working days
   if (!isSeoulWorkingDay(seoulEarlierDate) || !isSeoulWorkingDay(seoulLaterDate)) {
     return false;
   }
-  
+
   // Get the next working day after the earlier date
   const nextWorkingDay = getNextSeoulWorkingDay(seoulEarlierDate);
-  
+
   // Check if it matches the later date
   return isSameSeoulDate(nextWorkingDay, seoulLaterDate);
 }
@@ -390,21 +450,21 @@ export function countSeoulWorkingDaysBetween(startDate: Date, endDate: Date): nu
 
   const seoulStartDate = convertToSeoulTime(startDate);
   const seoulEndDate = convertToSeoulTime(endDate);
-  
+
   if (seoulStartDate >= seoulEndDate) {
     return 0;
   }
-  
+
   let count = 0;
   let currentDate = new Date(seoulStartDate);
-  
+
   while (currentDate < seoulEndDate) {
     if (isSeoulWorkingDay(currentDate)) {
       count++;
     }
     currentDate.setDate(currentDate.getDate() + 1);
   }
-  
+
   return count;
 }
 
@@ -424,7 +484,7 @@ export function parseAndValidateSeoulDateString(dateString: string) {
   if (!isValidDateString(dateString)) {
     throw new Error(`Invalid date string format. Expected YYYY-MM-DD, got: ${dateString}`);
   }
-  
+
   return parseSeoulDateString(dateString);
 }
 
@@ -458,7 +518,10 @@ export function getYesterdaySeoulDateString(): string {
 /**
  * Debug utility to show calendar calculation details
  */
-export function debugCalendarOperation(operation: string, date: Date): {
+export function debugCalendarOperation(
+  operation: string,
+  date: Date,
+): {
   operation: string;
   inputDate: string;
   seoulDate: string;
@@ -466,12 +529,12 @@ export function debugCalendarOperation(operation: string, date: Date): {
   isWorkingDay: boolean;
 } {
   const seoulDate = convertToSeoulTime(date);
-  
+
   return {
     operation,
     inputDate: date.toISOString(),
     seoulDate: seoulDate.toISOString(),
     seoulDateString: formatSeoulDate(seoulDate),
-    isWorkingDay: isSeoulWorkingDay(seoulDate)
+    isWorkingDay: isSeoulWorkingDay(seoulDate),
   };
 }
