@@ -37,6 +37,13 @@ describe('State Transitions Behavior Tests', () => {
     mockTransitionHelpers.addStreakCalculations.mockImplementation(
       async (userId: string, updates: any) => ({ ...updates, currentStreak: 1, longestStreak: 1 }),
     );
+    mockTransitionHelpers.calculateRestoredStreak.mockImplementation(
+      (originalStreak: number, recoveryDate: Date) => {
+        // Mock logic: if recovery date is Saturday (6) or Sunday (0), don't add 1
+        const dayOfWeek = recoveryDate.getDay();
+        return originalStreak + (dayOfWeek >= 1 && dayOfWeek <= 5 ? 1 : 0);
+      },
+    );
   });
 
   describe('User On Streak', () => {

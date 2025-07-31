@@ -1,19 +1,19 @@
+import { RecoveryStatusType } from './StreakInfo';
+import { getOrCreateStreakInfo } from './streakUtils';
 import {
-  formatSeoulDate,
   didUserMissYesterday,
   calculateRecoveryRequirement,
   countSeoulDatePosts,
-  hasDeadlinePassed,
+  formatSeoulDate,
   getSeoulYesterday,
-  isSeoulWorkingDay,
+  hasDeadlinePassed,
 } from '../shared/calendar';
-import { getOrCreateStreakInfo } from './streakUtils';
-import { RecoveryStatusType } from './StreakInfo';
 import {
   DBUpdate,
   addStreakCalculations,
   validateUserState,
   createBaseUpdate,
+  calculateRestoredStreak,
 } from './transitionHelpers';
 import { calculateUserStreaks } from './streakCalculations';
 
@@ -131,7 +131,7 @@ export async function calculateEligibleToOnStreak(
   if (todayPostCount < status.postsRequired) {
     const baseUpdate = createBaseUpdate(
       userId,
-      `eligible progress updated (${todayPostCount}/${status.postsRequired})`,
+      `eligible → eligible (progress: ${todayPostCount}/${status.postsRequired})`,
     );
 
     return {
@@ -146,33 +146,22 @@ export async function calculateEligibleToOnStreak(
     };
   }
 
-  // Recovery completed - restore original streak and update longest streak
-  const baseUpdate = createBaseUpdate(
-    userId,
-    `eligible → onStreak (recovery completed with ${todayPostCount} posts)`,
-  );
-
+  // Recovery completed - transition to onStreak
   const originalStreak = status.originalStreak || 0;
-
-  // Check if recovery completion day is a working day
-  const isRecoveryDayWorkingDay = isSeoulWorkingDay(postDate);
-  const restoredStreak = originalStreak + (isRecoveryDayWorkingDay ? 1 : 0); // Add 1 only if recovery day is a working day
-
+  const restoredStreak = calculateRestoredStreak(originalStreak, postDate);
   const newLongestStreak = Math.max(streakInfo.longestStreak || 0, restoredStreak);
 
-  const baseUpdates = {
-    ...baseUpdate.updates,
-    lastContributionDate: formatSeoulDate(postDate),
-    currentStreak: restoredStreak,
-    longestStreak: newLongestStreak,
-    status: {
-      type: RecoveryStatusType.ON_STREAK,
-    },
-  };
+  const baseUpdate = createBaseUpdate(userId, `eligible → onStreak (recovery completed)`);
 
   return {
     ...baseUpdate,
-    updates: baseUpdates,
+    updates: {
+      ...baseUpdate.updates,
+      status: { type: RecoveryStatusType.ON_STREAK },
+      currentStreak: restoredStreak,
+      longestStreak: newLongestStreak,
+      lastContributionDate: formatSeoulDate(postDate),
+    },
   };
 }
 

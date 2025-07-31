@@ -1,7 +1,8 @@
-import { Timestamp } from "firebase-admin/firestore";
-import { StreakInfo, RecoveryStatusType } from "./StreakInfo";
-import { calculateUserStreaks, calculateStreaksAfterNewPosting } from "./streakCalculations";
-import { getOrCreateStreakInfo } from "./streakUtils";
+import { Timestamp } from 'firebase-admin/firestore';
+import { StreakInfo, RecoveryStatusType } from './StreakInfo';
+import { calculateUserStreaks, calculateStreaksAfterNewPosting } from './streakCalculations';
+import { getOrCreateStreakInfo } from './streakUtils';
+import { isSeoulWorkingDay } from '../shared/calendar';
 
 export interface DBUpdate {
   userId: string;
@@ -13,33 +14,33 @@ export interface DBUpdate {
  * Helper function to add streak calculations to DB updates
  */
 export async function addStreakCalculations(
-  userId: string, 
+  userId: string,
   baseUpdates: Partial<StreakInfo> & { lastCalculated: Timestamp },
-  isNewPosting = false
+  isNewPosting = false,
 ): Promise<Partial<StreakInfo> & { lastCalculated: Timestamp }> {
   try {
     const { data: currentStreakInfo } = await getOrCreateStreakInfo(userId);
-    
+
     let streakData;
     if (isNewPosting && currentStreakInfo) {
       // Optimized calculation for new postings
       streakData = await calculateStreaksAfterNewPosting(
         userId,
         currentStreakInfo.currentStreak || 0,
-        currentStreakInfo.longestStreak || 0
+        currentStreakInfo.longestStreak || 0,
       );
     } else {
       // Full recalculation
       streakData = await calculateUserStreaks(userId);
     }
-    
+
     return {
       ...baseUpdates,
       currentStreak: streakData.currentStreak,
       longestStreak: streakData.longestStreak,
       ...(streakData.lastContributionDate && {
-        lastContributionDate: streakData.lastContributionDate
-      })
+        lastContributionDate: streakData.lastContributionDate,
+      }),
     };
   } catch (error) {
     console.error(`[StreakCalculation] Error calculating streaks for user ${userId}:`, error);
@@ -52,8 +53,8 @@ export async function addStreakCalculations(
  * Helper to validate user is in expected state
  */
 export function validateUserState(
-  streakInfo: StreakInfo | null, 
-  expectedState: RecoveryStatusType
+  streakInfo: StreakInfo | null,
+  expectedState: RecoveryStatusType,
 ): boolean {
   return streakInfo?.status.type === expectedState;
 }
@@ -63,13 +64,24 @@ export function validateUserState(
  */
 export function createBaseUpdate(
   userId: string,
-  reason: string
+  reason: string,
 ): Pick<DBUpdate, 'userId' | 'reason'> & { updates: { lastCalculated: Timestamp } } {
   return {
     userId,
     reason,
     updates: {
-      lastCalculated: Timestamp.now()
-    }
+      lastCalculated: Timestamp.now(),
+    },
   };
+}
+
+/**
+ * Calculate restored streak when completing recovery
+ * @param originalStreak - The streak value before transition to eligible
+ * @param recoveryDate - The date when recovery is completed
+ * @returns The restored streak value
+ */
+export function calculateRestoredStreak(originalStreak: number, recoveryDate: Date): number {
+  const isRecoveryDayWorkingDay = isSeoulWorkingDay(recoveryDate);
+  return originalStreak + (isRecoveryDayWorkingDay ? 1 : 0);
 }
