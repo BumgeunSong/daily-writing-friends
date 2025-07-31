@@ -58,7 +58,7 @@ export async function calculateOnStreakToEligible(
         currentPosts: recoveryReq.currentPosts,
         deadline: recoveryReq.deadline,
         missedDate: recoveryReq.missedDate,
-        originalStreak: streakInfo?.currentStreak || 0, // Store the original streak value
+        originalStreak: streakInfo ? streakInfo.currentStreak : 0, // Store the original streak value
       },
     },
   };
