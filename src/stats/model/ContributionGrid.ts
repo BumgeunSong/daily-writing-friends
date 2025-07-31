@@ -47,8 +47,6 @@ export interface ContributionGridData {
   postingGrid: ContributionGrid | null;
   /** Commenting contribution grid */
   commentingGrid: ContributionGrid | null;
-  /** Maximum value across both grids for scaling */
-  maxValue: number;
   /** Loading state */
   loading: boolean;
   /** Error state */
