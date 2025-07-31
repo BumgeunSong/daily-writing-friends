@@ -1,14 +1,13 @@
-import { 
+import {
   formatSeoulDate,
   didUserMissYesterday,
-  calculateRecoveryRequirement, 
+  calculateRecoveryRequirement,
   countSeoulDatePosts,
   hasDeadlinePassed,
-  getSeoulYesterday
+  getSeoulYesterday,
+  isSeoulWorkingDay,
 } from '../shared/calendar';
-import {
-  getOrCreateStreakInfo,
-} from './streakUtils';
+import { getOrCreateStreakInfo } from './streakUtils';
 import { RecoveryStatusType } from './StreakInfo';
 import {
   DBUpdate,
@@ -59,6 +58,7 @@ export async function calculateOnStreakToEligible(
         currentPosts: recoveryReq.currentPosts,
         deadline: recoveryReq.deadline,
         missedDate: recoveryReq.missedDate,
+        originalStreak: streakInfo?.currentStreak || 0, // Store the original streak value
       },
     },
   };
@@ -146,24 +146,33 @@ export async function calculateEligibleToOnStreak(
     };
   }
 
-  // Recovery completed
+  // Recovery completed - restore original streak and update longest streak
   const baseUpdate = createBaseUpdate(
     userId,
     `eligible → onStreak (recovery completed with ${todayPostCount} posts)`,
   );
+
+  const originalStreak = status.originalStreak || 0;
+
+  // Check if recovery completion day is a working day
+  const isRecoveryDayWorkingDay = isSeoulWorkingDay(postDate);
+  const restoredStreak = originalStreak + (isRecoveryDayWorkingDay ? 1 : 0); // Add 1 only if recovery day is a working day
+
+  const newLongestStreak = Math.max(streakInfo.longestStreak || 0, restoredStreak);
+
   const baseUpdates = {
     ...baseUpdate.updates,
     lastContributionDate: formatSeoulDate(postDate),
+    currentStreak: restoredStreak,
+    longestStreak: newLongestStreak,
     status: {
       type: RecoveryStatusType.ON_STREAK,
     },
   };
 
-  const updatesWithStreaks = await addStreakCalculations(userId, baseUpdates, true);
-
   return {
     ...baseUpdate,
-    updates: updatesWithStreaks,
+    updates: baseUpdates,
   };
 }
 

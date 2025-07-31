@@ -1,12 +1,12 @@
-import { Timestamp } from "firebase-admin/firestore";
+import { Timestamp } from 'firebase-admin/firestore';
 
 /**
  * Recovery status types for the 3-state system
  */
 export enum RecoveryStatusType {
   ON_STREAK = 'onStreak',
-  ELIGIBLE = 'eligible', 
-  MISSED = 'missed'
+  ELIGIBLE = 'eligible',
+  MISSED = 'missed',
 }
 
 /**
@@ -14,10 +14,11 @@ export enum RecoveryStatusType {
  */
 export interface RecoveryStatus {
   type: RecoveryStatusType;
-  postsRequired?: number;    // Only for 'eligible' status
-  currentPosts?: number;     // Only for 'eligible' status  
-  deadline?: string;         // Only for 'eligible' status (YYYY-MM-DD format)
-  missedDate?: string;       // Only for 'eligible' status (YYYY-MM-DD format)
+  postsRequired?: number; // Only for 'eligible' status
+  currentPosts?: number; // Only for 'eligible' status
+  deadline?: string; // Only for 'eligible' status (YYYY-MM-DD format)
+  missedDate?: string; // Only for 'eligible' status (YYYY-MM-DD format)
+  originalStreak?: number; // Only for 'eligible' status - stores the streak value before transition
 }
 
 /**
@@ -25,20 +26,20 @@ export interface RecoveryStatus {
  * Path: users/{userId}/streakInfo/{streakInfoId}
  */
 export interface StreakInfo {
-  lastContributionDate: string;  // YYYY-MM-DD format
-  lastCalculated: Timestamp;     // When this was last calculated
+  lastContributionDate: string; // YYYY-MM-DD format
+  lastCalculated: Timestamp; // When this was last calculated
   status: RecoveryStatus;
-  currentStreak: number;         // Current consecutive writing streak (working days)
-  longestStreak: number;         // All-time longest streak achieved
+  currentStreak: number; // Current consecutive writing streak (working days)
+  longestStreak: number; // All-time longest streak achieved
 }
 
 /**
  * Recovery history record
- * Path: streakInfo/{userId}/recoveryHistory/{recoveryId}  
+ * Path: streakInfo/{userId}/recoveryHistory/{recoveryId}
  */
 export interface RecoveryHistory {
-  missedDate: string;      // YYYY-MM-DD format
-  recoveryDate: string;    // YYYY-MM-DD format
+  missedDate: string; // YYYY-MM-DD format
+  recoveryDate: string; // YYYY-MM-DD format
   postsRequired: number;
   postsWritten: number;
   recoveredAt: Timestamp;
@@ -50,6 +51,6 @@ export interface RecoveryHistory {
 export interface RecoveryRequirement {
   postsRequired: number;
   currentPosts: number;
-  deadline: string;        // YYYY-MM-DD format
-  missedDate: string;      // YYYY-MM-DD format
+  deadline: string; // YYYY-MM-DD format
+  missedDate: string; // YYYY-MM-DD format
 }
