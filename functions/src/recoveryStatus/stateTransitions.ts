@@ -1,10 +1,12 @@
-import { toSeoulDate } from '../shared/dateUtils';
-import {
+import { 
+  formatSeoulDate,
   didUserMissYesterday,
-  calculateRecoveryRequirement,
-  countPostsOnDate,
-  formatDateString,
-  isDateAfter,
+  calculateRecoveryRequirement, 
+  countSeoulDatePosts,
+  hasDeadlinePassed,
+  getSeoulYesterday
+} from '../shared/calendar';
+import {
   getOrCreateStreakInfo,
 } from './streakUtils';
 import { RecoveryStatusType } from './StreakInfo';
@@ -39,11 +41,9 @@ export async function calculateOnStreakToEligible(
     return null;
   }
 
-  const seoulDate = toSeoulDate(currentDate);
-  const yesterday = new Date(seoulDate);
-  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterday = getSeoulYesterday(currentDate);
 
-  const recoveryReq = calculateRecoveryRequirement(yesterday, seoulDate);
+  const recoveryReq = calculateRecoveryRequirement(yesterday, currentDate);
   const baseUpdate = createBaseUpdate(
     userId,
     `onStreak → eligible (missed ${recoveryReq.missedDate})`,
@@ -81,11 +81,8 @@ export async function calculateEligibleToMissed(
     return null;
   }
 
-  const seoulDate = toSeoulDate(currentDate);
-  const currentDateString = formatDateString(seoulDate);
-
   const status = streakInfo.status;
-  if (!status.deadline || !isDateAfter(currentDateString, status.deadline)) {
+  if (!status.deadline || !hasDeadlinePassed(status.deadline, currentDate)) {
     return null;
   }
 
@@ -128,8 +125,7 @@ export async function calculateEligibleToOnStreak(
     return null;
   }
 
-  const seoulDate = toSeoulDate(postDate);
-  const todayPostCount = await countPostsOnDate(userId, seoulDate);
+  const todayPostCount = await countSeoulDatePosts(userId, postDate);
 
   // Return progress update if not yet completed
   if (todayPostCount < status.postsRequired) {
@@ -157,7 +153,7 @@ export async function calculateEligibleToOnStreak(
   );
   const baseUpdates = {
     ...baseUpdate.updates,
-    lastContributionDate: formatDateString(seoulDate),
+    lastContributionDate: formatSeoulDate(postDate),
     status: {
       type: RecoveryStatusType.ON_STREAK,
     },
@@ -184,11 +180,10 @@ export async function calculateMissedToOnStreak(
     return null;
   }
 
-  const seoulDate = toSeoulDate(postDate);
   const baseUpdate = createBaseUpdate(userId, 'missed → onStreak (fresh start)');
   const baseUpdates = {
     ...baseUpdate.updates,
-    lastContributionDate: formatDateString(seoulDate),
+    lastContributionDate: formatSeoulDate(postDate),
     status: {
       type: RecoveryStatusType.ON_STREAK,
     },
@@ -215,11 +210,10 @@ export async function calculateOnStreakToOnStreak(
     return null;
   }
 
-  const seoulDate = toSeoulDate(postDate);
   const baseUpdate = createBaseUpdate(userId, 'onStreak → onStreak (streak maintained)');
   const baseUpdates = {
     ...baseUpdate.updates,
-    lastContributionDate: formatDateString(seoulDate),
+    lastContributionDate: formatSeoulDate(postDate),
     status: {
       type: RecoveryStatusType.ON_STREAK,
     },

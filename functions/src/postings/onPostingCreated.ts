@@ -2,7 +2,7 @@ import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { Posting } from "./Posting";
 import { calculatePostingTransitions } from "../recoveryStatus/stateTransitions";
 import { updateStreakInfo } from "../recoveryStatus/streakUtils";
-import { toSeoulDate } from "../shared/dateUtils";
+import { convertToSeoulTime } from "../shared/seoulTime";
 
 export const onPostingCreated = onDocumentCreated(
   'users/{userId}/postings/{postingId}',
@@ -31,10 +31,10 @@ export const onPostingCreated = onDocumentCreated(
       } else {
         console.warn(`[PostingCreated] Warning: createdAt is missing for posting ${postingId}, using current Seoul time as fallback`);
         // Use Seoul time for consistency instead of server local time
-        postCreatedAt = toSeoulDate(new Date());
+        postCreatedAt = convertToSeoulTime(new Date());
       }
       
-      const seoulDate = toSeoulDate(postCreatedAt);
+      const seoulDate = convertToSeoulTime(postCreatedAt);
       
       console.log(`[PostingCreated] Post created at: ${seoulDate.toISOString()} (Seoul timezone)`);
       

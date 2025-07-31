@@ -1,13 +1,20 @@
 import { Timestamp } from "firebase-admin/firestore";
 import admin from "../shared/admin";
-import { toSeoulDate, isWorkingDay } from "../shared/dateUtils";
-import { RecoveryRequirement, StreakInfo, RecoveryStatusType } from "./StreakInfo";
+import { 
+  formatSeoulDate,
+  calculateRecoveryRequirement as calculateRecoveryReq,
+  didUserMissYesterday as didMissYesterday,
+  countSeoulDatePosts,
+  RecoveryRequirement
+} from "../shared/calendar";
+import { StreakInfo, RecoveryStatusType } from "./StreakInfo";
 
 /**
- * Format date to YYYY-MM-DD string
+ * Format date to YYYY-MM-DD string in Seoul timezone
+ * @deprecated Use formatSeoulDate from calendar.ts instead
  */
 export function formatDateString(date: Date): string {
-  return date.toISOString().split('T')[0];
+  return formatSeoulDate(date);
 }
 
 /**
@@ -78,93 +85,35 @@ export function isDateTimeBeforeOrOnDate(dateTime: Date, dateString: string): bo
 
 /**
  * Get the next working day after the given date
+ * @deprecated Use getNextSeoulWorkingDay from calendar.ts instead
  */
 export function getNextWorkingDay(date: Date): Date {
-  const nextDay = new Date(date);
-  nextDay.setDate(nextDay.getDate() + 1);
-  
-  // Keep advancing until we find a working day
-  while (!isWorkingDay(nextDay)) {
-    nextDay.setDate(nextDay.getDate() + 1);
-  }
-  
-  return nextDay;
+  // This is now handled by the calendar module
+  throw new Error('getNextWorkingDay is deprecated. Use getNextSeoulWorkingDay from calendar.ts instead');
 }
 
 /**
  * Calculate recovery requirement based on missed date and current date
+ * @deprecated Use calculateRecoveryRequirement from calendar.ts instead
  */
 export function calculateRecoveryRequirement(missedDate: Date, currentDate: Date): RecoveryRequirement {
-  const isCurrentWorkingDay = isWorkingDay(currentDate);
-  const nextWorkingDay = getNextWorkingDay(missedDate);
-  
-  return {
-    postsRequired: isCurrentWorkingDay ? 2 : 1,  // 2 for working day, 1 for weekend
-    currentPosts: 0,
-    deadline: formatDateString(nextWorkingDay),
-    missedDate: formatDateString(missedDate)
-  };
+  return calculateRecoveryReq(missedDate, currentDate);
 }
 
 /**
  * Check if user missed yesterday (only working days count)
+ * @deprecated Use didUserMissYesterday from calendar.ts instead
  */
 export async function didUserMissYesterday(userId: string, currentDate: Date): Promise<boolean> {
-  const seoulDate = toSeoulDate(currentDate);
-  const yesterday = new Date(seoulDate);
-  yesterday.setDate(yesterday.getDate() - 1);
-  
-  // Only working days count as "missable"
-  if (!isWorkingDay(yesterday)) {
-    return false;
-  }
-  
-  // Check if user had any postings on that working day
-  const postingsRef = admin.firestore()
-    .collection('users')
-    .doc(userId)
-    .collection('postings');
-    
-  // Create Seoul timezone date boundaries for yesterday
-  // Use formatDateString to get YYYY-MM-DD format, then create proper Seoul timezone boundaries
-  const yesterdayDateString = formatDateString(yesterday);
-  
-  // Create start and end of day in Seoul timezone
-  const startOfDaySeoul = new Date(`${yesterdayDateString}T00:00:00+09:00`);
-  const endOfDaySeoul = new Date(`${yesterdayDateString}T23:59:59.999+09:00`);
-  
-  const postingsSnapshot = await postingsRef
-    .where('createdAt', '>=', Timestamp.fromDate(startOfDaySeoul))
-    .where('createdAt', '<=', Timestamp.fromDate(endOfDaySeoul))
-    .limit(1)
-    .get();
-    
-  return postingsSnapshot.empty; // True if no postings = missed
+  return await didMissYesterday(userId, currentDate);
 }
 
 /**
- * Count posts written by user on a specific date
+ * Count posts written by user on a specific date in Seoul timezone
+ * @deprecated Use countSeoulDatePosts from calendar.ts instead
  */
 export async function countPostsOnDate(userId: string, date: Date): Promise<number> {
-  // Create Seoul timezone date boundaries
-  // Use formatDateString to get YYYY-MM-DD format, then create proper Seoul timezone boundaries
-  const dateString = formatDateString(date);
-  
-  // Create start and end of day in Seoul timezone
-  const startOfDaySeoul = new Date(`${dateString}T00:00:00+09:00`);
-  const endOfDaySeoul = new Date(`${dateString}T23:59:59.999+09:00`);
-  
-  const postingsRef = admin.firestore()
-    .collection('users')
-    .doc(userId)
-    .collection('postings');
-    
-  const postingsSnapshot = await postingsRef
-    .where('createdAt', '>=', Timestamp.fromDate(startOfDaySeoul))
-    .where('createdAt', '<=', Timestamp.fromDate(endOfDaySeoul))
-    .get();
-    
-  return postingsSnapshot.size;
+  return await countSeoulDatePosts(userId, date);
 }
 
 /**
