@@ -10,7 +10,8 @@ export type RemoteConfigKey =
   | 'free_writing_target_time'
   | 'stats_notice_banner_text'
   | 'block_user_feature_enabled'
-  | 'secret_buddy_enabled';
+  | 'secret_buddy_enabled'
+  | 'stat_page_enabled';
 
 // 각 key별 타입 정의
 interface RemoteConfigValueTypes {
@@ -21,6 +22,7 @@ interface RemoteConfigValueTypes {
   stats_notice_banner_text: string;
   block_user_feature_enabled: boolean;
   secret_buddy_enabled: boolean;
+  stat_page_enabled: boolean;
 }
 
 export const REMOTE_CONFIG_DEFAULTS: RemoteConfigValueTypes = {
@@ -31,6 +33,7 @@ export const REMOTE_CONFIG_DEFAULTS: RemoteConfigValueTypes = {
   stats_notice_banner_text: '',
   block_user_feature_enabled: false,
   secret_buddy_enabled: true,
+  stat_page_enabled: true,
 };
 
 interface RemoteConfigContextValue {
@@ -58,13 +61,27 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
     fetchAndActivate(remoteConfig)
       .then(() => {
         setValues({
-          active_board_id: getValue(remoteConfig, 'active_board_id').asString() || REMOTE_CONFIG_DEFAULTS.active_board_id,
-          upcoming_board_id: getValue(remoteConfig, 'upcoming_board_id').asString() || REMOTE_CONFIG_DEFAULTS.upcoming_board_id,
-          user_cache_version: getValue(remoteConfig, 'user_cache_version').asString() || REMOTE_CONFIG_DEFAULTS.user_cache_version,
-          stats_notice_banner_text: getValue(remoteConfig, 'stats_notice_banner_text').asString() || REMOTE_CONFIG_DEFAULTS.stats_notice_banner_text,
-          free_writing_target_time: getValue(remoteConfig, 'free_writing_target_time').asNumber() || REMOTE_CONFIG_DEFAULTS.free_writing_target_time,
-          block_user_feature_enabled: getValue(remoteConfig, 'block_user_feature_enabled').asBoolean(),
+          active_board_id:
+            getValue(remoteConfig, 'active_board_id').asString() ||
+            REMOTE_CONFIG_DEFAULTS.active_board_id,
+          upcoming_board_id:
+            getValue(remoteConfig, 'upcoming_board_id').asString() ||
+            REMOTE_CONFIG_DEFAULTS.upcoming_board_id,
+          user_cache_version:
+            getValue(remoteConfig, 'user_cache_version').asString() ||
+            REMOTE_CONFIG_DEFAULTS.user_cache_version,
+          stats_notice_banner_text:
+            getValue(remoteConfig, 'stats_notice_banner_text').asString() ||
+            REMOTE_CONFIG_DEFAULTS.stats_notice_banner_text,
+          free_writing_target_time:
+            getValue(remoteConfig, 'free_writing_target_time').asNumber() ||
+            REMOTE_CONFIG_DEFAULTS.free_writing_target_time,
+          block_user_feature_enabled: getValue(
+            remoteConfig,
+            'block_user_feature_enabled',
+          ).asBoolean(),
           secret_buddy_enabled: getValue(remoteConfig, 'secret_buddy_enabled').asBoolean(),
+          stat_page_enabled: getValue(remoteConfig, 'stat_page_enabled').asBoolean(),
         });
       })
       .catch((err) => {
@@ -98,4 +115,4 @@ export function useRemoteConfig<K extends keyof RemoteConfigValueTypes>(key: K) 
 
 export function useRemoteConfigReady() {
   return useContext(RemoteConfigContext).ready;
-} 
+}
