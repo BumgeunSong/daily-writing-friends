@@ -8,6 +8,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/shared/ui/card';
 import { useUser } from '@/user/hooks/useUser';
 import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';
 import { PostAuthorData, PostUserProfile } from './PostUserProfile';
+import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import type React from 'react';
 
 interface PostCardProps {
@@ -26,6 +27,7 @@ function handleKeyDown(e: React.KeyboardEvent, onClick: (e: any) => void) {
 
 const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) => {
   const { userData: authorData, isLoading: isAuthorLoading } = useUser(post.authorId);
+  const { value: statPageEnabled } = useRemoteConfig('stat_page_enabled');
   const { data: badges } = usePostProfileBadges(post.authorId);
   const isPrivate = post.visibility === PostVisibility.PRIVATE;
   const contentPreview = !isPrivate ? getContentPreview(post.content) : null;
@@ -48,21 +50,21 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) =>
   };
 
   return (
-    <Card 
-      className="reading-shadow border-border/50 transition-all duration-200 hover:border-border nav-hover cursor-pointer reading-focus active:scale-[0.99]"
+    <Card
+      className='reading-shadow border-border/50 transition-all duration-200 hover:border-border nav-hover cursor-pointer reading-focus active:scale-[0.99]'
       onClick={handleCardClick}
-      role="button"
+      role='button'
       tabIndex={0}
-      aria-label="게시글 상세로 이동"
+      aria-label='게시글 상세로 이동'
       onKeyDown={(e) => handleKeyDown(e, handleCardClick)}
     >
-      <CardHeader className="px-3 pb-1 pt-3 md:px-4">
-        <div className="mb-3 flex items-center">
+      <CardHeader className='px-3 pb-1 pt-3 md:px-4'>
+        <div className='mb-3 flex items-center'>
           <PostUserProfile
             authorData={postAuthorData}
             isLoading={isAuthorLoading}
             onClickProfile={handleProfileClick}
-            badges={badges}
+            badges={statPageEnabled ? badges : undefined}
           />
         </div>
         <h2 className='flex items-center text-lg font-semibold text-foreground leading-tight md:text-xl'>
@@ -72,9 +74,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) =>
           {post.title}
         </h2>
       </CardHeader>
-      <CardContent
-        className="px-3 pb-3 pt-1 min-h-[44px] md:px-4"
-      >
+      <CardContent className='px-3 pb-3 pt-1 min-h-[44px] md:px-4'>
         {!isPrivate && contentPreview && (
           <div
             className='
@@ -102,9 +102,7 @@ max-w-none'
           </div>
         )}
       </CardContent>
-      <CardFooter
-        className="flex justify-between border-t border-border/50 px-3 pb-3 pt-3 min-h-[44px] md:px-4"
-      >
+      <CardFooter className='flex justify-between border-t border-border/50 px-3 pb-3 pt-3 min-h-[44px] md:px-4'>
         <div className='flex items-center text-muted-foreground'>
           <MessageCircle className='mr-1.5 size-4' />
           <p className='text-sm font-medium'>{post.countOfComments + post.countOfReplies}</p>
