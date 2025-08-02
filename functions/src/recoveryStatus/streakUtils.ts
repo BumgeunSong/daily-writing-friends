@@ -28,6 +28,7 @@ export async function getOrCreateStreakInfo(
       },
       currentStreak: 0,
       longestStreak: 0,
+      originalStreak: 0,
     };
 
     await streakInfoRef.set(defaultStreakInfo);
