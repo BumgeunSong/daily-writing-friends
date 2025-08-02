@@ -1,3 +1,14 @@
+/**
+ * @deprecated LEGACY TESTS - DO NOT USE
+ * 
+ * These tests were written for the old streak recovery logic and are no longer valid.
+ * They are kept for reference only. 
+ * 
+ * Use stateTransitions.newspec.test.ts for current behavior verification.
+ * 
+ * TODO: Remove this file after confirming new implementation is stable.
+ */
+
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { Timestamp } from 'firebase-admin/firestore';
 import {

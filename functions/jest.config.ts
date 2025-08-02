@@ -10,6 +10,9 @@ const config: Config.InitialOptions = {
         }]
     },
     testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.tsx?$',
+    testPathIgnorePatterns: [
+        '<rootDir>/src/.*\\.legacy\\.(test|spec)\\.tsx?$'
+    ],
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
     setupFiles: ['<rootDir>/src/test/setup.ts'],
     testTimeout: 10000,
