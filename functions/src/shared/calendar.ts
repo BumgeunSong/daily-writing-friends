@@ -29,6 +29,7 @@ import {
   isSameDateInSeoul,
   parseSeoulDateString,
 } from './seoulTime';
+import { Timestamp } from 'firebase-admin/firestore';
 
 // ===== WORKING DAY OPERATIONS =====
 
@@ -219,8 +220,8 @@ export function isSameSeoulDate(date1: Date, date2: Date): boolean {
 export interface RecoveryRequirement {
   postsRequired: number;
   currentPosts: number;
-  deadline: string; // YYYY-MM-DD format
-  missedDate: string; // YYYY-MM-DD format
+  deadline: Timestamp;
+  missedDate: Timestamp;
 }
 
 /**
@@ -247,8 +248,8 @@ export function calculateRecoveryRequirement(
   return {
     postsRequired: isCurrentWorkingDay ? 2 : 1, // 2 for working day, 1 for weekend
     currentPosts: 0,
-    deadline: formatSeoulDate(nextWorkingDay),
-    missedDate: formatSeoulDate(seoulMissedDate),
+    deadline: Timestamp.fromDate(nextWorkingDay),
+    missedDate: Timestamp.fromDate(seoulMissedDate),
   };
 }
 
@@ -256,13 +257,13 @@ export function calculateRecoveryRequirement(
  * Check if a deadline has passed compared to current date
  * Both dates are compared in Seoul timezone
  */
-export function hasDeadlinePassed(deadlineString: string, currentDate: Date): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(deadlineString)) {
-    throw new Error(`Invalid deadline format. Expected YYYY-MM-DD, got: ${deadlineString}`);
+export function hasDeadlinePassed(deadline: Timestamp, currentDate: Date): boolean {
+  if (!deadline) {
+    throw new Error('Invalid deadline provided to hasDeadlinePassed');
   }
 
-  const currentDateString = formatSeoulDate(currentDate);
-  return currentDateString > deadlineString;
+  const currentTimestamp = Timestamp.fromDate(currentDate);
+  return currentTimestamp.toMillis() > deadline.toMillis();
 }
 
 // ===== POSTING QUERIES =====
