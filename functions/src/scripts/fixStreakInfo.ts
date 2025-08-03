@@ -153,8 +153,8 @@ export function determineStatusFromPostingHistoryOptimized(
   }
 
   // No current streak - need to determine if this is a recovery scenario or just missed
-  // Find the most recent working day to check for misses (PRD: only working days matter)
-  let mostRecentWorkingDay = new Date(currentDate);
+  // For recovery detection, we need to find the LAST working day the user posted on
+  // and see if there's a gap between that and today
   
   // Helper function for bypass
   const isWorkingDayWithBypass = (date: Date): boolean => {
@@ -164,56 +164,44 @@ export function determineStatusFromPostingHistoryOptimized(
     return isSeoulWorkingDay(date);
   };
 
-  // If today is a working day, that's our reference point
-  // If today is a weekend, go back to the most recent working day
-  if (!isWorkingDayWithBypass(mostRecentWorkingDay)) {
-    // Go back to find the most recent working day
-    do {
-      mostRecentWorkingDay = new Date(mostRecentWorkingDay.getTime() - 24 * 60 * 60 * 1000);
-    } while (!isWorkingDayWithBypass(mostRecentWorkingDay));
+  // Find the most recent working day the user actually posted on
+  const sortedWorkingDays = workingDayPostings
+    .map(p => getSeoulDateKey(p.createdAt))
+    .filter((dateKey, index, array) => array.indexOf(dateKey) === index) // Deduplicate
+    .sort()
+    .reverse(); // Most recent first
+
+  if (sortedWorkingDays.length === 0) {
+    // User has no working day posts at all
+    return {
+      lastContributionDate,
+      status: { type: RecoveryStatusType.MISSED },
+      currentStreak: 0,
+      longestStreak,
+      originalStreak: 0,
+    };
+  }
+
+  const lastWorkingDayWithPosts = new Date(sortedWorkingDays[0] + 'T12:00:00Z');
+  
+  // Find what the next working day after their last post should have been
+  let expectedNextWorkingDay = new Date(lastWorkingDayWithPosts.getTime() + 24 * 60 * 60 * 1000);
+  while (!isWorkingDayWithBypass(expectedNextWorkingDay)) {
+    expectedNextWorkingDay = new Date(expectedNextWorkingDay.getTime() + 24 * 60 * 60 * 1000);
   }
   
+  // Check if user missed that expected working day
+  const expectedDayKey = getSeoulDateKey(expectedNextWorkingDay);
+  const missedExpectedDay = !postingDays.has(expectedDayKey);
   
-  const mostRecentWorkingDayKey = getSeoulDateKey(mostRecentWorkingDay);
-  const hadPostsOnMostRecentWorkingDay = postingDays.has(mostRecentWorkingDayKey);
-  
-  
-  // If user posted on the most recent working day, they should have current streak > 0
-  // Since currentStreak is 0, check if they had a streak before missing
-  if (!hadPostsOnMostRecentWorkingDay) {
-    // Check if user had a streak before missing this working day
-    const dayBeforeMiss = new Date(mostRecentWorkingDay.getTime() - 24 * 60 * 60 * 1000);
+  if (missedExpectedDay) {
+    // User missed the expected next working day - check if they had a streak before
+    // Calculate the streak they had up until their last posting day
+    const streakEndingOnLastPost = calculateCurrentStreakPure(postingDays, lastWorkingDayWithPosts);
     
-    // Find the last working day before the missed day
-    let lastWorkingDayBeforeMiss = dayBeforeMiss;
-    while (!isWorkingDayWithBypass(lastWorkingDayBeforeMiss)) {
-      lastWorkingDayBeforeMiss = new Date(lastWorkingDayBeforeMiss.getTime() - 24 * 60 * 60 * 1000);
-    }
-    
-    const workingPostingsBeforeMiss = workingDayPostings.filter(p => 
-      p.createdAt <= lastWorkingDayBeforeMiss
-    );
-    const postingDaysBeforeMiss = buildPostingDaysSet(workingPostingsBeforeMiss);
-    // Temporary fix: Calculate streak manually due to bug in calculateCurrentStreakPure
-    let streakBeforeMiss = 0;
-    if (postingDaysBeforeMiss.has(getSeoulDateKey(lastWorkingDayBeforeMiss))) {
-      // Count consecutive working days backwards
-      let checkDate = new Date(lastWorkingDayBeforeMiss);
-      while (isWorkingDayWithBypass(checkDate) && postingDaysBeforeMiss.has(getSeoulDateKey(checkDate))) {
-        streakBeforeMiss++;
-        checkDate = new Date(checkDate.getTime() - 24 * 60 * 60 * 1000);
-        // Skip to previous working day
-        while (!isWorkingDayWithBypass(checkDate) && checkDate.getTime() > lastWorkingDayBeforeMiss.getTime() - 30 * 24 * 60 * 60 * 1000) {
-          checkDate = new Date(checkDate.getTime() - 24 * 60 * 60 * 1000);
-        }
-      }
-    }
-    
-    
-    
-    if (streakBeforeMiss > 0) {
-      // User had a streak but missed the recent working day - check for recovery eligibility
-      const recoveryReq = calculateRecoveryRequirement(mostRecentWorkingDay, currentDate);
+    if (streakEndingOnLastPost > 0) {
+      // User had a streak but missed the expected next working day
+      const recoveryReq = calculateRecoveryRequirement(expectedNextWorkingDay, currentDate);
       
       // Check if recovery deadline has passed
       if (hasDeadlinePassed(recoveryReq.deadline, currentDate)) {
@@ -226,12 +214,40 @@ export function determineStatusFromPostingHistoryOptimized(
         };
       }
 
-      // User is eligible for recovery
+      // Check if user has completed recovery by posting today
       const currentDateKey = getSeoulDateKey(currentDate);
       const todayAllPostings = allValidPostings.filter(
         p => getSeoulDateKey(p.createdAt) === currentDateKey
       );
 
+      // If user has posted enough times today, they've completed recovery
+      if (todayAllPostings.length >= recoveryReq.postsRequired) {
+        // Recovery completed! Calculate new streak based on recovery day type
+        const isRecoveryDayWorking = isWorkingDayWithBypass(currentDate);
+        
+        if (isRecoveryDayWorking) {
+          // Working day recovery: increment both streaks by 1
+          const newStreak = streakEndingOnLastPost + 1;
+          return {
+            lastContributionDate,
+            status: { type: RecoveryStatusType.ON_STREAK },
+            currentStreak: newStreak,
+            longestStreak: Math.max(longestStreak, newStreak),
+            originalStreak: newStreak,
+          };
+        } else {
+          // Weekend recovery: restore original streak without increment
+          return {
+            lastContributionDate,
+            status: { type: RecoveryStatusType.ON_STREAK },
+            currentStreak: streakEndingOnLastPost,
+            longestStreak: Math.max(longestStreak, streakEndingOnLastPost),
+            originalStreak: streakEndingOnLastPost,
+          };
+        }
+      }
+
+      // User is still eligible for recovery (hasn't posted enough yet)
       return {
         lastContributionDate,
         status: {
@@ -243,7 +259,7 @@ export function determineStatusFromPostingHistoryOptimized(
         },
         currentStreak: 0,
         longestStreak,
-        originalStreak: streakBeforeMiss,
+        originalStreak: streakEndingOnLastPost,
       };
     }
   }

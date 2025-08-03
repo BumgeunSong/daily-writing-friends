@@ -57,10 +57,9 @@ export function convertToSeoulTime(date: Date): Date {
     throw new Error('Invalid Date object provided to convertToSeoulTime');
   }
 
-  // Convert UTC time to Seoul timezone
-  // Seoul is UTC+9, so we add 9 hours to UTC time
-  const seoulTime = new Date(date.getTime() + 9 * 60 * 60 * 1000);
-  return seoulTime;
+  // Use date-fns-tz to properly handle timezone conversion including DST
+  // This converts a Seoul local time to UTC, then we interpret it as Seoul time
+  return fromZonedTime(date, SEOUL_TIMEZONE);
 }
 
 /**

@@ -180,7 +180,8 @@ export function isSeoulDateTimeBeforeOrOnDate(dateTime: Date, dateString: string
     throw new Error(`Invalid date string format. Expected YYYY-MM-DD, got: ${dateString}`);
   }
   const endOfDeadlineDay = endOfDay(new Date(dateString + 'T00:00:00.000Z'));
-  return isBefore(dateTime, endOfDeadlineDay) || isSameDay(dateTime, endOfDeadlineDay);
+  // Use negated isAfter to properly handle exact equality at end of day
+  return !isAfter(dateTime, endOfDeadlineDay);
 }
 
 /**
