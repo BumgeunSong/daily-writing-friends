@@ -30,6 +30,7 @@ import {
   parseSeoulDateString,
 } from './seoulTime';
 import { Timestamp } from 'firebase-admin/firestore';
+import { isWeekend, addDays, subDays, isSameDay, isAfter, isBefore, endOfDay } from 'date-fns';
 
 // ===== WORKING DAY OPERATIONS =====
 
@@ -57,12 +58,11 @@ export function getNextSeoulWorkingDay(date: Date): Date {
   }
 
   const seoulDate = convertToSeoulTime(date);
-  let nextDay = new Date(seoulDate);
-  nextDay.setDate(nextDay.getDate() + 1);
+  let nextDay = addDays(seoulDate, 1);
 
   // Keep advancing until we find a working day
-  while (!isWorkingDay(nextDay)) {
-    nextDay.setDate(nextDay.getDate() + 1);
+  while (isWeekend(nextDay)) {
+    nextDay = addDays(nextDay, 1);
   }
 
   return nextDay;
@@ -77,11 +77,10 @@ export function getPreviousSeoulWorkingDay(date: Date): Date {
   }
 
   const seoulDate = convertToSeoulTime(date);
-  let previousDay = new Date(seoulDate);
-  previousDay.setDate(previousDay.getDate() - 1);
+  let previousDay = subDays(seoulDate, 1);
 
-  while (!isWorkingDay(previousDay)) {
-    previousDay.setDate(previousDay.getDate() - 1);
+  while (isWeekend(previousDay)) {
+    previousDay = subDays(previousDay, 1);
   }
 
   return previousDay;
@@ -97,9 +96,7 @@ export function getSeoulYesterday(fromDate: Date): Date {
   }
 
   const seoulDate = convertToSeoulTime(fromDate);
-  const yesterday = new Date(seoulDate);
-  yesterday.setDate(yesterday.getDate() - 1);
-  return yesterday;
+  return subDays(seoulDate, 1);
 }
 
 // ===== DATE STRING OPERATIONS =====
@@ -174,8 +171,8 @@ export function isSeoulDateTimeBeforeOrOnDate(dateTime: Date, dateString: string
   if (!isValidDateString(dateString)) {
     throw new Error(`Invalid date string format. Expected YYYY-MM-DD, got: ${dateString}`);
   }
-  const endOfDeadlineDay = new Date(dateString + 'T23:59:59.999Z');
-  return dateTime.getTime() <= endOfDeadlineDay.getTime();
+  const endOfDeadlineDay = endOfDay(new Date(dateString + 'T00:00:00.000Z'));
+  return isBefore(dateTime, endOfDeadlineDay) || isSameDay(dateTime, endOfDeadlineDay);
 }
 
 /**
@@ -407,8 +404,7 @@ export function* generateSeoulWorkingDaysBackward(startDate: Date): Generator<Da
     if (isSeoulWorkingDay(currentDate)) {
       yield new Date(currentDate);
     }
-    currentDate = new Date(currentDate);
-    currentDate.setDate(currentDate.getDate() - 1);
+    currentDate = subDays(currentDate, 1);
   }
 }
 
@@ -452,18 +448,18 @@ export function countSeoulWorkingDaysBetween(startDate: Date, endDate: Date): nu
   const seoulStartDate = convertToSeoulTime(startDate);
   const seoulEndDate = convertToSeoulTime(endDate);
 
-  if (seoulStartDate >= seoulEndDate) {
+  if (isAfter(seoulStartDate, seoulEndDate) || isSameDay(seoulStartDate, seoulEndDate)) {
     return 0;
   }
 
   let count = 0;
   let currentDate = new Date(seoulStartDate);
 
-  while (currentDate < seoulEndDate) {
+  while (isBefore(currentDate, seoulEndDate)) {
     if (isSeoulWorkingDay(currentDate)) {
       count++;
     }
-    currentDate.setDate(currentDate.getDate() + 1);
+    currentDate = addDays(currentDate, 1);
   }
 
   return count;

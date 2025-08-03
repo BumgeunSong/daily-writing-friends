@@ -1,10 +1,11 @@
 /**
- * Centralized Seoul timezone utilities using proper IANA timezone handling
- * 
- * This module provides type-safe, reliable Seoul timezone operations that work
- * consistently across different server environments. All functions are pure
- * and use the standard Intl.DateTimeFormat API for timezone conversions.
- * 
+ * Centralized Seoul timezone utilities using date-fns-tz
+ *
+ * This module provides type-safe, reliable Seoul timezone operations using
+ * the date-fns-tz library for consistent timezone handling across different
+ * server environments. All functions are pure and use the standard date-fns
+ * API for timezone conversions.
+ *
  * Key Design Principles:
  * 1. Use IANA timezone 'Asia/Seoul' consistently
  * 2. Always work with UTC internally, convert for display/boundaries only
@@ -14,6 +15,8 @@
  */
 
 import { Timestamp } from 'firebase-admin/firestore';
+import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
+import { subDays } from 'date-fns';
 
 export const SEOUL_TIMEZONE = 'Asia/Seoul';
 
@@ -43,10 +46,10 @@ export function getCurrentSeoulTime(): Date {
 /**
  * Convert any Date to Seoul timezone
  * Returns a Date object that represents the Seoul local time as UTC
- * 
- * Example: 
+ *
+ * Example:
  * - Input: 2025-07-31T06:30:00Z (UTC)
- * - Seoul time: 2025-07-31T15:30:00 (Seoul = UTC+9)  
+ * - Seoul time: 2025-07-31T15:30:00 (Seoul = UTC+9)
  * - Output: 2025-07-31T15:30:00Z (Seoul time represented as UTC)
  */
 export function convertToSeoulTime(date: Date): Date {
@@ -54,38 +57,16 @@ export function convertToSeoulTime(date: Date): Date {
     throw new Error('Invalid Date object provided to convertToSeoulTime');
   }
 
-  // Use Intl.DateTimeFormat to get Seoul time components
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: SEOUL_TIMEZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false
-  });
-
-  const parts = formatter.formatToParts(date);
-  const partsMap = new Map(parts.map(part => [part.type, part.value]));
-
-  // Create a new Date representing Seoul time as UTC
-  const seoulTimeAsUTC = new Date(Date.UTC(
-    parseInt(partsMap.get('year')!),
-    parseInt(partsMap.get('month')!) - 1, // months are 0-indexed
-    parseInt(partsMap.get('day')!),
-    parseInt(partsMap.get('hour')!),
-    parseInt(partsMap.get('minute')!),
-    parseInt(partsMap.get('second')!)
-  ));
-
-  return seoulTimeAsUTC;
+  // Convert UTC time to Seoul timezone
+  // Seoul is UTC+9, so we add 9 hours to UTC time
+  const seoulTime = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  return seoulTime;
 }
 
 /**
  * Get date boundaries for a specific date in Seoul timezone
  * Returns UTC dates that represent the start and end of the Seoul day
- * 
+ *
  * Example:
  * - Input: 2025-07-31 (any time)
  * - Returns boundaries for 2025-07-31 in Seoul timezone
@@ -97,41 +78,24 @@ export function getSeoulDateBoundaries(date: Date): SeoulDateBoundaries {
     throw new Error('Invalid Date object provided to getSeoulDateBoundaries');
   }
 
-  // First convert the input date to Seoul timezone to get the Seoul date
-  const seoulTime = convertToSeoulTime(date);
-  
-  // Get YYYY-MM-DD string in Seoul timezone
-  const dateString = seoulTime.toISOString().split('T')[0];
-  
+  // Get the date string in Seoul timezone
+  const dateString = formatInTimeZone(date, SEOUL_TIMEZONE, 'yyyy-MM-dd');
+
   // Create Seoul date boundaries
   // Start of day: YYYY-MM-DD 00:00:00 in Seoul
   const seoulStartOfDay = new Date(`${dateString}T00:00:00.000`);
-  // End of day: YYYY-MM-DD 23:59:59.999 in Seoul  
+  // End of day: YYYY-MM-DD 23:59:59.999 in Seoul
   const seoulEndOfDay = new Date(`${dateString}T23:59:59.999`);
-  
+
   // Convert Seoul local times to UTC for database queries
-  const startOfDay = convertSeoulLocalTimeToUTC(seoulStartOfDay);
-  const endOfDay = convertSeoulLocalTimeToUTC(seoulEndOfDay);
+  const startOfDayUTC = fromZonedTime(seoulStartOfDay, SEOUL_TIMEZONE);
+  const endOfDayUTC = fromZonedTime(seoulEndOfDay, SEOUL_TIMEZONE);
 
   return {
-    startOfDay,
-    endOfDay,
-    dateString
+    startOfDay: startOfDayUTC,
+    endOfDay: endOfDayUTC,
+    dateString,
   };
-}
-
-/**
- * Convert a Seoul local time to UTC
- * Input should be a Date representing Seoul local time
- * Returns the equivalent UTC time
- * 
- * Example:
- * - Input: 2025-07-31T00:00:00 (representing Seoul midnight)
- * - Output: 2025-07-30T15:00:00Z (Seoul midnight as UTC)
- */
-function convertSeoulLocalTimeToUTC(seoulLocalTime: Date): Date {
-  // Seoul is UTC+9, so Seoul time - 9 hours = UTC time
-  return new Date(seoulLocalTime.getTime() - (9 * 60 * 60 * 1000));
 }
 
 /**
@@ -144,11 +108,11 @@ export function getSeoulDateBoundariesAsTimestamps(date: Date): {
   dateString: string;
 } {
   const boundaries = getSeoulDateBoundaries(date);
-  
+
   return {
     startTimestamp: Timestamp.fromDate(boundaries.startOfDay),
     endTimestamp: Timestamp.fromDate(boundaries.endOfDay),
-    dateString: boundaries.dateString
+    dateString: boundaries.dateString,
   };
 }
 
@@ -161,14 +125,7 @@ export function formatSeoulDateString(date: Date): string {
     throw new Error('Invalid Date object provided to formatSeoulDateString');
   }
 
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: SEOUL_TIMEZONE,
-    year: 'numeric',
-    month: '2-digit', 
-    day: '2-digit'
-  });
-
-  return formatter.format(date);
+  return formatInTimeZone(date, SEOUL_TIMEZONE, 'yyyy-MM-dd');
 }
 
 /**
@@ -186,12 +143,12 @@ export function isSameDateInSeoul(date1: Date, date2: Date): boolean {
  */
 export function getYesterdaySeoulBoundaries(): SeoulDateBoundaries {
   const now = new Date();
-  const yesterday = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+  const yesterday = subDays(now, 1);
   return getSeoulDateBoundaries(yesterday);
 }
 
 /**
- * Get today's date boundaries in Seoul timezone  
+ * Get today's date boundaries in Seoul timezone
  * Convenience function for common use case
  */
 export function getTodaySeoulBoundaries(): SeoulDateBoundaries {
@@ -210,8 +167,8 @@ export function parseSeoulDateString(dateString: string): SeoulDateBoundaries {
 
   // Create a date representing noon on that day in Seoul to avoid timezone edge cases
   const seoulNoon = new Date(`${dateString}T12:00:00`);
-  const utcNoonForSeoulDate = convertSeoulLocalTimeToUTC(seoulNoon);
-  
+  const utcNoonForSeoulDate = fromZonedTime(seoulNoon, SEOUL_TIMEZONE);
+
   return getSeoulDateBoundaries(utcNoonForSeoulDate);
 }
 
@@ -227,7 +184,7 @@ export function debugTimezoneConversion(date: Date): {
 } {
   const seoulTime = convertToSeoulTime(date);
   const boundaries = getSeoulDateBoundaries(date);
-  
+
   return {
     original: date.toISOString(),
     utc: date.toISOString(),
@@ -235,7 +192,7 @@ export function debugTimezoneConversion(date: Date): {
     boundaries: {
       ...boundaries,
       startOfDay: new Date(boundaries.startOfDay),
-      endOfDay: new Date(boundaries.endOfDay)
-    }
+      endOfDay: new Date(boundaries.endOfDay),
+    },
   };
 }
