@@ -36,5 +36,5 @@ export {
 
 export { 
   allocateSecretBuddy,
-  initializeUserStreaks
+  fixStreakInfoScript
 } from './scripts';
