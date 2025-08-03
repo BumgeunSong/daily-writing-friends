@@ -252,8 +252,8 @@ export function PostTextEditor({
 
   return (
     <CopyErrorBoundary>
-      <div className='relative space-y-2 w-full'>
-        <div className='rounded-xl border-0 bg-background w-full'>
+      <div className='relative w-full space-y-2'>
+        <div className='w-full rounded-xl border-0 bg-background'>
           <ReactQuill
             ref={quillRef}
             value={value}
@@ -262,7 +262,7 @@ export function PostTextEditor({
             theme="snow"
             modules={modules}
             formats={formats}
-            className="prose prose-lg prose-slate dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold max-w-none w-full"
+            className="prose prose-lg prose-slate w-full max-w-none dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold"
           />
         </div>
         

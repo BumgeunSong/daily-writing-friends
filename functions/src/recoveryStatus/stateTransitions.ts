@@ -1,6 +1,11 @@
 import { RecoveryStatusType } from './StreakInfo';
 import { getOrCreateStreakInfo } from './streakUtils';
 import {
+  DBUpdate,
+  validateUserState,
+  createBaseUpdate,
+} from './transitionHelpers';
+import {
   didUserMissYesterday,
   calculateRecoveryRequirement,
   countSeoulDatePosts,
@@ -9,11 +14,6 @@ import {
   hasDeadlinePassed,
   isSeoulWorkingDay,
 } from '../shared/calendar';
-import {
-  DBUpdate,
-  validateUserState,
-  createBaseUpdate,
-} from './transitionHelpers';
 
 // Re-export DBUpdate for backward compatibility
 export { DBUpdate } from './transitionHelpers';

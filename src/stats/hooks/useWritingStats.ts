@@ -4,16 +4,16 @@
 // 3. return stats
 
 import { useQuery } from '@tanstack/react-query';
+import { Posting } from '@/post/model/Posting';
 import { getRecentWorkingDays, getDateKey } from '@/shared/utils/dateUtils';
-import { WritingStats, Contribution, WritingBadge } from '@/stats/model/WritingStats';
 import {
   fetchPostingDataForContributions,
   createUserInfo,
   fetchUserSafely,
 } from '@/stats/api/stats';
 import { fetchStreakInfo } from '@/stats/api/streakInfo';
+import { WritingStats, Contribution, WritingBadge } from '@/stats/model/WritingStats';
 import { User } from '@/user/model/User';
-import { Posting } from '@/post/model/Posting';
 
 export function useWritingStats(userIds: string[], currentUserId?: string) {
   return useQuery({

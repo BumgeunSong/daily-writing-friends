@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithGoogle } from '@/firebase';
-import { useUpcomingBoard } from '@/login/hooks/useUpcomingBoard';
+import ActiveUserProfileList from '@/login/components/ActiveUserProfileList';
+import CohortDetailsCard from '@/login/components/CohortDetailsCard';
+import CountdownSection from '@/login/components/CountdownSection';
+import GoalSection from '@/login/components/GoalSection';
 import IntroCTA from '@/login/components/IntroCTA';
 import IntroHeader from '@/login/components/IntroHeader';
 import IntroHero from '@/login/components/IntroHero';
 import { useActiveUser } from '@/login/hooks/useActiveUser';
-import ActiveUserProfileList from '@/login/components/ActiveUserProfileList';
-import GoalSection from '@/login/components/GoalSection';
-import CountdownSection from '@/login/components/CountdownSection';
-import CohortDetailsCard from '@/login/components/CohortDetailsCard';
+import { useUpcomingBoard } from '@/login/hooks/useUpcomingBoard';
 import NoticeSection from '@/shared/components/NoticeSection';
 
 export default function JoinIntroPage() {

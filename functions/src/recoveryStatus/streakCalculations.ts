@@ -100,7 +100,7 @@ export function calculateLongestStreakPure(postingDays: string[]): number {
         currentStreakCount++;
       } else {
         // Check if there are working days between them
-        let tempDate = new Date(previousDate);
+        const tempDate = new Date(previousDate);
         tempDate.setDate(tempDate.getDate() + 1);
         let hasGap = false;
 
@@ -216,7 +216,7 @@ export function calculateLongestStreakOptimized(postings: PostingData[]): number
     } else {
       // Check for gaps in working days
       let hasWorkingDayGap = false;
-      let tempDate = new Date(previousDate);
+      const tempDate = new Date(previousDate);
       tempDate.setDate(tempDate.getDate() + 1);
 
       // Only check up to a reasonable limit to prevent infinite loops

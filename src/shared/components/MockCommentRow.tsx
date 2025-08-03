@@ -1,9 +1,9 @@
 import { Timestamp } from 'firebase/firestore';
 import { MessageCircle } from 'lucide-react';
+import { Comment } from '@/comment/model/Comment';
 import { sanitizeCommentContent } from '@/post/utils/contentUtils';
 import { AvatarFallback, AvatarImage, Avatar } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
-import { Comment } from '@/comment/model/Comment';
 
 export const mockComment: Comment = {
   id: 'mock-comment-1',
@@ -43,7 +43,7 @@ export default function MockCommentRow() {
       </div>
       <div className='text-base'>
         <div
-          className='prose prose-slate dark:prose-invert whitespace-pre-wrap'
+          className='prose prose-slate whitespace-pre-wrap dark:prose-invert'
           dangerouslySetInnerHTML={{ __html: sanitizeCommentContent(mockComment.content) }}
         />
       </div>

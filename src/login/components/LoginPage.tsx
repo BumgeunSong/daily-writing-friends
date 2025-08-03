@@ -35,9 +35,9 @@ export default function LoginPage() {
 
   return (
     <div className='flex min-h-screen items-center justify-center bg-background px-3 md:px-4'>
-      <Card className='w-full max-w-md reading-shadow border-border/50'>
+      <Card className='reading-shadow w-full max-w-md border-border/50'>
         <CardHeader className='text-center'>
-          <CardTitle className='text-2xl md:text-3xl font-semibold text-foreground tracking-tight'>매일 글쓰기 프렌즈</CardTitle>
+          <CardTitle className='text-2xl font-semibold tracking-tight text-foreground md:text-3xl'>매일 글쓰기 프렌즈</CardTitle>
         </CardHeader>
         <CardContent>
           <div className='mb-6 flex justify-center'>
@@ -48,7 +48,7 @@ export default function LoginPage() {
           <Button 
             variant="default"
             onClick={handleLogin} 
-            className='w-full min-h-[44px]'
+            className='min-h-[44px] w-full'
           >
             구글로 로그인하기
           </Button>

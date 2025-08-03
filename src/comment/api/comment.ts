@@ -8,8 +8,8 @@ import {
   deleteDoc,
   getDoc,
 } from 'firebase/firestore';
-import { firestore } from '@/firebase';
 import { Comment } from '@/comment/model/Comment';
+import { firestore } from '@/firebase';
 import { buildNotInQuery } from '@/user/api/user';
 
 /**

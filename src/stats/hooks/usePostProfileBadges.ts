@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { WritingBadge } from '@/stats/model/WritingStats';
 import { fetchCommentingData } from '@/stats/api/stats';
 import { fetchStreakInfo } from '@/stats/api/streakInfo';
+import { WritingBadge } from '@/stats/model/WritingStats';
 
 export function usePostProfileBadges(userId: string) {
     return useQuery(

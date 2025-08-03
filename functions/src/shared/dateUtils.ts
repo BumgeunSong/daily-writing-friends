@@ -4,7 +4,7 @@ export enum TimeZone {
 }
 
 /**
- * KST를 기준으로 주어진 날짜가 영업일인지 확인합니다 (주말과 공휴일 제외)
+ * KST를 기준으로 주어진 날짜가 영업일인지 확인합니다 (주말만 제외, 공휴일은 향후 구현)
  * @param date - Date 객체
  * @returns boolean - 영업일이면 true, 아니면 false
  * @throws Error - 유효하지 않은 Date 객체인 경우
@@ -18,28 +18,31 @@ export function isWorkingDay(date: Date): boolean {
         return false;
     }
 
-    if (isHolidayByKST(date, TimeZone.KST)) {
-        return false;
-    }
+    // TODO: Holiday logic will be implemented in future work
+    // if (isHolidayByKST(date, TimeZone.KST)) {
+    //     return false;
+    // }
 
     return true;
 }
 
-interface Holiday {
-    date: Date;
-}
+// TODO: Holiday logic will be implemented in future work
+// interface Holiday {
+//     date: Date;
+// }
 
-const HOLIDAYS: Holiday[] = [
-    { date: new Date('2024-12-31T00:00:00Z') },
-    { date: new Date('2025-01-01T00:00:00Z') },
-    { date: new Date('2025-01-28T00:00:00Z') },
-    { date: new Date('2025-01-29T00:00:00Z') },
-    { date: new Date('2025-01-30T00:00:00Z') }
-];
+// const HOLIDAYS: Holiday[] = [
+//     { date: new Date('2024-12-31T00:00:00Z') },
+//     { date: new Date('2025-01-01T00:00:00Z') },
+//     { date: new Date('2025-01-28T00:00:00Z') },
+//     { date: new Date('2025-01-29T00:00:00Z') },
+//     { date: new Date('2025-01-30T00:00:00Z') }
+// ];
 
-function isHolidayByKST(date: Date, timeZone: TimeZone): boolean {
-    return HOLIDAYS.some(holiday => isSameDay(holiday.date, date, timeZone));
-}
+// TODO: Holiday logic will be implemented in future work
+// function isHolidayByKST(date: Date, timeZone: TimeZone): boolean {
+//     return HOLIDAYS.some(holiday => isSameDay(holiday.date, date, timeZone));
+// }
 
 function isWeekendByKST(date: Date, timeZone: TimeZone): boolean {
     const dateInTimeZone = new Date(date.toLocaleString('en-US', { timeZone }));

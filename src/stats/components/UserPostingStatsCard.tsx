@@ -13,9 +13,9 @@ export function UserPostingStatsCard({ stats, onClick }: UserPostingStatsCardPro
   const { user, contributions } = stats;
 
   return (
-    <Card className='w-full bg-card border border-border/50 shadow-sm rounded-xl'>
+    <Card className='w-full rounded-xl border border-border/50 bg-card shadow-sm'>
       <CardContent
-        className='flex items-start gap-4 px-3 md:px-4 py-4 cursor-pointer reading-hover reading-focus active:scale-[0.99] transition-all duration-200'
+        className='reading-hover reading-focus flex cursor-pointer items-start gap-4 px-3 py-4 transition-all duration-200 active:scale-[0.99] md:px-4'
         onClick={onClick}
         role={onClick ? 'button' : undefined}
         tabIndex={onClick ? 0 : undefined}
@@ -26,7 +26,7 @@ export function UserPostingStatsCard({ stats, onClick }: UserPostingStatsCardPro
             <AvatarFallback>{user.nickname?.[0] || user.realname?.[0] || 'U'}</AvatarFallback>
           </Avatar>
           <div className='flex min-w-0 flex-col gap-1.5'>
-            <h3 className='truncate font-semibold text-card-foreground text-base md:text-lg'>
+            <h3 className='truncate text-base font-semibold text-card-foreground md:text-lg'>
               {user.nickname || user.realname || 'Anonymous'}
             </h3>
             <div className='flex flex-wrap gap-1'>

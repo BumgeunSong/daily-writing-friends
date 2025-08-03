@@ -47,7 +47,7 @@ async function fetchBoardFirstDay(boardId: string): Promise<Timestamp | null> {
 
 const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
 
-function generateDailyDatesBetween(startDate: Date, endDate: Date, timezone: TimeZone): Date[] {
+function generateDailyDatesBetween(startDate: Date, endDate: Date, _timezone: TimeZone): Date[] {
     // KST로 변환
     const kstStartDate = new Date(startDate.toLocaleString('en-US', {
         timeZone: 'Asia/Seoul'

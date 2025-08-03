@@ -1,7 +1,7 @@
 import { Timestamp } from 'firebase-admin/firestore';
+import { StreakInfo, RecoveryStatusType } from './StreakInfo';
 import admin from '../shared/admin';
 import { formatSeoulDate } from '../shared/calendar';
-import { StreakInfo, RecoveryStatusType } from './StreakInfo';
 
 /**
  * Get or create streak info document for user

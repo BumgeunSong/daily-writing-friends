@@ -20,8 +20,9 @@
  * - Comprehensive error handling
  */
 
+import { isWeekend, addDays, subDays, isSameDay, isAfter, isBefore, endOfDay } from 'date-fns';
+import { Timestamp } from 'firebase-admin/firestore';
 import admin from './admin';
-import { isWorkingDay } from './dateUtils';
 import {
   getSeoulDateBoundariesAsTimestamps,
   formatSeoulDateString,
@@ -29,8 +30,6 @@ import {
   isSameDateInSeoul,
   parseSeoulDateString,
 } from './seoulTime';
-import { Timestamp } from 'firebase-admin/firestore';
-import { isWeekend, addDays, subDays, isSameDay, isAfter, isBefore, endOfDay } from 'date-fns';
 
 // ===== WORKING DAY OPERATIONS =====
 
@@ -43,9 +42,18 @@ export function isSeoulWorkingDay(date: Date): boolean {
     throw new Error('Invalid Date object provided to isSeoulWorkingDay');
   }
 
-  // Convert to Seoul timezone first, then check working day
-  const seoulDate = convertToSeoulTime(date);
-  return isWorkingDay(seoulDate);
+  // Check day of week directly in Seoul timezone without date conversion
+  // This avoids the timezone conversion issues that can change the day
+  const dayOfWeek = date.toLocaleDateString('en-US', { 
+    timeZone: 'Asia/Seoul',
+    weekday: 'short'
+  });
+  
+  // Weekend check: Saturday = 'Sat', Sunday = 'Sun'
+  const isWeekend = dayOfWeek === 'Sat' || dayOfWeek === 'Sun';
+  
+  // TODO: Holiday logic will be implemented in future work
+  return !isWeekend;
 }
 
 /**

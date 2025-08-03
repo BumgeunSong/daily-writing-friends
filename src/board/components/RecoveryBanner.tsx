@@ -2,8 +2,8 @@
 
 import { SystemPostCard } from '@/post/components/SystemPostCard';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { useUserRecoveryStatus } from '@/user/hooks/useUserRecoveryStatus';
 import { useWritingStats } from '@/stats/hooks/useWritingStats';
+import { useUserRecoveryStatus } from '@/user/hooks/useUserRecoveryStatus';
 
 interface RecoveryBannerProps {
   boardId: string;

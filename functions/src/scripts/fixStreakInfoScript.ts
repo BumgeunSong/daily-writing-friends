@@ -1,5 +1,4 @@
 import { onRequest } from 'firebase-functions/v2/https';
-import admin from '../shared/admin';
 import {
   executeFixStreakInfo,
   FixStreakInfoResult,
@@ -7,8 +6,9 @@ import {
   OptimizedFetchOptions,
 } from './fixStreakInfo';
 import { StreakInfo } from '../recoveryStatus/StreakInfo';
-import { getCurrentSeoulTime, formatSeoulDateString } from '../shared/seoulTime';
+import admin from '../shared/admin';
 import { getCurrentSeoulDate } from '../shared/calendar';
+import { getCurrentSeoulTime, formatSeoulDateString } from '../shared/seoulTime';
 
 /**
  * Backup data structure for rollback capability
@@ -281,7 +281,7 @@ export async function executeFixStreakInfoWithBackup(options: {
  * Validate migration results by spot-checking a sample of users
  */
 async function validateMigrationResults(
-  sampleSize: number = 10
+  sampleSize = 10
 ): Promise<{
   validationPassed: boolean;
   checkedUsers: number;

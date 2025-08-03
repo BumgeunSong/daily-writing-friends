@@ -1,5 +1,7 @@
 import { Loader2, MessageCircle } from "lucide-react"
 import { useState, Suspense } from "react"
+import { useCreateReply } from '@/comment/hooks/useCreateReply'
+import { useReplyCount } from '@/comment/hooks/useReplyCount'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { Button } from "@/shared/ui/button"
 import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
@@ -7,8 +9,6 @@ import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import ReplyInput from "./ReplyInput"
 import ReplyList from "./ReplyList"
 import type React from "react"
-import { useReplyCount } from '@/comment/hooks/useReplyCount'
-import { useCreateReply } from '@/comment/hooks/useCreateReply'
 
 interface RepliesProps {
   boardId: string
@@ -54,7 +54,7 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
           <Button
             variant="ghost"
             size="sm"
-            className="h-auto px-0 text-sm font-normal text-muted-foreground reading-focus transition-colors duration-200 hover:bg-selection/60 hover:text-foreground"
+            className="reading-focus hover:bg-selection/60 h-auto px-0 text-sm font-normal text-muted-foreground transition-colors duration-200 hover:text-foreground"
             onClick={toggleExpand}
           >
             {isExpanded ? "답글 접기" : `답글 ${replyCount}개`}

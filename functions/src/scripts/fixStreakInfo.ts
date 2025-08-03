@@ -1,4 +1,11 @@
 import { Timestamp } from 'firebase-admin/firestore';
+import { Posting } from '../postings/Posting';
+import {
+  calculateCurrentStreakPure,
+  calculateLongestStreakPure,
+  buildPostingDaysSet,
+} from '../recoveryStatus/streakCalculations';
+import { StreakInfo, RecoveryStatus, RecoveryStatusType } from '../recoveryStatus/StreakInfo';
 import admin from '../shared/admin';
 import {
   getSeoulDateKey,
@@ -7,13 +14,6 @@ import {
   calculateRecoveryRequirement,
   hasDeadlinePassed,
 } from '../shared/calendar';
-import {
-  calculateCurrentStreakPure,
-  calculateLongestStreakPure,
-  buildPostingDaysSet,
-} from '../recoveryStatus/streakCalculations';
-import { StreakInfo, RecoveryStatus, RecoveryStatusType } from '../recoveryStatus/StreakInfo';
-import { Posting } from '../postings/Posting';
 
 /**
  * Optimized fetch options for posting queries
@@ -66,7 +66,7 @@ function convertPostingToStreakData(posting: Posting): { createdAt: Date; userId
  */
 function filterValidPostings(
   postings: Posting[], 
-  workingDaysOnly: boolean = true
+  workingDaysOnly = true
 ): Array<{ createdAt: Date; userId: string }> {
   const filtered = postings
     .map(convertPostingToStreakData)
@@ -128,7 +128,7 @@ export function determineStatusFromPostingHistoryOptimized(
   const currentStreak = calculateCurrentStreakPure(postingDays, currentDate);
   
   
-  // Calculate longest streak from working days only
+  // Calculate longest streak from working days only (preserve historical maximum)
   const workingDayDateStrings = workingDayPostings
     .map((posting) => getSeoulDateKey(posting.createdAt))
     .filter((dateKey, index, array) => array.indexOf(dateKey) === index) // Deduplicate
@@ -443,7 +443,7 @@ export async function processBatchUsers(
   userIds: string[],
   batchNumber: number,
   totalBatches: number,
-  dryRun: boolean = false
+  dryRun = false
 ): Promise<{
   updates: Array<{ userId: string; rebuiltData: StreakInfoRebuildResult }>;
   errors: Array<{ userId: string; error: string }>;

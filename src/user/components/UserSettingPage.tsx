@@ -1,12 +1,11 @@
 import { signOut } from 'firebase/auth';
+import { LogOut, MessageCircle, Trash2, SquareArrowRight, Moon, Sun } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '@/firebase';
 import { toast } from 'sonner';
+import { auth } from '@/firebase';
+import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { useClearCache } from '@/shared/hooks/useClearCache';
 import { useTheme } from '@/shared/hooks/useTheme';
-import { LogOut, MessageCircle, Trash2, SquareArrowRight, Moon, Sun } from 'lucide-react';
-import { Button } from '@/shared/ui/button';
-import { Switch } from '@/shared/ui/switch';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,7 +16,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/shared/ui/alert-dialog';
-import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
+import { Button } from '@/shared/ui/button';
+import { Switch } from '@/shared/ui/switch';
 
 export default function UserSettingPage() {
   const navigate = useNavigate();
@@ -61,21 +61,21 @@ export default function UserSettingPage() {
     <div className="min-h-screen bg-background">
       <header className="bg-background py-3">
         <div className="container mx-auto flex items-center justify-between px-3 md:px-4">
-          <div className="flex items-center space-x-2 rounded-lg p-2 min-h-[44px]">
-            <span className="text-xl font-semibold tracking-tight md:text-2xl text-foreground">설정</span>
+          <div className="flex min-h-[44px] items-center space-x-2 rounded-lg p-2">
+            <span className="text-xl font-semibold tracking-tight text-foreground md:text-2xl">설정</span>
           </div>
         </div>
       </header>
-      <main className="container mx-auto px-3 md:px-4 py-2">
-        <div className="space-y-0 bg-card rounded-lg reading-shadow border border-border/50 overflow-hidden">
-          <div className="w-full flex items-center justify-between border-b border-border/30 h-14 px-4">
+      <main className="container mx-auto px-3 py-2 md:px-4">
+        <div className="reading-shadow space-y-0 overflow-hidden rounded-lg border border-border/50 bg-card">
+          <div className="flex h-14 w-full items-center justify-between border-b border-border/30 px-4">
             <div className="flex items-center gap-3">
               {theme === 'dark' ? (
                 <Moon className="size-5 text-muted-foreground" />
               ) : (
                 <Sun className="size-5 text-muted-foreground" />
               )}
-              <span className="text-foreground text-base">다크 모드</span>
+              <span className="text-base text-foreground">다크 모드</span>
             </div>
             <Switch
               checked={theme === 'dark'}
@@ -85,7 +85,7 @@ export default function UserSettingPage() {
           </div>
           <Button
             variant="ghost"
-            className="w-full flex items-center justify-start gap-3 rounded-none border-b border-border/30 text-base h-14 px-4 reading-hover reading-focus transition-all duration-200"
+            className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-all duration-200"
             onClick={handleSignOut}
           >
             <LogOut className="size-5 text-muted-foreground" /> 
@@ -93,7 +93,7 @@ export default function UserSettingPage() {
           </Button>
           <Button
             variant="ghost"
-            className="w-full flex items-center justify-start gap-3 rounded-none border-b border-border/30 text-base h-14 px-4 reading-hover reading-focus transition-all duration-200"
+            className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-all duration-200"
             onClick={handleFeedback}
           >
             <MessageCircle className="size-5 text-muted-foreground" /> 
@@ -103,7 +103,7 @@ export default function UserSettingPage() {
             <AlertDialogTrigger asChild>
               <Button
                 variant="destructive"
-                className="w-full flex items-center justify-start gap-3 rounded-none border-b border-border/30 text-base h-14 px-4 reading-hover reading-focus transition-all duration-200"
+                className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-all duration-200"
               >
                 <Trash2 className="size-5" /> 
                 <span>캐시 삭제</span>
@@ -123,7 +123,7 @@ export default function UserSettingPage() {
           </AlertDialog>
           <Button
             variant="ghost"
-            className="w-full flex items-center justify-start gap-3 rounded-none border-b border-border/30 text-base h-14 px-4 reading-hover reading-focus transition-all duration-200"
+            className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-all duration-200"
             onClick={() => navigate('/join/form')}
           >
             <SquareArrowRight className="size-5 text-ring" /> 
@@ -132,7 +132,7 @@ export default function UserSettingPage() {
           {blockUserFeatureEnabled && (
             <Button
               variant="ghost"
-              className="w-full flex items-center justify-start gap-3 rounded-none text-base h-14 px-4 reading-hover reading-focus transition-all duration-200"
+              className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none px-4 text-base transition-all duration-200"
               onClick={() => navigate('/user/blocked-users')}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="size-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -1,8 +1,8 @@
-import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
+import { useAuth } from '@/shared/hooks/useAuth';
 import { fetchStreakInfo } from '../api/streakInfo';
 import type { StreakInfo } from '../model/StreakInfo';
-import { useAuth } from '@/shared/hooks/useAuth';
 
 interface StreakRecoveryNotice {
   show: boolean;

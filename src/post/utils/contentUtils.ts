@@ -284,7 +284,7 @@ const convertHtmlToText = (html: string): string => {
     }
 
     // 정규식으로 HTML 태그 제거 및 변환 (DOM 조작보다 빠름)
-    let text = html
+    const text = html
       // </p><p> 사이를 줄바꿈으로 변환 (단락 구분)
       .replace(/<\/p>\s*<p[^>]*>/gi, '\n')
       // <br> 태그를 줄바꿈으로 변환
