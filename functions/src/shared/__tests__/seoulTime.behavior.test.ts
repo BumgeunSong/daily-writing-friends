@@ -1,112 +1,60 @@
 import { describe, it, expect } from '@jest/globals';
 import {
-  convertToSeoulTime,
+  formatSeoulDate,
   getSeoulDateBoundaries,
-  formatSeoulDateString,
   isSameDateInSeoul,
-  debugTimezoneConversion,
-} from '../seoulTime';
+} from '../calendar';
 
 describe('Seoul Time Behavior Tests', () => {
-  describe('UTC to Seoul Time Conversion', () => {
-    describe('when converting UTC times to Seoul timezone', () => {
-      it('adds 9 hours to UTC time', () => {
-        const utcMorning = new Date('2025-07-31T06:30:00Z'); // 6:30 AM UTC
+  describe('Seoul Date Formatting', () => {
+    describe('when formatting dates in Seoul timezone', () => {
+      it('formats date as YYYY-MM-DD in Seoul timezone', () => {
+        const utcDate = new Date('2025-07-31T06:30:00Z'); // 6:30 AM UTC = 3:30 PM Seoul
 
-        const seoulTime = convertToSeoulTime(utcMorning);
+        const seoulDateString = formatSeoulDate(utcDate);
 
-        expect(seoulTime.toISOString()).toBe('2025-07-31T15:30:00.000Z'); // 3:30 PM Seoul as UTC
+        expect(seoulDateString).toBe('2025-07-31'); // Same date in Seoul
       });
 
       it('handles UTC midnight correctly', () => {
-        const utcMidnight = new Date('2025-07-31T00:00:00Z');
+        const utcMidnight = new Date('2025-07-31T00:00:00Z'); // Midnight UTC = 9 AM Seoul
 
-        const seoulTime = convertToSeoulTime(utcMidnight);
+        const seoulDateString = formatSeoulDate(utcMidnight);
 
-        expect(seoulTime.toISOString()).toBe('2025-07-31T09:00:00.000Z'); // 9 AM Seoul as UTC
+        expect(seoulDateString).toBe('2025-07-31'); // Same date in Seoul
       });
 
-      it('handles Seoul midnight correctly', () => {
-        const utcForSeoulMidnight = new Date('2025-07-30T15:00:00Z'); // 3 PM UTC = midnight Seoul next day
+      it('handles date boundary crossing', () => {
+        const utcLateEvening = new Date('2025-07-30T16:00:00Z'); // 4 PM UTC = 1 AM Seoul next day
 
-        const seoulTime = convertToSeoulTime(utcForSeoulMidnight);
+        const seoulDateString = formatSeoulDate(utcLateEvening);
 
-        expect(seoulTime.toISOString()).toBe('2025-07-31T00:00:00.000Z'); // midnight Seoul as UTC
-      });
-    });
-
-    describe('when given invalid dates', () => {
-      it('throws descriptive error', () => {
-        const invalidDate = new Date('invalid');
-
-        expect(() => convertToSeoulTime(invalidDate)).toThrow(
-          'Invalid Date object provided to convertToSeoulTime',
-        );
+        expect(seoulDateString).toBe('2025-07-31'); // Next day in Seoul
       });
     });
   });
 
   describe('Seoul Date Boundaries', () => {
     describe('when creating date boundaries for Seoul timezone', () => {
-      it('creates correct start and end boundaries', () => {
+      it('creates correct start and end timestamps', () => {
         const testDate = new Date('2025-07-31T10:00:00Z'); // 7 PM Seoul (July 31)
 
         const boundaries = getSeoulDateBoundaries(testDate);
 
-        expect(boundaries.dateString).toBe('2025-07-31');
-        expect(boundaries.startOfDay.toISOString()).toBe('2025-07-30T15:00:00.000Z'); // Seoul midnight as UTC
-        expect(boundaries.endOfDay.toISOString()).toBe('2025-07-31T14:59:59.999Z'); // Seoul end of day as UTC
+        expect(boundaries.startTimestamp.toDate().toISOString()).toBe('2025-07-30T15:00:00.000Z'); // Seoul midnight as UTC
+        expect(boundaries.endTimestamp.toDate().toISOString()).toBe('2025-07-31T14:59:59.999Z'); // Seoul end of day as UTC
       });
 
       it('handles timezone boundary edge cases', () => {
         const utcTimeSeoulNextDay = new Date('2025-07-30T20:00:00Z'); // 5 AM Seoul next day
 
-        const boundaries = getSeoulDateBoundaries(utcTimeSeoulNextDay);
+        const dateString = formatSeoulDate(utcTimeSeoulNextDay);
 
-        expect(boundaries.dateString).toBe('2025-07-31'); // Should be July 31 in Seoul
-      });
-    });
-
-    describe('when given invalid dates', () => {
-      it('throws descriptive error', () => {
-        const invalidDate = new Date('invalid');
-
-        expect(() => getSeoulDateBoundaries(invalidDate)).toThrow(
-          'Invalid Date object provided to getSeoulDateBoundaries',
-        );
+        expect(dateString).toBe('2025-07-31'); // Should be July 31 in Seoul
       });
     });
   });
 
-  describe('Seoul Date Formatting', () => {
-    describe('when formatting dates in Seoul timezone', () => {
-      it('formats to YYYY-MM-DD in Seoul timezone', () => {
-        const testDate = new Date('2025-07-31T05:00:00Z'); // 2 PM Seoul (July 31)
-
-        const formatted = formatSeoulDateString(testDate);
-
-        expect(formatted).toBe('2025-07-31');
-      });
-
-      it('handles timezone boundary correctly', () => {
-        const utcTimeSeoulNextDay = new Date('2025-07-30T20:00:00Z'); // 5 AM Seoul (July 31)
-
-        const formatted = formatSeoulDateString(utcTimeSeoulNextDay);
-
-        expect(formatted).toBe('2025-07-31'); // Should show Seoul date, not UTC date
-      });
-    });
-
-    describe('when given invalid dates', () => {
-      it('throws descriptive error', () => {
-        const invalidDate = new Date('invalid');
-
-        expect(() => formatSeoulDateString(invalidDate)).toThrow(
-          'Invalid Date object provided to formatSeoulDateString',
-        );
-      });
-    });
-  });
 
   describe('Seoul Date Comparison', () => {
     describe('when comparing dates in Seoul timezone', () => {
@@ -130,35 +78,6 @@ describe('Seoul Time Behavior Tests', () => {
     });
   });
 
-  describe('Timezone Debugging', () => {
-    describe('when debugging timezone conversions', () => {
-      it('provides comprehensive conversion details', () => {
-        const testDate = new Date('2025-07-31T06:30:00Z');
-
-        const debug = debugTimezoneConversion(testDate);
-
-        expect(debug).toMatchObject({
-          original: '2025-07-31T06:30:00.000Z',
-          utc: '2025-07-31T06:30:00.000Z',
-          seoul: '2025-07-31T15:30:00.000Z',
-          boundaries: {
-            dateString: '2025-07-31',
-            startOfDay: expect.any(Date),
-            endOfDay: expect.any(Date),
-          },
-        });
-      });
-
-      it('shows correct boundary dates', () => {
-        const testDate = new Date('2025-07-31T06:30:00Z');
-
-        const debug = debugTimezoneConversion(testDate);
-
-        expect(debug.boundaries.startOfDay.toISOString()).toBe('2025-07-30T15:00:00.000Z');
-        expect(debug.boundaries.endOfDay.toISOString()).toBe('2025-07-31T14:59:59.999Z');
-      });
-    });
-  });
 
   describe('Real-World Scenarios', () => {
     describe('when handling the original timezone bug case', () => {
@@ -166,26 +85,12 @@ describe('Seoul Time Behavior Tests', () => {
         const testDate = new Date('2025-07-31T10:00:00Z'); // 7 PM Seoul
 
         const boundaries = getSeoulDateBoundaries(testDate);
+        const dateString = formatSeoulDate(testDate);
 
-        expect(boundaries.dateString).toBe('2025-07-31');
+        expect(dateString).toBe('2025-07-31');
         // These boundaries should properly capture Seoul July 31st for database queries
-        expect(boundaries.startOfDay.toISOString()).toBe('2025-07-30T15:00:00.000Z');
-        expect(boundaries.endOfDay.toISOString()).toBe('2025-07-31T14:59:59.999Z');
-      });
-    });
-
-    describe('when working with different server timezones', () => {
-      it('produces consistent results regardless of server timezone', () => {
-        // Simulate different server timezone interpretations
-        const utcTime = new Date('2025-07-31T06:30:00Z');
-
-        const result1 = convertToSeoulTime(utcTime);
-        const result2 = convertToSeoulTime(new Date(utcTime.getTime()));
-        const result3 = formatSeoulDateString(utcTime);
-
-        expect(result1.toISOString()).toBe(result2.toISOString());
-        expect(result1.toISOString()).toBe('2025-07-31T15:30:00.000Z');
-        expect(result3).toBe('2025-07-31');
+        expect(boundaries.startTimestamp.toDate().toISOString()).toBe('2025-07-30T15:00:00.000Z');
+        expect(boundaries.endTimestamp.toDate().toISOString()).toBe('2025-07-31T14:59:59.999Z');
       });
     });
 
@@ -195,9 +100,9 @@ describe('Seoul Time Behavior Tests', () => {
         const exactlyMidnight = new Date('2025-07-30T15:00:00Z'); // 12:00 AM Seoul
         const justAfterMidnight = new Date('2025-07-30T15:00:01Z'); // 12:00:01 AM Seoul
 
-        expect(formatSeoulDateString(justBeforeMidnight)).toBe('2025-07-30');
-        expect(formatSeoulDateString(exactlyMidnight)).toBe('2025-07-31');
-        expect(formatSeoulDateString(justAfterMidnight)).toBe('2025-07-31');
+        expect(formatSeoulDate(justBeforeMidnight)).toBe('2025-07-30');
+        expect(formatSeoulDate(exactlyMidnight)).toBe('2025-07-31');
+        expect(formatSeoulDate(justAfterMidnight)).toBe('2025-07-31');
       });
     });
   });

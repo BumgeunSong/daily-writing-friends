@@ -112,7 +112,7 @@ describe('StreakInfo Rebuild Logic - Behavior Tests', () => {
           createPosting('2024-01-17'), // Wednesday
           createPosting('2024-01-16'), // Tuesday
           createPosting('2024-01-15'), // Monday
-          // Gap on 2024-01-12 (Friday)
+          // Gap on 2024-01-12 (Friday) - recovery deadline was Saturday 2024-01-13
           createPosting('2024-01-11'), // Thursday
           createPosting('2024-01-10'), // Wednesday
         ];
@@ -120,9 +120,11 @@ describe('StreakInfo Rebuild Logic - Behavior Tests', () => {
 
         const result = rebuildStreakInfoPure(postings, currentDate);
 
-        expect(result.status.type).toBe(RecoveryStatusType.ON_STREAK);
-        expect(result.currentStreak).toBe(5); // Mon-Fri this week
-        expect(result.longestStreak).toBe(5); // Longest is current streak
+        // User missed Friday 1/12, recovery deadline was Saturday 1/13
+        // User didn't recover until Monday 1/15 (too late), so streak is lost
+        expect(result.status.type).toBe(RecoveryStatusType.MISSED);
+        expect(result.currentStreak).toBe(0); // Streak lost due to missed recovery
+        expect(result.longestStreak).toBe(5); // Historical longest is Mon-Fri this week
         expect(result.lastContributionDate).toBe('2024-01-19');
       });
     });
@@ -269,14 +271,16 @@ describe('StreakInfo Rebuild Logic - Behavior Tests', () => {
     });
 
     describe('when user completes recovery on weekend', () => {
-      it('maintains original streak per PRD', () => {
+      it('cannot recover after missing multiple days', () => {
         const postingsBeforeMiss = [
           createPosting('2024-01-17'), // Wednesday
           createPosting('2024-01-16'), // Tuesday
           createPosting('2024-01-15'), // Monday
         ];
-        // User missed Thursday and Friday
-        // User posts twice on Saturday for recovery
+        // User missed Thursday (1/18) and Friday (1/19)
+        // Thursday recovery deadline: Friday 1/19 (but user also missed Friday)
+        // Friday recovery deadline: Saturday 1/20
+        // User posts twice on Saturday - can only potentially recover Friday, not Thursday
         const postingsAfterRecovery = [
           ...postingsBeforeMiss,
           createPosting('2024-01-20'), // Saturday recovery post 1
@@ -286,10 +290,10 @@ describe('StreakInfo Rebuild Logic - Behavior Tests', () => {
 
         const result = rebuildStreakInfoPure(postingsAfterRecovery, currentDate);
 
-        // Per PRD: weekend recovery maintains original streak
-        expect(result.status.type).toBe(RecoveryStatusType.ON_STREAK);
-        expect(result.currentStreak).toBe(3); // Original streak maintained
-        expect(result.originalStreak).toBe(3);
+        // User missed 2 consecutive working days - streak is completely lost
+        expect(result.status.type).toBe(RecoveryStatusType.MISSED);
+        expect(result.currentStreak).toBe(0); // Streak lost
+        expect(result.originalStreak).toBe(0); // No recovery possible
       });
     });
   });

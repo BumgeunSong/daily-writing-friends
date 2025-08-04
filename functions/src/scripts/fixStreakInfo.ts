@@ -125,8 +125,6 @@ export function determineStatusFromPostingHistoryOptimized(
 
   // Calculate streaks from working day postings only (PRD compliance)
   const postingDays = buildPostingDaysSet(workingDayPostings);
-  const currentStreak = calculateCurrentStreakPure(postingDays, currentDate);
-  
   
   // Calculate longest streak from working days only (preserve historical maximum)
   const workingDayDateStrings = workingDayPostings
@@ -141,20 +139,8 @@ export function determineStatusFromPostingHistoryOptimized(
   );
   const lastContributionDate = getSeoulDateKey(mostRecentPosting.createdAt);
 
-  // If we have a current streak, user is onStreak
-  if (currentStreak > 0) {
-    return {
-      lastContributionDate,
-      status: { type: RecoveryStatusType.ON_STREAK },
-      currentStreak,
-      longestStreak: Math.max(longestStreak, currentStreak),
-      originalStreak: currentStreak, // In onStreak state, these are the same
-    };
-  }
-
-  // No current streak - need to determine if this is a recovery scenario or just missed
-  // For recovery detection, we need to find the LAST working day the user posted on
-  // and see if there's a gap between that and today
+  // FIRST: Check for recovery scenarios before calculating current streak
+  // because recovery creates streaks that appear broken to calculateCurrentStreakPure
   
   // Helper function for bypass
   const isWorkingDayWithBypass = (date: Date): boolean => {
@@ -164,12 +150,11 @@ export function determineStatusFromPostingHistoryOptimized(
     return isSeoulWorkingDay(date);
   };
 
-  // Find the most recent working day the user actually posted on
+  // Simple approach: Check each working day to see if there's a gap that can be recovered
   const sortedWorkingDays = workingDayPostings
     .map(p => getSeoulDateKey(p.createdAt))
     .filter((dateKey, index, array) => array.indexOf(dateKey) === index) // Deduplicate
-    .sort()
-    .reverse(); // Most recent first
+    .sort(); // chronological order
 
   if (sortedWorkingDays.length === 0) {
     // User has no working day posts at all
@@ -182,86 +167,265 @@ export function determineStatusFromPostingHistoryOptimized(
     };
   }
 
-  const lastWorkingDayWithPosts = new Date(sortedWorkingDays[0] + 'T12:00:00Z');
   
-  // Find what the next working day after their last post should have been
-  let expectedNextWorkingDay = new Date(lastWorkingDayWithPosts.getTime() + 24 * 60 * 60 * 1000);
-  while (!isWorkingDayWithBypass(expectedNextWorkingDay)) {
-    expectedNextWorkingDay = new Date(expectedNextWorkingDay.getTime() + 24 * 60 * 60 * 1000);
-  }
-  
-  // Check if user missed that expected working day
-  const expectedDayKey = getSeoulDateKey(expectedNextWorkingDay);
-  const missedExpectedDay = !postingDays.has(expectedDayKey);
-  
-  if (missedExpectedDay) {
-    // User missed the expected next working day - check if they had a streak before
-    // Calculate the streak they had up until their last posting day
-    const streakEndingOnLastPost = calculateCurrentStreakPure(postingDays, lastWorkingDayWithPosts);
+  // Look for gaps in the working days that might indicate a recovery opportunity
+  for (let i = 0; i < sortedWorkingDays.length - 1; i++) {
+    const currentDateStr = sortedWorkingDays[i];
+    const nextDateStr = sortedWorkingDays[i + 1];
     
-    if (streakEndingOnLastPost > 0) {
-      // User had a streak but missed the expected next working day
-      const recoveryReq = calculateRecoveryRequirement(expectedNextWorkingDay, currentDate);
-      
-      // Check if recovery deadline has passed
-      if (hasDeadlinePassed(recoveryReq.deadline, currentDate)) {
-        return {
-          lastContributionDate,
-          status: { type: RecoveryStatusType.MISSED },
-          currentStreak: 0,
-          longestStreak,
-          originalStreak: 0,
-        };
+    const currentPostDate = new Date(currentDateStr + 'T12:00:00Z');
+    // const nextDate = new Date(nextDateStr + 'T12:00:00Z'); // not used
+    
+    // Calculate expected next working day after current
+    let expectedNext = new Date(currentPostDate.getTime() + 24 * 60 * 60 * 1000);
+    while (!isWorkingDayWithBypass(expectedNext)) {
+      expectedNext = new Date(expectedNext.getTime() + 24 * 60 * 60 * 1000);
+    }
+    
+    const expectedNextStr = getSeoulDateKey(expectedNext);
+    
+    // If there's a gap (expected next != actual next), this might be our recovery scenario
+    if (expectedNextStr !== nextDateStr) {
+      // Check if the gap is exactly one working day and the later post could be recovery
+      const dayAfterExpected = new Date(expectedNext.getTime() + 24 * 60 * 60 * 1000);
+      while (!isWorkingDayWithBypass(dayAfterExpected)) {
+        dayAfterExpected.setTime(dayAfterExpected.getTime() + 24 * 60 * 60 * 1000);
       }
-
-      // Check if user has completed recovery by posting today
-      const currentDateKey = getSeoulDateKey(currentDate);
-      const todayAllPostings = allValidPostings.filter(
-        p => getSeoulDateKey(p.createdAt) === currentDateKey
-      );
-
-      // If user has posted enough times today, they've completed recovery
-      if (todayAllPostings.length >= recoveryReq.postsRequired) {
-        // Recovery completed! Calculate new streak based on recovery day type
-        const isRecoveryDayWorking = isWorkingDayWithBypass(currentDate);
+      
+      if (getSeoulDateKey(dayAfterExpected) === nextDateStr || nextDateStr === getSeoulDateKey(currentPostDate)) {
+        // This looks like a recovery scenario!
+        const lastWorkingDayWithPosts = currentPostDate;
+        const expectedNextWorkingDay = expectedNext;
         
-        if (isRecoveryDayWorking) {
-          // Working day recovery: increment both streaks by 1
-          const newStreak = streakEndingOnLastPost + 1;
-          return {
-            lastContributionDate,
-            status: { type: RecoveryStatusType.ON_STREAK },
-            currentStreak: newStreak,
-            longestStreak: Math.max(longestStreak, newStreak),
-            originalStreak: newStreak,
-          };
-        } else {
-          // Weekend recovery: restore original streak without increment
-          return {
-            lastContributionDate,
-            status: { type: RecoveryStatusType.ON_STREAK },
-            currentStreak: streakEndingOnLastPost,
-            longestStreak: Math.max(longestStreak, streakEndingOnLastPost),
-            originalStreak: streakEndingOnLastPost,
-          };
+        
+        // Continue with recovery logic...
+        const expectedDayKey = getSeoulDateKey(expectedNextWorkingDay);
+        const missedExpectedDay = !postingDays.has(expectedDayKey);
+        
+        if (missedExpectedDay) {
+          const streakEndingOnLastPost = calculateCurrentStreakPure(postingDays, lastWorkingDayWithPosts);
+          
+          if (streakEndingOnLastPost > 0) {
+            // Continue with the recovery logic we already have...
+            const recoveryReq = calculateRecoveryRequirement(expectedNextWorkingDay, currentDate);
+            
+            // Check if recovery deadline has passed
+            if (hasDeadlinePassed(recoveryReq.deadline, currentDate)) {
+              return {
+                lastContributionDate,
+                status: { type: RecoveryStatusType.MISSED },
+                currentStreak: 0,
+                longestStreak,
+                originalStreak: 0,
+              };
+            }
+
+            // Check if user has completed recovery by posting on any valid recovery day
+            let recoveryCompletedOn: Date | null = null;
+            
+            // Check each day from the missed day up to current date for recovery completion
+            const missedDate = expectedNextWorkingDay;
+            let checkDate = new Date(missedDate);
+            
+            const currentDateStr = getSeoulDateKey(currentDate);
+            while (getSeoulDateKey(checkDate) <= currentDateStr && !recoveryCompletedOn) {
+              const checkDateKey = getSeoulDateKey(checkDate);
+              const postsOnThisDay = allValidPostings.filter(
+                p => getSeoulDateKey(p.createdAt) === checkDateKey
+              );
+              
+              // Calculate recovery requirement for this specific day
+              const dayRecoveryReq = calculateRecoveryRequirement(missedDate, checkDate);
+              
+              if (postsOnThisDay.length >= dayRecoveryReq.postsRequired) {
+                recoveryCompletedOn = checkDate;
+                break;
+              }
+              
+              checkDate = new Date(checkDate.getTime() + 24 * 60 * 60 * 1000);
+            }
+            
+
+            // If user has completed recovery, calculate new streak
+            if (recoveryCompletedOn) {
+              // Recovery completed! Calculate new streak based on recovery day type
+              const isRecoveryDayWorking = isWorkingDayWithBypass(recoveryCompletedOn);
+              
+              if (isRecoveryDayWorking) {
+                // Working day recovery: increment both streaks by 1
+                const newStreak = streakEndingOnLastPost + 1;
+                return {
+                  lastContributionDate,
+                  status: { type: RecoveryStatusType.ON_STREAK },
+                  currentStreak: newStreak,
+                  longestStreak: Math.max(longestStreak, newStreak),
+                  originalStreak: newStreak,
+                };
+              } else {
+                // Weekend recovery: restore original streak without increment
+                return {
+                  lastContributionDate,
+                  status: { type: RecoveryStatusType.ON_STREAK },
+                  currentStreak: streakEndingOnLastPost,
+                  longestStreak: Math.max(longestStreak, streakEndingOnLastPost),
+                  originalStreak: streakEndingOnLastPost,
+                };
+              }
+            }
+            
+            // User is still eligible for recovery (hasn't completed it yet)
+            // Check if they have posts today for current progress
+            const currentDateKey = getSeoulDateKey(currentDate);
+            const todayAllPostings = allValidPostings.filter(
+              p => getSeoulDateKey(p.createdAt) === currentDateKey
+            );
+            
+            return {
+              lastContributionDate,
+              status: {
+                type: RecoveryStatusType.ELIGIBLE,
+                postsRequired: recoveryReq.postsRequired,
+                currentPosts: todayAllPostings.length, // Include weekend posts for recovery
+                deadline: recoveryReq.deadline,
+                missedDate: recoveryReq.missedDate,
+              },
+              currentStreak: 0,
+              longestStreak,
+              originalStreak: streakEndingOnLastPost,
+            };
+          }
         }
       }
-
-      // User is still eligible for recovery (hasn't posted enough yet)
-      return {
-        lastContributionDate,
-        status: {
-          type: RecoveryStatusType.ELIGIBLE,
-          postsRequired: recoveryReq.postsRequired,
-          currentPosts: todayAllPostings.length, // Include weekend posts for recovery
-          deadline: recoveryReq.deadline,
-          missedDate: recoveryReq.missedDate,
-        },
-        currentStreak: 0,
-        longestStreak,
-        originalStreak: streakEndingOnLastPost,
-      };
     }
+  }
+  
+  // Check for recovery scenarios where user had streak but hasn't posted on working days recently
+  // but may have posted on weekends for recovery
+  if (sortedWorkingDays.length > 0) {
+    const lastWorkingDayStr = sortedWorkingDays[sortedWorkingDays.length - 1];
+    const lastWorkingDayWithPosts = new Date(lastWorkingDayStr + 'T12:00:00Z');
+    
+    // Check if there's been a reasonable gap since the last working day post (not too old)
+    const daysSinceLastWorkingPost = Math.floor((currentDate.getTime() - lastWorkingDayWithPosts.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Only consider recovery if the gap is reasonable (within 7 days) and not too old
+    if (daysSinceLastWorkingPost >= 1 && daysSinceLastWorkingPost <= 7) {
+      
+      // Find the first missed working day since the last working day post
+      let checkDate = new Date(lastWorkingDayWithPosts.getTime() + 24 * 60 * 60 * 1000);
+      let firstMissedWorkingDay: Date | null = null;
+      
+      while (checkDate <= currentDate && !firstMissedWorkingDay) {
+        if (isWorkingDayWithBypass(checkDate)) {
+          const checkDateKey = getSeoulDateKey(checkDate);
+          if (!postingDays.has(checkDateKey)) {
+            firstMissedWorkingDay = new Date(checkDate);
+            break; // Stop at first missed day
+          }
+        }
+        checkDate = new Date(checkDate.getTime() + 24 * 60 * 60 * 1000);
+      }
+      
+      if (firstMissedWorkingDay) {
+        const streakEndingOnLastPost = calculateCurrentStreakPure(postingDays, lastWorkingDayWithPosts);
+        
+        if (streakEndingOnLastPost > 0) {
+          // Check for recovery completion using weekend posts
+          const recoveryReq = calculateRecoveryRequirement(firstMissedWorkingDay, currentDate);
+          
+          // If deadline has passed, user missed their recovery opportunity
+          if (hasDeadlinePassed(recoveryReq.deadline, currentDate)) {
+            return {
+              lastContributionDate,
+              status: { type: RecoveryStatusType.MISSED },
+              currentStreak: 0,
+              longestStreak,
+              originalStreak: 0,
+            };
+          }
+          
+          if (!hasDeadlinePassed(recoveryReq.deadline, currentDate)) {
+            let recoveryCompletedOn: Date | null = null;
+            const missedDate = firstMissedWorkingDay;
+            let checkDate = new Date(missedDate);
+            
+            const currentDateStr = getSeoulDateKey(currentDate);
+            while (getSeoulDateKey(checkDate) <= currentDateStr && !recoveryCompletedOn) {
+              const checkDateKey = getSeoulDateKey(checkDate);
+              const postsOnThisDay = allValidPostings.filter(
+                p => getSeoulDateKey(p.createdAt) === checkDateKey
+              );
+              
+              const dayRecoveryReq = calculateRecoveryRequirement(missedDate, checkDate);
+              
+              if (postsOnThisDay.length >= dayRecoveryReq.postsRequired) {
+                recoveryCompletedOn = checkDate;
+                break;
+              }
+              
+              checkDate = new Date(checkDate.getTime() + 24 * 60 * 60 * 1000);
+            }
+
+            if (recoveryCompletedOn) {
+              const isRecoveryDayWorking = isWorkingDayWithBypass(recoveryCompletedOn);
+              
+              if (isRecoveryDayWorking) {
+                const newStreak = streakEndingOnLastPost + 1;
+                return {
+                  lastContributionDate,
+                  status: { type: RecoveryStatusType.ON_STREAK },
+                  currentStreak: newStreak,
+                  longestStreak: Math.max(longestStreak, newStreak),
+                  originalStreak: newStreak,
+                };
+              } else {
+                // Weekend recovery: restore original streak without increment
+                return {
+                  lastContributionDate,
+                  status: { type: RecoveryStatusType.ON_STREAK },
+                  currentStreak: streakEndingOnLastPost,
+                  longestStreak: Math.max(longestStreak, streakEndingOnLastPost),
+                  originalStreak: streakEndingOnLastPost,
+                };
+              }
+            }
+            
+            // Still eligible for recovery
+            const currentDateKey = getSeoulDateKey(currentDate);
+            const todayAllPostings = allValidPostings.filter(
+              p => getSeoulDateKey(p.createdAt) === currentDateKey
+            );
+            
+            return {
+              lastContributionDate,
+              status: {
+                type: RecoveryStatusType.ELIGIBLE,
+                postsRequired: recoveryReq.postsRequired,
+                currentPosts: todayAllPostings.length,
+                deadline: recoveryReq.deadline,
+                missedDate: recoveryReq.missedDate,
+              },
+              currentStreak: 0,
+              longestStreak,
+              originalStreak: streakEndingOnLastPost,
+            };
+          }
+        }
+      }
+    }
+  }
+  
+  // SECOND: If no recovery scenario detected, check for simple current streak
+  const currentStreak = calculateCurrentStreakPure(postingDays, currentDate);
+  
+  if (currentStreak > 0) {
+    return {
+      lastContributionDate,
+      status: { type: RecoveryStatusType.ON_STREAK },
+      currentStreak,
+      longestStreak: Math.max(longestStreak, currentStreak),
+      originalStreak: currentStreak, // In onStreak state, these are the same
+    };
   }
 
   // Default to missed status - either no recent posts or no previous streak

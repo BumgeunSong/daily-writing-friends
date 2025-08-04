@@ -21,15 +21,54 @@
  */
 
 import { isWeekend, addDays, subDays, isSameDay, isAfter, isBefore, endOfDay } from 'date-fns';
+import { formatInTimeZone, fromZonedTime, toZonedTime } from 'date-fns-tz';
 import { Timestamp } from 'firebase-admin/firestore';
 import admin from './admin';
-import {
-  getSeoulDateBoundariesAsTimestamps,
-  formatSeoulDateString,
-  convertToSeoulTime,
-  isSameDateInSeoul,
-  parseSeoulDateString,
-} from './seoulTime';
+
+const SEOUL_TIMEZONE = 'Asia/Seoul';
+
+// ===== CORE SEOUL TIMEZONE UTILITIES =====
+
+/**
+ * Format a date as YYYY-MM-DD string in Seoul timezone
+ */
+export function formatSeoulDate(date: Date): string {
+  return formatInTimeZone(date, SEOUL_TIMEZONE, 'yyyy-MM-dd');
+}
+
+/**
+ * Get date boundaries for a Seoul date (start and end of day in Seoul timezone)
+ * Returns UTC timestamps for Firestore queries
+ */
+export function getSeoulDateBoundaries(date: Date): {
+  startTimestamp: Timestamp;
+  endTimestamp: Timestamp;
+} {
+  const dateString = formatSeoulDate(date);
+
+  // Create start of day in Seoul timezone, then convert to UTC
+  const startOfDaySeoul = fromZonedTime(`${dateString}T00:00:00`, SEOUL_TIMEZONE);
+  const endOfDaySeoul = fromZonedTime(`${dateString}T23:59:59.999`, SEOUL_TIMEZONE);
+
+  return {
+    startTimestamp: Timestamp.fromDate(startOfDaySeoul),
+    endTimestamp: Timestamp.fromDate(endOfDaySeoul),
+  };
+}
+
+/**
+ * Check if two dates are the same day in Seoul timezone
+ */
+export function isSameDateInSeoul(date1: Date, date2: Date): boolean {
+  return formatSeoulDate(date1) === formatSeoulDate(date2);
+}
+
+/**
+ * Get current date in Seoul timezone
+ */
+export function getCurrentSeoulDate(): Date {
+  return toZonedTime(new Date(), SEOUL_TIMEZONE);
+}
 
 // ===== WORKING DAY OPERATIONS =====
 
@@ -44,14 +83,14 @@ export function isSeoulWorkingDay(date: Date): boolean {
 
   // Check day of week directly in Seoul timezone without date conversion
   // This avoids the timezone conversion issues that can change the day
-  const dayOfWeek = date.toLocaleDateString('en-US', { 
+  const dayOfWeek = date.toLocaleDateString('en-US', {
     timeZone: 'Asia/Seoul',
-    weekday: 'short'
+    weekday: 'short',
   });
-  
+
   // Weekend check: Saturday = 'Sat', Sunday = 'Sun'
   const isWeekend = dayOfWeek === 'Sat' || dayOfWeek === 'Sun';
-  
+
   // TODO: Holiday logic will be implemented in future work
   return !isWeekend;
 }
@@ -65,15 +104,17 @@ export function getNextSeoulWorkingDay(date: Date): Date {
     throw new Error('Invalid Date object provided to getNextSeoulWorkingDay');
   }
 
-  const seoulDate = convertToSeoulTime(date);
+  // Convert to Seoul timezone for calculations
+  let seoulDate = toZonedTime(date, SEOUL_TIMEZONE);
   let nextDay = addDays(seoulDate, 1);
 
-  // Keep advancing until we find a working day
+  // Keep advancing until we find a working day (not weekend)
   while (isWeekend(nextDay)) {
     nextDay = addDays(nextDay, 1);
   }
 
-  return nextDay;
+  // Convert back to UTC for consistency
+  return fromZonedTime(nextDay, SEOUL_TIMEZONE);
 }
 
 /**
@@ -84,14 +125,16 @@ export function getPreviousSeoulWorkingDay(date: Date): Date {
     throw new Error('Invalid Date object provided to getPreviousSeoulWorkingDay');
   }
 
-  const seoulDate = convertToSeoulTime(date);
+  // Convert to Seoul timezone for calculations
+  let seoulDate = toZonedTime(date, SEOUL_TIMEZONE);
   let previousDay = subDays(seoulDate, 1);
 
   while (isWeekend(previousDay)) {
     previousDay = subDays(previousDay, 1);
   }
 
-  return previousDay;
+  // Convert back to UTC for consistency
+  return fromZonedTime(previousDay, SEOUL_TIMEZONE);
 }
 
 /**
@@ -103,19 +146,13 @@ export function getSeoulYesterday(fromDate: Date): Date {
     throw new Error('Invalid Date object provided to getSeoulYesterday');
   }
 
-  const seoulDate = convertToSeoulTime(fromDate);
+  const seoulDate = toZonedTime(fromDate, SEOUL_TIMEZONE);
   return subDays(seoulDate, 1);
 }
 
 // ===== DATE STRING OPERATIONS =====
 
-/**
- * Format a date as YYYY-MM-DD string in Seoul timezone
- * Centralized to ensure consistency across the application
- */
-export function formatSeoulDate(date: Date): string {
-  return formatSeoulDateString(date);
-}
+// formatSeoulDate is already defined above
 
 /**
  * Create a Date object from YYYY-MM-DD string (robust version)
@@ -232,7 +269,7 @@ export interface RecoveryRequirement {
 
 /**
  * Calculate recovery requirements based on missed date and current date
- * Centralizes the recovery business logic
+ * Simplified recovery rule: exactly 1 day to recover (next calendar day)
  */
 export function calculateRecoveryRequirement(
   missedDate: Date,
@@ -245,16 +282,18 @@ export function calculateRecoveryRequirement(
     throw new Error('Invalid currentDate provided to calculateRecoveryRequirement');
   }
 
-  const seoulCurrentDate = convertToSeoulTime(currentDate);
-  const seoulMissedDate = convertToSeoulTime(missedDate);
+  const seoulCurrentDate = toZonedTime(currentDate, SEOUL_TIMEZONE);
+  const seoulMissedDate = toZonedTime(missedDate, SEOUL_TIMEZONE);
 
   const isCurrentWorkingDay = isSeoulWorkingDay(seoulCurrentDate);
-  const nextWorkingDay = getNextSeoulWorkingDay(seoulMissedDate);
+  
+  // Simplified rule: recovery deadline is exactly 1 day after missed date
+  const nextDay = addDays(seoulMissedDate, 1);
 
   return {
     postsRequired: isCurrentWorkingDay ? 2 : 1, // 2 for working day, 1 for weekend
     currentPosts: 0,
-    deadline: Timestamp.fromDate(nextWorkingDay),
+    deadline: Timestamp.fromDate(nextDay),
     missedDate: Timestamp.fromDate(seoulMissedDate),
   };
 }
@@ -289,7 +328,7 @@ export async function queryPostingsForSeoulDate(
     throw new Error('Invalid Date object provided to queryPostingsForSeoulDate');
   }
 
-  const { startTimestamp, endTimestamp } = getSeoulDateBoundariesAsTimestamps(date);
+  const { startTimestamp, endTimestamp } = getSeoulDateBoundaries(date);
 
   const postingsRef = admin.firestore().collection('users').doc(userId).collection('postings');
 
@@ -352,7 +391,7 @@ export async function countSeoulDatePosts(userId: string, date: Date): Promise<n
  * Check if user has any posts on a specific date in Seoul timezone
  */
 export async function hasSeoulDatePosts(userId: string, date: Date): Promise<boolean> {
-  const { startTimestamp, endTimestamp } = getSeoulDateBoundariesAsTimestamps(date);
+  const { startTimestamp, endTimestamp } = getSeoulDateBoundaries(date);
 
   const postingsRef = admin.firestore().collection('users').doc(userId).collection('postings');
 
@@ -407,7 +446,7 @@ export function* generateSeoulWorkingDaysBackward(startDate: Date): Generator<Da
     throw new Error('Invalid Date object provided to generateSeoulWorkingDaysBackward');
   }
 
-  let currentDate = convertToSeoulTime(startDate);
+  let currentDate = toZonedTime(startDate, SEOUL_TIMEZONE);
 
   while (true) {
     if (isSeoulWorkingDay(currentDate)) {
@@ -428,8 +467,8 @@ export function areConsecutiveSeoulWorkingDays(earlierDate: Date, laterDate: Dat
     throw new Error('Invalid laterDate provided to areConsecutiveSeoulWorkingDays');
   }
 
-  const seoulEarlierDate = convertToSeoulTime(earlierDate);
-  const seoulLaterDate = convertToSeoulTime(laterDate);
+  const seoulEarlierDate = toZonedTime(earlierDate, SEOUL_TIMEZONE);
+  const seoulLaterDate = toZonedTime(laterDate, SEOUL_TIMEZONE);
 
   // Check if both are working days
   if (!isSeoulWorkingDay(seoulEarlierDate) || !isSeoulWorkingDay(seoulLaterDate)) {
@@ -454,8 +493,8 @@ export function countSeoulWorkingDaysBetween(startDate: Date, endDate: Date): nu
     throw new Error('Invalid endDate provided to countSeoulWorkingDaysBetween');
   }
 
-  const seoulStartDate = convertToSeoulTime(startDate);
-  const seoulEndDate = convertToSeoulTime(endDate);
+  const seoulStartDate = toZonedTime(startDate, SEOUL_TIMEZONE);
+  const seoulEndDate = toZonedTime(endDate, SEOUL_TIMEZONE);
 
   if (isAfter(seoulStartDate, seoulEndDate) || isSameDay(seoulStartDate, seoulEndDate)) {
     return 0;
@@ -490,19 +529,12 @@ export function parseAndValidateSeoulDateString(dateString: string) {
   if (!isValidDateString(dateString)) {
     throw new Error(`Invalid date string format. Expected YYYY-MM-DD, got: ${dateString}`);
   }
-
-  return parseSeoulDateString(dateString);
+  return getSeoulDateBoundaries(new Date(dateString + 'T12:00:00Z'));
 }
 
 // ===== CURRENT TIME OPERATIONS =====
 
-/**
- * Get current Seoul date for calendar operations
- * Centralizes "now" operations to make testing easier
- */
-export function getCurrentSeoulDate(): Date {
-  return convertToSeoulTime(new Date());
-}
+// getCurrentSeoulDate is already defined above
 
 /**
  * Get today's date string in Seoul timezone
@@ -534,7 +566,7 @@ export function debugCalendarOperation(
   seoulDateString: string;
   isWorkingDay: boolean;
 } {
-  const seoulDate = convertToSeoulTime(date);
+  const seoulDate = toZonedTime(date, SEOUL_TIMEZONE);
 
   return {
     operation,
