@@ -1,6 +1,6 @@
+import { User as UserIcon } from 'lucide-react';
 import React from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from './avatar';
-import { User as UserIcon } from 'lucide-react';
 
 interface ComposedAvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   src?: string | null;

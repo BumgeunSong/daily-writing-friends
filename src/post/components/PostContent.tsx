@@ -1,10 +1,10 @@
 import * as Sentry from '@sentry/react';
-import { useEffect, useRef, useCallback } from 'react';
 import { AlertCircle, Lock } from 'lucide-react';
+import { useEffect, useRef, useCallback } from 'react';
+import { useCopyHandler } from '@/post/hooks/useCopyHandler';
+import { Post, PostVisibility } from '@/post/model/Post';
 import { sanitizePostContent } from '@/post/utils/contentUtils';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
-import { Post, PostVisibility } from '@/post/model/Post';
-import { useCopyHandler } from '@/post/hooks/useCopyHandler';
 import { CopyErrorBoundary } from './CopyErrorBoundary';
 
 // PostContent 컴포넌트

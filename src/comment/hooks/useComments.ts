@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { getBlockedByUsers } from '@/user/api/user';
 import { fetchCommentsOnce } from '@/comment/api/comment';
 import { Comment } from '@/comment/model/Comment';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { getBlockedByUsers } from '@/user/api/user';
 
 export function useComments(boardId: string, postId: string) {
   const { currentUser } = useAuth();

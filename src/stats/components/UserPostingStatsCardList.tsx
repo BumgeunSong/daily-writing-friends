@@ -1,5 +1,5 @@
-import { UserPostingStatsCard } from './UserPostingStatsCard'
 import { WritingStats } from '@/stats/model/WritingStats'
+import { UserPostingStatsCard } from './UserPostingStatsCard'
 
 interface UserPostingStatsCardListProps {
   stats: WritingStats[]

@@ -52,7 +52,7 @@ export const SystemPostCard: React.FC<SystemPostCardProps> = ({
   const contentProps = getContentProps(onClickContent, handleContentClick);
 
   return (
-    <Card className='reading-shadow border-border/50 transition-all duration-200 hover:border-border nav-hover'>
+    <Card className='reading-shadow nav-hover border-border/50 transition-all duration-200 hover:border-border'>
       <CardHeader className='px-3 pb-1 pt-3 md:px-4'>
         <div className='mb-3 flex items-center justify-between'>
           <PostUserProfile
@@ -62,7 +62,7 @@ export const SystemPostCard: React.FC<SystemPostCardProps> = ({
             badges={badges}
           />
         </div>
-        <h2 className='flex items-center text-lg font-semibold text-foreground leading-tight md:text-xl'>
+        <h2 className='flex items-center text-lg font-semibold leading-tight text-foreground md:text-xl'>
           {title}
         </h2>
       </CardHeader>

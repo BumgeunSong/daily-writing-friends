@@ -16,9 +16,8 @@ export interface RecoveryStatus {
   type: RecoveryStatusType;
   postsRequired?: number; // Only for 'eligible' status
   currentPosts?: number; // Only for 'eligible' status
-  deadline?: string; // Only for 'eligible' status (YYYY-MM-DD format)
-  missedDate?: string; // Only for 'eligible' status (YYYY-MM-DD format)
-  originalStreak?: number; // Only for 'eligible' status - stores the streak value before transition
+  deadline?: Timestamp; // Only for 'eligible' status
+  missedDate?: Timestamp; // Only for 'eligible' status
 }
 
 /**
@@ -31,15 +30,16 @@ export interface StreakInfo {
   status: RecoveryStatus;
   currentStreak: number; // Current consecutive writing streak (working days)
   longestStreak: number; // All-time longest streak achieved
+  originalStreak: number; // Stores the streak value before transition to eligible status
 }
 
 /**
  * Recovery history record
- * Path: streakInfo/{userId}/recoveryHistory/{recoveryId}
+ * Path: users/{userId}/streakInfo/{streakInfoId}/recoveryHistory/{recoveryId}
  */
 export interface RecoveryHistory {
-  missedDate: string; // YYYY-MM-DD format
-  recoveryDate: string; // YYYY-MM-DD format
+  missedDate: Timestamp;
+  recoveryDate: Timestamp;
   postsRequired: number;
   postsWritten: number;
   recoveredAt: Timestamp;
@@ -51,6 +51,6 @@ export interface RecoveryHistory {
 export interface RecoveryRequirement {
   postsRequired: number;
   currentPosts: number;
-  deadline: string; // YYYY-MM-DD format
-  missedDate: string; // YYYY-MM-DD format
+  deadline: Timestamp;
+  missedDate: Timestamp;
 }

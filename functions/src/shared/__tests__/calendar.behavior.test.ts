@@ -142,8 +142,8 @@ describe('Calendar Behavior Tests - Pure Functions', () => {
         expect(result).toMatchObject({
           postsRequired: 2,
           currentPosts: 0,
-          deadline: expect.any(String),
-          missedDate: expect.any(String)
+          deadline: expect.any(Object), // Timestamp object
+          missedDate: expect.any(Object) // Timestamp object
         });
       });
 
@@ -156,8 +156,8 @@ describe('Calendar Behavior Tests - Pure Functions', () => {
         expect(result).toMatchObject({
           postsRequired: 1,
           currentPosts: 0,
-          deadline: expect.any(String),
-          missedDate: expect.any(String)
+          deadline: expect.any(Object), // Timestamp object
+          missedDate: expect.any(Object) // Timestamp object
         });
       });
     });

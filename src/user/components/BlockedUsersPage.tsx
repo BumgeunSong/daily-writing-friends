@@ -1,9 +1,7 @@
-import type React from "react"
+import { ArrowLeft, UserX, Search, X } from "lucide-react"
 import { useState, useEffect, useMemo, useRef, Suspense } from "react"
 import { toast } from "sonner"
-import { Button } from "@/shared/ui/button"
-import { Input } from "@/shared/ui/input"
-import { Avatar, AvatarImage, AvatarFallback } from "@/shared/ui/avatar"
+import { useAuth } from '@/shared/hooks/useAuth'
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -14,12 +12,14 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/shared/ui/alert-dialog"
+import { Avatar, AvatarImage, AvatarFallback } from "@/shared/ui/avatar"
+import { Button } from "@/shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
+import { Input } from "@/shared/ui/input"
 import { Separator } from "@/shared/ui/separator"
-import { ArrowLeft, UserX, Search, X } from "lucide-react"
-import { useAuth } from '@/shared/hooks/useAuth'
 import { blockUser, unblockUser, getBlockedUsers, fetchUser } from '@/user/api/user'
 import useUserSearch from '@/user/hooks/useUserSearch'
+import type React from "react"
 
 // 검색 서제스트 드롭다운만 별도 컴포넌트로 분리 (Suspense 지원)
 function SuggestionsDropdown({
@@ -61,25 +61,25 @@ function SuggestionsDropdown({
     return (
       <div
         ref={suggestionsRef}
-        className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-md shadow-lg z-50 max-h-60 overflow-y-auto"
+        className="absolute inset-x-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-md border bg-background shadow-lg"
       >
         {suggestions.map((user, index) => (
           <button
             key={user.uid}
-            className={`w-full flex items-center gap-3 p-3 text-left hover:bg-muted transition-colors ${
+            className={`flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-muted ${
               index === selectedSuggestionIndex ? "bg-muted" : ""
             }`}
             onClick={() => handleBlock(user)}
             disabled={loading}
             onMouseEnter={() => setSelectedSuggestionIndex(index)}
           >
-            <Avatar className="h-8 w-8 shrink-0">
+            <Avatar className="size-8 shrink-0">
               <AvatarImage src={user.profilePhotoURL || "/placeholder.svg"} />
               <AvatarFallback>{user.nickname?.[0] || ''}</AvatarFallback>
             </Avatar>
-            <div className="flex-1 min-w-0">
-              <div className="font-medium truncate">{user.nickname}</div>
-              <div className="text-sm text-muted-foreground truncate">{user.email}</div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-medium">{user.nickname}</div>
+              <div className="truncate text-sm text-muted-foreground">{user.email}</div>
             </div>
           </button>
         ))}
@@ -88,7 +88,7 @@ function SuggestionsDropdown({
   }
   if (searchQuery.trim() && suggestions.length === 0) {
     return (
-      <div className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-md shadow-lg z-50 p-4 text-center text-muted-foreground">
+      <div className="absolute inset-x-0 top-full z-50 mt-1 rounded-md border bg-background p-4 text-center text-muted-foreground shadow-lg">
         검색 결과가 없습니다
       </div>
     )
@@ -217,15 +217,15 @@ export default function BlockedUsersPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-2xl px-4 py-6 space-y-6">
+      <div className="mx-auto max-w-2xl space-y-6 px-4 py-6">
         {/* Header */}
         <header className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="shrink-0" onClick={() => window.history.back()}>
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="size-5" />
           </Button>
           <div>
             <h1 className="text-2xl font-bold">비공개 사용자 관리</h1>
-            <p className="text-sm text-muted-foreground mt-1">비공개 사용자에게는 내 콘텐츠가 보이지 않습니다</p>
+            <p className="mt-1 text-sm text-muted-foreground">비공개 사용자에게는 내 콘텐츠가 보이지 않습니다</p>
           </div>
         </header>
 
@@ -237,7 +237,7 @@ export default function BlockedUsersPage() {
           <CardContent className="space-y-4">
             <div className="relative">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   ref={searchInputRef}
                   placeholder="닉네임 또는 이메일로 검색"
@@ -245,17 +245,17 @@ export default function BlockedUsersPage() {
                   onChange={handleSearchChange}
                   onKeyDown={handleKeyDown}
                   onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
-                  className="pl-10 pr-10"
+                  className="px-10"
                   disabled={loading || blockedUsers.length >= 10}
                 />
                 {searchQuery && (
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                    className="absolute right-1 top-1/2 size-8 -translate-y-1/2"
                     onClick={clearSearch}
                   >
-                    <X className="h-4 w-4" />
+                    <X className="size-4" />
                   </Button>
                 )}
               </div>
@@ -263,7 +263,7 @@ export default function BlockedUsersPage() {
               {/* Suspense로 검색 결과만 감싸기 */}
               {showSuggestions && searchQuery.trim() && (
                 <Suspense fallback={
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-md shadow-lg z-50 p-4 text-center text-muted-foreground">
+                  <div className="absolute inset-x-0 top-full z-50 mt-1 rounded-md border bg-background p-4 text-center text-muted-foreground shadow-lg">
                     검색 중...
                   </div>
                 }>
@@ -282,7 +282,7 @@ export default function BlockedUsersPage() {
             </div>
 
             {blockedUsers.length >= 10 && (
-              <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
+              <div className="rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
                 💡 비공개 사용자는 최대 10명까지 설정할 수 있습니다
               </div>
             )}
@@ -299,23 +299,23 @@ export default function BlockedUsersPage() {
           </CardHeader>
           <CardContent>
             {blockedUsers.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <UserX className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <div className="py-8 text-center text-muted-foreground">
+                <UserX className="mx-auto mb-3 size-12 opacity-50" />
                 <p>비공개 사용자가 없습니다</p>
-                <p className="text-sm mt-1">위에서 사용자를 검색하여 추가해보세요</p>
+                <p className="mt-1 text-sm">위에서 사용자를 검색하여 추가해보세요</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {blockedUsers.map((user, index) => (
                   <div key={user.uid}>
                     <div className="flex items-center gap-3 py-2">
-                      <Avatar className="h-10 w-10 shrink-0">
+                      <Avatar className="size-10 shrink-0">
                         <AvatarImage src={user.profilePhotoURL || "/placeholder.svg"} />
                         <AvatarFallback>{user.nickname[0]}</AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate">{user.nickname}</div>
-                        <div className="text-sm text-muted-foreground truncate">{user.email}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-medium">{user.nickname}</div>
+                        <div className="truncate text-sm text-muted-foreground">{user.email}</div>
                       </div>
                       <AlertDialog open={confirmUnblockUid === user.uid}>
                         <AlertDialogTrigger asChild>
@@ -360,7 +360,7 @@ export default function BlockedUsersPage() {
             </AlertDialogHeader>
             <div className="py-4">
               <p>비공개 사용자는 최대 10명까지만 설정할 수 있습니다.</p>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="mt-2 text-sm text-muted-foreground">
                 새로운 사용자를 추가하려면 기존 사용자의 설정을 먼저 해제해주세요.
               </p>
             </div>

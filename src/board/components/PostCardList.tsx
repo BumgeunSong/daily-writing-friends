@@ -1,21 +1,21 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import type React from 'react';
+import { PenSquare } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
-import { PenSquare } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import PostCard from '@/post/components/PostCard';
+import { usePosts } from '@/post/hooks/usePosts';
 import { useScrollRestoration } from '@/post/hooks/useScrollRestoration';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
 import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
-import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
-import PostCard from '@/post/components/PostCard';
-import { usePosts } from '@/post/hooks/usePosts';
-import { useCurrentUserKnownBuddy } from '@/user/hooks/useCurrentUserKnownBuddy';
 import { Button } from '@/shared/ui/button';
+import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
 import { StreakRecoveryNotice } from '@/stats/components/StreakRecoveryNotice';
-import { useNavigate } from 'react-router-dom';
+import { useCurrentUserKnownBuddy } from '@/user/hooks/useCurrentUserKnownBuddy';
+import type React from 'react';
 
 interface PostCardListProps {
   boardId: string;
@@ -93,12 +93,12 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
 
   if (allPosts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-start p-8 text-center pt-16">
-        <div className="text-6xl mb-4 text-muted-foreground">
+      <div className="flex flex-col items-center justify-start p-8 pt-16 text-center">
+        <div className="mb-4 text-6xl text-muted-foreground">
           텅~
         </div>
-        <div className="text-muted-foreground mb-6">게시판이 비어있어요</div>
-        <h3 className="text-lg font-semibold text-foreground mb-6">
+        <div className="mb-6 text-muted-foreground">게시판이 비어있어요</div>
+        <h3 className="mb-6 text-lg font-semibold text-foreground">
           첫 글의 주인공이 되어 볼까요?
         </h3>
         <Button 
@@ -126,7 +126,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
       ))}
       <div ref={inViewRef} />
       {isFetchingNextPage && (
-        <div className='flex items-center justify-center p-6 text-muted-foreground text-reading-sm'>
+        <div className='text-reading-sm flex items-center justify-center p-6 text-muted-foreground'>
           <span>글을 불러오는 중...</span>
         </div>
       )}

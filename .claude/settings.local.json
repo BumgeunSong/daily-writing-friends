@@ -26,7 +26,10 @@
       "Bash(curl:*)",
       "Bash(gcloud functions logs read:*)",
       "Bash(firebase functions:log:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(grep:*)",
+      "Bash(git rm:*)",
+      "Bash(git push:*)"
     ],
     "deny": []
   }

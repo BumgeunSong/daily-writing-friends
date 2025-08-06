@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
+import { useNotificationMessage } from '@/notification/hooks/useNotificationMessage';
 import { Notification } from '@/notification/model/Notification';
 import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
-import { useNotificationMessage } from '@/notification/hooks/useNotificationMessage';
 
 interface NotificationItemProps {
   notification: Notification;
@@ -25,8 +25,8 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
           <AvatarImage src={notification.fromUserProfileImage} alt='User Avatar' />
           <AvatarFallback>{notification.fromUserId.slice(0, 2).toUpperCase()}</AvatarFallback>
         </Avatar>
-        <div className='flex-1 space-y-1.5 min-w-0'>
-          <p className='text-sm font-medium text-reading text-foreground'>{message}</p>
+        <div className='min-w-0 flex-1 space-y-1.5'>
+          <p className='text-reading text-sm font-medium text-foreground'>{message}</p>
           <span className='text-xs text-muted-foreground'>
             {notification.timestamp.toDate().toLocaleString()}
           </span>

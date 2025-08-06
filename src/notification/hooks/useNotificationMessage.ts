@@ -1,8 +1,8 @@
-import { usePostTitle } from '@/post/utils/postUtils';
-import { useUserNickname } from '@/user/hooks/useUserNickname';
 import { useCommentContent } from '@/comment/hooks/useCommentContent';
 import { useReplyContent } from '@/comment/hooks/useReplyContent';
 import { Notification, NotificationType } from '@/notification/model/Notification';
+import { usePostTitle } from '@/post/utils/postUtils';
+import { useUserNickname } from '@/user/hooks/useUserNickname';
 
 const MAX_CONTENT_LENGTH = 30;
 function getSnippet(content: string | null | undefined) {
@@ -18,21 +18,22 @@ export function useNotificationMessage(notification: Notification): string {
   // user nickname
   const { nickname: userNickName } = useUserNickname(notification.fromUserId);
   // 댓글/답글 내용
-  const commentContentObj =
-    notification.type === NotificationType.REACTION_ON_COMMENT && notification.commentId
-      ? useCommentContent(notification.boardId, notification.postId, notification.commentId)
-      : null;
-  const replyContentObj =
-    notification.type === NotificationType.REACTION_ON_REPLY &&
-    notification.commentId &&
-    notification.replyId
-      ? useReplyContent(
-          notification.boardId,
-          notification.postId,
-          notification.commentId,
-          notification.replyId,
-        )
-      : null;
+  const shouldFetchComment = notification.type === NotificationType.REACTION_ON_COMMENT && notification.commentId;
+  const shouldFetchReply = notification.type === NotificationType.REACTION_ON_REPLY && notification.commentId && notification.replyId;
+  
+  const commentContentObj = useCommentContent(
+    notification.boardId, 
+    notification.postId, 
+    notification.commentId || '', 
+    { enabled: shouldFetchComment }
+  );
+  const replyContentObj = useReplyContent(
+    notification.boardId,
+    notification.postId,
+    notification.commentId || '',
+    notification.replyId || '',
+    { enabled: shouldFetchReply }
+  );
   const commentSnippet = commentContentObj ? getSnippet(commentContentObj.content) : '';
   const replySnippet = replyContentObj ? getSnippet(replyContentObj.content) : '';
   const postTitleSnippet = getSnippet(postTitle || '');

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { useAuth } from '@/shared/hooks/useAuth';
 import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext";
+import { useAuth } from '@/shared/hooks/useAuth';
 import { fetchPostingData } from "@/shared/utils/postingUtils";
 import { fetchStreakInfo } from "@/stats/api/streakInfo";
 

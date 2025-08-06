@@ -1,18 +1,18 @@
 import { useState, useRef, useEffect, useCallback } from "react"
 import { useParams, useNavigate } from "react-router-dom"
+import { toast } from "sonner"
 import { PostVisibility } from '@/post/model/Post'
 import { createPost } from '@/post/utils/postUtils'
-import { toast } from "sonner"
-import { useAuth } from '@/shared/hooks/useAuth'
 import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext"
+import { useAuth } from '@/shared/hooks/useAuth'
+import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
+import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { WritingStatus } from "@/stats/model/WritingStatus"
 import { useUserNickname } from '@/user/hooks/useUserNickname'
 import CountupWritingTimer from "./CountupWritingTimer"
 import { PostSubmitButton } from "./PostSubmitButton"
 import { PostTextEditor } from "./PostTextEditor"
 import type React from "react"
-import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
-import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
 
 export default function PostFreewritingPage() {
   const { currentUser } = useAuth()

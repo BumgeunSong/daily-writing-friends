@@ -1,8 +1,8 @@
-import { useRef, useState, useEffect } from "react"
-import type { User } from "@/user/model/User"
-import { Avatar, AvatarImage, AvatarFallback } from "@/shared/ui/avatar"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { useRef, useState, useEffect } from "react"
+import { Avatar, AvatarImage, AvatarFallback } from "@/shared/ui/avatar"
 import { cn } from "@/shared/utils/cn"
+import type { User } from "@/user/model/User"
 
 interface ActiveUserProfileListProps {
   users: User[]
@@ -68,22 +68,22 @@ export default function ActiveUserProfileList({ users, className }: ActiveUserPr
     <div className={cn("relative w-full", className)}>
       {/* Left gradient */}
       {canScrollLeft && (
-        <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-12 bg-gradient-to-r from-background to-transparent" />
       )}
 
       {/* Right gradient */}
       {canScrollRight && (
-        <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-12 bg-gradient-to-l from-background to-transparent" />
       )}
 
       {/* Left scroll button - only shown when can scroll left */}
       {canScrollLeft && (
         <button
           onClick={() => handleScroll("left")}
-          className="absolute left-1 top-1/2 -translate-y-1/2 z-20 bg-background/70 backdrop-blur-sm rounded-full p-1 text-muted-foreground hover:text-foreground transition-colors"
+          className="absolute left-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-background/70 p-1 text-muted-foreground backdrop-blur-sm transition-colors hover:text-foreground"
           aria-label="Scroll left"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="size-4" />
         </button>
       )}
 
@@ -91,21 +91,21 @@ export default function ActiveUserProfileList({ users, className }: ActiveUserPr
       {canScrollRight && (
         <button
           onClick={() => handleScroll("right")}
-          className="absolute right-1 top-1/2 -translate-y-1/2 z-20 bg-background/70 backdrop-blur-sm rounded-full p-1 text-muted-foreground hover:text-foreground transition-colors"
+          className="absolute right-1 top-1/2 z-20 -translate-y-1/2 rounded-full bg-background/70 p-1 text-muted-foreground backdrop-blur-sm transition-colors hover:text-foreground"
           aria-label="Scroll right"
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="size-4" />
         </button>
       )}
 
       <div
         ref={scrollContainerRef}
-        className="flex py-2 px-6 overflow-x-auto scrollbar-hide"
+        className="scrollbar-hide flex overflow-x-auto px-6 py-2"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {users.map((user) => (
-          <div key={user.uid} className="flex flex-col items-center min-w-[72px] max-w-[80px]">
-            <Avatar className="w-12 h-12 mb-1.5">
+          <div key={user.uid} className="flex min-w-[72px] max-w-[80px] flex-col items-center">
+            <Avatar className="mb-1.5 size-12">
               {user.profilePhotoURL ? (
                 <AvatarImage src={user.profilePhotoURL || "/placeholder.svg"} alt={user.nickname ?? "user"} />
               ) : (
@@ -114,7 +114,7 @@ export default function ActiveUserProfileList({ users, className }: ActiveUserPr
                 </AvatarFallback>
               )}
             </Avatar>
-            <span className="text-xs text-center truncate w-full font-medium">{user.nickname || "익명"}</span>
+            <span className="w-full truncate text-center text-xs font-medium">{user.nickname || "익명"}</span>
           </div>
         ))}
       </div>

@@ -3,12 +3,12 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { HelmetProvider } from 'react-helmet-async';
-import { AuthProvider } from '@/shared/hooks/useAuth';
+import { RouterProvider } from 'react-router-dom';
 import { RemoteConfigProvider } from '@/shared/contexts/RemoteConfigContext';
 import { ThemeProvider } from '@/shared/contexts/ThemeContext';
-import { RouterProvider } from 'react-router-dom';
-import { router } from './router';
+import { AuthProvider } from '@/shared/hooks/useAuth';
 import { queryClient } from '@/shared/lib/queryClient';
+import { router } from './router';
 import { initSentry } from './sentry';
 initSentry();
 

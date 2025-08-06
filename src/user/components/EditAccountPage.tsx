@@ -1,14 +1,14 @@
 import { Camera, Loader2 } from 'lucide-react';
+import { useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import StatusMessage from '@/shared/components/StatusMessage';
 import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
 import { Textarea } from '@/shared/ui/textarea';
-import StatusMessage from '@/shared/components/StatusMessage';
 import { useEditAccount } from '../hooks/useEditAccount';
-import { useRef } from 'react';
 import { useUpdateUserData } from '../hooks/useUpdateUserData';
 
 export default function EditAccountPage() {
@@ -63,13 +63,13 @@ export default function EditAccountPage() {
     <div className='min-h-screen bg-background'>
       <header className="bg-background py-3">
         <div className="container mx-auto px-3 md:px-4">
-          <h1 className='text-xl font-semibold tracking-tight md:text-2xl text-foreground'>내 정보 수정하기</h1>
+          <h1 className='text-xl font-semibold tracking-tight text-foreground md:text-2xl'>내 정보 수정하기</h1>
         </div>
       </header>
-      <main className="container mx-auto px-3 md:px-4 py-2">
+      <main className="container mx-auto px-3 py-2 md:px-4">
         <div className='relative flex items-start justify-center'>
           {isLoadingUpdate && <LoadingOverlay />}
-          <Card className={`w-full max-w-md reading-shadow border-border/50 ${isLoadingUpdate ? 'pointer-events-none opacity-50' : ''}`}>
+          <Card className={`reading-shadow w-full max-w-md border-border/50 ${isLoadingUpdate ? 'pointer-events-none opacity-50' : ''}`}>
             <CardHeader>
               <CardTitle className='text-center text-lg font-semibold text-foreground'>프로필 정보</CardTitle>
             </CardHeader>
@@ -113,7 +113,7 @@ export default function EditAccountPage() {
               <Button
                 type='button'
                 variant='outline'
-                className='w-full min-h-[44px] reading-hover reading-focus transition-all duration-200 active:scale-[0.99]'
+                className='reading-hover reading-focus min-h-[44px] w-full transition-all duration-200 active:scale-[0.99]'
                 onClick={() => window.history.back()}
                 disabled={isLoadingUpdate}
               >
@@ -122,7 +122,7 @@ export default function EditAccountPage() {
               <Button 
                 type='submit'
                 variant='default'
-                className='w-full min-h-[44px] reading-hover reading-focus transition-all duration-200 active:scale-[0.99]' 
+                className='reading-hover reading-focus min-h-[44px] w-full transition-all duration-200 active:scale-[0.99]' 
                 disabled={isLoadingUpdate}
               >
                 {isLoadingUpdate ? <Loader2 className='size-4 animate-spin' /> : '저장하기'}

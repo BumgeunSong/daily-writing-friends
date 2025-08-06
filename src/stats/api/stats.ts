@@ -1,9 +1,9 @@
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { Posting } from '@/post/model/Posting';
+import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { mapDocumentToPosting } from '@/shared/utils/postingUtils';
 import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
-import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { fetchUser } from '@/user/api/user';
 import { User } from '@/user/model/User';
 

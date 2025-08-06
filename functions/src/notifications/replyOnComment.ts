@@ -1,8 +1,8 @@
 import { Timestamp } from 'firebase-admin/firestore';
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
-import admin from '../shared/admin';
 import { generateMessage } from './messageGenerator';
 import { shouldGenerateNotification } from './shouldGenerateNotification';
+import admin from '../shared/admin';
 import { Comment } from '../shared/types/Comment';
 import { Notification, NotificationType } from '../shared/types/Notification';
 import { Reply } from '../shared/types/Reply';

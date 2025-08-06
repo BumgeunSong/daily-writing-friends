@@ -1,8 +1,8 @@
 import { collection, getDocs, query, where } from 'firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { Commenting } from '@/user/model/Commenting';
 import { Replying } from '@/user/model/Replying';
-import { Timestamp } from 'firebase/firestore';
 
 // 특정 유저의 commentings 서브컬렉션 전체 fetch
 export async function fetchUserCommentings(userId: string): Promise<Commenting[]> {

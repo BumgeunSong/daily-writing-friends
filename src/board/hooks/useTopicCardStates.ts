@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import { fetchTopicCardStates, updateTopicCardState } from "../api/topicCard"
 import { TopicCard } from "../model/TopicCard"
-import { toast } from "sonner"
 
 export function useTopicCardStates(userId: string, topicCards: TopicCard[]) {
   const queryClient = useQueryClient()

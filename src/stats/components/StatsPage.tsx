@@ -1,17 +1,17 @@
-import { useState } from 'react';
-import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
-import { ScrollArea } from '@/shared/ui/scroll-area';
-import StatsHeader from '@/stats/components/StatsHeader';
-import { StatsNoticeBanner } from '@/stats/components/StatsNoticeBanner';
-import { useStatsPageData } from '@/stats/hooks/useStatsPageData';
-import { UserPostingStatsCardList } from '@/stats/components/UserPostingStatsCardList';
-import { UserCommentStatsCardList } from '@/stats/components/UserCommentStatsCardList';
-import React from 'react';
 import { Loader2, AlertTriangle } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/ui/tabs';
+import { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
+import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
 import { Alert, AlertDescription } from '@/shared/ui/alert';
+import { ScrollArea } from '@/shared/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/ui/tabs';
+import StatsHeader from '@/stats/components/StatsHeader';
+import { StatsNoticeBanner } from '@/stats/components/StatsNoticeBanner';
+import { UserCommentStatsCardList } from '@/stats/components/UserCommentStatsCardList';
+import { UserPostingStatsCardList } from '@/stats/components/UserPostingStatsCardList';
+import { useStatsPageData } from '@/stats/hooks/useStatsPageData';
 
 // 통계 페이지 스크롤 영역의 고유 ID
 const STATS_SCROLL_ID = 'stats-scroll';
@@ -59,24 +59,24 @@ export default function StatsPage() {
   return (
     <div className='flex min-h-screen flex-col bg-background'>
       <StatsHeader />
-      <main className='container flex-1 px-3 md:px-4 py-2'>
+      <main className='container flex-1 px-3 py-2 md:px-4'>
         <ScrollArea className='h-full' id={STATS_SCROLL_ID}>
           <StatsNoticeBanner />
           <Tabs value={tab} onValueChange={(v) => setTab(v as TabType)}>
-            <TabsList className='w-full flex justify-between mb-4 rounded-lg bg-muted'>
+            <TabsList className='mb-4 flex w-full justify-between rounded-lg bg-muted'>
               <TabsTrigger
                 value='posting'
-                className='flex-1 data-[state=active]:bg-background data-[state=active]:reading-shadow rounded-lg text-base p-2 reading-hover reading-focus transition-all duration-200'
+                className='data-[state=active]:reading-shadow reading-hover reading-focus flex-1 rounded-lg p-2 text-base transition-all duration-200 data-[state=active]:bg-background'
               >
                 글쓰기
               </TabsTrigger>
               <TabsTrigger
                 value='commenting'
-                className='flex-1 data-[state=active]:bg-background data-[state=active]:reading-shadow rounded-lg text-base p-2 flex items-center justify-center gap-2 reading-hover reading-focus transition-all duration-200'
+                className='data-[state=active]:reading-shadow reading-hover reading-focus flex flex-1 items-center justify-center gap-2 rounded-lg p-2 text-base transition-all duration-200 data-[state=active]:bg-background'
               >
                 댓글·답글
                 {isLoadingCommenting && (
-                  <Loader2 className='ml-1 h-4 w-4 animate-spin text-muted-foreground' />
+                  <Loader2 className='ml-1 size-4 animate-spin text-muted-foreground' />
                 )}
               </TabsTrigger>
             </TabsList>
@@ -113,14 +113,14 @@ function LoadingState() {
   return (
     <div className='flex min-h-screen flex-col bg-background'>
       <StatsHeader />
-      <main className='container flex-1 px-3 md:px-4 py-2'>
+      <main className='container flex-1 px-3 py-2 md:px-4'>
         <ScrollArea className='h-full' id={STATS_SCROLL_ID}>
           <StatsNoticeBanner />
           <div className='space-y-4 pb-20'>
             {[...Array(5)].map((_, index) => (
               <div
                 key={index}
-                className='w-full rounded-lg bg-card reading-shadow border border-border/50'
+                className='reading-shadow w-full rounded-lg border border-border/50 bg-card'
               >
                 <div className='flex items-start gap-4 p-4'>
                   <div className='flex flex-1 items-start gap-4'>
@@ -152,19 +152,19 @@ function MaintenanceState() {
   return (
     <div className='flex min-h-screen flex-col bg-background'>
       <StatsHeader />
-      <main className='container flex-1 px-3 md:px-4 py-2'>
+      <main className='container flex-1 px-3 py-2 md:px-4'>
         <ScrollArea className='h-full' id={STATS_SCROLL_ID}>
-          <div className='flex flex-col items-center justify-center py-16 space-y-6'>
+          <div className='flex flex-col items-center justify-center space-y-6 py-16'>
             <img
               src='/admin-poodle-icon.webp'
               alt='점검 중인 강아지'
-              className='h-24 w-24 rounded-full object-cover'
+              className='size-24 rounded-full object-cover'
             />
-            <div className='text-center space-y-4'>
+            <div className='space-y-4 text-center'>
               <h2 className='text-2xl font-semibold text-foreground'>
                 잔디 기록 페이지가 잠시 점검 중이에요
               </h2>
-              <p className='text-muted-foreground max-w-md text-lg'>조금만 기다려주세요 🙏</p>
+              <p className='max-w-md text-lg text-muted-foreground'>조금만 기다려주세요 🙏</p>
             </div>
           </div>
         </ScrollArea>

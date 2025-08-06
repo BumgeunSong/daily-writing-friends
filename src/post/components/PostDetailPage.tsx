@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Comments from '@/comment/components/Comments';
 import { usePostDelete } from '@/post/hooks/usePostDelete';
@@ -42,7 +42,7 @@ export default function PostDetailPage() {
   return (
     <div className='min-h-screen bg-background'>
       <PostMetaHelmet post={post} boardId={boardId} postId={postId} />
-      <main className="container mx-auto px-6 py-2 max-w-4xl">
+      <main className="container mx-auto max-w-4xl px-6 py-2">
         <PostBackButton className='mb-4' />
         <article className='space-y-4'>
         <PostDetailHeader
@@ -77,7 +77,7 @@ export default function PostDetailPage() {
 function PostDetailSkeleton() {
   return (
     <div className='min-h-screen bg-background'>
-      <main className="container mx-auto px-6 py-2 max-w-4xl">
+      <main className="container mx-auto max-w-4xl px-6 py-2">
         <Skeleton className='mb-4 h-12 w-3/4' />
         <Skeleton className='mb-2 h-4 w-full' />
         <Skeleton className='mb-2 h-4 w-full' />
@@ -91,8 +91,8 @@ function PostDetailSkeleton() {
 function PostDetailError({ boardId }: { boardId?: string }) {
   return (
     <div className='min-h-screen bg-background'>
-      <main className="container mx-auto px-6 py-2 max-w-4xl text-center">
-        <h1 className='mb-4 text-xl md:text-2xl font-semibold text-foreground'>게시물을 찾을 수 없습니다.</h1>
+      <main className="container mx-auto max-w-4xl px-6 py-2 text-center">
+        <h1 className='mb-4 text-xl font-semibold text-foreground md:text-2xl'>게시물을 찾을 수 없습니다.</h1>
         {boardId && <PostBackButton />}
       </main>
     </div>

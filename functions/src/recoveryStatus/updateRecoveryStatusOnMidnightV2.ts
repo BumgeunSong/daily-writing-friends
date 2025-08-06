@@ -1,7 +1,7 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
+import { calculateMidnightTransitions, DBUpdate } from "./stateTransitions";
 import admin from "../shared/admin";
 import { getCurrentSeoulDate } from "../shared/calendar";
-import { calculateMidnightTransitions, DBUpdate } from "./stateTransitions";
 
 // Configuration constants for batch processing
 const USER_PROCESSING_BATCH_SIZE = 100; // Number of users to process in parallel
@@ -183,7 +183,7 @@ async function getAllUserIds(): Promise<string[]> {
  * @returns Processing summary
  */
 export async function executeMidnightUpdateV2(
-  currentDate: Date = new Date()
+  _currentDate: Date = new Date()
 ): Promise<MidnightUpdateSummary> {
   const seoulDate = getCurrentSeoulDate();
   console.log(`[MidnightV2] Starting midnight update for 3-state recovery system at ${seoulDate.toISOString()}`);

@@ -1,7 +1,7 @@
 import { onRequest } from "firebase-functions/v2/https";
+import { Commenting } from "./Commenting";
 import admin from "../shared/admin";
 import { Comment } from "../shared/types/Comment";
-import { Commenting } from "./Commenting";
 import { Post } from "../shared/types/Post";
 /**
  * updateCommenting is a one-time migration function.
