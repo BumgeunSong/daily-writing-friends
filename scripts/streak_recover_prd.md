@@ -1,535 +1,485 @@
-# Streak Recovery System PRD
+Streak Recovery System — Requirements Document
 
-## Overview
+1. Project Overview
 
-A simplified streak recovery system for a social writing app that allows users to recover missed writing days with flexible recovery options. The system uses a clean 3-state model and provides clear visual feedback to users.
+A simplified Streak Recovery system for a social writing app that lets authors recover a missed working day via clearly defined rules and a 3-state model (onStreak, eligible, missed).
+Calendar rule (v1): Only weekend (Saturday–Sunday, KST) is non-working; no holidays are considered.
+Timezone: All logic and deadlines use Asia/Seoul (KST).
+Key behaviors: Optimistic streak display during working days, explicit recovery windows, and deterministic midnight transitions.
 
-## Core Features
+⸻
 
-### Writing Streak
+2. Glossary
 
-- Users maintain streaks by writing at least 1 post per working day
-- Working Days: Monday-Friday only (weekends don't count toward streak)
-- Timezone: Fixed Asia/Seoul timezone for all users
-- Real-time Updates: Streak updates immediately when user creates a post
-- Fast Display: Streak count shows quickly on main page
+Author (User)
+: A registered app user who writes posts. Synonyms: user, writer. Must be authenticated to create posts.
 
-### Recovery System
+Working Day
+: Monday–Friday in Asia/Seoul (KST). Only weekends (Sat–Sun) are non-working in v1.
 
-- Recovery Window: Users can recover missed working days by writing extra posts the next day
-- Recovery Rules:
-  - Miss working day → Write 2 posts next working day to recover
-  - Miss Friday → Write 1 post on weekend to recover
-- Recovery Status: Users see if they can recover and their progress
+Post / Posting
+: A published writing entry created by an author in users/{userId}/postings/{postingId}. Edits/deletes do not retroactively change streaks.
 
-### Status Types
+Streak
+: Count of consecutive working days with ≥1 post per day (KST semantics).
 
-- **onStreak**: User is maintaining at least a 2-day streak (no action needed)
-- **eligible**: User missed yesterday, but recovery deadline hasn't passed (can still recover)
-- **missed**: Recovery deadline passed AND user doesn't have at least a 2-day streak (failed state)
+Optimistic Streak Display
+: Before the user posts on a working day, display continues to show yesterday’s streak; after posting, immediately reflect today’s increment.
 
-## Core Requirements
+StreakInfo
+: User’s streak state and counters stored at users/{userId}/streakInfo/current.
 
-### Streak Rules
+Status (RecoveryStatus)
+: One of onStreak, eligible, missed. For eligible, it also includes postsRequired, currentPosts, deadline, missedDate.
 
-- Users must write at least 1 post on working days (Monday-Friday) to maintain their streak
-- Weekends and holidays don't affect streak calculation
-- Users get streak recovery opportunities when they miss a working day
+originalStreak
+: The streak value captured at the moment of onStreak → eligible (pre-miss). It does not increment daily; it is used only to compute restoration on successful recovery, and is cleared when recovery fails (eligible → missed).
 
-### Current Streak Calculation Logic (Optimistic Approach)
+Recovery
+: A rule-bound process to restore a missed working day.
+: Miss Mon–Thu → 2 posts on next working day.
+: Miss Friday → 1 post on Saturday only (no Sunday).
 
-The system uses **optimistic streak calculation** to provide the best user experience:
+Midnight Function
+: A scheduled job at 00:00 KST that applies time-based transitions and deadlines.
 
-**Case 1: Today is working day & user hasn't posted today**
-- Current streak counts from yesterday (optimistic assumption user will post)
-- Example: User has 5-day streak, it's Tuesday morning, no post yet → shows currentStreak: 5
+Recovery History
+: Audit records of recovery attempts/outcomes at users/{userId}/streakInfo/current/recoveryHistory/{recoveryId}.
 
-**Case 2: Today is working day & user has posted today** 
-- Current streak counts including today (immediate update)
-- Example: User posts on Tuesday → immediately shows currentStreak: 6
+⸻
 
-**Case 3: Today is not working day**
-- Current streak counts from the most recent working day
-- Example: It's Saturday, user's last post was Friday → shows Friday's streak count
+3. Functional Requirements
 
-**Business Rationale**: We optimistically assume users will post on working days and only break the streak when they actually miss a working day completely. This provides immediate positive feedback when users post while avoiding premature streak breaks during the day.
+IDs follow REQ-###. Each has Acceptance Criteria in Gherkin.
 
-### New State Transition Logic
+REQ-001: Working Day Determination (KST)
+• Description: Classify a date as Working vs Non-Working using KST. Working = Mon–Fri; Non-Working = Sat–Sun. No holidays in v1.
 
-**OnStreak Requirement**: Users must maintain at least a 2-day consecutive streak to be `onStreak`
+Acceptance Criteria
 
-**Recovery Process After Missing a Working Day:**
+Given a UTC timestamp
+When it is converted to KST and classified
+Then Monday–Friday is Working and Saturday–Sunday is Non-Working
 
-**Working Day Recovery (2 posts required):**
-- **1st Post**: Status remains `eligible`, `currentStreak: 1` (need 1 more)
-- **2nd Post**: Status becomes `onStreak`, `currentStreak: originalStreak + 1` (bonus)
-- **Deadline passes without 2nd post**: Status becomes `missed`
+⸻
 
-**Weekend Recovery (1 post required when missed Friday):**
-- **1 Post on Saturday**: Status becomes `onStreak`, `currentStreak: originalStreak` (no bonus)
-- **No post on Saturday**: Status becomes `missed` at end of Saturday, `currentStreak: 0`
+REQ-002: Post Counting Scope
+• Description: A “post” is any published post created via the normal composer; edits/deletes do not adjust past streak counts. Drafts/scheduled do not count until actually published.
 
-**Building New Streak After Recovery Failure:**
-- User in `missed` status needs to achieve 2+ consecutive posting days
-- Once achieved, status becomes `onStreak` with new secure streak
+Acceptance Criteria
 
-**Key Principle**: `onStreak` status requires maintaining at least 2 consecutive posting days, providing clear security threshold for streak maintenance.
+Given a published post created today
+Then it is eligible to count for today’s streak or recovery progress
 
-### Recovery Policy
+Given a post is edited or deleted later
+Then prior streak counts remain unchanged
 
-- **Normal Recovery**: Write 2 posts the next working day to recover a missed working day
-- **Weekend Recovery**: Write 1 post on weekend to recover a missed Friday
-- **Fresh Start**: Users in 'missed' status can start a new streak by writing a post
+⸻
 
-## Recovery Status Types
+REQ-003: Daily Streak Rule
+• Description: On a Working Day, ≥1 post satisfies that day’s streak requirement. Additional posts the same day are used only for recovery progress (not extra streak increments).
 
-### Three Simple States
+Acceptance Criteria
 
-1. **`onStreak`**: User is maintaining their streak (no action needed)
-2. **`eligible`**: User can recover by writing posts today (shows progress: X/Y posts)
-3. **`missed`**: Recovery window has passed, streak is broken
+Given today is a Working Day and the user posts once
+Then today's streak requirement is satisfied
 
-### State Transitions
+Given the user posts additional times today
+Then the streak for today remains satisfied
+And additional posts count only toward recovery progress if applicable
 
-### Midnight Transitions (Daily at 00:00 KST)
+⸻
 
-#### onStreak → onStreak (posting on previous working day)
+REQ-004: Optimistic Display
+• Description: Before a user posts on a Working Day, display yesterday’s streak; after the first post, immediately display today’s incremented streak.
 
-- **Condition**: User has posted on previous working day
-- **currentStreak**: increment by 1
-- **originalStreak**: increment by 1
+Acceptance Criteria
 
-#### onStreak → eligible (missed previous working day)
+Given today is a Working Day and the user has not posted
+Then the UI shows yesterday’s streak value
 
-- **Condition**: User missed posting on previous working day
-- **currentStreak**: becomes 0 (ready for restoration)
-- **originalStreak**: remains same (preserves streak value before miss)
+Given the user posts today
+Then the UI immediately reflects the increment including today
 
-#### eligible → missed (recovery deadline passed)
+⸻
 
-- **Condition**: Recovery deadline has passed without completing requirements
-- **currentStreak**: becomes 0
-- **originalStreak**: becomes 0
+REQ-005: Recovery Opportunity After Miss (Mon–Thu)
+• Description: If the user misses a Working Day (Mon–Thu), the next Working Day becomes eligible with postsRequired = 2 and a deadline at 23:59:59 KST that day.
 
-#### missed → missed (no change)
+Acceptance Criteria
 
-- **Condition**: User remains in missed state
-- **currentStreak**: becomes 0
-- **originalStreak**: becomes 0
+Given the user missed Wednesday
+When it becomes Thursday 00:00 KST
+Then status becomes eligible with postsRequired = 2 and deadline = Thu 23:59:59 KST
 
-### Posting Transitions (When user creates new post)
+⸻
 
-#### missed → onStreak (fresh start)
+REQ-006: Friday Miss → Saturday Recovery
+• Description: If the user misses Friday, Saturday only is eligible with postsRequired = 1 and a deadline at Saturday 23:59:59 KST. Sunday does not apply.
 
-- **Condition**: User creates post from missed state
-- **currentStreak**: increment by 1 (starts from 0)
-- **originalStreak**: increment by 1 (starts from 0)
+Acceptance Criteria
 
-#### eligible → eligible (progress update)
+Given the user missed Friday
+When it becomes Saturday 00:00 KST
+Then status becomes eligible with postsRequired = 1 and deadline = Sat 23:59:59 KST
 
-- **Condition**: User writes 1st post when 2 posts required
-- **currentStreak**: remains 0
-- **originalStreak**: remains same
+⸻
 
-#### eligible → onStreak (recovery on working day)
+REQ-007: originalStreak Capture & Use
+• Description: At onStreak → eligible, capture originalStreak = currentStreak. Do not increment originalStreak during normal days. On recovery success, compute restoration from originalStreak.
 
-- **Condition**: User completes required posts (2nd post) on working day
-- **currentStreak**: becomes originalStreak + 1
-- **originalStreak**: increment by 1
+Acceptance Criteria
 
-#### eligible → onStreak (recovery on non-working day)
+Given onStreak → eligible occurs
+Then originalStreak is set to the currentStreak value at that moment
 
-- **Condition**: User completes required posts (1st post) on weekend
-- **currentStreak**: becomes originalStreak (no additional increment)
-- **originalStreak**: remains same
+Given subsequent normal onStreak days
+Then originalStreak does not change
 
-#### onStreak → onStreak (maintain streak)
+⸻
 
-- **Condition**: User creates post while on streak
-- **currentStreak**: increment by 1
-- **originalStreak**: increment by 1
+REQ-008: Eligible Progress & Partial Streak
+• Description: While eligible, increment progress on each post. Reflect partial progress in currentStreak (e.g., first post may show currentStreak = 1) before recovery completes.
 
-## Data Model
+Acceptance Criteria
 
-### StreakInfo Document
+Given status is eligible with postsRequired = 2
+When the user posts once
+Then status remains eligible and currentPosts = 1
+And currentStreak may reflect 1 as partial progress
 
-**Path**: `users/{userId}/streakInfo/{streakInfoId}`
+⸻
 
-```typescript
+REQ-009: Completing Recovery
+• Description: When currentPosts >= postsRequired within the deadline:
+• If it’s a Working Day recovery: set currentStreak = originalStreak + 1 and status = onStreak.
+• If it’s Saturday (Friday miss): set currentStreak = originalStreak (no bonus) and status = onStreak.
+• originalStreak remains the captured value (it is not incremented on success).
+
+Acceptance Criteria
+
+Given eligible with postsRequired = 2 on a Working Day
+When the second post is created before the deadline
+Then status becomes onStreak and currentStreak = originalStreak + 1
+
+Given eligible with postsRequired = 1 on Saturday
+When one post is created before the deadline
+Then status becomes onStreak and currentStreak = originalStreak
+
+⸻
+
+REQ-010: Failing Recovery → missed (Partial Carry)
+• Description: If the deadline passes without meeting postsRequired, set status = missed. Preserve partial daily progress into currentStreak if any (e.g., 1), and clear originalStreak to 0.
+
+Acceptance Criteria
+
+Given eligible with postsRequired = 2 and only 1 post made by deadline
+When it becomes 00:00 KST
+Then status becomes missed
+And currentStreak reflects partial progress (e.g., 1)
+And originalStreak = 0
+
+⸻
+
+REQ-011: Building New Streak After missed (Two Paths)
+• Description: After missed: 1. Same-day two-post path: First post sets status to eligible (progress), second post (same day) flips to onStreak and restores streak as per REQ-009. If day ends with 0–1 post, status stays/returns missed. 2. Across-days path: If the user posts on consecutive working days, once currentStreak ≥ 2 the system flips missed → onStreak.
+
+Acceptance Criteria
+
+Given status is missed
+When the user posts once today
+Then status becomes eligible with currentPosts = 1
+
+Given the same day the user posts a second time
+Then status becomes onStreak per the applicable recovery rule
+
+Given the day ends with only 0–1 post after missed
+Then status is missed
+
+Given the user posts again on the next Working Day and currentStreak ≥ 2 overall
+Then status becomes onStreak
+
+⸻
+
+REQ-012: Multiple Consecutive Misses
+• Description: Only the most recent missed day can be recovered; earlier misses are not recoverable (no chained/rolling recoveries).
+
+Acceptance Criteria
+
+Given two consecutive missed Working Days
+Then only the most recent missed day is considered for any recovery opportunity
+
+⸻
+
+REQ-013: Single StreakInfo Document
+• Description: Maintain exactly one StreakInfo doc per user at users/{userId}/streakInfo/current.
+
+Acceptance Criteria
+
+Given a user
+Then there exists at most one document at users/{userId}/streakInfo/current
+
+⸻
+
+REQ-014: Data Model — StreakInfo & RecoveryHistory
+• Description: Store fields with these shapes:
+
+// StreakInfo (users/{userId}/streakInfo/current)
 interface StreakInfo {
-  lastContributionDate: string; // YYYY-MM-DD format
-  lastCalculated: Timestamp; // When this was last calculated
-  status: RecoveryStatus;
-  currentStreak: number; // Current consecutive writing streak (working days)
-  longestStreak: number; // All-time longest streak achieved
-  originalStreak: number; // Stores the streak value before transition to eligible status
+lastContributionDate: string; // YYYY-MM-DD (KST)
+lastCalculated: Timestamp;
+status: {
+type: 'onStreak' | 'eligible' | 'missed';
+postsRequired?: number;
+currentPosts?: number;
+deadline?: Timestamp;
+missedDate?: Timestamp;
+};
+currentStreak: number;
+longestStreak: number;
+originalStreak: number; // captured at onStreak→eligible; used only for recovery
 }
 
-interface RecoveryStatus {
-  type: 'onStreak' | 'eligible' | 'missed';
-  postsRequired?: number; // Only for 'eligible' status
-  currentPosts?: number; // Only for 'eligible' status
-  deadline?: Timestamp; // Only for 'eligible' status
-  missedDate?: Timestamp; // Only for 'eligible' status
-}
-```
-
-### Recovery History Document
-
-**Path**: `users/{userId}/streakInfo/{streakInfoId}/recoveryHistory/{recoveryId}`
-
-```typescript
+// RecoveryHistory (users/{userId}/streakInfo/current/recoveryHistory/{recoveryId})
 interface RecoveryHistory {
-  missedDate: Timestamp;
-  recoveryDate: Timestamp;
-  postsRequired: number;
-  postsWritten: number;
-  recoveredAt: Timestamp;
+missedDate: Timestamp;
+recoveryDate: Timestamp;
+postsRequired: number;
+postsWritten: number;
+recoveredAt: Timestamp;
 }
-```
-
-### Helper Interface
-
-```typescript
-interface RecoveryRequirement {
-  postsRequired: number;
-  currentPosts: number;
-  deadline: Timestamp;
-  missedDate: Timestamp;
-}
-```
-
-### Posting Documents
-
-```typescript
-interface Posting {
-  // existing fields...
-  isRecovered?: boolean; // true if this post was backdated for recovery
-}
-```
-
-## Recovery Logic
-
-### Working Day Validation
-
-- **Working Days**: Monday-Friday in Seoul timezone (Asia/Seoul)
-- **Non-Working Days**: Saturday-Sunday
-- **Holiday Handling**: Korean holidays are treated as non-working days
-- **State Changes**: Only previous working day misses trigger state transitions
-- **Posting Impact**: Only posts on specific day types affect streak calculations
-
-### Recovery Requirement Calculation
-
-```typescript
-function calculateRecoveryRequirement(missedDate: Date, recoveryDate: Date): RecoveryRequirement {
-  const isRecoveryWorkingDay = isWorkingDay(recoveryDate);
-
-  return {
-    postsRequired: isRecoveryWorkingDay ? 2 : 1, // 2 for working day, 1 for weekend
-    currentPosts: 0,
-    deadline: Timestamp.fromDate(getEndOfDay(getNextWorkingDay(missedDate))),
-    missedDate: Timestamp.fromDate(missedDate),
-  };
-}
-```
-
-### State Update Algorithm
-
-```typescript
-function updateStreakInfo(
-  userId: string,
-  currentDate: Date,
-  isPosting: boolean = false,
-): Partial<StreakInfo> {
-  const streakInfo = getStreakInfo(userId);
-  const isWorkingDay = isWorkingDayInSeoul(currentDate);
-  const yesterday = getYesterday(currentDate);
-  const wasYesterdayWorkingDay = isWorkingDayInSeoul(yesterday);
-
-  // Midnight transitions (only check previous working day)
-  if (!isPosting && wasYesterdayWorkingDay) {
-    switch (streakInfo.status.type) {
-      case 'onStreak':
-        if (missedYesterday(userId, currentDate)) {
-          return {
-            status: {
-              type: 'eligible',
-              ...calculateRecoveryRequirement(yesterday, currentDate),
-            },
-            currentStreak: 0, // Reset immediately
-            originalStreak: streakInfo.currentStreak, // Preserve current streak
-          };
-        } else {
-          return {
-            currentStreak: streakInfo.currentStreak + 1,
-            originalStreak: streakInfo.originalStreak + 1,
-          };
-        }
-
-      case 'eligible':
-        if (hasDeadlinePassed(streakInfo.status.deadline, currentDate)) {
-          return {
-            status: { type: 'missed' },
-            currentStreak: 0,
-            originalStreak: 0,
-          };
-        }
-        break;
-
-      case 'missed':
-        return {
-          currentStreak: 0,
-          originalStreak: 0,
-        };
-    }
-  }
-
-  // Posting transitions
-  if (isPosting) {
-    switch (streakInfo.status.type) {
-      case 'missed':
-        return {
-          status: { type: 'onStreak' },
-          currentStreak: 1, // Fresh start
-          originalStreak: 1,
-        };
-
-      case 'eligible':
-        const progress = getTodayPostingCount(userId, currentDate);
-        if (progress >= streakInfo.status.postsRequired) {
-          // Recovery completed
-          const isRecoveryOnWorkingDay = isWorkingDayInSeoul(currentDate);
-          return {
-            status: { type: 'onStreak' },
-            currentStreak: isRecoveryOnWorkingDay
-              ? streakInfo.originalStreak + 1 // Working day: restore + increment
-              : streakInfo.originalStreak, // Weekend: just restore
-            originalStreak: isRecoveryOnWorkingDay
-              ? streakInfo.originalStreak + 1
-              : streakInfo.originalStreak,
-          };
-        } else {
-          // Progress update
-          return {
-            status: {
-              ...streakInfo.status,
-              currentPosts: progress,
-            },
-          };
-        }
-
-      case 'onStreak':
-        return {
-          currentStreak: streakInfo.currentStreak + 1,
-          originalStreak: streakInfo.originalStreak + 1,
-        };
-    }
-  }
-}
-```
-
-## Function Architecture
-
-### Separation of Concerns
-
-1. **createPosting**: Only handles basic posting record creation
-
-   - No recovery logic
-   - Uses original createdAt timestamp
-   - Minimal error logging only
-
-2. **Recovery Handler**: Separate function triggered by posting creation events
-
-   - Listens to `users/{userId}/postings/{postingId}` creation
-   - Handles recovery logic and status updates
-   - Backdate posting if recovery completed
-   - Add `isRecovered: true` flag when needed
-
-3. **Midnight Function**: Daily status maintenance
-   - Run at 00:00 KST
-   - Create new recovery opportunities (`onStreak → eligible`)
-   - Expire recovery windows (`eligible → missed`)
-   - Maintain `missed` status until manual resolution
-
-## User Interface
-
-### Recovery Banner (SystemPostCard)
-
-Only shown when `recoveryStatus === 'eligible'`
-
-**Dynamic Messages:**
-
-- Working day recovery: `"0/2 완료 - 2개 더 작성하면 streak가 복구돼요!"`
-- Working day progress: `"1/2 완료 - 1개 더 작성하면 streak가 복구돼요!"`
-- Weekend recovery: `"0/1 완료 - 1개 더 작성하면 streak가 복구돼요!"`
-
-### Client Flow
-
-1. Load StreakInfo document on BoardPage entry from `users/{userId}/streakInfo/{streakInfoId}`
-2. Check `streakInfo.status.type`
-3. If `'eligible'`, display recovery banner with status data (postsRequired, currentPosts, deadline)
-4. Set up real-time listener for StreakInfo document updates
-5. Display currentStreak value for user's streak count
-
-## Example Scenarios
-
-### Working Day Recovery (2 posts required)
-
-```
-Monday: 1+ posts ✅ (onStreak, currentStreak: 5, originalStreak: 5)
-Tuesday: 0 posts ❌ (missed working day)
-Wednesday 00:00: onStreak → eligible
-  - currentStreak: 0 (reset immediately)
-  - originalStreak: 5 (preserved)
-  - recoveryRequirement: { postsRequired: 2, currentPosts: 0, deadline: Wed 23:59 }
-Wednesday: 1st post → eligible (currentStreak: 1, recovery progress - still need 1 more)
-Wednesday: 2nd post → onStreak (currentStreak: 6, recovery completed - originalStreak + 1)
-  - originalStreak: 6 (updated after recovery completion)
-```
-
-### Weekend Recovery (1 post required)
-
-```
-Thursday: 1+ posts ✅ (onStreak, currentStreak: 5, originalStreak: 5)
-Friday: 0 posts ❌ (missed working day)
-Saturday 00:00: onStreak → eligible
-  - currentStreak: 0 (reset immediately)
-  - originalStreak: 5 (preserved)
-  - recoveryRequirement: { postsRequired: 1, currentPosts: 0, deadline: Sat 23:59 }
-Saturday: 1 post → onStreak (recovery completed with 1 post on weekend)
-  - currentStreak: 5 (restored to originalStreak, no bonus for weekend recovery)
-  - originalStreak: 5 (unchanged)
-```
-
-**Weekend Recovery Failure:**
-```
-Thursday: 1+ posts ✅ (onStreak, currentStreak: 5, originalStreak: 5)
-Friday: 0 posts ❌ (missed working day)
-Saturday 00:00: onStreak → eligible
-  - currentStreak: 0 (reset immediately)
-  - originalStreak: 5 (preserved)
-Saturday: 0 posts ❌ (no recovery attempt)
-Sunday 00:00: eligible → missed (weekend recovery deadline passed)
-  - currentStreak: 0 (recovery failed)
-  - originalStreak: 0 (original streak lost)
-```
-
-### Recovery Failure → Building New Streak
-
-```
-Tuesday: 0 posts ❌ (onStreak, currentStreak: 5 → eligible)
-Wednesday 00:00: eligible (postsRequired: 2, currentStreak: 0, originalStreak: 5)
-Wednesday: 1 post → eligible (currentStreak: 1, recovery progress - need 1 more)
-Thursday 00:00: Recovery deadline expires → missed
-  - currentStreak: 1 (partial progress maintained)
-  - originalStreak: 0 (recovery failed, original streak lost)
-Thursday: 1 post → missed (currentStreak: 2, building new streak)
-Friday: 1 post → onStreak (currentStreak: 3, achieved 2+ consecutive days)
-  - originalStreak: 3 (new secure streak established)
-```
-
-### Consecutive Working Days
-
-```
-Monday: 1+ posts ✅ (onStreak, currentStreak: 5)
-Monday 23:59 → Tuesday 00:00: onStreak → onStreak
-  - currentStreak: 6 (increment for maintaining streak)
-  - originalStreak: 6
-Tuesday: 1+ posts ✅ (onStreak, currentStreak: 6)
-Tuesday 23:59 → Wednesday 00:00: onStreak → onStreak
-  - currentStreak: 7
-  - originalStreak: 7
-```
-
-## Implementation Priority
-
-### Phase 1: Core Logic
-
-1. Update StreakInfo model with `originalStreak` field and Timestamp types
-2. Implement `calculateRecoveryRequirement` function with Timestamp returns
-3. Implement `updateStreakInfo` function for state transitions
-4. Update midnight function to use StreakInfo document
-5. Create separate recovery handler function for posting events
-6. Implement RecoveryHistory logging for completed recoveries
-
-### Phase 2: UI Updates
-
-1. Update SystemPostCard component
-2. Implement dynamic message generation
-3. Add real-time progress display
-4. Handle fresh start messaging
-
-### Phase 3: Migration & Optimization
-
-1. Migrate existing user data to StreakInfo documents (set `status.type: 'onStreak'`, initialize `originalStreak`)
-2. Performance testing and optimization
-3. Error handling improvements
-4. Analytics and monitoring using RecoveryHistory collection
-
-## Key Benefits
-
-### Simplified Design
-
-- Only 3 states to manage
-- Clear data model with all info in `recoveryRequirement`
-- Intuitive UI progress display
-
-### Flexible Recovery
-
-- Different requirements for working days vs weekends
-- Fresh start option for missed status
-- Immediate feedback on recovery completion
-
-### Clean Architecture
-
-- Complete separation between posting creation and recovery logic
-- Real-time status updates
-- Clear deadline and progress tracking
-
-## Technical Constraints
-
-### Backend Requirements
-
-- **Platform**: Firebase (Firestore + Cloud Functions)
-- **Performance**: Fast reads prioritized (< 100 monthly active users)
-- **Testability**: Date/time logic must be easily testable
-- **Extensibility**: Recovery policies should be configurable
-- **Data Source**: Use existing postings collection, don't duplicate data
-
-### Performance Considerations
-
-- Optimize for read operations over write operations
-- Minimize Firestore reads for streak display
-- Cache frequently accessed data where possible
-- Batch operations for midnight status updates
-
-### Testing Requirements
-
-- All date/time logic must be unit testable
-- Mock Firebase Timestamp for consistent testing
-- Test all timezone edge cases
-- Validate recovery window calculations
-
-## Configuration
-
-### Holiday Management
-
-- **Admin Control**: Configurable via Firebase console
-- **Holiday Rules**: Holidays don't count as working days
-- **Update Process**: Admin can add/remove holidays dynamically
-- **Data Storage**: Store holidays in Firestore config collection
-
-### Recovery Policy Configuration
-
-- **Admin Settings**: Modify recovery requirements through admin interface
-- **Configurable Values**:
-  - Working day recovery posts required (default: 2)
-  - Weekend recovery posts required (default: 1)
-  - Recovery window duration (default: next working day)
-- **Runtime Updates**: Changes apply to new recovery opportunities immediately
-
-### Timezone Configuration
-
-- **Fixed Timezone**: Asia/Seoul for all users
-- **No User Customization**: Simplifies logic and testing
-- **Consistent Calculation**: All date operations use KST
+
+Acceptance Criteria
+
+Given a streak transition occurs
+Then StreakInfo fields are updated consistently
+And on successful recovery a RecoveryHistory record is written
+
+⸻
+
+REQ-015: Triggers & Processing
+• Description: Use both:
+• Firestore onCreate of users/{userId}/postings/{postingId} for posting transitions.
+• Midnight 00:00 KST scheduled job for time-based transitions.
+
+Acceptance Criteria
+
+Given a new post is created
+Then the onCreate handler evaluates and applies posting transitions
+
+Given it is 00:00 KST
+Then the scheduled job evaluates and applies midnight transitions
+
+⸻
+
+REQ-016: Idempotency & Concurrency Policy
+• Description: Reprocessing is best-effort (may double count if retried). For concurrency bursts, use transactions/atomic increments to avoid over/under-counting within a day.
+
+Acceptance Criteria
+
+Given the same post triggers the handler twice
+Then behavior is best-effort and may not be strictly idempotent
+
+Given multiple posts arrive in rapid succession
+Then transaction-based increments are used to maintain accurate counters
+
+⸻
+
+REQ-017: Timestamps & Cutoffs
+• Description: Use server-side creation timestamps. Posts at 00:00:00 KST count for the new day (≥00:00:00 is new day).
+
+Acceptance Criteria
+
+Given a post created at exactly 00:00:00 KST
+Then it counts toward the new day
+
+⸻
+
+REQ-018: Longest Streak
+• Description: Update longestStreak whenever currentStreak exceeds its previous max (update timing left to implementation as long as value is correct).
+
+Acceptance Criteria
+
+Given currentStreak increases beyond longestStreak
+Then longestStreak is updated to currentStreak
+
+⸻
+
+Visual Model — State Flow (condensed)
+
+flowchart TD
+%% Midnight transitions
+A[onStreak]
+B[eligible]
+C[missed]
+
+A -->|Missed previous Working Day at 00:00 KST| B
+A -->|Posted previous Working Day at 00:00 KST| A
+B -->|Deadline passed (not met)| C
+
+%% Posting transitions (same day)
+C -->|1st post today| B
+B -->|progress < required| B
+B -->|met on Working Day (2 posts)| A
+B -->|met on Saturday (1 post, Friday miss)| A
+
+%% Across days (building back)
+C -->|Post across days; when currentStreak ≥ 2| A
+
+⸻
+
+4. Non-Functional Requirements
+
+NFR-01 Performance
+: Streak display should feel immediate after posting; keep reads minimal.
+
+NFR-02 Testability
+: Date/time logic must be unit-testable with controllable “now” and mocked Timestamps.
+
+NFR-03 Reliability
+: Midnight job should be safe to re-run within a window without corrupting state; retries permitted.
+
+NFR-04 Security
+: Users can read their own StreakInfo; only privileged backend functions may update it. RecoveryHistory is read-restricted.
+
+NFR-05 Observability
+: Log recovery completions and state transitions with correlation to user and dates.
+
+NFR-06 Maintainability
+: Code organized to separate posting handler and midnight scheduler; clear pure functions for calendar logic.
+
+⸻
+
+5. Business & Domain Rules
+
+BDR-01: Multi-Condition Decision Table (Recovery Windows)
+
+Missed Day Recovery Day Allowed? postsRequired On Success currentStreak Notes
+Mon–Thu Next Working Yes 2 originalStreak + 1 Deadline: 23:59:59 KST
+Friday Saturday Yes 1 originalStreak Saturday only
+Friday Sunday No — — Not allowed
+
+BDR-02: Only Most-Recent Miss Recoverable
+
+Earlier missed days are forfeited; no chained recoveries.
+
+BDR-03: Partial Progress Carry on Failure
+
+If deadline passes with partial progress, currentStreak may carry partial value (e.g., 1) while status = missed and originalStreak = 0.
+
+BDR-04: Two Paths to Regain onStreak After missed
+• Two posts in the same day (first → eligible, second → onStreak); or
+• Post across days until currentStreak ≥ 2, then flip to onStreak.
+
+BDR-05: Counting Rule Within a Day
+
+Only the first post satisfies the day’s streak; any additional posts the same day count only toward recovery progress.
+
+⸻
+
+6. Acceptance Criteria (End-to-End Scenarios)
+
+TC-01 — Weekday Miss, Two-Post Recovery (Thu after Wed miss)
+
+Given the user missed Wednesday (Working Day)
+When it becomes Thursday 00:00 KST
+Then status becomes eligible with postsRequired = 2 and deadline = Thu 23:59:59
+
+When the user posts once on Thursday
+Then currentPosts = 1 and status remains eligible
+
+When the user posts a second time on Thursday
+Then status becomes onStreak and currentStreak = originalStreak + 1
+
+TC-02 — Friday Miss, Saturday Recovery
+
+Given the user missed Friday
+When it becomes Saturday 00:00 KST
+Then status becomes eligible with postsRequired = 1 and deadline = Sat 23:59:59
+
+When the user posts once on Saturday
+Then status becomes onStreak and currentStreak = originalStreak
+
+TC-03 — Recovery Failure with Partial Carry
+
+Given eligible with postsRequired = 2 and only 1 post made by the deadline
+When it becomes 00:00 KST
+Then status becomes missed
+And currentStreak = 1
+And originalStreak = 0
+
+TC-04 — Building Across Days After missed
+
+Given status is missed and currentStreak = 1 from partial carry
+When the user posts on the next Working Day
+Then currentStreak becomes ≥ 2
+And status becomes onStreak
+
+TC-05 — Same-Day Two-Post Return After missed
+
+Given status is missed at the start of the day
+When the user posts once
+Then status becomes eligible with currentPosts = 1
+
+When the user posts a second time the same day
+Then status becomes onStreak per the applicable rule
+
+TC-06 — Optimistic Display
+
+Given today is a Working Day and the user has not posted
+Then the UI shows yesterday’s streak value
+
+When the user posts today
+Then the UI shows today’s increment immediately
+
+TC-07 — Midnight Cutoff
+
+Given a post created at exactly 00:00:00 KST
+Then it counts for the new day
+
+⸻
+
+7. Traceability Matrix
+
+Req ID User Story Design Doc Test Case
+REQ-001 US-01 DOC-Calendar TC-07
+REQ-02 US-02 DOC-PostingRules TC-06
+REQ-003 US-03 DOC-PostingRules TC-06
+REQ-004 US-04 DOC-UI-Streak TC-06
+REQ-005 US-05 DOC-RecoveryWeekday TC-01, TC-03
+REQ-006 US-06 DOC-RecoveryFriday TC-02
+REQ-007 US-07 DOC-StreakModel TC-01, TC-02
+REQ-008 US-07 DOC-StreakModel TC-01
+REQ-009 US-05/06/07 DOC-RecoveryCore TC-01, TC-02
+REQ-010 US-08 DOC-RecoveryCore TC-03
+REQ-011 US-09 DOC-RecoveryCore TC-04, TC-05
+REQ-012 US-10 DOC-Policy (Add TC)
+REQ-013 US-11 DOC-DataModel (Add TC)
+REQ-014 US-11 DOC-DataModel TC-01..05
+REQ-015 US-12 DOC-Architecture TC-01..07
+REQ-016 US-13 DOC-Architecture (Add TC)
+REQ-017 US-01 DOC-Calendar TC-07
+REQ-018 US-14 DOC-StreakModel (Add TC)
+
+User Stories (US) — Summary
+• US-01: As a developer, I need deterministic KST calendar rules.
+• US-02: As an author, I want clear, fair post counting.
+• US-03: As an author, one post per working day should satisfy the day.
+• US-04: As an author, I want optimistic streak display.
+• US-05: As an author, if I miss Mon–Thu I can recover next working day with two posts.
+• US-06: As an author, if I miss Friday I can recover on Saturday with one post.
+• US-07: As a developer, I need captured originalStreak semantics for recovery.
+• US-08: As an operator, I need predictable failure behavior with partial carry.
+• US-09: As an author, after missed I want paths to regain onStreak.
+• US-10: As a product owner, only the latest miss should be recoverable.
+• US-11: As a developer, I need a single canonical StreakInfo per user and RecoveryHistory.
+• US-12: As a developer, I need posting and midnight triggers.
+• US-13: As an engineer, I need concurrency safety while accepting best-effort reprocessing.
+• US-14: As an author, I want my longest streak tracked.
+
+⸻
+
+8. Version History
+
+Version Date Author Changes
+1.0 2025-08-06 Eddy Song Initial complete requirements (v1, no holidays; Saturday-only recovery)
