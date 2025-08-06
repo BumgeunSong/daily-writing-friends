@@ -269,7 +269,9 @@ export interface RecoveryRequirement {
 
 /**
  * Calculate recovery requirements based on missed date and current date
- * Simplified recovery rule: exactly 1 day to recover (next calendar day)
+ * CRITICAL: Recovery deadline is end of the day AFTER missed date
+ * - Miss Monday → Recover by Tuesday 23:59:59 KST
+ * - Miss Friday → Recover by Saturday 23:59:59 KST
  */
 export function calculateRecoveryRequirement(
   missedDate: Date,
@@ -287,13 +289,15 @@ export function calculateRecoveryRequirement(
 
   const isCurrentWorkingDay = isSeoulWorkingDay(seoulCurrentDate);
   
-  // Simplified rule: recovery deadline is exactly 1 day after missed date
+  // CRITICAL: Recovery deadline is exactly 1 calendar day after missed date (not working day)
+  // This gives users until end of next day to recover
   const nextDay = addDays(seoulMissedDate, 1);
+  const deadlineEndOfDay = endOfDay(nextDay);
 
   return {
     postsRequired: isCurrentWorkingDay ? 2 : 1, // 2 for working day, 1 for weekend
     currentPosts: 0,
-    deadline: Timestamp.fromDate(nextDay),
+    deadline: Timestamp.fromDate(deadlineEndOfDay), // End of next calendar day
     missedDate: Timestamp.fromDate(seoulMissedDate),
   };
 }
