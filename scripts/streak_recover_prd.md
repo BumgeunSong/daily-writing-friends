@@ -24,9 +24,9 @@ A simplified streak recovery system for a social writing app that allows users t
 
 ### Status Types
 
-- **onStreak**: User is maintaining streak (no action needed)
-- **eligible**: User can recover by writing X more posts today (shows progress)
-- **missed**: Recovery window passed, streak broken
+- **onStreak**: User is maintaining at least a 2-day streak (no action needed)
+- **eligible**: User missed yesterday, but recovery deadline hasn't passed (can still recover)
+- **missed**: Recovery deadline passed AND user doesn't have at least a 2-day streak (failed state)
 
 ## Core Requirements
 
@@ -35,6 +35,45 @@ A simplified streak recovery system for a social writing app that allows users t
 - Users must write at least 1 post on working days (Monday-Friday) to maintain their streak
 - Weekends and holidays don't affect streak calculation
 - Users get streak recovery opportunities when they miss a working day
+
+### Current Streak Calculation Logic (Optimistic Approach)
+
+The system uses **optimistic streak calculation** to provide the best user experience:
+
+**Case 1: Today is working day & user hasn't posted today**
+- Current streak counts from yesterday (optimistic assumption user will post)
+- Example: User has 5-day streak, it's Tuesday morning, no post yet → shows currentStreak: 5
+
+**Case 2: Today is working day & user has posted today** 
+- Current streak counts including today (immediate update)
+- Example: User posts on Tuesday → immediately shows currentStreak: 6
+
+**Case 3: Today is not working day**
+- Current streak counts from the most recent working day
+- Example: It's Saturday, user's last post was Friday → shows Friday's streak count
+
+**Business Rationale**: We optimistically assume users will post on working days and only break the streak when they actually miss a working day completely. This provides immediate positive feedback when users post while avoiding premature streak breaks during the day.
+
+### New State Transition Logic
+
+**OnStreak Requirement**: Users must maintain at least a 2-day consecutive streak to be `onStreak`
+
+**Recovery Process After Missing a Working Day:**
+
+**Working Day Recovery (2 posts required):**
+- **1st Post**: Status remains `eligible`, `currentStreak: 1` (need 1 more)
+- **2nd Post**: Status becomes `onStreak`, `currentStreak: originalStreak + 1` (bonus)
+- **Deadline passes without 2nd post**: Status becomes `missed`
+
+**Weekend Recovery (1 post required when missed Friday):**
+- **1 Post on Saturday**: Status becomes `onStreak`, `currentStreak: originalStreak` (no bonus)
+- **No post on Saturday**: Status becomes `missed` at end of Saturday, `currentStreak: 0`
+
+**Building New Streak After Recovery Failure:**
+- User in `missed` status needs to achieve 2+ consecutive posting days
+- Once achieved, status becomes `onStreak` with new secure streak
+
+**Key Principle**: `onStreak` status requires maintaining at least 2 consecutive posting days, providing clear security threshold for streak maintenance.
 
 ### Recovery Policy
 
@@ -343,10 +382,9 @@ Wednesday 00:00: onStreak → eligible
   - currentStreak: 0 (reset immediately)
   - originalStreak: 5 (preserved)
   - recoveryRequirement: { postsRequired: 2, currentPosts: 0, deadline: Wed 23:59 }
-Wednesday: 1st post → eligible (currentPosts: 1, currentStreak: 0)
-Wednesday: 2nd post → eligible → onStreak
-  - currentStreak: 6 (originalStreak + 1 for working day recovery)
-  - originalStreak: 6
+Wednesday: 1st post → eligible (currentStreak: 1, recovery progress - still need 1 more)
+Wednesday: 2nd post → onStreak (currentStreak: 6, recovery completed - originalStreak + 1)
+  - originalStreak: 6 (updated after recovery completion)
 ```
 
 ### Weekend Recovery (1 post required)
@@ -357,24 +395,37 @@ Friday: 0 posts ❌ (missed working day)
 Saturday 00:00: onStreak → eligible
   - currentStreak: 0 (reset immediately)
   - originalStreak: 5 (preserved)
-  - recoveryRequirement: { postsRequired: 1, currentPosts: 0, deadline: Mon 23:59 }
-Saturday: 1 post → eligible → onStreak
-  - currentStreak: 5 (restored to originalStreak, no increment for weekend)
+  - recoveryRequirement: { postsRequired: 1, currentPosts: 0, deadline: Sat 23:59 }
+Saturday: 1 post → onStreak (recovery completed with 1 post on weekend)
+  - currentStreak: 5 (restored to originalStreak, no bonus for weekend recovery)
   - originalStreak: 5 (unchanged)
 ```
 
-### Recovery Failure → Fresh Start
+**Weekend Recovery Failure:**
+```
+Thursday: 1+ posts ✅ (onStreak, currentStreak: 5, originalStreak: 5)
+Friday: 0 posts ❌ (missed working day)
+Saturday 00:00: onStreak → eligible
+  - currentStreak: 0 (reset immediately)
+  - originalStreak: 5 (preserved)
+Saturday: 0 posts ❌ (no recovery attempt)
+Sunday 00:00: eligible → missed (weekend recovery deadline passed)
+  - currentStreak: 0 (recovery failed)
+  - originalStreak: 0 (original streak lost)
+```
+
+### Recovery Failure → Building New Streak
 
 ```
 Tuesday: 0 posts ❌ (onStreak, currentStreak: 5 → eligible)
 Wednesday 00:00: eligible (postsRequired: 2, currentStreak: 0, originalStreak: 5)
-Wednesday: 1 post → eligible (currentPosts: 1, currentStreak: 0)
-Thursday 00:00: eligible → missed (deadline passed)
-  - currentStreak: 0
-  - originalStreak: 0
-Friday: 1 post → missed → onStreak (fresh start)
-  - currentStreak: 1
-  - originalStreak: 1
+Wednesday: 1 post → eligible (currentStreak: 1, recovery progress - need 1 more)
+Thursday 00:00: Recovery deadline expires → missed
+  - currentStreak: 1 (partial progress maintained)
+  - originalStreak: 0 (recovery failed, original streak lost)
+Thursday: 1 post → missed (currentStreak: 2, building new streak)
+Friday: 1 post → onStreak (currentStreak: 3, achieved 2+ consecutive days)
+  - originalStreak: 3 (new secure streak established)
 ```
 
 ### Consecutive Working Days
