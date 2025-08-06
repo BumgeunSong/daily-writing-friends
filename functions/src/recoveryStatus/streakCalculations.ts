@@ -52,19 +52,55 @@ export function buildPostingDaysSet(postings: PostingData[]): Set<string> {
 
 /**
  * Pure function: Calculate current streak from posting days set and current date
+ * Per PRD: Weekends don't break streaks - only missed working days break streaks
  * @param postingDays - Set of posting date strings (YYYY-MM-DD)
  * @param currentDate - The current date to calculate streak from
  * @returns Current streak length
  */
 export function calculateCurrentStreakPure(postingDays: Set<string>, currentDate: Date): number {
-  // Start from today if it's a working day and has a posting, otherwise start from yesterday
-  const startDay =
-    isSeoulWorkingDay(currentDate) && postingDays.has(getSeoulDateKey(currentDate))
-      ? currentDate
-      : new Date(currentDate.getTime() - 24 * 60 * 60 * 1000); // yesterday
+  // Per PRD: Start from today if it's a working day and has a posting
+  if (isSeoulWorkingDay(currentDate) && postingDays.has(getSeoulDateKey(currentDate))) {
+    // Count consecutive working days with postings, going backward from today
+    const streakDays = takeWhile(generateSeoulWorkingDaysBackward(currentDate), (date) =>
+      postingDays.has(getSeoulDateKey(date)),
+    );
+    return streakDays.length;
+  }
 
-  // Count consecutive working days with postings, going backward
-  const streakDays = takeWhile(generateSeoulWorkingDaysBackward(startDay), (date) =>
+  // If today is not a working day OR user didn't post today,
+  // find the most recent working day and check for continuous streak from there
+  let mostRecentWorkingDayWithPost: Date | null = null;
+  
+  // Look backward to find the most recent working day with posts
+  for (const workingDay of generateSeoulWorkingDaysBackward(currentDate)) {
+    if (postingDays.has(getSeoulDateKey(workingDay))) {
+      mostRecentWorkingDayWithPost = workingDay;
+      break;
+    }
+    
+    // Stop searching after reasonable time (avoid infinite search)
+    const daysDiff = Math.floor((currentDate.getTime() - workingDay.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysDiff > 30) break; // Reasonable limit
+  }
+
+  if (!mostRecentWorkingDayWithPost) {
+    return 0; // No working day postings found recently
+  }
+
+  // Check if there are any missed working days between most recent post and current date
+  // Per PRD: Only missed working days break streaks, weekends are ignored
+  let checkDate = new Date(mostRecentWorkingDayWithPost.getTime() + 24 * 60 * 60 * 1000);
+  
+  while (checkDate <= currentDate) {
+    if (isSeoulWorkingDay(checkDate) && !postingDays.has(getSeoulDateKey(checkDate))) {
+      // Found a missed working day - streak is broken
+      return 0;  
+    }
+    checkDate = new Date(checkDate.getTime() + 24 * 60 * 60 * 1000);
+  }
+
+  // No missed working days found - count the streak from the most recent working day with post
+  const streakDays = takeWhile(generateSeoulWorkingDaysBackward(mostRecentWorkingDayWithPost), (date) =>
     postingDays.has(getSeoulDateKey(date)),
   );
 
