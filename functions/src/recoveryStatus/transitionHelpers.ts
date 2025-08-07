@@ -1,9 +1,12 @@
 import { Timestamp } from 'firebase-admin/firestore';
-import { StreakInfo, RecoveryStatusType } from './StreakInfo';
+import { StreakInfo, RecoveryStatusType, RecoveryHistory } from './StreakInfo';
 
 export interface DBUpdate {
   userId: string;
-  updates: Partial<StreakInfo> & { lastCalculated: Timestamp };
+  updates: Partial<StreakInfo> & { 
+    lastCalculated: Timestamp;
+    recoveryHistory?: RecoveryHistory;
+  };
   reason: string;
 }
 

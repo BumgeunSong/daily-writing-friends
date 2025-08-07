@@ -1,4 +1,5 @@
-import { RecoveryStatusType } from './StreakInfo';
+import { Timestamp } from 'firebase-admin/firestore';
+import { RecoveryStatusType, StreakInfo } from './StreakInfo';
 import { getOrCreateStreakInfo } from './streakUtils';
 import {
   DBUpdate,
@@ -26,7 +27,7 @@ export { DBUpdate } from './transitionHelpers';
 export function calculateOnStreakToEligiblePure(
   userId: string,
   currentDate: Date,
-  streakInfo: any,
+  streakInfo: StreakInfo | null,
   hadPostsYesterday: boolean,
 ): DBUpdate | null {
   if (!validateUserState(streakInfo, RecoveryStatusType.ON_STREAK)) {
@@ -82,43 +83,15 @@ export async function calculateOnStreakToEligible(
 }
 
 /**
- * Calculate eligible → missed transition
+ * Database wrapper: Calculate eligible → missed transition
  */
 export async function calculateEligibleToMissed(
   userId: string,
   currentDate: Date,
 ): Promise<DBUpdate | null> {
   const { data: streakInfo } = await getOrCreateStreakInfo(userId);
-
-  if (!validateUserState(streakInfo, RecoveryStatusType.ELIGIBLE)) {
-    return null;
-  }
-
-  if (!streakInfo) {
-    return null;
-  }
-
-  const status = streakInfo.status;
-  if (!status.deadline || !hasDeadlinePassed(status.deadline, currentDate)) {
-    return null;
-  }
-
-  const baseUpdate = createBaseUpdate(
-    userId,
-    `eligible → missed (deadline ${status.deadline} passed)`,
-  );
-
-  return {
-    ...baseUpdate,
-    updates: {
-      ...baseUpdate.updates,
-      status: {
-        type: RecoveryStatusType.MISSED,
-      },
-      currentStreak: 0, // Reset per new PRD
-      originalStreak: 0, // Reset per new PRD
-    },
-  };
+  
+  return calculateEligibleToMissedPure(userId, currentDate, streakInfo);
 }
 
 /**
@@ -127,7 +100,7 @@ export async function calculateEligibleToMissed(
 export function calculateEligibleToOnStreakPure(
   userId: string,
   postDate: Date,
-  streakInfo: any,
+  streakInfo: StreakInfo | null,
   todayPostCount: number,
 ): DBUpdate | null {
   if (!validateUserState(streakInfo, RecoveryStatusType.ELIGIBLE)) {
@@ -183,6 +156,15 @@ export function calculateEligibleToOnStreakPure(
   
   const newLongestStreak = Math.max(streakInfo.longestStreak || 0, newCurrentStreak);
 
+  // Create RecoveryHistory record per REQ-014
+  const recoveryHistory = {
+    missedDate: status.missedDate!, // Safe to use ! because we validated status.missedDate exists in eligible status
+    recoveryDate: Timestamp.fromDate(postDate),
+    postsRequired: status.postsRequired,
+    postsWritten: todayPostCount,
+    recoveredAt: Timestamp.now(),
+  };
+
   const baseUpdate = createBaseUpdate(userId, `eligible → onStreak (recovery completed)`);
 
   return {
@@ -194,8 +176,203 @@ export function calculateEligibleToOnStreakPure(
       originalStreak: newOriginalStreak,
       longestStreak: newLongestStreak,
       lastContributionDate: formatSeoulDate(postDate),
+      recoveryHistory,
     },
   };
+}
+
+/**
+ * Pure function: Calculate eligible → missed transition
+ */
+export function calculateEligibleToMissedPure(
+  userId: string,
+  currentDate: Date,
+  streakInfo: StreakInfo | null,
+): DBUpdate | null {
+  if (!validateUserState(streakInfo, RecoveryStatusType.ELIGIBLE)) {
+    return null;
+  }
+
+  if (!streakInfo) {
+    return null;
+  }
+
+  const status = streakInfo.status;
+  if (!status.deadline || !hasDeadlinePassed(status.deadline, currentDate)) {
+    return null;
+  }
+
+  const baseUpdate = createBaseUpdate(
+    userId,
+    `eligible → missed (deadline ${status.deadline.toDate().toISOString()} passed)`,
+  );
+
+  // Per REQ-010: Preserve partial progress in currentStreak, clear originalStreak
+  const partialProgress = status.currentPosts || 0;
+
+  return {
+    ...baseUpdate,
+    updates: {
+      ...baseUpdate.updates,
+      status: {
+        type: RecoveryStatusType.MISSED,
+      },
+      currentStreak: partialProgress, // Preserve partial progress
+      originalStreak: 0, // Clear original streak per PRD
+    },
+  };
+}
+
+/**
+ * Pure function: Calculate missed → onStreak transition
+ */
+export function calculateMissedToOnStreakPure(
+  userId: string,
+  postDate: Date,
+  streakInfo: StreakInfo | null,
+  todayPostCount: number,
+): DBUpdate | null {
+  if (!validateUserState(streakInfo, RecoveryStatusType.MISSED)) {
+    return null;
+  }
+
+  if (!streakInfo) {
+    return null;
+  }
+
+  const currentStreak = streakInfo.currentStreak || 0;
+  const newCurrentStreak = currentStreak + 1;
+
+  // Per REQ-011: Two paths to regain onStreak
+  // Path 1: Same-day two-post path (first post → eligible, second post → onStreak)
+  if (todayPostCount >= 2) {
+    // Calculate recovery requirement for RecoveryHistory
+    const recoveryReq = calculateRecoveryRequirement(postDate, postDate);
+    
+    // Create RecoveryHistory record per REQ-014
+    const recoveryHistory = {
+      missedDate: recoveryReq.missedDate,
+      recoveryDate: Timestamp.fromDate(postDate),
+      postsRequired: recoveryReq.postsRequired,
+      postsWritten: todayPostCount,
+      recoveredAt: Timestamp.now(),
+    };
+
+    const baseUpdate = createBaseUpdate(userId, 'missed → onStreak (same-day recovery)');
+    const newLongestStreak = Math.max(streakInfo.longestStreak || 0, todayPostCount);
+    
+    return {
+      ...baseUpdate,
+      updates: {
+        ...baseUpdate.updates,
+        status: { type: RecoveryStatusType.ON_STREAK },
+        currentStreak: todayPostCount, // Fresh start with posts made today
+        originalStreak: todayPostCount, // Fresh start
+        longestStreak: newLongestStreak,
+        lastContributionDate: formatSeoulDate(postDate),
+        recoveryHistory,
+      },
+    };
+  }
+  
+  // First post of the day - behavior depends on day type
+  if (todayPostCount === 1) {
+    const isWorkingDay = isSeoulWorkingDay(postDate);
+    
+    if (isWorkingDay) {
+      // Working day (Mon-Fri): Need 2 posts for recovery → with 1 post, go to eligible
+      if (currentStreak > 0) {
+        // Had previous progress - transition to eligible for same-day recovery opportunity
+        const recoveryReq = calculateRecoveryRequirement(postDate, postDate);
+        const baseUpdate = createBaseUpdate(userId, 'missed → eligible (1 post on working day, need 2 total)');
+        
+        const newLongestStreak = Math.max(streakInfo.longestStreak || 0, newCurrentStreak);
+        
+        return {
+          ...baseUpdate,
+          updates: {
+            ...baseUpdate.updates,
+            status: {
+              type: RecoveryStatusType.ELIGIBLE,
+              postsRequired: recoveryReq.postsRequired,
+              currentPosts: 1,
+              deadline: recoveryReq.deadline,
+              missedDate: recoveryReq.missedDate,
+            },
+            currentStreak: newCurrentStreak,
+            longestStreak: newLongestStreak,
+            lastContributionDate: formatSeoulDate(postDate),
+          },
+        };
+      } else {
+        // No previous progress, still building
+        const baseUpdate = createBaseUpdate(userId, 'missed (building streak on working day, currentStreak < 2)');
+        const newLongestStreak = Math.max(streakInfo.longestStreak || 0, newCurrentStreak);
+        
+        return {
+          ...baseUpdate,
+          updates: {
+            ...baseUpdate.updates,
+            status: { type: RecoveryStatusType.MISSED },
+            currentStreak: newCurrentStreak,
+            longestStreak: newLongestStreak,
+            lastContributionDate: formatSeoulDate(postDate),
+          },
+        };
+      }
+    } else {
+      // Weekend (Sat): Need 1 post for recovery → with 1 post, complete recovery if currentStreak ≥ 2
+      if (newCurrentStreak >= 2) {
+        const baseUpdate = createBaseUpdate(userId, 'missed → onStreak (weekend recovery, 1 post sufficient)');
+        const newLongestStreak = Math.max(streakInfo.longestStreak || 0, newCurrentStreak);
+        
+        return {
+          ...baseUpdate,
+          updates: {
+            ...baseUpdate.updates,
+            status: { type: RecoveryStatusType.ON_STREAK },
+            currentStreak: newCurrentStreak,
+            originalStreak: newCurrentStreak,
+            longestStreak: newLongestStreak,
+            lastContributionDate: formatSeoulDate(postDate),
+          },
+        };
+      } else {
+        // Still building streak, stay missed
+        const baseUpdate = createBaseUpdate(userId, 'missed (building streak on weekend, currentStreak < 2)');
+        const newLongestStreak = Math.max(streakInfo.longestStreak || 0, newCurrentStreak);
+        
+        return {
+          ...baseUpdate,
+          updates: {
+            ...baseUpdate.updates,
+            status: { type: RecoveryStatusType.MISSED },
+            currentStreak: newCurrentStreak,
+            longestStreak: newLongestStreak,
+            lastContributionDate: formatSeoulDate(postDate),
+          },
+        };
+      }
+    }
+  }
+  
+  // No posts today - stay missed but update currentStreak if it had previous progress
+  if (todayPostCount === 0 && currentStreak > 0) {
+    // Just update currentStreak tracking, stay in missed status
+    const baseUpdate = createBaseUpdate(userId, 'missed (maintaining partial progress)');
+    
+    return {
+      ...baseUpdate,
+      updates: {
+        ...baseUpdate.updates,
+        status: { type: RecoveryStatusType.MISSED },
+        currentStreak: currentStreak, // Keep existing streak
+      },
+    };
+  }
+
+  // No posts today and no existing progress - return null (no change)
+  return null;
 }
 
 /**
@@ -212,32 +389,16 @@ export async function calculateEligibleToOnStreak(
 }
 
 /**
- * Calculate missed → onStreak transition
+ * Database wrapper: Calculate missed → onStreak transition
  */
 export async function calculateMissedToOnStreak(
   userId: string,
   postDate: Date,
 ): Promise<DBUpdate | null> {
   const { data: streakInfo } = await getOrCreateStreakInfo(userId);
-
-  if (!validateUserState(streakInfo, RecoveryStatusType.MISSED)) {
-    return null;
-  }
-
-  const baseUpdate = createBaseUpdate(userId, 'missed → onStreak (fresh start)');
-
-  return {
-    ...baseUpdate,
-    updates: {
-      ...baseUpdate.updates,
-      lastContributionDate: formatSeoulDate(postDate),
-      status: {
-        type: RecoveryStatusType.ON_STREAK,
-      },
-      currentStreak: 1, // Fresh start per new PRD
-      originalStreak: 1, // Fresh start per new PRD
-    },
-  };
+  const todayPostCount = await countSeoulDatePosts(userId, postDate);
+  
+  return calculateMissedToOnStreakPure(userId, postDate, streakInfo, todayPostCount);
 }
 
 /**
@@ -370,7 +531,7 @@ export async function calculateMidnightTransitions(
 function calculateMidnightStreakMaintenancePure(
   userId: string,
   currentDate: Date,
-  streakInfo: any,
+  streakInfo: StreakInfo | null,
   hadPostsYesterday: boolean,
 ): DBUpdate | null {
   if (!streakInfo || streakInfo.status.type !== RecoveryStatusType.ON_STREAK) {
