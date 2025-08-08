@@ -139,21 +139,21 @@ Then originalStreak does not change
 ⸻
 
 REQ-008: Eligible Progress & Partial Streak
-• Description: While eligible, increment progress on each post. Reflect partial progress in currentStreak (e.g., first post may show currentStreak = 1) before recovery completes.
+• Description: While eligible, increment progress on each post. The currentStreak must show the actual count of posts made since the miss (e.g., first post sets currentStreak = 1, second post sets currentStreak = 2) to reflect real-time progress before recovery completes.
 
 Acceptance Criteria
 
 Given status is eligible with postsRequired = 2
 When the user posts once
 Then status remains eligible and currentPosts = 1
-And currentStreak may reflect 1 as partial progress
+And currentStreak must equal 1 (showing actual progress count)
 
 ⸻
 
 REQ-009: Completing Recovery
 • Description: When currentPosts >= postsRequired within the deadline:
-• If it’s a Working Day recovery: set currentStreak = originalStreak + 1 and status = onStreak.
-• If it’s Saturday (Friday miss): set currentStreak = originalStreak (no bonus) and status = onStreak.
+• Recovery formula (both weekday and Friday): set currentStreak = originalStreak + 1 and status = onStreak.
+• The +1 represents the recovered missed day being restored to the streak.
 • originalStreak remains the captured value (it is not incremented on success).
 
 Acceptance Criteria
@@ -164,7 +164,7 @@ Then status becomes onStreak and currentStreak = originalStreak + 1
 
 Given eligible with postsRequired = 1 on Saturday
 When one post is created before the deadline
-Then status becomes onStreak and currentStreak = originalStreak
+Then status becomes onStreak and currentStreak = originalStreak + 1
 
 ⸻
 
@@ -202,12 +202,19 @@ Then status becomes onStreak
 ⸻
 
 REQ-012: Multiple Consecutive Misses
-• Description: Only the most recent missed day can be recovered; earlier misses are not recoverable (no chained/rolling recoveries).
+• Description: Only the most recent missed day can be recovered; earlier misses become permanently unrecoverable breaks. When tracking switches to a new missed day while already eligible, the previous miss is considered a permanent streak break, and originalStreak should be updated to reflect only the progress built since that break.
 
 Acceptance Criteria
 
 Given two consecutive missed Working Days
 Then only the most recent missed day is considered for any recovery opportunity
+And the previous missed day becomes a permanent break
+
+Given status is eligible for day X recovery with currentStreak = n
+When day Y is also missed (consecutive miss)
+Then status updates to track day Y recovery
+And originalStreak = n (progress built since day X)
+And currentStreak = 0 (reset for new miss)
 
 ⸻
 
@@ -356,12 +363,12 @@ BDR-01: Multi-Condition Decision Table (Recovery Windows)
 
 Missed Day Recovery Day Allowed? postsRequired On Success currentStreak Notes
 Mon–Thu Next Working Yes 2 originalStreak + 1 Deadline: 23:59:59 KST
-Friday Saturday Yes 1 originalStreak Saturday only
+Friday Saturday Yes 1 originalStreak + 1 Same formula as weekday
 Friday Sunday No — — Not allowed
 
 BDR-02: Only Most-Recent Miss Recoverable
 
-Earlier missed days are forfeited; no chained recoveries.
+Earlier missed days are forfeited; no chained recoveries. When a new miss occurs while already eligible, the previous miss becomes a permanent break and originalStreak is updated to the progress built since that break.
 
 BDR-03: Partial Progress Carry on Failure
 
@@ -381,24 +388,24 @@ Only the first post satisfies the day’s streak; any additional posts the same 
 
 TC-01 — Weekday Miss, Two-Post Recovery (Thu after Wed miss)
 
-Given the user missed Wednesday (Working Day)
+Given the user missed Wednesday (Working Day) with originalStreak = 5
 When it becomes Thursday 00:00 KST
 Then status becomes eligible with postsRequired = 2 and deadline = Thu 23:59:59
 
 When the user posts once on Thursday
-Then currentPosts = 1 and status remains eligible
+Then currentPosts = 1 and currentStreak = 1 and status remains eligible
 
 When the user posts a second time on Thursday
-Then status becomes onStreak and currentStreak = originalStreak + 1
+Then status becomes onStreak and currentStreak = originalStreak + 1 = 6
 
 TC-02 — Friday Miss, Saturday Recovery
 
-Given the user missed Friday
+Given the user missed Friday with originalStreak = 5
 When it becomes Saturday 00:00 KST
 Then status becomes eligible with postsRequired = 1 and deadline = Sat 23:59:59
 
 When the user posts once on Saturday
-Then status becomes onStreak and currentStreak = originalStreak
+Then status becomes onStreak and currentStreak = originalStreak + 1 = 6
 
 TC-03 — Recovery Failure with Partial Carry
 
@@ -436,6 +443,15 @@ TC-07 — Midnight Cutoff
 
 Given a post created at exactly 00:00:00 KST
 Then it counts for the new day
+
+TC-08 — Consecutive Misses (REQ-012)
+
+Given the user is eligible for Monday recovery with currentStreak = 1 from Tuesday post
+When Wednesday is also missed without recovery
+Then status updates to track Wednesday recovery
+And originalStreak = 1 (progress from Tuesday)
+And currentStreak = 0 (reset for new miss)
+And Monday miss becomes permanently unrecoverable
 
 ⸻
 
@@ -483,3 +499,7 @@ User Stories (US) — Summary
 
 Version Date Author Changes
 1.0 2025-08-06 Eddy Song Initial complete requirements (v1, no holidays; Saturday-only recovery)
+1.1 2025-08-07 Eddy Song Updated REQ-008, REQ-009, REQ-012 to reflect finalized recovery policies:
+                          - Unified recovery formula: originalStreak + 1 (both weekday and Friday)
+                          - Consecutive miss handling with originalStreak reset
+                          - Partial progress visibility in currentStreak
