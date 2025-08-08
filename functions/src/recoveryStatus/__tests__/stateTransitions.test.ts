@@ -1,570 +1,736 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import { Timestamp } from 'firebase-admin/firestore';
 import {
   calculateOnStreakToEligiblePure,
   calculateEligibleToOnStreakPure,
+  calculateEligibleToMissedPure,
+  calculateMissedToOnStreakPure,
 } from '../stateTransitions';
 import { RecoveryStatusType, StreakInfo } from '../StreakInfo';
 
-// Mock only the helper functions that don't involve database
-jest.mock('../transitionHelpers');
-
-// Import mocked functions
-import {
-  createBaseUpdate,
-  validateUserState,
-} from '../transitionHelpers';
-
-// Import REAL calendar functions (not mocked)
-import {
-  isSeoulWorkingDay,
-  getSeoulYesterday,
-  calculateRecoveryRequirement,
-  hasDeadlinePassed,
-} from '../../shared/calendar';
-
-// Mock only the functions we need to mock (not calendar functions)
-const mockCreateBaseUpdate = createBaseUpdate as jest.MockedFunction<typeof createBaseUpdate>;
-const mockValidateUserState = validateUserState as jest.MockedFunction<typeof validateUserState>;
-
-describe('State Transitions - Pure Functions', () => {
+describe('Streak Recovery State Transitions', () => {
   const userId = 'testUser123';
-  const testDate = new Date('2024-01-17T10:00:00Z'); // Wednesday
-  const yesterday = new Date('2024-01-16T10:00:00Z'); // Tuesday
-  const mockBaseUpdate = {
-    userId,
-    reason: 'test operation',
-    updates: { lastCalculated: Timestamp.now() },
-  };
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    
-    // Default mock implementations
-    mockCreateBaseUpdate.mockReturnValue(mockBaseUpdate);
-    mockValidateUserState.mockReturnValue(true);
+  
+  // Test data helpers
+  const createStreakInfo = (overrides: Partial<StreakInfo> = {}): StreakInfo => ({
+    lastContributionDate: '2024-01-15',
+    lastCalculated: Timestamp.now(),
+    status: { type: RecoveryStatusType.ON_STREAK },
+    currentStreak: 5,
+    longestStreak: 10,
+    originalStreak: 5,
+    ...overrides,
   });
 
-  describe('calculateOnStreakToEligiblePure', () => {
-    describe('when user missed a working day', () => {
-      it('resets currentStreak to 0 and preserves originalStreak', () => {
-        const streakInfo: StreakInfo = {
-          lastContributionDate: '2024-01-15',
-          lastCalculated: Timestamp.now(),
-          status: { type: RecoveryStatusType.ON_STREAK },
-          currentStreak: 5,
-          longestStreak: 10,
-          originalStreak: 5,
-        };
+  beforeEach(() => {
+    // No mocks needed - testing pure functions with real return values
+  });
 
-        const hadPostsYesterday = false; // User missed yesterday
+  describe('when user misses working day', () => {
+    describe('when missing Monday through Thursday', () => {
+      it('enters recovery mode requiring 2 posts by next working day', () => {
+        const wednesdayDate = new Date('2024-01-17T10:00:00Z'); // Wednesday
+        const streakInfo = createStreakInfo({ currentStreak: 7, originalStreak: 7 });
+        const hadPostsYesterday = false; // Missed Tuesday
         
-        const result = calculateOnStreakToEligiblePure(userId, testDate, streakInfo, hadPostsYesterday);
-
-        expect(result).toEqual({
-          ...mockBaseUpdate,
-          updates: {
-            ...mockBaseUpdate.updates,
-            status: {
-              type: RecoveryStatusType.ELIGIBLE,
-              postsRequired: 2, // Working day recovery
-              currentPosts: 0,
-              deadline: expect.any(Timestamp),
-              missedDate: expect.any(Timestamp),
-            },
-            currentStreak: 0, // Reset immediately per new PRD
-            originalStreak: 5, // Preserved per new PRD
-          },
+        const result = calculateOnStreakToEligiblePure(userId, wednesdayDate, streakInfo, hadPostsYesterday);
+        
+        expect(result?.updates.status).toEqual({
+          type: RecoveryStatusType.ELIGIBLE,
+          postsRequired: 2,
+          currentPosts: 0,
+          deadline: expect.any(Timestamp),
+          missedDate: expect.any(Timestamp),
+        });
+      });
+      
+      it('captures original streak and resets current streak', () => {
+        const thursdayDate = new Date('2024-01-18T10:00:00Z'); // Thursday
+        const streakInfo = createStreakInfo({ currentStreak: 3, originalStreak: 3 });
+        const hadPostsYesterday = false; // Missed Wednesday
+        
+        const result = calculateOnStreakToEligiblePure(userId, thursdayDate, streakInfo, hadPostsYesterday);
+        
+        expect(result?.updates.currentStreak).toBe(0);
+        expect(result?.updates.originalStreak).toBe(3);
+      });
+    });
+    
+    describe('when missing Friday', () => {
+      it('enters recovery mode requiring 1 post by Saturday only', () => {
+        const saturdayDate = new Date('2024-01-20T10:00:00Z'); // Saturday
+        const streakInfo = createStreakInfo({ currentStreak: 4, originalStreak: 4 });
+        const hadPostsYesterday = false; // Missed Friday
+        
+        const result = calculateOnStreakToEligiblePure(userId, saturdayDate, streakInfo, hadPostsYesterday);
+        
+        expect(result?.updates.status).toEqual({
+          type: RecoveryStatusType.ELIGIBLE,
+          postsRequired: 1, // Friday miss only needs 1 post
+          currentPosts: 0,
+          deadline: expect.any(Timestamp),
+          missedDate: expect.any(Timestamp),
         });
       });
     });
-
-    describe('when user had posts yesterday', () => {
-      it('returns null (no state change needed)', () => {
-        const streakInfo: StreakInfo = {
-          lastContributionDate: '2024-01-16', // Yesterday
-          lastCalculated: Timestamp.now(),
-          status: { type: RecoveryStatusType.ON_STREAK },
-          currentStreak: 5,
-          longestStreak: 10,
-          originalStreak: 5,
-        };
-
-        const hadPostsYesterday = true; // User had posts
+    
+    describe('when user posted on previous working day', () => {
+      it('maintains current streak status', () => {
+        const wednesdayDate = new Date('2024-01-17T10:00:00Z'); // Wednesday
+        const streakInfo = createStreakInfo();
+        const hadPostsYesterday = true; // Posted on Tuesday
         
-        const result = calculateOnStreakToEligiblePure(userId, testDate, streakInfo, hadPostsYesterday);
+        const result = calculateOnStreakToEligiblePure(userId, wednesdayDate, streakInfo, hadPostsYesterday);
 
         expect(result).toBeNull();
       });
     });
-
-    describe('when yesterday was not a working day', () => {
-      it('returns null (no state change needed)', () => {
-        const streakInfo: StreakInfo = {
-          lastContributionDate: '2024-01-12', // Friday
-          lastCalculated: Timestamp.now(),
-          status: { type: RecoveryStatusType.ON_STREAK },
-          currentStreak: 5,
-          longestStreak: 10,
-          originalStreak: 5,
-        };
-
+    
+    describe('when previous day was not a working day', () => {
+      it('maintains current streak status regardless of posting', () => {
         const mondayDate = new Date('2024-01-15T12:00:00Z'); // Monday
-        const hadPostsYesterday = false; // No posts on Sunday (not working day)
-        
-        // Debug the actual logic using real calendar functions
-        const yesterday = getSeoulYesterday(mondayDate);
-        const yesterdayIsWorkingDay = isSeoulWorkingDay(yesterday);
-        
-        console.log('Yesterday check:', {
-          mondayDate: mondayDate.toISOString(),
-          yesterday: yesterday.toISOString(),
-          yesterdayDayOfWeek: yesterday.getDay(),
-          isWorkingDay: yesterdayIsWorkingDay
-        });
+        const streakInfo = createStreakInfo();
+        const hadPostsYesterday = false; // No posts on Sunday
         
         const result = calculateOnStreakToEligiblePure(userId, mondayDate, streakInfo, hadPostsYesterday);
         
-        // Accept the result based on actual working day logic
-        if (yesterdayIsWorkingDay) {
-          // Yesterday was a working day, so transition should occur
-          expect(result).not.toBeNull();
-        } else {
-          // Yesterday was not a working day, no transition
-          expect(result).toBeNull();
-        }
+        // Non-working day misses don't trigger recovery
+        expect(result).toBeNull();
       });
     });
   });
 
-  describe('calculateEligibleToOnStreakPure', () => {
-    describe('when recovery is incomplete', () => {
-      it('returns progress update without changing streaks', () => {
-        const streakInfo: StreakInfo = {
-          lastContributionDate: '2024-01-15',
-          lastCalculated: Timestamp.now(),
+  describe('when user attempts recovery', () => {
+    describe('when posting during recovery window', () => {
+      it('tracks partial progress when requirement not met', () => {
+        const wednesdayDate = new Date('2024-01-17T10:00:00Z'); // Wednesday
+        const streakInfo = createStreakInfo({
           status: {
             type: RecoveryStatusType.ELIGIBLE,
             postsRequired: 2,
             currentPosts: 0,
-            deadline: Timestamp.fromDate(testDate),
-            missedDate: Timestamp.fromDate(yesterday),
+            deadline: Timestamp.fromDate(wednesdayDate),
+            missedDate: Timestamp.fromDate(new Date('2024-01-16T10:00:00Z')),
           },
           currentStreak: 0,
-          longestStreak: 10,
           originalStreak: 5,
-        };
+        });
 
-        const todayPostCount = 1; // Only 1 post, need 2
-        const result = calculateEligibleToOnStreakPure(userId, testDate, streakInfo, todayPostCount);
+        const todayPostCount = 1; // Only 1 out of 2 required posts
+        const result = calculateEligibleToOnStreakPure(userId, wednesdayDate, streakInfo, todayPostCount);
 
-        expect(result?.updates).toEqual(expect.objectContaining({
-          status: expect.objectContaining({
-            type: RecoveryStatusType.ELIGIBLE,
-            currentPosts: 1, // Progress updated
-            postsRequired: 2,
-          }),
+        expect(result?.updates.status).toEqual(expect.objectContaining({
+          type: RecoveryStatusType.ELIGIBLE,
+          currentPosts: 1,
+          postsRequired: 2,
         }));
-
-        // Verify no streak fields are modified during progress update
-        expect(result?.updates).not.toHaveProperty('currentStreak');
-        expect(result?.updates).not.toHaveProperty('originalStreak');
       });
-    });
 
-    describe('when recovery is completed on working day', () => {
-      it('sets currentStreak to originalStreak + 1 and increments originalStreak', () => {
-        const streakInfo: StreakInfo = {
-          lastContributionDate: '2024-01-15',
-          lastCalculated: Timestamp.now(),
+      it('completes recovery and restores streak for working day recovery', () => {
+        const wednesdayDate = new Date('2024-01-17T10:00:00Z'); // Wednesday
+        const streakInfo = createStreakInfo({
           status: {
             type: RecoveryStatusType.ELIGIBLE,
             postsRequired: 2,
             currentPosts: 1,
-            deadline: Timestamp.fromDate(testDate),
-            missedDate: Timestamp.fromDate(yesterday),
+            deadline: Timestamp.fromDate(wednesdayDate),
+            missedDate: Timestamp.fromDate(new Date('2024-01-16T10:00:00Z')),
           },
           currentStreak: 0,
-          longestStreak: 10,
           originalStreak: 5,
-        };
-
-        const todayPostCount = 2; // Completed requirement
-        
-        // Verify testDate (Wednesday) is actually a working day
-        expect(isSeoulWorkingDay(testDate)).toBe(true);
-        
-        const result = calculateEligibleToOnStreakPure(userId, testDate, streakInfo, todayPostCount);
-
-        // EXPECTED per new PRD:
-        // currentStreak: originalStreak + 1 = 5 + 1 = 6
-        // originalStreak: increment by 1 = 5 + 1 = 6
-        expect(result?.updates).toEqual({
-          ...mockBaseUpdate.updates,
-          status: { type: RecoveryStatusType.ON_STREAK },
-          currentStreak: 6, // Should be originalStreak + 1
-          originalStreak: 6, // Should be originalStreak + 1
-          longestStreak: expect.any(Number),
-          lastContributionDate: expect.any(String),
         });
-      });
-    });
 
-    describe('when recovery is completed on non-working day', () => {
-      it('sets currentStreak to originalStreak (no increment) and keeps originalStreak same', () => {
-        const streakInfo: StreakInfo = {
-          lastContributionDate: '2024-01-15',
-          lastCalculated: Timestamp.now(),
+        const todayPostCount = 2; // Met 2-post requirement
+        const result = calculateEligibleToOnStreakPure(userId, wednesdayDate, streakInfo, todayPostCount);
+
+        expect(result?.updates.status).toEqual({ type: RecoveryStatusType.ON_STREAK });
+        expect(result?.updates.currentStreak).toBe(6); // originalStreak + 1
+        expect(result?.updates.originalStreak).toBe(6); // originalStreak + 1
+      });
+
+      it('completes recovery without bonus for weekend recovery', () => {
+        const saturdayDate = new Date('2024-01-20T10:00:00Z'); // Saturday
+        const streakInfo = createStreakInfo({
           status: {
             type: RecoveryStatusType.ELIGIBLE,
             postsRequired: 1,
             currentPosts: 0,
-            deadline: Timestamp.fromDate(new Date('2024-01-22')), // Monday deadline
-            missedDate: Timestamp.fromDate(new Date('2024-01-19')), // Friday missed
+            deadline: Timestamp.fromDate(new Date('2024-01-22T23:59:59Z')),
+            missedDate: Timestamp.fromDate(new Date('2024-01-19T10:00:00Z')), // Friday
           },
           currentStreak: 0,
-          longestStreak: 10,
           originalStreak: 5,
-        };
+        });
 
-        const saturdayDate = new Date('2024-01-20T10:00:00Z'); // Saturday
-        const todayPostCount = 1; // Completed requirement
-        
-        // Verify it's actually a weekend
-        expect(isSeoulWorkingDay(saturdayDate)).toBe(false);
-        
+        const todayPostCount = 1; // Met 1-post requirement
         const result = calculateEligibleToOnStreakPure(userId, saturdayDate, streakInfo, todayPostCount);
 
-        // EXPECTED per new PRD:
-        // currentStreak: originalStreak = 5 (no increment for weekend)
-        // originalStreak: remains same = 5
-        expect(result?.updates).toEqual({
-          ...mockBaseUpdate.updates,
-          status: { type: RecoveryStatusType.ON_STREAK },
-          currentStreak: 5, // Should be originalStreak (no increment)
-          originalStreak: 5, // Should remain same
-          longestStreak: expect.any(Number),
-          lastContributionDate: expect.any(String),
-        });
+        expect(result?.updates.status).toEqual({ type: RecoveryStatusType.ON_STREAK });
+        expect(result?.updates.currentStreak).toBe(5); // originalStreak (no bonus)
+        expect(result?.updates.originalStreak).toBe(5); // unchanged
       });
     });
   });
 
-  describe('Critical Missing Tests - PRD Coverage Gaps', () => {
-    describe('Midnight onStreak → onStreak Maintenance', () => {
-      it('increments both streaks when user posted on previous working day', () => {
-        const streakInfo: StreakInfo = {
-          lastContributionDate: '2024-01-16', // Tuesday (previous working day)
-          lastCalculated: Timestamp.now(),
-          status: { type: RecoveryStatusType.ON_STREAK },
-          currentStreak: 5,
-          longestStreak: 10,
-          originalStreak: 5,
-        };
+  describe('when user builds new streak after missed', () => {
+    describe('when posting same day after missed', () => {
+      it('allows immediate recovery with 2 posts same day', () => {
+        const wednesdayDate = new Date('2024-01-17T10:00:00Z'); // Wednesday
+        const streakInfo = createStreakInfo({
+          status: {
+            type: RecoveryStatusType.ELIGIBLE,
+            postsRequired: 2,
+            currentPosts: 1, // First post already made
+            deadline: Timestamp.fromDate(wednesdayDate),
+            missedDate: Timestamp.fromDate(new Date('2024-01-16T10:00:00Z')),
+          },
+          currentStreak: 0,
+          originalStreak: 3,
+        });
 
-        const wednesdayDate = new Date('2024-01-17T12:00:00Z'); // Wednesday
-        const hadPostsYesterday = true; // User posted on Tuesday
+        const todayPostCount = 2; // Second post completes requirement
+        const result = calculateEligibleToOnStreakPure(userId, wednesdayDate, streakInfo, todayPostCount);
         
-        // This would be handled by calculateMidnightStreakMaintenancePure (not exported)
-        // but we can test the logic through calculateOnStreakToEligiblePure returning null
+        expect(result?.updates.status).toEqual({ type: RecoveryStatusType.ON_STREAK });
+        expect(result?.updates.currentStreak).toBe(4); // originalStreak + 1
+      });
+    });
+  });
+
+  describe('when recovery requirements vary by day type', () => {
+    it('requires different post counts based on missed day', () => {
+      // Test weekday recovery - requires 2 posts
+      const thursdayDate = new Date('2024-01-18T10:00:00Z'); // Thursday
+      const weekdayStreakInfo = createStreakInfo({ currentStreak: 8, originalStreak: 8 });
+      const weekdayResult = calculateOnStreakToEligiblePure(userId, thursdayDate, weekdayStreakInfo, false);
+      
+      expect(weekdayResult?.updates.status?.postsRequired).toBe(2);
+      
+      // Test Friday miss recovery - requires 1 post
+      const saturdayDate = new Date('2024-01-20T10:00:00Z'); // Saturday
+      const fridayStreakInfo = createStreakInfo({ currentStreak: 6, originalStreak: 6 });
+      const fridayResult = calculateOnStreakToEligiblePure(userId, saturdayDate, fridayStreakInfo, false);
+      
+      expect(fridayResult?.updates.status?.postsRequired).toBe(1);
+    });
+    
+    it('calculates different streak increments by recovery type', () => {
+      // Working day recovery: both streaks increment
+      const wednesdayDate = new Date('2024-01-17T10:00:00Z');
+      const workingDayStreakInfo = createStreakInfo({
+        status: {
+          type: RecoveryStatusType.ELIGIBLE,
+          postsRequired: 2,
+          currentPosts: 1,
+          deadline: Timestamp.fromDate(wednesdayDate),
+          missedDate: Timestamp.fromDate(new Date('2024-01-16T10:00:00Z')),
+        },
+        currentStreak: 0,
+        originalStreak: 7,
+      });
+      
+      const workingDayResult = calculateEligibleToOnStreakPure(userId, wednesdayDate, workingDayStreakInfo, 2);
+      expect(workingDayResult?.updates.currentStreak).toBe(8); // originalStreak + 1
+      expect(workingDayResult?.updates.originalStreak).toBe(8); // originalStreak + 1
+      
+      // Weekend recovery: no increment to originalStreak
+      const saturdayDate = new Date('2024-01-20T10:00:00Z');
+      const weekendStreakInfo = createStreakInfo({
+        status: {
+          type: RecoveryStatusType.ELIGIBLE,
+          postsRequired: 1,
+          currentPosts: 0,
+          deadline: Timestamp.fromDate(new Date('2024-01-22T23:59:59Z')),
+          missedDate: Timestamp.fromDate(new Date('2024-01-19T10:00:00Z')),
+        },
+        currentStreak: 0,
+        originalStreak: 9,
+      });
+      
+      const weekendResult = calculateEligibleToOnStreakPure(userId, saturdayDate, weekendStreakInfo, 1);
+      expect(weekendResult?.updates.currentStreak).toBe(9); // originalStreak (no increment)
+      expect(weekendResult?.updates.originalStreak).toBe(9); // unchanged
+    });
+  });
+
+  describe('edge cases', () => {
+    describe('when user is not in expected state', () => {
+      it('returns null for onStreak transition when user is not onStreak', () => {
+        const wednesdayDate = new Date('2024-01-17T10:00:00Z');
+        const streakInfo = createStreakInfo({ status: { type: RecoveryStatusType.MISSED } });
+        const hadPostsYesterday = false;
+        
         const result = calculateOnStreakToEligiblePure(userId, wednesdayDate, streakInfo, hadPostsYesterday);
         
-        // Should return null because user didn't miss yesterday
         expect(result).toBeNull();
+      });
+      
+      it('returns null for eligible transition when user is not eligible', () => {
+        const wednesdayDate = new Date('2024-01-17T10:00:00Z');
+        const streakInfo = createStreakInfo({ status: { type: RecoveryStatusType.ON_STREAK } });
+        const todayPostCount = 2;
         
-        // The actual streak increment would happen in midnight maintenance
-        // Expected behavior: currentStreak: 5 → 6, originalStreak: 5 → 6
+        const result = calculateEligibleToOnStreakPure(userId, wednesdayDate, streakInfo, todayPostCount);
+        
+        expect(result).toBeNull();
       });
     });
 
-    describe('Midnight missed → missed Maintenance', () => {
-      it('ensures missed state maintains zero streaks', () => {
-        const streakInfo: StreakInfo = {
-          lastContributionDate: '2024-01-15',
-          lastCalculated: Timestamp.now(),
-          status: { type: RecoveryStatusType.MISSED },
-          currentStreak: 0, // Already correct
-          longestStreak: 10,
-          originalStreak: 0, // Already correct
-        };
-
-        // In missed state, both streaks should remain 0
-        expect(streakInfo.currentStreak).toBe(0);
-        expect(streakInfo.originalStreak).toBe(0);
-        
-        // Test case where streaks are incorrect and need maintenance
-        const incorrectStreakInfo: StreakInfo = {
-          ...streakInfo,
-          currentStreak: 3, // Incorrect - should be 0
-          originalStreak: 3, // Incorrect - should be 0
-        };
-        
-        // The maintenance function would reset these to 0
-        expect(incorrectStreakInfo.currentStreak).not.toBe(0); // Shows need for maintenance
-        expect(incorrectStreakInfo.originalStreak).not.toBe(0); // Shows need for maintenance
-      });
-    });
-
-    describe('eligible → eligible Progress Updates', () => {
-      it('increments currentPosts but keeps streaks unchanged on first post', () => {
-        const streakInfo: StreakInfo = {
-          lastContributionDate: '2024-01-15',
-          lastCalculated: Timestamp.now(),
+    describe('when recovery status is missing required fields', () => {
+      it('returns null for eligible transition when postsRequired is missing', () => {
+        const wednesdayDate = new Date('2024-01-17T10:00:00Z');
+        const streakInfo = createStreakInfo({
           status: {
             type: RecoveryStatusType.ELIGIBLE,
-            postsRequired: 2,
-            currentPosts: 0, // No posts yet
-            deadline: Timestamp.fromDate(testDate),
-            missedDate: Timestamp.fromDate(yesterday),
-          },
-          currentStreak: 0,
-          longestStreak: 10,
-          originalStreak: 5,
-        };
-
-        const todayPostCount = 1; // First post out of 2 required
-        const result = calculateEligibleToOnStreakPure(userId, testDate, streakInfo, todayPostCount);
-
-        expect(result?.updates).toEqual(expect.objectContaining({
-          status: expect.objectContaining({
-            type: RecoveryStatusType.ELIGIBLE, // Still eligible
-            currentPosts: 1, // Progress updated
-            postsRequired: 2, // Requirement unchanged
-          }),
-        }));
-
-        // Critical: Verify NO streak fields are modified during progress update
-        expect(result?.updates).not.toHaveProperty('currentStreak');
-        expect(result?.updates).not.toHaveProperty('originalStreak');
-        
-        // This ensures streaks remain: currentStreak: 0, originalStreak: 5
-      });
-    });
-
-    describe('Working Day Validation Logic', () => {
-      it('prevents state changes when user misses non-working day', () => {
-        const streakInfo: StreakInfo = {
-          lastContributionDate: '2024-01-12', // Friday
-          lastCalculated: Timestamp.now(),
-          status: { type: RecoveryStatusType.ON_STREAK },
-          currentStreak: 5,
-          longestStreak: 10,
-          originalStreak: 5,
-        };
-
-        const mondayDate = new Date('2024-01-15T12:00:00Z'); // Monday
-        const yesterday = getSeoulYesterday(mondayDate); // Sunday
-        const hadPostsYesterday = false; // No posts on Sunday
-        
-        // Verify Sunday is not a working day (this is the critical test)
-        const yesterdayIsWorkingDay = isSeoulWorkingDay(yesterday);
-        
-        const result = calculateOnStreakToEligiblePure(userId, mondayDate, streakInfo, hadPostsYesterday);
-        
-        if (!yesterdayIsWorkingDay) {
-          // Critical: No state change should occur for non-working day misses
-          expect(result).toBeNull();
-        } else {
-          // If Sunday is considered a working day (unexpected), state change should occur
-          expect(result).not.toBeNull();
-        }
-      });
-
-      it('ensures posting impact varies by day type', () => {
-        const streakInfo: StreakInfo = {
-          lastContributionDate: '2024-01-15',
-          lastCalculated: Timestamp.now(),
-          status: {
-            type: RecoveryStatusType.ELIGIBLE,
-            postsRequired: 1, // Weekend recovery
+            // Missing postsRequired
             currentPosts: 0,
-            deadline: Timestamp.fromDate(new Date('2024-01-22')),
-            missedDate: Timestamp.fromDate(new Date('2024-01-19')), // Friday
+            deadline: Timestamp.fromDate(wednesdayDate),
+            missedDate: Timestamp.fromDate(new Date('2024-01-16T10:00:00Z')),
           },
-          currentStreak: 0,
-          longestStreak: 10,
-          originalStreak: 5,
-        };
-
-        // Test working day recovery (should increment both streaks)
-        const workingDay = new Date('2024-01-17T12:00:00Z'); // Wednesday
-        const resultWorkingDay = calculateEligibleToOnStreakPure(userId, workingDay, {
-          ...streakInfo,
-          status: { ...streakInfo.status, postsRequired: 2 }
-        }, 2);
-        
-        expect(isSeoulWorkingDay(workingDay)).toBe(true);
-        expect(resultWorkingDay?.updates).toEqual(expect.objectContaining({
-          currentStreak: 6, // originalStreak + 1
-          originalStreak: 6, // originalStreak + 1
-        }));
-
-        // Test weekend recovery (should not increment originalStreak)
-        const weekend = new Date('2024-01-20T12:00:00Z'); // Saturday
-        const resultWeekend = calculateEligibleToOnStreakPure(userId, weekend, streakInfo, 1);
-        
-        expect(isSeoulWorkingDay(weekend)).toBe(false);
-        expect(resultWeekend?.updates).toEqual(expect.objectContaining({
-          currentStreak: 5, // originalStreak (no increment)
-          originalStreak: 5, // originalStreak (unchanged)
-        }));
-      });
-    });
-
-    describe('Recovery Deadline Logic', () => {
-      it('calculates deadline correctly for working day recovery', () => {
-        const missedTuesday = new Date('2024-01-16T12:00:00Z'); // Tuesday
-        const currentWednesday = new Date('2024-01-17T12:00:00Z'); // Wednesday
-        
-        const requirement = calculateRecoveryRequirement(missedTuesday, currentWednesday);
-        
-        // Critical: Working day recovery requires 2 posts
-        expect(requirement.postsRequired).toBe(2);
-        expect(requirement.currentPosts).toBe(0);
-        
-        // Deadline should be set to next working day after missed date
-        expect(requirement.deadline).toBeInstanceOf(Timestamp);
-        expect(requirement.missedDate).toBeInstanceOf(Timestamp);
-        
-        // Verify missed date is approximately correct (timezone conversions may affect exact date)
-        const missedDateSeoul = requirement.missedDate.toDate();
-        expect(missedDateSeoul.getFullYear()).toBe(2024);
-        expect(missedDateSeoul.getMonth()).toBe(0); // January
-        // Accept 16 or 17 due to timezone conversion differences
-        expect([16, 17]).toContain(missedDateSeoul.getDate());
-      });
-
-      it('calculates deadline correctly for weekend recovery', () => {
-        const missedFriday = new Date('2024-01-19T12:00:00Z'); // Friday
-        const currentSaturday = new Date('2024-01-20T12:00:00Z'); // Saturday
-        
-        const requirement = calculateRecoveryRequirement(missedFriday, currentSaturday);
-        
-        // Critical: Weekend recovery requires 1 post
-        expect(requirement.postsRequired).toBe(1);
-        expect(requirement.currentPosts).toBe(0);
-        
-        expect(requirement.deadline).toBeInstanceOf(Timestamp);
-        expect(requirement.missedDate).toBeInstanceOf(Timestamp);
-      });
-
-      it('correctly identifies when deadline has passed', () => {
-        const pastDeadline = new Date('2024-01-16T23:59:59Z'); // Yesterday end
-        const currentTime = new Date('2024-01-17T12:00:00Z'); // Today
-        
-        const hasPassed = hasDeadlinePassed(Timestamp.fromDate(pastDeadline), currentTime);
-        expect(hasPassed).toBe(true);
-        
-        const futureDeadline = new Date('2024-01-18T23:59:59Z'); // Tomorrow end
-        const hasNotPassed = hasDeadlinePassed(Timestamp.fromDate(futureDeadline), currentTime);
-        expect(hasNotPassed).toBe(false);
-      });
-    });
-
-    describe('Multi-Post Recovery Requirements', () => {
-      it('ensures both posts must be written on same day for working day recovery', () => {
-        const streakInfo: StreakInfo = {
-          lastContributionDate: '2024-01-15',
-          lastCalculated: Timestamp.now(),
-          status: {
-            type: RecoveryStatusType.ELIGIBLE,
-            postsRequired: 2,
-            currentPosts: 0,
-            deadline: Timestamp.fromDate(testDate),
-            missedDate: Timestamp.fromDate(yesterday),
-          },
-          currentStreak: 0,
-          longestStreak: 10,
-          originalStreak: 5,
-        };
-
-        // Test partial recovery (1 out of 2 posts)
-        const partialResult = calculateEligibleToOnStreakPure(userId, testDate, streakInfo, 1);
-        expect(partialResult?.updates.status).toEqual(expect.objectContaining({
-          type: RecoveryStatusType.ELIGIBLE, // Still eligible
-          currentPosts: 1, // Progress tracked
-          postsRequired: 2, // Still need 2 total
-        }));
-        
-        // Test complete recovery (2 out of 2 posts)
-        const completeResult = calculateEligibleToOnStreakPure(userId, testDate, streakInfo, 2);
-        expect(completeResult?.updates.status).toEqual({
-          type: RecoveryStatusType.ON_STREAK // Recovery completed
         });
+        const todayPostCount = 2;
         
-        // Critical: The system counts posts written on the current day
-        // Posts from previous days don't count toward today's recovery requirement
+        const result = calculateEligibleToOnStreakPure(userId, wednesdayDate, streakInfo, todayPostCount);
+        
+        expect(result).toBeNull();
       });
+    });
 
-      it('handles single post requirement for weekend recovery', () => {
-        const streakInfo: StreakInfo = {
-          lastContributionDate: '2024-01-18', // Thursday
-          lastCalculated: Timestamp.now(),
-          status: {
-            type: RecoveryStatusType.ELIGIBLE,
-            postsRequired: 1, // Weekend only needs 1 post
-            currentPosts: 0,
-            deadline: Timestamp.fromDate(new Date('2024-01-22')), // Monday
-            missedDate: Timestamp.fromDate(new Date('2024-01-19')), // Friday
-          },
-          currentStreak: 0,
-          longestStreak: 10,
-          originalStreak: 5,
-        };
-
-        const saturdayDate = new Date('2024-01-20T12:00:00Z'); // Saturday
+    describe('when input validation fails', () => {
+      it('returns null when streak info is null', () => {
+        const wednesdayDate = new Date('2024-01-17T10:00:00Z');
         
-        // Test complete recovery with 1 post on weekend
-        const result = calculateEligibleToOnStreakPure(userId, saturdayDate, streakInfo, 1);
-        expect(result?.updates.status).toEqual({
-          type: RecoveryStatusType.ON_STREAK // Recovery completed with 1 post
-        });
+        const result = calculateOnStreakToEligiblePure(userId, wednesdayDate, null, false);
         
-        // Weekend recovery: currentStreak = originalStreak (no increment)
-        expect(result?.updates.currentStreak).toBe(5);
-        expect(result?.updates.originalStreak).toBe(5);
+        expect(result).toBeNull();
       });
     });
   });
 
-  describe('Real Calendar Function Integration', () => {
-    describe('Working day validation', () => {
-      it('correctly identifies working days', () => {
-        // Use mid-day times to avoid timezone edge cases
-        const monday = new Date('2024-01-15T12:00:00Z');
-        const tuesday = new Date('2024-01-16T12:00:00Z');
-        const wednesday = new Date('2024-01-17T12:00:00Z');
-        const thursday = new Date('2024-01-18T12:00:00Z');
-        const friday = new Date('2024-01-19T12:00:00Z');
-        const saturday = new Date('2024-01-20T12:00:00Z');
-        const sunday = new Date('2024-01-21T12:00:00Z');
+  describe('when recovery deadline passes', () => {
+    describe('when deadline passes with partial progress', () => {
+      it('transitions to missed status and preserves partial progress', () => {
+        const thursdayDate = new Date('2024-01-18T10:00:00Z'); // Thursday
+        const wednesdayDeadline = new Date('2024-01-17T23:59:59Z'); // Wednesday deadline (passed)
+        const streakInfo = createStreakInfo({
+          status: {
+            type: RecoveryStatusType.ELIGIBLE,
+            postsRequired: 2,
+            currentPosts: 1, // Made 1 out of 2 required posts
+            deadline: Timestamp.fromDate(wednesdayDeadline),
+            missedDate: Timestamp.fromDate(new Date('2024-01-16T10:00:00Z')),
+          },
+          currentStreak: 1, // Partial progress from 1 post
+          originalStreak: 5,
+        });
 
-        // Test what we actually get for these dates
-        const results = {
-          monday: isSeoulWorkingDay(monday),
-          tuesday: isSeoulWorkingDay(tuesday),
-          wednesday: isSeoulWorkingDay(wednesday),
-          thursday: isSeoulWorkingDay(thursday),
-          friday: isSeoulWorkingDay(friday),
-          saturday: isSeoulWorkingDay(saturday),
-          sunday: isSeoulWorkingDay(sunday)
-        };
-        
-        console.log('Working day results:', results);
+        const result = calculateEligibleToMissedPure(userId, thursdayDate, streakInfo);
 
-        // Test the days we know should be consistent
-        expect(results.monday).toBe(true);
-        expect(results.tuesday).toBe(true);
-        expect(results.wednesday).toBe(true);
-        expect(results.thursday).toBe(true);
-        // Accept whatever the calendar function returns for Friday and Sunday
-        // as there might be timezone or holiday complexities
-        expect(typeof results.friday).toBe('boolean');
-        expect(results.saturday).toBe(false);
-        expect(typeof results.sunday).toBe('boolean');
+        expect(result?.updates.status).toEqual({ type: RecoveryStatusType.MISSED });
+        expect(result?.updates.currentStreak).toBe(1); // Preserve partial progress
+        expect(result?.updates.originalStreak).toBe(0); // Clear original streak
+      });
+    });
+
+    describe('when deadline passes with no progress', () => {
+      it('transitions to missed status with zero streak', () => {
+        const fridayDate = new Date('2024-01-19T10:00:00Z'); // Friday
+        const thursdayDeadline = new Date('2024-01-18T23:59:59Z'); // Thursday deadline (passed)
+        const streakInfo = createStreakInfo({
+          status: {
+            type: RecoveryStatusType.ELIGIBLE,
+            postsRequired: 2,
+            currentPosts: 0, // Made 0 out of 2 required posts
+            deadline: Timestamp.fromDate(thursdayDeadline),
+            missedDate: Timestamp.fromDate(new Date('2024-01-17T10:00:00Z')),
+          },
+          currentStreak: 0,
+          originalStreak: 7,
+        });
+
+        const result = calculateEligibleToMissedPure(userId, fridayDate, streakInfo);
+
+        expect(result?.updates.status).toEqual({ type: RecoveryStatusType.MISSED });
+        expect(result?.updates.currentStreak).toBe(0);
+        expect(result?.updates.originalStreak).toBe(0);
+      });
+    });
+
+    describe('when deadline has not passed', () => {
+      it('returns null to maintain eligible status', () => {
+        const wednesdayDate = new Date('2024-01-17T12:00:00Z'); // Wednesday noon
+        const wednesdayDeadline = new Date('2024-01-17T23:59:59Z'); // Wednesday end (not passed yet)
+        const streakInfo = createStreakInfo({
+          status: {
+            type: RecoveryStatusType.ELIGIBLE,
+            postsRequired: 2,
+            currentPosts: 1,
+            deadline: Timestamp.fromDate(wednesdayDeadline),
+            missedDate: Timestamp.fromDate(new Date('2024-01-16T10:00:00Z')),
+          },
+          currentStreak: 1,
+          originalStreak: 5,
+        });
+
+        const result = calculateEligibleToMissedPure(userId, wednesdayDate, streakInfo);
+
+        expect(result).toBeNull();
+      });
+    });
+  });
+
+  describe('when building new streak after missed', () => {
+    describe('when posting after missed status', () => {
+      it('transitions missed to eligible on first post', () => {
+        const thursdayDate = new Date('2024-01-18T10:00:00Z'); // Thursday
+        const streakInfo = createStreakInfo({
+          status: { type: RecoveryStatusType.MISSED },
+          currentStreak: 1, // Had partial progress from previous attempt
+          originalStreak: 0,
+        });
+
+        const todayPostCount = 1; // First post after missed
+        const result = calculateMissedToOnStreakPure(userId, thursdayDate, streakInfo, todayPostCount);
+
+        expect(result?.updates.status).toEqual(expect.objectContaining({
+          type: RecoveryStatusType.ELIGIBLE,
+          currentPosts: 1,
+          postsRequired: 2, // Working day recovery
+        }));
+        expect(result?.updates.currentStreak).toBe(2); // Incremented from 1+1
+      });
+
+      it('completes same-day recovery with second post', () => {
+        const thursdayDate = new Date('2024-01-18T10:00:00Z'); // Thursday
+        const streakInfo = createStreakInfo({
+          status: { type: RecoveryStatusType.MISSED },
+          currentStreak: 0,
+          originalStreak: 0,
+        });
+
+        const todayPostCount = 2; // Two posts same day after missed
+        const result = calculateMissedToOnStreakPure(userId, thursdayDate, streakInfo, todayPostCount);
+
+        expect(result?.updates.status).toEqual({ type: RecoveryStatusType.ON_STREAK });
+        expect(result?.updates.currentStreak).toBe(2); // Fresh start with 2 posts
+      });
+    });
+
+    describe('when building streak across multiple days', () => {
+      it('transitions to onStreak when currentStreak reaches 2', () => {
+        const saturdayDate = new Date('2024-01-20T10:00:00Z'); // Saturday
+        const streakInfo = createStreakInfo({
+          status: { type: RecoveryStatusType.MISSED },
+          currentStreak: 1, // Had 1 from yesterday
+          originalStreak: 0,
+        });
+
+        const todayPostCount = 1; // One more post
+        const result = calculateMissedToOnStreakPure(userId, saturdayDate, streakInfo, todayPostCount);
+
+        expect(result?.updates.status).toEqual({ type: RecoveryStatusType.ON_STREAK });
+        expect(result?.updates.currentStreak).toBe(2); // currentStreak ≥ 2 triggers onStreak
+      });
+
+      it('remains missed when currentStreak is still below 2', () => {
+        const fridayDate = new Date('2024-01-19T10:00:00Z'); // Friday
+        const streakInfo = createStreakInfo({
+          status: { type: RecoveryStatusType.MISSED },
+          currentStreak: 0,
+          originalStreak: 0,
+        });
+
+        const todayPostCount = 1; // Only one post
+        const result = calculateMissedToOnStreakPure(userId, fridayDate, streakInfo, todayPostCount);
+
+        expect(result?.updates.status).toEqual({ type: RecoveryStatusType.MISSED });
+        expect(result?.updates.currentStreak).toBe(1); // Still building
+      });
+    });
+  });
+
+  describe('return value structure validation', () => {
+    it('returns properly structured DBUpdate object for valid transitions', () => {
+      const wednesdayDate = new Date('2024-01-17T10:00:00Z');
+      const streakInfo = createStreakInfo();
+      const hadPostsYesterday = false;
+      
+      const result = calculateOnStreakToEligiblePure(userId, wednesdayDate, streakInfo, hadPostsYesterday);
+      
+      expect(result).toHaveProperty('userId', userId);
+      expect(result).toHaveProperty('updates');
+      expect(result).toHaveProperty('reason');
+      expect(result?.updates).toHaveProperty('lastCalculated');
+      expect(result?.updates).toHaveProperty('status');
+      expect(result?.updates).toHaveProperty('currentStreak');
+      expect(result?.updates).toHaveProperty('originalStreak');
+    });
+    
+    it('includes lastContributionDate in recovery completion', () => {
+      const wednesdayDate = new Date('2024-01-17T10:00:00Z');
+      const streakInfo = createStreakInfo({
+        status: {
+          type: RecoveryStatusType.ELIGIBLE,
+          postsRequired: 2,
+          currentPosts: 1,
+          deadline: Timestamp.fromDate(wednesdayDate),
+          missedDate: Timestamp.fromDate(new Date('2024-01-16T10:00:00Z')),
+        },
+        currentStreak: 0,
+        originalStreak: 3,
+      });
+
+      const todayPostCount = 2;
+      const result = calculateEligibleToOnStreakPure(userId, wednesdayDate, streakInfo, todayPostCount);
+      
+      expect(result?.updates).toHaveProperty('lastContributionDate');
+      expect(typeof result?.updates.lastContributionDate).toBe('string');
+    });
+  });
+
+  describe('when recovery completes successfully (REQ-014)', () => {
+    describe('when eligible transitions to onStreak', () => {
+      it('creates RecoveryHistory record for working day recovery', () => {
+        const wednesdayDate = new Date('2024-01-17T10:00:00Z'); // Wednesday
+        const missedTuesday = new Date('2024-01-16T10:00:00Z'); // Tuesday
+        const streakInfo = createStreakInfo({
+          status: {
+            type: RecoveryStatusType.ELIGIBLE,
+            postsRequired: 2,
+            currentPosts: 1,
+            deadline: Timestamp.fromDate(wednesdayDate),
+            missedDate: Timestamp.fromDate(missedTuesday),
+          },
+          currentStreak: 0,
+          originalStreak: 5,
+        });
+
+        const todayPostCount = 2; // Completed recovery requirement
+        const result = calculateEligibleToOnStreakPure(userId, wednesdayDate, streakInfo, todayPostCount);
         
-        // At least verify that the function is working
-        expect(Object.values(results).every(val => typeof val === 'boolean')).toBe(true);
+        // Should include RecoveryHistory record
+        expect(result?.updates).toHaveProperty('recoveryHistory');
+        expect(result?.updates.recoveryHistory).toEqual({
+          missedDate: Timestamp.fromDate(missedTuesday),
+          recoveryDate: Timestamp.fromDate(wednesdayDate),
+          postsRequired: 2,
+          postsWritten: 2,
+          recoveredAt: expect.any(Timestamp),
+        });
+      });
+
+      it('creates RecoveryHistory record for weekend recovery', () => {
+        const saturdayDate = new Date('2024-01-20T10:00:00Z'); // Saturday
+        const missedFriday = new Date('2024-01-19T10:00:00Z'); // Friday
+        const streakInfo = createStreakInfo({
+          status: {
+            type: RecoveryStatusType.ELIGIBLE,
+            postsRequired: 1,
+            currentPosts: 0,
+            deadline: Timestamp.fromDate(new Date('2024-01-22T23:59:59Z')),
+            missedDate: Timestamp.fromDate(missedFriday),
+          },
+          currentStreak: 0,
+          originalStreak: 7,
+        });
+
+        const todayPostCount = 1; // Completed recovery requirement 
+        const result = calculateEligibleToOnStreakPure(userId, saturdayDate, streakInfo, todayPostCount);
+        
+        // Should include RecoveryHistory record
+        expect(result?.updates).toHaveProperty('recoveryHistory');
+        expect(result?.updates.recoveryHistory).toEqual({
+          missedDate: Timestamp.fromDate(missedFriday),
+          recoveryDate: Timestamp.fromDate(saturdayDate),
+          postsRequired: 1,
+          postsWritten: 1,
+          recoveredAt: expect.any(Timestamp),
+        });
+      });
+
+      it('does not create RecoveryHistory for partial progress', () => {
+        const wednesdayDate = new Date('2024-01-17T10:00:00Z'); // Wednesday
+        const streakInfo = createStreakInfo({
+          status: {
+            type: RecoveryStatusType.ELIGIBLE,
+            postsRequired: 2,
+            currentPosts: 0,
+            deadline: Timestamp.fromDate(wednesdayDate),
+            missedDate: Timestamp.fromDate(new Date('2024-01-16T10:00:00Z')),
+          },
+          currentStreak: 0,
+          originalStreak: 5,
+        });
+
+        const todayPostCount = 1; // Only partial progress (1 out of 2 required)
+        const result = calculateEligibleToOnStreakPure(userId, wednesdayDate, streakInfo, todayPostCount);
+        
+        // Should NOT include RecoveryHistory record
+        expect(result?.updates).not.toHaveProperty('recoveryHistory');
+        expect(result?.updates.status?.type).toBe(RecoveryStatusType.ELIGIBLE);
+      });
+    });
+
+    describe('when missed transitions to onStreak via same-day path', () => {
+      it('creates RecoveryHistory record for same-day two-post recovery', () => {
+        const thursdayDate = new Date('2024-01-18T10:00:00Z'); // Thursday
+        const streakInfo = createStreakInfo({
+          status: { type: RecoveryStatusType.MISSED },
+          currentStreak: 0,
+          originalStreak: 0,
+        });
+
+        const todayPostCount = 2; // Two posts same day
+        const result = calculateMissedToOnStreakPure(userId, thursdayDate, streakInfo, todayPostCount);
+        
+        // Should include RecoveryHistory record
+        expect(result?.updates).toHaveProperty('recoveryHistory');
+        expect(result?.updates.recoveryHistory).toEqual({
+          missedDate: expect.any(Timestamp), // Should be calculated based on recovery requirement
+          recoveryDate: Timestamp.fromDate(thursdayDate),
+          postsRequired: 2,
+          postsWritten: 2,
+          recoveredAt: expect.any(Timestamp),
+        });
+      });
+    });
+  });
+
+  describe('when longest streak should be updated (REQ-018)', () => {
+    describe('when currentStreak exceeds previous longestStreak', () => {
+      it('updates longestStreak during recovery completion (eligible → onStreak)', () => {
+        const wednesdayDate = new Date('2024-01-17T10:00:00Z'); // Wednesday
+        const streakInfo = createStreakInfo({
+          status: {
+            type: RecoveryStatusType.ELIGIBLE,
+            postsRequired: 2,
+            currentPosts: 1,
+            deadline: Timestamp.fromDate(wednesdayDate),
+            missedDate: Timestamp.fromDate(new Date('2024-01-16T10:00:00Z')),
+          },
+          currentStreak: 0,
+          originalStreak: 8, // Recovery will make currentStreak = 9
+          longestStreak: 5,   // Should be updated to 9
+        });
+
+        const todayPostCount = 2; // Completes recovery
+        const result = calculateEligibleToOnStreakPure(userId, wednesdayDate, streakInfo, todayPostCount);
+        
+        expect(result?.updates.currentStreak).toBe(9); // originalStreak + 1
+        expect(result?.updates.longestStreak).toBe(9); // Updated from 5 to 9
+      });
+
+      it('updates longestStreak during same-day recovery (missed → onStreak)', () => {
+        const thursdayDate = new Date('2024-01-18T10:00:00Z'); // Thursday
+        const streakInfo = createStreakInfo({
+          status: { type: RecoveryStatusType.MISSED },
+          currentStreak: 0,
+          originalStreak: 0,
+          longestStreak: 2, // Should be updated to 3
+        });
+
+        const todayPostCount = 3; // Three posts same day
+        const result = calculateMissedToOnStreakPure(userId, thursdayDate, streakInfo, todayPostCount);
+        
+        expect(result?.updates.currentStreak).toBe(3);
+        expect(result?.updates.longestStreak).toBe(3); // Updated from 2 to 3
+      });
+
+      it('updates longestStreak during cross-day building (missed → onStreak)', () => {
+        const saturdayDate = new Date('2024-01-20T10:00:00Z'); // Saturday
+        const streakInfo = createStreakInfo({
+          status: { type: RecoveryStatusType.MISSED },
+          currentStreak: 6, // Had 6 from previous days
+          originalStreak: 0,
+          longestStreak: 7, // Should be updated to 7
+        });
+
+        const todayPostCount = 1; // One more post (currentStreak becomes 7)
+        const result = calculateMissedToOnStreakPure(userId, saturdayDate, streakInfo, todayPostCount);
+        
+        expect(result?.updates.currentStreak).toBe(7);
+        expect(result?.updates.longestStreak).toBe(7); // Should remain 7 (no change needed)
+      });
+
+      it('updates longestStreak when currentStreak reaches new high', () => {
+        const saturdayDate = new Date('2024-01-20T10:00:00Z'); // Saturday
+        const streakInfo = createStreakInfo({
+          status: { type: RecoveryStatusType.MISSED },
+          currentStreak: 9, // Had 9 from previous days
+          originalStreak: 0,
+          longestStreak: 8, // Should be updated to 10
+        });
+
+        const todayPostCount = 1; // One more post (currentStreak becomes 10)
+        const result = calculateMissedToOnStreakPure(userId, saturdayDate, streakInfo, todayPostCount);
+        
+        expect(result?.updates.currentStreak).toBe(10);
+        expect(result?.updates.longestStreak).toBe(10); // Updated from 8 to 10
+      });
+    });
+
+    describe('when currentStreak does not exceed longestStreak', () => {
+      it('does not update longestStreak during recovery', () => {
+        const wednesdayDate = new Date('2024-01-17T10:00:00Z'); // Wednesday
+        const streakInfo = createStreakInfo({
+          status: {
+            type: RecoveryStatusType.ELIGIBLE,
+            postsRequired: 2,
+            currentPosts: 1,
+            deadline: Timestamp.fromDate(wednesdayDate),
+            missedDate: Timestamp.fromDate(new Date('2024-01-16T10:00:00Z')),
+          },
+          currentStreak: 0,
+          originalStreak: 3, // Recovery will make currentStreak = 4
+          longestStreak: 10, // Should remain 10
+        });
+
+        const todayPostCount = 2; // Completes recovery
+        const result = calculateEligibleToOnStreakPure(userId, wednesdayDate, streakInfo, todayPostCount);
+        
+        expect(result?.updates.currentStreak).toBe(4); // originalStreak + 1
+        expect(result?.updates.longestStreak).toBe(10); // Unchanged (4 < 10)
+      });
+
+      it('does not update longestStreak when building streak below max', () => {
+        const thursdayDate = new Date('2024-01-18T10:00:00Z'); // Thursday
+        const streakInfo = createStreakInfo({
+          status: { type: RecoveryStatusType.MISSED },
+          currentStreak: 0,
+          originalStreak: 0,
+          longestStreak: 15, // Should remain 15
+        });
+
+        const todayPostCount = 2; // Two posts same day
+        const result = calculateMissedToOnStreakPure(userId, thursdayDate, streakInfo, todayPostCount);
+        
+        expect(result?.updates.currentStreak).toBe(2);
+        expect(result?.updates.longestStreak).toBe(15); // Unchanged (2 < 15)
+      });
+    });
+
+    describe('when longestStreak is initially undefined', () => {
+      it('sets longestStreak to currentStreak value', () => {
+        const wednesdayDate = new Date('2024-01-17T10:00:00Z'); // Wednesday
+        const streakInfoBase = createStreakInfo({
+          status: {
+            type: RecoveryStatusType.ELIGIBLE,
+            postsRequired: 2,
+            currentPosts: 1,
+            deadline: Timestamp.fromDate(wednesdayDate),
+            missedDate: Timestamp.fromDate(new Date('2024-01-16T10:00:00Z')),
+          },
+          currentStreak: 0,
+          originalStreak: 5,
+        });
+        // Remove longestStreak to simulate undefined case
+        const streakInfo = { ...streakInfoBase, longestStreak: undefined } as unknown as StreakInfo;
+
+        const todayPostCount = 2; // Completes recovery
+        const result = calculateEligibleToOnStreakPure(userId, wednesdayDate, streakInfo, todayPostCount);
+        
+        expect(result?.updates.currentStreak).toBe(6); // originalStreak + 1
+        expect(result?.updates.longestStreak).toBe(6); // Set to currentStreak (was undefined)
       });
     });
   });

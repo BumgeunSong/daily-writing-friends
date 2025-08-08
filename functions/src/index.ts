@@ -35,6 +35,13 @@ export {
 } from './replyings';
 
 export { 
-  allocateSecretBuddy,
-  fixStreakInfoScript
+  allocateSecretBuddy
 } from './scripts';
+
+export { 
+  retroactiveBackfillHttp
+} from './backfill/retroactiveBackfillHttp';
+
+export { 
+  backfillAllBoardUsersHttp
+} from './backfill/backfillAllBoardUsers';
