@@ -162,7 +162,7 @@ export async function processSimulationDay(
 
     case RecoveryStatusType.ELIGIBLE: {
       const missedDate = getEligibleMissedDate(currentState);
-      const isValidRecovery = isValidRecoveryDay(dayBucket, missedDate);
+      const isEligibleDay = isValidRecoveryDay(dayBucket, missedDate);
 
       // Debug recovery validation
       if (dayBucket.kstDateString >= '2025-07-25' && dayBucket.kstDateString <= '2025-07-27') {
@@ -170,27 +170,27 @@ export async function processSimulationDay(
           missedDate,
           dayOfWeek: new Date(dayBucket.kstDateString).getDay(),
           isWorkingDay: dayBucket.isWorkingDay,
-          isValidRecovery,
-          willProcess: dayBucket.isWorkingDay || isValidRecovery,
+          isEligibleDay,
         });
       }
 
-      // REQ-012: If this is a working day with no posts, update to track most recent miss
-      if (dayBucket.isWorkingDay && !streakSatisfied) {
-        const transition = handleEligibleToMostRecentMiss(newState, dayBucket);
-        newState = transition.newState;
-        stateTransition = transition.stateTransition;
-      } else if (dayBucket.isWorkingDay || isValidRecovery) {
+      if (isEligibleDay) {
+        // Only the eligible day can contribute to recovery on weekdays
         const transition = handleEligibleDay(newState, dayBucket, postsCount);
         newState = transition.newState;
         stateTransition = transition.stateTransition;
         recoveryProgress = transition.recoveryProgress;
       } else {
-        // Check if deadline has passed
+        // For any non-eligible day, evaluate deadline first
         const deadlineCheck = checkEligibleDeadline(newState, dayBucket);
         if (deadlineCheck.deadlinePassed) {
           newState = deadlineCheck.newState;
           stateTransition = deadlineCheck.stateTransition;
+        } else if (dayBucket.isWorkingDay && !streakSatisfied) {
+          // Still before deadline and working day with no posts → track most recent miss
+          const transition = handleEligibleToMostRecentMiss(newState, dayBucket);
+          newState = transition.newState;
+          stateTransition = transition.stateTransition;
         }
       }
       break;
