@@ -314,11 +314,10 @@ function handleEligibleDay(
     let newCurrentStreak: number;
 
     if (recoveryWindow.isWorkingDayRecovery) {
-      // Weekday recovery: originalStreak + recovered missed day
-      newCurrentStreak = state.originalStreak + 1;
+      // Policy(v2): Weekday recovery adds 2 (missed day + recovery day)
+      newCurrentStreak = state.originalStreak + 2;
     } else {
-      // Friday → Saturday recovery: originalStreak + recovered Friday
-      // Same formula as weekday recovery
+      // Friday → Saturday recovery remains +1
       newCurrentStreak = state.originalStreak + 1;
     }
 
@@ -327,7 +326,7 @@ function handleEligibleDay(
         ...state,
         status: { type: RecoveryStatusType.ON_STREAK },
         currentStreak: newCurrentStreak,
-        // originalStreak stays the same (it was the pre-miss streak)
+        // originalStreak stays the same (captured at miss). It will be updated on next miss capture
       },
       stateTransition: {
         from: 'eligible',

@@ -25,7 +25,7 @@ export function calculateOnStreakToEligiblePure(
   }
 
   const yesterday = getSeoulYesterday(currentDate);
-  
+
   // Per PRD: Only check working day misses
   if (!isSeoulWorkingDay(yesterday)) {
     return null; // No state changes for non-working day misses
@@ -105,21 +105,21 @@ export function calculateEligibleToOnStreakPure(
   // Recovery completed - transition to onStreak
   const originalStreak = streakInfo.originalStreak || 0;
   const isRecoveryOnWorkingDay = isSeoulWorkingDay(postDate);
-  
-  // Per PRD:
-  // - Working day recovery: currentStreak = originalStreak + 1, originalStreak = originalStreak + 1
-  // - Weekend recovery: currentStreak = originalStreak, originalStreak = originalStreak (no change)
+
+  // Policy v2:
+  // - Working day recovery (Mon–Fri): currentStreak = originalStreak + 2
+  // - Weekend recovery (Fri->Sat): currentStreak = originalStreak + 1
   let newCurrentStreak: number;
   let newOriginalStreak: number;
-  
+
   if (isRecoveryOnWorkingDay) {
+    newCurrentStreak = originalStreak + 2;
+    newOriginalStreak = originalStreak + 2;
+  } else {
     newCurrentStreak = originalStreak + 1;
     newOriginalStreak = originalStreak + 1;
-  } else {
-    newCurrentStreak = originalStreak;
-    newOriginalStreak = originalStreak;
   }
-  
+
   const newLongestStreak = updateLongestStreak(streakInfo.longestStreak, newCurrentStreak);
   const recoveryHistory = createRecoveryHistory(status, postDate, todayPostCount);
   const baseUpdate = createBaseUpdate(userId, `eligible → onStreak (recovery completed)`);
@@ -207,16 +207,16 @@ export function calculateMissedToOnStreakPure(
   if (todayPostCount >= 2) {
     return handleSameDayRecovery(userId, postDate, streakInfo, todayPostCount);
   }
-  
+
   // First post of the day - behavior depends on day type
   if (todayPostCount === 1) {
     return handleFirstPostOfDay(userId, postDate, streakInfo, newCurrentStreak);
   }
-  
+
   // No posts today - stay missed but update currentStreak if it had previous progress
   if (todayPostCount === 0 && currentStreak > 0) {
     const baseUpdate = createBaseUpdate(userId, 'missed (maintaining partial progress)');
-    
+
     return {
       ...baseUpdate,
       updates: {
@@ -245,7 +245,7 @@ function handleSameDayRecovery(
   const newLongestStreak = updateLongestStreak(streakInfo.longestStreak, todayPostCount);
   const recoveryHistory = createRecoveryHistory(recoveryReq, postDate, todayPostCount);
   const baseUpdate = createBaseUpdate(userId, 'missed → onStreak (same-day recovery)');
-  
+
   return {
     ...baseUpdate,
     updates: {
@@ -271,14 +271,17 @@ function handleFirstPostOfDay(
 ): DBUpdate {
   const isWorkingDay = isSeoulWorkingDay(postDate);
   const newLongestStreak = updateLongestStreak(streakInfo.longestStreak, newCurrentStreak);
-  
+
   if (isWorkingDay) {
     // Working day (Mon-Fri): Need 2 posts for recovery → with 1 post, go to eligible
     if (streakInfo.currentStreak > 0) {
       // Had previous progress - transition to eligible for same-day recovery opportunity
       const recoveryReq = calculateRecoveryRequirement(postDate, postDate);
-      const baseUpdate = createBaseUpdate(userId, 'missed → eligible (1 post on working day, need 2 total)');
-      
+      const baseUpdate = createBaseUpdate(
+        userId,
+        'missed → eligible (1 post on working day, need 2 total)',
+      );
+
       return {
         ...baseUpdate,
         updates: {
@@ -297,8 +300,11 @@ function handleFirstPostOfDay(
       };
     } else {
       // No previous progress, still building
-      const baseUpdate = createBaseUpdate(userId, 'missed (building streak on working day, currentStreak < 2)');
-      
+      const baseUpdate = createBaseUpdate(
+        userId,
+        'missed (building streak on working day, currentStreak < 2)',
+      );
+
       return {
         ...baseUpdate,
         updates: {
@@ -313,8 +319,11 @@ function handleFirstPostOfDay(
   } else {
     // Weekend (Sat): Need 1 post for recovery → with 1 post, complete recovery if currentStreak ≥ 2
     if (newCurrentStreak >= 2) {
-      const baseUpdate = createBaseUpdate(userId, 'missed → onStreak (weekend recovery, 1 post sufficient)');
-      
+      const baseUpdate = createBaseUpdate(
+        userId,
+        'missed → onStreak (weekend recovery, 1 post sufficient)',
+      );
+
       return {
         ...baseUpdate,
         updates: {
@@ -328,8 +337,11 @@ function handleFirstPostOfDay(
       };
     } else {
       // Still building streak, stay missed
-      const baseUpdate = createBaseUpdate(userId, 'missed (building streak on weekend, currentStreak < 2)');
-      
+      const baseUpdate = createBaseUpdate(
+        userId,
+        'missed (building streak on weekend, currentStreak < 2)',
+      );
+
       return {
         ...baseUpdate,
         updates: {
@@ -359,7 +371,7 @@ export function calculateMidnightStreakMaintenancePure(
 
   const yesterday = getSeoulYesterday(currentDate);
   const wasYesterdayWorkingDay = isSeoulWorkingDay(yesterday);
-  
+
   // Only increment if yesterday was a working day and user posted
   if (!wasYesterdayWorkingDay) {
     return null; // No changes needed for non-working days
