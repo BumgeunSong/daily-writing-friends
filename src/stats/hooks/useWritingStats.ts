@@ -11,7 +11,7 @@ import {
   createUserInfo,
   fetchUserSafely,
 } from '@/stats/api/stats';
-import { fetchStreakInfo } from '@/stats/api/streakInfo';
+import { fetchStreakInfo, fetchRecoveryHistoryByMissedDateRange } from '@/stats/api/streakInfo';
 import { WritingStats, Contribution, WritingBadge } from '@/stats/model/WritingStats';
 import { User } from '@/user/model/User';
 
@@ -78,31 +78,55 @@ async function fetchSingleUserStats(userId: string): Promise<WritingStats | null
     if (!userData) return null;
 
     // Fetch data separately for different purposes
-    const [contributionPostings, streakInfo] = await Promise.all([
+    const [contributionPostings, streakInfo, recoveryHistory] = await Promise.all([
       fetchPostingDataForContributions(userId, 20), // Only 20 days for contributions
       fetchStreakInfo(userId), // Server-side streak info
+      fetchRecoveryHistoryByMissedDateRange(userId, 20), // Recovery marks within recent 20 working days (by missedDate)
     ]);
 
-    return calculateWritingStats(userData, contributionPostings, streakInfo?.currentStreak || 0);
+    const recoveredDateKeys = new Set(recoveryHistory.map((r) => r.missedDate));
+
+    return calculateWritingStats(
+      userData,
+      contributionPostings,
+      streakInfo?.currentStreak || 0,
+      recoveredDateKeys,
+    );
   } catch (error) {
     return null;
   }
 }
 
-function createContributions(postings: Posting[], workingDays: Date[]): Contribution[] {
-  const postingMap = new Map<string, number>();
-
+// --- Contribution 생성 로직 분해 ---
+function accumulatePostingLengths(postings: Posting[]): Map<string, number> {
+  const map = new Map<string, number>();
   for (const posting of postings) {
-    const postingDate = posting.createdAt.toDate();
-    const key = getDateKey(postingDate);
-    const currentSum = postingMap.get(key) || 0;
-    postingMap.set(key, currentSum + posting.post.contentLength);
+    const key = getDateKey(posting.createdAt.toDate());
+    const currentSum = map.get(key) || 0;
+    map.set(key, currentSum + posting.post.contentLength);
   }
+  return map;
+}
 
-  return workingDays.map((day) => ({
-    createdAt: getDateKey(day),
-    contentLength: postingMap.has(getDateKey(day)) ? postingMap.get(getDateKey(day))! : null,
-  }));
+function toContribution(
+  key: string,
+  lengthMap: Map<string, number>,
+  recoveredDates: Set<string>,
+): Contribution {
+  const contentLength = lengthMap.has(key) ? lengthMap.get(key)! : null;
+  const isRecovered = recoveredDates.has(key);
+  return isRecovered
+    ? { createdAt: key, contentLength, isRecovered: true }
+    : { createdAt: key, contentLength };
+}
+
+function createContributions(
+  postings: Posting[],
+  workingDays: Date[],
+  recoveredDateKeys: Set<string>,
+): Contribution[] {
+  const lengthMap = accumulatePostingLengths(postings);
+  return workingDays.map((day) => toContribution(getDateKey(day), lengthMap, recoveredDateKeys));
 }
 
 function createStreakBadge(streak: number): WritingBadge[] {
@@ -120,9 +144,10 @@ function calculateWritingStats(
   user: User,
   contributionPostings: Posting[],
   streak: number,
+  recoveredDateKeys: Set<string>,
 ): WritingStats {
   const workingDays = getRecentWorkingDays(20); // Only 20 days for contributions
-  const contributions = createContributions(contributionPostings, workingDays);
+  const contributions = createContributions(contributionPostings, workingDays, recoveredDateKeys);
   const badges = createStreakBadge(streak);
 
   return {

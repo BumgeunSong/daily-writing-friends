@@ -150,17 +150,17 @@ And currentStreak must equal 1 (showing actual progress count)
 
 ⸻
 
-REQ-009: Completing Recovery
+REQ-009: Completing Recovery (Policy v2)
 • Description: When currentPosts >= postsRequired within the deadline:
-• Recovery formula (both weekday and Friday): set currentStreak = originalStreak + 1 and status = onStreak.
-• The +1 represents the recovered missed day being restored to the streak.
-• originalStreak remains the captured value (it is not incremented on success).
+• Working day recovery (Mon–Thu miss → next working day): set currentStreak = originalStreak + 2 and status = onStreak. The +2 represents “recovered missed day (+1)” and “the recovery day itself (+1)”.
+• Friday miss → Saturday recovery: set currentStreak = originalStreak + 1 and status = onStreak.
+• On successful recovery, originalStreak is updated to match the new currentStreak (so future misses capture the elevated baseline).
 
 Acceptance Criteria
 
 Given eligible with postsRequired = 2 on a Working Day
 When the second post is created before the deadline
-Then status becomes onStreak and currentStreak = originalStreak + 1
+Then status becomes onStreak and currentStreak = originalStreak + 2
 
 Given eligible with postsRequired = 1 on Saturday
 When one post is created before the deadline
@@ -362,8 +362,8 @@ NFR-06 Maintainability
 BDR-01: Multi-Condition Decision Table (Recovery Windows)
 
 Missed Day Recovery Day Allowed? postsRequired On Success currentStreak Notes
-Mon–Thu Next Working Yes 2 originalStreak + 1 Deadline: 23:59:59 KST
-Friday Saturday Yes 1 originalStreak + 1 Same formula as weekday
+Mon–Thu Next Working Yes 2 originalStreak + 2 Deadline: 23:59:59 KST (recovery must occur the next working day only)
+Friday Saturday Yes 1 originalStreak + 1 Saturday only (no Sunday)
 Friday Sunday No — — Not allowed
 
 BDR-02: Only Most-Recent Miss Recoverable
@@ -386,7 +386,7 @@ Only the first post satisfies the day’s streak; any additional posts the same 
 
 6. Acceptance Criteria (End-to-End Scenarios)
 
-TC-01 — Weekday Miss, Two-Post Recovery (Thu after Wed miss)
+TC-01 — Weekday Miss, Two-Post Recovery (Thu after Wed miss, +2)
 
 Given the user missed Wednesday (Working Day) with originalStreak = 5
 When it becomes Thursday 00:00 KST
@@ -396,9 +396,9 @@ When the user posts once on Thursday
 Then currentPosts = 1 and currentStreak = 1 and status remains eligible
 
 When the user posts a second time on Thursday
-Then status becomes onStreak and currentStreak = originalStreak + 1 = 6
+Then status becomes onStreak and currentStreak = originalStreak + 2 = 7
 
-TC-02 — Friday Miss, Saturday Recovery
+TC-02 — Friday Miss, Saturday Recovery (+1)
 
 Given the user missed Friday with originalStreak = 5
 When it becomes Saturday 00:00 KST
@@ -499,7 +499,4 @@ User Stories (US) — Summary
 
 Version Date Author Changes
 1.0 2025-08-06 Eddy Song Initial complete requirements (v1, no holidays; Saturday-only recovery)
-1.1 2025-08-07 Eddy Song Updated REQ-008, REQ-009, REQ-012 to reflect finalized recovery policies:
-                          - Unified recovery formula: originalStreak + 1 (both weekday and Friday)
-                          - Consecutive miss handling with originalStreak reset
-                          - Partial progress visibility in currentStreak
+1.1 2025-08-07 Eddy Song Updated REQ-008, REQ-009, REQ-012 to reflect finalized recovery policies: - Unified recovery formula: originalStreak + 1 (both weekday and Friday) - Consecutive miss handling with originalStreak reset - Partial progress visibility in currentStreak

@@ -1,9 +1,9 @@
 /**
  * KST Calendar Logic for Historical Context
- * 
+ *
  * Implements REQ-103: KST Day Boundaries & Calendar
  * Implements REQ-105: Daily Bucketing & First-Post Rule
- * 
+ *
  * This module provides calendar operations specific to historical
  * simulation, focusing on KST timezone and working day rules.
  */
@@ -22,10 +22,10 @@ export function isHistoricalWorkingDay(kstDateString: string): boolean {
   if (!isValidDateString(kstDateString)) {
     throw new Error(`Invalid date string format: ${kstDateString}`);
   }
-  
+
   // Create date in KST timezone to check day of week
   const date = new Date(`${kstDateString}T00:00:00+09:00`);
-  
+
   // Check if it's a weekend (Saturday = 6, Sunday = 0)
   const dayOfWeek = date.getDay();
   return dayOfWeek !== 0 && dayOfWeek !== 6; // Not Sunday and not Saturday
@@ -42,11 +42,11 @@ export function getKstDayBoundaries(kstDateString: string): {
   if (!isValidDateString(kstDateString)) {
     throw new Error(`Invalid date string format: ${kstDateString}`);
   }
-  
+
   // Create start and end of day in KST timezone
   const startOfDayKst = fromZonedTime(`${kstDateString}T00:00:00`, KST_TIMEZONE);
   const endOfDayKst = fromZonedTime(`${kstDateString}T23:59:59.999`, KST_TIMEZONE);
-  
+
   return {
     start: startOfDayKst,
     end: endOfDayKst,
@@ -62,7 +62,7 @@ export function doesSatisfyDailyStreak(dayBucket: DayBucket): boolean {
   if (!dayBucket.isWorkingDay) {
     return false;
   }
-  
+
   // Need at least one post to satisfy streak
   return dayBucket.events.length > 0;
 }
@@ -76,14 +76,14 @@ export function canContributeToRecovery(dayBucket: DayBucket, missedDateString: 
   if (dayBucket.isWorkingDay) {
     return true;
   }
-  
+
   // Non-working day posts can only contribute to specific recovery scenarios
-  if (dayBucket.kstDateString.endsWith('Saturday') || isSaturday(dayBucket.kstDate)) {
+  if (isSaturdayKst(dayBucket.kstDate)) {
     // Saturday posts can only count toward Friday recovery
     const fridayDateString = getPreviousWorkingDay(dayBucket.kstDateString);
     return fridayDateString === missedDateString;
   }
-  
+
   // Sunday posts never contribute to recovery
   return false;
 }
@@ -100,15 +100,16 @@ export function calculateHistoricalRecoveryWindow(missedDateString: string): {
   if (!isValidDateString(missedDateString)) {
     throw new Error(`Invalid missed date format: ${missedDateString}`);
   }
-  
+
   const missedDate = new Date(`${missedDateString}T00:00:00+09:00`);
-  const dayOfWeek = missedDate.getDay();
-  
-  if (dayOfWeek === 5) {
+  // Determine day-of-week in KST (ISO: 1=Mon ... 5=Fri, 6=Sat, 7=Sun)
+  const dayOfWeekKst = Number(formatInTimeZone(missedDate, KST_TIMEZONE, 'i'));
+
+  if (dayOfWeekKst === 5) {
     // Friday miss → Saturday recovery with 1 post
     const saturdayDate = addDays(missedDate, 1);
     const saturdayDateString = formatInTimeZone(saturdayDate, KST_TIMEZONE, 'yyyy-MM-dd');
-    
+
     return {
       eligibleDate: saturdayDateString,
       postsRequired: 1,
@@ -118,7 +119,7 @@ export function calculateHistoricalRecoveryWindow(missedDateString: string): {
     // Monday-Thursday miss → next working day with 2 posts
     const nextWorkingDay = getNextWorkingDayFromDate(missedDate);
     const nextWorkingDayString = formatInTimeZone(nextWorkingDay, KST_TIMEZONE, 'yyyy-MM-dd');
-    
+
     return {
       eligibleDate: nextWorkingDayString,
       postsRequired: 2,
@@ -132,12 +133,12 @@ export function calculateHistoricalRecoveryWindow(missedDateString: string): {
  */
 function getNextWorkingDayFromDate(date: Date): Date {
   let nextDay = addDays(date, 1);
-  
+
   // Skip weekends
   while (isWeekend(nextDay)) {
     nextDay = addDays(nextDay, 1);
   }
-  
+
   return nextDay;
 }
 
@@ -147,20 +148,22 @@ function getNextWorkingDayFromDate(date: Date): Date {
 function getPreviousWorkingDay(kstDateString: string): string {
   const date = new Date(`${kstDateString}T00:00:00+09:00`);
   let previousDay = addDays(date, -1);
-  
+
   // Skip weekends backwards
   while (isWeekend(previousDay)) {
     previousDay = addDays(previousDay, -1);
   }
-  
+
   return formatInTimeZone(previousDay, KST_TIMEZONE, 'yyyy-MM-dd');
 }
 
 /**
  * Check if a date is a Saturday
  */
-function isSaturday(date: Date): boolean {
-  return date.getDay() === 6;
+function isSaturdayKst(date: Date): boolean {
+  // Determine day-of-week in KST timezone
+  // ISO day-of-week: 1 (Mon) .. 7 (Sun); Saturday = 6
+  return formatInTimeZone(date, KST_TIMEZONE, 'i') === '6';
 }
 
 /**
@@ -178,7 +181,7 @@ export function getFirstPostOfDay(dayBucket: DayBucket): PostingEvent | null {
   if (!dayBucket.events.length) {
     return null;
   }
-  
+
   // Events should already be sorted by KST timestamp in groupEventsByDay
   return dayBucket.events[0];
 }
@@ -190,7 +193,7 @@ export function getRecoveryOnlyPosts(dayBucket: DayBucket): PostingEvent[] {
   if (dayBucket.events.length <= 1) {
     return [];
   }
-  
+
   return dayBucket.events.slice(1);
 }
 
@@ -198,13 +201,13 @@ export function getRecoveryOnlyPosts(dayBucket: DayBucket): PostingEvent[] {
  * Calculate total posts that can contribute to recovery from a day bucket
  */
 export function countRecoveryContributingPosts(
-  dayBucket: DayBucket, 
-  missedDateString: string
+  dayBucket: DayBucket,
+  missedDateString: string,
 ): number {
   if (!canContributeToRecovery(dayBucket, missedDateString)) {
     return 0;
   }
-  
+
   if (dayBucket.isWorkingDay) {
     // Working day: all posts count toward recovery
     return dayBucket.events.length;
