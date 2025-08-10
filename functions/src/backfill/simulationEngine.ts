@@ -338,7 +338,13 @@ function handleEligibleDay(
         ...state,
         status: { type: RecoveryStatusType.ON_STREAK },
         currentStreak: newCurrentStreak,
-        // originalStreak stays the same (captured at miss). It will be updated on next miss capture
+        /**
+         * Note on originalStreak lifecycle:
+         * - It is CAPTURED when we transition OnStreak → Eligible (see handleOnStreakToEligible)
+         * - If another miss occurs while already Eligible, it is UPDATED to the current progress
+         *   (see handleEligibleToMostRecentMiss)
+         * - It is NOT changed here on recovery completion
+         */
       },
       stateTransition: {
         from: 'eligible',

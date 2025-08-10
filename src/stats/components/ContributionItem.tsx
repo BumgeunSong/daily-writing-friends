@@ -11,29 +11,37 @@ interface ContributionItemProps {
   maxValue: number;
 }
 
+type CombinedContribution = Contribution | CommentingContribution | undefined;
+
+function isWritingContribution(c: CombinedContribution): c is Contribution {
+  return !!c && ('contentLength' in c || 'isRecovered' in c);
+}
+
 function useContributionMeta(
-  contribution: Contribution | CommentingContribution | undefined,
+  contribution: CombinedContribution,
   value: number | null,
   maxValue: number,
 ) {
   return useMemo(() => {
-    const isRecovered = Boolean((contribution as any)?.isRecovered);
+    const isRecovered = isWritingContribution(contribution)
+      ? Boolean(contribution.isRecovered)
+      : false;
+
     const intensity = isRecovered
       ? -1
       : !value
         ? 0
         : Math.ceil((value / Math.max(maxValue, 1)) * 4);
+
     const createdAt = contribution?.createdAt;
-    const yearMonthDay = createdAt
-      ? new Date(createdAt).toLocaleDateString('ko-KR', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-        })
+    const parsed = createdAt ? new Date(createdAt) : null;
+    const yearMonthDay = parsed
+      ? parsed.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })
       : '';
-    const day = createdAt ? new Date(createdAt).getDate().toString() : '';
+    const day = parsed ? parsed.getDate().toString() : '';
+
     return { intensity, yearMonthDay, day, isRecovered };
-  }, [contribution?.createdAt, (contribution as any)?.isRecovered, value, maxValue]);
+  }, [contribution, value, maxValue]);
 }
 
 function useContributionClasses(intensity: number, isRecovered: boolean) {
