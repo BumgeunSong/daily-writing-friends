@@ -153,21 +153,21 @@ Then status becomes missed, currentStreak=1, originalStreak=0
 
 ⸻
 
-REQ-108: Completing Recovery & Same-Day Return Path
+REQ-108: Completing Recovery & Same-Day Return Path (Policy v2)
 • Description:
 • If currentPosts >= postsRequired within deadline:
-• Working day recovery → currentStreak = originalStreak + 1, status=onStreak.
-• Saturday (Friday miss) → currentStreak = originalStreak, status=onStreak.
+• Working day recovery (Mon–Thu miss → next working day): currentStreak = originalStreak + 2, status=onStreak.
+• Friday miss → Saturday recovery: currentStreak = originalStreak + 1, status=onStreak.
 • After missed, same day 2 posts path: 1st post → eligible, 2nd post → onStreak (apply rule above).
 • After missed, across days path: when currentStreak ≥ 2, flip missed → onStreak.
 
 Acceptance Criteria
 
 Given eligible (2 required) on a working day and 2 posts before deadline
-Then currentStreak = originalStreak + 1 and status=onStreak
+Then currentStreak = originalStreak + 2 and status=onStreak
 
 Given Friday miss and 1 Saturday post
-Then currentStreak = originalStreak and status=onStreak
+Then currentStreak = originalStreak + 1 and status=onStreak
 
 ⸻
 
@@ -302,11 +302,11 @@ Friday Yes (first post only) First post → streak; extras → recovery-only
 Saturday No Recovery-only for Friday miss
 Sunday No No effect
 
-BDR-02: Recovery Windows
+BDR-02: Recovery Windows (Policy v2)
 
 Missed Day Eligible Day postsRequired Deadline (KST) On Success currentStreak
-Mon–Thu Next Working 2 That day 23:59:59 originalStreak + 1
-Friday Saturday 1 Saturday 23:59:59 originalStreak (no bonus)
+Mon–Thu Next Working 2 That day 23:59:59 originalStreak + 2
+Friday Saturday 1 Saturday 23:59:59 originalStreak + 1
 
 BDR-03: Multiple Misses
 
