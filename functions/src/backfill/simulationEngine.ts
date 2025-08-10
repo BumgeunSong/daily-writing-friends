@@ -38,11 +38,12 @@ import {
 export async function simulateHistoricalStreak(
   dayBuckets: DayBucket[],
   initialState: SimulationState,
+  horizonEndKstDateString?: string,
 ): Promise<SimulationResult> {
   const startTime = Date.now();
 
   // Generate complete day timeline including missing days
-  const completeDayBuckets = generateCompleteDayTimeline(dayBuckets);
+  const completeDayBuckets = generateCompleteDayTimeline(dayBuckets, horizonEndKstDateString);
 
   // Debug: log complete timeline
   console.log('Complete day timeline:');
@@ -608,7 +609,10 @@ function calculateSimulationStats(
  * Generate complete day timeline including missing days
  * Creates empty day buckets for days without posts to ensure proper gap detection
  */
-function generateCompleteDayTimeline(dayBuckets: DayBucket[]): DayBucket[] {
+function generateCompleteDayTimeline(
+  dayBuckets: DayBucket[],
+  horizonEndKstDateString?: string,
+): DayBucket[] {
   if (dayBuckets.length === 0) {
     return [];
   }
@@ -624,11 +628,14 @@ function generateCompleteDayTimeline(dayBuckets: DayBucket[]): DayBucket[] {
     existingDays.set(bucket.kstDateString, bucket);
   });
 
-  // Generate complete timeline from first to last day
+  // Generate complete timeline from first to last day (or horizon if provided)
   const startDate = new Date(sortedBuckets[0].kstDateString + 'T00:00:00+09:00');
-  const endDate = new Date(
+  const lastBucketEnd = new Date(
     sortedBuckets[sortedBuckets.length - 1].kstDateString + 'T00:00:00+09:00',
   );
+  const endDate = horizonEndKstDateString
+    ? new Date(horizonEndKstDateString + 'T00:00:00+09:00')
+    : lastBucketEnd;
 
   const completeBuckets: DayBucket[] = [];
   const currentDate = new Date(startDate);
