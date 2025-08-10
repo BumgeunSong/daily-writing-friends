@@ -73,3 +73,38 @@ describe('SimulationEngine - Friday miss with Saturday recovery (KST)', () => {
     expect(evt.successful).toBe(true);
   });
 });
+
+describe('SimulationEngine - Weekday recovery only on eligible next working day (no cross-day accumulation)', () => {
+  it('does NOT recover when Wed+Thu are used to try to recover Tue miss (eligible is Wed only)', async () => {
+    // Timeline (KST):
+    // 2025-08-04 Mon: 1 post
+    // 2025-08-05 Tue: 0 post (miss)
+    // 2025-08-06 Wed: 1 post (eligible day)
+    // 2025-08-07 Thu: 1 post (non-eligible day)
+    const buckets: DayBucket[] = [
+      makeBucket('2025-08-04', ['09:00']),
+      makeBucket('2025-08-05', []),
+      makeBucket('2025-08-06', ['09:00']),
+      makeBucket('2025-08-07', ['09:00']),
+    ];
+
+    const initialState: SimulationState = {
+      status: { type: RecoveryStatusType.ON_STREAK },
+      currentStreak: 1,
+      longestStreak: 1,
+      originalStreak: 1,
+      lastContributionDate: '2025-08-04',
+      lastCalculated: Timestamp.now(),
+    };
+
+    const result = await simulateHistoricalStreak(buckets, initialState);
+
+    // Expect NO recovery event for 2025-08-05 (Tue) since Wed had only 1 post (required 2),
+    // and Thu (non-eligible) cannot be used to accumulate.
+    const hasInvalidRecovery = result.recoveryEvents.some((e) => e.missedDate === '2025-08-05');
+    expect(hasInvalidRecovery).toBe(false);
+
+    // Final status should still be eligible or onStreak without Tue recovery being recorded
+    // We only assert that no recovery event exists for that miss
+  });
+});

@@ -181,16 +181,27 @@ export async function processSimulationDay(
         stateTransition = transition.stateTransition;
         recoveryProgress = transition.recoveryProgress;
       } else {
-        // For any non-eligible day, evaluate deadline first
+        // For any non-eligible day
         const deadlineCheck = checkEligibleDeadline(newState, dayBucket);
-        if (deadlineCheck.deadlinePassed) {
+        if (dayBucket.isWorkingDay && !streakSatisfied) {
+          if (deadlineCheck.deadlinePassed) {
+            // Previous eligible failed, and today is a new working-day miss → immediately track today as the most recent miss
+            // Step 1: apply deadline failure
+            const afterFailureState = deadlineCheck.newState;
+            // Step 2: mark today as new missed day (eligible for next working day)
+            const transition = handleMissedToEligible(afterFailureState, dayBucket);
+            newState = transition.newState;
+            stateTransition = transition.stateTransition;
+          } else {
+            // Still before deadline → update to track most recent miss
+            const transition = handleEligibleToMostRecentMiss(newState, dayBucket);
+            newState = transition.newState;
+            stateTransition = transition.stateTransition;
+          }
+        } else if (deadlineCheck.deadlinePassed) {
+          // Non-working or posted day: only apply deadline failure
           newState = deadlineCheck.newState;
           stateTransition = deadlineCheck.stateTransition;
-        } else if (dayBucket.isWorkingDay && !streakSatisfied) {
-          // Still before deadline and working day with no posts → track most recent miss
-          const transition = handleEligibleToMostRecentMiss(newState, dayBucket);
-          newState = transition.newState;
-          stateTransition = transition.stateTransition;
         }
       }
       break;
