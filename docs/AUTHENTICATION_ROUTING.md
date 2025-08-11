@@ -28,6 +28,32 @@ graph TD
     M --> N[Redirect to saved path]
 ```
 
+### Join Page Authentication Flow
+
+The `/join` page (JoinIntroPage) implements a special authentication flow for new user onboarding:
+
+```mermaid
+graph TD
+    A[User visits /join] --> B[JoinIntroPage renders]
+    B --> C[User clicks Google Login CTA]
+    C --> D[Google Sign-in]
+    D -->|Success| E[Check if user is active]
+    D -->|Failure| F[Show error, stay on page]
+    
+    E --> G{Is Active User?}
+    G -->|Yes| H[Redirect to /boards]
+    G -->|No| I[Redirect to /join/form]
+    
+    I --> J[User completes onboarding form]
+    J --> K[Redirect to /boards]
+```
+
+**Key Features:**
+- Single CTA button for Google login at the bottom of the page
+- Automatically checks if the logged-in user is active (has access to current cohort)
+- Active users skip the onboarding form and go directly to the app
+- Non-active users proceed to the join form to complete onboarding
+
 ## Route Structure
 
 ```mermaid
@@ -181,6 +207,42 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
   return redirect('/success');
 }
 ```
+
+## Custom Authentication Hooks
+
+### useGoogleLoginWithRedirect
+
+**Purpose**: Handles Google login and redirects based on user's active status
+
+**Location**: `src/login/hooks/useGoogleLoginWithRedirect.ts`
+
+**Usage**:
+```typescript
+const { handleLogin, isLoading, error } = useGoogleLoginWithRedirect();
+
+// In your component
+<Button onClick={handleLogin} disabled={isLoading}>
+  {isLoading ? 'Processing...' : 'Sign in with Google'}
+</Button>
+```
+
+**Behavior**:
+- Initiates Google sign-in
+- After successful login, checks if user is active using `useIsCurrentUserActive`
+- Active users → redirect to `/boards`
+- Non-active users → redirect to `/join/form`
+- Handles loading and error states
+
+### useIsCurrentUserActive
+
+**Purpose**: Checks if the current authenticated user has access to the active cohort
+
+**Location**: `src/login/hooks/useIsCurrentUserActive.ts`
+
+**Returns**: `{ isCurrentUserActive: boolean | undefined }`
+- `true` if user has permission for the active board
+- `false` if user doesn't have permission
+- `undefined` while loading
 
 ## Adding New Routes
 
