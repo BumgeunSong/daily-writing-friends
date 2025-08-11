@@ -10,14 +10,19 @@ import IntroHeader from '@/login/components/IntroHeader';
 import IntroHero from '@/login/components/IntroHero';
 import { useActiveUser } from '@/login/hooks/useActiveUser';
 import { useUpcomingBoard } from '@/login/hooks/useUpcomingBoard';
+import { useIsCurrentUserActive } from '@/login/hooks/useIsCurrentUserActive';
 import NoticeSection from '@/shared/components/NoticeSection';
+import { useAuth } from '@/shared/hooks/useAuth';
 
 export default function JoinIntroPage() {
   const navigate = useNavigate();
   const [daysRemaining, setDaysRemaining] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [checkingActiveStatus, setCheckingActiveStatus] = useState<boolean>(false);
   const { data: upcomingBoard } = useUpcomingBoard();
   const { data: activeUsers } = useActiveUser();
+  const { currentUser } = useAuth();
+  const { isCurrentUserActive } = useIsCurrentUserActive();
 
   // Calculate days remaining until cohort starts
   useEffect(() => {
@@ -30,18 +35,31 @@ export default function JoinIntroPage() {
     }
   }, [upcomingBoard]);
 
-  const handleLogin = () => {
-    navigate('/login');
-  };
+  // Check active status after login
+  useEffect(() => {
+    if (checkingActiveStatus && currentUser && isCurrentUserActive !== undefined) {
+      setCheckingActiveStatus(false);
+      setIsLoading(false);
+      
+      if (isCurrentUserActive) {
+        // Active user - redirect to boards
+        navigate('/boards');
+      } else {
+        // Non-active user - redirect to join form
+        navigate('/join/form');
+      }
+    }
+  }, [checkingActiveStatus, currentUser, isCurrentUserActive, navigate]);
 
-  const handleJoin = async () => {
+  const handleGoogleLogin = async () => {
     try {
       setIsLoading(true);
       await signInWithGoogle();
-      navigate('/join/form');
+      // After sign in, the useAuth hook will update currentUser
+      // and we'll check active status via the effect above
+      setCheckingActiveStatus(true);
     } catch (error) {
       console.error('Error during sign-in:', error);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -52,7 +70,7 @@ export default function JoinIntroPage() {
       <div className='relative flex w-full max-w-3xl flex-col pb-24 lg:max-w-4xl'>
         {/* Main content - scrollable */}
         <div className='flex-1 overflow-auto'>
-          <IntroHeader onLogin={handleLogin} />
+          <IntroHeader />
           <IntroHero />
           <div className='space-y-8 px-2 md:px-6'>
             {/* 목표 섹션 */}
@@ -86,7 +104,7 @@ export default function JoinIntroPage() {
         <div className='h-12' />
 
         {/* Sticky CTA at bottom */}
-        <IntroCTA onLogin={handleJoin} cohort={upcomingBoard?.cohort} isLoading={isLoading} />
+        <IntroCTA onLogin={handleGoogleLogin} cohort={upcomingBoard?.cohort} isLoading={isLoading} />
       </div>
     </div>
   );
