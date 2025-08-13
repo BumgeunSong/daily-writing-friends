@@ -1,10 +1,10 @@
-import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import Dropcursor from '@tiptap/extension-dropcursor';
+import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
 import { Progress } from '@/shared/ui/progress';
 import { sanitize } from '@/post/utils/sanitizeHtml';
 import { useTiptapImageUpload } from '@/post/hooks/useTiptapImageUpload';

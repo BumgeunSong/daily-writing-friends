@@ -80,9 +80,11 @@ export class CopyErrorBoundary extends Component<CopyErrorBoundaryProps, CopyErr
 export const withCopyErrorBoundary = <P extends object>(
   Component: React.ComponentType<P>
 ) => {
-  return (props: P) => (
+  const WrappedComponent = (props: P) => (
     <CopyErrorBoundary>
       <Component {...props} />
     </CopyErrorBoundary>
   );
+  WrappedComponent.displayName = `withCopyErrorBoundary(${Component.displayName || Component.name || 'Component'})`;
+  return WrappedComponent;
 };
