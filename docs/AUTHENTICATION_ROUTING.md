@@ -28,6 +28,32 @@ graph TD
     M --> N[Redirect to saved path]
 ```
 
+### Join Page Authentication Flow
+
+The `/join` page (JoinIntroPage) implements a special authentication flow for new user onboarding:
+
+```mermaid
+graph TD
+    A[User visits /join] --> B[JoinIntroPage renders]
+    B --> C[User clicks Google Login CTA]
+    C --> D[Google Sign-in]
+    D -->|Success| E[Check if user is active]
+    D -->|Failure| F[Show error, stay on page]
+    
+    E --> G{Is Active User?}
+    G -->|Yes| H[Redirect to /boards]
+    G -->|No| I[Redirect to /join/form]
+    
+    I --> J[User completes onboarding form]
+    J --> K[Redirect to /boards]
+```
+
+**Key Features:**
+- Single CTA button for Google login at the bottom of the page
+- Automatically checks if the logged-in user is active (has access to current cohort)
+- Active users skip the onboarding form and go directly to the app
+- Non-active users proceed to the join form to complete onboarding
+
 ## Route Structure
 
 ```mermaid
@@ -39,12 +65,11 @@ graph TD
     B --> B1[RootRedirect Component]
     B1 --> B2{User Authenticated?}
     B2 -->|Yes| B3[Redirect to /boards]
-    B2 -->|No| B4[Redirect to /login]
+    B2 -->|No| B4[Redirect to /join]
     
     C --> C1[PublicRoutes Guard]
     C1 --> C2[/login - LoginPage]
     C1 --> C3[/join - JoinIntroPage]
-    C1 --> C4[/board/:boardId/free-writing/intro]
     
     D --> D1[PrivateRoutes Guard]
     D1 --> D2[BottomNavigatorLayout]
@@ -52,15 +77,26 @@ graph TD
     
     D2 --> D2A[/boards - RecentBoard]
     D2 --> D2B[/boards/list - BoardListPage with loader]
-    D2 --> D2C[/board/:boardId - BoardPage]
+    D2 --> D2C[/board/:boardId - BoardPage with loader]
     D2 --> D2D[/create/:boardId - PostCreationPage with action]
-    D2 --> D2E[/board/:boardId/post/:postId - PostDetailPage with loader]
-    D2 --> D2F[/notifications - NotificationsPage]
-    D2 --> D2G[/stats - StatsPage]
-    D2 --> D2H[/user/* - User pages]
+    D2 --> D2E[/create/:boardId/completion - PostCompletionPage]
+    D2 --> D2F[/board/:boardId/topic-cards - TopicCardCarouselPage]
+    D2 --> D2G[/board/:boardId/post/:postId - PostDetailPage with loader]
+    D2 --> D2H[/board/:boardId/edit/:postId - PostEditPage with loader]
+    D2 --> D2I[/notifications - NotificationsPage]
+    D2 --> D2J[/notifications/settings - NotificationSettingPage]
+    D2 --> D2K[/account/edit/:userId - EditAccountPage]
+    D2 --> D2L[/stats - StatsPage]
+    D2 --> D2M[/user - UserPage]
+    D2 --> D2N[/user/:userId - UserPage]
+    D2 --> D2O[/user/settings - UserSettingPage]
+    D2 --> D2P[/user/blocked-users - BlockedUsersPage]
     
-    D3 --> D3A[/create/:boardId/free-writing]
-    D3 --> D3B[/join/form/*]
+    D3 --> D3A[/board/:boardId/free-writing/intro - PostFreewritingIntro]
+    D3 --> D3B[/create/:boardId/free-writing - PostFreewritingPage]
+    D3 --> D3C[/join/form - JoinFormPageForActiveOrNewUser]
+    D3 --> D3D[/join/form/new-user - JoinFormPageForNewUser]
+    D3 --> D3E[/join/form/active-user - JoinFormPageForActiveUser]
 ```
 
 ## Authentication Components
@@ -77,7 +113,7 @@ graph TD
 
 ```typescript
 interface AuthContextType {
-  currentUser: FirebaseUser | null;
+  currentUser: any; // FirebaseUser type
   loading: boolean;
   redirectPathAfterLogin: string | null;
   setRedirectPathAfterLogin: (path: string | null) => void;
@@ -122,7 +158,7 @@ interface AuthContextType {
 
 **Logic**:
 - Authenticated users → `/boards`
-- Non-authenticated users → `/login`
+- Non-authenticated users → `/join` (official landing page)
 
 ## Data Fetching Architecture
 
@@ -171,6 +207,42 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
   return redirect('/success');
 }
 ```
+
+## Custom Authentication Hooks
+
+### useGoogleLoginWithRedirect
+
+**Purpose**: Handles Google login and redirects based on user's active status
+
+**Location**: `src/login/hooks/useGoogleLoginWithRedirect.ts`
+
+**Usage**:
+```typescript
+const { handleLogin, isLoading, error } = useGoogleLoginWithRedirect();
+
+// In your component
+<Button onClick={handleLogin} disabled={isLoading}>
+  {isLoading ? 'Processing...' : 'Sign in with Google'}
+</Button>
+```
+
+**Behavior**:
+- Initiates Google sign-in
+- After successful login, checks if user is active using `useIsCurrentUserActive`
+- Active users → redirect to `/boards`
+- Non-active users → redirect to `/join/form`
+- Handles loading and error states
+
+### useIsCurrentUserActive
+
+**Purpose**: Checks if the current authenticated user has access to the active cohort
+
+**Location**: `src/login/hooks/useIsCurrentUserActive.ts`
+
+**Returns**: `{ isCurrentUserActive: boolean | undefined }`
+- `true` if user has permission for the active board
+- `false` if user doesn't have permission
+- `undefined` while loading
 
 ## Adding New Routes
 
