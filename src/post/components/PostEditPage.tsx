@@ -7,9 +7,9 @@ import { toast } from '@/shared/hooks/use-toast';
 import { Button } from '@/shared/ui/button';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { formatDate } from '@/shared/utils/dateUtils';
-import { fetchPost, updatePost } from '@/shared/utils/postUtils';
+import { fetchPost, updatePost } from '@/post/utils/postUtils';
 import { PostBackButton } from './PostBackButton';
-import { PostTextEditor } from './PostTextEditor';
+import { PostEditor } from './PostEditor';
 import { PostTitleEditor } from './PostTitleEditor';
 
 // 메인 컴포넌트
@@ -71,7 +71,8 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
   // 편집 상태를 관리하는 객체
   const [editState, setEditState] = useState({
     title: post?.title || '',
-    content: post?.content || ''
+    content: post?.content || '',
+    contentJson: post?.contentJson || null
   });
 
   // 제목 변경 핸들러
@@ -90,13 +91,21 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
     }));
   };
 
+  // JSON 내용 변경 핸들러
+  const setContentJson = (contentJson: any) => {
+    setEditState(prev => ({
+      ...prev,
+      contentJson
+    }));
+  };
+
   // 폼 제출 핸들러
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editState.title.trim() || !editState.content.trim()) return;
     
     try {
-      await updatePost(boardId, postId, editState.title, editState.content);
+      await updatePost(boardId, postId, editState.title, editState.content, editState.contentJson);
       navigate(`/board/${boardId}/post/${postId}`);
     } catch (error) {
       console.error('Error updating post:', error);
@@ -122,9 +131,11 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
           value={editState.title}
           onChange={setTitle}
         />
-        <PostTextEditor
+        <PostEditor
           value={editState.content}
           onChange={setContent}
+          contentJson={editState.contentJson}
+          onJsonChange={setContentJson}
           placeholder='내용을 수정하세요...'
         />
         

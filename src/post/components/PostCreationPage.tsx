@@ -9,7 +9,7 @@ import { usePostEditor } from '@/post/hooks/usePostEditor';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/shared/ui/alert-dialog';
 import { Button } from '@/shared/ui/button';
-import { PostTextEditor } from './PostTextEditor';
+import { PostEditor } from './PostEditor';
 import { PostTitleEditor } from './PostTitleEditor';
 
 // Type for action data (errors, success messages, etc.)
@@ -43,6 +43,7 @@ export default function PostCreationPage() {
     initialTitle,
     initialContent,
   });
+  const [contentJson, setContentJson] = useState<any>(null);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
 
   // Router automatically handles loading states during form submission
@@ -78,14 +79,17 @@ export default function PostCreationPage() {
         <input type="hidden" name="authorName" value={currentUser?.displayName || currentUser?.email || 'Anonymous'} />
         <input type="hidden" name="title" value={title} />
         <input type="hidden" name="content" value={content} />
+        <input type="hidden" name="contentJson" value={contentJson ? JSON.stringify(contentJson) : ''} />
         
         <PostTitleEditor 
           value={title} 
           onChange={(e) => setTitle(e.target.value)} 
         />
-        <PostTextEditor 
+        <PostEditor 
           value={content} 
-          onChange={setContent} 
+          onChange={setContent}
+          contentJson={contentJson}
+          onJsonChange={setContentJson}
         />
         
         {/* 임시 저장 상태 표시 컴포넌트 */}

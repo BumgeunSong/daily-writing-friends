@@ -46,13 +46,22 @@ export const usePostTitle = (boardId: string, postId: string) => {
   });
 };
 
-export async function createPost(boardId: string, title: string, content: string, authorId: string, authorName: string, visibility?: PostVisibility) {
+export async function createPost(
+  boardId: string, 
+  title: string, 
+  content: string, 
+  authorId: string, 
+  authorName: string, 
+  visibility?: PostVisibility,
+  contentJson?: any
+) {
   const postRef = doc(collection(firestore, `boards/${boardId}/posts`));
   const post: Post = {
     id: postRef.id,
     boardId,
     title,
     content,
+    contentJson, // Store ProseMirror JSON if provided
     thumbnailImageURL: extractFirstImageUrl(content),
     authorId,
     authorName,
@@ -68,15 +77,23 @@ export const updatePost = async (
   boardId: string,
   postId: string,
   title: string,
-  content: string
+  content: string,
+  contentJson?: any
 ): Promise<void> => {
   const postRef = doc(firestore, `boards/${boardId}/posts`, postId);
-  await updateDoc(postRef, {
+  const updateData: any = {
     title,
     content,  
     thumbnailImageURL: extractFirstImageUrl(content),
     updatedAt: Timestamp.now(),
-  });
+  };
+  
+  // Only update contentJson if provided
+  if (contentJson !== undefined) {
+    updateData.contentJson = contentJson;
+  }
+  
+  await updateDoc(postRef, updateData);
 };
 
 export const fetchAdjacentPosts = async (boardId: string, currentPostId: string) => {

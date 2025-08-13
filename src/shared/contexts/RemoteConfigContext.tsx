@@ -11,7 +11,8 @@ export type RemoteConfigKey =
   | 'stats_notice_banner_text'
   | 'block_user_feature_enabled'
   | 'secret_buddy_enabled'
-  | 'stat_page_enabled';
+  | 'stat_page_enabled'
+  | 'tiptap_editor_enabled';
 
 // 각 key별 타입 정의
 interface RemoteConfigValueTypes {
@@ -23,6 +24,7 @@ interface RemoteConfigValueTypes {
   block_user_feature_enabled: boolean;
   secret_buddy_enabled: boolean;
   stat_page_enabled: boolean;
+  tiptap_editor_enabled: boolean;
 }
 
 export const REMOTE_CONFIG_DEFAULTS: RemoteConfigValueTypes = {
@@ -34,6 +36,7 @@ export const REMOTE_CONFIG_DEFAULTS: RemoteConfigValueTypes = {
   block_user_feature_enabled: false,
   secret_buddy_enabled: true,
   stat_page_enabled: true,
+  tiptap_editor_enabled: false,
 };
 
 interface RemoteConfigContextValue {
@@ -82,6 +85,7 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
           ).asBoolean(),
           secret_buddy_enabled: getValue(remoteConfig, 'secret_buddy_enabled').asBoolean(),
           stat_page_enabled: getValue(remoteConfig, 'stat_page_enabled').asBoolean(),
+          tiptap_editor_enabled: getValue(remoteConfig, 'tiptap_editor_enabled').asBoolean(),
         });
       })
       .catch((err) => {
