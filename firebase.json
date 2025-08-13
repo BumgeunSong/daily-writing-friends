@@ -32,20 +32,37 @@
   ],
   "emulators": {
     "auth": {
-      "port": 9099
+      "port": 9099,
+      "host": "localhost"
     },
     "functions": {
-      "port": 5001
+      "port": 5001,
+      "host": "localhost"
     },
     "firestore": {
-      "port": 8080
+      "port": 8080,
+      "host": "localhost"
+    },
+    "storage": {
+      "port": 9199,
+      "host": "localhost"
     },
     "ui": {
-      "enabled": true
+      "enabled": true,
+      "port": 4000,
+      "host": "localhost"
     },
     "singleProjectMode": true,
     "hosting": {
-      "port": 5100
+      "port": 5100,
+      "host": "localhost"
     }
+  },
+  "firestore": {
+    "rules": "firebase/firestore.rules",
+    "indexes": "firebase/firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "firebase/storage.rules"
   }
 }

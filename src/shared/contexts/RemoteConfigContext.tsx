@@ -36,7 +36,7 @@ export const REMOTE_CONFIG_DEFAULTS: RemoteConfigValueTypes = {
   block_user_feature_enabled: false,
   secret_buddy_enabled: true,
   stat_page_enabled: true,
-  tiptap_editor_enabled: false,
+  tiptap_editor_enabled: true,
 };
 
 interface RemoteConfigContextValue {
