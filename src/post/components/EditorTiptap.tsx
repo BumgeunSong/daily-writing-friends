@@ -36,6 +36,8 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
           codeBlock: false,
           code: false,
           horizontalRule: false,
+          // Disable dropCursor since we're adding it separately with custom config
+          dropcursor: false,
           // Configure heading to only allow h1 and h2
           heading: {
             levels: [1, 2],
