@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { fetchStreakInfo } from '../api/streakInfo';
 import type { StreakInfo } from '../model/StreakInfo';
+import { Timestamp } from 'firebase/firestore';
 
 interface StreakRecoveryNotice {
   show: boolean;
@@ -88,14 +89,14 @@ function createRecoveryNotice(streakInfo: StreakInfo | null): StreakRecoveryNoti
 }
 
 /**
- * Formats deadline string for display
+ * Formats deadline Timestamp for display
  */
-function formatDeadline(deadline?: string): string {
+function formatDeadline(deadline?: Timestamp): string {
   if (!deadline) {
     return '오늘';
   }
 
-  const deadlineDate = new Date(deadline);
+  const deadlineDate = deadline.toDate();
   const today = new Date();
   const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
