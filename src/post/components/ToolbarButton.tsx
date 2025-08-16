@@ -1,4 +1,3 @@
-import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils/cn';
 
 interface ToolbarButtonProps {
@@ -19,24 +18,26 @@ export function ToolbarButton({
   className,
 }: ToolbarButtonProps) {
   return (
-    <Button
+    <button
       type='button'
-      variant='ghost'
-      size='icon'
       onClick={onClick}
       aria-pressed={isActive}
       aria-label={ariaLabel || title}
       title={title}
       className={cn(
-        'size-10 shrink-0 transition-colors',
-        isActive
-          ? 'bg-accent/20 text-accent hover:bg-accent/30'
-          : 'hover:bg-accent hover:text-accent-foreground',
+        'inline-flex size-10 shrink-0 items-center justify-center rounded-md transition-colors',
+        'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+        'disabled:pointer-events-none disabled:opacity-50',
+        'text-foreground hover:bg-accent/10',
+        isActive && 'bg-accent/20 text-accent hover:bg-accent/30',
         className,
       )}
-      style={{ touchAction: 'manipulation' }}
+      style={{ 
+        touchAction: 'manipulation',
+        backgroundColor: isActive ? undefined : 'transparent'
+      }}
     >
       {icon}
-    </Button>
+    </button>
   );
 }
