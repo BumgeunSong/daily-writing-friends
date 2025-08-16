@@ -1,4 +1,3 @@
-import { Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useParams, Form, useNavigation, useActionData, useSearchParams } from 'react-router-dom';
 import { DraftsDrawer } from '@/draft/components/DraftsDrawer';
@@ -7,7 +6,15 @@ import { useAutoSaveDrafts } from '@/draft/hooks/useAutoSaveDrafts';
 import { useDraftLoader } from '@/draft/hooks/useDraftLoader';
 import { usePostEditor } from '@/post/hooks/usePostEditor';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/shared/ui/alert-dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/shared/ui/alert-dialog';
 import { Button } from '@/shared/ui/button';
 import { PostEditor } from './PostEditor';
 import { PostTitleEditor } from './PostTitleEditor';
@@ -16,6 +23,56 @@ import { PostTitleEditor } from './PostTitleEditor';
 interface ActionData {
   error?: string;
   success?: boolean;
+}
+
+/**
+ * Safely stringify JSON data with error handling
+ * Handles circular references and non-serializable data
+ */
+function safeStringifyJson(data: any): string {
+  if (!data) return '';
+
+  try {
+    // First, try normal JSON.stringify
+    return JSON.stringify(data);
+  } catch (error) {
+    console.warn(
+      'Failed to stringify contentJson, attempting with circular reference handling:',
+      error,
+    );
+
+    try {
+      // Handle circular references by replacing them with a placeholder
+      const seen = new WeakSet();
+      const result = JSON.stringify(data, (_key, value) => {
+        if (typeof value === 'object' && value !== null) {
+          if (seen.has(value)) {
+            return '[Circular Reference]';
+          }
+          seen.add(value);
+        }
+
+        // Handle non-serializable data types
+        if (typeof value === 'function') {
+          return '[Function]';
+        }
+        if (value instanceof Date) {
+          return value.toISOString();
+        }
+        if (value === undefined) {
+          return null;
+        }
+
+        return value;
+      });
+
+      return result;
+    } catch (fallbackError) {
+      console.error('JSON stringification failed completely:', fallbackError);
+      // Return empty string as fallback to prevent form submission errors
+      return '';
+    }
+  }
 }
 
 export default function PostCreationPage() {
@@ -27,8 +84,11 @@ export default function PostCreationPage() {
   const initialTitle = searchParams.get('title') || '';
   const initialContent = searchParams.get('content') || '';
 
-  // eslint-disable-next-line no-unused-vars
-  const { draft, draftId: loadedDraftId, isLoading: isDraftLoading, error: draftError } = useDraftLoader({
+  const {
+    draft,
+    draftId: loadedDraftId,
+    error: draftError,
+  } = useDraftLoader({
     userId: currentUser?.uid,
     boardId,
     draftId,
@@ -36,7 +96,7 @@ export default function PostCreationPage() {
 
   const navigation = useNavigation();
   const actionData = useActionData() as ActionData;
-  
+
   // State for controlled form inputs
   const { title, setTitle, content, setContent } = usePostEditor({
     initialDraft: draft,
@@ -48,21 +108,16 @@ export default function PostCreationPage() {
 
   // Router automatically handles loading states during form submission
   const isSubmitting = navigation.state === 'submitting';
-  
+
   // Show error dialog when error occurs
   useEffect(() => {
     if (actionData?.error) {
       setShowErrorDialog(true);
     }
   }, [actionData?.error]);
-  
+
   // 3단계: 자동 임시저장
-  const {
-    draftId: autoDraftId,
-    lastSavedAt,
-    isSaving,
-    savingError
-  } = useAutoSaveDrafts({
+  const { lastSavedAt, isSaving, savingError } = useAutoSaveDrafts({
     boardId: boardId || '',
     userId: currentUser?.uid,
     title,
@@ -73,25 +128,26 @@ export default function PostCreationPage() {
   return (
     <div className='mx-auto max-w-4xl px-6 py-8'>
       {/* React Router Form automatically submits to the route's action */}
-      <Form method="post" className='space-y-6'>
-        <input type="hidden" name="boardId" value={boardId} />
-        <input type="hidden" name="authorId" value={currentUser?.uid} />
-        <input type="hidden" name="authorName" value={currentUser?.displayName || currentUser?.email || 'Anonymous'} />
-        <input type="hidden" name="title" value={title} />
-        <input type="hidden" name="content" value={content} />
-        <input type="hidden" name="contentJson" value={contentJson ? JSON.stringify(contentJson) : ''} />
-        
-        <PostTitleEditor 
-          value={title} 
-          onChange={(e) => setTitle(e.target.value)} 
+      <Form method='post' className='space-y-6'>
+        <input type='hidden' name='boardId' value={boardId} />
+        <input type='hidden' name='authorId' value={currentUser?.uid} />
+        <input
+          type='hidden'
+          name='authorName'
+          value={currentUser?.displayName || currentUser?.email || 'Anonymous'}
         />
-        <PostEditor 
-          value={content} 
+        <input type='hidden' name='title' value={title} />
+        <input type='hidden' name='content' value={content} />
+        <input type='hidden' name='contentJson' value={safeStringifyJson(contentJson)} />
+
+        <PostTitleEditor value={title} onChange={(e) => setTitle(e.target.value)} />
+        <PostEditor
+          value={content}
           onChange={setContent}
           contentJson={contentJson}
           onJsonChange={setContentJson}
         />
-        
+
         {/* 임시 저장 상태 표시 컴포넌트 */}
         <DraftStatusIndicator
           isSaving={isSaving}
@@ -100,32 +156,34 @@ export default function PostCreationPage() {
         />
         <div className='flex justify-between space-x-4'>
           <DraftsDrawer userId={currentUser?.uid} boardId={boardId}>
-            <Button variant="outline" size="default" className="flex items-center">
+            <Button variant='outline' size='default' className='flex items-center'>
               임시 저장 글
             </Button>
           </DraftsDrawer>
-          <Button variant="default" type="submit" disabled={isSubmitting || !title.trim() || !content.trim()}>
+          <Button
+            variant='default'
+            type='submit'
+            disabled={isSubmitting || !title.trim() || !content.trim()}
+          >
             {isSubmitting ? '저장 중...' : '글 저장'}
           </Button>
         </div>
-        </Form>
+      </Form>
 
-        {/* Error Dialog */}
-        <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>오류 발생</AlertDialogTitle>
-              <AlertDialogDescription>
-                {actionData?.error || '알 수 없는 오류가 발생했습니다.'}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogAction onClick={() => setShowErrorDialog(false)}>
-                확인
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+      {/* Error Dialog */}
+      <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>오류 발생</AlertDialogTitle>
+            <AlertDialogDescription>
+              {actionData?.error || '알 수 없는 오류가 발생했습니다.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowErrorDialog(false)}>확인</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
