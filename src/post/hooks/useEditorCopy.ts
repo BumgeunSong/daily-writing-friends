@@ -40,6 +40,9 @@ const NODE_TYPES = {
   ORDERED_LIST: 'orderedList',
 } as const;
 
+// Timing constants
+const EDITOR_ELEMENT_UPDATE_DELAY = 100; // milliseconds - delay for editor DOM element to be available
+
 /**
  * Applies formatting marks to text content
  */
@@ -203,7 +206,7 @@ export function useEditorCopy(editor: Editor | null) {
       if (editorElement && editorElement instanceof HTMLElement) {
         editorElementRef.current = editorElement;
       }
-    }, 100);
+    }, EDITOR_ELEMENT_UPDATE_DELAY);
 
     return () => clearTimeout(timer);
   }, [editor]);

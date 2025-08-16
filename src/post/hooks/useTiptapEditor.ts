@@ -7,11 +7,16 @@ import Dropcursor from '@tiptap/extension-dropcursor';
 import { useRef, useEffect } from 'react';
 import { sanitize } from '@/post/utils/sanitizeHtml';
 
+// Editor configuration constants
+const DEFAULT_DEBOUNCE_DELAY = 300; // milliseconds
+const DEFAULT_PLACEHOLDER = '내용을 입력하세요...';
+
 interface UseTiptapEditorProps {
   initialHtml?: string;
   initialJson?: any;
   onChange: (output: { html: string; json: any }) => void;
   placeholder?: string;
+  debounceDelay?: number;
 }
 
 /**
@@ -22,7 +27,8 @@ export function useTiptapEditor({
   initialHtml,
   initialJson,
   onChange,
-  placeholder = '내용을 입력하세요...',
+  placeholder = DEFAULT_PLACEHOLDER,
+  debounceDelay = DEFAULT_DEBOUNCE_DELAY,
 }: UseTiptapEditorProps) {
   const debounceTimerRef = useRef<NodeJS.Timeout>();
 
@@ -46,7 +52,7 @@ export function useTiptapEditor({
         target: '_blank',
         rel: 'noopener noreferrer',
       },
-      validate: href => /^https?:\/\//.test(href),
+      validate: (href) => /^https?:\/\//.test(href),
     }),
     Image.configure({
       HTMLAttributes: {
@@ -68,7 +74,8 @@ export function useTiptapEditor({
     content: initialJson || initialHtml || '',
     editorProps: {
       attributes: {
-        class: 'prose prose-lg max-w-none min-h-[300px] focus:outline-none px-0 py-6 dark:prose-invert prose-headings:text-foreground prose-strong:text-foreground prose-a:text-accent prose-blockquote:border-l-muted-foreground prose-blockquote:text-muted-foreground',
+        class:
+          'prose prose-lg max-w-none min-h-[300px] focus:outline-none px-0 py-6 dark:prose-invert prose-headings:text-foreground prose-strong:text-foreground prose-a:text-accent prose-blockquote:border-l-muted-foreground prose-blockquote:text-muted-foreground',
       },
       handlePaste: (view, event) => {
         // Check if clipboard contains image
@@ -91,7 +98,7 @@ export function useTiptapEditor({
         const html = sanitize(editor.getHTML());
         const json = editor.getJSON();
         onChange({ html, json });
-      }, 300);
+      }, debounceDelay);
     },
   });
 
