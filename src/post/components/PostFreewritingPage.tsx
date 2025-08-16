@@ -11,7 +11,7 @@ import { WritingStatus } from "@/stats/model/WritingStatus"
 import { useUserNickname } from '@/user/hooks/useUserNickname'
 import CountupWritingTimer from "./CountupWritingTimer"
 import { PostSubmitButton } from "./PostSubmitButton"
-import { PostTextEditor } from "./PostTextEditor"
+import { PostEditor } from "./PostEditor"
 import type React from "react"
 
 export default function PostFreewritingPage() {
@@ -24,6 +24,7 @@ export default function PostFreewritingPage() {
   // 상태 관리
   const POST_TITLE = userNickname ? `${userNickname}님의 프리라이팅` : "프리라이팅"
   const [content, setContent] = useState("")
+  const [contentJson, setContentJson] = useState<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [timerStatus, setTimerStatus] = useState<WritingStatus>(WritingStatus.Paused)
   const [isReached, setIsReached] = useState(false)
@@ -78,7 +79,7 @@ export default function PostFreewritingPage() {
     setIsSubmitting(true)
 
     try {
-      await createPost(boardId, POST_TITLE, content, currentUser.uid, userNickname ?? '', PostVisibility.PRIVATE)
+      await createPost(boardId, POST_TITLE, content, currentUser.uid, userNickname ?? '', PostVisibility.PRIVATE, contentJson)
 
       toast.success("프리라이팅으로 쓴 글은 다른 사람에게 보이지 않아요.", {position: 'bottom-center'})
 
@@ -106,7 +107,12 @@ export default function PostFreewritingPage() {
       <div className="container mx-auto max-w-3xl grow px-4 py-6 sm:px-6">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="overflow-hidden rounded-xl border bg-card">
-            <PostTextEditor value={content} onChange={handleContentChange} />
+            <PostEditor 
+              value={content} 
+              onChange={handleContentChange}
+              contentJson={contentJson}
+              onJsonChange={setContentJson}
+            />
           </div>
 
           <div className="flex items-center justify-end pt-2">

@@ -50,7 +50,7 @@
    ```
 
 3. **환경 변수 설정:**
-   관리자에게 Firebase, Sentry 프로젝트에 대한 접근 권한을 요청하여 환경 변수를 설정합니다. `.env` 파일을 프로젝트 루트에 생성하고 다음과 같이 설정합니다:
+   관리자에게 Firebase, Sentry 프로젝트에 대한 접근 권한을 요청하여 환경 변수를 설정합니다. `.env` 파일을 프로젝트 루트에 생성하고 다음과 같이 설정합니다. 환경 변수 템플릿은 `config/.env.example`을 참조하세요:
    ```plaintext
    VITE_FIREBASE_API_KEY=your_api_key
    VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain

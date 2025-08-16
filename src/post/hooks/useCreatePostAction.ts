@@ -10,6 +10,8 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
   const authorId = formData.get('authorId') as string;
   const authorName = formData.get('authorName') as string;
   const draftId = formData.get('draftId') as string | null;
+  const contentJsonStr = formData.get('contentJson') as string | null;
+  const contentJson = contentJsonStr ? JSON.parse(contentJsonStr) : undefined;
 
   // Validate required fields
   if (!title?.trim()) {
@@ -38,8 +40,8 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
     const { deleteDraft } = await import('@/draft/utils/draftUtils');
     const { sendAnalyticsEvent, AnalyticsEvent } = await import('@/shared/utils/analyticsUtils');
 
-    // Create the post
-    await createPost(boardId, title, content, authorId, authorName);
+    // Create the post with optional contentJson
+    await createPost(boardId, title, content, authorId, authorName, undefined, contentJson);
     
     // Send analytics
     sendAnalyticsEvent(AnalyticsEvent.CREATE_POST, {

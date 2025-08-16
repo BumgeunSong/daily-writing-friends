@@ -14,7 +14,7 @@ export const RecoveryStatusSchema = z.object({
   type: RecoveryStatusTypeSchema,
   postsRequired: z.number().optional(),
   currentPosts: z.number().optional(), 
-  deadline: z.string().optional(), // YYYY-MM-DD format
+  deadline: z.instanceof(Timestamp).optional(),
 });
 
 export type RecoveryStatus = z.infer<typeof RecoveryStatusSchema>;

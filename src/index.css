@@ -177,4 +177,39 @@
   .nav-hover:hover {
     background-color: hsl(var(--selection) / 0.6);
   }
+  
+  /* TipTap Editor Styles */
+  .ProseMirror p.is-editor-empty:first-child::before {
+    @apply text-muted-foreground;
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+  
+  /* TipTap dark mode text selection */
+  .dark .ProseMirror ::selection {
+    background-color: hsl(var(--accent) / 0.3);
+  }
+  
+  /* TipTap placeholder in dark mode */
+  .dark .ProseMirror p.is-editor-empty:first-child::before {
+    @apply text-muted-foreground/60;
+  }
+  
+  /* TipTap list styles in dark mode */
+  .dark .ProseMirror ul,
+  .dark .ProseMirror ol {
+    @apply text-foreground;
+  }
+  
+  /* TipTap link styles */
+  .ProseMirror a {
+    @apply text-accent underline;
+  }
+  
+  /* TipTap code styles */
+  .ProseMirror code {
+    @apply rounded-sm bg-muted px-1 py-0.5 text-sm;
+  }
 }

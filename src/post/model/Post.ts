@@ -5,6 +5,7 @@ export interface Post {
   boardId: string;
   title: string;
   content: string;
+  contentJson?: any; // ProseMirror JSON for TipTap editor
   thumbnailImageURL: string | null;
   authorId: string;
   authorName: string;

@@ -1,0 +1,54 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidImageType() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    function isValidImageSize() {
+      return request.resource.size <= 10 * 1024 * 1024; // 10MB limit
+    }
+
+    // User profile images - users can upload/read/delete their own profile images
+    match /users/{userId}/profile/{imageId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId) && isValidImageType() && isValidImageSize();
+      allow delete: if isOwner(userId);
+    }
+
+    // Post images - authors can upload images for their posts
+    match /posts/{postId}/images/{imageId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidImageType() && isValidImageSize();
+      allow delete: if isAuthenticated();
+    }
+
+    // Board images - for board-related assets
+    match /boards/{boardId}/images/{imageId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidImageType() && isValidImageSize();
+      allow delete: if isAuthenticated();
+    }
+
+    // Public assets - readable by all authenticated users
+    match /public/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Only admins should manage public assets
+    }
+
+    // Deny all other access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

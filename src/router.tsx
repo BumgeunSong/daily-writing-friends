@@ -50,14 +50,8 @@ import { NavigationProvider } from './shared/contexts/NavigationContext';
 // Root layout component with router-dependent providers
 function RootLayout({ children }: { children?: React.ReactNode }) {
   return (
-    <NavigationProvider 
-      debounceTime={500} 
-      topThreshold={30} 
-      ignoreSmallChanges={10}
-    >
-      <BottomTabHandlerProvider>
-        {children || <Outlet />}
-      </BottomTabHandlerProvider>
+    <NavigationProvider debounceTime={500} topThreshold={30} ignoreSmallChanges={10}>
+      <BottomTabHandlerProvider>{children || <Outlet />}</BottomTabHandlerProvider>
     </NavigationProvider>
   );
 }
@@ -82,7 +76,7 @@ const publicRoutes = {
   element: <PublicRoutes />,
   children: [
     { path: 'login', element: <LoginPage /> },
-    { path: 'join', element: <JoinIntroPage /> }
+    { path: 'join', element: <JoinIntroPage /> },
   ],
 };
 
@@ -97,12 +91,22 @@ const privateRoutesWithNav = {
       children: [
         { path: 'boards', element: <RecentBoard /> },
         { path: 'boards/list', element: <BoardListPage />, loader: boardsLoader },
-        { path: 'board/:boardId', element: <BoardPage />, loader: boardLoader, errorElement: <PermissionErrorBoundary /> },
-        { path: 'create/:boardId', element: <PostCreationPage />, action: createPostAction },
+        {
+          path: 'board/:boardId',
+          element: <BoardPage />,
+          loader: boardLoader,
+          errorElement: <PermissionErrorBoundary />,
+        },
+
         { path: 'create/:boardId/completion', element: <PostCompletionPage /> },
         { path: 'board/:boardId/topic-cards', element: <TopicCardCarouselPage /> },
-        { path: 'board/:boardId/post/:postId', element: <PostDetailPage />, loader: postDetailLoader, errorElement: <PermissionErrorBoundary /> },
-        { path: 'board/:boardId/edit/:postId', element: <PostEditPage />, loader: postDetailLoader, errorElement: <PermissionErrorBoundary /> },
+        {
+          path: 'board/:boardId/post/:postId',
+          element: <PostDetailPage />,
+          loader: postDetailLoader,
+          errorElement: <PermissionErrorBoundary />,
+        },
+
         { path: 'notifications', element: <NotificationsPage /> },
         { path: 'notifications/settings', element: <NotificationSettingPage /> },
         { path: 'account/edit/:userId', element: <EditAccountPage /> },
@@ -123,6 +127,13 @@ const privateRoutesWithoutNav = {
   children: [
     { path: 'board/:boardId/free-writing/intro', element: <PostFreewritingIntro /> },
     { path: 'create/:boardId/free-writing', element: <PostFreewritingPage /> },
+    { path: 'create/:boardId', element: <PostCreationPage />, action: createPostAction },
+    {
+      path: 'board/:boardId/edit/:postId',
+      element: <PostEditPage />,
+      loader: postDetailLoader,
+      errorElement: <PermissionErrorBoundary />,
+    },
     { path: 'join/form', element: <JoinFormPageForActiveOrNewUser /> },
     { path: 'join/form/new-user', element: <JoinFormPageForNewUser /> },
     { path: 'join/form/active-user', element: <JoinFormPageForActiveUser /> },
@@ -136,7 +147,14 @@ export const router = createBrowserRouter([
     path: '/',
     element: <RootLayout />,
     errorElement: (
-      <ErrorBoundary fallback={<StatusMessage error errorMessage="페이지를 불러오는 중에 문제가 생겼어요. 잠시 후 다시 시도해주세요." />}>
+      <ErrorBoundary
+        fallback={
+          <StatusMessage
+            error
+            errorMessage='페이지를 불러오는 중에 문제가 생겼어요. 잠시 후 다시 시도해주세요.'
+          />
+        }
+      >
         <></>
       </ErrorBoundary>
     ),

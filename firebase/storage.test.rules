@@ -1,0 +1,15 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // PERMISSIVE RULES FOR EMULATOR TESTING ONLY
+    // These rules allow broader access for E2E testing
+    // DO NOT use these rules in production
+    
+    // Allow authenticated users to read and write all files
+    // This simplifies E2E testing by removing security barriers
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
