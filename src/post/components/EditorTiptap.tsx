@@ -70,7 +70,7 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
       content: initialJson || initialHtml || '',
       editorProps: {
         attributes: {
-          class: 'prose prose-lg max-w-none min-h-[300px] focus:outline-none px-0 py-6',
+          class: 'prose prose-lg max-w-none min-h-[300px] focus:outline-none px-0 py-6 dark:prose-invert prose-headings:text-foreground prose-strong:text-foreground prose-a:text-accent prose-blockquote:border-l-muted-foreground prose-blockquote:text-muted-foreground',
         },
         handlePaste: (view, event) => {
           // Check if clipboard contains image
