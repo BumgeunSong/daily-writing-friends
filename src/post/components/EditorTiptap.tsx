@@ -6,6 +6,7 @@ import { UploadProgress } from './UploadProgress';
 import { EditorContentArea } from './EditorContentArea';
 import { ResponsiveEditorToolbar } from './ResponsiveEditorToolbar';
 import { CopyErrorBoundary } from './CopyErrorBoundary';
+import { useIsMobile } from '../../shared/hooks/useWindowSize';
 
 interface EditorTiptapProps {
   initialHtml?: string;
@@ -56,11 +57,18 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
     }, [handlePaste, editorElementRef]);
 
     // Expose focus method
-    useImperativeHandle(ref, () => ({
-      focus: () => {
-        editor?.commands.focus();
-      },
-    }), [editor]);
+    useImperativeHandle(
+      ref,
+      () => ({
+        focus: () => {
+          editor?.commands.focus();
+        },
+      }),
+      [editor],
+    );
+
+    // 윈도우 크기 변경을 실시간으로 감지하여 모바일 여부 판단
+    const isMobile = useIsMobile(768);
 
     if (!editor) {
       return null;
@@ -68,26 +76,26 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
 
     return (
       <CopyErrorBoundary>
-        <div className="relative w-full">
+        <div className='relative w-full'>
           {/* Desktop toolbar at top */}
-          <div className="hidden md:block">
+          <div className='hidden md:block'>
             <ResponsiveEditorToolbar editor={editor} onImageUpload={openFilePicker} />
           </div>
 
           {/* Editor content area */}
-          <EditorContentArea editor={editor} isMobile={window.innerWidth < 768} />
+          <EditorContentArea editor={editor} isMobile={isMobile} />
 
           {/* Upload progress overlay */}
           <UploadProgress isUploading={isUploading} uploadProgress={uploadProgress} />
 
           {/* Mobile toolbar at bottom */}
-          <div className="md:hidden">
+          <div className='md:hidden'>
             <ResponsiveEditorToolbar editor={editor} onImageUpload={openFilePicker} />
           </div>
         </div>
       </CopyErrorBoundary>
     );
-  }
+  },
 );
 
 EditorTiptap.displayName = 'EditorTiptap';
