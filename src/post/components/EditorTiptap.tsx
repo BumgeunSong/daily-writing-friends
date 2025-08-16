@@ -9,7 +9,7 @@ import { Progress } from '@/shared/ui/progress';
 import { sanitize } from '@/post/utils/sanitizeHtml';
 import { useTiptapImageUpload } from '@/post/hooks/useTiptapImageUpload';
 import { useCopyHandler } from '@/post/hooks/useCopyHandler';
-import { StickyToolbar } from './StickyToolbar';
+import { EditorToolbar } from './EditorToolbar';
 import { CopyErrorBoundary } from './CopyErrorBoundary';
 
 interface EditorTiptapProps {
@@ -174,8 +174,17 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
     return (
       <CopyErrorBoundary>
         <div className="relative w-full">
-          {/* Editor content with bottom padding for sticky toolbar */}
-          <div className="w-full rounded-xl border-0 bg-background pb-20">
+          {/* Desktop: Inline toolbar above editor */}
+          <div className="hidden md:block">
+            <EditorToolbar 
+              editor={editor} 
+              onImageUpload={openFilePicker}
+              variant="inline"
+            />
+          </div>
+
+          {/* Editor content with bottom padding for mobile sticky toolbar */}
+          <div className="w-full rounded-xl border-0 bg-background pb-20 md:pb-0">
             <EditorContent editor={editor} />
           </div>
 
@@ -191,8 +200,14 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
             </div>
           )}
 
-          {/* Sticky toolbar at bottom */}
-          <StickyToolbar editor={editor} onImageUpload={openFilePicker} />
+          {/* Mobile: Sticky toolbar at bottom */}
+          <div className="md:hidden">
+            <EditorToolbar 
+              editor={editor} 
+              onImageUpload={openFilePicker}
+              variant="sticky"
+            />
+          </div>
         </div>
       </CopyErrorBoundary>
     );

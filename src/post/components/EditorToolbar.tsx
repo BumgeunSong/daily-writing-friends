@@ -23,12 +23,13 @@ import { cn } from '@/shared/utils/cn';
 import { useScrollIndicators } from '@/post/hooks/useScrollIndicators';
 import { ToolbarButton } from './ToolbarButton';
 
-interface StickyToolbarProps {
+interface EditorToolbarProps {
   editor: Editor;
   onImageUpload: () => void;
+  variant?: 'sticky' | 'inline';
 }
 
-export function StickyToolbar({ editor, onImageUpload }: StickyToolbarProps) {
+export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: EditorToolbarProps) {
   const [linkUrl, setLinkUrl] = useState('');
   const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false);
   const { scrollContainerRef, canScrollLeft, canScrollRight } = useScrollIndicators();
@@ -69,16 +70,22 @@ export function StickyToolbar({ editor, onImageUpload }: StickyToolbarProps) {
     setIsLinkPopoverOpen(true);
   };
 
-  return (
-    <div
-      className={cn(
+  const containerClass = variant === 'sticky' 
+    ? cn(
         'fixed bottom-0 left-0 right-0 z-50',
         'border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80',
         'px-4 py-2',
         // iOS safe area support
         'pb-[calc(0.5rem+env(safe-area-inset-bottom))]',
-      )}
-    >
+      )
+    : cn(
+        'relative w-full',
+        'border-y bg-background/95',
+        'px-4 py-2 my-4',
+      );
+
+  return (
+    <div className={containerClass}>
       <div className='relative mx-auto max-w-4xl'>
         {/* Left gradient indicator */}
         {canScrollLeft && (
