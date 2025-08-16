@@ -1,5 +1,6 @@
 import { type Editor } from '@tiptap/react';
 import { EditorToolbar } from './EditorToolbar';
+import { useIsMobile } from '../../shared/hooks/useWindowSize';
 
 interface ResponsiveEditorToolbarProps {
   editor: Editor;
@@ -9,16 +10,17 @@ interface ResponsiveEditorToolbarProps {
 /**
  * Responsive toolbar wrapper component
  * Renders inline toolbar on desktop and sticky toolbar on mobile
+ * Automatically adjusts when window size changes
  */
 export function ResponsiveEditorToolbar({ editor, onImageUpload }: ResponsiveEditorToolbarProps) {
-  // Check if we're on mobile based on the parent element's visibility
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  
+  // 윈도우 크기 변경을 실시간으로 감지하여 모바일 여부 판단
+  const isMobile = useIsMobile(768);
+
   return (
-    <EditorToolbar 
-      editor={editor} 
+    <EditorToolbar
+      editor={editor}
       onImageUpload={onImageUpload}
-      variant={isMobile ? "sticky" : "inline"}
+      variant={isMobile ? 'sticky' : 'inline'}
     />
   );
 }
