@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Editor } from '@tiptap/react';
+import { useEditorState } from '@tiptap/react';
 import {
   Bold,
   Italic,
@@ -13,14 +14,14 @@ import {
   Image as ImageIcon,
   Check,
   X,
-  Space,
 } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover';
 import { Input } from '@/shared/ui/input';
-import { cn } from '@/shared/utils/cn';
 import { isValidHttpUrl } from '@/post/utils/sanitizeHtml';
+import { cn } from '@/shared/utils/cn';
 import { useScrollIndicators } from '@/post/hooks/useScrollIndicators';
+import { ToolbarButton } from './ToolbarButton';
 
 interface StickyToolbarProps {
   editor: Editor;
@@ -31,6 +32,22 @@ export function StickyToolbar({ editor, onImageUpload }: StickyToolbarProps) {
   const [linkUrl, setLinkUrl] = useState('');
   const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false);
   const { scrollContainerRef, canScrollLeft, canScrollRight } = useScrollIndicators();
+
+  // Use TipTap's useEditorState for optimized re-renders
+  const editorState = useEditorState({
+    editor,
+    selector: ctx => ({
+      isBold: ctx.editor.isActive('bold'),
+      isItalic: ctx.editor.isActive('italic'),
+      isStrike: ctx.editor.isActive('strike'),
+      isHeading1: ctx.editor.isActive('heading', { level: 1 }),
+      isHeading2: ctx.editor.isActive('heading', { level: 2 }),
+      isBlockquote: ctx.editor.isActive('blockquote'),
+      isBulletList: ctx.editor.isActive('bulletList'),
+      isOrderedList: ctx.editor.isActive('orderedList'),
+      isLink: ctx.editor.isActive('link'),
+    }),
+  });
 
   const handleSetLink = () => {
     if (!linkUrl) {
@@ -79,142 +96,90 @@ export function StickyToolbar({ editor, onImageUpload }: StickyToolbarProps) {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {/* Format buttons */}
-          <Button
-            type='button'
-            variant='ghost'
-            size='icon'
+          <ToolbarButton
+            isActive={editorState.isBold}
             onClick={() => editor.chain().focus().toggleBold().run()}
-            className={cn(
-              'size-10 shrink-0',
-              editor.isActive('bold') && 'bg-accent text-accent-foreground',
-            )}
+            icon={<Bold className='size-5' />}
             title='Bold (Ctrl+B)'
-          >
-            <Bold className='size-5' />
-          </Button>
+            ariaLabel='Bold'
+          />
 
-          <Button
-            type='button'
-            variant='ghost'
-            size='icon'
+          <ToolbarButton
+            isActive={editorState.isItalic}
             onClick={() => editor.chain().focus().toggleItalic().run()}
-            className={cn(
-              'size-10 shrink-0',
-              editor.isActive('italic') && 'bg-accent text-accent-foreground',
-            )}
+            icon={<Italic className='size-5' />}
             title='Italic (Ctrl+I)'
-          >
-            <Italic className='size-5' />
-          </Button>
+            ariaLabel='Italic'
+          />
 
-          <Button
-            type='button'
-            variant='ghost'
-            size='icon'
+          <ToolbarButton
+            isActive={editorState.isStrike}
             onClick={() => editor.chain().focus().toggleStrike().run()}
-            className={cn(
-              'size-10 shrink-0',
-              editor.isActive('strike') && 'bg-accent text-accent-foreground',
-            )}
+            icon={<Strikethrough className='size-5' />}
             title='Strikethrough'
-          >
-            <Strikethrough className='size-5' />
-          </Button>
+            ariaLabel='Strikethrough'
+          />
 
           <div className='mx-1 h-6 w-px bg-border' />
 
           {/* Heading buttons */}
-          <Button
-            type='button'
-            variant='ghost'
-            size='icon'
+          <ToolbarButton
+            isActive={editorState.isHeading1}
             onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-            className={cn(
-              'size-10 shrink-0',
-              editor.isActive('heading', { level: 1 }) && 'bg-accent text-accent-foreground',
-            )}
+            icon={<Heading1 className='size-5' />}
             title='Heading 1'
-          >
-            <Heading1 className='size-5' />
-          </Button>
+            ariaLabel='Heading 1'
+          />
 
-          <Button
-            type='button'
-            variant='ghost'
-            size='icon'
+          <ToolbarButton
+            isActive={editorState.isHeading2}
             onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-            className={cn(
-              'size-10 shrink-0',
-              editor.isActive('heading', { level: 2 }) && 'bg-accent text-accent-foreground',
-            )}
+            icon={<Heading2 className='size-5' />}
             title='Heading 2'
-          >
-            <Heading2 className='size-5' />
-          </Button>
+            ariaLabel='Heading 2'
+          />
 
           <div className='mx-1 h-6 w-px bg-border' />
 
           {/* Block formatting */}
-          <Button
-            type='button'
-            variant='ghost'
-            size='icon'
+          <ToolbarButton
+            isActive={editorState.isBlockquote}
             onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            className={cn(
-              'size-10 shrink-0',
-              editor.isActive('blockquote') && 'bg-accent text-accent-foreground',
-            )}
+            icon={<Quote className='size-5' />}
             title='Blockquote'
-          >
-            <Quote className='size-5' />
-          </Button>
+            ariaLabel='Blockquote'
+          />
 
-          <Button
-            type='button'
-            variant='ghost'
-            size='icon'
+          <ToolbarButton
+            isActive={editorState.isBulletList}
             onClick={() => editor.chain().focus().toggleBulletList().run()}
-            className={cn(
-              'size-10 shrink-0',
-              editor.isActive('bulletList') && 'bg-accent text-accent-foreground',
-            )}
+            icon={<List className='size-5' />}
             title='Bullet List'
-          >
-            <List className='size-5' />
-          </Button>
+            ariaLabel='Bullet List'
+          />
 
-          <Button
-            type='button'
-            variant='ghost'
-            size='icon'
+          <ToolbarButton
+            isActive={editorState.isOrderedList}
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            className={cn(
-              'size-10 shrink-0',
-              editor.isActive('orderedList') && 'bg-accent text-accent-foreground',
-            )}
+            icon={<ListOrdered className='size-5' />}
             title='Ordered List'
-          >
-            <ListOrdered className='size-5' />
-          </Button>
+            ariaLabel='Ordered List'
+          />
 
           <div className='mx-1 h-6 w-px bg-border' />
 
           {/* Link button with popover */}
           <Popover open={isLinkPopoverOpen} onOpenChange={setIsLinkPopoverOpen}>
             <PopoverTrigger asChild>
-              <Button
-                type='button'
-                variant='ghost'
-                size='icon'
-                onClick={handleOpenLinkPopover}
-                className={cn(
-                  'size-10 shrink-0',
-                  editor.isActive('link') && 'bg-accent text-accent-foreground',
-                )}
-                title='Insert Link'
-              >
-                <Link2 className='size-5' />
-              </Button>
+              <div>
+                <ToolbarButton
+                  isActive={editorState.isLink}
+                  onClick={handleOpenLinkPopover}
+                  icon={<Link2 className='size-5' />}
+                  title='Insert Link'
+                  ariaLabel='Insert Link'
+                />
+              </div>
             </PopoverTrigger>
             <PopoverContent className='w-80' align='start'>
               <div className='space-y-2'>
@@ -265,16 +230,13 @@ export function StickyToolbar({ editor, onImageUpload }: StickyToolbarProps) {
           </Popover>
 
           {/* Image button */}
-          <Button
-            type='button'
-            variant='ghost'
-            size='icon'
+          <ToolbarButton
+            isActive={false}
             onClick={onImageUpload}
-            className='size-10 shrink-0'
+            icon={<ImageIcon className='size-5' />}
             title='Insert Image'
-          >
-            <ImageIcon className='size-5' />
-          </Button>
+            ariaLabel='Insert Image'
+          />
         </div>
       </div>
     </div>
