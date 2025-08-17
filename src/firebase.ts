@@ -18,6 +18,41 @@ import { getPerformance } from 'firebase/performance';
 import { getRemoteConfig } from 'firebase/remote-config';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 
+// Time constants
+const TIME_CONSTANTS = {
+  SECOND_IN_MS: 1000,
+  MINUTE_IN_SECONDS: 60,
+} as const;
+
+// Remote Config fetch intervals
+const REMOTE_CONFIG_INTERVALS = {
+  DEVELOPMENT_MINUTES: 1,
+  PRODUCTION_MINUTES: 5,
+} as const;
+
+const REMOTE_CONFIG_FETCH_INTERVALS = {
+  DEVELOPMENT:
+    REMOTE_CONFIG_INTERVALS.DEVELOPMENT_MINUTES *
+    TIME_CONSTANTS.MINUTE_IN_SECONDS *
+    TIME_CONSTANTS.SECOND_IN_MS,
+  PRODUCTION:
+    REMOTE_CONFIG_INTERVALS.PRODUCTION_MINUTES *
+    TIME_CONSTANTS.MINUTE_IN_SECONDS *
+    TIME_CONSTANTS.SECOND_IN_MS,
+} as const;
+
+// Default emulator configuration
+const DEFAULT_EMULATOR_CONFIG = {
+  HOST: 'localhost',
+  PORTS: {
+    AUTH: '9099',
+    FIRESTORE: '8080',
+    STORAGE: '9199',
+    FUNCTIONS: '5001',
+  },
+  RADIX: 10, // For parseInt base
+} as const;
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY as string,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN as string,
@@ -38,20 +73,32 @@ const parseBoolean = (value: string | undefined): boolean => {
 const useEmulators = parseBoolean(import.meta.env.VITE_USE_EMULATORS);
 const emulatorConfig = {
   auth: {
-    host: import.meta.env.VITE_EMULATOR_AUTH_HOST || 'localhost',
-    port: parseInt(import.meta.env.VITE_EMULATOR_AUTH_PORT || '9099', 10),
+    host: import.meta.env.VITE_EMULATOR_AUTH_HOST || DEFAULT_EMULATOR_CONFIG.HOST,
+    port: parseInt(
+      import.meta.env.VITE_EMULATOR_AUTH_PORT || DEFAULT_EMULATOR_CONFIG.PORTS.AUTH,
+      DEFAULT_EMULATOR_CONFIG.RADIX,
+    ),
   },
   firestore: {
-    host: import.meta.env.VITE_EMULATOR_FIRESTORE_HOST || 'localhost',
-    port: parseInt(import.meta.env.VITE_EMULATOR_FIRESTORE_PORT || '8080', 10),
+    host: import.meta.env.VITE_EMULATOR_FIRESTORE_HOST || DEFAULT_EMULATOR_CONFIG.HOST,
+    port: parseInt(
+      import.meta.env.VITE_EMULATOR_FIRESTORE_PORT || DEFAULT_EMULATOR_CONFIG.PORTS.FIRESTORE,
+      DEFAULT_EMULATOR_CONFIG.RADIX,
+    ),
   },
   storage: {
-    host: import.meta.env.VITE_EMULATOR_STORAGE_HOST || 'localhost',
-    port: parseInt(import.meta.env.VITE_EMULATOR_STORAGE_PORT || '9199', 10),
+    host: import.meta.env.VITE_EMULATOR_STORAGE_HOST || DEFAULT_EMULATOR_CONFIG.HOST,
+    port: parseInt(
+      import.meta.env.VITE_EMULATOR_STORAGE_PORT || DEFAULT_EMULATOR_CONFIG.PORTS.STORAGE,
+      DEFAULT_EMULATOR_CONFIG.RADIX,
+    ),
   },
   functions: {
-    host: import.meta.env.VITE_EMULATOR_FUNCTIONS_HOST || 'localhost',
-    port: parseInt(import.meta.env.VITE_EMULATOR_FUNCTIONS_PORT || '5001', 10),
+    host: import.meta.env.VITE_EMULATOR_FUNCTIONS_HOST || DEFAULT_EMULATOR_CONFIG.HOST,
+    port: parseInt(
+      import.meta.env.VITE_EMULATOR_FUNCTIONS_PORT || DEFAULT_EMULATOR_CONFIG.PORTS.FUNCTIONS,
+      DEFAULT_EMULATOR_CONFIG.RADIX,
+    ),
   },
 };
 
@@ -84,13 +131,13 @@ if (!useEmulators && typeof window !== 'undefined') {
     // Reference: https://firebase.google.com/docs/remote-config/get-started?platform=web#rest_2
     const isDevelopment = import.meta.env.DEV;
     const fetchIntervalMs = isDevelopment
-      ? 60 * 1000 // 1 minute for development
-      : 5 * 60 * 1000; // 5 minutes for production
+      ? REMOTE_CONFIG_FETCH_INTERVALS.DEVELOPMENT
+      : REMOTE_CONFIG_FETCH_INTERVALS.PRODUCTION;
 
     remoteConfig.settings.minimumFetchIntervalMillis = fetchIntervalMs;
 
     console.log(
-      `🔧 Remote Config fetch interval set to: ${fetchIntervalMs / 1000} seconds (${isDevelopment ? 'development' : 'production'} mode)`,
+      `🔧 Remote Config fetch interval set to: ${fetchIntervalMs / TIME_CONSTANTS.SECOND_IN_MS} seconds (${isDevelopment ? 'development' : 'production'} mode)`,
     );
   } catch (error) {
     console.warn('Analytics/Performance services not available:', error);
