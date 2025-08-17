@@ -14,12 +14,12 @@ graph TD
     B -->|Yes| C[Show nothing/wait]
     B -->|No| D{User Authenticated?}
     
-    D -->|Yes, visiting public route| E[PublicRoutes: Redirect to intended destination]
+    D -->|Yes, visiting public route| E[PublicRoutes: Allow access]
     D -->|Yes, visiting private route| F[PrivateRoutes: Allow access]
     D -->|No, visiting private route| G[PrivateRoutes: Store path & redirect to /login]
     D -->|No, visiting public route| H[PublicRoutes: Allow access]
     
-    E --> I[Navigate to saved redirect path or /boards]
+    E --> I[Render public component]
     F --> J[Render protected component]
     G --> K[LoginPage]
     H --> L[Render public component]
@@ -144,13 +144,13 @@ interface AuthContextType {
 
 ### 3. PublicRoutes (`src/shared/components/auth/RouteGuards.tsx`)
 
-**Purpose**: Handles routes accessible to non-authenticated users
+**Purpose**: Handles routes accessible to everyone (both authenticated and non-authenticated users)
 
 **Logic**:
-1. If user is authenticated → redirect to `redirectPathAfterLogin` or home
-2. If user is not authenticated → allow access to public routes
+- Always allows access to public routes regardless of authentication status
+- No redirects - public routes are truly public and accessible to all users
 
-**Usage**: Wrap routes like `/login`, `/join`
+**Usage**: Wrap routes like `/login`, `/join` that should be accessible to everyone
 
 ### 4. RootRedirect (`src/shared/components/auth/RootRedirect.tsx`)
 
@@ -330,8 +330,8 @@ export default function NewPageWithForm() {
 
 ### 3. Route Protection
 - Use `PrivateRoutes` for authenticated-only pages
-- Use `PublicRoutes` for login/join pages that should redirect if already logged in
-- Store intended destination in `redirectPathAfterLogin` for better UX
+- Use `PublicRoutes` for pages that should be accessible to everyone (e.g., login, join, marketing pages)
+- Store intended destination in `redirectPathAfterLogin` when redirecting from private routes for better UX
 
 ### 4. Error Handling
 - Loaders should throw `Response` objects for HTTP errors

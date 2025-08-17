@@ -35,23 +35,11 @@ export function PrivateRoutes() {
 
 /**
  * Public route guard component  
- * Redirects authenticated users to their intended destination
+ * Allows access to public routes for both authenticated and unauthenticated users
+ * No redirects - public routes are accessible to everyone
  */
 export function PublicRoutes() {
-  const { currentUser, loading, redirectPathAfterLogin, setRedirectPathAfterLogin } = useAuth();
-
-  // 상태 변경은 useEffect에서만!
-  useEffect(() => {
-    if (!loading && currentUser && redirectPathAfterLogin) {
-      setRedirectPathAfterLogin(null);
-    }
-  }, [loading, currentUser, redirectPathAfterLogin, setRedirectPathAfterLogin]);
-
-  if (!loading && currentUser) {
-    const redirectTo = redirectPathAfterLogin || '/';
-    return <Navigate to={redirectTo} replace />;
-  }
-
-  // User is not authenticated or still loading, render the public route
+  // Public routes don't need any authentication checks
+  // They are accessible to everyone (logged in or not)
   return <Outlet />;
 }
