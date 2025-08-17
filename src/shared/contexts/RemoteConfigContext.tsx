@@ -59,8 +59,19 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
   const [error, setError] = useState<Error | null>(null);
 
   const loadConfig = useCallback(() => {
+    if (!remoteConfig) {
+      console.warn('Remote Config not available (emulator mode or server environment)');
+      setValues(REMOTE_CONFIG_DEFAULTS);
+      setReady(true);
+      return;
+    }
+
     setReady(false);
     setError(null);
+
+    // Set default config values
+    remoteConfig.defaultConfig = REMOTE_CONFIG_DEFAULTS;
+
     fetchAndActivate(remoteConfig)
       .then(() => {
         setValues({
@@ -89,7 +100,10 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
         });
       })
       .catch((err) => {
-        setError(err instanceof Error ? err : new Error(String(err)));
+        console.error('Failed to fetch Remote Config:', err);
+        const error = err instanceof Error ? err : new Error(String(err));
+        setError(error);
+        // Use default values if fetch fails
         setValues(REMOTE_CONFIG_DEFAULTS);
       })
       .finally(() => setReady(true));

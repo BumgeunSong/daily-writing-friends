@@ -1,5 +1,5 @@
 // src/firebase.ts
-import { getAnalytics } from "firebase/analytics";
+import { getAnalytics } from 'firebase/analytics';
 import { initializeApp } from 'firebase/app';
 import {
   getAuth,
@@ -11,11 +11,11 @@ import {
   UserCredential,
   connectAuthEmulator,
   setPersistence,
-  browserLocalPersistence
+  browserLocalPersistence,
 } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
-import { getPerformance } from "firebase/performance";
-import { getRemoteConfig } from "firebase/remote-config";
+import { getPerformance } from 'firebase/performance';
+import { getRemoteConfig } from 'firebase/remote-config';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 
 const firebaseConfig = {
@@ -39,20 +39,20 @@ const useEmulators = parseBoolean(import.meta.env.VITE_USE_EMULATORS);
 const emulatorConfig = {
   auth: {
     host: import.meta.env.VITE_EMULATOR_AUTH_HOST || 'localhost',
-    port: parseInt(import.meta.env.VITE_EMULATOR_AUTH_PORT || '9099', 10)
+    port: parseInt(import.meta.env.VITE_EMULATOR_AUTH_PORT || '9099', 10),
   },
   firestore: {
     host: import.meta.env.VITE_EMULATOR_FIRESTORE_HOST || 'localhost',
-    port: parseInt(import.meta.env.VITE_EMULATOR_FIRESTORE_PORT || '8080', 10)
+    port: parseInt(import.meta.env.VITE_EMULATOR_FIRESTORE_PORT || '8080', 10),
   },
   storage: {
     host: import.meta.env.VITE_EMULATOR_STORAGE_HOST || 'localhost',
-    port: parseInt(import.meta.env.VITE_EMULATOR_STORAGE_PORT || '9199', 10)
+    port: parseInt(import.meta.env.VITE_EMULATOR_STORAGE_PORT || '9199', 10),
   },
   functions: {
     host: import.meta.env.VITE_EMULATOR_FUNCTIONS_HOST || 'localhost',
-    port: parseInt(import.meta.env.VITE_EMULATOR_FUNCTIONS_PORT || '5001', 10)
-  }
+    port: parseInt(import.meta.env.VITE_EMULATOR_FUNCTIONS_PORT || '5001', 10),
+  },
 };
 
 if (useEmulators) {
@@ -79,28 +79,54 @@ if (!useEmulators && typeof window !== 'undefined') {
     performance = getPerformance(app);
     analytics = getAnalytics(app);
     remoteConfig = getRemoteConfig(app);
+
+    // Configure Remote Config fetch interval based on environment
+    // Reference: https://firebase.google.com/docs/remote-config/get-started?platform=web#rest_2
+    const isDevelopment = import.meta.env.DEV;
+    const fetchIntervalMs = isDevelopment
+      ? 60 * 1000 // 1 minute for development
+      : 5 * 60 * 1000; // 5 minutes for production
+
+    remoteConfig.settings.minimumFetchIntervalMillis = fetchIntervalMs;
+
+    console.log(
+      `🔧 Remote Config fetch interval set to: ${fetchIntervalMs / 1000} seconds (${isDevelopment ? 'development' : 'production'} mode)`,
+    );
   } catch (error) {
     console.warn('Analytics/Performance services not available:', error);
   }
+} else if (useEmulators) {
+  // In emulator mode, Remote Config is not typically available
+  // but we can still initialize it for testing purposes
+  console.log('🧪 Remote Config disabled in emulator mode - using default values');
 }
 
 // Connect to Firebase emulators if enabled
 if (useEmulators) {
   try {
     // Connect Auth emulator with warning suppression
-    connectAuthEmulator(auth, `http://${emulatorConfig.auth.host}:${emulatorConfig.auth.port}`, { 
-      disableWarnings: true 
+    connectAuthEmulator(auth, `http://${emulatorConfig.auth.host}:${emulatorConfig.auth.port}`, {
+      disableWarnings: true,
     });
-    console.log(`🔐 Connected to Auth emulator at ${emulatorConfig.auth.host}:${emulatorConfig.auth.port}`);
-    
+    console.log(
+      `🔐 Connected to Auth emulator at ${emulatorConfig.auth.host}:${emulatorConfig.auth.port}`,
+    );
+
     // Connect Firestore emulator
-    connectFirestoreEmulator(firestore, emulatorConfig.firestore.host, emulatorConfig.firestore.port);
-    console.log(`🔥 Connected to Firestore emulator at ${emulatorConfig.firestore.host}:${emulatorConfig.firestore.port}`);
-    
+    connectFirestoreEmulator(
+      firestore,
+      emulatorConfig.firestore.host,
+      emulatorConfig.firestore.port,
+    );
+    console.log(
+      `🔥 Connected to Firestore emulator at ${emulatorConfig.firestore.host}:${emulatorConfig.firestore.port}`,
+    );
+
     // Connect Storage emulator
     connectStorageEmulator(storage, emulatorConfig.storage.host, emulatorConfig.storage.port);
-    console.log(`📁 Connected to Storage emulator at ${emulatorConfig.storage.host}:${emulatorConfig.storage.port}`);
-    
+    console.log(
+      `📁 Connected to Storage emulator at ${emulatorConfig.storage.host}:${emulatorConfig.storage.port}`,
+    );
   } catch (error) {
     console.error('Failed to connect to Firebase emulators:', error);
     console.warn('Make sure Firebase emulators are running: firebase emulators:start');
@@ -126,7 +152,7 @@ const signInWithGoogle = async (): Promise<UserCredential> => {
       window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(currentUrl)}`;
       throw new Error('카카오톡 인앱 브라우저에서는 구글 로그인을 할 수 없어요');
     }
-    
+
     return await signInWithPopup(auth, provider);
   } catch (error) {
     console.error('Error during sign-in:', error);
@@ -147,11 +173,14 @@ const signOutUser = (): Promise<void> => {
 
 // E2E Testing authentication functions
 // These functions are only used when emulators are enabled
-const signInWithTestCredentials = async (email: string, password: string): Promise<UserCredential> => {
+const signInWithTestCredentials = async (
+  email: string,
+  password: string,
+): Promise<UserCredential> => {
   if (!useEmulators) {
     throw new Error('Test credentials can only be used with Firebase emulators');
   }
-  
+
   try {
     return await signInWithEmailAndPassword(auth, email, password);
   } catch (error) {
@@ -164,7 +193,7 @@ const signInWithTestToken = async (customToken: string): Promise<UserCredential>
   if (!useEmulators) {
     throw new Error('Custom tokens can only be used with Firebase emulators');
   }
-  
+
   try {
     return await signInWithCustomToken(auth, customToken);
   } catch (error) {
@@ -177,17 +206,17 @@ const signInWithTestToken = async (customToken: string): Promise<UserCredential>
 export const isUsingEmulators = useEmulators;
 export const emulatorConfiguration = emulatorConfig;
 
-export { 
-  auth, 
-  firestore, 
-  storage, 
-  app, 
-  performance, 
-  remoteConfig, 
+export {
+  auth,
+  firestore,
+  storage,
+  app,
+  performance,
+  remoteConfig,
   analytics,
-  signInWithGoogle, 
+  signInWithGoogle,
   signOutUser,
   // E2E testing functions (only available when using emulators)
   signInWithTestCredentials,
-  signInWithTestToken
+  signInWithTestToken,
 };
