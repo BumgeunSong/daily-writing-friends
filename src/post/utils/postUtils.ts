@@ -10,11 +10,11 @@ import {
   orderBy,
   Timestamp,
   DocumentSnapshot,
-  QueryDocumentSnapshot
+  QueryDocumentSnapshot,
 } from 'firebase/firestore';
 
 import { firestore } from '@/firebase';
-import { Post, PostVisibility } from '@/post/model/Post';
+import { Post, PostVisibility, ProseMirrorDoc } from '@/post/model/Post';
 
 /**
  * Firebase 문서를 Post 객체로 변환하는 유틸리티 함수
@@ -24,7 +24,7 @@ export function mapDocumentToPost(snapshot: DocumentSnapshot | QueryDocumentSnap
   const data = snapshot.data() as Omit<Post, 'id'>;
   return {
     ...data,
-    id: snapshot.id // 스냅샷 ID를 항상 사용
+    id: snapshot.id, // 스냅샷 ID를 항상 사용
   };
 }
 
@@ -33,7 +33,7 @@ export const fetchPost = async (boardId: string, postId: string): Promise<Post |
 
   if (!docSnap.exists()) {
     console.log('해당 문서가 없습니다!');
-    return null; 
+    return null;
   }
 
   return mapDocumentToPost(docSnap);
@@ -47,13 +47,13 @@ export const usePostTitle = (boardId: string, postId: string) => {
 };
 
 export async function createPost(
-  boardId: string, 
-  title: string, 
-  content: string, 
-  authorId: string, 
-  authorName: string, 
+  boardId: string,
+  title: string,
+  content: string,
+  authorId: string,
+  authorName: string,
   visibility?: PostVisibility,
-  contentJson?: any
+  contentJson?: ProseMirrorDoc,
 ) {
   const postRef = doc(collection(firestore, `boards/${boardId}/posts`));
   const post: Post = {
@@ -61,7 +61,6 @@ export async function createPost(
     boardId,
     title,
     content,
-    contentJson, // Store ProseMirror JSON if provided
     thumbnailImageURL: extractFirstImageUrl(content),
     authorId,
     authorName,
@@ -70,6 +69,12 @@ export async function createPost(
     createdAt: Timestamp.now(),
     visibility: visibility || PostVisibility.PUBLIC,
   };
+
+  // Only include contentJson if it's defined
+  if (contentJson !== undefined) {
+    post.contentJson = contentJson;
+  }
+
   return setDoc(postRef, post);
 }
 
@@ -78,21 +83,21 @@ export const updatePost = async (
   postId: string,
   title: string,
   content: string,
-  contentJson?: any
+  contentJson?: ProseMirrorDoc,
 ): Promise<void> => {
   const postRef = doc(firestore, `boards/${boardId}/posts`, postId);
   const updateData: any = {
     title,
-    content,  
+    content,
     thumbnailImageURL: extractFirstImageUrl(content),
     updatedAt: Timestamp.now(),
   };
-  
+
   // Only update contentJson if provided
   if (contentJson !== undefined) {
     updateData.contentJson = contentJson;
   }
-  
+
   await updateDoc(postRef, updateData);
 };
 
@@ -100,13 +105,13 @@ export const fetchAdjacentPosts = async (boardId: string, currentPostId: string)
   const postsRef = collection(firestore, `boards/${boardId}/posts`);
   const q = query(postsRef, orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
-  
-  const posts = snapshot.docs.map(doc => ({ id: doc.id }));
-  const currentIndex = posts.findIndex(post => post.id === currentPostId);
-  
+
+  const posts = snapshot.docs.map((doc) => ({ id: doc.id }));
+  const currentIndex = posts.findIndex((post) => post.id === currentPostId);
+
   return {
     prevPost: currentIndex < posts.length - 1 ? posts[currentIndex + 1].id : null,
-    nextPost: currentIndex > 0 ? posts[currentIndex - 1].id : null
+    nextPost: currentIndex > 0 ? posts[currentIndex - 1].id : null,
   };
 };
 

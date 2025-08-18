@@ -6,6 +6,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Dropcursor from '@tiptap/extension-dropcursor';
 import { useRef, useEffect } from 'react';
 import { sanitize } from '@/post/utils/sanitizeHtml';
+import { ProseMirrorDoc } from '@/post/model/Post';
 
 // Editor configuration constants
 const DEFAULT_DEBOUNCE_DELAY = 300; // milliseconds
@@ -13,8 +14,8 @@ const DEFAULT_PLACEHOLDER = '내용을 입력하세요...';
 
 interface UseTiptapEditorProps {
   initialHtml?: string;
-  initialJson?: any;
-  onChange: (output: { html: string; json: any }) => void;
+  initialJson?: ProseMirrorDoc;
+  onChange: (output: { html: string; json: ProseMirrorDoc }) => void;
   placeholder?: string;
   debounceDelay?: number;
 }
