@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 
 import { firestore } from '@/firebase';
-import { Post, PostVisibility } from '@/post/model/Post';
+import { Post, PostVisibility, ProseMirrorDoc } from '@/post/model/Post';
 
 /**
  * Firebase 문서를 Post 객체로 변환하는 유틸리티 함수
@@ -53,7 +53,7 @@ export async function createPost(
   authorId: string,
   authorName: string,
   visibility?: PostVisibility,
-  contentJson?: any,
+  contentJson?: ProseMirrorDoc,
 ) {
   const postRef = doc(collection(firestore, `boards/${boardId}/posts`));
   const post: Post = {
@@ -83,7 +83,7 @@ export const updatePost = async (
   postId: string,
   title: string,
   content: string,
-  contentJson?: any,
+  contentJson?: ProseMirrorDoc,
 ): Promise<void> => {
   const postRef = doc(firestore, `boards/${boardId}/posts`, postId);
   const updateData: any = {

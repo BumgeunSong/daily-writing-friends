@@ -2,14 +2,15 @@ import { forwardRef, useImperativeHandle, useRef } from 'react';
 import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { PostTextEditor } from './PostTextEditor'; // Quill editor
 import { EditorTiptap, type EditorTiptapHandle } from './EditorTiptap'; // TipTap editor
+import { ProseMirrorDoc } from '@/post/model/Post';
 
 interface PostEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   // For TipTap dual-write strategy
-  contentJson?: any;
-  onJsonChange?: (json: any) => void;
+  contentJson?: ProseMirrorDoc;
+  onJsonChange?: (json: ProseMirrorDoc) => void;
 }
 
 export interface PostEditorHandle {
@@ -26,14 +27,18 @@ export const PostEditor = forwardRef<PostEditorHandle, PostEditorProps>(
     const tiptapRef = useRef<EditorTiptapHandle>(null);
 
     // Expose focus method through ref
-    useImperativeHandle(ref, () => ({
-      focus: () => {
-        if (tiptapEnabled && tiptapRef.current) {
-          tiptapRef.current.focus();
-        }
-        // Quill editor doesn't have a focus method in current implementation
-      },
-    }), [tiptapEnabled]);
+    useImperativeHandle(
+      ref,
+      () => ({
+        focus: () => {
+          if (tiptapEnabled && tiptapRef.current) {
+            tiptapRef.current.focus();
+          }
+          // Quill editor doesn't have a focus method in current implementation
+        },
+      }),
+      [tiptapEnabled],
+    );
 
     // Use TipTap editor if enabled
     if (tiptapEnabled) {
@@ -52,14 +57,8 @@ export const PostEditor = forwardRef<PostEditorHandle, PostEditorProps>(
     }
 
     // Use Quill editor (default)
-    return (
-      <PostTextEditor
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-      />
-    );
-  }
+    return <PostTextEditor value={value} onChange={onChange} placeholder={placeholder} />;
+  },
 );
 
 PostEditor.displayName = 'PostEditor';

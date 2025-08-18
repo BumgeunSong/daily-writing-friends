@@ -7,11 +7,12 @@ import { EditorContentArea } from './EditorContentArea';
 import { ResponsiveEditorToolbar } from './ResponsiveEditorToolbar';
 import { CopyErrorBoundary } from './CopyErrorBoundary';
 import { useIsMobile } from '../../shared/hooks/useWindowSize';
+import { ProseMirrorDoc } from '@/post/model/Post';
 
 interface EditorTiptapProps {
   initialHtml?: string;
-  initialJson?: any;
-  onChange: (output: { html: string; json: any }) => void;
+  initialJson?: ProseMirrorDoc;
+  onChange: (output: { html: string; json: ProseMirrorDoc }) => void;
   placeholder?: string;
 }
 

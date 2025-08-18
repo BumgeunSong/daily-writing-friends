@@ -2,8 +2,28 @@ import { z } from 'zod';
 import { Timestamp } from 'firebase/firestore';
 import { PostVisibility } from './Post';
 
-// Schema for ProseMirror JSON content from TipTap
-const ContentJsonSchema = z.any(); // For now, we'll allow any JSON structure
+// Schema for ProseMirror Mark
+const ProseMirrorMarkSchema = z.object({
+  type: z.string(),
+  attrs: z.record(z.unknown()).optional(),
+});
+
+// Schema for ProseMirror Node (recursive)
+const ProseMirrorNodeSchema: z.ZodType<any> = z.lazy(() =>
+  z.object({
+    type: z.string(),
+    attrs: z.record(z.unknown()).optional(),
+    content: z.array(ProseMirrorNodeSchema).optional(),
+    marks: z.array(ProseMirrorMarkSchema).optional(),
+    text: z.string().optional(),
+  }),
+);
+
+// Schema for ProseMirror Document
+const ContentJsonSchema = z.object({
+  type: z.literal('doc'),
+  content: z.array(ProseMirrorNodeSchema).optional(),
+});
 
 // Timestamp schema
 const TimestampSchema = z.custom<Timestamp>((val) => val instanceof Timestamp);
