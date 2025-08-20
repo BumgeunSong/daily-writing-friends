@@ -372,6 +372,56 @@ describe('Streak Recovery State Transitions', () => {
       // Should be +2 because MISSED date was Tuesday (Mon-Thu), regardless that recovery happens on Wednesday
       expect(tuesdayMissResult?.updates.currentStreak).toBe(7); // originalStreak + 2
     });
+
+    it('handles invalid or missing missedDate gracefully', () => {
+      const wednesdayDate = new Date('2024-01-17T10:00:00Z'); // Wednesday
+      
+      // Test with missing missedDate
+      const streakInfoNoMissedDate = createStreakInfo({
+        status: {
+          type: RecoveryStatusType.ELIGIBLE,
+          postsRequired: 2,
+          currentPosts: 1,
+          deadline: Timestamp.fromDate(wednesdayDate),
+          // missedDate is undefined
+        },
+        currentStreak: 0,
+        originalStreak: 5,
+      });
+
+      const resultNoMissedDate = calculateEligibleToOnStreakPure(
+        userId,
+        wednesdayDate,
+        streakInfoNoMissedDate,
+        2,
+      );
+
+      // Should default to Mon-Thu policy (+2) when missedDate is invalid
+      expect(resultNoMissedDate?.updates.currentStreak).toBe(7); // originalStreak + 2
+
+      // Test with invalid missedDate object
+      const streakInfoInvalidMissedDate = createStreakInfo({
+        status: {
+          type: RecoveryStatusType.ELIGIBLE,
+          postsRequired: 2,
+          currentPosts: 1,
+          deadline: Timestamp.fromDate(wednesdayDate),
+          missedDate: { invalid: 'object' } as any, // Invalid timestamp
+        },
+        currentStreak: 0,
+        originalStreak: 5,
+      });
+
+      const resultInvalidMissedDate = calculateEligibleToOnStreakPure(
+        userId,
+        wednesdayDate,
+        streakInfoInvalidMissedDate,
+        2,
+      );
+
+      // Should default to Mon-Thu policy (+2) when missedDate is invalid
+      expect(resultInvalidMissedDate?.updates.currentStreak).toBe(7); // originalStreak + 2
+    });
   });
 
   describe('edge cases', () => {

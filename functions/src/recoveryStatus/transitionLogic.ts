@@ -107,7 +107,11 @@ export function calculateEligibleToOnStreakPure(
   const originalStreak = streakInfo.originalStreak || 0;
   
   // Check if the missed date was a Friday to determine recovery policy
-  const wasFridayMiss = status.missedDate ? isSeoulFriday(status.missedDate.toDate()) : false;
+  // Validate missedDate is a valid Timestamp before calling toDate()
+  const wasFridayMiss = 
+    status.missedDate && typeof status.missedDate.toDate === 'function'
+      ? isSeoulFriday(status.missedDate.toDate())
+      : false; // Default to Mon-Thu policy if missedDate is invalid
 
   // Policy v2:
   // - Mon-Thu miss → recovery on next working day: currentStreak = originalStreak + 2
