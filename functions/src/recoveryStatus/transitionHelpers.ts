@@ -5,9 +5,9 @@ export interface DBUpdate {
   userId: string;
   updates: Partial<StreakInfo> & { 
     lastCalculated: Timestamp;
-    recoveryHistory?: RecoveryHistory;
   };
   reason: string;
+  recoveryHistory?: RecoveryHistory; // Moved outside of updates to handle separately
 }
 
 

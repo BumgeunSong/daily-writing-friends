@@ -627,9 +627,9 @@ describe('Streak Recovery State Transitions', () => {
           todayPostCount,
         );
 
-        // Should include RecoveryHistory record
-        expect(result?.updates).toHaveProperty('recoveryHistory');
-        expect(result?.updates.recoveryHistory).toEqual({
+        // Should include RecoveryHistory record as separate field
+        expect(result).toHaveProperty('recoveryHistory');
+        expect(result?.recoveryHistory).toEqual({
           missedDate: Timestamp.fromDate(missedTuesday),
           recoveryDate: Timestamp.fromDate(wednesdayDate),
           postsRequired: 2,
@@ -661,9 +661,9 @@ describe('Streak Recovery State Transitions', () => {
           todayPostCount,
         );
 
-        // Should include RecoveryHistory record
-        expect(result?.updates).toHaveProperty('recoveryHistory');
-        expect(result?.updates.recoveryHistory).toEqual({
+        // Should include RecoveryHistory record as separate field
+        expect(result).toHaveProperty('recoveryHistory');
+        expect(result?.recoveryHistory).toEqual({
           missedDate: Timestamp.fromDate(missedFriday),
           recoveryDate: Timestamp.fromDate(saturdayDate),
           postsRequired: 1,
@@ -695,7 +695,7 @@ describe('Streak Recovery State Transitions', () => {
         );
 
         // Should NOT include RecoveryHistory record
-        expect(result?.updates).not.toHaveProperty('recoveryHistory');
+        expect(result).not.toHaveProperty('recoveryHistory');
         expect(result?.updates.status?.type).toBe(RecoveryStatusType.ELIGIBLE);
       });
     });
@@ -717,9 +717,9 @@ describe('Streak Recovery State Transitions', () => {
           todayPostCount,
         );
 
-        // Should include RecoveryHistory record
-        expect(result?.updates).toHaveProperty('recoveryHistory');
-        expect(result?.updates.recoveryHistory).toEqual({
+        // Should include RecoveryHistory record as separate field
+        expect(result).toHaveProperty('recoveryHistory');
+        expect(result?.recoveryHistory).toEqual({
           missedDate: expect.any(Timestamp), // Should be calculated based on recovery requirement
           recoveryDate: Timestamp.fromDate(thursdayDate),
           postsRequired: 2,

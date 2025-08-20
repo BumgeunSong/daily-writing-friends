@@ -133,8 +133,8 @@ export function calculateEligibleToOnStreakPure(
       originalStreak: newOriginalStreak,
       longestStreak: newLongestStreak,
       lastContributionDate: formatSeoulDate(postDate),
-      recoveryHistory,
     },
+    recoveryHistory, // Return as separate field for subcollection handling
   };
 }
 
@@ -255,8 +255,8 @@ function handleSameDayRecovery(
       originalStreak: todayPostCount, // Fresh start
       longestStreak: newLongestStreak,
       lastContributionDate: formatSeoulDate(postDate),
-      recoveryHistory,
     },
+    recoveryHistory, // Return as separate field for subcollection handling
   };
 }
 

@@ -51,4 +51,5 @@ export {
   isRecoveryDeadlinePassed,
   calculatePostsNeeded,
   isRecoveryOnTrack,
+  addRecoveryHistoryToSubcollection,
 } from './recoveryUtils';

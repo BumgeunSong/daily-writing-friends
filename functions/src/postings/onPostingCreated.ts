@@ -3,6 +3,7 @@ import { Posting } from "./Posting";
 import { calculatePostingTransitions } from "../recoveryStatus/stateTransitions";
 import { updateStreakInfo } from "../recoveryStatus/streakUtils";
 import { convertToSeoulTime } from "../shared/seoulTime";
+import { addRecoveryHistoryToSubcollection } from "../recoveryStatus/recoveryUtils";
 
 export const onPostingCreated = onDocumentCreated(
   'users/{userId}/postings/{postingId}',
@@ -41,8 +42,15 @@ export const onPostingCreated = onDocumentCreated(
       // Process state transitions based on posting creation
       const dbUpdate = await calculatePostingTransitions(userId, seoulDate);
       if (dbUpdate) {
+        // Update streak info first
         await updateStreakInfo(userId, dbUpdate.updates);
         console.log(`[StateTransition] User ${userId}: ${dbUpdate.reason}`, JSON.stringify(dbUpdate, null, 2));
+        
+        // If recovery was completed, add recovery history to subcollection
+        if (dbUpdate.recoveryHistory) {
+          await addRecoveryHistoryToSubcollection(userId, dbUpdate.recoveryHistory);
+          console.log(`[RecoveryHistory] Recovery completed for user ${userId}`);
+        }
       }
       
       console.log(`[PostingCreated] Successfully processed transitions for user: ${userId}`);

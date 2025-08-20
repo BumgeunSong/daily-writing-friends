@@ -1,5 +1,6 @@
 import { Timestamp } from 'firebase-admin/firestore';
 import { RecoveryHistory, RecoveryStatus, RecoveryRequirement } from './StreakInfo';
+import admin from '../shared/admin';
 
 /**
  * Create a RecoveryHistory record for successful recovery
@@ -16,6 +17,32 @@ export function createRecoveryHistory(
     postsWritten,
     recoveredAt: Timestamp.now(),
   };
+}
+
+/**
+ * Add recovery history to the subcollection
+ * Path: users/{userId}/streakInfo/current/recoveryHistory/{recoveryId}
+ */
+export async function addRecoveryHistoryToSubcollection(
+  userId: string,
+  recoveryHistory: RecoveryHistory,
+): Promise<void> {
+  try {
+    const recoveryHistoryRef = admin
+      .firestore()
+      .collection('users')
+      .doc(userId)
+      .collection('streakInfo')
+      .doc('current')
+      .collection('recoveryHistory');
+
+    await recoveryHistoryRef.add(recoveryHistory);
+    
+    console.log(`[RecoveryHistory] Added recovery history for user ${userId}`);
+  } catch (error) {
+    console.error(`[RecoveryHistory] Error adding recovery history for user ${userId}:`, error);
+    throw error;
+  }
 }
 
 /**
