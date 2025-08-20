@@ -5,6 +5,7 @@ import Comments from '@/comment/components/Comments';
 import { usePostDelete } from '@/post/hooks/usePostDelete';
 import { fetchPost } from '@/post/utils/postUtils';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { getUserDisplayName } from '@/shared/utils/userUtils';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { useUser } from '@/user/hooks/useUser';
 import { PostAdjacentButtons } from './PostAdjacentButtons';
@@ -19,15 +20,17 @@ export default function PostDetailPage() {
   const navigate = useNavigate();
   const handleDelete = usePostDelete();
 
-  const { data: post, isLoading, error } = useQuery(
-    ['post', boardId, postId],
-    () => fetchPost(boardId!, postId!),
-    { enabled: !!boardId && !!postId }
-  );
+  const {
+    data: post,
+    isLoading,
+    error,
+  } = useQuery(['post', boardId, postId], () => fetchPost(boardId!, postId!), {
+    enabled: !!boardId && !!postId,
+  });
 
   // PostCard에서 이미 캐시된 author 데이터 활용
   const { userData: authorData } = useUser(post?.authorId ?? null);
-  const authorNickname = authorData?.nickname;
+  const authorNickname = getUserDisplayName(authorData);
 
   // 게시글 상세 페이지는 항상 맨 위부터 시작
   useEffect(() => {
@@ -42,19 +45,19 @@ export default function PostDetailPage() {
   return (
     <div className='min-h-screen bg-background'>
       <PostMetaHelmet post={post} boardId={boardId} postId={postId} />
-      <main className="container mx-auto max-w-4xl px-6 py-2">
+      <main className='container mx-auto max-w-4xl px-6 py-2'>
         <PostBackButton className='mb-4' />
         <article className='space-y-4'>
-        <PostDetailHeader
-          post={post}
-          authorNickname={authorNickname ?? undefined}
-          isAuthor={isAuthor}
-          boardId={boardId}
-          postId={postId}
-          onDelete={handleDelete}
-          navigate={navigate}
-        />
-        <PostContent post={post} isAuthor={isAuthor} />
+          <PostDetailHeader
+            post={post}
+            authorNickname={authorNickname ?? undefined}
+            isAuthor={isAuthor}
+            boardId={boardId}
+            postId={postId}
+            onDelete={handleDelete}
+            navigate={navigate}
+          />
+          <PostContent post={post} isAuthor={isAuthor} />
         </article>
         <div className='mt-8 border-t border-border'></div>
         {boardId && postId && <PostAdjacentButtons boardId={boardId} postId={postId} />}
@@ -77,7 +80,7 @@ export default function PostDetailPage() {
 function PostDetailSkeleton() {
   return (
     <div className='min-h-screen bg-background'>
-      <main className="container mx-auto max-w-4xl px-6 py-2">
+      <main className='container mx-auto max-w-4xl px-6 py-2'>
         <Skeleton className='mb-4 h-12 w-3/4' />
         <Skeleton className='mb-2 h-4 w-full' />
         <Skeleton className='mb-2 h-4 w-full' />
@@ -91,8 +94,10 @@ function PostDetailSkeleton() {
 function PostDetailError({ boardId }: { boardId?: string }) {
   return (
     <div className='min-h-screen bg-background'>
-      <main className="container mx-auto max-w-4xl px-6 py-2 text-center">
-        <h1 className='mb-4 text-xl font-semibold text-foreground md:text-2xl'>게시물을 찾을 수 없습니다.</h1>
+      <main className='container mx-auto max-w-4xl px-6 py-2 text-center'>
+        <h1 className='mb-4 text-xl font-semibold text-foreground md:text-2xl'>
+          게시물을 찾을 수 없습니다.
+        </h1>
         {boardId && <PostBackButton />}
       </main>
     </div>
