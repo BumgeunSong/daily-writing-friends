@@ -29,7 +29,7 @@ export function calculateOnStreakToEligiblePure(
 
   // Per PRD: Only check working day misses
   if (!isSeoulWorkingDay(yesterday)) {
-    return null; // No state changes for non-working day misses
+    return null;
   }
 
   const missedYesterday = !hadPostsYesterday;
@@ -55,7 +55,7 @@ export function calculateOnStreakToEligiblePure(
         missedDate: recoveryReq.missedDate,
       },
       currentStreak: 0, // Reset immediately per PRD
-      originalStreak: streakInfo ? streakInfo.currentStreak : 0, // Preserve current streak
+      originalStreak: streakInfo ? streakInfo.currentStreak : 0,
     },
   };
 }
@@ -84,7 +84,6 @@ export function calculateEligibleToOnStreakPure(
     return null;
   }
 
-  // Return progress update if not yet completed
   if (todayPostCount < status.postsRequired) {
     const baseUpdate = createBaseUpdate(
       userId,
@@ -103,15 +102,15 @@ export function calculateEligibleToOnStreakPure(
     };
   }
 
-  // Recovery completed - transition to onStreak
   const originalStreak = streakInfo.originalStreak || 0;
   
-  // Check if the missed date was a Friday to determine recovery policy
-  // Validate missedDate is a valid Timestamp before calling toDate()
+  // Recovery policy depends on which day was missed (not recovery day)
+  // Business rule: Friday misses are easier to recover from (+1) than weekday misses (+2)
+  // because weekends have lower posting expectations
   const wasFridayMiss = 
     status.missedDate && typeof status.missedDate.toDate === 'function'
       ? isSeoulFriday(status.missedDate.toDate())
-      : false; // Default to Mon-Thu policy if missedDate is invalid
+      : false;
 
   // Policy v2:
   // - Mon-Thu miss → recovery on next working day: currentStreak = originalStreak + 2
