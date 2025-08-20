@@ -8,6 +8,7 @@ import { Badge } from '@/shared/ui/badge';
 import { Card, CardContent, CardFooter, CardHeader } from '@/shared/ui/card';
 import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';
 import { useUser } from '@/user/hooks/useUser';
+import { getUserDisplayName } from '@/shared/utils/userUtils';
 import { PostAuthorData, PostUserProfile } from './PostUserProfile';
 import type React from 'react';
 
@@ -45,7 +46,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) =>
 
   const postAuthorData: PostAuthorData = {
     id: post.authorId,
-    displayName: authorData?.nickname || authorData?.realName || '',
+    displayName: getUserDisplayName(authorData),
     profileImageURL: authorData?.profilePhotoURL || '',
   };
 
