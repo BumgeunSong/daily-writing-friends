@@ -8,6 +8,7 @@ import {
   getSeoulYesterday,
   hasDeadlinePassed,
   isSeoulWorkingDay,
+  isSeoulFriday,
 } from '../shared/calendar';
 
 /**
@@ -104,20 +105,24 @@ export function calculateEligibleToOnStreakPure(
 
   // Recovery completed - transition to onStreak
   const originalStreak = streakInfo.originalStreak || 0;
-  const isRecoveryOnWorkingDay = isSeoulWorkingDay(postDate);
+  
+  // Check if the missed date was a Friday to determine recovery policy
+  const wasFridayMiss = status.missedDate ? isSeoulFriday(status.missedDate.toDate()) : false;
 
   // Policy v2:
-  // - Working day recovery (Mon–Fri): currentStreak = originalStreak + 2
-  // - Weekend recovery (Fri->Sat): currentStreak = originalStreak + 1
+  // - Mon-Thu miss → recovery on next working day: currentStreak = originalStreak + 2
+  // - Friday miss → recovery on Saturday: currentStreak = originalStreak + 1
   let newCurrentStreak: number;
   let newOriginalStreak: number;
 
-  if (isRecoveryOnWorkingDay) {
-    newCurrentStreak = originalStreak + 2;
-    newOriginalStreak = originalStreak + 2;
-  } else {
+  if (wasFridayMiss) {
+    // Friday miss → Saturday recovery: +1
     newCurrentStreak = originalStreak + 1;
     newOriginalStreak = originalStreak + 1;
+  } else {
+    // Mon-Thu miss → working day recovery: +2
+    newCurrentStreak = originalStreak + 2;
+    newOriginalStreak = originalStreak + 2;
   }
 
   const newLongestStreak = updateLongestStreak(streakInfo.longestStreak, newCurrentStreak);

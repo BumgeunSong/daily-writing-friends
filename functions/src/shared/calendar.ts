@@ -96,6 +96,23 @@ export function isSeoulWorkingDay(date: Date): boolean {
 }
 
 /**
+ * Check if a given date is Friday in Seoul timezone
+ * Used for recovery policy calculation
+ */
+export function isSeoulFriday(date: Date): boolean {
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    throw new Error('Invalid Date object provided to isSeoulFriday');
+  }
+
+  const dayOfWeek = date.toLocaleDateString('en-US', {
+    timeZone: 'Asia/Seoul',
+    weekday: 'short',
+  });
+
+  return dayOfWeek === 'Fri';
+}
+
+/**
  * Get the next working day after a given date in Seoul timezone
  * Returns a new Date object representing the next working day
  */
