@@ -14,7 +14,8 @@ import { BackfillRequestParams, BackfillParams, BackfillErrorType } from './type
  */
 export async function handleBackfillRequest(req: Request, res: Response): Promise<void> {
   try {
-    // TODO: Re-enable authentication after testing
+    // TODO: Enable authentication for production deployment (ETA: before v1.0 release)
+    // Auth disabled for development backfill testing
     // const isAuthorized = await validateBackfillAuth(req);
     // if (!isAuthorized) {
     //   res.status(403).json({

@@ -40,6 +40,66 @@ src/[feature]/
 
 ## Code Writing Practices
 
+### Code Comments Best Practices
+
+Follow these principles for effective code comments:
+
+**Core Principle: Code tells you HOW, Comments tell you WHY**
+
+#### 9 Rules for Code Comments
+
+1. **Don't Duplicate Code**
+   - Comments should provide additional insight, not restate what's already clear
+   - ❌ `// Add one to counter` 
+   - ✅ `// Increment for retry backoff calculation`
+
+2. **Comments Can't Fix Bad Code**
+   - Instead of explaining confusing code, rewrite it to be clear
+   - If you can't write a clear comment, rethink the code structure
+
+3. **Explain Unusual or Non-Standard Code**
+   - Add comments for code that might seem redundant or counterintuitive
+   - Help future readers understand why a specific approach was taken
+
+4. **Cite Sources for Copied Code**
+   - Include links to original sources when using external code
+   - Provide context about where the code came from
+
+5. **Link to Relevant External References**
+   - Include links to standards, documentation, or specifications
+   - Help readers understand the broader context
+
+6. **Document Bug Fixes and Workarounds**
+   - Add comments when resolving specific issues
+   - Reference issue trackers or provide details about the problem
+
+7. **Mark Incomplete Implementations**
+   - Use `TODO:` comments to highlight known limitations
+   - Make technical debt visible and trackable
+
+8. **Comments Should Clarify, Not Confuse**
+   - Remove comments that create more questions than answers
+   - Aim to make the code's purpose immediately understandable
+
+9. **Keep Comments Current**
+   - Update comments when changing code
+   - Remove obsolete comments that no longer apply
+
+#### When to Comment
+
+- **Business logic reasoning**: Why this calculation/formula is used
+- **Performance optimizations**: Why a specific approach was chosen
+- **Bug workarounds**: Reference to issues or limitations
+- **Complex algorithms**: High-level explanation of the approach
+- **External API integrations**: Context about third-party requirements
+
+#### When NOT to Comment
+
+- **Obvious code**: Simple variable assignments or clear function calls
+- **Self-explanatory functions**: Well-named functions with clear parameters
+- **Standard patterns**: Common React/TypeScript patterns
+- **Temporary debugging**: Remove debug comments before committing
+
 ### Component Structure
 
 Follow this pattern for all React components:

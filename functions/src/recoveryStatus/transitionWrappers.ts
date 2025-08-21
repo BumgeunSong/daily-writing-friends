@@ -80,7 +80,7 @@ export async function calculateOnStreakToOnStreak(
     ...baseUpdate,
     updates: {
       ...baseUpdate.updates,
-      lastContributionDate: postDate.toISOString().split('T')[0], // YYYY-MM-DD format
+      lastContributionDate: postDate.toISOString().split('T')[0],
       status: {
         type: RecoveryStatusType.ON_STREAK,
       },
@@ -114,8 +114,8 @@ export async function calculateMidnightStreakMaintenance(
 }
 
 /**
- * Calculate missed state maintenance at midnight 
- * Per PRD: ensure missed state has currentStreak=0, originalStreak=0
+ * Reset missed state streak values to baseline
+ * Per PRD: missed state should have both currentStreak=0 and originalStreak=0
  */
 export async function calculateMissedStateMaintenance(
   userId: string,

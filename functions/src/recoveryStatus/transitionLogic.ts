@@ -8,6 +8,7 @@ import {
   getSeoulYesterday,
   hasDeadlinePassed,
   isSeoulWorkingDay,
+  isSeoulFriday,
 } from '../shared/calendar';
 
 /**
@@ -28,7 +29,7 @@ export function calculateOnStreakToEligiblePure(
 
   // Per PRD: Only check working day misses
   if (!isSeoulWorkingDay(yesterday)) {
-    return null; // No state changes for non-working day misses
+    return null;
   }
 
   const missedYesterday = !hadPostsYesterday;
@@ -54,7 +55,7 @@ export function calculateOnStreakToEligiblePure(
         missedDate: recoveryReq.missedDate,
       },
       currentStreak: 0, // Reset immediately per PRD
-      originalStreak: streakInfo ? streakInfo.currentStreak : 0, // Preserve current streak
+      originalStreak: streakInfo ? streakInfo.currentStreak : 0,
     },
   };
 }
@@ -83,7 +84,6 @@ export function calculateEligibleToOnStreakPure(
     return null;
   }
 
-  // Return progress update if not yet completed
   if (todayPostCount < status.postsRequired) {
     const baseUpdate = createBaseUpdate(
       userId,
@@ -102,22 +102,30 @@ export function calculateEligibleToOnStreakPure(
     };
   }
 
-  // Recovery completed - transition to onStreak
   const originalStreak = streakInfo.originalStreak || 0;
-  const isRecoveryOnWorkingDay = isSeoulWorkingDay(postDate);
+  
+  // Recovery policy depends on which day was missed (not recovery day)
+  // Business rule: Friday misses are easier to recover from (+1) than weekday misses (+2)
+  // because weekends have lower posting expectations
+  const wasFridayMiss = 
+    status.missedDate && typeof status.missedDate.toDate === 'function'
+      ? isSeoulFriday(status.missedDate.toDate())
+      : false;
 
   // Policy v2:
-  // - Working day recovery (Mon–Fri): currentStreak = originalStreak + 2
-  // - Weekend recovery (Fri->Sat): currentStreak = originalStreak + 1
+  // - Mon-Thu miss → recovery on next working day: currentStreak = originalStreak + 2
+  // - Friday miss → recovery on Saturday: currentStreak = originalStreak + 1
   let newCurrentStreak: number;
   let newOriginalStreak: number;
 
-  if (isRecoveryOnWorkingDay) {
-    newCurrentStreak = originalStreak + 2;
-    newOriginalStreak = originalStreak + 2;
-  } else {
+  if (wasFridayMiss) {
+    // Friday miss → Saturday recovery: +1
     newCurrentStreak = originalStreak + 1;
     newOriginalStreak = originalStreak + 1;
+  } else {
+    // Mon-Thu miss → working day recovery: +2
+    newCurrentStreak = originalStreak + 2;
+    newOriginalStreak = originalStreak + 2;
   }
 
   const newLongestStreak = updateLongestStreak(streakInfo.longestStreak, newCurrentStreak);
@@ -133,8 +141,8 @@ export function calculateEligibleToOnStreakPure(
       originalStreak: newOriginalStreak,
       longestStreak: newLongestStreak,
       lastContributionDate: formatSeoulDate(postDate),
-      recoveryHistory,
     },
+    recoveryHistory, // Return as separate field for subcollection handling
   };
 }
 
@@ -255,8 +263,8 @@ function handleSameDayRecovery(
       originalStreak: todayPostCount, // Fresh start
       longestStreak: newLongestStreak,
       lastContributionDate: formatSeoulDate(postDate),
-      recoveryHistory,
     },
+    recoveryHistory, // Return as separate field for subcollection handling
   };
 }
 

@@ -185,10 +185,9 @@ export async function processSimulationDay(
         const deadlineCheck = checkEligibleDeadline(newState, dayBucket);
         if (dayBucket.isWorkingDay && !streakSatisfied) {
           if (deadlineCheck.deadlinePassed) {
-            // Previous eligible failed, and today is a new working-day miss → immediately track today as the most recent miss
-            // Step 1: apply deadline failure
+            // Complex case: deadline expired AND new miss on same day
+            // User loses previous recovery opportunity but gets new recovery window for today's miss
             const afterFailureState = deadlineCheck.newState;
-            // Step 2: mark today as new missed day (eligible for next working day)
             const transition = handleMissedToEligible(afterFailureState, dayBucket);
             newState = transition.newState;
             stateTransition = transition.stateTransition;
@@ -248,8 +247,8 @@ function handleOnStreakToContinue(state: SimulationState, dayBucket: DayBucket):
   return {
     ...state,
     currentStreak: state.currentStreak + 1,
-    // PRD: originalStreak는 onStreak → eligible 전환 시 캡쳐된 값으로 유지
-    // onStreak 진행 중에는 증가시키지 않습니다
+    // originalStreak stays constant during onStreak progression
+    // Only captured once during onStreak → eligible transition for recovery purposes
     originalStreak: state.originalStreak,
     lastContributionDate: dayBucket.kstDateString,
   };
@@ -338,13 +337,8 @@ function handleEligibleDay(
         ...state,
         status: { type: RecoveryStatusType.ON_STREAK },
         currentStreak: newCurrentStreak,
-        /**
-         * Note on originalStreak lifecycle:
-         * - It is CAPTURED when we transition OnStreak → Eligible (see handleOnStreakToEligible)
-         * - If another miss occurs while already Eligible, it is UPDATED to the current progress
-         *   (see handleEligibleToMostRecentMiss)
-         * - It is NOT changed here on recovery completion
-         */
+        // originalStreak preserved from initial onStreak → eligible capture
+        // Used to calculate recovery bonus: +1 for Friday miss, +2 for weekday miss
       },
       stateTransition: {
         from: 'eligible',
