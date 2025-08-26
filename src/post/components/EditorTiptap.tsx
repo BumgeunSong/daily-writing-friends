@@ -1,11 +1,13 @@
-import { useImperativeHandle, forwardRef, useEffect } from 'react';
+import { useImperativeHandle, forwardRef, useEffect, useState } from 'react';
 import { useTiptapEditor } from '@/post/hooks/useTiptapEditor';
 import { useTiptapImageUpload } from '@/post/hooks/useTiptapImageUpload';
 import { useEditorCopy } from '@/post/hooks/useEditorCopy';
+import { useIMEDiagnostics } from '@/post/hooks/useIMEDiagnostics';
 import { UploadProgress } from './UploadProgress';
 import { EditorContentArea } from './EditorContentArea';
 import { ResponsiveEditorToolbar } from './ResponsiveEditorToolbar';
 import { CopyErrorBoundary } from './CopyErrorBoundary';
+import { IMEDiagnosticOverlay } from './IMEDiagnosticOverlay';
 import { useIsMobile } from '../../shared/hooks/useWindowSize';
 import { ProseMirrorDoc } from '@/post/model/Post';
 
@@ -26,12 +28,20 @@ export interface EditorTiptapHandle {
  */
 export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
   ({ initialHtml, initialJson, onChange, placeholder = '내용을 입력하세요...' }, ref) => {
+    const [showDiagnostics, setShowDiagnostics] = useState(false);
+    
     // Initialize editor with custom configuration
     const editor = useTiptapEditor({
       initialHtml,
       initialJson,
       onChange,
       placeholder,
+    });
+
+    // IME diagnostics for debugging Korean input issues
+    const { imeState, imeLogger } = useIMEDiagnostics({
+      editor,
+      enabled: true, // Always enabled in debug mode
     });
 
     // Image upload functionality
@@ -41,6 +51,20 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
 
     // Copy functionality
     const { editorElementRef } = useEditorCopy(editor);
+    
+    // Show diagnostics overlay with keyboard shortcut (Ctrl/Cmd + Shift + D)
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'D') {
+          e.preventDefault();
+          setShowDiagnostics(prev => !prev);
+          console.log('🔍 IME Diagnostics:', !showDiagnostics ? 'Enabled' : 'Disabled');
+        }
+      };
+      
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [showDiagnostics]);
 
     // Handle paste events for images
     useEffect(() => {
@@ -93,6 +117,15 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
           <div className='md:hidden'>
             <ResponsiveEditorToolbar editor={editor} onImageUpload={openFilePicker} />
           </div>
+
+          {/* IME Diagnostics Overlay (Ctrl/Cmd + Shift + D to toggle) */}
+          {showDiagnostics && (
+            <IMEDiagnosticOverlay
+              imeState={imeState}
+              imeLogger={imeLogger}
+              onClose={() => setShowDiagnostics(false)}
+            />
+          )}
         </div>
       </CopyErrorBoundary>
     );

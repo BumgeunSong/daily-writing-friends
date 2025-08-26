@@ -7,10 +7,12 @@ import Dropcursor from '@tiptap/extension-dropcursor';
 import { useRef, useEffect } from 'react';
 import { sanitize } from '@/post/utils/sanitizeHtml';
 import { ProseMirrorDoc } from '@/post/model/Post';
+import { imeLogger } from '@/post/utils/imeLogger';
 
 // Editor configuration constants
 const DEFAULT_DEBOUNCE_DELAY = 300; // milliseconds
 const DEFAULT_PLACEHOLDER = '내용을 입력하세요...';
+const ENABLE_IME_DIAGNOSTICS = true; // Toggle for IME debugging
 
 interface UseTiptapEditorProps {
   initialHtml?: string;
@@ -91,6 +93,81 @@ export function useTiptapEditor({
         }
         return false; // Let TipTap handle other paste events
       },
+      handleDOMEvents: ENABLE_IME_DIAGNOSTICS ? {
+        compositionstart: (view, event) => {
+          const state = {
+            selection: { from: view.state.selection.from, to: view.state.selection.to },
+            content: view.state.doc.textContent.substring(
+              Math.max(0, view.state.selection.from - 50),
+              Math.min(view.state.doc.textContent.length, view.state.selection.to + 50)
+            ),
+          };
+          imeLogger.logCompositionStart(event as CompositionEvent, state);
+          
+          console.log('%c[Tiptap] compositionstart handled', 'color: #9333EA', {
+            selectionFrom: view.state.selection.from,
+            selectionTo: view.state.selection.to,
+            data: (event as CompositionEvent).data,
+          });
+          return false; // Let ProseMirror handle it
+        },
+        compositionupdate: (view, event) => {
+          const state = {
+            selection: { from: view.state.selection.from, to: view.state.selection.to },
+            content: view.state.doc.textContent.substring(
+              Math.max(0, view.state.selection.from - 50),
+              Math.min(view.state.doc.textContent.length, view.state.selection.to + 50)
+            ),
+          };
+          imeLogger.logCompositionUpdate(event as CompositionEvent, state);
+          
+          console.log('%c[Tiptap] compositionupdate handled', 'color: #9333EA', {
+            data: (event as CompositionEvent).data,
+            currentContent: view.state.doc.textContent.substring(
+              view.state.selection.from - 10,
+              view.state.selection.from + 10
+            ),
+          });
+          return false; // Let ProseMirror handle it
+        },
+        compositionend: (view, event) => {
+          const state = {
+            selection: { from: view.state.selection.from, to: view.state.selection.to },
+            content: view.state.doc.textContent.substring(
+              Math.max(0, view.state.selection.from - 50),
+              Math.min(view.state.doc.textContent.length, view.state.selection.to + 50)
+            ),
+          };
+          
+          // Check actual inserted text after a brief delay
+          setTimeout(() => {
+            const afterContent = view.state.doc.textContent;
+            const insertedText = afterContent.substring(
+              view.state.selection.from - (event as CompositionEvent).data.length,
+              view.state.selection.from
+            );
+            imeLogger.logCompositionEnd(event as CompositionEvent, state, insertedText);
+            
+            console.log('%c[Tiptap] compositionend result', 'color: #9333EA', {
+              expected: (event as CompositionEvent).data,
+              inserted: insertedText,
+              match: insertedText === (event as CompositionEvent).data,
+            });
+          }, 10);
+          
+          return false; // Let ProseMirror handle it
+        },
+        beforeinput: (view, event) => {
+          const inputEvent = event as InputEvent;
+          if (inputEvent.isComposing) {
+            console.log('%c[Tiptap] beforeinput during composition', 'color: #9333EA', {
+              inputType: inputEvent.inputType,
+              data: inputEvent.data,
+            });
+          }
+          return false; // Let ProseMirror handle it
+        },
+      } : {},
     },
     onUpdate: ({ editor }) => {
       // Debounce onChange calls for performance
