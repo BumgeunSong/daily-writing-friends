@@ -9,6 +9,7 @@ import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { WritingStatus } from "@/stats/model/WritingStatus"
 import { useUserNickname } from '@/user/hooks/useUserNickname'
+import { TopNavigationBar } from '@/shared/components/TopNavigationBar'
 import CountupWritingTimer from "./CountupWritingTimer"
 import { PostSubmitButton } from "./PostSubmitButton"
 import { PostEditor } from "./PostEditor"
@@ -24,7 +25,6 @@ export default function PostFreewritingPage() {
   // 상태 관리
   const POST_TITLE = userNickname ? `${userNickname}님의 프리라이팅` : "프리라이팅"
   const [content, setContent] = useState("")
-  const [contentJson, setContentJson] = useState<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [timerStatus, setTimerStatus] = useState<WritingStatus>(WritingStatus.Paused)
   const [isReached, setIsReached] = useState(false)
@@ -79,7 +79,7 @@ export default function PostFreewritingPage() {
     setIsSubmitting(true)
 
     try {
-      await createPost(boardId, POST_TITLE, content, currentUser.uid, userNickname ?? '', PostVisibility.PRIVATE, contentJson)
+      await createPost(boardId, POST_TITLE, content, currentUser.uid, userNickname ?? '', PostVisibility.PRIVATE)
 
       toast.success("프리라이팅으로 쓴 글은 다른 사람에게 보이지 않아요.", {position: 'bottom-center'})
 
@@ -96,6 +96,18 @@ export default function PostFreewritingPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
+      {/* Top Navigation Bar */}
+      <TopNavigationBar
+        rightContent={
+          <PostSubmitButton
+            isSubmitting={isSubmitting}
+            disabled={!isReached || !POST_TITLE.trim() || !content.trim()}
+            label={isReached ? "업로드하기" : "아직 시간이 남았어요"}
+            submittingLabel="업로드 중..."
+          />
+        }
+      />
+
       {/* 카운트업 타이머 */}
       <CountupWritingTimer
         status={timerStatus}
@@ -106,22 +118,18 @@ export default function PostFreewritingPage() {
 
       <div className="container mx-auto max-w-3xl grow px-4 py-6 sm:px-6">
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Title */}
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">프리라이팅</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {userNickname ? `${userNickname}님의 ` : ''}자유로운 글쓰기 시간
+            </p>
+          </div>
+
           <div className="overflow-hidden rounded-xl border bg-card">
             <PostEditor 
               value={content} 
               onChange={handleContentChange}
-              contentJson={contentJson}
-              onJsonChange={setContentJson}
-            />
-          </div>
-
-          <div className="flex items-center justify-end pt-2">
-            <PostSubmitButton
-              isSubmitting={isSubmitting}
-              disabled={!isReached || !POST_TITLE.trim() || !content.trim()}
-              label={isReached ? "업로드하기" : "아직 시간이 남았어요"}
-              submittingLabel="업로드 중..."
-              className="px-8 py-6 text-lg"
             />
           </div>
         </form>

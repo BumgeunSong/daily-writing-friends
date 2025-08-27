@@ -1,7 +1,6 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
-import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
-import { PostTextEditor } from './PostTextEditor'; // Quill editor
-import { NativeTextEditor } from './NativeTextEditor'; // Native textarea editor
+import { EnhancedPostTextEditor } from './EnhancedPostTextEditor';
+import type { QuillInstance } from '../types/quillEditor';
 
 interface PostEditorProps {
   value: string;
@@ -11,53 +10,37 @@ interface PostEditorProps {
 
 export interface PostEditorHandle {
   focus: () => void;
-  save?: () => void;
 }
 
 /**
- * Wrapper component that toggles between Quill and Native editors
- * based on remote config flag
+ * Enhanced Quill-based rich text editor with sticky toolbar and modern features
  */
 export const PostEditor = forwardRef<PostEditorHandle, PostEditorProps>(
   ({ value, onChange, placeholder }, ref) => {
-    const { value: nativeEditorEnabled } = useRemoteConfig('native_editor_enabled');
-    const nativeEditorRef = useRef<HTMLTextAreaElement>(null);
+    const quillRef = useRef<QuillInstance>(null);
 
     // Expose focus method through ref
     useImperativeHandle(
       ref,
       () => ({
         focus: () => {
-          if (nativeEditorEnabled && nativeEditorRef.current) {
-            nativeEditorRef.current.focus();
+          const editor = quillRef.current?.getEditor();
+          if (editor) {
+            editor.focus();
           }
-          // Quill editor doesn't have a focus method in current implementation
-        },
-        save: () => {
-          // Native editor has save functionality, Quill doesn't need it
         },
       }),
-      [nativeEditorEnabled],
+      [],
     );
 
-    // Use Native editor if enabled
-    if (nativeEditorEnabled) {
-      return (
-        <NativeTextEditor
-          ref={nativeEditorRef}
-          initialContent={value}
-          onSave={(content) => {
-            // Auto-save functionality handled internally
-            onChange(content);
-          }}
-          placeholder={placeholder}
-          variant="inline"
-        />
-      );
-    }
-
-    // Use Quill editor (default)
-    return <PostTextEditor value={value} onChange={onChange} placeholder={placeholder} />;
+    return (
+      <EnhancedPostTextEditor 
+        value={value} 
+        onChange={onChange} 
+        placeholder={placeholder}
+        stickyToolbar={true}
+      />
+    );
   },
 );
 

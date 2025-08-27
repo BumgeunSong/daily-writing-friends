@@ -3,12 +3,12 @@ import { Save } from 'lucide-react';
 import React, { useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
+import { TopNavigationBar } from '@/shared/components/TopNavigationBar';
 import { toast } from '@/shared/hooks/use-toast';
 import { Button } from '@/shared/ui/button';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { formatDate } from '@/shared/utils/dateUtils';
 import { fetchPost, updatePost } from '@/post/utils/postUtils';
-import { PostBackButton } from './PostBackButton';
 import { PostEditor } from './PostEditor';
 import { PostTitleEditor } from './PostTitleEditor';
 
@@ -66,7 +66,6 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
   const [editState, setEditState] = useState({
     title: post?.title || '',
     content: post?.content || '',
-    contentJson: post?.contentJson || null,
   });
 
   // 제목 변경 핸들러
@@ -85,13 +84,6 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
     }));
   };
 
-  // JSON 내용 변경 핸들러
-  const setContentJson = (contentJson: any) => {
-    setEditState((prev) => ({
-      ...prev,
-      contentJson,
-    }));
-  };
 
   // 폼 제출 핸들러
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,7 +91,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
     if (!editState.title.trim() || !editState.content.trim()) return;
 
     try {
-      await updatePost(boardId, postId, editState.title, editState.content, editState.contentJson);
+      await updatePost(boardId, postId, editState.title, editState.content);
       navigate(`/board/${boardId}/post/${postId}`);
     } catch (error) {
       console.error('Error updating post:', error);
@@ -112,41 +104,47 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
   };
 
   return (
-    <div className='mx-auto max-w-4xl px-6 py-8'>
-      <PostBackButton className='mb-2' />
-      <form onSubmit={handleSubmit} className='space-y-6'>
-        <input type='hidden' value={post?.boardId} />
-        <input type='hidden' value={post?.authorId} />
-        <input type='hidden' value={post?.authorName} />
-        <input type='hidden' value={editState.title} />
-        <input type='hidden' value={editState.content} />
+    <div className='min-h-screen flex flex-col bg-background'>
+      {/* Top Navigation Bar */}
+      <TopNavigationBar
+        rightContent={
+          <Button
+            variant='default'
+            type='submit'
+            form='edit-form'
+            disabled={!editState.title.trim() || !editState.content.trim()}
+            className='px-6'
+          >
+            <Save className='mr-2 size-4' /> 수정 완료
+          </Button>
+        }
+      />
 
-        <PostTitleEditor value={editState.title} onChange={setTitle} />
-        <PostEditor
-          value={editState.content}
-          onChange={setContent}
-          contentJson={editState.contentJson}
-          onJsonChange={setContentJson}
-          placeholder='내용을 수정하세요...'
-        />
-
-        <div className='flex items-center justify-between text-sm text-muted-foreground'>
-          <p>
+      <div className='mx-auto max-w-4xl px-6 py-8 flex-1'>
+        {/* Post metadata */}
+        <div className='mb-6'>
+          <p className='text-sm text-muted-foreground'>
             작성자: {post?.authorName || '?'} | 작성일:{' '}
             {post?.createdAt ? formatDate(post.createdAt.toDate()) : '?'}
           </p>
         </div>
 
-        <div className='flex justify-end'>
-          <Button
-            variant='default'
-            type='submit'
-            disabled={!editState.title.trim() || !editState.content.trim()}
-          >
-            <Save className='mr-2 size-4' /> 수정 완료
-          </Button>
-        </div>
-      </form>
+        <form id='edit-form' onSubmit={handleSubmit} className='space-y-6'>
+          <input type='hidden' value={post?.boardId} />
+          <input type='hidden' value={post?.authorId} />
+          <input type='hidden' value={post?.authorName} />
+          <input type='hidden' value={editState.title} />
+          <input type='hidden' value={editState.content} />
+
+          <PostTitleEditor value={editState.title} onChange={setTitle} />
+
+          <PostEditor
+            value={editState.content}
+            onChange={setContent}
+            placeholder='내용을 수정하세요...'
+          />
+        </form>
+      </div>
     </div>
   );
 }

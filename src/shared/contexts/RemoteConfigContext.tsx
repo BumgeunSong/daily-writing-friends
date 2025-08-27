@@ -1,10 +1,6 @@
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { remoteConfig, auth } from '@/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-
-// Admin user ID
-const ADMIN_USER_ID = '1y06BmkauwhIEwZm9LQmEmgl6Al1';
+import { remoteConfig } from '@/firebase';
 
 // Remote Config key union type
 export type RemoteConfigKey =
@@ -15,8 +11,7 @@ export type RemoteConfigKey =
   | 'stats_notice_banner_text'
   | 'block_user_feature_enabled'
   | 'secret_buddy_enabled'
-  | 'stat_page_enabled'
-  | 'native_editor_enabled';
+  | 'stat_page_enabled';
 
 // 각 key별 타입 정의
 interface RemoteConfigValueTypes {
@@ -28,7 +23,6 @@ interface RemoteConfigValueTypes {
   block_user_feature_enabled: boolean;
   secret_buddy_enabled: boolean;
   stat_page_enabled: boolean;
-  native_editor_enabled: boolean;
 }
 
 export const REMOTE_CONFIG_DEFAULTS: RemoteConfigValueTypes = {
@@ -40,7 +34,6 @@ export const REMOTE_CONFIG_DEFAULTS: RemoteConfigValueTypes = {
   block_user_feature_enabled: false,
   secret_buddy_enabled: true,
   stat_page_enabled: true,
-  native_editor_enabled: false,
 };
 
 interface RemoteConfigContextValue {
@@ -61,17 +54,11 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
   const [ready, setReady] = useState(false);
   const [values, setValues] = useState<RemoteConfigValueTypes>(REMOTE_CONFIG_DEFAULTS);
   const [error, setError] = useState<Error | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const loadConfig = useCallback(() => {
     if (!remoteConfig) {
       console.warn('Remote Config not available (emulator mode or server environment)');
-      const isAdmin = currentUserId === ADMIN_USER_ID;
-      setValues({
-        ...REMOTE_CONFIG_DEFAULTS,
-        // Admin always gets native_editor_enabled = true even in emulator mode
-        native_editor_enabled: isAdmin ? true : REMOTE_CONFIG_DEFAULTS.native_editor_enabled,
-      });
+      setValues(REMOTE_CONFIG_DEFAULTS);
       setReady(true);
       return;
     }
@@ -84,8 +71,6 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
 
     fetchAndActivate(remoteConfig)
       .then(() => {
-        const isAdmin = currentUserId === ADMIN_USER_ID;
-        
         const configValues = {
           active_board_id:
             getValue(remoteConfig, 'active_board_id').asString() ||
@@ -108,8 +93,6 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
           ).asBoolean(),
           secret_buddy_enabled: getValue(remoteConfig, 'secret_buddy_enabled').asBoolean(),
           stat_page_enabled: getValue(remoteConfig, 'stat_page_enabled').asBoolean(),
-          // Admin always gets native_editor_enabled = true, others depend on remote config
-          native_editor_enabled: isAdmin ? true : getValue(remoteConfig, 'native_editor_enabled').asBoolean(),
         };
         
         setValues(configValues);
@@ -123,15 +106,6 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
         setValues(REMOTE_CONFIG_DEFAULTS);
       })
       .finally(() => setReady(true));
-  }, [currentUserId]);
-
-  // Track auth state changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUserId(user?.uid || null);
-    });
-
-    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
