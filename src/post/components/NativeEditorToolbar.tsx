@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import type { Editor } from '@tiptap/react';
-import { useEditorState } from '@tiptap/react';
 import {
   Bold,
   Italic,
@@ -22,51 +20,43 @@ import { isValidHttpUrl } from '@/post/utils/sanitizeHtml';
 import { cn } from '@/shared/utils/cn';
 import { useScrollIndicators } from '@/post/hooks/useScrollIndicators';
 import { ToolbarButton } from './ToolbarButton';
+import type { TextFormatter, FormatState } from '../types/nativeEditor';
 
-interface EditorToolbarProps {
-  editor: Editor;
-  onImageUpload: () => void;
+interface NativeEditorToolbarProps {
+  formatter: TextFormatter;
+  onImageUpload?: () => void;
   variant?: 'sticky' | 'inline';
+  formatState: FormatState;
+  disabled?: boolean;
 }
 
-export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: EditorToolbarProps) {
+export function NativeEditorToolbar({ 
+  formatter, 
+  onImageUpload, 
+  variant = 'sticky',
+  formatState,
+  disabled = false 
+}: NativeEditorToolbarProps) {
   const [linkUrl, setLinkUrl] = useState('');
   const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false);
   const { scrollContainerRef, canScrollLeft, canScrollRight } = useScrollIndicators();
 
-  // Use TipTap's useEditorState for optimized re-renders
-  const editorState = useEditorState({
-    editor,
-    selector: ctx => ({
-      isBold: ctx.editor.isActive('bold'),
-      isItalic: ctx.editor.isActive('italic'),
-      isStrike: ctx.editor.isActive('strike'),
-      isHeading1: ctx.editor.isActive('heading', { level: 1 }),
-      isHeading2: ctx.editor.isActive('heading', { level: 2 }),
-      isBlockquote: ctx.editor.isActive('blockquote'),
-      isBulletList: ctx.editor.isActive('bulletList'),
-      isOrderedList: ctx.editor.isActive('orderedList'),
-      isLink: ctx.editor.isActive('link'),
-    }),
-  });
-
   const handleSetLink = () => {
     if (!linkUrl) {
-      // Remove link
-      editor.chain().focus().unsetLink().run();
+      // For now, just close popover - removing links will be implemented later
+      setIsLinkPopoverOpen(false);
     } else if (isValidHttpUrl(linkUrl)) {
       // Set link with proper protocol
       const url = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`;
-      editor.chain().focus().setLink({ href: url }).run();
+      formatter.insertLink(url);
     }
     setLinkUrl('');
     setIsLinkPopoverOpen(false);
   };
 
   const handleOpenLinkPopover = () => {
-    // Get current link if any
-    const currentLink = editor.getAttributes('link').href || '';
-    setLinkUrl(currentLink);
+    // TODO: Get current link if any (similar to TipTap's getAttributes)
+    setLinkUrl('');
     setIsLinkPopoverOpen(true);
   };
 
@@ -83,6 +73,10 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
         'border-y bg-background/95',
         'px-4 py-2 my-4',
       );
+
+  if (disabled) {
+    return null;
+  }
 
   return (
     <div className={containerClass}>
@@ -104,24 +98,24 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
         >
           {/* Format buttons */}
           <ToolbarButton
-            isActive={editorState.isBold}
-            onClick={() => editor.chain().focus().toggleBold().run()}
+            isActive={formatState.isBold}
+            onClick={() => formatter.toggleBold()}
             icon={<Bold className='size-5' />}
             title='Bold (Ctrl+B)'
             ariaLabel='Bold'
           />
 
           <ToolbarButton
-            isActive={editorState.isItalic}
-            onClick={() => editor.chain().focus().toggleItalic().run()}
+            isActive={formatState.isItalic}
+            onClick={() => formatter.toggleItalic()}
             icon={<Italic className='size-5' />}
             title='Italic (Ctrl+I)'
             ariaLabel='Italic'
           />
 
           <ToolbarButton
-            isActive={editorState.isStrike}
-            onClick={() => editor.chain().focus().toggleStrike().run()}
+            isActive={formatState.isStrike}
+            onClick={() => formatter.toggleStrike()}
             icon={<Strikethrough className='size-5' />}
             title='Strikethrough'
             ariaLabel='Strikethrough'
@@ -131,16 +125,16 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
 
           {/* Heading buttons */}
           <ToolbarButton
-            isActive={editorState.isHeading1}
-            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+            isActive={formatState.isHeading1}
+            onClick={() => formatter.toggleHeading(1)}
             icon={<Heading1 className='size-5' />}
             title='Heading 1'
             ariaLabel='Heading 1'
           />
 
           <ToolbarButton
-            isActive={editorState.isHeading2}
-            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            isActive={formatState.isHeading2}
+            onClick={() => formatter.toggleHeading(2)}
             icon={<Heading2 className='size-5' />}
             title='Heading 2'
             ariaLabel='Heading 2'
@@ -150,24 +144,24 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
 
           {/* Block formatting */}
           <ToolbarButton
-            isActive={editorState.isBlockquote}
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            isActive={formatState.isBlockquote}
+            onClick={() => formatter.toggleBlockquote()}
             icon={<Quote className='size-5' />}
             title='Blockquote'
             ariaLabel='Blockquote'
           />
 
           <ToolbarButton
-            isActive={editorState.isBulletList}
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            isActive={formatState.isBulletList}
+            onClick={() => formatter.toggleBulletList()}
             icon={<List className='size-5' />}
             title='Bullet List'
             ariaLabel='Bullet List'
           />
 
           <ToolbarButton
-            isActive={editorState.isOrderedList}
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            isActive={formatState.isOrderedList}
+            onClick={() => formatter.toggleOrderedList()}
             icon={<ListOrdered className='size-5' />}
             title='Ordered List'
             ariaLabel='Ordered List'
@@ -180,7 +174,7 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
             <PopoverTrigger asChild>
               <div>
                 <ToolbarButton
-                  isActive={editorState.isLink}
+                  isActive={formatState.isLink}
                   onClick={handleOpenLinkPopover}
                   icon={<Link2 className='size-5' />}
                   title='Insert Link'

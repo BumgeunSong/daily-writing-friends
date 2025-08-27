@@ -16,7 +16,7 @@ export type RemoteConfigKey =
   | 'block_user_feature_enabled'
   | 'secret_buddy_enabled'
   | 'stat_page_enabled'
-  | 'tiptap_editor_enabled';
+  | 'native_editor_enabled';
 
 // 각 key별 타입 정의
 interface RemoteConfigValueTypes {
@@ -28,7 +28,7 @@ interface RemoteConfigValueTypes {
   block_user_feature_enabled: boolean;
   secret_buddy_enabled: boolean;
   stat_page_enabled: boolean;
-  tiptap_editor_enabled: boolean;
+  native_editor_enabled: boolean;
 }
 
 export const REMOTE_CONFIG_DEFAULTS: RemoteConfigValueTypes = {
@@ -40,7 +40,7 @@ export const REMOTE_CONFIG_DEFAULTS: RemoteConfigValueTypes = {
   block_user_feature_enabled: false,
   secret_buddy_enabled: true,
   stat_page_enabled: true,
-  tiptap_editor_enabled: true,
+  native_editor_enabled: false,
 };
 
 interface RemoteConfigContextValue {
@@ -69,8 +69,8 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
       const isAdmin = currentUserId === ADMIN_USER_ID;
       setValues({
         ...REMOTE_CONFIG_DEFAULTS,
-        // Admin always gets tiptap_editor_enabled = true even in emulator mode
-        tiptap_editor_enabled: isAdmin ? true : REMOTE_CONFIG_DEFAULTS.tiptap_editor_enabled,
+        // Admin always gets native_editor_enabled = true even in emulator mode
+        native_editor_enabled: isAdmin ? true : REMOTE_CONFIG_DEFAULTS.native_editor_enabled,
       });
       setReady(true);
       return;
@@ -108,15 +108,12 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
           ).asBoolean(),
           secret_buddy_enabled: getValue(remoteConfig, 'secret_buddy_enabled').asBoolean(),
           stat_page_enabled: getValue(remoteConfig, 'stat_page_enabled').asBoolean(),
-          // Admin always gets tiptap_editor_enabled = true, others depend on remote config
-          tiptap_editor_enabled: isAdmin ? true : getValue(remoteConfig, 'tiptap_editor_enabled').asBoolean(),
+          // Admin always gets native_editor_enabled = true, others depend on remote config
+          native_editor_enabled: isAdmin ? true : getValue(remoteConfig, 'native_editor_enabled').asBoolean(),
         };
         
         setValues(configValues);
         
-        if (isAdmin) {
-          console.log('Admin user detected - Tiptap editor enabled');
-        }
       })
       .catch((err) => {
         console.error('Failed to fetch Remote Config:', err);
