@@ -1,6 +1,10 @@
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { remoteConfig } from '@/firebase';
+import { remoteConfig, auth } from '@/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+
+// Admin user ID
+const ADMIN_USER_ID = '1y06BmkauwhIEwZm9LQmEmgl6Al1';
 
 // Remote Config key union type
 export type RemoteConfigKey =
@@ -57,11 +61,17 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
   const [ready, setReady] = useState(false);
   const [values, setValues] = useState<RemoteConfigValueTypes>(REMOTE_CONFIG_DEFAULTS);
   const [error, setError] = useState<Error | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const loadConfig = useCallback(() => {
     if (!remoteConfig) {
       console.warn('Remote Config not available (emulator mode or server environment)');
-      setValues(REMOTE_CONFIG_DEFAULTS);
+      const isAdmin = currentUserId === ADMIN_USER_ID;
+      setValues({
+        ...REMOTE_CONFIG_DEFAULTS,
+        // Admin always gets tiptap_editor_enabled = true even in emulator mode
+        tiptap_editor_enabled: isAdmin ? true : REMOTE_CONFIG_DEFAULTS.tiptap_editor_enabled,
+      });
       setReady(true);
       return;
     }
@@ -74,7 +84,9 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
 
     fetchAndActivate(remoteConfig)
       .then(() => {
-        setValues({
+        const isAdmin = currentUserId === ADMIN_USER_ID;
+        
+        const configValues = {
           active_board_id:
             getValue(remoteConfig, 'active_board_id').asString() ||
             REMOTE_CONFIG_DEFAULTS.active_board_id,
@@ -96,8 +108,15 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
           ).asBoolean(),
           secret_buddy_enabled: getValue(remoteConfig, 'secret_buddy_enabled').asBoolean(),
           stat_page_enabled: getValue(remoteConfig, 'stat_page_enabled').asBoolean(),
-          tiptap_editor_enabled: getValue(remoteConfig, 'tiptap_editor_enabled').asBoolean(),
-        });
+          // Admin always gets tiptap_editor_enabled = true, others depend on remote config
+          tiptap_editor_enabled: isAdmin ? true : getValue(remoteConfig, 'tiptap_editor_enabled').asBoolean(),
+        };
+        
+        setValues(configValues);
+        
+        if (isAdmin) {
+          console.log('Admin user detected - Tiptap editor enabled');
+        }
       })
       .catch((err) => {
         console.error('Failed to fetch Remote Config:', err);
@@ -107,6 +126,15 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
         setValues(REMOTE_CONFIG_DEFAULTS);
       })
       .finally(() => setReady(true));
+  }, [currentUserId]);
+
+  // Track auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUserId(user?.uid || null);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
