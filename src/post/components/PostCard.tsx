@@ -71,7 +71,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) =>
       <div className='hidden lg:block'>
         <div className='flex'>
           {/* Main content area */}
-          <div className='flex-1 flex flex-col'>
+          <div className='flex flex-col flex-1'>
             <PostCardHeader
               title={post.title}
               isPrivate={isPrivate}
