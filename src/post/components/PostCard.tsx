@@ -59,26 +59,31 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) =>
       aria-label='게시글 상세로 이동'
       onKeyDown={(e) => handleKeyDown(e, handleCardClick)}
     >
-      <CardHeader className='px-3 pb-1 pt-3 md:px-4'>
-        <div className='mb-3 flex items-center'>
-          <PostUserProfile
-            authorData={postAuthorData}
-            isLoading={isAuthorLoading}
-            onClickProfile={handleProfileClick}
-            badges={statPageEnabled ? badges : undefined}
-          />
-        </div>
-        <h2 className='flex items-center text-lg font-semibold leading-tight text-foreground md:text-xl'>
-          {isPrivate && (
-            <Lock className='mr-1.5 size-4 shrink-0 text-muted-foreground' aria-label='비공개 글' />
-          )}
-          {post.title}
-        </h2>
-      </CardHeader>
-      <CardContent className='min-h-[44px] px-3 pb-3 pt-1 md:px-4'>
-        {!isPrivate && contentPreview && (
-          <div
-            className='
+      {/* Mobile layout: vertical stack */}
+      <div className='block lg:hidden'>
+        <CardHeader className='px-3 pb-1 pt-3 md:px-4'>
+          <div className='mb-3 flex items-center'>
+            <PostUserProfile
+              authorData={postAuthorData}
+              isLoading={isAuthorLoading}
+              onClickProfile={handleProfileClick}
+              badges={statPageEnabled ? badges : undefined}
+            />
+          </div>
+          <h2 className='flex items-center text-lg font-semibold leading-tight text-foreground md:text-xl'>
+            {isPrivate && (
+              <Lock
+                className='mr-1.5 size-4 shrink-0 text-muted-foreground'
+                aria-label='비공개 글'
+              />
+            )}
+            {post.title}
+          </h2>
+        </CardHeader>
+        <CardContent className='min-h-[44px] px-3 pb-3 pt-1 md:px-4'>
+          {!isPrivate && contentPreview && (
+            <div
+              className='
 text-reading-sm prose prose-sm 
 line-clamp-3
 max-w-none
@@ -90,19 +95,81 @@ prose-a:text-ring
 prose-strong:text-foreground/90
 prose-ol:my-1.5
 prose-ul:my-1.5'
-            dangerouslySetInnerHTML={{ __html: contentPreview }}
-          />
-        )}
-        {!isPrivate && post.thumbnailImageURL && (
-          <div className='reading-shadow mt-4 aspect-video w-full overflow-hidden rounded-lg bg-muted'>
-            <img
-              src={post.thumbnailImageURL || '/placeholder.svg'}
-              alt='게시글 썸네일'
-              className='size-full object-cover'
+              dangerouslySetInnerHTML={{ __html: contentPreview }}
             />
+          )}
+          {!isPrivate && post.thumbnailImageURL && (
+            <div className='reading-shadow mt-4 aspect-video w-full overflow-hidden rounded-lg bg-muted'>
+              <img
+                src={post.thumbnailImageURL || '/placeholder.svg'}
+                alt='게시글 썸네일'
+                className='size-full object-cover'
+              />
+            </div>
+          )}
+        </CardContent>
+      </div>
+
+      {/* Desktop layout: side-by-side */}
+      <div className='hidden lg:block'>
+        <div className='flex'>
+          {/* Main content area */}
+          <div className='flex-1 flex flex-col'>
+            <CardHeader className='px-4 pb-1 pt-3'>
+              <div className='mb-3 flex items-center'>
+                <PostUserProfile
+                  authorData={postAuthorData}
+                  isLoading={isAuthorLoading}
+                  onClickProfile={handleProfileClick}
+                  badges={statPageEnabled ? badges : undefined}
+                />
+              </div>
+              <h2 className='flex items-center text-xl font-semibold leading-tight text-foreground'>
+                {isPrivate && (
+                  <Lock
+                    className='mr-1.5 size-4 shrink-0 text-muted-foreground'
+                    aria-label='비공개 글'
+                  />
+                )}
+                {post.title}
+              </h2>
+            </CardHeader>
+            <CardContent className='min-h-[44px] px-4 pb-3 pt-1 flex-1'>
+              {!isPrivate && contentPreview && (
+                <div
+                  className='
+text-reading-sm prose prose-sm 
+line-clamp-3
+max-w-none
+text-foreground/85
+dark:prose-invert
+prose-headings:text-foreground
+prose-p:my-1.5
+prose-a:text-ring
+prose-strong:text-foreground/90
+prose-ol:my-1.5
+prose-ul:my-1.5'
+                  dangerouslySetInnerHTML={{ __html: contentPreview }}
+                />
+              )}
+            </CardContent>
           </div>
-        )}
-      </CardContent>
+
+          {/* Thumbnail area */}
+          {!isPrivate && post.thumbnailImageURL && (
+            <div className='w-1/3 p-3'>
+              <div className='reading-shadow aspect-video w-full overflow-hidden rounded-lg bg-muted'>
+                <img
+                  src={post.thumbnailImageURL || '/placeholder.svg'}
+                  alt='게시글 썸네일'
+                  className='size-full object-cover'
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       <CardFooter className='flex min-h-[44px] justify-between border-t border-border/50 p-3 md:px-4'>
         <div className='flex items-center text-muted-foreground'>
           <MessageCircle className='mr-1.5 size-4' />
