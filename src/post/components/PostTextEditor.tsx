@@ -77,8 +77,8 @@ const quillStyles = `
   top: 0;
   z-index: 50;
   border: none !important;
-  border-top-left-radius: 0.75rem;
-  border-top-right-radius: 0.75rem;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
   background-color: hsl(var(--background));
   padding: 0.75rem 0;
 }
