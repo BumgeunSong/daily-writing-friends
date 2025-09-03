@@ -73,6 +73,9 @@ const quillStyles = `
 /* Remove all borders from Quill components */
 .ql-toolbar,
 .ql-toolbar.ql-snow {
+  position: sticky;
+  top: 0;
+  z-index: 50;
   border: none !important;
   border-top-left-radius: 0.75rem;
   border-top-right-radius: 0.75rem;
