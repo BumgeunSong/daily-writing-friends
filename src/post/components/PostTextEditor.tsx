@@ -14,6 +14,11 @@ interface PostTextEditorProps {
 }
 
 const quillStyles = `
+/* Z-index values for consistent layering */
+:root {
+  --z-toolbar-sticky: 50;
+}
+
 .ql-container {
   font-family: var(--font-sans);
   font-size: 1.125rem;
@@ -73,9 +78,12 @@ const quillStyles = `
 /* Remove all borders from Quill components */
 .ql-toolbar,
 .ql-toolbar.ql-snow {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-toolbar-sticky);
   border: none !important;
-  border-top-left-radius: 0.75rem;
-  border-top-right-radius: 0.75rem;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
   background-color: hsl(var(--background));
   padding: 0.75rem 0;
 }
