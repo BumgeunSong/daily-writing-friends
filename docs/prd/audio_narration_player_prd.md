@@ -387,7 +387,13 @@ interface RecoveryData {
 }
 
 // Recovery logic
-if (Date.now() - recoveryData.savedAt < 30 * 60 * 1000) {
+// Ensure the correct section's audio is loaded and the audio element exists before resuming.
+if (
+  Date.now() - recoveryData.savedAt < 30 * 60 * 1000 &&
+  typeof audio !== "undefined" &&
+  audio instanceof HTMLAudioElement &&
+  currentSectionIndex === recoveryData.sectionIndex
+) {
   // Resume at exact position within section
   audio.currentTime = recoveryData.sectionTimestamp;
 }
