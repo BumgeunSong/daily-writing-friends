@@ -67,7 +67,7 @@ Users may benefit from audio guidance and prompts while writing to:
 #### Firebase Storage
 - Audio files stored at paths specified in `storagePath`
 - Format: `audio/webm;codecs=opus`
-- **File Granularity**: One audio file per section (not concatenated)
+- **File Granularity**: One audio file per section (do not include silence in files; silence between sections is handled programmatically during playback)
 
 ### Component Architecture
 
