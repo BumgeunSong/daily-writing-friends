@@ -19,7 +19,7 @@ This implementation creates a system to automatically generate and store comment
 
 ```bash
 cd functions
-npm install @google/generative-ai
+npm install @google/genai
 ```
 
 ### 2. Set Up Gemini API Key
@@ -171,9 +171,10 @@ async function analyzeUserTonePatterns(userId: string) {
 
 ## Cost Estimation
 
-### Gemini 2.0 Flash Pricing
-- **Input**: ~$0.002 per 1K characters
-- **Output**: ~$0.004 per 1K characters
+### Gemini 2.5 Flash-lite Pricing (Ultra-Lightweight Model)
+- **Input**: ~$0.01 per 1M input tokens (most cost-effective)
+- **Output**: ~$0.04 per 1M output tokens
+- **Note**: Gemini 2.5 Flash-lite is optimized for maximum speed with lowest cost
 
 ### Expected Costs
 - **Backfill**: ~300 posts × 1K chars = $0.60 (one-time)

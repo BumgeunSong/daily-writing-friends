@@ -45,3 +45,8 @@ export {
 export { 
   backfillAllBoardUsersHttp
 } from './backfill/backfillAllBoardUsers';
+
+export {
+  createCommentStyleData,
+  backfillCommentStyleDataForActiveUsers
+} from './commentStyle';

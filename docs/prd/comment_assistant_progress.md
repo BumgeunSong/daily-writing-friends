@@ -96,7 +96,7 @@ async function generateCommentSuggestions(userId: string, targetPostId: string) 
   const suggestions = await gemini.generatePersonalizedComments({
     userPatterns,
     targetPost,
-    sugestionTypes: ['trait', 'highlight', 'empathy', 'curiosity']
+    suggestionTypes: ['trait', 'highlight', 'empathy', 'curiosity']
   });
   
   return suggestions;
