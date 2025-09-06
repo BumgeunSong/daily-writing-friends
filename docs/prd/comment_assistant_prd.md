@@ -63,54 +63,47 @@ graph TD
 | **Empathy Response**       | Emotional connection          | Posts expressing feelings        | "I've been there too, it's really tough"         |
 | **Curiosity Driver**       | Encourages elaboration        | Posts with incomplete narratives | "What happened after the meeting?"               |
 
-### 3.3 Personalization Through Comment History
+### 3.3 Comment Style Data Generation (IMPLEMENTED)
 
-#### Optimized Prompt-Based Learning
+#### Data Collection Strategy
 
 ```
-User's Last 10-12 Comments
+Active Users Identified
     ↓
-Include Key Context Only:
-- Post key phrase (50 chars)
-- Full user comment
-- Optional: Post mood/tone
+Real-time: New Comments Processed Automatically
     ↓
-AI Learns Style from More Examples
+Backfill: Historical Comments (10 per user)
     ↓
-Generate Better Style-Matched Suggestions
+LLM Analysis: 50-char Summary + Tone + Mood
+    ↓
+Store in commentStyleData Collection
 ```
 
-#### Comment History Data Structure
+#### Implemented Data Structure
 
 ```typescript
-interface CommentHistoryItem {
-  postKeyContext: string;     // Key phrase from post (50 chars max)
-  userComment: string;         // User's full comment
-  postMood?: 'happy' | 'sad' | 'thoughtful' | 'daily' | 'anxious';
+interface CommentStyleData {
+  id: string;
+  userId: string;           // Comment author
+  postId: string;          // Post being commented on  
+  boardId: string;         // Board ID
+  postSummary: string;     // 50-char LLM-generated summary
+  postTone: PostTone;      // Writer's style (11 categories)
+  postMood: PostMood;      // Emotional atmosphere (7 categories)
+  userComment: string;     // Original comment text
+  createdAt: Timestamp;    // Comment creation time
+  processedAt: Timestamp;  // Processing time
 }
 
-interface CommentGenerationContext {
-  targetPost: {
-    authorId: string;
-    authorNickname: string;
-    content: string;          // Full content (up to 1500 chars)
-  };
-  userCommentHistory: CommentHistoryItem[];  // Last 10-12 comments
-}
+// 11 Tone Categories (Writer's Style)
+type PostTone = 'thoughtful' | 'warm' | 'emotional' | 'humorous' 
+  | 'serious' | 'informal' | 'formal' | 'optimistic' 
+  | 'calm' | 'guiding' | 'friendly';
 
-// Key context extraction
-function extractKeyContext(postContent: string): string {
-  // Priority: emotional peaks > questions > topic sentence > beginning
-  const sentences = postContent.split(/[.!?]/);
-  
-  // Find most meaningful sentence
-  const emotionalSentence = sentences.find(s => 
-    s.includes('!') || s.includes('?') || 
-    /기쁨|슬픔|고민|성공|실패|힘듦/.test(s)
-  );
-  
-  return (emotionalSentence || sentences[0]).slice(0, 50);
-}
+// 7 Mood Categories (Emotional Atmosphere)  
+type PostMood = 'happy_uplifting' | 'sad_gloomy' | 'tense_exciting'
+  | 'romantic_loving' | 'mysterious_curious' | 'funny_lighthearted'
+  | 'peaceful_calm';
 ```
 
 ### 3.4 Post Tone Analysis
@@ -542,24 +535,27 @@ export function CommentAssistant({ postId, onCommentSelect }: CommentAssistantPr
 
 ### Sprint Plan (6 weeks total)
 
-#### Sprint 1 (Week 1-2): Foundation
+#### Phase 1: Data Generation (COMPLETED ✅)
 
-- [ ] User style profile extraction algorithm
-- [ ] Firestore schema implementation
-- [ ] Basic prompt engineering
+- [x] **Comment Style Data Collection**: Real-time and backfill functions
+- [x] **Dual Classification System**: 11 tones + 7 moods with Gemini integration  
+- [x] **Smart Caching**: Post processing cache to minimize LLM costs
+- [x] **Active User Filtering**: Only process comments from active users
+- [x] **Error Handling**: Robust error handling that doesn't break existing flows
 
-#### Sprint 2 (Week 3-4): Core Features
+#### Phase 2: Comment Suggestion Generation (NEXT)
 
-- [ ] Cloud Function for generation
-- [ ] Frontend component development
-- [ ] Post tone analysis
+- [ ] **Suggestion Cloud Function**: Generate 4 comment types using style data
+- [ ] **Prompt Optimization**: Use commentStyleData for personalized suggestions
+- [ ] **Fallback System**: Default suggestions for new users
+- [ ] **Analytics Integration**: Track suggestion usage and selection rates
 
-#### Sprint 3 (Week 5-6): Polish & Launch
+#### Phase 3: UI Integration & Launch (FUTURE)
 
-- [ ] Error handling & edge cases
-- [ ] Performance optimization
-- [ ] A/B testing framework
-- [ ] Analytics integration
+- [ ] **Frontend Component**: Auto-loading horizontal scroll cards
+- [ ] **Comment Field Integration**: Populate selected suggestions  
+- [ ] **A/B Testing Framework**: Test different UI variations
+- [ ] **Performance Optimization**: Sub-2s suggestion generation
 
 ## 10. Open Questions & Decisions Needed
 
