@@ -7,7 +7,7 @@ export const geminiApiKey = defineSecret("GEMINI_API_KEY");
 export const runtimeOptions = {
   timeoutSeconds: 60,
   memory: "512MiB" as const,
-  minInstances: 1,        // 콜드 스타트 방지
+  minInstances: 0,        // 필요시에만 시작 (비용 절감)
   maxInstances: 10,       // 동시 실행 제한
   secrets: [geminiApiKey] // 시크릿 접근 권한
 };

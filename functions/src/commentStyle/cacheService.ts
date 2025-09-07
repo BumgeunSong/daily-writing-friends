@@ -15,7 +15,12 @@ export class CacheService {
     mood: PostMood;
   } | null> {
     try {
-      const doc = await admin.firestore().collection('postProcessingCache').doc(postId).get();
+      const doc = await admin.firestore()
+        .collection('caches')
+        .doc('postSummaries')
+        .collection('summaries')
+        .doc(postId)
+        .get();
 
       if (!doc.exists) {
         return null;
@@ -50,7 +55,12 @@ export class CacheService {
         processedAt: admin.firestore.Timestamp.now(),
       };
 
-      await admin.firestore().collection('postProcessingCache').doc(postId).set(cacheData);
+      await admin.firestore()
+        .collection('caches')
+        .doc('postSummaries')
+        .collection('summaries')
+        .doc(postId)
+        .set(cacheData);
 
       console.log(`Cached post processing result for ${postId}`);
     } catch (error) {
@@ -77,7 +87,11 @@ export class CacheService {
       const timestamp = admin.firestore.Timestamp.now();
 
       results.forEach((result) => {
-        const cacheRef = admin.firestore().collection('postProcessingCache').doc(result.postId);
+        const cacheRef = admin.firestore()
+          .collection('caches')
+          .doc('postSummaries')
+          .collection('summaries')
+          .doc(result.postId);
 
         const cacheData: PostProcessingCache = {
           postId: result.postId,
@@ -108,7 +122,9 @@ export class CacheService {
 
       const oldCacheQuery = admin
         .firestore()
-        .collection('postProcessingCache')
+        .collection('caches')
+        .doc('postSummaries')
+        .collection('summaries')
         .where('processedAt', '<', cutoffTimestamp)
         .limit(100); // 한 번에 너무 많이 삭제하지 않도록 제한
 
@@ -145,7 +161,9 @@ export class CacheService {
       // 전체 캐시 개수
       const allCacheSnapshot = await admin
         .firestore()
-        .collection('postProcessingCache')
+        .collection('caches')
+        .doc('postSummaries')
+        .collection('summaries')
         .count()
         .get();
 
@@ -162,7 +180,9 @@ export class CacheService {
       // 가장 오래된 캐시
       const oldestSnapshot = await admin
         .firestore()
-        .collection('postProcessingCache')
+        .collection('caches')
+        .doc('postSummaries')
+        .collection('summaries')
         .orderBy('processedAt', 'asc')
         .limit(1)
         .get();
@@ -170,7 +190,9 @@ export class CacheService {
       // 가장 최신 캐시
       const newestSnapshot = await admin
         .firestore()
-        .collection('postProcessingCache')
+        .collection('caches')
+        .doc('postSummaries')
+        .collection('summaries')
         .orderBy('processedAt', 'desc')
         .limit(1)
         .get();

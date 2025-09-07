@@ -4,6 +4,7 @@ import { PostTone, PostMood, LLMAnalysisResult } from './types';
 
 export class GeminiService {
   private client: GoogleGenAI;
+  private MAX_SUMMARY_LENGTH = 60; // 50자로 요청하지만, 여유를 10자 정도 둔다
 
   constructor() {
     this.client = new GoogleGenAI({ apiKey: geminiApiKey.value() });
@@ -35,7 +36,7 @@ export class GeminiService {
         console.error('Batch processing error for content:', content.slice(0, 50), error);
         // 실패한 경우 기본값으로 추가
         results.push({
-          summary: content.slice(0, 50).trim(),
+          summary: content.slice(0, this.MAX_SUMMARY_LENGTH).trim(),
           tone: 'informal',
           mood: 'peaceful_calm',
         });

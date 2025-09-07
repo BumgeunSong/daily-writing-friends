@@ -92,12 +92,14 @@ export const createCommentStyleData = onDocumentCreated({
       processedAt: admin.firestore.Timestamp.now()
     };
 
-    // 7. Firestore에 저장
+    // 7. Firestore에 사용자 하위 컬렉션으로 저장
     await admin.firestore()
+      .collection('users')
+      .doc(userId)
       .collection('commentStyleData')
       .add(commentStyleData);
 
-    console.log(`Successfully created commentStyleData for comment ${commentId} by user ${userId}`);
+    console.log(`Successfully created commentStyleData for comment ${commentId} under user ${userId}`);
     console.log(`Analysis: tone=${analysis.tone}, mood=${analysis.mood}, summary="${analysis.summary}"`);
 
   } catch (error) {

@@ -36,10 +36,6 @@ export const backfillCommentStyleDataForActiveUsers = onRequest({
 
     // 1. 활성 보드 ID 조회
     const activeBoardId = await getActiveBoardId();
-    if (!activeBoardId) {
-      throw new Error('Active board ID not found');
-    }
-
     console.log(`Active board ID: ${activeBoardId}`);
 
     // 2. 활성 사용자들 조회
@@ -206,7 +202,11 @@ async function processUserCommentsWithToneMood(
         processedAt: timestamp
       };
 
-      const docRef = admin.firestore().collection('commentStyleData').doc();
+      const docRef = admin.firestore()
+        .collection('users')
+        .doc(userId)
+        .collection('commentStyleData')
+        .doc();
       batch.set(docRef, commentStyleData);
     });
 
