@@ -1,4 +1,5 @@
 import admin from '../shared/admin';
+import { getRemoteConfig } from 'firebase-admin/remote-config';
 
 /**
  * 사용자가 활성 보드에 write 권한을 가지고 있는지 확인
@@ -47,18 +48,38 @@ export async function getActiveUsers(boardId: string): Promise<string[]> {
 /**
  * Remote Config에서 활성 보드 ID 조회
  */
-export async function getActiveBoardId(): Promise<string | null> {
+export async function getActiveBoardId(): Promise<string> {
   try {
-    // Remote Config 값 조회
-    // 실제 구현에서는 Remote Config SDK 사용하거나
-    // 환경변수/하드코딩된 값 사용
+    // Remote Config 템플릿 가져오기
+    const template = await getRemoteConfig().getTemplate();
     
-    // 임시로 하드코딩된 기본 보드 ID 반환
-    // TODO: Remote Config 연동 필요
-    return 'rW3Y3E2aEbpB0KqGiigd';
+    // active_board_id 파라미터 값 가져오기
+    const activeBoardIdParam = template.parameters['active_board_id'];
+    
+    if (!activeBoardIdParam || !activeBoardIdParam.defaultValue) {
+      throw new Error('active_board_id parameter not found in Remote Config');
+    }
+    
+    // defaultValue는 여러 타입이 될 수 있으므로 타입 체크
+    const defaultValue = activeBoardIdParam.defaultValue;
+    let value: string | undefined;
+    
+    // InAppDefaultValue 타입 체크
+    if ('value' in defaultValue) {
+      value = defaultValue.value as string;
+    } else {
+      throw new Error('Unexpected Remote Config value type for active_board_id');
+    }
+    
+    if (!value || typeof value !== 'string') {
+      throw new Error('active_board_id is not a valid string value');
+    }
+    
+    console.log(`Active board ID from Remote Config: ${value}`);
+    return value;
     
   } catch (error) {
-    console.error('Error getting active board ID:', error);
-    return null;
+    console.error('Error getting active board ID from Remote Config:', error);
+    throw error;
   }
 }
