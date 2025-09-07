@@ -84,6 +84,8 @@ export const createCommentStyleData = onDocumentCreated({
       userId: userId,
       postId: postId,
       boardId: boardId,
+      authorId: postData.authorId,
+      authorNickname: postData.authorName,
       postSummary: analysis.summary,
       postTone: analysis.tone,
       postMood: analysis.mood,

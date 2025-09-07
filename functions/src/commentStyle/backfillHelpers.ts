@@ -6,14 +6,15 @@ import admin from '../shared/admin';
  * 백필 처리를 위한 헬퍼 함수
  */
 export async function getUserRecentCommentsWithPosts(
-  userId: string, 
-  limit = 10
+  userId: string,
+  limit = 10,
 ): Promise<UserCommentWithPost[]> {
   try {
     console.log(`Fetching last ${limit} comments for user ${userId}`);
 
     // 사용자의 최근 댓글 조회 (commentings 컬렉션 사용)
-    const commentingsSnapshot = await admin.firestore()
+    const commentingsSnapshot = await admin
+      .firestore()
       .collection(`users/${userId}/commentings`)
       .orderBy('createdAt', 'desc')
       .limit(limit)
@@ -35,7 +36,8 @@ export async function getUserRecentCommentsWithPosts(
         const commentId = commenting.comment.id;
 
         // 실제 댓글 데이터 조회
-        const commentDoc = await admin.firestore()
+        const commentDoc = await admin
+          .firestore()
           .doc(`boards/${boardId}/posts/${postId}/comments/${commentId}`)
           .get();
 
@@ -47,9 +49,7 @@ export async function getUserRecentCommentsWithPosts(
         const commentData = commentDoc.data();
 
         // 포스트 데이터 조회
-        const postDoc = await admin.firestore()
-          .doc(`boards/${boardId}/posts/${postId}`)
-          .get();
+        const postDoc = await admin.firestore().doc(`boards/${boardId}/posts/${postId}`).get();
 
         if (!postDoc.exists) {
           console.warn(`Post ${postId} not found, skipping comment ${commentId}`);
@@ -64,9 +64,10 @@ export async function getUserRecentCommentsWithPosts(
           postId: postId,
           postContent: postData!.content,
           boardId: boardId,
-          createdAt: commenting.createdAt
+          authorId: postData!.authorId,
+          authorNickname: postData!.authorName,
+          createdAt: commenting.createdAt,
         });
-
       } catch (error) {
         console.error('Error processing commenting record:', commentingDoc.id, error);
         continue;
@@ -75,7 +76,6 @@ export async function getUserRecentCommentsWithPosts(
 
     console.log(`Retrieved ${results.length} comments with post data for user ${userId}`);
     return results;
-
   } catch (error) {
     console.error(`Error getting recent comments for user ${userId}:`, error);
     return [];
@@ -87,11 +87,11 @@ export async function getUserRecentCommentsWithPosts(
  * LLM 처리 비용 최적화를 위해 사용
  */
 export function getUniquePostContents(
-  comments: UserCommentWithPost[]
+  comments: UserCommentWithPost[],
 ): Array<{ postId: string; content: string }> {
   const uniquePosts = new Map<string, string>();
-  
-  comments.forEach(comment => {
+
+  comments.forEach((comment) => {
     if (!uniquePosts.has(comment.postId)) {
       uniquePosts.set(comment.postId, comment.postContent);
     }
@@ -99,7 +99,7 @@ export function getUniquePostContents(
 
   return Array.from(uniquePosts.entries()).map(([postId, content]) => ({
     postId,
-    content
+    content,
   }));
 }
 
@@ -142,16 +142,18 @@ export class BackfillProgress {
     return {
       totalUsers: this.totalUsers,
       processedUsers: this.processedUsers,
-      userProgress: `${this.processedUsers}/${this.totalUsers} (${Math.round(this.processedUsers / this.totalUsers * 100)}%)`,
+      userProgress: `${this.processedUsers}/${this.totalUsers} (${Math.round((this.processedUsers / this.totalUsers) * 100)}%)`,
       totalComments: this.totalComments,
       processedComments: this.processedComments,
       errors: this.errors.length,
-      success: this.errors.length < this.totalUsers * 0.1 // 10% 미만 에러율이면 성공
+      success: this.errors.length < this.totalUsers * 0.1, // 10% 미만 에러율이면 성공
     };
   }
 
   logProgress(): void {
     const progress = this.getProgress();
-    console.log(`Backfill Progress: Users ${progress.userProgress}, Comments: ${progress.totalComments}, Errors: ${progress.errors}`);
+    console.log(
+      `Backfill Progress: Users ${progress.userProgress}, Comments: ${progress.totalComments}, Errors: ${progress.errors}`,
+    );
   }
 }

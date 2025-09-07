@@ -194,6 +194,8 @@ async function processUserCommentsWithToneMood(
         userId: userId,
         postId: comment.postId,
         boardId: comment.boardId,
+        authorId: comment.authorId,
+        authorNickname: comment.authorNickname,
         postSummary: analysis.summary,
         postTone: analysis.tone,
         postMood: analysis.mood,

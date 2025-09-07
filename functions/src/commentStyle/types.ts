@@ -37,6 +37,10 @@ export interface CommentStyleData {
   postId: string;          // 댓글이 달린 포스트
   boardId: string;         // 보드 ID
   
+  // 포스트 작성자 정보
+  authorId: string;        // 포스트 작성자 ID
+  authorNickname: string;  // 포스트 작성자 닉네임
+  
   // LLM 분석 결과
   postSummary: string;     // 50자 이내 포스트 요약
   postTone: PostTone;      // 작성자의 글쓰기 스타일
@@ -79,6 +83,8 @@ export interface UserCommentWithPost {
   postId: string;
   postContent: string;
   boardId: string;
+  authorId: string;
+  authorNickname: string;
   createdAt: Timestamp;
 }
 
