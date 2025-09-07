@@ -23,7 +23,7 @@ import admin from "../shared/admin";
  */
 export const backfillCommentStyleDataForActiveUsers = onRequest({
   ...backfillRuntimeOptions
-}, async (req, res): Promise<void> => {
+}, async (_req, res): Promise<void> => {
   console.log('Starting commentStyleData backfill for active users');
   
   let progress: BackfillProgress | undefined;
@@ -64,6 +64,9 @@ export const backfillCommentStyleDataForActiveUsers = onRequest({
     // 3. 사용자들을 배치로 처리 (타임아웃 방지)
     const results: BackfillResult[] = [];
     
+    // Progress is now guaranteed to be defined
+    const definedProgress = progress;
+    
     for (let i = 0; i < activeUserIds.length; i += PROCESSING_LIMITS.batchSize) {
       const userBatch = activeUserIds.slice(i, i + PROCESSING_LIMITS.batchSize);
       
@@ -73,13 +76,13 @@ export const backfillCommentStyleDataForActiveUsers = onRequest({
       const batchPromises = userBatch.map(userId => 
         processUserCommentsWithToneMood(userId, activeBoardId)
           .then(result => {
-            progress.incrementProcessedUsers();
-            progress.addProcessedComments(result.commentsProcessed);
+            definedProgress.incrementProcessedUsers();
+            definedProgress.addProcessedComments(result.commentsProcessed);
             return result;
           })
           .catch(error => {
-            progress.incrementProcessedUsers();
-            progress.addError(`User ${userId}: ${error.message}`);
+            definedProgress.incrementProcessedUsers();
+            definedProgress.addError(`User ${userId}: ${error.message}`);
             return {
               userId,
               commentsProcessed: 0,
@@ -92,7 +95,7 @@ export const backfillCommentStyleDataForActiveUsers = onRequest({
       const batchResults = await Promise.all(batchPromises);
       results.push(...batchResults);
       
-      progress.logProgress();
+      definedProgress.logProgress();
       
       // 배치 간 짧은 대기 (API 레이트 리미트 고려)
       if (i + PROCESSING_LIMITS.batchSize < activeUserIds.length) {
@@ -101,7 +104,7 @@ export const backfillCommentStyleDataForActiveUsers = onRequest({
     }
 
     // 4. 결과 정리 및 응답
-    const finalProgress = progress.getProgress();
+    const finalProgress = definedProgress.getProgress();
     const successCount = results.filter(r => r.success).length;
     const totalCommentsProcessed = results.reduce((sum, r) => sum + r.commentsProcessed, 0);
 
@@ -142,7 +145,7 @@ export const backfillCommentStyleDataForActiveUsers = onRequest({
  */
 async function processUserCommentsWithToneMood(
   userId: string, 
-  activeBoardId: string
+  _activeBoardId: string
 ): Promise<BackfillResult> {
   try {
     console.log(`Processing comments for user ${userId}`);
