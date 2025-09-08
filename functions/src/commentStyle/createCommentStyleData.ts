@@ -54,14 +54,20 @@ export const createCommentStyleData = onDocumentCreated({
 
     const postData = postDoc.data() as Post;
 
-    // 3. 캐시 서비스 및 Gemini 서비스 초기화
+    // 3. 셀프 댓글인 경우 제외 (본인 포스트에 본인이 댓글)
+    if (postData.authorId === userId) {
+      console.log(`Skipping self-comment: user ${userId} commenting on own post ${postId}`);
+      return;
+    }
+
+    // 4. 캐시 서비스 및 Gemini 서비스 초기화
     const cacheService = new CacheService();
     let analysis = await cacheService.getCachedPostProcessing(postId);
 
     if (!analysis) {
       console.log(`No cache found for post ${postId}, calling Gemini API`);
       
-      // 4. Gemini로 포스트 분석
+      // 5. Gemini로 포스트 분석
       const geminiService = new GeminiService();
       const result = await geminiService.generateSummaryToneMood(postData.content);
       
@@ -71,14 +77,14 @@ export const createCommentStyleData = onDocumentCreated({
         mood: result.mood
       };
 
-      // 5. 분석 결과를 캐시에 저장
+      // 6. 분석 결과를 캐시에 저장
       await cacheService.cachePostProcessing(postId, analysis);
       console.log(`Cached analysis result for post ${postId}`);
     } else {
       console.log(`Using cached analysis for post ${postId}`);
     }
 
-    // 6. CommentStyleData 레코드 생성
+    // 7. CommentStyleData 레코드 생성
     const commentStyleData: CommentStyleData = {
       id: commentId,
       userId: userId,
@@ -94,7 +100,7 @@ export const createCommentStyleData = onDocumentCreated({
       processedAt: admin.firestore.Timestamp.now()
     };
 
-    // 7. Firestore에 사용자 하위 컬렉션으로 저장
+    // 8. Firestore에 사용자 하위 컬렉션으로 저장
     await admin.firestore()
       .collection('users')
       .doc(userId)

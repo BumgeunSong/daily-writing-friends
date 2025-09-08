@@ -58,6 +58,12 @@ export async function getUserRecentCommentsWithPosts(
 
         const postData = postDoc.data();
 
+        // 셀프 댓글 제외 (본인 포스트에 본인이 댓글)
+        if (postData!.authorId === userId) {
+          console.log(`Skipping self-comment: user ${userId} commenting on own post ${postId}`);
+          continue;
+        }
+
         results.push({
           commentId: commentId,
           commentContent: commentData!.content,

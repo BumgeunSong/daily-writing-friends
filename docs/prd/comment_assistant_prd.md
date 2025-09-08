@@ -72,12 +72,19 @@ Active Users Identified
     ↓
 Real-time: New Comments Processed Automatically
     ↓
-Backfill: Historical Comments (10 per user)
+Self-Comments Excluded (authorId === userId)
+    ↓
+Backfill: Historical Comments (10 per user, excluding self-comments)
     ↓
 LLM Analysis: 50-char Summary + Tone + Mood
     ↓
 Store in commentStyleData Collection
 ```
+
+**Self-Comment Exclusion Policy:**
+- Comments where the post author and comment author are the same person are excluded from CommentStyleData
+- Rationale: Self-comments are not effective samples for learning commenting patterns since we won't suggest comments on user's own posts
+- This policy applies to both real-time processing and backfill operations
 
 #### Implemented Data Structure
 
@@ -87,6 +94,8 @@ interface CommentStyleData {
   userId: string;           // Comment author
   postId: string;          // Post being commented on  
   boardId: string;         // Board ID
+  authorId: string;        // Post author ID
+  authorNickname: string;  // Post author display name
   postSummary: string;     // 50-char LLM-generated summary
   postTone: PostTone;      // Writer's style (11 categories)
   postMood: PostMood;      // Emotional atmosphere (7 categories)
