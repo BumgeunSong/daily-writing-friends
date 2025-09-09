@@ -1,0 +1,115 @@
+import { RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { Button } from '@/shared/ui/button';
+import { CommentSuggestionCard } from './CommentSuggestionCard';
+import { CommentSuggestionSkeleton } from './CommentSuggestionSkeleton';
+import { useCommentSuggestions } from '../hooks/useCommentSuggestions';
+
+interface CommentSuggestionsProps {
+  postId: string;
+  boardId: string;
+  onSuggestionSelect: (text: string) => void;
+  enabled?: boolean;
+}
+
+export function CommentSuggestions({
+  postId,
+  boardId,
+  onSuggestionSelect,
+  enabled = true,
+}: CommentSuggestionsProps) {
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
+  const {
+    data: suggestions,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useCommentSuggestions({
+    postId,
+    boardId,
+    enabled,
+  });
+
+  const handleSuggestionSelect = (index: number, text: string) => {
+    setSelectedIndex(index);
+    onSuggestionSelect(text);
+
+    // Track analytics (optional)
+    // trackSuggestionSelection(index, suggestions[index].type);
+  };
+
+  // Don't render if disabled or no user
+  if (!enabled) {
+    return null;
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className='mb-4'>
+        <div className='flex items-center gap-2 mb-2'>
+          <span className='text-sm font-medium'>💡 Suggestion comments</span>
+          <div className='size-2 animate-pulse rounded-full bg-primary' />
+        </div>
+        <CommentSuggestionSkeleton />
+      </div>
+    );
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <div className='mb-4 p-3 rounded-lg border border-red-200 bg-red-50'>
+        <div className='flex items-center justify-between'>
+          <div>
+            <p className='text-sm text-red-800'>Failed to load suggestions</p>
+            <p className='text-xs text-red-600 mt-1'>{(error as Error)?.message || 'Something went wrong'}</p>
+          </div>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => refetch()}
+            className='text-red-700 border-red-300 hover:bg-red-100'
+          >
+            <RefreshCw className='w-3 h-3 mr-1' />
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // No suggestions
+  if (!suggestions || suggestions.length === 0) {
+    return null;
+  }
+
+  // Success state
+  return (
+    <div className='mb-4'>
+      <div className='flex items-center gap-2 mb-2'>
+        <span className='text-sm font-medium'>💡 Suggestion comments</span>
+        <span className='text-xs text-muted-foreground'>{suggestions.length} suggestions</span>
+      </div>
+
+      <div className='flex gap-3 overflow-x-auto pb-2'>
+        {suggestions.map((suggestion, index) => (
+          <CommentSuggestionCard
+            key={`${suggestion.type}-${index}`}
+            suggestion={suggestion}
+            selected={selectedIndex === index}
+            onSelect={() => handleSuggestionSelect(index, suggestion.text)}
+          />
+        ))}
+      </div>
+
+      {selectedIndex !== null && (
+        <p className='text-xs text-muted-foreground mt-2'>
+          You can edit the selected suggestion before posting
+        </p>
+      )}
+    </div>
+  );
+}
