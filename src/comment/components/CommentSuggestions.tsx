@@ -48,10 +48,11 @@ export function CommentSuggestions({
   // Loading state
   if (isLoading) {
     return (
-      <div className='mb-4'>
-        <div className='flex items-center gap-2 mb-2'>
-          <span className='text-sm font-medium'>💡 Suggestion comments</span>
-          <div className='size-2 animate-pulse rounded-full bg-primary' />
+      <div className='mb-3 sm:mb-4'>
+        <div className='flex items-center gap-2 mb-2 sm:mb-3'>
+          <span className='text-sm font-medium'>💡 댓글 제안</span>
+          <div className='size-2 animate-pulse rounded-full bg-primary sm:hidden' />
+          <div className='hidden sm:block w-3 h-3 animate-spin rounded-full border-2 border-primary border-t-transparent' />
         </div>
         <CommentSuggestionSkeleton />
       </div>
@@ -61,11 +62,13 @@ export function CommentSuggestions({
   // Error state
   if (isError) {
     return (
-      <div className='mb-4 p-3 rounded-lg border border-red-200 bg-red-50'>
+      <div className='mb-3 sm:mb-4 p-3 rounded-lg border border-red-200 bg-red-50'>
         <div className='flex items-center justify-between'>
           <div>
             <p className='text-sm text-red-800'>Failed to load suggestions</p>
-            <p className='text-xs text-red-600 mt-1'>{(error as Error)?.message || 'Something went wrong'}</p>
+            <p className='text-xs text-red-600 mt-1'>
+              {(error as Error)?.message || 'Something went wrong'}
+            </p>
           </div>
           <Button
             variant='outline'
@@ -88,13 +91,12 @@ export function CommentSuggestions({
 
   // Success state
   return (
-    <div className='mb-4'>
-      <div className='flex items-center gap-2 mb-2'>
-        <span className='text-sm font-medium'>💡 Suggestion comments</span>
-        <span className='text-xs text-muted-foreground'>{suggestions.length} suggestions</span>
+    <div className='mb-3 sm:mb-4'>
+      <div className='flex items-center gap-2 mb-2 sm:mb-3'>
+        <span className='text-sm font-medium'>💡 댓글 제안</span>
       </div>
 
-      <div className='flex gap-3 overflow-x-auto pb-2'>
+      <div className='flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide'>
         {suggestions.map((suggestion, index) => (
           <CommentSuggestionCard
             key={`${suggestion.type}-${index}`}
@@ -104,12 +106,6 @@ export function CommentSuggestions({
           />
         ))}
       </div>
-
-      {selectedIndex !== null && (
-        <p className='text-xs text-muted-foreground mt-2'>
-          You can edit the selected suggestion before posting
-        </p>
-      )}
     </div>
   );
 }
