@@ -50,3 +50,7 @@ export {
   createCommentStyleData,
   backfillCommentStyleDataForActiveUsers
 } from './commentStyle';
+
+export {
+  generateCommentSuggestions
+} from './commentSuggestion';
