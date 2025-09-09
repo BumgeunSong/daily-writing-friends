@@ -73,7 +73,7 @@ const Comments: React.FC<CommentsProps> = ({
           placeholder={placeholder}
           postId={postId}
           boardId={boardId}
-          enableSuggestions={true}
+          enableSuggestions={currentUser?.uid !== postAuthorId}
         />
       </div>
     </section>
