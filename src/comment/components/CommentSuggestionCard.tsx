@@ -7,20 +7,6 @@ interface CommentSuggestionCardProps {
   onSelect: () => void;
 }
 
-// Type icons based on PRD specifications
-const TYPE_ICONS = {
-  trait: '💭',
-  highlight: '✨',
-  empathy: '💙',
-  curiosity: '❓',
-} as const;
-
-const TYPE_LABELS = {
-  trait: 'Trait Recognition',
-  highlight: 'Highlight Appreciation',
-  empathy: 'Empathy Response',
-  curiosity: 'Curiosity Driver',
-} as const;
 
 export function CommentSuggestionCard({
   suggestion,
