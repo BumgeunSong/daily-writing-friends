@@ -19,6 +19,7 @@
   },
   "main": "lib/index.js",
   "dependencies": {
+    "@google/genai": "^1.17.0",
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "firebase-admin": "^12.7.0",

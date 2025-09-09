@@ -24,6 +24,7 @@ module.exports = {
   },
   ignorePatterns: [
     "/lib/**/*", // Ignore built files.
+    "/dist/**/*", // Ignore TypeScript compiled output.
     "/generated/**/*", // Ignore generated files.
     "**/*.test.ts", // Ignore test files.
     "**/__tests__/**/*", // Ignore test directories.
