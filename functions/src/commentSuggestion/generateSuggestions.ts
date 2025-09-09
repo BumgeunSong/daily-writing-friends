@@ -92,7 +92,22 @@ export const generateCommentSuggestions = onRequest(
 
       // 5. Call Gemini API
       const geminiService = new GeminiService();
-      const suggestions = await generateWithGemini(geminiService, prompt);
+      let suggestions: CommentSuggestion[];
+      
+      try {
+        suggestions = await generateWithGemini(geminiService, prompt);
+      } catch (geminiError) {
+        console.error('Gemini API failed, falling back to default suggestions:', geminiError);
+        // Fallback to default suggestions if Gemini fails
+        const defaultSuggestions = await generateDefaultSuggestions();
+        res.json({
+          success: true,
+          suggestions: defaultSuggestions,
+          isDefault: true,
+          warning: 'Used default suggestions due to API error',
+        } as GenerateSuggestionsResponse);
+        return;
+      }
 
       // 6. Return suggestions
       res.json({
@@ -208,6 +223,55 @@ JSON 형식으로만 응답하세요:
 }
 
 /**
+ * Type guard to validate CommentSuggestion structure
+ */
+function isValidCommentSuggestion(obj: unknown): obj is CommentSuggestion {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'type' in obj &&
+    'text' in obj &&
+    typeof (obj as any).type === 'string' &&
+    typeof (obj as any).text === 'string' &&
+    ['trait', 'highlight', 'empathy', 'curiosity'].includes((obj as any).type)
+  );
+}
+
+/**
+ * Type guard to validate GeminiSuggestionResponse structure
+ */
+function isValidGeminiResponse(obj: unknown): obj is GeminiSuggestionResponse {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'suggestions' in obj &&
+    Array.isArray((obj as any).suggestions) &&
+    (obj as any).suggestions.every(isValidCommentSuggestion)
+  );
+}
+
+/**
+ * Validate and sanitize suggestion text
+ */
+function sanitizeSuggestionText(text: string): string {
+  if (typeof text !== 'string') {
+    throw new Error('Suggestion text must be a string');
+  }
+  
+  const sanitized = text.trim();
+  
+  if (sanitized.length === 0) {
+    throw new Error('Suggestion text cannot be empty');
+  }
+  
+  if (sanitized.length > 500) {
+    throw new Error('Suggestion text too long (max 500 characters)');
+  }
+  
+  return sanitized;
+}
+
+/**
  * Generate suggestions using Gemini API
  */
 async function generateWithGemini(
@@ -218,20 +282,55 @@ async function generateWithGemini(
     // Use the new generateCommentSuggestions method
     const response = await geminiService.generateCommentSuggestions(prompt);
 
-    // Parse and validate response
-    const parsed = response as GeminiSuggestionResponse;
-
-    if (!parsed.suggestions || !Array.isArray(parsed.suggestions)) {
-      throw new Error('Invalid response format from Gemini');
+    // Validate response structure with type guard
+    if (!isValidGeminiResponse(response)) {
+      console.error('Invalid Gemini API response structure:', response);
+      throw new Error('Invalid response format from Gemini API');
     }
 
-    // Validate and map suggestions
-    return parsed.suggestions.map((s) => ({
-      type: s.type as CommentSuggestion['type'],
-      text: s.text,
-    }));
+    // Validate we have exactly 4 suggestions as expected
+    if (response.suggestions.length !== 4) {
+      console.warn(`Expected 4 suggestions, got ${response.suggestions.length}`);
+    }
+
+    // Ensure we have all required suggestion types
+    const expectedTypes = ['trait', 'highlight', 'empathy', 'curiosity'];
+    const receivedTypes = response.suggestions.map(s => s.type);
+    const missingTypes = expectedTypes.filter(type => !receivedTypes.includes(type));
+    
+    if (missingTypes.length > 0) {
+      console.warn('Missing suggestion types:', missingTypes);
+    }
+
+    // Validate, sanitize and map suggestions
+    const validatedSuggestions: CommentSuggestion[] = response.suggestions.map((suggestion) => {
+      try {
+        const sanitizedText = sanitizeSuggestionText(suggestion.text);
+        return {
+          type: suggestion.type as CommentSuggestion['type'],
+          text: sanitizedText,
+        };
+      } catch (sanitizationError) {
+        console.error('Suggestion sanitization failed:', sanitizationError);
+        throw new Error(`Invalid suggestion text for type ${suggestion.type}`);
+      }
+    });
+
+    // Ensure we return at least some suggestions
+    if (validatedSuggestions.length === 0) {
+      throw new Error('No valid suggestions generated');
+    }
+
+    return validatedSuggestions;
+
   } catch (error) {
     console.error('Gemini API error:', error);
+    
+    // Provide more specific error context
+    if (error instanceof Error) {
+      throw new Error(`Failed to generate suggestions: ${error.message}`);
+    }
+    
     throw new Error('Failed to generate suggestions with Gemini');
   }
 }
