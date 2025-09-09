@@ -26,6 +26,7 @@ export function CommentSuggestions({
     isError,
     error,
     refetch,
+    refresh,
   } = useCommentSuggestions({
     postId,
     boardId,
@@ -45,7 +46,7 @@ export function CommentSuggestions({
     return null;
   }
 
-  // Loading state
+  // Loading state (initial load or refreshing)
   if (isLoading) {
     return (
       <div className='mb-3 sm:mb-4'>
@@ -94,6 +95,23 @@ export function CommentSuggestions({
     <div className='mb-3 sm:mb-4'>
       <div className='flex items-center gap-2 mb-2 sm:mb-3'>
         <span className='text-sm font-medium'>💡 댓글 제안</span>
+        <Button
+          variant='ghost'
+          size='sm'
+          onClick={refresh}
+          disabled={isLoading}
+          className='h-6 w-6 p-0 text-muted-foreground hover:text-foreground disabled:opacity-50'
+          title='댓글 제안 새로고침'
+        >
+          {isLoading ? (
+            <>
+              <div className='size-2 animate-pulse rounded-full bg-current sm:hidden' />
+              <div className='hidden sm:block w-3 h-3 animate-spin rounded-full border-2 border-current border-t-transparent' />
+            </>
+          ) : (
+            <RefreshCw className='w-3 h-3' />
+          )}
+        </Button>
       </div>
 
       <div className='flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide'>

@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { generateCommentSuggestions } from '../api/commentSuggestions';
 import type { CommentSuggestion } from '../model/CommentSuggestion';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 
 interface UseCommentSuggestionsParams {
@@ -56,6 +56,14 @@ const loadFromCache = (key: string): CommentSuggestion[] | null => {
   }
 };
 
+const clearCache = (key: string): void => {
+  try {
+    localStorage.removeItem(`${CACHE_KEY}-${key}`);
+  } catch (error) {
+    console.warn('Failed to clear comment suggestions cache:', error);
+  }
+};
+
 /**
  * Custom hook to generate comment suggestions using TanStack Query
  * Based on comment_assistant_prd.md specifications
@@ -68,6 +76,7 @@ export function useCommentSuggestions({
 }: UseCommentSuggestionsParams) {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const cacheKey = `${currentUser?.uid}-${postId}-${boardId}`;
   
@@ -120,5 +129,24 @@ export function useCommentSuggestions({
     }
   }, [queryEnabled, query.data, query.isLoading, queryClient, currentUser?.uid, postId, boardId, cacheKey]);
 
-  return query;
+  // Refresh function that clears cache and refetches
+  const refresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Clear localStorage cache
+      clearCache(cacheKey);
+      // Clear current data immediately to show skeleton
+      queryClient.setQueryData(['commentSuggestions', currentUser?.uid, postId, boardId], undefined);
+      // Force refetch
+      await query.refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  return {
+    ...query,
+    isLoading: query.isLoading || isRefreshing,
+    refresh,
+  };
 }
