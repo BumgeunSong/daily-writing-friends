@@ -141,7 +141,6 @@ export function CommentSuggestions({
     isLoading,
     isError,
     error,
-    refetch,
     refresh,
   } = useCommentSuggestions({
     postId,
@@ -158,8 +157,8 @@ export function CommentSuggestions({
   );
 
   const handleRetry = useCallback(() => {
-    refetch();
-  }, [refetch]);
+    refresh();
+  }, [refresh]);
 
   // Early returns for different states
   if (!enabled) return null;
