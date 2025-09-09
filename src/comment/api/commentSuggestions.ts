@@ -1,17 +1,8 @@
-import type { CommentSuggestion } from '../hooks/useCommentSuggestions';
-
-export interface GenerateCommentSuggestionsRequest {
-  userId: string;
-  postId: string;
-  boardId: string;
-}
-
-export interface GenerateCommentSuggestionsResponse {
-  success: boolean;
-  suggestions?: CommentSuggestion[];
-  isDefault?: boolean;
-  error?: string;
-}
+import type { 
+  CommentSuggestion, 
+  GenerateCommentSuggestionsRequest, 
+  GenerateCommentSuggestionsResponse 
+} from '../model/CommentSuggestion';
 
 /**
  * Generate comment suggestions using the Cloud Function

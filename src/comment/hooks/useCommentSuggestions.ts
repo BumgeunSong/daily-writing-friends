@@ -1,16 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { generateCommentSuggestions } from '../api/commentSuggestions';
-
-/**
- * Types for comment suggestions
- */
-export type SuggestionType = 'trait' | 'highlight' | 'empathy' | 'curiosity';
-
-export interface CommentSuggestion {
-  type: SuggestionType;
-  text: string;
-}
+import type { CommentSuggestion } from '../model/CommentSuggestion';
 
 
 interface UseCommentSuggestionsParams {
