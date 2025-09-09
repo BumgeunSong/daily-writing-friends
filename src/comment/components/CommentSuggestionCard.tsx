@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import type { CommentSuggestion } from '../hooks/useCommentSuggestions';
+import type { CommentSuggestion } from '../model/CommentSuggestion';
 
 interface CommentSuggestionCardProps {
   suggestion: CommentSuggestion;
