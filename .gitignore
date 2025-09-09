@@ -48,6 +48,9 @@ tasks/
 .roo/
 .claude/
 
+# Security: Test scripts with real data
+functions/src/commentSuggestion/test-suggestions.sh
+
 # Playwright
 /test-results/
 /playwright-report/

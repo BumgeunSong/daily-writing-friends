@@ -1,6 +1,6 @@
 import { Edit, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
-import CommentInput from '@/comment/components/CommentInput';
+import { CommentInput } from '@/comment/components/CommentInput';
 import ReactionList from '@/comment/components/ReactionList';
 import { useDeleteComment, useEditComment } from '@/comment/hooks/useCreateComment';
 import { sanitizeCommentContent } from '@/post/utils/contentUtils';
@@ -76,7 +76,13 @@ const CommentRow: React.FC<CommentRowProps> = ({ boardId, postId, comment, isAut
       </div>
       <div className='text-base'>
         {isEditing ? (
-          <CommentInput onSubmit={handleEditSubmit} initialValue={comment.content} />
+          <CommentInput 
+            onSubmit={handleEditSubmit} 
+            initialValue={comment.content}
+            postId={postId}
+            boardId={boardId}
+            enableSuggestions={false}
+          />
         ) : (
           <div
             className='prose prose-slate whitespace-pre-wrap dark:prose-invert'
