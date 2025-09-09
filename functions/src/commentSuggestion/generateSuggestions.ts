@@ -1,120 +1,121 @@
-import { onRequest } from "firebase-functions/v2/https";
-import admin from "../shared/admin";
-import { CommentStyleData } from "../commentStyle/types";
-import { 
-  GenerateSuggestionsRequest, 
+import { onRequest } from 'firebase-functions/v2/https';
+import admin from '../shared/admin';
+import { CommentStyleData } from '../commentStyle/types';
+import {
+  GenerateSuggestionsRequest,
   GenerateSuggestionsResponse,
   CommentSuggestion,
-  GeminiSuggestionResponse
-} from "./types";
-import { GeminiService } from "../commentStyle/geminiService";
-import { geminiApiKey } from "../commentStyle/config";
+  GeminiSuggestionResponse,
+} from './types';
+import { GeminiService } from '../commentStyle/geminiService';
+import { geminiApiKey } from '../commentStyle/config';
 
 /**
  * HTTP Cloud Function to generate personalized comment suggestions
- * 
+ *
  * Process:
  * 1. Fetch user's last 10 commentStyleData records
  * 2. Fetch target post content
- * 3. Build prompt with examples + instructions  
+ * 3. Build prompt with examples + instructions
  * 4. Call Gemini API
  * 5. Return 4 suggestions
  */
-export const generateCommentSuggestions = onRequest({
-  timeoutSeconds: 30,
-  memory: "512MiB" as const,
-  minInstances: 0,
-  maxInstances: 10,
-  secrets: [geminiApiKey],
-  invoker: "public",  // Allow unauthenticated access
-}, async (req, res): Promise<void> => {
-  // CORS 헤더 설정
-  res.set('Access-Control-Allow-Origin', '*');
-  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type');
+export const generateCommentSuggestions = onRequest(
+  {
+    timeoutSeconds: 30,
+    memory: '512MiB' as const,
+    minInstances: 0,
+    maxInstances: 10,
+    secrets: [geminiApiKey],
+    invoker: 'public', // Allow unauthenticated access
+  },
+  async (req, res): Promise<void> => {
+    // CORS 헤더 설정
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Handle OPTIONS request for CORS
-  if (req.method === 'OPTIONS') {
-    res.status(204).send('');
-    return;
-  }
-
-  try {
-    // Parse request body
-    const { userId, postId, boardId } = req.body as GenerateSuggestionsRequest;
-
-    // Validate required parameters
-    if (!userId || !postId || !boardId) {
-      res.status(400).json({
-        success: false,
-        error: 'Missing required parameters: userId, postId, boardId'
-      } as GenerateSuggestionsResponse);
+    // Handle OPTIONS request for CORS
+    if (req.method === 'OPTIONS') {
+      res.status(204).send('');
       return;
     }
 
-    console.log(`Generating suggestions for user ${userId} on post ${postId}`);
+    try {
+      // Parse request body
+      const { userId, postId, boardId } = req.body as GenerateSuggestionsRequest;
 
-    // 1. Fetch user's comment history from commentStyleData
-    const commentHistory = await getUserCommentHistory(userId);
-    console.log(`Found ${commentHistory.length} historical comments for user`);
+      // Validate required parameters
+      if (!userId || !postId || !boardId) {
+        res.status(400).json({
+          success: false,
+          error: 'Missing required parameters: userId, postId, boardId',
+        } as GenerateSuggestionsResponse);
+        return;
+      }
 
-    // 2. Check if user has enough history (minimum 3 comments)
-    if (commentHistory.length < 3) {
-      console.log('User has insufficient comment history, using default suggestions');
-      const defaultSuggestions = await generateDefaultSuggestions(postId, boardId);
+      console.log(`Generating suggestions for user ${userId} on post ${postId}`);
+
+      // 1. Fetch user's comment history from commentStyleData
+      const commentHistory = await getUserCommentHistory(userId);
+      console.log(`Found ${commentHistory.length} historical comments for user`);
+
+      // 2. Check if user has enough history (minimum 3 comments)
+      if (commentHistory.length < 3) {
+        console.log('User has insufficient comment history, using default suggestions');
+        const defaultSuggestions = await generateDefaultSuggestions();
+        res.json({
+          success: true,
+          suggestions: defaultSuggestions,
+          isDefault: true,
+        } as GenerateSuggestionsResponse);
+        return;
+      }
+
+      // 3. Fetch target post
+      const postDoc = await admin.firestore().doc(`boards/${boardId}/posts/${postId}`).get();
+
+      if (!postDoc.exists) {
+        res.status(404).json({
+          success: false,
+          error: 'Post not found',
+        } as GenerateSuggestionsResponse);
+        return;
+      }
+
+      const postData = postDoc.data();
+      const postContent = postData?.content || '';
+      const postAuthorName = postData?.authorName || '';
+
+      // 4. Build prompt and generate suggestions
+      const prompt = buildSuggestionPrompt(commentHistory, postContent, postAuthorName);
+
+      // 5. Call Gemini API
+      const geminiService = new GeminiService();
+      const suggestions = await generateWithGemini(geminiService, prompt);
+
+      // 6. Return suggestions
       res.json({
         success: true,
-        suggestions: defaultSuggestions,
-        isDefault: true
+        suggestions: suggestions,
+        isDefault: false,
       } as GenerateSuggestionsResponse);
-      return;
-    }
-
-    // 3. Fetch target post
-    const postDoc = await admin.firestore()
-      .doc(`boards/${boardId}/posts/${postId}`)
-      .get();
-
-    if (!postDoc.exists) {
-      res.status(404).json({
+    } catch (error) {
+      console.error('Error generating suggestions:', error);
+      res.status(500).json({
         success: false,
-        error: 'Post not found'
+        error: 'Failed to generate suggestions',
       } as GenerateSuggestionsResponse);
-      return;
     }
-
-    const postData = postDoc.data();
-    const postContent = postData?.content || '';
-    const postAuthorName = postData?.authorName || '';
-
-    // 4. Build prompt and generate suggestions
-    const prompt = buildSuggestionPrompt(commentHistory, postContent, postAuthorName);
-    
-    // 5. Call Gemini API
-    const geminiService = new GeminiService();
-    const suggestions = await generateWithGemini(geminiService, prompt);
-
-    // 6. Return suggestions
-    res.json({
-      success: true,
-      suggestions: suggestions,
-      isDefault: false
-    } as GenerateSuggestionsResponse);
-
-  } catch (error) {
-    console.error('Error generating suggestions:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to generate suggestions'
-    } as GenerateSuggestionsResponse);
-  }
-});
+  },
+);
 
 /**
  * Fetch user's comment history from commentStyleData collection
  */
 async function getUserCommentHistory(userId: string): Promise<CommentStyleData[]> {
-  const snapshot = await admin.firestore()
+  const snapshot = await admin
+    .firestore()
     .collection('users')
     .doc(userId)
     .collection('commentStyleData')
@@ -122,29 +123,30 @@ async function getUserCommentHistory(userId: string): Promise<CommentStyleData[]
     .limit(10)
     .get();
 
-  return snapshot.docs.map(doc => doc.data() as CommentStyleData);
+  return snapshot.docs.map((doc) => doc.data() as CommentStyleData);
 }
 
 /**
  * Build the prompt for Gemini to generate suggestions
  */
 function buildSuggestionPrompt(
-  commentHistory: CommentStyleData[], 
+  commentHistory: CommentStyleData[],
   postContent: string,
-  postAuthorName: string
+  postAuthorName: string,
 ): string {
   // Format comment history examples
-  const examples = commentHistory.map((data, index) => {
-    return `예시 ${index + 1}:
+  const examples = commentHistory
+    .map((data, index) => {
+      return `예시 ${index + 1}:
 포스트 요약: "${data.postSummary}"
 포스트 톤: ${data.postTone}, 무드: ${data.postMood}
 작성한 댓글: "${data.userComment}"`;
-  }).join('\n\n');
+    })
+    .join('\n\n');
 
   // Truncate post content if too long
-  const targetContent = postContent.length > 1500 
-    ? postContent.slice(0, 1500) + '...'
-    : postContent;
+  const targetContent =
+    postContent.length > 1500 ? postContent.slice(0, 1500) + '...' : postContent;
 
   return `당신은 사용자의 댓글 스타일을 학습하여 개인화된 댓글을 제안하는 AI입니다.
 
@@ -174,10 +176,10 @@ ${examples}
 ## 필수 작성 규칙:
 
 ### 톤 & 스타일:
-- 모든 댓글은 일상 대화체로 작성하세요
-- 반말을 기본으로 하되, 사용자 과거 패턴을 따르세요
+ - 모든 댓글은 존댓말로 작성하세요 (예: ~해요, ~습니다, ~네요, ~데요, ~어요, ~겠죠, ~걸요, ~군요)
+- 일상 대화체이지만 정중하고 친근한 톤을 유지하세요
 - 가벼운 감탄사(ㅋㅋ, ㅎㅎ, 헉, 아이고, ㅠㅠ 등)는 사용자가 실제 사용한 경우만 따라하세요
-- 과거 댓글에서 반복문자/인터넷체가 등장하면 그대로 따라하세요 (예: '헉ㅋㅋ', '와....')
+- 과거 댓글에서 반복문자/인터넷체가 등장하면 그대로 따라하되, 존댓말로 변환하세요
 
 ### 문장 구조:
 - 짧은 문장으로 나누어 자연스럽게 말하는 느낌을 내세요
@@ -210,25 +212,24 @@ JSON 형식으로만 응답하세요:
  */
 async function generateWithGemini(
   geminiService: GeminiService,
-  prompt: string
+  prompt: string,
 ): Promise<CommentSuggestion[]> {
   try {
     // Use the new generateCommentSuggestions method
     const response = await geminiService.generateCommentSuggestions(prompt);
-    
+
     // Parse and validate response
     const parsed = response as GeminiSuggestionResponse;
-    
+
     if (!parsed.suggestions || !Array.isArray(parsed.suggestions)) {
       throw new Error('Invalid response format from Gemini');
     }
 
     // Validate and map suggestions
-    return parsed.suggestions.map(s => ({
+    return parsed.suggestions.map((s) => ({
       type: s.type as CommentSuggestion['type'],
-      text: s.text
+      text: s.text,
     }));
-
   } catch (error) {
     console.error('Gemini API error:', error);
     throw new Error('Failed to generate suggestions with Gemini');
@@ -238,28 +239,25 @@ async function generateWithGemini(
 /**
  * Generate default suggestions for users with insufficient history
  */
-async function generateDefaultSuggestions(
-  _postId: string,
-  _boardId: string
-): Promise<CommentSuggestion[]> {
+async function generateDefaultSuggestions(): Promise<CommentSuggestion[]> {
   // For now, return generic suggestions
   // In the future, we can analyze just the post content
   return [
     {
       type: 'trait',
-      text: '글에서 느껴지는 진정성이 좋네요.'
+      text: '글에서 느껴지는 진정성이 좋네요.',
     },
     {
-      type: 'highlight', 
-      text: '표현이 정말 인상적이에요!'
+      type: 'highlight',
+      text: '표현이 정말 인상적이네요!',
     },
     {
       type: 'empathy',
-      text: '공감이 되는 이야기네요. 저도 비슷한 경험이 있어요.'
+      text: '공감이 되는 이야기네요. 저도 비슷한 경험이 있어요.',
     },
     {
       type: 'curiosity',
-      text: '흥미로운 이야기네요! 그 다음엔 어떻게 되었나요?'
-    }
+      text: '흥미로운 이야기네요! 그 다음엔 어떻게 되었나요?',
+    },
   ];
 }
