@@ -4,6 +4,7 @@ import { Button } from '@/shared/ui/button';
 import { CommentSuggestionCard } from './CommentSuggestionCard';
 import { CommentSuggestionSkeleton } from './CommentSuggestionSkeleton';
 import { useCommentSuggestions } from '../hooks/useCommentSuggestions';
+import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import type { CommentSuggestion } from '../model/CommentSuggestion';
 
 interface CommentSuggestionsProps {
@@ -135,6 +136,7 @@ export function CommentSuggestions({
   enabled = true,
 }: CommentSuggestionsProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const { value: commentAssistantEnabled } = useRemoteConfig('comment_assistant_enabled');
 
   const {
     data: suggestions,
@@ -145,7 +147,7 @@ export function CommentSuggestions({
   } = useCommentSuggestions({
     postId,
     boardId,
-    enabled,
+    enabled: enabled && commentAssistantEnabled,
   });
 
   const handleSuggestionSelect = useCallback(
@@ -161,7 +163,7 @@ export function CommentSuggestions({
   }, [refresh]);
 
   // Early returns for different states
-  if (!enabled) return null;
+  if (!enabled || !commentAssistantEnabled) return null;
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState error={error as Error | null} onRetry={handleRetry} />;
   if (!suggestions || suggestions.length === 0) return null;
