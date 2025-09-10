@@ -93,7 +93,7 @@ export const generateCommentSuggestions = onRequest(
       // 5. Call Gemini API
       const geminiService = new GeminiService();
       let suggestions: CommentSuggestion[];
-      
+
       try {
         suggestions = await generateWithGemini(geminiService, prompt);
       } catch (geminiError) {
@@ -153,9 +153,10 @@ function buildSuggestionPrompt(
   const examples = commentHistory
     .map((data, index) => {
       return `예시 ${index + 1}:
+포스트 작성자: ${data.authorNickname}
 포스트 요약: "${data.postSummary}"
 포스트 톤: ${data.postTone}, 무드: ${data.postMood}
-작성한 댓글: "${data.userComment}"`;
+사용자가 작성한 댓글: "${data.userComment}"`;
     })
     .join('\n\n');
 
@@ -170,10 +171,9 @@ ${examples}
 
 ## 위 예시를 분석하여 파악한 사용자 스타일:
 - 댓글 길이 패턴을 관찰하세요
-- 이모지 사용 빈도를 확인하세요
-- 반말/존댓말 사용을 파악하세요
-- 자주 쓰는 표현을 찾아보세요
-- 감정 표현 방식을 이해하세요
+- 자주 쓰이는 종결 어미를 파악하세요 (예시: ~해요, ~습니다, ~네요, ~데요, ~구요, ~고요, ~어요, ~겠죠, ~걸요, ~군요))
+- 이모지 사용 빈도를 확인하세요 (예시: '부러운 습관입니다 😭', '꿀팁이라…🤔')
+- 자주 쓰는 표현, 감정 표현 방식을 찾아보세요. '와', '오', 'ㅋㅋ', 'ㅎㅎ', '헉', '아이고', 'ㅠㅠ', '!', '!!', '?!', '....' 등
 
 ## 새로운 포스트 (댓글을 작성할 대상):
 작성자: ${postAuthorName}
@@ -190,11 +190,17 @@ ${examples}
 
 ## 필수 작성 규칙:
 
+### 개인화 원칙:
+- [!!가장 중요한 점!!]: 개인화를 위하여 위에서 분석한 사용자의 댓글 작성 스타일을 최대한 비슷하게 따라하세요.
+- 사용자의 평균 댓글 길이와 비슷해야 함 (±20%)
+- 사용자 기록이 5개 미만인 경우, 기본 캐주얼 페르소나(친구끼리 채팅하는 듯한 가벼운 톤) 사용
+- 실제 친구가 쓸 법한 자연스러운 댓글로 작성
+
 ### 톤 & 스타일:
- - 모든 댓글은 존댓말로 작성하세요 (예: ~해요, ~습니다, ~네요, ~데요, ~어요, ~겠죠, ~걸요, ~군요)
-- 일상 대화체이지만 정중하고 친근한 톤을 유지하세요
-- 가벼운 감탄사(ㅋㅋ, ㅎㅎ, 헉, 아이고, ㅠㅠ 등)는 사용자가 실제 사용한 경우만 따라하세요
-- 과거 댓글에서 반복문자/인터넷체가 등장하면 그대로 따라하되, 존댓말로 변환하세요
+- 친한 이웃과 대화하듯 일상 대화체의 친근한 톤을 유지하세요.
+- 포스트 내용과 분위기가 진지한 글이 아닌 경우, 질문(curiosity) 유형이나, 칭찬(highlight) 유형에는 가끔은 엉뚱하거나 유머러스한 톤을 넣어보세요.
+- 가급적이면 모든 댓글은 존댓말로 작성하세요.
+- 과거 댓글에서 반복문자/인터넷체가 등장하면 따라하되, 반말은 하지 마세요.
 
 ### 문장 구조:
 - 짧은 문장으로 나누어 자연스럽게 말하는 느낌을 내세요
@@ -204,12 +210,7 @@ ${examples}
 ### 금지사항:
 - 절대 '좋네요', '최고예요' 같은 뻔한 칭찬 금지
 - AI 생성처럼 보이는 완벽하고 예의바른 문장 금지
-- 사용자가 쓰지 않은 표현이나 이모지 사용 금지
-
-### 개인화 원칙:
-- 사용자의 평균 댓글 길이와 비슷해야 함 (±20%)
-- 사용자 기록이 5개 미만인 경우, 기본 캐주얼 페르소나(친구끼리 채팅하는 듯한 가벼운 톤) 사용
-- 실제 친구가 쓸 법한 자연스러운 댓글로 작성
+- 사용자가 쓰지 않은 표현이나 이모지는 사용 금지
 
 JSON 형식으로만 응답하세요:
 {
@@ -257,17 +258,17 @@ function sanitizeSuggestionText(text: string): string {
   if (typeof text !== 'string') {
     throw new Error('Suggestion text must be a string');
   }
-  
+
   const sanitized = text.trim();
-  
+
   if (sanitized.length === 0) {
     throw new Error('Suggestion text cannot be empty');
   }
-  
+
   if (sanitized.length > 500) {
     throw new Error('Suggestion text too long (max 500 characters)');
   }
-  
+
   return sanitized;
 }
 
@@ -295,9 +296,9 @@ async function generateWithGemini(
 
     // Ensure we have all required suggestion types
     const expectedTypes = ['trait', 'highlight', 'empathy', 'curiosity'];
-    const receivedTypes = response.suggestions.map(s => s.type);
-    const missingTypes = expectedTypes.filter(type => !receivedTypes.includes(type));
-    
+    const receivedTypes = response.suggestions.map((s) => s.type);
+    const missingTypes = expectedTypes.filter((type) => !receivedTypes.includes(type));
+
     if (missingTypes.length > 0) {
       console.warn('Missing suggestion types:', missingTypes);
     }
@@ -322,15 +323,14 @@ async function generateWithGemini(
     }
 
     return validatedSuggestions;
-
   } catch (error) {
     console.error('Gemini API error:', error);
-    
+
     // Provide more specific error context
     if (error instanceof Error) {
       throw new Error(`Failed to generate suggestions: ${error.message}`);
     }
-    
+
     throw new Error('Failed to generate suggestions with Gemini');
   }
 }
