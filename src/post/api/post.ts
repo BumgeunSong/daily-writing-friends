@@ -1,8 +1,9 @@
-import { collection, getDocs, startAfter, limit, query } from 'firebase/firestore';
+import { collection, startAfter, limit, query } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { Post } from '@/post/model/Post';
 import { mapDocumentToPost } from '@/post/utils/postUtils';
 import { buildNotInQuery } from '@/user/api/user';
+import { trackedFirebase } from '@/shared/api/trackedFirebase';
 
 /**
  * Firestore에서 게시글을 불러옴 (blockedByUsers 서버사이드 필터링)
@@ -26,6 +27,6 @@ export async function fetchPosts(
   if (after) {
     q = query(q, startAfter(after));
   }
-  const snapshot = await getDocs(q);
+  const snapshot = await trackedFirebase.getDocs(q);
   return snapshot.docs.map(doc => mapDocumentToPost(doc));
 }
