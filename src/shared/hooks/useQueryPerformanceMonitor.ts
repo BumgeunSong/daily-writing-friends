@@ -41,7 +41,7 @@ export function useQueryPerformanceMonitor(enabled = false) {
       });
 
       // Log slow queries to Sentry in production
-      if (import.meta.env.PROD && stats.slowQueries.length > 0) {
+      if (!import.meta.env.DEV && stats.slowQueries.length > 0) {
         stats.slowQueries.forEach(slowQuery => {
           addSentryBreadcrumb(
             `Slow query detected: ${JSON.stringify(slowQuery.queryKey)}`,
