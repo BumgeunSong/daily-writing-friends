@@ -7,21 +7,13 @@ export const initSentry = () => {
   Sentry.init({
     dsn: 'https://8909fb2b0ca421e67d747c29dc427694@o4508460976635904.ingest.us.sentry.io/4508460981747712',
     environment,
-    integrations: [
-      Sentry.browserTracingIntegration(),
-      Sentry.replayIntegration(),
-    ],
-    // Tracing
-    tracesSampleRate: isDevelopment ? 0.1 : 1.0, // Lower sample rate in dev
-    // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
+    integrations: [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
+    tracesSampleRate: 0.1,
     tracePropagationTargets: ['localhost', /^https:\/\/daily-writing-friends\.com\/api/],
-    // Session Replay
-    replaysSessionSampleRate: isDevelopment ? 0 : 0.1, // No replay in dev, 10% in prod
-    replaysOnErrorSampleRate: 1.0, // Always replay on error
+    replaysSessionSampleRate: isDevelopment ? 0 : 0.1,
+    replaysOnErrorSampleRate: 1.0,
 
-    // Error filtering and processing
     beforeSend(event, hint) {
-      // Filter out network errors in development
       if (isDevelopment && event.exception?.values?.[0]?.type === 'NetworkError') {
         return null;
       }
@@ -41,7 +33,10 @@ export const initSentry = () => {
           }
         }
         // Group network timeout errors
-        else if (error.message?.includes('timeout') || error.message?.includes('Network request failed')) {
+        else if (
+          error.message?.includes('timeout') ||
+          error.message?.includes('Network request failed')
+        ) {
           event.fingerprint = ['network', 'timeout'];
         }
       }
@@ -76,12 +71,14 @@ export const initSentry = () => {
       'AbortError',
     ],
   });
-}
+};
 
 /**
  * Set user context for Sentry error tracking
  */
-export const setSentryUser = (user: { uid: string; email?: string | null; displayName?: string | null } | null) => {
+export const setSentryUser = (
+  user: { uid: string; email?: string | null; displayName?: string | null } | null,
+) => {
   if (user) {
     Sentry.setUser({
       id: user.uid,
@@ -100,7 +97,7 @@ export const addSentryBreadcrumb = (
   message: string,
   category: string,
   data?: Record<string, any>,
-  level: Sentry.SeverityLevel = 'info'
+  level: Sentry.SeverityLevel = 'info',
 ) => {
   Sentry.addBreadcrumb({
     message,
