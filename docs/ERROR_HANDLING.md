@@ -235,9 +235,40 @@ if (!navigator.onLine) {
 - Check user online status
 
 #### "Missing or insufficient permissions"
-- Verify Firestore security rules
-- Check user authentication state
-- Review user roles/permissions
+
+**Enhanced Context in Sentry:**
+When permission errors occur, Sentry now captures:
+- **Operation type**: read/write/create/update/delete
+- **Collection & Document**: Exact path being accessed
+- **User state**: Authenticated status and user ID
+- **Permission details**: Current vs required permissions
+- **Debug hints**: Likely causes and solutions
+
+**Common Permission Scenarios:**
+
+1. **Board Access (`boards/{boardId}`)**
+   - **Required**: User authenticated + `boardPermissions[boardId]` = 'read' or 'write'
+   - **Check**: User's `boardPermissions` field in Firestore
+   - **Debug**: Look for `availablePermissions` in Sentry context
+
+2. **Post Reading (`boards/{boardId}/posts/{postId}`)**
+   - **Required**: User authenticated + (post is PUBLIC OR user is author)
+   - **Check**: Post's `visibility` field and `authorId`
+   - **Debug**: Verify post visibility status in Sentry context
+
+3. **User Data (`users/{userId}`)**
+   - **Required**: User can only access their own data
+   - **Check**: `userId` matches authenticated user
+   - **Debug**: Compare `userId` in path with authenticated user ID
+
+**Debugging Steps:**
+1. Check Sentry's `firebasePermission` context for:
+   - Exact operation and path
+   - User authentication state
+   - Additional info with specific reason
+2. Review console logs for detailed debug hints
+3. Verify user's permissions in Firestore console
+4. Check authentication state in browser: `firebase.auth().currentUser`
 
 #### "TypeError" in components
 - Check for null/undefined data

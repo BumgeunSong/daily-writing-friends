@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { addSentryBreadcrumb, setSentryContext } from '@/sentry';
+import { getCurrentUserIdFromStorage } from '@/shared/utils/getCurrentUserId';
 
 interface NetworkErrorDetails {
   url: string;
@@ -88,6 +89,7 @@ export function setupNetworkErrorTracking() {
         duration,
         errorName: error instanceof Error ? error.name : 'Unknown',
         errorMessage: error instanceof Error ? error.message : String(error),
+        userId: getCurrentUserIdFromStorage(),
       });
 
       // Create a more descriptive error
