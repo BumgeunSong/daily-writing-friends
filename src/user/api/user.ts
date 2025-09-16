@@ -3,15 +3,16 @@
 // Abstract repetitive Firebase logic into helpers
 
 import { User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, serverTimestamp, collection, getDocs, where, query, Timestamp, writeBatch, orderBy, CollectionReference, Query, or } from 'firebase/firestore';
+import { doc, setDoc as firebaseSetDoc, updateDoc as firebaseUpdateDoc, deleteDoc as firebaseDeleteDoc, serverTimestamp, collection, where, query, Timestamp, writeBatch, orderBy, CollectionReference, Query, or } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, storage } from '@/firebase';
 import { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
+import { trackedFirebase } from '@/shared/api/trackedFirebase';
 
 // Firestore에서 User 데이터 읽기
 export async function fetchUser(uid: string): Promise<User | null> {
     const userDocRef = doc(firestore, 'users', uid);
-    const userDoc = await getDoc(userDocRef);
+    const userDoc = await trackedFirebase.getDoc(userDocRef);
     if (!userDoc.exists()) return null;
     return userDoc.data() as User;
 }
@@ -19,7 +20,7 @@ export async function fetchUser(uid: string): Promise<User | null> {
 // Firestore에 User 데이터 생성
 export async function createUser(data: User): Promise<void> {
     const userDocRef = doc(firestore, 'users', data.uid);
-    await setDoc(userDocRef, {
+    await firebaseSetDoc(userDocRef, {
         ...data,
         updatedAt: serverTimestamp(),
     });
@@ -28,7 +29,7 @@ export async function createUser(data: User): Promise<void> {
 // Firestore의 User 데이터 수정
 export async function updateUser(uid: string, data: Partial<User>): Promise<void> {
     const userDocRef = doc(firestore, 'users', uid);
-    await updateDoc(userDocRef, {
+    await firebaseUpdateDoc(userDocRef, {
         ...data,
         updatedAt: serverTimestamp(),
     });
@@ -37,7 +38,7 @@ export async function updateUser(uid: string, data: Partial<User>): Promise<void
 // Firestore의 User 데이터 삭제
 export async function deleteUser(uid: string): Promise<void> {
     const userDocRef = doc(firestore, 'users', uid);
-    await deleteDoc(userDocRef);
+    await firebaseDeleteDoc(userDocRef);
 }
 
 // 특정 boardIds에 write 권한이 있는 모든 사용자 데이터 가져오기
@@ -55,7 +56,7 @@ export async function fetchUsersWithBoardPermission(boardIds: string[]): Promise
             or(...conditions)
         );
         
-        const snapshot = await getDocs(q);
+        const snapshot = await trackedFirebase.getDocs(q);
         const users: User[] = [];
         
         snapshot.docs.forEach(doc => {
@@ -150,7 +151,7 @@ export async function removeBlockedUser(myUid: string, blockedUid: string): Prom
  */
 export async function fetchAllUsers(): Promise<User[]> {
     try {
-        const usersSnap = await getDocs(collection(firestore, 'users'));
+        const usersSnap = await trackedFirebase.getDocs(collection(firestore, 'users'));
         return usersSnap.docs.map(doc => doc.data() as User);
     } catch (error) {
         console.error('Error fetching all users:', error);
@@ -176,13 +177,13 @@ export async function unblockUser(blockerId: string, blockedId: string) {
 
 /** 내가 차단한 유저 목록 */
 export async function getBlockedUsers(userId: string): Promise<string[]> {
-  const snap = await getDocs(collection(firestore, `users/${userId}/blockedUsers`));
+  const snap = await trackedFirebase.getDocs(collection(firestore, `users/${userId}/blockedUsers`));
   return snap.docs.map(doc => doc.id);
 }
 
 /** 나를 차단한 유저 목록 */
 export async function getBlockedByUsers(userId: string): Promise<string[]> {
-  const snap = await getDocs(collection(firestore, `users/${userId}/blockedByUsers`));
+  const snap = await trackedFirebase.getDocs(collection(firestore, `users/${userId}/blockedByUsers`));
   return snap.docs.map(doc => doc.id);
 }
 

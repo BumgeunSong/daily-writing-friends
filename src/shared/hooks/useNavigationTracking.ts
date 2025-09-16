@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { addSentryBreadcrumb, setSentryContext } from '@/sentry';
-import { trackUserAction } from '@/shared/utils/networkErrorTracking';
 
 /**
  * Hook to track navigation for better error context
@@ -31,39 +30,58 @@ export function useNavigationTracking() {
       search: location.search,
     });
 
-    // Track as user action for network error context
-    trackUserAction('navigate', pageName);
   }, [location]);
 
-  // Track clicks on interactive elements
+  // Track user interactions
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
 
-      // Track button clicks
+      // Track button clicks with breadcrumbs
       if (target.tagName === 'BUTTON' || target.closest('button')) {
         const button = target.closest('button');
         const buttonText = button?.textContent?.trim() || 'Unknown Button';
-        trackUserAction('click', `Button: ${buttonText}`);
+        addSentryBreadcrumb(
+          `User clicked: Button: ${buttonText}`,
+          'user',
+          { action: 'click', target: `Button: ${buttonText}` },
+          'info'
+        );
       }
 
-      // Track link clicks
+      // Track link clicks with breadcrumbs
       if (target.tagName === 'A' || target.closest('a')) {
         const link = target.closest('a');
         const linkText = link?.textContent?.trim() || link?.href || 'Unknown Link';
-        trackUserAction('click', `Link: ${linkText}`);
-      }
-
-      // Track form submissions
-      if (target.tagName === 'FORM' || target.closest('form')) {
-        const form = target.closest('form');
-        const formId = form?.id || form?.className || 'Unknown Form';
-        trackUserAction('submit', `Form: ${formId}`);
+        addSentryBreadcrumb(
+          `User clicked: Link: ${linkText}`,
+          'user',
+          { action: 'click', target: `Link: ${linkText}` },
+          'info'
+        );
       }
     };
 
+    const handleSubmit = (event: SubmitEvent) => {
+      const target = event.target as HTMLFormElement;
+
+      // Track form submissions with breadcrumbs
+      const formId = target?.id || target?.className || 'Unknown Form';
+      addSentryBreadcrumb(
+        `User submitted: Form: ${formId}`,
+        'user',
+        { action: 'submit', target: `Form: ${formId}` },
+        'info'
+      );
+    };
+
     document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
+    document.addEventListener('submit', handleSubmit);
+
+    return () => {
+      document.removeEventListener('click', handleClick);
+      document.removeEventListener('submit', handleSubmit);
+    };
   }, []);
 }
 

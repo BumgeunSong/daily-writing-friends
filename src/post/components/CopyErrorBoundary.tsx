@@ -1,5 +1,6 @@
 import { AlertCircle } from 'lucide-react';
 import React, { Component, ReactNode } from 'react';
+import * as Sentry from '@sentry/react';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 
 interface CopyErrorBoundaryProps {
@@ -44,17 +45,15 @@ export class CopyErrorBoundary extends Component<CopyErrorBoundaryProps, CopyErr
     // 복사 관련 에러 로깅
     console.error('Copy functionality error:', error, errorInfo);
 
-    // Sentry로 에러 리포팅
-    import('@sentry/react').then((Sentry) => {
-      Sentry.withScope((scope) => {
-        scope.setLevel('warning'); // 복사 에러는 warning 레벨로 설정
-        scope.setTag('errorType', 'copy-functionality');
-        scope.setContext('copyError', {
-          componentStack: errorInfo.componentStack,
-          errorMessage: error.message,
-        });
-        Sentry.captureException(error);
+    // Sentry로 에러 리포팅 (정적 임포트 사용)
+    Sentry.withScope((scope) => {
+      scope.setLevel('warning'); // 복사 에러는 warning 레벨로 설정
+      scope.setTag('errorType', 'copy-functionality');
+      scope.setContext('copyError', {
+        componentStack: errorInfo.componentStack,
+        errorMessage: error.message,
       });
+      Sentry.captureException(error);
     });
   }
 
