@@ -5,6 +5,28 @@ import { addSentryBreadcrumb, setSentryContext, setSentryTags } from '@/sentry';
 import { trackFirebasePermissionError, getPermissionErrorHints } from '@/shared/utils/firebaseErrorTracking';
 import { getCurrentUserIdFromStorage } from '@/shared/utils/getCurrentUserId';
 
+// Performance tracking constants
+const SLOW_QUERY_THRESHOLD = 3000; // 3 seconds
+const VERY_SLOW_QUERY_THRESHOLD = 5000; // 5 seconds
+
+// Query key to Firebase path mappings
+const QUERY_KEY_PATTERNS = {
+  posts: (queryKey: unknown[]) => ({ operation: 'read' as const, path: `boards/${queryKey[1]}/posts` }),
+  user: (queryKey: unknown[]) => ({ operation: 'read' as const, path: `users/${queryKey[1]}` }),
+  comments: (queryKey: unknown[]) => ({ operation: 'read' as const, path: `boards/${queryKey[1]}/posts/${queryKey[2]}/comments` }),
+  boards: () => ({ operation: 'read' as const, path: 'boards' }),
+} as const;
+
+// Query key description mappings
+const QUERY_DESCRIPTIONS = {
+  posts: (queryKey: unknown[]) => `Posts from board ${queryKey[1]}`,
+  user: (queryKey: unknown[]) => `User ${queryKey[1]}`,
+  comments: (queryKey: unknown[]) => `Comments for post ${queryKey[2]}`,
+  boards: () => 'Board list',
+  notifications: () => 'User notifications',
+  writingStats: (queryKey: unknown[]) => `Writing stats for user ${queryKey[1]}`,
+} as const;
+
 /**
  * Performance tracking for queries
  */
@@ -33,8 +55,7 @@ export function trackQuerySuccess(queryKey: unknown[], duration?: number) {
   const startTime = queryPerformance.get(key);
   const actualDuration = duration || (startTime ? Date.now() - startTime : undefined);
 
-  if (actualDuration && actualDuration > 3000) {
-    // Track slow queries
+  if (actualDuration && actualDuration > SLOW_QUERY_THRESHOLD) {
     addSentryBreadcrumb(
       `Slow query detected: ${getQueryKeyDescription(queryKey)}`,
       'performance',
@@ -53,52 +74,24 @@ export function trackQueryError(
   error: unknown,
   query: Query<unknown, unknown, unknown, unknown[]>
 ) {
-  const queryKey = query.queryKey;
-  const retryCount = query.state.fetchFailureCount || 0;
-  const queryHash = query.queryHash;
-
-  // Determine if this is a Firebase error
-  const isFirebaseError = error instanceof FirebaseError ||
-    (error instanceof Error && error.message?.includes('Firebase'));
-
-  // Get query description for better context
+  const { queryKey, state: { fetchFailureCount = 0 }, queryHash } = query;
   const queryDescription = getQueryKeyDescription(queryKey);
 
-  // Add breadcrumb for the error
-  addSentryBreadcrumb(
-    `Query failed: ${queryDescription}`,
-    'query-error',
-    {
-      queryKey,
-      retryCount,
-      errorMessage: error instanceof Error ? error.message : String(error),
-    },
-    'error'
-  );
-
-  // Set context for the error
-  setSentryContext('queryError', {
-    queryKey,
+  // Add error context and breadcrumb
+  addErrorContext({
+    type: 'query',
+    key: queryKey,
+    description: queryDescription,
+    retryCount: fetchFailureCount,
     queryHash,
-    retryCount,
-    queryDescription,
-    userId: getCurrentUserIdFromStorage(),
-    timestamp: new Date().toISOString(),
+    error,
   });
 
-  // Set tags for filtering
-  setSentryTags({
-    'query.key': queryDescription,
-    'query.retryCount': String(retryCount),
-    'error.source': 'react-query',
-  });
-
-  // Handle Firebase-specific errors
-  if (isFirebaseError && error instanceof FirebaseError) {
-    handleFirebaseQueryError(error, queryKey);
+  // Route to appropriate error handler
+  if (isFirebaseError(error)) {
+    handleFirebaseQueryError(error as FirebaseError, queryKey);
   } else {
-    // Capture non-Firebase errors
-    captureQueryError(error, queryKey, retryCount);
+    captureQueryError(error, queryKey, fetchFailureCount);
   }
 }
 
@@ -109,40 +102,78 @@ export function trackMutationError(
   error: unknown,
   mutation: Mutation<unknown, unknown, unknown, unknown>
 ) {
-  const mutationKey = mutation.options.mutationKey;
-  const variables = mutation.state.variables;
+  const { options: { mutationKey }, state: { variables } } = mutation;
   const mutationDescription = mutationKey ? getQueryKeyDescription(mutationKey) : 'Unknown mutation';
 
-  addSentryBreadcrumb(
-    `Mutation failed: ${mutationDescription}`,
-    'mutation-error',
-    {
-      mutationKey,
-      variables: variables ? '[Variables present]' : undefined,
-      errorMessage: error instanceof Error ? error.message : String(error),
-    },
-    'error'
-  );
-
-  setSentryContext('mutationError', {
-    mutationKey,
+  // Add error context and breadcrumb
+  addErrorContext({
+    type: 'mutation',
+    key: mutationKey,
+    description: mutationDescription,
     variables,
-    mutationDescription,
-    userId: getCurrentUserIdFromStorage(),
-    timestamp: new Date().toISOString(),
+    error,
   });
 
-  setSentryTags({
-    'mutation.key': mutationDescription,
-    'error.source': 'react-query-mutation',
-  });
-
-  // Handle Firebase-specific errors
+  // Route to appropriate error handler
   if (error instanceof FirebaseError) {
     handleFirebaseMutationError(error, mutationKey, variables);
   } else {
     captureMutationError(error, mutationKey, variables);
   }
+}
+
+/**
+ * Check if error is Firebase-related
+ */
+function isFirebaseError(error: unknown): boolean {
+  return error instanceof FirebaseError ||
+    (error instanceof Error && error.message?.includes('Firebase'));
+}
+
+/**
+ * Add common error context and breadcrumb
+ */
+function addErrorContext(params: {
+  type: 'query' | 'mutation';
+  key: unknown[] | undefined;
+  description: string;
+  error: unknown;
+  retryCount?: number;
+  queryHash?: string;
+  variables?: unknown;
+}): void {
+  const { type, key, description, error, retryCount, queryHash, variables } = params;
+
+  // Add breadcrumb
+  addSentryBreadcrumb(
+    `${type === 'query' ? 'Query' : 'Mutation'} failed: ${description}`,
+    `${type}-error`,
+    {
+      [`${type}Key`]: key,
+      ...(retryCount !== undefined && { retryCount }),
+      ...(variables !== undefined && { variables: variables ? '[Variables present]' : undefined }),
+      errorMessage: error instanceof Error ? error.message : String(error),
+    },
+    'error'
+  );
+
+  // Set context
+  setSentryContext(`${type}Error`, {
+    [`${type}Key`]: key,
+    [`${type}Description`]: description,
+    ...(retryCount !== undefined && { retryCount }),
+    ...(queryHash && { queryHash }),
+    ...(variables !== undefined && { variables }),
+    userId: getCurrentUserIdFromStorage(),
+    timestamp: new Date().toISOString(),
+  });
+
+  // Set tags
+  setSentryTags({
+    [`${type}.key`]: description,
+    ...(retryCount !== undefined && { [`${type}.retryCount`]: String(retryCount) }),
+    'error.source': type === 'query' ? 'react-query' : 'react-query-mutation',
+  });
 }
 
 /**
@@ -253,21 +284,14 @@ function captureMutationError(error: unknown, mutationKey: unknown[] | undefined
  * Parse query key to determine Firebase operation and path
  */
 function parseQueryKeyForFirebase(queryKey: unknown[]): { operation: 'read' | 'write', path: string } {
-  // Common patterns in your app
-  if (queryKey[0] === 'posts') {
-    return { operation: 'read', path: `boards/${queryKey[1]}/posts` };
-  }
-  if (queryKey[0] === 'user') {
-    return { operation: 'read', path: `users/${queryKey[1]}` };
-  }
-  if (queryKey[0] === 'comments') {
-    return { operation: 'read', path: `boards/${queryKey[1]}/posts/${queryKey[2]}/comments` };
-  }
-  if (queryKey[0] === 'boards') {
-    return { operation: 'read', path: 'boards' };
+  const firstKey = queryKey[0] as keyof typeof QUERY_KEY_PATTERNS;
+  const pattern = QUERY_KEY_PATTERNS[firstKey];
+
+  if (pattern) {
+    return pattern(queryKey);
   }
 
-  // Default
+  // Default fallback
   return { operation: 'read', path: queryKey.join('/') };
 }
 
@@ -279,26 +303,11 @@ function getQueryKeyDescription(queryKey: unknown[]): string {
     return 'Unknown query';
   }
 
-  // Map common query keys to descriptions
-  const firstKey = queryKey[0];
+  const firstKey = queryKey[0] as keyof typeof QUERY_DESCRIPTIONS;
+  const descriptionFn = QUERY_DESCRIPTIONS[firstKey];
 
-  if (firstKey === 'posts' && queryKey[1]) {
-    return `Posts from board ${queryKey[1]}`;
-  }
-  if (firstKey === 'user' && queryKey[1]) {
-    return `User ${queryKey[1]}`;
-  }
-  if (firstKey === 'comments') {
-    return `Comments for post ${queryKey[2]}`;
-  }
-  if (firstKey === 'boards') {
-    return 'Board list';
-  }
-  if (firstKey === 'notifications') {
-    return 'User notifications';
-  }
-  if (firstKey === 'writingStats') {
-    return `Writing stats for user ${queryKey[1]}`;
+  if (descriptionFn) {
+    return descriptionFn(queryKey);
   }
 
   // Default: join with dots
@@ -324,7 +333,7 @@ export function getQueryPerformanceStats() {
 
   queryPerformance.forEach((startTime, queryKey) => {
     const duration = Date.now() - startTime;
-    if (duration > 5000) {
+    if (duration > VERY_SLOW_QUERY_THRESHOLD) {
       slowQueries.push({
         queryKey,
         duration,

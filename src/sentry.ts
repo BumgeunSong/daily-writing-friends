@@ -1,75 +1,119 @@
 import * as Sentry from '@sentry/react';
 
-export const initSentry = () => {
+// Configuration constants
+const SENTRY_CONFIG = {
+  DSN: 'https://8909fb2b0ca421e67d747c29dc427694@o4508460976635904.ingest.us.sentry.io/4508460981747712',
+  TRACE_SAMPLE_RATE: 0.1,
+  REPLAY_SAMPLE_RATE: 0.1,
+  REPLAY_ON_ERROR_RATE: 1.0,
+} as const;
+
+const IGNORED_ERRORS = [
+  // Browser extensions
+  'chrome-extension://',
+  'moz-extension://',
+  // Common browser errors
+  'ResizeObserver loop limit exceeded',
+  'ResizeObserver loop completed with undelivered notifications',
+  // Network errors that are expected
+  'NetworkError',
+  'Failed to fetch',
+  // User-initiated cancellations
+  'AbortError',
+] as const;
+
+/**
+ * Apply custom fingerprinting to group similar errors
+ */
+function applyCustomFingerprinting(event: Sentry.Event, error: Error): void {
+  // Group Firebase permission errors
+  if (error.message?.includes('Missing or insufficient permissions')) {
+    event.fingerprint = ['firebase', 'permission-denied'];
+    return;
+  }
+
+  // Group Firebase auth errors by specific auth error type
+  if (error.message?.includes('Firebase: Error')) {
+    const authErrorType = error.message.match(/\(auth\/([^)]+)\)/)?.[1];
+    if (authErrorType) {
+      event.fingerprint = ['firebase-auth', authErrorType];
+      return;
+    }
+  }
+
+  // Group network timeout errors
+  const isNetworkTimeout =
+    error.message?.includes('timeout') ||
+    error.message?.includes('Network request failed');
+
+  if (isNetworkTimeout) {
+    event.fingerprint = ['network', 'timeout'];
+  }
+}
+
+/**
+ * Remove sensitive data from error reports
+ */
+function sanitizeEvent(event: Sentry.Event): void {
+  // Remove all cookie data
+  if (event.request?.cookies) {
+    delete event.request.cookies;
+  }
+
+  // Mask email local part while keeping domain for debugging
+  if (event.user?.email) {
+    const [, domain] = event.user.email.split('@');
+    if (domain) {
+      event.user.email = `***@${domain}`;
+    }
+  }
+}
+
+/**
+ * Determine if error should be filtered out in development
+ */
+function shouldFilterInDevelopment(event: Sentry.Event, isDevelopment: boolean): boolean {
+  return isDevelopment && event.exception?.values?.[0]?.type === 'NetworkError';
+}
+
+/**
+ * Initialize Sentry with comprehensive error tracking configuration
+ */
+export const initSentry = (): void => {
   const isDevelopment = import.meta.env.DEV;
   const environment = isDevelopment ? 'development' : 'production';
 
   Sentry.init({
-    dsn: 'https://8909fb2b0ca421e67d747c29dc427694@o4508460976635904.ingest.us.sentry.io/4508460981747712',
+    dsn: SENTRY_CONFIG.DSN,
     environment,
-    integrations: [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
-    tracesSampleRate: 0.1,
-    tracePropagationTargets: ['localhost', /^https:\/\/daily-writing-friends\.com\/api/],
-    replaysSessionSampleRate: isDevelopment ? 0 : 0.1,
-    replaysOnErrorSampleRate: 1.0,
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      Sentry.replayIntegration(),
+    ],
+    tracesSampleRate: SENTRY_CONFIG.TRACE_SAMPLE_RATE,
+    tracePropagationTargets: [
+      'localhost',
+      /^https:\/\/daily-writing-friends\.com\/api/,
+    ],
+    replaysSessionSampleRate: isDevelopment ? 0 : SENTRY_CONFIG.REPLAY_SAMPLE_RATE,
+    replaysOnErrorSampleRate: SENTRY_CONFIG.REPLAY_ON_ERROR_RATE,
+    ignoreErrors: [...IGNORED_ERRORS],
 
     beforeSend(event, hint) {
-      if (isDevelopment && event.exception?.values?.[0]?.type === 'NetworkError') {
+      // Filter out development network errors
+      if (shouldFilterInDevelopment(event, isDevelopment)) {
         return null;
       }
 
-      // Add custom fingerprinting for Firebase errors
       const error = hint.originalException;
-      if (error && error instanceof Error) {
-        // Group Firebase permission errors together
-        if (error.message?.includes('Missing or insufficient permissions')) {
-          event.fingerprint = ['firebase', 'permission-denied'];
-        }
-        // Group Firebase auth errors
-        else if (error.message?.includes('Firebase: Error')) {
-          const authErrorType = error.message.match(/\(auth\/([^)]+)\)/)?.[1];
-          if (authErrorType) {
-            event.fingerprint = ['firebase-auth', authErrorType];
-          }
-        }
-        // Group network timeout errors
-        else if (
-          error.message?.includes('timeout') ||
-          error.message?.includes('Network request failed')
-        ) {
-          event.fingerprint = ['network', 'timeout'];
-        }
+      if (error instanceof Error) {
+        applyCustomFingerprinting(event, error);
       }
 
-      // Sanitize sensitive data
-      if (event.request?.cookies) {
-        delete event.request.cookies;
-      }
-      if (event.user?.email) {
-        // Keep email domain but hide local part for privacy
-        const [, domain] = event.user.email.split('@');
-        if (domain) {
-          event.user.email = `***@${domain}`;
-        }
-      }
+      sanitizeEvent(event);
 
       return event;
     },
-
-    // Ignore certain errors
-    ignoreErrors: [
-      // Browser extensions
-      'chrome-extension://',
-      'moz-extension://',
-      // Common browser errors
-      'ResizeObserver loop limit exceeded',
-      'ResizeObserver loop completed with undelivered notifications',
-      // Network errors that are expected
-      'NetworkError',
-      'Failed to fetch',
-      // User-initiated cancellations
-      'AbortError',
-    ],
   });
 };
 
