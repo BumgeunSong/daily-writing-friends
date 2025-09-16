@@ -43,15 +43,18 @@ import { BottomNavigatorLayout } from '@/shared/components/BottomNavigatorLayout
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { PermissionErrorBoundary } from '@/shared/components/PermissionErrorBoundary';
 import StatusMessage from '@/shared/components/StatusMessage';
+import { AppWithTracking } from '@/shared/components/AppWithTracking';
 import TopicCardCarouselPage from './board/components/TopicCardCarouselPage';
 import { BottomTabHandlerProvider } from './shared/contexts/BottomTabHandlerContext';
 import { NavigationProvider } from './shared/contexts/NavigationContext';
 
-// Root layout component with router-dependent providers
+// Root layout component with router-dependent providers and tracking
 function RootLayout({ children }: { children?: React.ReactNode }) {
   return (
     <NavigationProvider debounceTime={500} topThreshold={30} ignoreSmallChanges={10}>
-      <BottomTabHandlerProvider>{children || <Outlet />}</BottomTabHandlerProvider>
+      <BottomTabHandlerProvider>
+        <AppWithTracking />
+      </BottomTabHandlerProvider>
     </NavigationProvider>
   );
 }

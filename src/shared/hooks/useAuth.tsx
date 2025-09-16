@@ -3,6 +3,7 @@ import { User as FirebaseUser } from 'firebase/auth';
 import React, { useContext, useState, useEffect, createContext } from 'react';
 
 import { auth } from '@/firebase';
+import { setSentryUser } from '@/sentry';
 interface AuthContextType {
   currentUser: any;
   loading: boolean;
@@ -33,8 +34,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
         localStorage.setItem('currentUser', JSON.stringify(user));
+        // Set user context in Sentry for error tracking
+        setSentryUser({
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+        });
       } else {
         localStorage.removeItem('currentUser');
+        // Clear user context when logged out
+        setSentryUser(null);
       }
       setCurrentUser(user);
       setLoading(false);
