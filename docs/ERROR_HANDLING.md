@@ -5,6 +5,37 @@ Comprehensive error handling strategy for the application, including error bound
 
 ## Error Handling Architecture
 
+### React Query Global Error Tracking (Primary Approach)
+All network errors are now automatically tracked through React Query's centralized error handling:
+
+- **Automatic Error Capture**: All queries and mutations are tracked
+- **Firebase Integration**: Special handling for permission and auth errors
+- **Performance Monitoring**: Slow queries (>3s) are logged
+- **Rich Context**: Query keys, retry counts, and user state included
+
+#### How It Works
+```typescript
+// All queries/mutations automatically tracked - no changes needed
+useQuery({
+  queryKey: ['posts', boardId],
+  queryFn: fetchPosts,
+  // Optional: Add meta for extra context
+  meta: {
+    feature: 'board-view',
+    errorContext: 'Loading posts'
+  }
+});
+```
+
+#### What Gets Tracked
+- **Query Key**: Exact query that failed (e.g., `['posts', 'boardId123']`)
+- **Retry Count**: Number of retry attempts
+- **Firebase Errors**: Permission errors with hints
+- **Performance**: Request duration and slow queries
+- **User Context**: User ID and authentication state
+
+## Error Handling Architecture
+
 ### Error Boundaries
 React Error Boundaries catch JavaScript errors in component trees:
 - **ErrorBoundary.tsx**: Generic error boundary for all components

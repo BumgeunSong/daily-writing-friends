@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { addSentryBreadcrumb, setSentryContext } from '@/sentry';
-import { trackUserAction } from '@/shared/utils/networkErrorTracking';
+import { trackUserAction } from '@/shared/utils/trackedFetch';
 
 /**
  * Hook to track navigation for better error context

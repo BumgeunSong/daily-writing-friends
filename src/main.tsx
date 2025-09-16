@@ -8,15 +8,14 @@ import { RemoteConfigProvider } from '@/shared/contexts/RemoteConfigContext';
 import { ThemeProvider } from '@/shared/contexts/ThemeContext';
 import { AuthProvider } from '@/shared/hooks/useAuth';
 import { queryClient } from '@/shared/lib/queryClient';
-import { setupNetworkErrorTracking, setupConnectivityMonitoring } from '@/shared/utils/networkErrorTracking';
+import { setupConnectivityMonitoring } from '@/shared/utils/trackedFetch';
 import { router } from './router';
 import { initSentry } from './sentry';
 
 // Initialize Sentry first
 initSentry();
 
-// Setup enhanced error tracking
-setupNetworkErrorTracking();
+// Setup connectivity monitoring
 setupConnectivityMonitoring();
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
