@@ -126,8 +126,7 @@ export function trackMutationError(
  * Check if error is Firebase-related
  */
 function isFirebaseError(error: unknown): boolean {
-  return error instanceof FirebaseError ||
-    (error instanceof Error && error.message?.includes('Firebase'));
+  return error instanceof FirebaseError;
 }
 
 /**

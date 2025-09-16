@@ -31,21 +31,9 @@ export const queryClient = new QueryClient({
       cacheTime: 1000 * 60 * 5, // 5 minutes
       refetchOnWindowFocus: true,
       retry: 3,
-      // Track query starts for performance monitoring
-      onSuccess: (data) => {
-        // Additional success handling if needed
-      },
-      onError: (error) => {
-        // Local error handling can still be added in individual queries
-        // Global handling happens in QueryCache
-      },
     },
     mutations: {
       retry: 1,
-      onError: (error) => {
-        // Local error handling can still be added in individual mutations
-        // Global handling happens in MutationCache
-      },
     },
   },
 });
