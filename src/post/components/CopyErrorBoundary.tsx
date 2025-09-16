@@ -44,8 +44,18 @@ export class CopyErrorBoundary extends Component<CopyErrorBoundaryProps, CopyErr
     // 복사 관련 에러 로깅
     console.error('Copy functionality error:', error, errorInfo);
 
-    // 필요시 에러 리포팅 서비스로 전송
-    // 예: Sentry.captureException(error, { extra: errorInfo });
+    // Sentry로 에러 리포팅
+    import('@sentry/react').then((Sentry) => {
+      Sentry.withScope((scope) => {
+        scope.setLevel('warning'); // 복사 에러는 warning 레벨로 설정
+        scope.setTag('errorType', 'copy-functionality');
+        scope.setContext('copyError', {
+          componentStack: errorInfo.componentStack,
+          errorMessage: error.message,
+        });
+        Sentry.captureException(error);
+      });
+    });
   }
 
   render() {

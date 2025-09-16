@@ -1,8 +1,11 @@
+import * as Sentry from '@sentry/react';
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { setSentryContext, setSentryTags } from '@/sentry';
 
 interface ErrorBoundaryProps {
   fallback: ReactNode | ((error: Error) => ReactNode);
   children: ReactNode;
+  context?: string; // Optional context identifier for the error boundary
 }
 
 interface ErrorBoundaryState {
@@ -22,6 +25,28 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+
+    // Set context for this specific error
+    if (this.props.context) {
+      setSentryTags({
+        errorBoundary: this.props.context,
+        errorLocation: 'ErrorBoundary',
+      });
+      setSentryContext('errorBoundary', {
+        context: this.props.context,
+        componentStack: errorInfo.componentStack,
+      });
+    }
+
+    // Report to Sentry with additional context
+    Sentry.withScope((scope) => {
+      scope.setLevel('error');
+      scope.setContext('errorInfo', {
+        componentStack: errorInfo.componentStack,
+        errorBoundaryContext: this.props.context || 'generic',
+      });
+      Sentry.captureException(error);
+    });
   }
 
   render(): ReactNode {
