@@ -32,7 +32,7 @@ export function useNavigationTracking() {
 
   }, [location]);
 
-  // Track clicks on interactive elements
+  // Track user interactions
   useEffect(() => {
     const handleClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -60,22 +60,28 @@ export function useNavigationTracking() {
           'info'
         );
       }
+    };
+
+    const handleSubmit = (event: SubmitEvent) => {
+      const target = event.target as HTMLFormElement;
 
       // Track form submissions with breadcrumbs
-      if (target.tagName === 'FORM' || target.closest('form')) {
-        const form = target.closest('form');
-        const formId = form?.id || form?.className || 'Unknown Form';
-        addSentryBreadcrumb(
-          `User submitted: Form: ${formId}`,
-          'user',
-          { action: 'submit', target: `Form: ${formId}` },
-          'info'
-        );
-      }
+      const formId = target?.id || target?.className || 'Unknown Form';
+      addSentryBreadcrumb(
+        `User submitted: Form: ${formId}`,
+        'user',
+        { action: 'submit', target: `Form: ${formId}` },
+        'info'
+      );
     };
 
     document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
+    document.addEventListener('submit', handleSubmit);
+
+    return () => {
+      document.removeEventListener('click', handleClick);
+      document.removeEventListener('submit', handleSubmit);
+    };
   }, []);
 }
 
