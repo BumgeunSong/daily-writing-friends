@@ -326,7 +326,7 @@ export function getQueryPerformanceStats() {
     const duration = Date.now() - startTime;
     if (duration > 5000) {
       slowQueries.push({
-        queryKey: JSON.parse(queryKey),
+        queryKey,
         duration,
       });
     }
