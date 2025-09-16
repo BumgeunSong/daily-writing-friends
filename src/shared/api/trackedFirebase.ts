@@ -21,20 +21,38 @@ import { trackFirebasePermissionError } from '@/shared/utils/firebaseErrorTracki
 import { getCurrentUserIdFromStorage } from '@/shared/utils/getCurrentUserId';
 
 /**
- * Extract path from Firebase reference
+ * Extract path from Firebase reference using only public APIs
  */
 function getPathFromReference(ref: DocumentReference | CollectionReference | Query): string {
-  if ('path' in ref) {
+  // DocumentReference and CollectionReference have public path property
+  if ('path' in ref && typeof (ref as any).path === 'string') {
     return (ref as DocumentReference | CollectionReference).path;
   }
-  // For queries, try to extract from the underlying collection
-  if ('_query' in ref) {
-    const query = ref as any;
-    if (query._query?.path?.segments) {
-      return query._query.path.segments.join('/');
+
+  // For Query objects, we can't reliably get the path using public APIs
+  // So we'll use a safe approach that doesn't depend on private properties
+  try {
+    // Check if it's a Query by looking for public query methods
+    if ('where' in ref && 'orderBy' in ref && 'limit' in ref) {
+      // It's a Query object - use toString() as a safe fallback
+      const queryString = ref.toString();
+
+      // Try to extract collection path from the string representation
+      // This is safer than accessing private properties
+      const collectionMatch = queryString.match(/Query\(([^/\s]+(?:\/[^/\s]+)*)/);
+      if (collectionMatch && collectionMatch[1]) {
+        const basePath = collectionMatch[1].split(' ')[0]; // Remove query conditions
+        return basePath || 'firestore-query';
+      }
     }
+
+    // If we can't determine the type, return a generic identifier
+    return 'firestore-operation';
+  } catch (error) {
+    // If toString() fails or any other error occurs, use a safe fallback
+    console.warn('Could not extract path from Firebase reference, using fallback:', error);
+    return 'firebase-operation';
   }
-  return 'unknown';
 }
 
 /**
