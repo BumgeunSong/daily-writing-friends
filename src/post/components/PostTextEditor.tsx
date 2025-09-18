@@ -29,7 +29,7 @@ const quillStyles = `
 }
 
 .ql-editor {
-  padding: 1.5rem 0;
+  padding: 1.5rem 1.5rem 1.5rem 0;
   color: hsl(var(--foreground));
   background-color: hsl(var(--background));
   width: 100%;
@@ -139,7 +139,7 @@ const quillStyles = `
   font-style: normal;
   pointer-events: none; /* 플레이스홀더가 터치 이벤트를 방해하지 않도록 함 */
   opacity: 0.7; /* 약간 투명하게 설정 */
-  padding-left: 0; /* Remove horizontal padding from placeholder */
+  left: 0; /* Align placeholder with text content */
 }
 
 /* 포커스 상태나 터치 시 플레이스홀더 숨기기 */
