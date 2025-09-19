@@ -68,6 +68,7 @@ export default function PostDetailPage() {
               postId={postId}
               postAuthorId={post.authorId}
               postAuthorNickname={typeof authorNickname === 'string' ? authorNickname : null}
+              postVisibility={post.visibility}
             />
           )}
         </div>

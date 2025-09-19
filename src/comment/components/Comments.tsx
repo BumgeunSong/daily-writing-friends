@@ -6,6 +6,7 @@ import { useActivity } from '@/comment/hooks/useActivity';
 import { useCreateComment } from '@/comment/hooks/useCreateComment';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { sendAnalyticsEvent, AnalyticsEvent } from '@/shared/utils/analyticsUtils';
+import type { PostVisibility } from '@/post/model/Post';
 import type React from 'react';
 
 interface CommentsProps {
@@ -13,6 +14,7 @@ interface CommentsProps {
   postId: string;
   postAuthorId: string;
   postAuthorNickname: string | null;
+  postVisibility?: PostVisibility;
 }
 
 // 로딩 인디케이터 컴포넌트
@@ -25,6 +27,7 @@ const Comments: React.FC<CommentsProps> = ({
   postId,
   postAuthorId,
   postAuthorNickname,
+  postVisibility,
 }) => {
   const { currentUser } = useAuth();
   const addComment = useCreateComment(boardId, postId);
@@ -65,15 +68,20 @@ const Comments: React.FC<CommentsProps> = ({
         </Suspense>
       </div>
       <Suspense fallback={null}>
-        <CommentList boardId={boardId} postId={postId} currentUserId={currentUser?.uid} />
+        <CommentList
+          boardId={boardId}
+          postId={postId}
+          currentUserId={currentUser?.uid}
+          postVisibility={postVisibility}
+        />
       </Suspense>
       <div className='mt-6 space-y-4 border-t border-border pt-6'>
-        <CommentInput 
-          onSubmit={handleSubmit} 
+        <CommentInput
+          onSubmit={handleSubmit}
           placeholder={placeholder}
           postId={postId}
           boardId={boardId}
-          enableSuggestions={currentUser?.uid !== postAuthorId}
+          enableSuggestions={currentUser?.uid !== postAuthorId && postVisibility !== 'private'}
         />
       </div>
     </section>

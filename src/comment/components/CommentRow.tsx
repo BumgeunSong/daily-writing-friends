@@ -10,6 +10,7 @@ import { getUserDisplayName } from '@/shared/utils/userUtils';
 import { useUser } from '@/user/hooks/useUser';
 import Replies from './Replies';
 import type { Comment } from '@/comment/model/Comment';
+import type { PostVisibility } from '@/post/model/Post';
 import type React from 'react';
 
 interface CommentRowProps {
@@ -17,9 +18,16 @@ interface CommentRowProps {
   postId: string;
   comment: Comment;
   isAuthor: boolean;
+  postVisibility?: PostVisibility;
 }
 
-const CommentRow: React.FC<CommentRowProps> = ({ boardId, postId, comment, isAuthor }) => {
+const CommentRow: React.FC<CommentRowProps> = ({
+  boardId,
+  postId,
+  comment,
+  isAuthor,
+  postVisibility,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const deleteComment = useDeleteComment(boardId, postId, comment.id);
   const editComment = useEditComment(boardId, postId, comment.id);
@@ -76,12 +84,12 @@ const CommentRow: React.FC<CommentRowProps> = ({ boardId, postId, comment, isAut
       </div>
       <div className='text-base'>
         {isEditing ? (
-          <CommentInput 
-            onSubmit={handleEditSubmit} 
+          <CommentInput
+            onSubmit={handleEditSubmit}
             initialValue={comment.content}
             postId={postId}
             boardId={boardId}
-            enableSuggestions={false}
+            enableSuggestions={postVisibility !== 'private'}
           />
         ) : (
           <div
