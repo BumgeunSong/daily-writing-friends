@@ -47,7 +47,6 @@ export const CommentInput: React.FC<CommentInputProps> = ({
           postId={postId}
           boardId={boardId}
           onSuggestionSelect={setNewComment}
-          enabled={enableSuggestions}
         />
       )}
 
