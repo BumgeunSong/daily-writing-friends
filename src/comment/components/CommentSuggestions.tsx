@@ -11,7 +11,6 @@ interface CommentSuggestionsProps {
   postId: string;
   boardId: string;
   onSuggestionSelect: (text: string) => void;
-  enabled?: boolean;
 }
 
 interface LoadingStateProps {
@@ -133,7 +132,6 @@ export function CommentSuggestions({
   postId,
   boardId,
   onSuggestionSelect,
-  enabled = true,
 }: CommentSuggestionsProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const { value: commentAssistantEnabled } = useRemoteConfig('comment_assistant_enabled');
@@ -147,7 +145,7 @@ export function CommentSuggestions({
   } = useCommentSuggestions({
     postId,
     boardId,
-    enabled: enabled && commentAssistantEnabled,
+    enabled: commentAssistantEnabled,
   });
 
   const handleSuggestionSelect = useCallback(
@@ -163,7 +161,7 @@ export function CommentSuggestions({
   }, [refresh]);
 
   // Early returns for different states
-  if (!enabled || !commentAssistantEnabled) return null;
+  if (!commentAssistantEnabled) return null;
   if (isLoading) return <LoadingState />;
   if (isError) return <ErrorState error={error as Error | null} onRetry={handleRetry} />;
   if (!suggestions || suggestions.length === 0) return null;
