@@ -1,10 +1,14 @@
 import { useEffect, useRef, useMemo, useCallback } from 'react';
+import Quill from 'quill';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
-import { useImageUploadDialog } from '@/post/hooks/useImageUploadDialog';
 import { useCopyHandler } from '@/post/hooks/useCopyHandler';
+import { useImageUploadDialog } from '@/post/hooks/useImageUploadDialog';
+import { useVideoEmbedDialog } from '@/post/hooks/useVideoEmbedDialog';
 import { CopyErrorBoundary } from './CopyErrorBoundary';
 import { ImageUploadDialog } from './ImageUploadDialog';
+import VideoBlot from './quill/VideoBlot';
+import { VideoEmbedDialog } from './VideoEmbedDialog';
 
 interface PostTextEditorProps {
   value: string;
@@ -181,13 +185,14 @@ const quillStyles = `
 `;
 
 
-export function PostTextEditor({ 
-  value, 
-  onChange, 
-  placeholder = '내용을 입력하세요...', 
+export function PostTextEditor({
+  value,
+  onChange,
+  placeholder = '내용을 입력하세요...',
 }: PostTextEditorProps) {
-  const quillRef = useRef<any>(null);
+  const quillRef = useRef<ReactQuill>(null);
   const editorElementRef = useRef<HTMLElement | null>(null);
+
 
   const {
     isOpen: isDialogOpen,
@@ -217,36 +222,112 @@ export function PostTextEditor({
       // Move cursor to after the newline
       editor.setSelection(index + 2);
     }
+  });
+
+  const {
+    isOpen: isVideoDialogOpen,
+    openDialog: openVideoDialog,
+    closeDialog: closeVideoDialog,
+    isProcessing: isVideoProcessing,
+    error: videoError,
+    previewData: videoPreviewData,
+    handleUrlSubmit: handleVideoUrlSubmit,
+    handleInsertVideo,
+    handleUrlPaste,
+  } = useVideoEmbedDialog({
+    insertVideo: (videoData) => {
+      const editor = quillRef.current?.getEditor();
+      if (!editor) return;
+
+      // Get current selection or use end of content
+      const currentSelection = editor.getSelection();
+      const contentLength = editor.getLength();
+      const index = currentSelection?.index ?? Math.max(0, contentLength - 1);
+
+      try {
+        // Insert video embed
+        editor.insertEmbed(index, 'video', videoData);
+
+        // Add a newline after the video for easier editing
+        editor.insertText(index + 1, '\n');
+
+        // Set cursor position after the newline
+        editor.setSelection(index + 2);
+      } catch (error) {
+        console.error('Failed to insert video:', error);
+      }
+    }
   });  
 
-  const formats = [
+  const formats = useMemo(() => [
     'bold', 'italic', 'underline', 'strike',
     'blockquote', 'header',
-    'list', 'link', 'image'
-  ];
+    'list', 'link', 'image', 'video'
+  ], []);
+
+  // Create stable handler functions using refs to avoid recreating modules
+  const imageHandlerRef = useRef(() => {
+    openImageDialog();
+  });
+
+  const videoHandlerRef = useRef(() => {
+    openVideoDialog();
+  });
+
+  // Update handler refs when dialog functions change
+  useEffect(() => {
+    imageHandlerRef.current = () => openImageDialog();
+    videoHandlerRef.current = () => openVideoDialog();
+  }, [openImageDialog, openVideoDialog]);
 
   const modules = useMemo(
-    () => ({
-      toolbar: {
-        container: [
-          ['bold', 'italic', 'underline', 'strike'],
-          ['blockquote'],
-          [{ 'header': 1 }, { 'header': 2 }],
-          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-          ['link', 'image'],
-        ],
-        handlers: {
-          image: openImageDialog,
+    () => {
+      const moduleConfig = {
+        toolbar: {
+          container: [
+            ['bold', 'italic', 'underline', 'strike'],
+            ['blockquote'],
+            [{ 'header': 1 }, { 'header': 2 }],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            ['link', 'image', 'video'],
+          ],
+          handlers: {
+            image: () => imageHandlerRef.current(),
+            video: () => videoHandlerRef.current(),
+          },
         },
-      },
-    }),
-    [openImageDialog]
+      };
+
+
+      return moduleConfig;
+    },
+    [] // No dependencies - stable object identity
   );
 
   useEffect(() => {
+    console.log('🎬 [QuillSetup] Registering VideoBlot with Quill');
+
+    // Register VideoBlot with Quill
+    try {
+      Quill.register(VideoBlot);
+      console.log('🎬 [QuillSetup] VideoBlot registered successfully');
+    } catch (error) {
+      console.error('🎬 [QuillSetup] Failed to register VideoBlot:', error);
+    }
+
+    // Add custom video icon to toolbar
+    console.log('🎬 [QuillSetup] Adding custom video icon');
+    const icons = Quill.import('ui/icons');
+    icons['video'] = `<svg viewBox="0 0 18 18">
+      <rect class="ql-fill" x="2" y="4" width="14" height="10" rx="1"/>
+      <polygon class="ql-stroke" points="7,7 7,11 11,9"/>
+    </svg>`;
+
     const styleTag = document.createElement('style');
     styleTag.textContent = quillStyles;
     document.head.appendChild(styleTag);
+
+    console.log('🎬 [QuillSetup] Setup complete');
 
     return () => {
       styleTag.remove();
@@ -282,6 +363,35 @@ export function PostTextEditor({
   // 커스텀 복사 핸들러 적용
   useCopyHandler(getSelectedHtml, editorElementRef.current);
 
+  // Handle paste events for automatic YouTube URL detection
+  useEffect(() => {
+    const editor = quillRef.current?.getEditor();
+    if (!editor) return;
+
+    const handlePaste = (e: ClipboardEvent) => {
+      if (!e.clipboardData) return;
+
+      const pastedText = e.clipboardData.getData('text/plain');
+      if (pastedText) {
+        // Check if the pasted text contains a YouTube URL
+        handleUrlPaste(pastedText).then((handled) => {
+          if (handled) {
+            // Prevent default paste behavior if we handled it
+            e.preventDefault();
+          }
+        });
+      }
+    };
+
+    const editorElement = editor.root;
+    editorElement.addEventListener('paste', handlePaste);
+
+    return () => {
+      editorElement.removeEventListener('paste', handlePaste);
+    };
+  }, [handleUrlPaste]);
+
+
   return (
     <CopyErrorBoundary>
       <div className='relative w-full space-y-2'>
@@ -310,6 +420,16 @@ export function PostTextEditor({
         onClose={closeDialog}
         onMaxFilesConfirm={handleMaxFilesConfirm}
         onMaxFilesCancel={handleMaxFilesCancel}
+      />
+
+      <VideoEmbedDialog
+        isOpen={isVideoDialogOpen}
+        onOpenChange={closeVideoDialog}
+        onSubmit={handleVideoUrlSubmit}
+        onInsert={handleInsertVideo}
+        isProcessing={isVideoProcessing}
+        error={videoError}
+        previewData={videoPreviewData}
       />
     </CopyErrorBoundary>
   );
