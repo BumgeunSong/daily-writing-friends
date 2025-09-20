@@ -66,7 +66,6 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
   const [editState, setEditState] = useState({
     title: post?.title || '',
     content: post?.content || '',
-    contentJson: post?.contentJson || null,
   });
 
   // 제목 변경 핸들러
@@ -85,13 +84,6 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
     }));
   };
 
-  // JSON 내용 변경 핸들러
-  const setContentJson = (contentJson: any) => {
-    setEditState((prev) => ({
-      ...prev,
-      contentJson,
-    }));
-  };
 
   // 폼 제출 핸들러
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,7 +91,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
     if (!editState.title.trim() || !editState.content.trim()) return;
 
     try {
-      await updatePost(boardId, postId, editState.title, editState.content, editState.contentJson);
+      await updatePost(boardId, postId, editState.title, editState.content);
       navigate(`/board/${boardId}/post/${postId}`);
     } catch (error) {
       console.error('Error updating post:', error);
@@ -125,8 +117,6 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
         <PostEditor
           value={editState.content}
           onChange={setContent}
-          contentJson={editState.contentJson}
-          onJsonChange={setContentJson}
           placeholder='내용을 수정하세요...'
         />
 
