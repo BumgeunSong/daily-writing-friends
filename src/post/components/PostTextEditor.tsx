@@ -1,13 +1,12 @@
 import { useEffect, useRef, useMemo, useCallback } from 'react';
-import Quill from 'quill';
-import ReactQuill from 'react-quill-new';
+import ReactQuill, { Quill as ReactQuillQuill } from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { useCopyHandler } from '@/post/hooks/useCopyHandler';
 import { useImageUploadDialog } from '@/post/hooks/useImageUploadDialog';
 import { useVideoEmbedDialog } from '@/post/hooks/useVideoEmbedDialog';
 import { CopyErrorBoundary } from './CopyErrorBoundary';
 import { ImageUploadDialog } from './ImageUploadDialog';
-import VideoBlot from './quill/VideoBlot';
+import { VideoBlot } from '../quill-register';
 import { VideoEmbedDialog } from './VideoEmbedDialog';
 
 interface PostTextEditorProps {
@@ -236,25 +235,81 @@ export function PostTextEditor({
     handleUrlPaste,
   } = useVideoEmbedDialog({
     insertVideo: (videoData) => {
+      console.log('🎬 [VideoInsertion] Starting video insertion', { videoData });
+
       const editor = quillRef.current?.getEditor();
-      if (!editor) return;
+      if (!editor) {
+        console.error('🎬 [VideoInsertion] No editor available');
+        return;
+      }
 
       // Get current selection or use end of content
       const currentSelection = editor.getSelection();
       const contentLength = editor.getLength();
       const index = currentSelection?.index ?? Math.max(0, contentLength - 1);
 
+      console.log('🎬 [VideoInsertion] Insertion details', {
+        currentSelection,
+        contentLength,
+        index
+      });
+
       try {
+        // Sanity checks before insertion
+        const formats = editor.options.formats;
+        console.log('🎬 [VideoInsertion] Editor formats:', formats);
+        if (!formats?.includes('video-thumb')) {
+          console.warn('🎬 [VideoInsertion] video-thumb not whitelisted; aborting');
+          return;
+        }
+
+        const blotClass = ReactQuillQuill.import('formats/video-thumb');
+        console.log('🎬 [VideoInsertion] Blot identity check:', blotClass === VideoBlot);
+        console.log('🎬 [VideoInsertion] Blot name:', (blotClass as any)?.blotName);
+
         // Insert video embed
-        editor.insertEmbed(index, 'video', videoData);
+        console.log('🎬 [VideoInsertion] Inserting video embed');
+        try {
+          editor.insertEmbed(index, 'video-thumb', videoData, 'user');
+          console.log('🎬 [VideoInsertion] insertEmbed completed successfully');
+        } catch (embedError) {
+          console.error('🎬 [VideoInsertion] insertEmbed failed:', embedError);
+          throw embedError;
+        }
 
         // Add a newline after the video for easier editing
-        editor.insertText(index + 1, '\n');
+        console.log('🎬 [VideoInsertion] Adding newline');
+        editor.insertText(index + 1, '\n', 'user');
 
         // Set cursor position after the newline
-        editor.setSelection(index + 2);
+        console.log('🎬 [VideoInsertion] Setting cursor position');
+        editor.setSelection(index + 2, 0, 'user');
+
+        console.log('🎬 [VideoInsertion] Video insertion completed successfully');
+
+        // Critical probes: Check what actually happened
+        const delta = editor.getContents();
+        console.log('🎬 [VideoInsertion] Delta after insert:', delta.ops);
+        console.log('🎬 [VideoInsertion] HTML after insert:', editor.root.innerHTML);
+
+        // Probe: Check which blot type was actually inserted
+        const lastOp = delta.ops[delta.ops.length - 2]; // -2 because last is the newline
+        if (lastOp?.insert) {
+          if (lastOp.insert['video-thumb']) {
+            console.log('✅ [VideoInsertion] SUCCESS: video-thumb blot used', lastOp.insert['video-thumb']);
+          } else if (lastOp.insert['video']) {
+            console.warn('❌ [VideoInsertion] FALLBACK: built-in video blot used', lastOp.insert['video']);
+          } else {
+            console.warn('❓ [VideoInsertion] UNKNOWN: unexpected blot type', Object.keys(lastOp.insert));
+          }
+        } else {
+          console.warn('❌ [VideoInsertion] No insert operation found in last op');
+        }
       } catch (error) {
-        console.error('Failed to insert video:', error);
+        console.error('🎬 [VideoInsertion] Failed to insert video:', error);
+        if (error instanceof Error) {
+          console.error('🎬 [VideoInsertion] Error details:', error.stack);
+        }
       }
     }
   });  
@@ -262,7 +317,7 @@ export function PostTextEditor({
   const formats = useMemo(() => [
     'bold', 'italic', 'underline', 'strike',
     'blockquote', 'header',
-    'list', 'link', 'image', 'video'
+    'list', 'link', 'image', 'video-thumb'
   ], []);
 
   // Create stable handler functions using refs to avoid recreating modules
@@ -305,33 +360,29 @@ export function PostTextEditor({
   );
 
   useEffect(() => {
-    console.log('🎬 [QuillSetup] Registering VideoBlot with Quill');
-
-    // Register VideoBlot with Quill
+    // Add custom video icon to toolbar (idempotent operation)
     try {
-      Quill.register(VideoBlot);
-      console.log('🎬 [QuillSetup] VideoBlot registered successfully');
-    } catch (error) {
-      console.error('🎬 [QuillSetup] Failed to register VideoBlot:', error);
+      const icons = ReactQuillQuill.import('ui/icons') as Record<string, string>;
+      if (!icons['video']) {
+        console.log('🎬 [QuillSetup] Adding custom video icon');
+        icons['video'] = `<svg viewBox="0 0 18 18">
+          <rect class="ql-fill" x="2" y="4" width="14" height="10" rx="1"/>
+          <polygon class="ql-stroke" points="7,7 7,11 11,9"/>
+        </svg>`;
+      }
+    } catch (iconError) {
+      console.warn('🎬 [QuillSetup] Could not set video icon:', iconError);
     }
 
-    // Add custom video icon to toolbar
-    console.log('🎬 [QuillSetup] Adding custom video icon');
-    const icons = Quill.import('ui/icons');
-    icons['video'] = `<svg viewBox="0 0 18 18">
-      <rect class="ql-fill" x="2" y="4" width="14" height="10" rx="1"/>
-      <polygon class="ql-stroke" points="7,7 7,11 11,9"/>
-    </svg>`;
+    // Add styles (check if already added)
+    if (!document.querySelector('#quill-video-styles')) {
+      const styleTag = document.createElement('style');
+      styleTag.id = 'quill-video-styles';
+      styleTag.textContent = quillStyles;
+      document.head.appendChild(styleTag);
 
-    const styleTag = document.createElement('style');
-    styleTag.textContent = quillStyles;
-    document.head.appendChild(styleTag);
-
-    console.log('🎬 [QuillSetup] Setup complete');
-
-    return () => {
-      styleTag.remove();
-    };
+      console.log('🎬 [QuillSetup] Setup complete');
+    }
   }, []);
 
 
@@ -362,6 +413,33 @@ export function PostTextEditor({
 
   // 커스텀 복사 핸들러 적용
   useCopyHandler(getSelectedHtml, editorElementRef.current);
+
+  // Debug: Add MutationObserver to detect iframe insertions
+  useEffect(() => {
+    const editor = quillRef.current?.getEditor();
+    if (!editor) return;
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeName === 'IFRAME') {
+            const iframe = node as HTMLIFrameElement;
+            console.warn('🚨 [IFRAME DETECTED]', {
+              src: iframe.src,
+              className: iframe.className,
+              parent: iframe.parentElement?.className
+            });
+          }
+        });
+      });
+    });
+
+    observer.observe(editor.root, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   // Handle paste events for automatic YouTube URL detection
   useEffect(() => {
