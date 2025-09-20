@@ -1,11 +1,10 @@
 import { useEffect, useRef, useMemo, useCallback } from 'react';
 import ReactQuill from 'react-quill-new';
-import { toast } from 'sonner';
-import { Progress } from '@/shared/ui/progress';
 import 'react-quill-new/dist/quill.snow.css';
-import { useImageUpload } from '@/post/hooks/useImageUpload';
+import { useImageUploadDialog } from '@/post/hooks/useImageUploadDialog';
 import { useCopyHandler } from '@/post/hooks/useCopyHandler';
 import { CopyErrorBoundary } from './CopyErrorBoundary';
+import { ImageUploadDialog } from './ImageUploadDialog';
 
 interface PostTextEditorProps {
   value: string;
@@ -189,11 +188,36 @@ export function PostTextEditor({
 }: PostTextEditorProps) {
   const quillRef = useRef<any>(null);
   const editorElementRef = useRef<HTMLElement | null>(null);
-  const { imageHandler, isUploading, uploadProgress } = useImageUpload({ insertImage: (url: string) => {
-    const editor = quillRef.current?.getEditor();
-    const range = editor?.getSelection(true);
-    editor?.insertEmbed(range?.index, 'image', url);
-  } });  
+
+  const {
+    isOpen: isDialogOpen,
+    openDialog: openImageDialog,
+    closeDialog: closeDialog,
+    selectFiles,
+    maxFilesAlert,
+    handleMaxFilesConfirm,
+    handleMaxFilesCancel,
+    isUploading,
+    uploadProgress,
+    uploadComplete,
+  } = useImageUploadDialog({
+    insertImage: (url: string) => {
+      const editor = quillRef.current?.getEditor();
+      if (!editor) return;
+
+      const range = editor.getSelection(true);
+      const index = range?.index || editor.getLength() - 1;
+
+      // Insert image
+      editor.insertEmbed(index, 'image', url);
+
+      // Add a newline after the image for easier editing
+      editor.insertText(index + 1, '\n');
+
+      // Move cursor to after the newline
+      editor.setSelection(index + 2);
+    }
+  });  
 
   const formats = [
     'bold', 'italic', 'underline', 'strike',
@@ -212,11 +236,11 @@ export function PostTextEditor({
           ['link', 'image'],
         ],
         handlers: {
-          image: imageHandler,
+          image: openImageDialog,
         },
       },
     }),
-    [toast]
+    [openImageDialog]
   );
 
   useEffect(() => {
@@ -273,18 +297,20 @@ export function PostTextEditor({
             className="prose prose-lg prose-slate w-full max-w-none dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold"
           />
         </div>
-        
-        {isUploading && (
-          <div className='absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm'>
-            <div className='w-4/5 max-w-md space-y-3 p-4'>
-              <Progress value={uploadProgress} className="h-2" />
-              <p className='text-center text-sm font-medium text-foreground'>
-                이미지 업로드 중... {uploadProgress}%
-              </p>
-            </div>
-          </div>
-        )}
       </div>
+
+      <ImageUploadDialog
+        isOpen={isDialogOpen}
+        onOpenChange={closeDialog}
+        onSelectFiles={selectFiles}
+        isUploading={isUploading}
+        uploadProgress={uploadProgress}
+        uploadComplete={uploadComplete}
+        maxFilesAlert={maxFilesAlert}
+        onClose={closeDialog}
+        onMaxFilesConfirm={handleMaxFilesConfirm}
+        onMaxFilesCancel={handleMaxFilesCancel}
+      />
     </CopyErrorBoundary>
   );
 }
