@@ -45,7 +45,7 @@ export default function PostDetailPage() {
   return (
     <div className='min-h-screen bg-background'>
       <PostMetaHelmet post={post} boardId={boardId} postId={postId} />
-      <main className='container mx-auto max-w-4xl px-6 py-2'>
+      <main className='container mx-auto max-w-4xl overflow-x-hidden px-6 py-2'>
         <PostBackButton className='mb-4' />
         <article className='space-y-4'>
           <PostDetailHeader
