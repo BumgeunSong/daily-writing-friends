@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Form, useNavigation, useActionData, useSearchParams } from 'react-router-dom';
+
 import { DraftsDrawer } from '@/draft/components/DraftsDrawer';
 import { DraftStatusIndicator } from '@/draft/components/DraftStatusIndicator';
 import { useAutoSaveDrafts } from '@/draft/hooks/useAutoSaveDrafts';
@@ -25,55 +26,6 @@ interface ActionData {
   success?: boolean;
 }
 
-/**
- * Safely stringify JSON data with error handling
- * Handles circular references and non-serializable data
- */
-function safeStringifyJson(data: any): string {
-  if (!data) return '';
-
-  try {
-    // First, try normal JSON.stringify
-    return JSON.stringify(data);
-  } catch (error) {
-    console.warn(
-      'Failed to stringify contentJson, attempting with circular reference handling:',
-      error,
-    );
-
-    try {
-      // Handle circular references by replacing them with a placeholder
-      const seen = new WeakSet();
-      const result = JSON.stringify(data, (_key, value) => {
-        if (typeof value === 'object' && value !== null) {
-          if (seen.has(value)) {
-            return '[Circular Reference]';
-          }
-          seen.add(value);
-        }
-
-        // Handle non-serializable data types
-        if (typeof value === 'function') {
-          return '[Function]';
-        }
-        if (value instanceof Date) {
-          return value.toISOString();
-        }
-        if (value === undefined) {
-          return null;
-        }
-
-        return value;
-      });
-
-      return result;
-    } catch (fallbackError) {
-      console.error('JSON stringification failed completely:', fallbackError);
-      // Return empty string as fallback to prevent form submission errors
-      return '';
-    }
-  }
-}
 
 export default function PostCreationPage() {
   // 1단계: 임시저장글 불러오기
@@ -103,7 +55,6 @@ export default function PostCreationPage() {
     initialTitle,
     initialContent,
   });
-  const [contentJson, setContentJson] = useState<any>(null);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
 
   // Router automatically handles loading states during form submission
@@ -138,14 +89,11 @@ export default function PostCreationPage() {
         />
         <input type='hidden' name='title' value={title} />
         <input type='hidden' name='content' value={content} />
-        <input type='hidden' name='contentJson' value={safeStringifyJson(contentJson)} />
 
         <PostTitleEditor value={title} onChange={(e) => setTitle(e.target.value)} />
         <PostEditor
           value={content}
           onChange={setContent}
-          contentJson={contentJson}
-          onJsonChange={setContentJson}
         />
 
         {/* 임시 저장 상태 표시 컴포넌트 */}
