@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import {
 } from '@/shared/ui/dialog';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
+import { parseYouTubeUrl } from '../utils/videoUtils';
 
 interface VideoEmbedDialogProps {
   isOpen: boolean;
@@ -29,27 +30,34 @@ export function VideoEmbedDialog({
 }: VideoEmbedDialogProps) {
   const [videoUrl, setVideoUrl] = useState('');
 
+  // Validate YouTube URL
+  const isValidUrl = useMemo(() => {
+    if (!videoUrl.trim()) return true; // Empty is valid
+    return parseYouTubeUrl(videoUrl.trim()) !== null;
+  }, [videoUrl]);
+
   const handleClose = useCallback(() => {
     setVideoUrl('');
     onOpenChange(false);
   }, [onOpenChange]);
 
   const handleVideoInsert = useCallback(() => {
-    if (videoUrl.trim()) {
-      onVideoInsert(videoUrl.trim());
+    const trimmedUrl = videoUrl.trim();
+    if (trimmedUrl && isValidUrl) {
+      onVideoInsert(trimmedUrl);
       setVideoUrl('');
       onOpenChange(false);
     }
-  }, [videoUrl, onVideoInsert, onOpenChange]);
+  }, [videoUrl, isValidUrl, onVideoInsert, onOpenChange]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter' && videoUrl.trim()) {
+      if (e.key === 'Enter' && videoUrl.trim() && isValidUrl) {
         e.preventDefault();
         handleVideoInsert();
       }
     },
-    [videoUrl, handleVideoInsert]
+    [videoUrl, isValidUrl, handleVideoInsert]
   );
 
   return (
@@ -70,6 +78,7 @@ export function VideoEmbedDialog({
               onChange={(e) => setVideoUrl(e.target.value)}
               onKeyDown={handleKeyDown}
               autoFocus
+              className={videoUrl.trim() && !isValidUrl ? 'border-destructive' : undefined}
             />
           </div>
         </div>
@@ -81,7 +90,7 @@ export function VideoEmbedDialog({
           <Button
             type="button"
             onClick={handleVideoInsert}
-            disabled={!videoUrl.trim()}
+            disabled={!videoUrl.trim() || !isValidUrl}
           >
             {BUTTON_CONFIRM}
           </Button>
