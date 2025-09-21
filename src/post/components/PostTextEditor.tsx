@@ -19,6 +19,7 @@ const quillStyles = `
 /* Z-index values for consistent layering */
 :root {
   --z-toolbar-sticky: 50;
+  --z-video-selection: 60;
 }
 
 .ql-container {
@@ -37,6 +38,8 @@ const quillStyles = `
   width: 100%;
   max-width: none;
   border: none !important;
+  overflow-x: hidden;
+  word-wrap: break-word;
 }
 
 .ql-editor p {
@@ -164,7 +167,7 @@ const quillStyles = `
 }
 
 /* List styling */
-.ql-editor ol, 
+.ql-editor ol,
 .ql-editor ul {
   padding-left: 1.5rem;
 }
@@ -180,6 +183,237 @@ const quillStyles = `
 .ql-editor ol li:before,
 .ql-editor ul li:before {
   left: -1.5rem;
+}
+
+/* Video Embed Styles */
+.ql-video-thumb {
+  margin: 0 auto !important;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s ease;
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Override prose styles for video thumbnails */
+.prose .ql-video-thumb,
+.prose-lg .ql-video-thumb {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.prose .ql-video-thumb img,
+.prose-lg .ql-video-thumb img {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.ql-video-thumb:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.ql-video-thumb:focus {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+
+/* Video Editor Container */
+.video-editor-container {
+  position: relative !important;
+  width: 100% !important;
+  height: 0 !important; /* Required for padding-bottom trick */
+  background-color: hsl(var(--muted));
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-sizing: border-box !important;
+}
+
+/* Video Thumbnail */
+.video-editor-thumbnail {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block;
+}
+
+/* Video Overlay */
+.video-editor-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent, rgba(0, 0, 0, 0.1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.video-editor-play-button {
+  width: 4rem;
+  height: 4rem;
+  background-color: rgba(0, 0, 0, 0.8);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transition: all 0.2s ease;
+}
+
+.ql-video-thumb:hover .video-editor-play-button {
+  background-color: hsl(var(--primary));
+  transform: scale(1.1);
+}
+
+.video-editor-timestamp {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 0.75rem;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+}
+
+/* Video Info */
+.video-editor-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  color: white;
+  padding: 2rem 1rem 1rem;
+  backdrop-filter: blur(4px);
+}
+
+.video-editor-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  margin-bottom: 0.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.video-editor-caption {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Selection Frame */
+.video-editor-selection-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px solid hsl(var(--primary));
+  border-radius: 0.75rem;
+  z-index: var(--z-video-selection);
+  pointer-events: none;
+}
+
+.video-editor-selection-frame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: hsl(var(--primary) / 0.1);
+  border-radius: 0.75rem;
+}
+
+/* Toolbar */
+.video-editor-toolbar {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+  pointer-events: auto;
+}
+
+.video-editor-btn {
+  width: 2rem;
+  height: 2rem;
+  background-color: rgba(0, 0, 0, 0.8);
+  border: none;
+  border-radius: 0.25rem;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.video-editor-btn:hover {
+  background-color: hsl(var(--primary));
+  transform: scale(1.05);
+}
+
+.video-editor-btn:active {
+  transform: scale(0.95);
+}
+
+.video-editor-btn--delete:hover {
+  background-color: hsl(var(--destructive));
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 640px) {
+  .video-editor-play-button {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .video-editor-info {
+    padding: 1.5rem 0.75rem 0.75rem;
+  }
+
+  .video-editor-toolbar {
+    top: 0.25rem;
+    right: 0.25rem;
+    gap: 0.125rem;
+  }
+
+  .video-editor-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .video-editor-container {
+    background-color: hsl(var(--muted) / 0.5);
+  }
 }
 `;
 
@@ -212,13 +446,8 @@ export function PostTextEditor({
       const range = editor.getSelection(true);
       const index = range?.index || editor.getLength() - 1;
 
-      // Insert image
       editor.insertEmbed(index, 'image', url);
-
-      // Add a newline after the image for easier editing
       editor.insertText(index + 1, '\n');
-
-      // Move cursor to after the newline
       editor.setSelection(index + 2);
     }
   });
@@ -235,81 +464,19 @@ export function PostTextEditor({
     handleUrlPaste,
   } = useVideoEmbedDialog({
     insertVideo: (videoData) => {
-      console.log('🎬 [VideoInsertion] Starting video insertion', { videoData });
-
       const editor = quillRef.current?.getEditor();
-      if (!editor) {
-        console.error('🎬 [VideoInsertion] No editor available');
-        return;
-      }
+      if (!editor) return;
 
-      // Get current selection or use end of content
       const currentSelection = editor.getSelection();
       const contentLength = editor.getLength();
       const index = currentSelection?.index ?? Math.max(0, contentLength - 1);
 
-      console.log('🎬 [VideoInsertion] Insertion details', {
-        currentSelection,
-        contentLength,
-        index
-      });
-
       try {
-        // Sanity checks before insertion
-        const formats = editor.options.formats;
-        console.log('🎬 [VideoInsertion] Editor formats:', formats);
-        if (!formats?.includes('video-thumb')) {
-          console.warn('🎬 [VideoInsertion] video-thumb not whitelisted; aborting');
-          return;
-        }
-
-        const blotClass = ReactQuillQuill.import('formats/video-thumb');
-        console.log('🎬 [VideoInsertion] Blot identity check:', blotClass === VideoBlot);
-        console.log('🎬 [VideoInsertion] Blot name:', (blotClass as any)?.blotName);
-
-        // Insert video embed
-        console.log('🎬 [VideoInsertion] Inserting video embed');
-        try {
-          editor.insertEmbed(index, 'video-thumb', videoData, 'user');
-          console.log('🎬 [VideoInsertion] insertEmbed completed successfully');
-        } catch (embedError) {
-          console.error('🎬 [VideoInsertion] insertEmbed failed:', embedError);
-          throw embedError;
-        }
-
-        // Add a newline after the video for easier editing
-        console.log('🎬 [VideoInsertion] Adding newline');
+        editor.insertEmbed(index, 'video-thumb', videoData, 'user');
         editor.insertText(index + 1, '\n', 'user');
-
-        // Set cursor position after the newline
-        console.log('🎬 [VideoInsertion] Setting cursor position');
         editor.setSelection(index + 2, 0, 'user');
-
-        console.log('🎬 [VideoInsertion] Video insertion completed successfully');
-
-        // Critical probes: Check what actually happened
-        const delta = editor.getContents();
-        console.log('🎬 [VideoInsertion] Delta after insert:', delta.ops);
-        console.log('🎬 [VideoInsertion] HTML after insert:', editor.root.innerHTML);
-
-        // Probe: Check which blot type was actually inserted
-        const lastOp = delta.ops[delta.ops.length - 2]; // -2 because last is the newline
-        if (lastOp?.insert) {
-          if (lastOp.insert['video-thumb']) {
-            console.log('✅ [VideoInsertion] SUCCESS: video-thumb blot used', lastOp.insert['video-thumb']);
-          } else if (lastOp.insert['video']) {
-            console.warn('❌ [VideoInsertion] FALLBACK: built-in video blot used', lastOp.insert['video']);
-          } else {
-            console.warn('❓ [VideoInsertion] UNKNOWN: unexpected blot type', Object.keys(lastOp.insert));
-          }
-        } else {
-          console.warn('❌ [VideoInsertion] No insert operation found in last op');
-        }
       } catch (error) {
-        console.error('🎬 [VideoInsertion] Failed to insert video:', error);
-        if (error instanceof Error) {
-          console.error('🎬 [VideoInsertion] Error details:', error.stack);
-        }
+        console.error('Failed to insert video:', error);
       }
     }
   });  
@@ -361,17 +528,12 @@ export function PostTextEditor({
 
   useEffect(() => {
     // Add custom video icon to toolbar (idempotent operation)
-    try {
-      const icons = ReactQuillQuill.import('ui/icons') as Record<string, string>;
-      if (!icons['video']) {
-        console.log('🎬 [QuillSetup] Adding custom video icon');
-        icons['video'] = `<svg viewBox="0 0 18 18">
-          <rect class="ql-fill" x="2" y="4" width="14" height="10" rx="1"/>
-          <polygon class="ql-stroke" points="7,7 7,11 11,9"/>
-        </svg>`;
-      }
-    } catch (iconError) {
-      console.warn('🎬 [QuillSetup] Could not set video icon:', iconError);
+    const icons = ReactQuillQuill.import('ui/icons') as Record<string, string>;
+    if (!icons['video']) {
+      icons['video'] = `<svg viewBox="0 0 18 18">
+        <rect class="ql-fill" x="2" y="4" width="14" height="10" rx="1"/>
+        <polygon class="ql-stroke" points="7,7 7,11 11,9"/>
+      </svg>`;
     }
 
     // Add styles (check if already added)
@@ -380,8 +542,6 @@ export function PostTextEditor({
       styleTag.id = 'quill-video-styles';
       styleTag.textContent = quillStyles;
       document.head.appendChild(styleTag);
-
-      console.log('🎬 [QuillSetup] Setup complete');
     }
   }, []);
 
@@ -414,32 +574,6 @@ export function PostTextEditor({
   // 커스텀 복사 핸들러 적용
   useCopyHandler(getSelectedHtml, editorElementRef.current);
 
-  // Debug: Add MutationObserver to detect iframe insertions
-  useEffect(() => {
-    const editor = quillRef.current?.getEditor();
-    if (!editor) return;
-
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeName === 'IFRAME') {
-            const iframe = node as HTMLIFrameElement;
-            console.warn('🚨 [IFRAME DETECTED]', {
-              src: iframe.src,
-              className: iframe.className,
-              parent: iframe.parentElement?.className
-            });
-          }
-        });
-      });
-    });
-
-    observer.observe(editor.root, { childList: true, subtree: true });
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
 
   // Handle paste events for automatic YouTube URL detection
   useEffect(() => {
@@ -468,6 +602,30 @@ export function PostTextEditor({
       editorElement.removeEventListener('paste', handlePaste);
     };
   }, [handleUrlPaste]);
+
+  // Handle video delete events
+  useEffect(() => {
+    const editor = quillRef.current?.getEditor();
+    if (!editor) return;
+
+    const handleVideoDelete = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const node = customEvent.detail?.node;
+
+      if (node) {
+        const blot = editor.scroll.find(node);
+        if (blot) {
+          blot.remove();
+        }
+      }
+    };
+
+    document.addEventListener('video-delete', handleVideoDelete);
+
+    return () => {
+      document.removeEventListener('video-delete', handleVideoDelete);
+    };
+  }, []);
 
 
   return (
