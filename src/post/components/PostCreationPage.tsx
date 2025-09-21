@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Form, useNavigation, useActionData, useSearchParams } from 'react-router-dom';
 
-// Initialize Quill blots for editor functionality
-import '../quill-register';
 import { DraftsDrawer } from '@/draft/components/DraftsDrawer';
 import { DraftStatusIndicator } from '@/draft/components/DraftStatusIndicator';
 import { useAutoSaveDrafts } from '@/draft/hooks/useAutoSaveDrafts';

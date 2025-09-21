@@ -3,8 +3,6 @@ import { Save } from 'lucide-react';
 import React, { useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-// Initialize Quill blots for editor functionality
-import '../quill-register';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { toast } from '@/shared/hooks/use-toast';
 import { Button } from '@/shared/ui/button';
