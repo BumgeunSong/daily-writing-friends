@@ -14,8 +14,7 @@ import { initSentry } from './sentry';
 // Initialize Sentry first
 initSentry();
 
-// Initialize Quill blots before any editor renders
-import './post/quill-register';
+// Quill blots are now imported only in editor routes to keep viewer bundle lean
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

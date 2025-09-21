@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import DOMPurify from 'dompurify';
-import { VideoEmbed, validateVideoEmbed, isVideoOp } from '../model/VideoEmbed';
+import { VideoEmbed, validateVideoEmbed, isVideoOp, pickVideoData } from '../model/VideoEmbed';
+import { tokenizeVideos, type TokenizedBlock } from './videoTokenizer';
 
 export interface ParsedContent {
   blocks: ContentBlock[];
@@ -59,7 +60,7 @@ function parseQuillDelta(deltaData: any): ParsedContent {
       // Flush any accumulated HTML before adding video
       flushHtmlBuffer();
 
-      const videoData = validateVideoEmbed(op.insert.video);
+      const videoData = pickVideoData(op);
       if (videoData) {
         blocks.push({
           type: 'video',
@@ -97,22 +98,66 @@ function parseQuillDelta(deltaData: any): ParsedContent {
 }
 
 /**
- * Parse HTML content and extract video embeds
+ * Parse HTML content and extract video embeds from [video](url) markdown
  */
 function parseHtmlContent(content: string): ParsedContent {
-  const sanitizedContent = DOMPurify.sanitize(content);
+  // First, extract plain text from HTML for video tokenization
+  const textContent = stripHtmlTags(content);
 
-  // For now, treat all HTML content as a single block
-  // In the future, we could implement more sophisticated parsing
-  // to extract video elements from HTML if needed
-  return {
-    blocks: [{
+  // Tokenize videos from the text content
+  const tokenizedBlocks = tokenizeVideos(textContent);
+
+  // Convert tokenized blocks back to ContentBlocks
+  const blocks: ContentBlock[] = [];
+  let videoCount = 0;
+
+  for (const block of tokenizedBlocks) {
+    if (block.type === 'video') {
+      blocks.push({
+        type: 'video',
+        data: block.data
+      });
+      videoCount++;
+    } else if (block.type === 'text' && block.content.trim()) {
+      // Re-apply HTML processing to text blocks
+      const sanitizedContent = DOMPurify.sanitize(block.content);
+      blocks.push({
+        type: 'html',
+        content: sanitizedContent
+      });
+    }
+  }
+
+  // If no blocks were created, fall back to original content
+  if (blocks.length === 0) {
+    const sanitizedContent = DOMPurify.sanitize(content);
+    blocks.push({
       type: 'html',
       content: sanitizedContent
-    }],
-    hasVideos: false,
-    videoCount: 0
+    });
+  }
+
+  return {
+    blocks,
+    hasVideos: videoCount > 0,
+    videoCount
   };
+}
+
+/**
+ * Strip HTML tags to extract plain text for video tokenization
+ * This is a simple implementation - could be enhanced for better text extraction
+ */
+function stripHtmlTags(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, '') // Remove HTML tags
+    .replace(/&nbsp;/g, ' ') // Convert HTML entities
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
 }
 
 /**

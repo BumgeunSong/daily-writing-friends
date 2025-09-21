@@ -188,22 +188,6 @@ export const parseTimestring = (timestring: string): number => {
   return hours * 3600 + minutes * 60 + seconds;
 };
 
-/**
- * Format seconds to human-readable timestring
- */
-export const formatTimestring = (seconds: number): string => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-
-  if (hours > 0) {
-    return `${hours}h${minutes}m${secs}s`;
-  }
-  if (minutes > 0) {
-    return `${minutes}m${secs}s`;
-  }
-  return `${secs}s`;
-};
 
 /**
  * Validate YouTube video ID format
@@ -220,21 +204,6 @@ const isValidVideoId = (videoId: string): boolean => {
   return videoIdPattern.test(videoId);
 };
 
-/**
- * Check if a string looks like a YouTube URL
- */
-export const isYouTubeUrl = (input: string): boolean => {
-  if (!input || typeof input !== 'string') {
-    return false;
-  }
-
-  const cleanInput = input.trim().toLowerCase();
-
-  // Check for YouTube domains
-  return VIDEO_CONSTANTS.YOUTUBE_DOMAINS.some(domain =>
-    cleanInput.includes(domain)
-  );
-};
 
 /**
  * Generate YouTube embed URL with optional timestamp
@@ -268,18 +237,6 @@ export const generateEmbedUrl = (videoId: string, timestamp?: number, options?: 
   return `https://www.youtube.com/embed/${videoId}${queryString ? '?' + queryString : ''}`;
 };
 
-/**
- * Generate YouTube watch URL
- */
-export const generateWatchUrl = (videoId: string, timestamp?: number): string => {
-  const params = new URLSearchParams({ v: videoId });
-
-  if (timestamp) {
-    params.set('t', timestamp.toString());
-  }
-
-  return `https://www.youtube.com/watch?${params.toString()}`;
-};
 
 /**
  * Extract video ID from any YouTube URL format
@@ -289,14 +246,3 @@ export const extractVideoId = (url: string): string | null => {
   return parsed?.videoId || null;
 };
 
-/**
- * Validate and normalize YouTube URL
- */
-export const normalizeYouTubeUrl = (url: string): string | null => {
-  const parsed = parseYouTubeUrl(url);
-  if (!parsed) {
-    return null;
-  }
-
-  return generateWatchUrl(parsed.videoId, parsed.timestamp);
-};

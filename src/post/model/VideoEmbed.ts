@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { EDITOR_BLOT_VIDEO } from '../constants/content';
 
 // Supported video platforms (extensible for future)
 export const VideoPlatform = z.enum(['youtube']);
@@ -81,8 +82,14 @@ export const validateVideoEmbed = (data: unknown): VideoEmbed | null => {
   }
 };
 
-export const isVideoOp = (op: any): op is VideoOp => {
-  return op?.insert?.video && validateVideoEmbed(op.insert.video) !== null;
+export const isVideoOp = (op: any): op is { insert: Record<string, unknown> } => {
+  const v = op?.insert?.video ?? op?.insert?.[EDITOR_BLOT_VIDEO];
+  return validateVideoEmbed(v) !== null;
+};
+
+export const pickVideoData = (op: any): VideoEmbed | null => {
+  const v = op?.insert?.video ?? op?.insert?.[EDITOR_BLOT_VIDEO];
+  return validateVideoEmbed(v);
 };
 
 // Default video embed values
