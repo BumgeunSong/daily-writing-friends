@@ -21,7 +21,7 @@ export const parseYouTubeUrl = (input: string): YouTubeUrlData | null => {
     const url = new URL(urlString);
 
     // Validate YouTube domain
-    if (!VIDEO_CONSTANTS.YOUTUBE_DOMAINS.includes(url.hostname as any)) {
+    if (!VIDEO_CONSTANTS.YOUTUBE_DOMAINS.includes(url.hostname as typeof VIDEO_CONSTANTS.YOUTUBE_DOMAINS[number])) {
       return null;
     }
 
@@ -159,7 +159,11 @@ const extractTimestamp = (url: URL): number | undefined => {
  */
 const extractStartParam = (url: URL): number | undefined => {
   const start = url.searchParams.get('start');
-  return start ? parseInt(start, 10) : undefined;
+  if (!start) {
+    return undefined;
+  }
+  const parsed = parseInt(start, 10);
+  return isNaN(parsed) ? undefined : parsed;
 };
 
 /**
@@ -175,9 +179,9 @@ export const parseTimestring = (timestring: string): number => {
   }
 
   // Handle formats with units (1h2m3s, 2m30s, etc.)
-  const matches = str.match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?/);
+  const matches = str.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$/);
 
-  if (!matches) {
+  if (!matches || (!matches[1] && !matches[2] && !matches[3])) {
     return 0;
   }
 
