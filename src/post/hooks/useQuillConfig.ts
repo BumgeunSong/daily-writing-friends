@@ -16,7 +16,7 @@ export const QUILL_FORMATS = [
   'list',
   'link',
   'image',
-] as const;
+];
 
 const TOOLBAR_CONFIG = [
   [{ header: [2, 3, false] }],
