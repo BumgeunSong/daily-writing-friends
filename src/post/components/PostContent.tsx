@@ -1,11 +1,10 @@
-import { useRef, useCallback, useMemo } from 'react';
 import * as Sentry from '@sentry/react';
 import { AlertCircle, Lock } from 'lucide-react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useCopyHandler } from '@/post/hooks/useCopyHandler';
 import { Post, PostVisibility } from '@/post/model/Post';
-import { parsePostContent } from '@/post/utils/contentParser';
+import { sanitizePostContent } from '@/post/utils/contentUtils';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
-import { ContentRenderer } from './ContentRenderer';
 import { CopyErrorBoundary } from './CopyErrorBoundary';
 
 // PostContent 컴포넌트
@@ -19,22 +18,11 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
     const isPrivateAndNotAuthor = post.visibility === PostVisibility.PRIVATE && !isAuthor;
     const isPrivateAndAuthor = post.visibility === PostVisibility.PRIVATE && isAuthor;
 
-    // Parse content into blocks (memoized for performance)
-    const parsedContent = useMemo(() => {
-        if (!post?.content) return null;
-        try {
-            return parsePostContent(post.content);
-        } catch (error) {
-            console.error('Failed to parse post content:', error);
-            return null;
-        }
-    }, [post?.content]);
-
     // 선택된 HTML을 가져오는 함수
     const getSelectedHtml = useCallback(() => {
         const selection = window.getSelection();
         if (!selection || selection.toString().length === 0) return '';
-
+        
         const range = selection.getRangeAt(0);
         const clonedSelection = range.cloneContents();
         const div = document.createElement('div');
@@ -45,7 +33,7 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
     // 커스텀 복사 핸들러 적용
     useCopyHandler(getSelectedHtml, contentRef.current);
 
-    if (!post?.content || !parsedContent) {
+    if (!post?.content) {
         return <p>내용이 없습니다.</p>;
     }
 
@@ -63,6 +51,7 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
     }
 
     try {
+        const sanitizedContent = sanitizePostContent(post.content);
         return (
             <CopyErrorBoundary>
                 <div className="relative">
@@ -73,19 +62,18 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
                             </span>
                         </div>
                     )}
-                    <div ref={contentRef}>
-                        <ContentRenderer
-                            blocks={parsedContent.blocks}
-                            className="prose prose-lg prose-slate mt-6 max-w-none dark:prose-invert
-                                prose-h1:text-3xl prose-h1:font-semibold
-                                prose-h2:text-2xl prose-h2:font-semibold
-                                prose-p:my-2 prose-p:break-words
-                                prose-ol:my-4
-                                prose-ul:my-4
-                            "
-                            style={{ overflowWrap: 'break-word', wordWrap: 'break-word' }}
-                        />
-                    </div>
+                    <div
+                        ref={contentRef}
+                        dangerouslySetInnerHTML={{ __html: sanitizedContent }}
+                        className="prose prose-lg prose-slate mt-6 max-w-none overflow-wrap-break-word dark:prose-invert
+                            prose-h1:text-3xl prose-h1:font-semibold
+                            prose-h2:text-2xl prose-h2:font-semibold
+                            prose-p:my-2 prose-p:break-words
+                            prose-ol:my-4
+                            prose-ul:my-4
+                        "
+                        style={{ overflowWrap: 'break-word', wordWrap: 'break-word' }}
+                    />
                 </div>
             </CopyErrorBoundary>
         );
