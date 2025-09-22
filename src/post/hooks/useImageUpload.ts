@@ -1,94 +1,141 @@
 import * as Sentry from '@sentry/react';
-import { useCallback } from 'react';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import heic2any from 'heic2any';
+import { useState } from 'react';
 import { toast } from 'sonner';
-import { useFileProcessor } from './useFileProcessor';
-import { useUploadQueue } from './useUploadQueue';
-import { uploadFilesBatch } from '../api/imageUpload';
-import { UPLOAD_MESSAGES } from '../constants/upload';
+import { storage } from '@/firebase';
 
 interface UseImageUploadProps {
-  insertImage: (url: string) => void;
+    insertImage: (url: string) => void;
 }
 
 export function useImageUpload({ insertImage }: UseImageUploadProps) {
-  const { processFiles, validateFileCount } = useFileProcessor();
-  const { state, startUpload, updateProgress, completeUpload, reset } = useUploadQueue();
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  const handleFileUpload = useCallback(async (files: File[]) => {
-    if (files.length === 0) return;
+  const imageHandler = async () => {
 
-    // Validate file count
-    const validation = validateFileCount(files.length);
-    if (!validation.isValid) {
-      return { error: validation.message };
-    }
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
 
-    try {
-      // Process files
-      const { processed, errors } = await processFiles(files);
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
 
-      if (processed.length === 0) {
-        toast.error('처리할 수 있는 파일이 없습니다');
-        return { error: '처리할 수 있는 파일이 없습니다' };
+      // Declare processedFile outside try block for catch block access
+      let processedFile = file;
+
+      try {
+        setIsUploading(true);
+        setUploadProgress(0);
+
+        // 파일 크기 체크 (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error("파일 크기는 5MB를 초과할 수 없습니다.", {
+            position: 'bottom-center',
+          });
+          setIsUploading(false);
+          return;
+        }
+
+        // HEIC 파일 변환 처리
+        if (file.type === 'image/heic' || file.type === 'image/heif' || file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+          try {
+            const convertedBlob = await heic2any({
+              blob: file,
+              toType: 'image/jpeg',
+              quality: 0.8
+            }) as Blob;
+            
+            // Convert blob to file with proper name
+            const convertedFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+            processedFile = new File([convertedBlob], convertedFileName, {
+              type: 'image/jpeg',
+              lastModified: Date.now()
+            });
+          } catch (conversionError) {
+            Sentry.captureException(conversionError, {
+              tags: { feature: 'image_upload', operation: 'heic_conversion' },
+              extra: { fileName: file.name, fileSize: file.size, fileType: file.type }
+            });
+            toast.error("HEIC 파일 변환에 실패했습니다.", {
+              position: 'bottom-center',
+            });
+            setIsUploading(false);
+            return;
+          }
+        }
+
+        // 파일 타입 체크 (변환된 파일 기준)
+        if (!processedFile.type.startsWith('image/')) {
+          toast.error("이미지 파일만 업로드할 수 있습니다.", {
+            position: 'bottom-center',
+          });
+          setIsUploading(false);
+          return;
+        }
+
+        // 업로드 시작 표시
+        setUploadProgress(20);
+
+        // 날짜 기반 파일 경로 생성
+        const now = new Date();
+        const { dateFolder, timePrefix } = formatDate(now);
+        const fileName = `${timePrefix}_${processedFile.name}`;
+        const storageRef = ref(storage, `postImages/${dateFolder}/${fileName}`);
+
+        // 파일 업로드
+        setUploadProgress(40);
+        const snapshot = await uploadBytes(storageRef, processedFile);
+        setUploadProgress(70);
+
+        // URL 가져오기
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        setUploadProgress(90);
+
+        // 에디터에 이미지 삽입
+        insertImage(downloadURL);
+
+        setUploadProgress(100);
+        toast.success("이미지가 업로드되었습니다.", {
+          position: 'bottom-center',
+        });
+
+      } catch (error) {
+        setIsUploading(false);
+        Sentry.captureException(error, {
+          tags: { feature: 'image_upload', operation: 'upload_process' },
+          extra: { fileName: processedFile?.name, fileSize: processedFile?.size, fileType: processedFile?.type }
+        });
+        toast.error("이미지 업로드에 실패했습니다.", {
+          position: 'bottom-center',
+        });
+      } finally {
+        // 약간의 딜레이 후 로딩 상태 초기화
+        setTimeout(() => {
+          setIsUploading(false);
+          setUploadProgress(0);
+        }, 500);
       }
-
-      // Start upload
-      startUpload(processed);
-
-      const { successes, errors: uploadErrors } = await uploadFilesBatch(
-        processed.map(p => p.file),
-        updateProgress
-      );
-
-      // Insert successful uploads
-      successes.forEach(result => {
-        insertImage(result.url);
-      });
-
-      // Complete upload
-      const allErrors = [...errors, ...uploadErrors];
-      completeUpload(successes, allErrors);
-
-      // Show notifications
-      if (successes.length > 0 && allErrors.length === 0) {
-        toast.success(UPLOAD_MESSAGES.UPLOAD_SUCCESS(successes.length), {
-          position: 'bottom-center',
-        });
-      } else if (successes.length > 0 && allErrors.length > 0) {
-        toast.warning(UPLOAD_MESSAGES.UPLOAD_PARTIAL(successes.length, allErrors.length), {
-          position: 'bottom-center',
-        });
-      } else if (allErrors.length > 0) {
-        toast.error(UPLOAD_MESSAGES.UPLOAD_FAILED, {
-          position: 'bottom-center',
-        });
-      }
-
-      return { success: true };
-
-    } catch (error) {
-      Sentry.captureException(error, {
-        tags: { feature: 'image_upload', operation: 'upload_process' },
-        extra: { fileCount: files.length },
-      });
-
-      toast.error('업로드 중 오류가 발생했습니다', {
-        position: 'bottom-center',
-      });
-
-      return { error: '업로드 중 오류가 발생했습니다' };
-    }
-  }, [processFiles, validateFileCount, startUpload, updateProgress, completeUpload, insertImage]);
-
-  const isUploading = state.type === 'uploading';
-  const uploadProgress = state.type === 'uploading' ? state.progress : null;
-  const uploadComplete = state.type === 'complete' ? state.results : null;
-
-  return {
-    handleFileUpload,
-    isUploading,
-    uploadProgress,
-    uploadComplete,
-    reset,
+    };
   };
-}
+
+  return { imageHandler, isUploading, uploadProgress };
+} 
+
+
+const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+  
+    return {
+      dateFolder: `${year}${month}${day}`,
+      timePrefix: `${hours}${minutes}${seconds}`
+    };
+  };
