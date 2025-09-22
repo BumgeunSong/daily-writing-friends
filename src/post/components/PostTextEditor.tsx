@@ -1,92 +1,291 @@
-import { useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useMemo, useCallback } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
-
-// Hooks
-import { useCopyHandler } from '@/post/hooks/useCopyHandler';
 import { useImageUploadDialog } from '@/post/hooks/useImageUploadDialog';
-import { useQuillConfig } from '@/post/hooks/useQuillConfig';
-import { useEditorOperations } from '@/post/hooks/useEditorOperations';
-import { useEditorStyles } from '@/post/hooks/useEditorStyles';
-
-// Components
+import { useCopyHandler } from '@/post/hooks/useCopyHandler';
 import { CopyErrorBoundary } from './CopyErrorBoundary';
 import { ImageUploadDialog } from './ImageUploadDialog';
-import { VideoEmbedDialog } from './VideoEmbedDialog';
 
-// Types
-import type { PostTextEditorProps, VideoDialogState } from '@/post/types/editor';
+interface PostTextEditorProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}
 
-const DEFAULT_PLACEHOLDER = '내용을 입력하세요...';
+const quillStyles = `
+/* Z-index values for consistent layering */
+:root {
+  --z-toolbar-sticky: 50;
+}
 
-const EDITOR_CLASS_NAMES = [
-  'prose',
-  'prose-lg',
-  'prose-slate',
-  'w-full',
-  'max-w-none',
-  'dark:prose-invert',
-  'prose-h1:text-3xl',
-  'prose-h1:font-semibold',
-  'prose-h2:text-2xl',
-  'prose-h2:font-semibold',
-].join(' ');
+.ql-container {
+  font-family: var(--font-sans);
+  font-size: 1.125rem;
+  line-height: 1.5;
+  min-height: 300px;
+  width: 100%;
+  max-width: none;
+}
 
-export function PostTextEditor({
-  value,
-  onChange,
-  placeholder = DEFAULT_PLACEHOLDER,
+.ql-editor {
+  padding: 1.5rem 1.5rem 1.5rem 0;
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+  width: 100%;
+  max-width: none;
+  border: none !important;
+}
+
+.ql-editor p {
+  margin-bottom: 0.5rem;
+}
+
+/* Ensure consistent paragraph spacing for better copy-paste behavior */
+.ql-editor p:last-child {
+  margin-bottom: 0;
+}
+
+.ql-editor strong {
+  font-weight: 600;
+}
+
+.ql-editor a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.ql-editor a:hover {
+  color: hsl(var(--primary) / 0.8);
+}
+
+/* Updated heading styles */
+.ql-editor h1 {
+  font-size: 1.875rem;
+  font-weight: 600;
+  margin-top: 2.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.ql-editor h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 1.25rem;
+}
+
+/* Remove all borders from Quill components */
+.ql-toolbar,
+.ql-toolbar.ql-snow {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-toolbar-sticky);
+  border: none !important;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  background-color: hsl(var(--background));
+  padding: 0.75rem 0;
+}
+
+.ql-container,
+.ql-container.ql-snow {
+  border: none !important;
+  border-bottom-left-radius: 0.75rem;
+  border-bottom-right-radius: 0.75rem;
+}
+
+.ql-toolbar button {
+  height: 2.5rem;
+  width: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  color: hsl(var(--foreground) / 0.5);
+}
+
+.ql-toolbar button svg .ql-stroke,
+.ql-toolbar button svg .ql-fill {
+  stroke: hsl(var(--foreground) / 0.5);
+  fill: hsl(var(--foreground) / 0.5);
+}
+
+.ql-toolbar button:hover {
+  background-color: hsl(var(--selection) / 0.6);
+  color: hsl(var(--foreground));
+}
+
+.ql-toolbar button:hover svg .ql-stroke,
+.ql-toolbar button:hover svg .ql-fill {
+  stroke: hsl(var(--foreground));
+  fill: hsl(var(--foreground));
+}
+
+.ql-toolbar .ql-active {
+  background-color: hsl(var(--selection));
+  color: hsl(var(--foreground));
+}
+
+.ql-toolbar .ql-active svg .ql-stroke,
+.ql-toolbar .ql-active svg .ql-fill {
+  stroke: hsl(var(--foreground));
+  fill: hsl(var(--foreground));
+}
+
+/* Placeholder styling - 모바일 환경에서도 작동하도록 수정 */
+.ql-editor.ql-blank::before {
+  color: hsl(var(--muted-foreground));
+  font-style: normal;
+  pointer-events: none; /* 플레이스홀더가 터치 이벤트를 방해하지 않도록 함 */
+  opacity: 0.7; /* 약간 투명하게 설정 */
+  left: 0; /* Align placeholder with text content */
+}
+
+/* 포커스 상태나 터치 시 플레이스홀더 숨기기 */
+.ql-container:focus-within .ql-editor.ql-blank::before,
+.ql-editor.ql-blank:focus::before {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Matching prose styles - Important declarations to override Tailwind prose */
+.ql-editor {
+  max-width: none;
+  font-size: 1.125rem !important;
+  line-height: 1.5 !important;
+}
+
+/* Override Tailwind prose-lg line-height */
+.prose-lg .ql-editor {
+  line-height: 1.5 !important;
+}
+
+/* List styling */
+.ql-editor ol, 
+.ql-editor ul {
+  padding-left: 1.5rem;
+}
+
+.ql-editor li {
+  padding-left: 0.5rem;
+}
+
+.ql-editor li.ql-indent-1 {
+  padding-left: 1.5rem;
+}
+
+.ql-editor ol li:before,
+.ql-editor ul li:before {
+  left: -1.5rem;
+}
+`;
+
+
+export function PostTextEditor({ 
+  value, 
+  onChange, 
+  placeholder = '내용을 입력하세요...', 
 }: PostTextEditorProps) {
-  // Refs
-  const quillRef = useRef<ReactQuill>(null);
+  const quillRef = useRef<any>(null);
+  const editorElementRef = useRef<HTMLElement | null>(null);
 
-  // State
-  const [videoDialog, setVideoDialog] = useState<VideoDialogState>({
-    isOpen: false,
-    url: '',
-  });
+  const {
+    isOpen: isDialogOpen,
+    openDialog: openImageDialog,
+    closeDialog: closeDialog,
+    selectFiles,
+    maxFilesAlert,
+    handleMaxFilesConfirm,
+    handleMaxFilesCancel,
+    isUploading,
+    uploadProgress,
+    uploadComplete,
+  } = useImageUploadDialog({
+    insertImage: (url: string) => {
+      const editor = quillRef.current?.getEditor();
+      if (!editor) return;
 
-  // Load editor styles
-  useEditorStyles();
+      const range = editor.getSelection(true);
+      const index = range?.index || editor.getLength() - 1;
 
-  // Editor operations
-  const { insertImage, insertVideo, getSelectedHtml, getEditorElement } =
-    useEditorOperations({ quillRef });
+      // Insert image
+      editor.insertEmbed(index, 'image', url);
 
-  // Image upload functionality
-  const imageUploadDialog = useImageUploadDialog({ insertImage });
+      // Add a newline after the image for easier editing
+      editor.insertText(index + 1, '\n');
 
-  // Dialog handlers
-  const handleImageDialogOpen = useCallback(() => {
-    imageUploadDialog.openDialog();
-  }, [imageUploadDialog]);
+      // Move cursor to after the newline
+      editor.setSelection(index + 2);
+    }
+  });  
 
-  const handleVideoDialogOpen = useCallback(() => {
-    setVideoDialog(prev => ({ ...prev, isOpen: true }));
+  const formats = [
+    'bold', 'italic', 'underline', 'strike',
+    'blockquote', 'header',
+    'list', 'link', 'image'
+  ];
+
+  const modules = useMemo(
+    () => ({
+      toolbar: {
+        container: [
+          ['bold', 'italic', 'underline', 'strike'],
+          ['blockquote'],
+          [{ 'header': 1 }, { 'header': 2 }],
+          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+          ['link', 'image'],
+        ],
+        handlers: {
+          image: openImageDialog,
+        },
+      },
+    }),
+    [openImageDialog]
+  );
+
+  useEffect(() => {
+    const styleTag = document.createElement('style');
+    styleTag.textContent = quillStyles;
+    document.head.appendChild(styleTag);
+
+    return () => {
+      styleTag.remove();
+    };
   }, []);
 
-  const handleVideoDialogClose = useCallback(() => {
-    setVideoDialog({ isOpen: false, url: '' });
+
+  // 선택된 HTML을 가져오는 함수
+  const getSelectedHtml = useCallback(() => {
+    const editor = quillRef.current?.getEditor();
+    if (!editor) return '';
+    
+    const selection = editor.getSelection();
+    if (!selection || selection.length === 0) return '';
+    
+    return editor.getSemanticHTML(selection.index, selection.length);
   }, []);
 
-  const handleVideoInsert = useCallback((url: string) => {
-    insertVideo(url);
-    handleVideoDialogClose();
-  }, [insertVideo, handleVideoDialogClose]);
+  // 에디터 요소 참조 업데이트
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const editorElement = quillRef.current?.getEditor()?.root;
+      if (editorElement) {
+        editorElementRef.current = editorElement;
+      }
+    }, 100);
 
-  // Quill configuration
-  const { modules, formats } = useQuillConfig({
-    onImageInsert: handleImageDialogOpen,
-    onVideoInsert: handleVideoDialogOpen,
-  });
+    return () => {
+      clearTimeout(timer);
+    };
+  }, []);
 
-  // Copy functionality
-  useCopyHandler(getSelectedHtml, getEditorElement());
+  // 커스텀 복사 핸들러 적용
+  useCopyHandler(getSelectedHtml, editorElementRef.current);
 
   return (
     <CopyErrorBoundary>
-      <div className="relative w-full space-y-2">
-        <div className="w-full rounded-xl border-0 bg-background">
+      <div className='relative w-full space-y-2'>
+        <div className='w-full rounded-xl border-0 bg-background'>
           <ReactQuill
             ref={quillRef}
             value={value}
@@ -95,31 +294,24 @@ export function PostTextEditor({
             theme="snow"
             modules={modules}
             formats={formats}
-            className={EDITOR_CLASS_NAMES}
+            className="prose prose-lg prose-slate w-full max-w-none dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold"
           />
         </div>
       </div>
 
-      {/* Image Upload Dialog */}
       <ImageUploadDialog
-        isOpen={imageUploadDialog.isOpen}
-        onOpenChange={imageUploadDialog.closeDialog}
-        onSelectFiles={imageUploadDialog.selectFiles}
-        onClose={imageUploadDialog.closeDialog}
-        maxFilesAlert={imageUploadDialog.maxFilesAlert}
-        onMaxFilesConfirm={imageUploadDialog.handleMaxFilesConfirm}
-        onMaxFilesCancel={imageUploadDialog.handleMaxFilesCancel}
-        isUploading={imageUploadDialog.isUploading}
-        uploadProgress={imageUploadDialog.uploadProgress}
-        uploadComplete={imageUploadDialog.uploadComplete}
-      />
-
-      {/* Video Embed Dialog */}
-      <VideoEmbedDialog
-        isOpen={videoDialog.isOpen}
-        onOpenChange={handleVideoDialogClose}
-        onVideoInsert={handleVideoInsert}
+        isOpen={isDialogOpen}
+        onOpenChange={closeDialog}
+        onSelectFiles={selectFiles}
+        isUploading={isUploading}
+        uploadProgress={uploadProgress}
+        uploadComplete={uploadComplete}
+        maxFilesAlert={maxFilesAlert}
+        onClose={closeDialog}
+        onMaxFilesConfirm={handleMaxFilesConfirm}
+        onMaxFilesCancel={handleMaxFilesCancel}
       />
     </CopyErrorBoundary>
   );
 }
+
