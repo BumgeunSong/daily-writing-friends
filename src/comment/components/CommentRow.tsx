@@ -89,7 +89,7 @@ const CommentRow: React.FC<CommentRowProps> = ({
             initialValue={comment.content}
             postId={postId}
             boardId={boardId}
-            enableSuggestions={postVisibility !== 'private'}
+            enableSuggestions={false}
           />
         ) : (
           <div
