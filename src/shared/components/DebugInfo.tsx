@@ -7,6 +7,42 @@ import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Helper function to get status badge styles
+const getStatusBadgeClass = (isEnabled: boolean, type: 'boolean' | 'feature' = 'feature') => {
+  if (type === 'boolean') {
+    return isEnabled
+      ? 'px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-800'
+      : 'px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-800';
+  }
+  return isEnabled
+    ? 'px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-800'
+    : 'px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-800';
+};
+
+// Helper component for config row
+interface ConfigRowProps {
+  label: string;
+  value: string | boolean;
+  type?: 'boolean' | 'feature' | 'text';
+}
+
+const ConfigRow = ({ label, value, type = 'feature' }: ConfigRowProps) => {
+  const isBoolean = typeof value === 'boolean';
+
+  return (
+    <div className='flex items-center justify-between p-3 bg-muted/50 rounded-lg'>
+      <span className='font-medium'>{label}</span>
+      {isBoolean ? (
+        <span className={getStatusBadgeClass(value, type)}>
+          {value ? (type === 'boolean' ? 'TRUE' : 'ENABLED') : (type === 'boolean' ? 'FALSE' : 'DISABLED')}
+        </span>
+      ) : (
+        <code className='text-sm font-mono text-muted-foreground'>{value}</code>
+      )}
+    </div>
+  );
+};
+
 export function DebugInfo() {
   const [fid, setFid] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -117,67 +153,12 @@ export function DebugInfo() {
         </CardHeader>
         <CardContent>
           <div className='space-y-3'>
-            <div className='flex items-center justify-between p-3 bg-muted/50 rounded-lg'>
-              <span className='font-medium'>TipTap Editor Enabled</span>
-              <span
-                className={`px-2 py-1 rounded text-xs font-semibold ${
-                  tiptapEnabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {tiptapEnabled ? 'TRUE' : 'FALSE'}
-              </span>
-            </div>
-
-            <div className='flex items-center justify-between p-3 bg-muted/50 rounded-lg'>
-              <span className='font-medium'>Active Board ID</span>
-              <code className='text-sm font-mono text-muted-foreground'>{activeBoardId}</code>
-            </div>
-
-            <div className='flex items-center justify-between p-3 bg-muted/50 rounded-lg'>
-              <span className='font-medium'>Block User Feature</span>
-              <span
-                className={`px-2 py-1 rounded text-xs font-semibold ${
-                  blockUserEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                }`}
-              >
-                {blockUserEnabled ? 'ENABLED' : 'DISABLED'}
-              </span>
-            </div>
-
-            <div className='flex items-center justify-between p-3 bg-muted/50 rounded-lg'>
-              <span className='font-medium'>Secret Buddy</span>
-              <span
-                className={`px-2 py-1 rounded text-xs font-semibold ${
-                  secretBuddyEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                }`}
-              >
-                {secretBuddyEnabled ? 'ENABLED' : 'DISABLED'}
-              </span>
-            </div>
-
-            <div className='flex items-center justify-between p-3 bg-muted/50 rounded-lg'>
-              <span className='font-medium'>Stats Page</span>
-              <span
-                className={`px-2 py-1 rounded text-xs font-semibold ${
-                  statPageEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                }`}
-              >
-                {statPageEnabled ? 'ENABLED' : 'DISABLED'}
-              </span>
-            </div>
-
-            <div className='flex items-center justify-between p-3 bg-muted/50 rounded-lg'>
-              <span className='font-medium'>Comment Assistant</span>
-              <span
-                className={`px-2 py-1 rounded text-xs font-semibold ${
-                  commentAssistantEnabled
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-gray-100 text-gray-800'
-                }`}
-              >
-                {commentAssistantEnabled ? 'ENABLED' : 'DISABLED'}
-              </span>
-            </div>
+            <ConfigRow label='TipTap Editor Enabled' value={tiptapEnabled} type='boolean' />
+            <ConfigRow label='Active Board ID' value={activeBoardId} type='text' />
+            <ConfigRow label='Block User Feature' value={blockUserEnabled} type='feature' />
+            <ConfigRow label='Secret Buddy' value={secretBuddyEnabled} type='feature' />
+            <ConfigRow label='Stats Page' value={statPageEnabled} type='feature' />
+            <ConfigRow label='Comment Assistant' value={commentAssistantEnabled} type='feature' />
           </div>
         </CardContent>
       </Card>
