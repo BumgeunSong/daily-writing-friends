@@ -141,13 +141,8 @@ const privateRoutesWithoutNav = {
     { path: 'join/form', element: <JoinFormPageForActiveOrNewUser /> },
     { path: 'join/form/new-user', element: <JoinFormPageForNewUser /> },
     { path: 'join/form/active-user', element: <JoinFormPageForActiveUser /> },
+    { path: 'debug-info', element: <DebugInfo /> },
   ],
-};
-
-// Debug route (no access control as requested)
-const debugRoute = {
-  path: 'debug-info',
-  element: <DebugInfo />,
 };
 
 // --- Router 생성 ---
@@ -173,7 +168,6 @@ export const router = createBrowserRouter([
       publicRoutes,
       privateRoutesWithNav,
       privateRoutesWithoutNav,
-      debugRoute,
       catchAllRedirectRoute,
     ],
   },
