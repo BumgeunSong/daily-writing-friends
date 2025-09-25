@@ -21,6 +21,7 @@ import JoinFormPageForActiveUser from '@/login/components/JoinFormPageForActiveU
 import JoinFormPageForNewUser from '@/login/components/JoinFormPageForNewUser';
 import JoinIntroPage from '@/login/components/JoinIntroPage';
 import LoginPage from '@/login/components/LoginPage';
+import { DebugInfo } from '@/shared/components/DebugInfo';
 
 // Loaders and actions from feature hooks
 import { boardsLoader } from '@/board/hooks/useBoardsLoader';
@@ -143,6 +144,12 @@ const privateRoutesWithoutNav = {
   ],
 };
 
+// Debug route (no access control as requested)
+const debugRoute = {
+  path: 'debug-info',
+  element: <DebugInfo />,
+};
+
 // --- Router 생성 ---
 
 export const router = createBrowserRouter([
@@ -166,6 +173,7 @@ export const router = createBrowserRouter([
       publicRoutes,
       privateRoutesWithNav,
       privateRoutesWithoutNav,
+      debugRoute,
       catchAllRedirectRoute,
     ],
   },
