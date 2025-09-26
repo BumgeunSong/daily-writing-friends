@@ -15,6 +15,7 @@ import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
 import { getPerformance } from 'firebase/performance';
 import { getRemoteConfig } from 'firebase/remote-config';
+import { getInstallations } from 'firebase/installations';
 
 // Initialize Firebase app
 const firebaseConfig = createFirebaseConfig();
@@ -25,6 +26,7 @@ const auth = getAuth(app);
 const firestore = getFirestore(app);
 const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
+const installations = getInstallations(app);
 
 // Initialize optional services (analytics, performance, remote config)
 const useEmulators = shouldUseEmulators();
@@ -79,4 +81,4 @@ export const signInWithTestCredentials = (
 export const signInWithTestToken = (customToken: string): Promise<UserCredential> =>
   testTokenSignIn(auth, customToken);
 
-export { auth, firestore, storage, app, performance, remoteConfig, analytics };
+export { auth, firestore, storage, app, performance, remoteConfig, analytics, installations };

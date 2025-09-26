@@ -21,6 +21,7 @@ import JoinFormPageForActiveUser from '@/login/components/JoinFormPageForActiveU
 import JoinFormPageForNewUser from '@/login/components/JoinFormPageForNewUser';
 import JoinIntroPage from '@/login/components/JoinIntroPage';
 import LoginPage from '@/login/components/LoginPage';
+import { DebugInfo } from '@/shared/components/DebugInfo';
 
 // Loaders and actions from feature hooks
 import { boardsLoader } from '@/board/hooks/useBoardsLoader';
@@ -140,6 +141,7 @@ const privateRoutesWithoutNav = {
     { path: 'join/form', element: <JoinFormPageForActiveOrNewUser /> },
     { path: 'join/form/new-user', element: <JoinFormPageForNewUser /> },
     { path: 'join/form/active-user', element: <JoinFormPageForActiveUser /> },
+    { path: 'debug-info', element: <DebugInfo /> },
   ],
 };
 
