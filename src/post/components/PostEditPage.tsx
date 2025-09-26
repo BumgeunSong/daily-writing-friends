@@ -8,11 +8,10 @@ import { Button } from '@/shared/ui/button';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { formatDate } from '@/shared/utils/dateUtils';
 import { fetchPost, updatePost } from '@/post/utils/postUtils';
-import { PostBackButton } from './PostBackButton';
+import { PostEditorHeader } from './PostEditorHeader';
 import { PostEditor } from './PostEditor';
 import { PostTitleEditor } from './PostTitleEditor';
 
-// 메인 컴포넌트
 export default function PostEditPage() {
   const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
 
@@ -29,7 +28,6 @@ export default function PostEditPage() {
   );
 }
 
-// 로딩 상태 컴포넌트
 function LoadingState() {
   return (
     <div className='mx-auto max-w-4xl px-6 py-8'>
@@ -41,7 +39,6 @@ function LoadingState() {
   );
 }
 
-// 에러 상태 컴포넌트
 function ErrorState({ error }: { error: Error }) {
   return (
     <div className='mx-auto max-w-4xl px-6 py-8 text-center'>
@@ -51,49 +48,33 @@ function ErrorState({ error }: { error: Error }) {
   );
 }
 
-// 게시물 편집 폼 컴포넌트
 function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) {
   const navigate = useNavigate();
 
-  // React Query의 suspense 모드 사용
   const { data: post } = useQuery(['post', boardId, postId], () => fetchPost(boardId, postId), {
-    suspense: true, // Suspense 모드 활성화
-    useErrorBoundary: true, // 에러를 ErrorBoundary로 전파
+    suspense: true,
+    useErrorBoundary: true,
     refetchOnWindowFocus: false,
   });
 
-  // 편집 상태를 관리하는 객체
   const [editState, setEditState] = useState({
     title: post?.title || '',
     content: post?.content || '',
     contentJson: post?.contentJson || null,
   });
 
-  // 제목 변경 핸들러
   const setTitle = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setEditState((prev) => ({
-      ...prev,
-      title: e.target.value,
-    }));
+    setEditState((prev) => ({ ...prev, title: e.target.value }));
   };
 
-  // 내용 변경 핸들러
   const setContent = (content: string) => {
-    setEditState((prev) => ({
-      ...prev,
-      content,
-    }));
+    setEditState((prev) => ({ ...prev, content }));
   };
 
-  // JSON 내용 변경 핸들러
   const setContentJson = (contentJson: any) => {
-    setEditState((prev) => ({
-      ...prev,
-      contentJson,
-    }));
+    setEditState((prev) => ({ ...prev, contentJson }));
   };
 
-  // 폼 제출 핸들러
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editState.title.trim() || !editState.content.trim()) return;
@@ -112,41 +93,44 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
   };
 
   return (
-    <div className='mx-auto max-w-4xl px-6 py-8'>
-      <PostBackButton className='mb-2' />
-      <form onSubmit={handleSubmit} className='space-y-6'>
-        <input type='hidden' value={post?.boardId} />
-        <input type='hidden' value={post?.authorId} />
-        <input type='hidden' value={post?.authorName} />
-        <input type='hidden' value={editState.title} />
-        <input type='hidden' value={editState.content} />
-
-        <PostTitleEditor value={editState.title} onChange={setTitle} />
-        <PostEditor
-          value={editState.content}
-          onChange={setContent}
-          contentJson={editState.contentJson}
-          onJsonChange={setContentJson}
-          placeholder='내용을 수정하세요...'
-        />
-
-        <div className='flex items-center justify-between text-sm text-muted-foreground'>
-          <p>
-            작성자: {post?.authorName || '?'} | 작성일:{' '}
-            {post?.createdAt ? formatDate(post.createdAt.toDate()) : '?'}
-          </p>
-        </div>
-
-        <div className='flex justify-end'>
+    <div>
+      <PostEditorHeader
+        rightActions={
           <Button
             variant='default'
             type='submit'
+            form='post-edit-form'
             disabled={!editState.title.trim() || !editState.content.trim()}
           >
             <Save className='mr-2 size-4' /> 수정 완료
           </Button>
-        </div>
-      </form>
+        }
+      />
+
+      <div className='mx-auto max-w-4xl px-6 py-4'>
+        <form id='post-edit-form' onSubmit={handleSubmit} className='space-y-6'>
+          <input type='hidden' value={post?.boardId} />
+          <input type='hidden' value={post?.authorId} />
+          <input type='hidden' value={post?.authorName} />
+          <input type='hidden' value={editState.title} />
+          <input type='hidden' value={editState.content} />
+
+          <PostTitleEditor value={editState.title} onChange={setTitle} />
+          <PostEditor
+            value={editState.content}
+            onChange={setContent}
+            contentJson={editState.contentJson}
+            onJsonChange={setContentJson}
+            placeholder='내용을 수정하세요...'
+          />
+
+          <div className='flex items-center justify-center text-sm text-muted-foreground pt-4'>
+            <p>
+              작성자: {post?.authorName || '?'} | 작성일: {post?.createdAt ? formatDate(post.createdAt.toDate()) : '?'}
+            </p>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
