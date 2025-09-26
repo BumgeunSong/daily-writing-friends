@@ -10,8 +10,10 @@ import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { WritingStatus } from "@/stats/model/WritingStatus"
 import { useUserNickname } from '@/user/hooks/useUserNickname'
 import CountupWritingTimer from "./CountupWritingTimer"
-import { PostSubmitButton } from "./PostSubmitButton"
 import { PostEditor } from "./PostEditor"
+import { PostFreewritingHeader } from "./PostFreewritingHeader"
+import { Button } from "@/shared/ui/button"
+import { Loader2 } from "lucide-react"
 import type React from "react"
 
 export default function PostFreewritingPage() {
@@ -94,34 +96,54 @@ export default function PostFreewritingPage() {
     }
   }
 
+  if (!currentUser) {
+    return <div>Loading user...</div>;
+  }
+
+  if (!boardId) {
+    return <div>No board ID found</div>;
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* 카운트업 타이머 */}
-      <CountupWritingTimer
-        status={timerStatus}
-        reached={isReached}
-        onReach={handleTimerReach}
-        targetTime={freeWritingTargetTime}
-      />
+      {/* Combined Sticky Header with Timer */}
+      <div className="sticky top-0 z-40 bg-background border-b">
+        <PostFreewritingHeader
+          rightActions={
+            <Button
+              variant="default"
+              type="submit"
+              form="freewriting-form"
+              disabled={isSubmitting || !isReached || !POST_TITLE.trim() || !content.trim()}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                  업로드 중...
+                </>
+              ) : (
+                "업로드"
+              )}
+            </Button>
+          }
+        />
+
+        <CountupWritingTimer
+          status={timerStatus}
+          reached={isReached}
+          onReach={handleTimerReach}
+          targetTime={freeWritingTargetTime}
+        />
+      </div>
 
       <div className="container mx-auto max-w-4xl grow px-6 py-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form id="freewriting-form" onSubmit={handleSubmit} className="space-y-6">
           <PostEditor
             value={content}
             onChange={handleContentChange}
             contentJson={contentJson}
             onJsonChange={setContentJson}
           />
-
-          <div className="flex items-center justify-end pt-2">
-            <PostSubmitButton
-              isSubmitting={isSubmitting}
-              disabled={!isReached || !POST_TITLE.trim() || !content.trim()}
-              label={isReached ? "업로드하기" : "아직 시간이 남았어요"}
-              submittingLabel="업로드 중..."
-              className="px-8 py-6 text-lg"
-            />
-          </div>
         </form>
       </div>
     </div>
