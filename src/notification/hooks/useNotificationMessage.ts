@@ -17,9 +17,14 @@ export function useNotificationMessage(notification: Notification): string {
   const { data: postTitle } = usePostTitle(notification.boardId, notification.postId);
   // user nickname
   const { nickname: userNickName } = useUserNickname(notification.fromUserId);
-  // 댓글/답글 내용
-  const shouldFetchComment = notification.type === NotificationType.REACTION_ON_COMMENT && notification.commentId;
-  const shouldFetchReply = notification.type === NotificationType.REACTION_ON_REPLY && notification.commentId && notification.replyId;
+  // 댓글/답글 내용 fetch 여부 결정 (React Query의 enabled 옵션은 반드시 boolean이어야 함)
+  const shouldFetchComment: boolean =
+    notification.type === NotificationType.REACTION_ON_COMMENT &&
+    notification.commentId != null;
+  const shouldFetchReply: boolean =
+    notification.type === NotificationType.REACTION_ON_REPLY &&
+    notification.commentId != null &&
+    notification.replyId != null;
   
   const commentContentObj = useCommentContent(
     notification.boardId, 
