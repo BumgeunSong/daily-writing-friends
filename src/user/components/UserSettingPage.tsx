@@ -1,8 +1,9 @@
 import { signOut } from 'firebase/auth';
-import { LogOut, MessageCircle, Trash2, SquareArrowRight, Moon, Sun } from 'lucide-react';
+import { LogOut, Trash2, SquareArrowRight, Moon, Sun } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { auth } from '@/firebase';
+import { SentryFeedbackDialog } from '@/shared/components/SentryFeedbackDialog';
 import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { useClearCache } from '@/shared/hooks/useClearCache';
 import { useTheme } from '@/shared/hooks/useTheme';
@@ -35,13 +36,6 @@ export default function UserSettingPage() {
     }
   };
 
-  // 피드백
-  const handleFeedback = () => {
-    window.open(
-      'https://docs.google.com/forms/d/e/1FAIpQLSfujE9OSO58OZ6qFe9qw1vimWEcuPCX6jyDNCRZKOdCVWB5UQ/viewform?usp=sf_link',
-      '_blank',
-    );
-  };
 
   // 캐시 삭제
   const handleClearCache = async () => {
@@ -91,14 +85,7 @@ export default function UserSettingPage() {
             <LogOut className="size-5 text-muted-foreground" /> 
             <span className="text-foreground">로그아웃</span>
           </Button>
-          <Button
-            variant="ghost"
-            className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-all duration-200"
-            onClick={handleFeedback}
-          >
-            <MessageCircle className="size-5 text-muted-foreground" /> 
-            <span className="text-foreground">피드백 보내기</span>
-          </Button>
+          <SentryFeedbackDialog />
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
