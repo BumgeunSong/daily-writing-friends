@@ -86,6 +86,7 @@ export const initSentry = (): void => {
   Sentry.init({
     dsn: SENTRY_CONFIG.DSN,
     environment,
+    sendDefaultPii: true,
     integrations: [
       Sentry.browserTracingIntegration(),
       Sentry.replayIntegration(),
