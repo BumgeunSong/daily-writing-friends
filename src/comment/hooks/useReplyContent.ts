@@ -6,6 +6,7 @@ export function useReplyContent(
   postId: string,
   commentId: string,
   replyId: string,
+  options?: { enabled?: boolean }
 ) {
   const {
     data: reply,
@@ -14,7 +15,8 @@ export function useReplyContent(
   } = useQuery({
     queryKey: ['reply', boardId, postId, commentId, replyId],
     queryFn: () => fetchReplyById(boardId, postId, commentId, replyId),
-    enabled: !!boardId && !!postId && !!commentId && !!replyId,
+    enabled: options?.enabled !== undefined ? options.enabled : (!!boardId && !!postId && !!commentId && !!replyId),
+    retry: false, // Don't retry for potentially deleted replies
   });
   const content = reply?.content ?? null;
   return { content, isLoading, error };
