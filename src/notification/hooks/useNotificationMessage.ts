@@ -20,14 +20,11 @@ export function useNotificationMessage(notification: Notification): string {
   // 댓글/답글 내용 fetch 여부 결정 (React Query의 enabled 옵션은 반드시 boolean이어야 함)
   const shouldFetchComment: boolean =
     notification.type === NotificationType.REACTION_ON_COMMENT &&
-    notification.commentId !== null &&
-    notification.commentId !== undefined;
+    notification.commentId != null;
   const shouldFetchReply: boolean =
     notification.type === NotificationType.REACTION_ON_REPLY &&
-    notification.commentId !== null &&
-    notification.commentId !== undefined &&
-    notification.replyId !== null &&
-    notification.replyId !== undefined;
+    notification.commentId != null &&
+    notification.replyId != null;
   
   const commentContentObj = useCommentContent(
     notification.boardId, 
