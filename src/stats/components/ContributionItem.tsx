@@ -4,7 +4,6 @@ import { cn } from '@/shared/utils/cn';
 import { Contribution } from '@/stats/model/WritingStats';
 import { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 
-// Contribution | CommentingContribution 모두 지원
 interface ContributionItemProps {
   contribution?: Contribution | CommentingContribution;
   value: number | null;
@@ -13,8 +12,51 @@ interface ContributionItemProps {
 
 type CombinedContribution = Contribution | CommentingContribution | undefined;
 
+const INTENSITY_RECOVERED = -1;
+const INTENSITY_HOLIDAY = -2;
+const INTENSITY_NONE = 0;
+const MAX_INTENSITY_LEVELS = 4;
+const HIGH_INTENSITY_THRESHOLD = 3;
+
 function isWritingContribution(c: CombinedContribution): c is Contribution {
   return !!c && ('contentLength' in c || 'isRecovered' in c);
+}
+
+function extractContributionFlags(contribution: CombinedContribution) {
+  const isRecovered = isWritingContribution(contribution)
+    ? Boolean(contribution.isRecovered)
+    : false;
+  const isHoliday = contribution?.isHoliday ?? false;
+  return { isRecovered, isHoliday };
+}
+
+function calculateIntensity(
+  value: number | null,
+  maxValue: number,
+  isRecovered: boolean,
+  isHoliday: boolean,
+): number {
+  if (isRecovered) return INTENSITY_RECOVERED;
+  if (isHoliday) return INTENSITY_HOLIDAY;
+  if (!value) return INTENSITY_NONE;
+
+  const normalizedValue = value / Math.max(maxValue, 1);
+  return Math.ceil(normalizedValue * MAX_INTENSITY_LEVELS);
+}
+
+function formatDate(contribution: CombinedContribution) {
+  const createdAt = contribution?.createdAt;
+  if (!createdAt) return { yearMonthDay: '', day: '' };
+
+  const parsed = new Date(createdAt);
+  const yearMonthDay = parsed.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const day = parsed.getDate().toString();
+
+  return { yearMonthDay, day };
 }
 
 function useContributionMeta(
@@ -23,56 +65,56 @@ function useContributionMeta(
   maxValue: number,
 ) {
   return useMemo(() => {
-    const isRecovered = isWritingContribution(contribution)
-      ? Boolean(contribution.isRecovered)
-      : false;
-    const isHoliday = contribution?.isHoliday ?? false;
-
-    const intensity = isRecovered
-      ? -1
-      : isHoliday
-        ? -2
-        : !value
-          ? 0
-          : Math.ceil((value / Math.max(maxValue, 1)) * 4);
-
-    const createdAt = contribution?.createdAt;
-    const parsed = createdAt ? new Date(createdAt) : null;
-    const yearMonthDay = parsed
-      ? parsed.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })
-      : '';
-    const day = parsed ? parsed.getDate().toString() : '';
+    const { isRecovered, isHoliday } = extractContributionFlags(contribution);
+    const intensity = calculateIntensity(value, maxValue, isRecovered, isHoliday);
+    const { yearMonthDay, day } = formatDate(contribution);
 
     return { intensity, yearMonthDay, day, isRecovered, isHoliday };
   }, [contribution, value, maxValue]);
 }
 
-function useContributionClasses(intensity: number, isRecovered: boolean, isHoliday: boolean) {
-  const containerClassName = useMemo(
-    () =>
-      cn(
-        'aspect-square w-full rounded-sm relative flex items-center justify-center border border-border/30',
-        isRecovered && 'bg-blue-400 dark:bg-blue-400/80',
-        isHoliday && 'bg-gray-300 dark:bg-gray-600',
-        !isRecovered && !isHoliday && intensity === 0 && 'bg-muted/50',
-        !isRecovered && !isHoliday && intensity === 1 && 'bg-green-200 dark:bg-green-800/60',
-        !isRecovered && !isHoliday && intensity === 2 && 'bg-green-400 dark:bg-green-600/70',
-        !isRecovered && !isHoliday && intensity === 3 && 'bg-green-600 dark:bg-green-500/80',
-        !isRecovered && !isHoliday && intensity === 4 && 'bg-green-800 dark:bg-green-400',
-      ),
-    [intensity, isRecovered, isHoliday],
-  );
+function getBackgroundColorClass(intensity: number, isRecovered: boolean, isHoliday: boolean) {
+  if (isRecovered) return 'bg-blue-400 dark:bg-blue-400/80';
+  if (isHoliday) return 'bg-gray-300 dark:bg-gray-600';
 
-  const textClassName = useMemo(
-    () =>
-      cn(
-        'text-[0.6rem] font-medium',
-        isRecovered || intensity >= 3 ? 'text-white' : 'text-muted-foreground',
-      ),
-    [intensity, isRecovered],
-  );
+  const colorMap: Record<number, string> = {
+    [INTENSITY_NONE]: 'bg-muted/50',
+    1: 'bg-green-200 dark:bg-green-800/60',
+    2: 'bg-green-400 dark:bg-green-600/70',
+    3: 'bg-green-600 dark:bg-green-500/80',
+    4: 'bg-green-800 dark:bg-green-400',
+  };
+
+  return colorMap[intensity] || '';
+}
+
+function getTextColorClass(intensity: number, isRecovered: boolean): string {
+  const shouldUseWhiteText = isRecovered || intensity >= HIGH_INTENSITY_THRESHOLD;
+  return shouldUseWhiteText ? 'text-white' : 'text-muted-foreground';
+}
+
+function useContributionClasses(intensity: number, isRecovered: boolean, isHoliday: boolean) {
+  const containerClassName = useMemo(() => {
+    const baseClasses =
+      'aspect-square w-full rounded-sm relative flex items-center justify-center border border-border/30';
+    const bgClass = getBackgroundColorClass(intensity, isRecovered, isHoliday);
+    return cn(baseClasses, bgClass);
+  }, [intensity, isRecovered, isHoliday]);
+
+  const textClassName = useMemo(() => {
+    const baseClass = 'text-[0.6rem] font-medium';
+    const colorClass = getTextColorClass(intensity, isRecovered);
+    return cn(baseClass, colorClass);
+  }, [intensity, isRecovered]);
 
   return { containerClassName, textClassName };
+}
+
+function buildTooltipText(yearMonthDay: string, isRecovered: boolean, isHoliday: boolean): string {
+  let text = yearMonthDay;
+  if (isRecovered) text += ' (회복됨)';
+  if (isHoliday) text += ' (공휴일)';
+  return text;
 }
 
 function ContributionItemInner({ contribution, value, maxValue }: ContributionItemProps) {
@@ -87,6 +129,8 @@ function ContributionItemInner({ contribution, value, maxValue }: ContributionIt
     isHoliday,
   );
 
+  const tooltipText = buildTooltipText(yearMonthDay, isRecovered, isHoliday);
+
   return (
     <TooltipProvider>
       <Tooltip>
@@ -96,16 +140,11 @@ function ContributionItemInner({ contribution, value, maxValue }: ContributionIt
           </div>
         </TooltipTrigger>
         <TooltipContent>
-          <p className='text-xs'>
-            {yearMonthDay}
-            {isRecovered ? ' (회복됨)' : ''}
-            {isHoliday ? ' (공휴일)' : ''}
-          </p>
+          <p className='text-xs'>{tooltipText}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
   );
 }
 
-// Memoize the component to prevent unnecessary re-renders
 export const ContributionItem = memo(ContributionItemInner);

@@ -2,9 +2,8 @@ import { Contribution } from '@/stats/model/WritingStats';
 import { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 import { isConfigurableHoliday } from '@/shared/utils/dateUtils';
 
-// Constants for grid layout
 const WEEKS_TO_DISPLAY = 4;
-const WEEKDAYS_COUNT = 5; // Mon-Fri only
+const WEEKDAYS_COUNT = 5;
 const DAYS_PER_WEEK = 7;
 const SUNDAY = 0;
 const SATURDAY = 6;
@@ -52,9 +51,13 @@ function getKoreanToday(): Date {
   return new Date(koreaDateStr);
 }
 
+function calculateDaysToMonday(dayOfWeek: number): number {
+  return dayOfWeek === SUNDAY ? 6 : dayOfWeek - 1;
+}
+
 function findCurrentWeekMonday(today: Date): Date {
   const todayDayOfWeek = today.getDay();
-  const daysToCurrentMonday = todayDayOfWeek === 0 ? 6 : todayDayOfWeek - 1;
+  const daysToCurrentMonday = calculateDaysToMonday(todayDayOfWeek);
   const currentMonday = new Date(today);
   currentMonday.setDate(today.getDate() - daysToCurrentMonday);
   currentMonday.setHours(0, 0, 0, 0);
@@ -76,15 +79,21 @@ export function getTimeRange(): { weeksAgo: Date; today: Date } {
   return { weeksAgo: mondayStart, today };
 }
 
+function isContributionInDateRange<T extends { createdAt: any }>(
+  contribution: T,
+  startDate: Date,
+  endDate: Date,
+): boolean {
+  const contributionDate = new Date(contribution.createdAt);
+  return contributionDate >= startDate && contributionDate <= endDate;
+}
+
 export function filterContributionsInTimeRange<T extends { createdAt: any }>(
   contributions: T[],
   startDate: Date,
   endDate: Date,
 ): T[] {
-  return contributions.filter((c) => {
-    const contributionDate = new Date(c.createdAt);
-    return contributionDate >= startDate && contributionDate <= endDate;
-  });
+  return contributions.filter((c) => isContributionInDateRange(c, startDate, endDate));
 }
 
 function isWeekendDay(dayOfWeek: number): boolean {
@@ -97,6 +106,10 @@ function convertToWeekdayColumn(dayOfWeek: number): number {
 
 function calculateDaysDifferenceFromStart(date: Date, startDate: Date): number {
   return Math.floor((date.getTime() - startDate.getTime()) / MILLISECONDS_PER_DAY);
+}
+
+function calculateWeekRow(daysDifference: number): number {
+  return Math.floor(daysDifference / DAYS_PER_WEEK);
 }
 
 function isPositionWithinGridBounds(weekRow: number, weekdayColumn: number): boolean {
@@ -117,7 +130,7 @@ export function calculateGridPosition(date: Date, weeksAgo: Date): GridPosition 
 
   const weekdayColumn = convertToWeekdayColumn(dayOfWeek);
   const daysDifference = calculateDaysDifferenceFromStart(date, weeksAgo);
-  const weekRow = Math.floor(daysDifference / DAYS_PER_WEEK);
+  const weekRow = calculateWeekRow(daysDifference);
 
   if (isPositionWithinGridBounds(weekRow, weekdayColumn)) {
     return { weekRow, weekdayColumn };
@@ -134,7 +147,7 @@ function updateMatricesAtPosition(
   matrices: { matrix: ContributionMatrix; weeklyContributions: ContributionDataMatrix },
   position: GridPosition,
   contribution: ContributionData,
-  value: number
+  value: number,
 ): void {
   const { weekRow, weekdayColumn } = position;
   matrices.matrix[weekRow][weekdayColumn] = value;
@@ -192,7 +205,8 @@ function createCommentingPlaceholderWithZeroCount(
 
 function calculateGridPositionDate(weeksAgo: Date, weekRow: number, weekdayColumn: number): Date {
   const date = new Date(weeksAgo);
-  date.setDate(weeksAgo.getDate() + weekRow * DAYS_PER_WEEK + weekdayColumn);
+  const offsetDays = weekRow * DAYS_PER_WEEK + weekdayColumn;
+  date.setDate(weeksAgo.getDate() + offsetDays);
   normalizeToMidnight(date);
   return date;
 }
@@ -213,6 +227,24 @@ function createPlaceholderByType(
     : createCommentingPlaceholderWithZeroCount(dateStr, isHoliday);
 }
 
+function shouldInitializePlaceholder(date: Date, today: Date): boolean {
+  return isDateWithinTodayInclusive(date, today);
+}
+
+function initializeSinglePlaceholder(
+  matrices: { matrix: ContributionMatrix; weeklyContributions: ContributionDataMatrix },
+  date: Date,
+  weekRow: number,
+  weekdayColumn: number,
+  contributionType: 'posting' | 'commenting',
+  configurableHolidays?: Map<string, string>,
+): void {
+  const dateStr = formatDateInKoreanTimezone(date);
+  const isHoliday = isConfigurableHoliday(date, configurableHolidays);
+  const placeholder = createPlaceholderByType(contributionType, dateStr, isHoliday);
+  matrices.weeklyContributions[weekRow][weekdayColumn] = placeholder;
+}
+
 export function initializeGridWithPlaceholders(
   matrices: { matrix: ContributionMatrix; weeklyContributions: ContributionDataMatrix },
   weeksAgo: Date,
@@ -224,11 +256,15 @@ export function initializeGridWithPlaceholders(
     for (let weekdayColumn = 0; weekdayColumn < WEEKDAYS_COUNT; weekdayColumn++) {
       const date = calculateGridPositionDate(weeksAgo, weekRow, weekdayColumn);
 
-      if (isDateWithinTodayInclusive(date, today)) {
-        const dateStr = formatDateInKoreanTimezone(date);
-        const isHoliday = isConfigurableHoliday(date, configurableHolidays);
-        const placeholder = createPlaceholderByType(contributionType, dateStr, isHoliday);
-        matrices.weeklyContributions[weekRow][weekdayColumn] = placeholder;
+      if (shouldInitializePlaceholder(date, today)) {
+        initializeSinglePlaceholder(
+          matrices,
+          date,
+          weekRow,
+          weekdayColumn,
+          contributionType,
+          configurableHolidays,
+        );
       }
     }
   }
@@ -238,7 +274,7 @@ function placeAllContributionsInGrid<T extends ContributionData>(
   contributions: T[],
   matrices: { matrix: ContributionMatrix; weeklyContributions: ContributionDataMatrix },
   weeksAgo: Date,
-  getValue: (contribution: T) => number
+  getValue: (contribution: T) => number,
 ): void {
   contributions.forEach((contribution) => {
     placeContributionInGrid(contribution, (c) => getValue(c as T), matrices, weeksAgo);
@@ -247,10 +283,11 @@ function placeAllContributionsInGrid<T extends ContributionData>(
 
 function calculateMaxValueFromWeekdayContributions<T extends ContributionData>(
   contributions: T[],
-  getValue: (contribution: T) => number
+  getValue: (contribution: T) => number,
 ): number {
   const weekdayContributions = filterWeekdayContributions(contributions);
-  return Math.max(...weekdayContributions.map(getValue), 0);
+  const values = weekdayContributions.map(getValue);
+  return Math.max(...values, 0);
 }
 
 export function processContributionsInGrid<T extends ContributionData>(
@@ -321,12 +358,12 @@ export function processCommentingContributions(
 }
 
 export function createEmptyGridResult(): GridResult {
+  const emptyMatrix = Array.from({ length: WEEKS_TO_DISPLAY }, () => Array(5).fill(null));
   return {
-    matrix: Array.from({ length: WEEKS_TO_DISPLAY }, () => Array(5).fill(null)),
-    weeklyContributions: Array.from({ length: WEEKS_TO_DISPLAY }, () => Array(5).fill(null)),
+    matrix: emptyMatrix,
+    weeklyContributions: emptyMatrix,
     maxValue: 0,
   };
 }
 
-// Export constants for use in other files
 export { WEEKS_TO_DISPLAY };
