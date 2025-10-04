@@ -24,6 +24,12 @@ export interface GridResult {
   maxValue: number;
 }
 
+type DateLike = string | Date;
+
+interface HasCreatedAt {
+  createdAt: DateLike;
+}
+
 export function createEmptyMatrices(): {
   matrix: ContributionMatrix;
   weeklyContributions: ContributionDataMatrix;
@@ -79,7 +85,7 @@ export function getTimeRange(): { weeksAgo: Date; today: Date } {
   return { weeksAgo: mondayStart, today };
 }
 
-function isContributionInDateRange<T extends { createdAt: any }>(
+function isContributionInDateRange<T extends HasCreatedAt>(
   contribution: T,
   startDate: Date,
   endDate: Date,
@@ -88,7 +94,7 @@ function isContributionInDateRange<T extends { createdAt: any }>(
   return contributionDate >= startDate && contributionDate <= endDate;
 }
 
-export function filterContributionsInTimeRange<T extends { createdAt: any }>(
+export function filterContributionsInTimeRange<T extends HasCreatedAt>(
   contributions: T[],
   startDate: Date,
   endDate: Date,
@@ -180,13 +186,13 @@ export function placeContributionInGrid(
   }
 }
 
-function isWeekdayContribution<T extends { createdAt: any }>(contribution: T): boolean {
+function isWeekdayContribution<T extends HasCreatedAt>(contribution: T): boolean {
   const date = new Date(contribution.createdAt);
   const dayOfWeek = date.getDay();
   return !isWeekendDay(dayOfWeek);
 }
 
-export function filterWeekdayContributions<T extends { createdAt: any }>(contributions: T[]): T[] {
+export function filterWeekdayContributions<T extends HasCreatedAt>(contributions: T[]): T[] {
   return contributions.filter(isWeekdayContribution);
 }
 
@@ -374,10 +380,9 @@ export function processCommentingContributions(
 }
 
 export function createEmptyGridResult(): GridResult {
-  const emptyMatrix = Array.from({ length: WEEKS_TO_DISPLAY }, () => Array(5).fill(null));
   return {
-    matrix: emptyMatrix,
-    weeklyContributions: emptyMatrix,
+    matrix: Array.from({ length: WEEKS_TO_DISPLAY }, () => Array(5).fill(null)),
+    weeklyContributions: Array.from({ length: WEEKS_TO_DISPLAY }, () => Array(5).fill(null)),
     maxValue: 0,
   };
 }
