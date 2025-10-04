@@ -76,7 +76,7 @@ function useContributionMeta(
 
 function getBackgroundColorClass(intensity: number, isRecovered: boolean, isHoliday: boolean) {
   if (isRecovered) return 'bg-blue-400 dark:bg-blue-400/80';
-  if (isHoliday) return 'bg-red-50 dark:bg-red-950/40';
+  if (isHoliday) return 'bg-amber-50 dark:bg-amber-950/40';
 
   const colorMap: Record<number, string> = {
     [INTENSITY_NONE]: 'bg-muted/50',
