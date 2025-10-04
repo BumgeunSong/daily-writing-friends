@@ -258,15 +258,6 @@ function initializeSinglePlaceholder(
   const holidayName = isHoliday ? configurableHolidays?.get(dateStr) : undefined;
   const placeholder = createPlaceholderByType(contributionType, dateStr, isHoliday, holidayName);
 
-  if (dateStr === '2025-10-03') {
-    console.log(`[Holidays] Creating placeholder for ${dateStr}:`, {
-      isHoliday,
-      holidayName,
-      placeholder,
-      configurableHolidays: configurableHolidays?.size,
-    });
-  }
-
   matrices.weeklyContributions[weekRow][weekdayColumn] = placeholder;
 }
 

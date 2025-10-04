@@ -127,15 +127,6 @@ function ContributionItemInner({ contribution, value, maxValue }: ContributionIt
   const { intensity, yearMonthDay, day, isRecovered, isHoliday, holidayName } =
     useContributionMeta(contribution, value, maxValue);
 
-  if (contribution?.createdAt?.includes('2025-10-03')) {
-    console.log(`[Holidays] ContributionItem for 2025-10-03:`, {
-      contribution,
-      isHoliday,
-      holidayName,
-      intensity,
-    });
-  }
-
   const { containerClassName, textClassName } = useContributionClasses(
     intensity,
     isRecovered,
