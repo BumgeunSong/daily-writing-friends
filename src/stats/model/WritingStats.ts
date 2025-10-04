@@ -20,6 +20,7 @@ export type Contribution = {
   createdAt: string;
   contentLength: number | null;
   isRecovered?: boolean;
+  isHoliday?: boolean;
 };
 
 export interface WritingBadge {

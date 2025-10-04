@@ -26,12 +26,15 @@ function useContributionMeta(
     const isRecovered = isWritingContribution(contribution)
       ? Boolean(contribution.isRecovered)
       : false;
+    const isHoliday = contribution?.isHoliday ?? false;
 
     const intensity = isRecovered
       ? -1
-      : !value
-        ? 0
-        : Math.ceil((value / Math.max(maxValue, 1)) * 4);
+      : isHoliday
+        ? -2
+        : !value
+          ? 0
+          : Math.ceil((value / Math.max(maxValue, 1)) * 4);
 
     const createdAt = contribution?.createdAt;
     const parsed = createdAt ? new Date(createdAt) : null;
@@ -40,23 +43,24 @@ function useContributionMeta(
       : '';
     const day = parsed ? parsed.getDate().toString() : '';
 
-    return { intensity, yearMonthDay, day, isRecovered };
+    return { intensity, yearMonthDay, day, isRecovered, isHoliday };
   }, [contribution, value, maxValue]);
 }
 
-function useContributionClasses(intensity: number, isRecovered: boolean) {
+function useContributionClasses(intensity: number, isRecovered: boolean, isHoliday: boolean) {
   const containerClassName = useMemo(
     () =>
       cn(
         'aspect-square w-full rounded-sm relative flex items-center justify-center border border-border/30',
         isRecovered && 'bg-blue-400 dark:bg-blue-400/80',
-        !isRecovered && intensity === 0 && 'bg-muted/50',
-        !isRecovered && intensity === 1 && 'bg-green-200 dark:bg-green-800/60',
-        !isRecovered && intensity === 2 && 'bg-green-400 dark:bg-green-600/70',
-        !isRecovered && intensity === 3 && 'bg-green-600 dark:bg-green-500/80',
-        !isRecovered && intensity === 4 && 'bg-green-800 dark:bg-green-400',
+        isHoliday && 'bg-gray-300 dark:bg-gray-600',
+        !isRecovered && !isHoliday && intensity === 0 && 'bg-muted/50',
+        !isRecovered && !isHoliday && intensity === 1 && 'bg-green-200 dark:bg-green-800/60',
+        !isRecovered && !isHoliday && intensity === 2 && 'bg-green-400 dark:bg-green-600/70',
+        !isRecovered && !isHoliday && intensity === 3 && 'bg-green-600 dark:bg-green-500/80',
+        !isRecovered && !isHoliday && intensity === 4 && 'bg-green-800 dark:bg-green-400',
       ),
-    [intensity, isRecovered],
+    [intensity, isRecovered, isHoliday],
   );
 
   const textClassName = useMemo(
@@ -72,12 +76,16 @@ function useContributionClasses(intensity: number, isRecovered: boolean) {
 }
 
 function ContributionItemInner({ contribution, value, maxValue }: ContributionItemProps) {
-  const { intensity, yearMonthDay, day, isRecovered } = useContributionMeta(
+  const { intensity, yearMonthDay, day, isRecovered, isHoliday } = useContributionMeta(
     contribution,
     value,
     maxValue,
   );
-  const { containerClassName, textClassName } = useContributionClasses(intensity, isRecovered);
+  const { containerClassName, textClassName } = useContributionClasses(
+    intensity,
+    isRecovered,
+    isHoliday,
+  );
 
   return (
     <TooltipProvider>
@@ -91,6 +99,7 @@ function ContributionItemInner({ contribution, value, maxValue }: ContributionIt
           <p className='text-xs'>
             {yearMonthDay}
             {isRecovered ? ' (회복됨)' : ''}
+            {isHoliday ? ' (공휴일)' : ''}
           </p>
         </TooltipContent>
       </Tooltip>

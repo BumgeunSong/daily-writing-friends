@@ -1,5 +1,6 @@
 import { Contribution } from '@/stats/model/WritingStats';
 import { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
+import { isConfigurableHoliday } from '@/shared/utils/dateUtils';
 
 // Constants for grid layout
 const WEEKS_TO_DISPLAY = 4;
@@ -167,17 +168,25 @@ export function filterWeekdayContributions<T extends { createdAt: any }>(contrib
   return contributions.filter(isWeekdayContribution);
 }
 
-function createPostingPlaceholderWithZeroContent(dateStr: string): Contribution {
+function createPostingPlaceholderWithZeroContent(
+  dateStr: string,
+  isHoliday = false,
+): Contribution {
   return {
     createdAt: dateStr,
-    contentLength: 0
+    contentLength: 0,
+    isHoliday,
   };
 }
 
-function createCommentingPlaceholderWithZeroCount(dateStr: string): CommentingContribution {
+function createCommentingPlaceholderWithZeroCount(
+  dateStr: string,
+  isHoliday = false,
+): CommentingContribution {
   return {
     createdAt: dateStr,
-    countOfCommentAndReplies: 0
+    countOfCommentAndReplies: 0,
+    isHoliday,
   };
 }
 
@@ -194,10 +203,14 @@ function isDateWithinTodayInclusive(date: Date, today: Date): boolean {
   return dateStr <= todayStr;
 }
 
-function createPlaceholderByType(contributionType: 'posting' | 'commenting', dateStr: string): ContributionData {
-  return contributionType === 'posting' 
-    ? createPostingPlaceholderWithZeroContent(dateStr)
-    : createCommentingPlaceholderWithZeroCount(dateStr);
+function createPlaceholderByType(
+  contributionType: 'posting' | 'commenting',
+  dateStr: string,
+  isHoliday = false,
+): ContributionData {
+  return contributionType === 'posting'
+    ? createPostingPlaceholderWithZeroContent(dateStr, isHoliday)
+    : createCommentingPlaceholderWithZeroCount(dateStr, isHoliday);
 }
 
 export function initializeGridWithPlaceholders(
@@ -205,14 +218,16 @@ export function initializeGridWithPlaceholders(
   weeksAgo: Date,
   today: Date,
   contributionType: 'posting' | 'commenting',
+  configurableHolidays?: Map<string, string>,
 ): void {
   for (let weekRow = 0; weekRow < WEEKS_TO_DISPLAY; weekRow++) {
     for (let weekdayColumn = 0; weekdayColumn < WEEKDAYS_COUNT; weekdayColumn++) {
       const date = calculateGridPositionDate(weeksAgo, weekRow, weekdayColumn);
-      
+
       if (isDateWithinTodayInclusive(date, today)) {
         const dateStr = formatDateInKoreanTimezone(date);
-        const placeholder = createPlaceholderByType(contributionType, dateStr);
+        const isHoliday = isConfigurableHoliday(date, configurableHolidays);
+        const placeholder = createPlaceholderByType(contributionType, dateStr, isHoliday);
         matrices.weeklyContributions[weekRow][weekdayColumn] = placeholder;
       }
     }
@@ -255,11 +270,14 @@ function extractContentLengthValue(contribution: Contribution): number {
   return contribution.contentLength ?? 0;
 }
 
-export function processPostingContributions(contributions: Contribution[]): GridResult {
+export function processPostingContributions(
+  contributions: Contribution[],
+  configurableHolidays?: Map<string, string>,
+): GridResult {
   const matrices = createEmptyMatrices();
   const { weeksAgo, today } = getTimeRange();
 
-  initializeGridWithPlaceholders(matrices, weeksAgo, today, 'posting');
+  initializeGridWithPlaceholders(matrices, weeksAgo, today, 'posting', configurableHolidays);
   const { maxValue } = processContributionsInGrid(
     contributions,
     matrices,
@@ -281,11 +299,12 @@ function extractCommentAndRepliesCount(contribution: CommentingContribution): nu
 
 export function processCommentingContributions(
   contributions: CommentingContribution[],
+  configurableHolidays?: Map<string, string>,
 ): GridResult {
   const matrices = createEmptyMatrices();
   const { weeksAgo, today } = getTimeRange();
 
-  initializeGridWithPlaceholders(matrices, weeksAgo, today, 'commenting');
+  initializeGridWithPlaceholders(matrices, weeksAgo, today, 'commenting', configurableHolidays);
   const { maxValue } = processContributionsInGrid(
     contributions,
     matrices,

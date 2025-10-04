@@ -1,4 +1,4 @@
-const HOLIDAYS: Date[] = [
+const KOREAN_HOLIDAYS: Date[] = [
   new Date('2024-12-31T00:00:00Z'),
   new Date('2025-01-01T00:00:00Z'),
   new Date('2025-01-28T00:00:00Z'),
@@ -7,11 +7,14 @@ const HOLIDAYS: Date[] = [
 ];
 
 // functions to get recent working days (return value's length should be equal to numberOfDays)
-export function getRecentWorkingDays(numberOfDays: number = 20): Date[] {
+export function getRecentWorkingDays(
+  numberOfDays: number = 20,
+  configurableHolidays?: Map<string, string>,
+): Date[] {
   const workingDays: Date[] = [];
   const currentDate = new Date();
   while (workingDays.length < numberOfDays) {
-    if (isWorkingDay(currentDate)) {
+    if (isWorkingDay(currentDate, 'Asia/Seoul', configurableHolidays)) {
       workingDays.push(new Date(currentDate));
     }
     currentDate.setDate(currentDate.getDate() - 1);
@@ -19,9 +22,16 @@ export function getRecentWorkingDays(numberOfDays: number = 20): Date[] {
   return workingDays.reverse();
 }
 
-export function isWorkingDay(date: Date, timeZone: string = 'Asia/Seoul'): boolean {
-  // if it's weekend or holiday based on 'Asia/Seoul' timezone, return false
-  if (isWeekend(date, timeZone) || isHoliday(date, timeZone)) {
+export function isWorkingDay(
+  date: Date,
+  timeZone: string = 'Asia/Seoul',
+  configurableHolidays?: Map<string, string>,
+): boolean {
+  if (
+    isWeekend(date, timeZone) ||
+    isKoreanHoliday(date, timeZone) ||
+    isConfigurableHoliday(date, configurableHolidays)
+  ) {
     return false;
   }
   return true;
@@ -33,14 +43,29 @@ function isWeekend(date: Date, timeZone: string): boolean {
   return day === 0 || day === 6;
 }
 
-function isHoliday(date: Date, timeZone: string): boolean {
+function isKoreanHoliday(date: Date, timeZone: string): boolean {
   const dateInTimeZone = new Date(date.toLocaleString('en-US', { timeZone }));
-  return HOLIDAYS.some(
+  return KOREAN_HOLIDAYS.some(
     (holiday) =>
       dateInTimeZone.getFullYear() === holiday.getFullYear() &&
       dateInTimeZone.getMonth() === holiday.getMonth() &&
       dateInTimeZone.getDate() === holiday.getDate(),
   );
+}
+
+/**
+ * Check if a date is a configurable holiday
+ */
+export function isConfigurableHoliday(
+  date: Date,
+  configurableHolidays?: Map<string, string>,
+): boolean {
+  if (!configurableHolidays || configurableHolidays.size === 0) {
+    return false;
+  }
+
+  const dateKey = getDateKey(date);
+  return configurableHolidays.has(dateKey);
 }
 
 // 날짜를 YYYY.MM.DD HH:MM 형식으로 포매팅하는 함수

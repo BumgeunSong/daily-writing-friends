@@ -24,8 +24,14 @@ import { isWeekend, addDays, subDays, isSameDay, isAfter, isBefore, endOfDay } f
 import { formatInTimeZone, fromZonedTime, toZonedTime } from 'date-fns-tz';
 import { Timestamp } from 'firebase-admin/firestore';
 import admin from './admin';
+import { YearHolidays } from './types/Holiday';
 
 const SEOUL_TIMEZONE = 'Asia/Seoul';
+
+// Cache for configurable holidays to minimize Firestore reads
+let holidaysCache: Map<string, string> | null = null;
+let holidaysCacheTimestamp = 0;
+const CACHE_TTL = 1000 * 60 * 60; // 1 hour cache
 
 // ===== CORE SEOUL TIMEZONE UTILITIES =====
 
@@ -70,11 +76,112 @@ export function getCurrentSeoulDate(): Date {
   return toZonedTime(new Date(), SEOUL_TIMEZONE);
 }
 
+// ===== CONFIGURABLE HOLIDAYS =====
+
+/**
+ * Get unique years from a date range
+ */
+function getYearsInRange(startDate: Date, endDate: Date): string[] {
+  const startYear = startDate.getFullYear();
+  const endYear = endDate.getFullYear();
+
+  if (startYear === endYear) {
+    return [startYear.toString()];
+  }
+
+  return [startYear.toString(), endYear.toString()];
+}
+
+/**
+ * Fetch holidays for a specific year from year-sharded structure
+ */
+async function fetchHolidaysForYear(year: string): Promise<Map<string, string>> {
+  try {
+    const yearDocRef = admin.firestore().collection('holidays').doc(year);
+    const snapshot = await yearDocRef.get();
+
+    const holidayMap = new Map<string, string>();
+
+    if (snapshot.exists) {
+      const data = snapshot.data() as YearHolidays;
+      if (data?.items && Array.isArray(data.items)) {
+        data.items.forEach((holiday) => {
+          holidayMap.set(holiday.date, holiday.name);
+        });
+      }
+    }
+
+    return holidayMap;
+  } catch (error) {
+    console.error(`Error fetching holidays for year ${year}:`, error);
+    return new Map<string, string>();
+  }
+}
+
+/**
+ * Fetch configurable holidays from Firestore with caching
+ * Uses year-sharded structure
+ */
+async function fetchConfigurableHolidays(): Promise<Map<string, string>> {
+  const now = Date.now();
+
+  // Return cached data if still valid
+  if (holidaysCache && now - holidaysCacheTimestamp < CACHE_TTL) {
+    return holidaysCache;
+  }
+
+  try {
+    // Fetch current year ± 1 for typical use cases
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setFullYear(today.getFullYear() - 1);
+    const endDate = new Date(today);
+    endDate.setFullYear(today.getFullYear() + 1);
+
+    const years = getYearsInRange(startDate, endDate);
+
+    // Fetch year-based documents
+    const yearPromises = years.map(year => fetchHolidaysForYear(year));
+    const yearMaps = await Promise.all(yearPromises);
+
+    // Merge all year maps
+    const mergedMap = new Map<string, string>();
+    yearMaps.forEach(yearMap => {
+      yearMap.forEach((name, date) => {
+        mergedMap.set(date, name);
+      });
+    });
+
+    // Update cache
+    holidaysCache = mergedMap;
+    holidaysCacheTimestamp = now;
+
+    return mergedMap;
+  } catch (error) {
+    console.error('Error fetching configurable holidays:', error);
+    return new Map<string, string>();
+  }
+}
+
+/**
+ * Check if a date is a configurable holiday
+ */
+function isConfigurableHoliday(date: Date, holidayMap: Map<string, string>): boolean {
+  const dateKey = formatSeoulDate(date);
+  return holidayMap.has(dateKey);
+}
+
 // ===== WORKING DAY OPERATIONS =====
 
 /**
  * Check if a date is a working day in Seoul timezone
  * Centralizes working day logic to ensure consistency
+ *
+ * NOTE: Currently only checks weekends. Configurable holidays are checked
+ * separately in the frontend. This is synchronous to maintain compatibility
+ * with existing pure functions in streak calculations.
+ *
+ * For async holiday checking, use isSeoulWorkingDayAsync() instead.
  */
 export function isSeoulWorkingDay(date: Date): boolean {
   if (!(date instanceof Date) || isNaN(date.getTime())) {
@@ -82,17 +189,38 @@ export function isSeoulWorkingDay(date: Date): boolean {
   }
 
   // Check day of week directly in Seoul timezone without date conversion
-  // This avoids the timezone conversion issues that can change the day
   const dayOfWeek = date.toLocaleDateString('en-US', {
     timeZone: 'Asia/Seoul',
     weekday: 'short',
   });
 
   // Weekend check: Saturday = 'Sat', Sunday = 'Sun'
-  const isWeekend = dayOfWeek === 'Sat' || dayOfWeek === 'Sun';
+  const isWeekendDay = dayOfWeek === 'Sat' || dayOfWeek === 'Sun';
 
-  // TODO: Holiday logic will be implemented in future work
-  return !isWeekend;
+  return !isWeekendDay;
+}
+
+/**
+ * Async version that includes configurable holidays check
+ * Use this when you need to check holidays and can handle async
+ */
+export async function isSeoulWorkingDayAsync(date: Date): Promise<boolean> {
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    throw new Error('Invalid Date object provided to isSeoulWorkingDayAsync');
+  }
+
+  // First check weekends (synchronous)
+  if (!isSeoulWorkingDay(date)) {
+    return false;
+  }
+
+  // Then check configurable holidays (async)
+  const holidays = await fetchConfigurableHolidays();
+  if (isConfigurableHoliday(date, holidays)) {
+    return false;
+  }
+
+  return true;
 }
 
 /**

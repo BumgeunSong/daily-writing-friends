@@ -5,6 +5,7 @@ import { Replying } from '@/user/model/Replying';
 export type CommentingContribution = {
   createdAt: string; // YYYY-MM-DD
   countOfCommentAndReplies: number | null;
+  isHoliday?: boolean;
 };
 
 export function aggregateCommentingContributions(
