@@ -57,9 +57,9 @@ export default function StatsPage() {
   }
 
   return (
-    <div className='flex min-h-screen flex-col bg-background'>
+    <div className='min-h-screen bg-background'>
       <StatsHeader />
-      <main className='container flex-1 px-3 py-2 md:px-4'>
+      <main className='container mx-auto px-3 py-2 md:px-4'>
         <ScrollArea className='h-full' id={STATS_SCROLL_ID}>
           <StatsNoticeBanner />
           <Tabs value={tab} onValueChange={(v) => setTab(v as TabType)}>
@@ -111,9 +111,9 @@ export default function StatsPage() {
 // LoadingState 컴포넌트 - 스켈레톤 UI 표시
 function LoadingState() {
   return (
-    <div className='flex min-h-screen flex-col bg-background'>
+    <div className='min-h-screen bg-background'>
       <StatsHeader />
-      <main className='container flex-1 px-3 py-2 md:px-4'>
+      <main className='container mx-auto px-3 py-2 md:px-4'>
         <ScrollArea className='h-full' id={STATS_SCROLL_ID}>
           <StatsNoticeBanner />
           <div className='space-y-4 pb-20'>
@@ -150,9 +150,9 @@ function LoadingState() {
 // MaintenanceState 컴포넌트 - 유지보수 알림 표시
 function MaintenanceState() {
   return (
-    <div className='flex min-h-screen flex-col bg-background'>
+    <div className='min-h-screen bg-background'>
       <StatsHeader />
-      <main className='container flex-1 px-3 py-2 md:px-4'>
+      <main className='container mx-auto px-3 py-2 md:px-4'>
         <ScrollArea className='h-full' id={STATS_SCROLL_ID}>
           <div className='flex flex-col items-center justify-center space-y-6 py-16'>
             <img
@@ -176,9 +176,9 @@ function MaintenanceState() {
 // ErrorState 컴포넌트 - 오류 메시지 표시
 function ErrorState({ error }: { error: Error }) {
   return (
-    <div className='flex min-h-screen flex-col items-center justify-center bg-background'>
+    <div className='min-h-screen bg-background'>
       <StatsHeader />
-      <main className='container flex flex-col items-center justify-center py-8'>
+      <main className='container mx-auto flex flex-col items-center justify-center px-3 py-8 md:px-4'>
         <h2 className='text-xl font-semibold text-red-600'>오류: {error.message}</h2>
         <p className='text-muted-foreground'>
           데이터를 불러올 수 없습니다. 나중에 다시 시도해주세요.
