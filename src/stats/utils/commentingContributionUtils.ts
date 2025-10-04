@@ -6,6 +6,7 @@ export type CommentingContribution = {
   createdAt: string; // YYYY-MM-DD
   countOfCommentAndReplies: number | null;
   isHoliday?: boolean;
+  holidayName?: string;
 };
 
 export function aggregateCommentingContributions(

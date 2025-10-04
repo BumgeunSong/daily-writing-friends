@@ -68,14 +68,15 @@ function useContributionMeta(
     const { isRecovered, isHoliday } = extractContributionFlags(contribution);
     const intensity = calculateIntensity(value, maxValue, isRecovered, isHoliday);
     const { yearMonthDay, day } = formatDate(contribution);
+    const holidayName = contribution?.holidayName;
 
-    return { intensity, yearMonthDay, day, isRecovered, isHoliday };
+    return { intensity, yearMonthDay, day, isRecovered, isHoliday, holidayName };
   }, [contribution, value, maxValue]);
 }
 
 function getBackgroundColorClass(intensity: number, isRecovered: boolean, isHoliday: boolean) {
   if (isRecovered) return 'bg-blue-400 dark:bg-blue-400/80';
-  if (isHoliday) return 'bg-gray-300 dark:bg-gray-600';
+  if (isHoliday) return 'bg-red-50 dark:bg-red-950/40';
 
   const colorMap: Record<number, string> = {
     [INTENSITY_NONE]: 'bg-muted/50',
@@ -110,26 +111,38 @@ function useContributionClasses(intensity: number, isRecovered: boolean, isHolid
   return { containerClassName, textClassName };
 }
 
-function buildTooltipText(yearMonthDay: string, isRecovered: boolean, isHoliday: boolean): string {
+function buildTooltipText(
+  yearMonthDay: string,
+  isRecovered: boolean,
+  isHoliday: boolean,
+  holidayName?: string,
+): string {
   let text = yearMonthDay;
   if (isRecovered) text += ' (회복됨)';
-  if (isHoliday) text += ' (공휴일)';
+  if (isHoliday && holidayName) text += ` (${holidayName})`;
   return text;
 }
 
 function ContributionItemInner({ contribution, value, maxValue }: ContributionItemProps) {
-  const { intensity, yearMonthDay, day, isRecovered, isHoliday } = useContributionMeta(
-    contribution,
-    value,
-    maxValue,
-  );
+  const { intensity, yearMonthDay, day, isRecovered, isHoliday, holidayName } =
+    useContributionMeta(contribution, value, maxValue);
+
+  if (contribution?.createdAt?.includes('2025-10-03')) {
+    console.log(`[Holidays] ContributionItem for 2025-10-03:`, {
+      contribution,
+      isHoliday,
+      holidayName,
+      intensity,
+    });
+  }
+
   const { containerClassName, textClassName } = useContributionClasses(
     intensity,
     isRecovered,
     isHoliday,
   );
 
-  const tooltipText = buildTooltipText(yearMonthDay, isRecovered, isHoliday);
+  const tooltipText = buildTooltipText(yearMonthDay, isRecovered, isHoliday, holidayName);
 
   return (
     <TooltipProvider>

@@ -150,8 +150,17 @@ function updateMatricesAtPosition(
   value: number,
 ): void {
   const { weekRow, weekdayColumn } = position;
+  const existingContribution = matrices.weeklyContributions[weekRow][weekdayColumn];
+
+  // Preserve isHoliday and holidayName from placeholder when placing real contribution
+  const mergedContribution = {
+    ...contribution,
+    isHoliday: existingContribution?.isHoliday ?? contribution.isHoliday,
+    holidayName: existingContribution?.holidayName ?? contribution.holidayName,
+  };
+
   matrices.matrix[weekRow][weekdayColumn] = value;
-  matrices.weeklyContributions[weekRow][weekdayColumn] = contribution;
+  matrices.weeklyContributions[weekRow][weekdayColumn] = mergedContribution;
 }
 
 export function placeContributionInGrid(
@@ -184,22 +193,26 @@ export function filterWeekdayContributions<T extends { createdAt: any }>(contrib
 function createPostingPlaceholderWithZeroContent(
   dateStr: string,
   isHoliday = false,
+  holidayName?: string,
 ): Contribution {
   return {
     createdAt: dateStr,
     contentLength: 0,
     isHoliday,
+    holidayName,
   };
 }
 
 function createCommentingPlaceholderWithZeroCount(
   dateStr: string,
   isHoliday = false,
+  holidayName?: string,
 ): CommentingContribution {
   return {
     createdAt: dateStr,
     countOfCommentAndReplies: 0,
     isHoliday,
+    holidayName,
   };
 }
 
@@ -221,10 +234,11 @@ function createPlaceholderByType(
   contributionType: 'posting' | 'commenting',
   dateStr: string,
   isHoliday = false,
+  holidayName?: string,
 ): ContributionData {
   return contributionType === 'posting'
-    ? createPostingPlaceholderWithZeroContent(dateStr, isHoliday)
-    : createCommentingPlaceholderWithZeroCount(dateStr, isHoliday);
+    ? createPostingPlaceholderWithZeroContent(dateStr, isHoliday, holidayName)
+    : createCommentingPlaceholderWithZeroCount(dateStr, isHoliday, holidayName);
 }
 
 function shouldInitializePlaceholder(date: Date, today: Date): boolean {
@@ -241,7 +255,18 @@ function initializeSinglePlaceholder(
 ): void {
   const dateStr = formatDateInKoreanTimezone(date);
   const isHoliday = isConfigurableHoliday(date, configurableHolidays);
-  const placeholder = createPlaceholderByType(contributionType, dateStr, isHoliday);
+  const holidayName = isHoliday ? configurableHolidays?.get(dateStr) : undefined;
+  const placeholder = createPlaceholderByType(contributionType, dateStr, isHoliday, holidayName);
+
+  if (dateStr === '2025-10-03') {
+    console.log(`[Holidays] Creating placeholder for ${dateStr}:`, {
+      isHoliday,
+      holidayName,
+      placeholder,
+      configurableHolidays: configurableHolidays?.size,
+    });
+  }
+
   matrices.weeklyContributions[weekRow][weekdayColumn] = placeholder;
 }
 

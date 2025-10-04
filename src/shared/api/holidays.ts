@@ -10,11 +10,12 @@ function getYearsInRange(startDate: Date, endDate: Date): string[] {
   const startYear = startDate.getFullYear();
   const endYear = endDate.getFullYear();
 
-  if (startYear === endYear) {
-    return [startYear.toString()];
+  const years: string[] = [];
+  for (let year = startYear; year <= endYear; year++) {
+    years.push(year.toString());
   }
 
-  return [startYear.toString(), endYear.toString()];
+  return years;
 }
 
 /**
@@ -54,8 +55,9 @@ export async function fetchHolidaysForRange(
 
   const yearPromises = years.map((year) => fetchHolidaysForYear(year));
   const yearResults = await Promise.all(yearPromises);
+  const allHolidays = yearResults.flat();
 
-  return yearResults.flat();
+  return allHolidays;
 }
 
 /**
