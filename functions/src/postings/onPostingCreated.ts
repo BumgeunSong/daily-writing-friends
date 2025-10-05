@@ -4,6 +4,7 @@ import { calculatePostingTransitions } from "../recoveryStatus/stateTransitions"
 import { updateStreakInfo } from "../recoveryStatus/streakUtils";
 import { convertToSeoulTime } from "../shared/seoulTime";
 import { addRecoveryHistoryToSubcollection } from "../recoveryStatus/recoveryUtils";
+import { appendPostCreatedEvent } from "../eventSourcing/append/appendEvent";
 
 export const onPostingCreated = onDocumentCreated(
   'users/{userId}/postings/{postingId}',
@@ -54,7 +55,16 @@ export const onPostingCreated = onDocumentCreated(
       }
       
       console.log(`[PostingCreated] Successfully processed transitions for user: ${userId}`);
-      
+
+      // Phase 1: Dual-write to event stream (new event-sourced architecture)
+      await appendPostCreatedEvent({
+        userId,
+        postId: postingData.post.id,
+        boardId: postingData.board.id,
+        contentLength: postingData.post.contentLength,
+      });
+      console.log(`[EventSourcing] Appended PostCreated event for user ${userId}`);
+
     } catch (error) {
       console.error(`[PostingCreated] Error processing posting creation for user ${userId}:`, error);
     }
