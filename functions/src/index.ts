@@ -54,3 +54,11 @@ export {
 export {
   generateCommentSuggestions
 } from './commentSuggestion';
+
+export {
+  onEventCreatedTrigger
+} from './eventSourcing/projection/onEventCreated';
+
+export {
+  migrateDefaultTimezones
+} from './eventSourcing/migrations/setDefaultTimezones';
