@@ -26,6 +26,16 @@ const db = admin.firestore();
  * 3. Apply events via pure reducers (Phase 1 and Phase 2)
  * 4. Write new states in same transaction
  *
+ * Single-batch approach:
+ * - Processes up to 500 events per invocation
+ * - Scheduler (every 5 min) provides natural batching for backlogs
+ * - Simpler, bounded execution time, lower timeout risk
+ *
+ * If projection becomes too slow to catch up (e.g., >500 event backlogs common):
+ * - Add loop to process multiple batches per invocation
+ * - Add safety limit (e.g., max 100 iterations = 50k events)
+ * - Log warnings if max iterations hit
+ *
  * If no new events exist, transaction is a no-op (idempotency guarantee).
  */
 export async function projectStreakForUser(userId: string): Promise<void> {
