@@ -64,5 +64,6 @@ export {
 } from './eventSourcing/migrations/setDefaultTimezones';
 
 export {
-  processDayBoundariesHttp
+  processDayBoundariesBaseline,
+  processDayBoundariesPeak
 } from './eventSourcing/scheduler/processDayBoundaries';

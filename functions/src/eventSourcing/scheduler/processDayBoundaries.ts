@@ -1,5 +1,5 @@
 import admin from '../../shared/admin';
-import { onRequest } from 'firebase-functions/v2/https';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import { addDays, parseISO } from 'date-fns';
 import { appendDayClosedEvent } from '../append/appendDayClosedEvent';
@@ -9,10 +9,8 @@ import { EventMeta } from '../types/EventMeta';
 const db = admin.firestore();
 
 /**
- * Process day boundaries for all users.
- * Called by Cloud Scheduler at various frequencies:
- * - Every 5 minutes (baseline)
- * - Every 1 minute during peak hours (22:00-01:00 KST)
+ * Baseline scheduler: Process day boundaries every 5 minutes.
+ * Handles most users outside of peak midnight hours.
  *
  * For each user:
  * 1. Compute yesterday's dayKey in user's timezone
@@ -22,51 +20,72 @@ const db = admin.firestore();
  *
  * Idempotency: DayClosed events use idempotency key and lastClosedLocalDate check.
  */
-export const processDayBoundariesHttp = onRequest(
-  { timeoutSeconds: 540, memory: '512MiB' },
-  async (req, res) => {
-    try {
-      console.log('[DayBoundary] Starting day boundary processing...');
-
-      const usersSnapshot = await db.collection('users').get();
-      let processedCount = 0;
-      let skippedCount = 0;
-      let errorCount = 0;
-
-      for (const userDoc of usersSnapshot.docs) {
-        const userId = userDoc.id;
-        const userData = userDoc.data();
-        const timezone = userData?.profile?.timezone ?? 'Asia/Seoul';
-
-        try {
-          const processed = await processUserDayBoundary(userId, timezone);
-          if (processed) {
-            processedCount++;
-          } else {
-            skippedCount++;
-          }
-        } catch (error) {
-          console.error(`[DayBoundary] Error processing user ${userId}:`, error);
-          errorCount++;
-        }
-      }
-
-      const summary = {
-        success: true,
-        totalUsers: usersSnapshot.size,
-        processed: processedCount,
-        skipped: skippedCount,
-        errors: errorCount,
-      };
-
-      console.log('[DayBoundary] Processing complete:', summary);
-      res.status(200).json(summary);
-    } catch (error) {
-      console.error('[DayBoundary] Fatal error:', error);
-      res.status(500).json({ success: false, error: String(error) });
-    }
+export const processDayBoundariesBaseline = onSchedule(
+  {
+    schedule: 'every 5 minutes',
+    timeZone: 'Asia/Seoul',
+    timeoutSeconds: 540,
+    memory: '512MiB',
+  },
+  async (event) => {
+    await processDayBoundaries('[Baseline]');
   },
 );
+
+/**
+ * Peak scheduler: Process day boundaries every 1 minute during 22:00-00:59 KST.
+ * Ensures timely processing during the midnight boundary crossing window.
+ */
+export const processDayBoundariesPeak = onSchedule(
+  {
+    schedule: '* 22-23,0 * * *', // Every minute during 22:00-23:59 and 00:00-00:59 KST
+    timeZone: 'Asia/Seoul',
+    timeoutSeconds: 540,
+    memory: '512MiB',
+  },
+  async (event) => {
+    await processDayBoundaries('[Peak]');
+  },
+);
+
+/**
+ * Core processing logic shared by both schedulers.
+ */
+async function processDayBoundaries(prefix: string): Promise<void> {
+  try {
+    console.log(`${prefix} Starting day boundary processing...`);
+
+    const usersSnapshot = await db.collection('users').get();
+    let processedCount = 0;
+    let skippedCount = 0;
+    let errorCount = 0;
+
+    for (const userDoc of usersSnapshot.docs) {
+      const userId = userDoc.id;
+      const userData = userDoc.data();
+      const timezone = userData?.profile?.timezone ?? 'Asia/Seoul';
+
+      try {
+        const processed = await processUserDayBoundary(userId, timezone);
+        if (processed) {
+          processedCount++;
+        } else {
+          skippedCount++;
+        }
+      } catch (error) {
+        console.error(`${prefix} Error processing user ${userId}:`, error);
+        errorCount++;
+      }
+    }
+
+    console.log(
+      `${prefix} Processing complete: ${processedCount} processed, ${skippedCount} skipped, ${errorCount} errors (total: ${usersSnapshot.size} users)`,
+    );
+  } catch (error) {
+    console.error(`${prefix} Fatal error:`, error);
+    throw error;
+  }
+}
 
 /**
  * Process day boundary for a single user.
