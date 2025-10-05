@@ -62,3 +62,7 @@ export {
 export {
   migrateDefaultTimezones
 } from './eventSourcing/migrations/setDefaultTimezones';
+
+export {
+  processDayBoundariesHttp
+} from './eventSourcing/scheduler/processDayBoundaries';
