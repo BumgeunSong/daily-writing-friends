@@ -4,6 +4,7 @@ export enum EventType {
   POST_CREATED = 'PostCreated',
   POST_DELETED = 'PostDeleted',
   TIMEZONE_CHANGED = 'TimezoneChanged',
+  DAY_CLOSED = 'DayClosed',
 }
 
 export interface BaseEvent {
@@ -38,4 +39,9 @@ export interface TimezoneChangedEvent extends BaseEvent {
   };
 }
 
-export type Event = PostCreatedEvent | PostDeletedEvent | TimezoneChangedEvent;
+export interface DayClosedEvent extends BaseEvent {
+  type: EventType.DAY_CLOSED;
+  idempotencyKey: string; // Format: ${userId}:${dayKey}:closed
+}
+
+export type Event = PostCreatedEvent | PostDeletedEvent | TimezoneChangedEvent | DayClosedEvent;
