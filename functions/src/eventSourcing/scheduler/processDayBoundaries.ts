@@ -110,7 +110,7 @@ async function processUserDayBoundary(userId: string, timezone: string): Promise
   const lastClosedLocalDate = eventMeta?.lastClosedLocalDate;
 
   // Determine which days need to be closed
-  const daysToClose = getDaysToClose(lastClosedLocalDate, targetDayKey);
+  const daysToClose = getDaysToClose(lastClosedLocalDate, targetDayKey, timezone);
 
   if (daysToClose.length === 0) {
     // Already up to date
@@ -142,9 +142,14 @@ async function processUserDayBoundary(userId: string, timezone: string): Promise
  *
  * @param lastClosedLocalDate - Last closed dayKey (YYYY-MM-DD) or undefined
  * @param targetDayKey - Target dayKey to close up to (YYYY-MM-DD)
+ * @param timezone - User's timezone for formatting dates
  * @returns Array of dayKeys to close, in chronological order
  */
-function getDaysToClose(lastClosedLocalDate: string | undefined, targetDayKey: string): string[] {
+function getDaysToClose(
+  lastClosedLocalDate: string | undefined,
+  targetDayKey: string,
+  timezone: string,
+): string[] {
   if (!lastClosedLocalDate) {
     // No days closed yet - only close targetDayKey (don't backfill history)
     return [targetDayKey];
@@ -161,7 +166,7 @@ function getDaysToClose(lastClosedLocalDate: string | undefined, targetDayKey: s
   const targetDate = parseISO(targetDayKey);
 
   while (currentDate <= targetDate) {
-    days.push(formatInTimeZone(currentDate, 'UTC', 'yyyy-MM-dd'));
+    days.push(formatInTimeZone(currentDate, timezone, 'yyyy-MM-dd'));
     currentDate = addDays(currentDate, 1);
   }
 
