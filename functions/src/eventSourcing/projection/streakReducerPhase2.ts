@@ -6,6 +6,7 @@ import {
   computeStreakIncrement,
   getEndOfDay,
 } from '../utils/workingDayUtils';
+import { formatInTimeZone } from 'date-fns-tz';
 
 /**
  * Creates initial Phase 2 projection state.
@@ -279,5 +280,5 @@ function calculateRestoredStreak(postsPerDay: Map<string, number>, timezone: str
  */
 function dayKeyFromTimestamp(timestamp: { toDate: () => Date }, timezone: string): string {
   const date = timestamp.toDate();
-  return date.toISOString().split('T')[0]; // Simplified - should use formatInTimeZone for accuracy
+  return formatInTimeZone(date, timezone, 'yyyy-MM-dd');
 }
