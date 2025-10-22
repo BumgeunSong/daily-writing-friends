@@ -8,6 +8,7 @@ export interface StreakStatus {
   currentPosts?: number;
   deadline?: Timestamp;
   missedDate?: Timestamp;
+  missedPostDates?: string[]; // dayKeys of posts during missed period for rebuild tracking
 }
 
 export interface StreamProjectionPhase2 {

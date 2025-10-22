@@ -5,6 +5,7 @@ import {
   computeRecoveryWindow,
   computeStreakIncrement,
   getEndOfDay,
+  getNextWorkingDayKey,
 } from '../utils/workingDayUtils';
 import { formatInTimeZone } from 'date-fns-tz';
 
@@ -116,14 +117,21 @@ function handlePostCreated(
 
     // Check if transition to onStreak via rebuild
     if (newState.status.type === 'onStreak') {
-      // Calculate restored streak based on posts
-      const restoredStreak = calculateRestoredStreak(postsPerDay, timezone);
+      // Calculate restored streak from the missedPostDates that were accumulated before transition
+      // Use the old status's missedPostDates to get the count
+      const previousMissedDates = (state.status.type === 'missed' && state.status.missedPostDates)
+        ? state.status.missedPostDates
+        : [];
+
+      // Include the current post that triggered the transition
+      const allMissedDates = [...previousMissedDates, dayKey];
+      const restoredStreak = calculateRestoredStreak(allMissedDates, timezone);
+
       newState.currentStreak = newState.originalStreak + restoredStreak;
       newState.longestStreak = Math.max(newState.longestStreak, newState.currentStreak);
       newState.originalStreak = newState.currentStreak;
 
-      // Clear missed fields
-      delete newState.status.missedDate;
+      // Status is already { type: 'onStreak' } from handleMissedPost
     }
   }
 
@@ -168,7 +176,7 @@ function handleEligiblePost(
  * Handle post during missed status.
  * Check rebuild conditions:
  * - Same-day 2 posts: immediate rebuild
- * - Cross-day ≥2 working days with posts: rebuild
+ * - 2+ consecutive working days with posts: rebuild
  */
 function handleMissedPost(
   state: StreamProjectionPhase2,
@@ -180,23 +188,27 @@ function handleMissedPost(
 
   if (status.type !== 'missed') return status;
 
-  const postsToday = postsPerDay.get(dayKey) || 0;
+  // Track this post in missedPostDates (array of all post dates during missed period)
+  const missedPostDates = [...(status.missedPostDates || [])];
+  missedPostDates.push(dayKey);
 
-  // Same-day rebuild: 2 posts on same day
-  if (postsToday >= 2) {
+  // Check same-day rebuild: count posts on current dayKey (including this one)
+  const postsOnDayKey = missedPostDates.filter(d => d === dayKey).length;
+  if (postsOnDayKey >= 2) {
     return { type: 'onStreak' };
   }
 
-  // Cross-day rebuild: ≥2 working days with at least 1 post each
-  const workingDaysWithPosts = Array.from(postsPerDay.keys()).filter((day) =>
-    isWorkingDayByTz(day, timezone),
-  );
+  // Check cross-day rebuild: consecutive working days with posts
+  const uniqueWorkingDays = Array.from(new Set(
+    missedPostDates.filter(day => isWorkingDayByTz(day, timezone))
+  )).sort();
 
-  if (workingDaysWithPosts.length >= 2) {
+  if (hasConsecutiveWorkingDays(uniqueWorkingDays, timezone)) {
     return { type: 'onStreak' };
   }
 
-  return status;
+  // Still in missed status - update with new post date
+  return { ...status, missedPostDates };
 }
 
 /**
@@ -265,14 +277,55 @@ function handleDayClosed(
 }
 
 /**
- * Calculate restored streak from posts during missed period.
- * Returns the number of working days with at least 1 post.
+ * Check if there are at least 2 consecutive working days in the array.
+ * Requires sorted array of dayKeys (YYYY-MM-DD format).
+ * Returns true if any two consecutive working days are found.
  */
-function calculateRestoredStreak(postsPerDay: Map<string, number>, timezone: string): number {
-  const workingDaysWithPosts = Array.from(postsPerDay.keys()).filter((day) =>
-    isWorkingDayByTz(day, timezone),
-  );
-  return workingDaysWithPosts.length;
+function hasConsecutiveWorkingDays(sortedWorkingDays: string[], timezone: string): boolean {
+  if (sortedWorkingDays.length < 2) return false;
+
+  for (let i = 0; i < sortedWorkingDays.length - 1; i++) {
+    const currentDay = sortedWorkingDays[i];
+    const nextDay = sortedWorkingDays[i + 1];
+    const expectedNextDay = getNextWorkingDayKey(currentDay, timezone);
+
+    if (nextDay === expectedNextDay) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Calculate restored streak from posts during missed period.
+ * Counts consecutive working days with at least 1 post.
+ */
+function calculateRestoredStreak(postDates: string[], timezone: string): number {
+  const uniqueWorkingDays = Array.from(new Set(
+    postDates.filter((day) => isWorkingDayByTz(day, timezone))
+  )).sort();
+
+  if (uniqueWorkingDays.length === 0) return 0;
+
+  // Count longest consecutive streak
+  let currentStreak = 1;
+  let longestStreak = 1;
+
+  for (let i = 0; i < uniqueWorkingDays.length - 1; i++) {
+    const currentDay = uniqueWorkingDays[i];
+    const nextDay = uniqueWorkingDays[i + 1];
+    const expectedNextDay = getNextWorkingDayKey(currentDay, timezone);
+
+    if (nextDay === expectedNextDay) {
+      currentStreak++;
+      longestStreak = Math.max(longestStreak, currentStreak);
+    } else {
+      currentStreak = 1;
+    }
+  }
+
+  return longestStreak;
 }
 
 /**

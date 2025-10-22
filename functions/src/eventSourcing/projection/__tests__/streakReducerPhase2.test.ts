@@ -139,8 +139,8 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
         type: 'eligible',
         postsRequired: 1,
         currentPosts: 0,
-        deadline: Timestamp.fromDate(new Date('2025-01-18T23:59:59Z')),
-        missedDate: Timestamp.fromDate(new Date('2025-01-17T23:59:59Z')), // Friday
+        deadline: Timestamp.fromDate(new Date('2025-01-18T14:59:59.999Z')), // End of Sat in Seoul (recovery day)
+        missedDate: Timestamp.fromDate(new Date('2025-01-17T14:59:59.999Z')), // End of Fri in Seoul
       };
       state.originalStreak = 8;
       state.currentStreak = 0;
@@ -170,8 +170,8 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
         type: 'eligible',
         postsRequired: 2,
         currentPosts: 1, // Already made 1 post during recovery window
-        deadline: Timestamp.fromDate(new Date('2025-01-21T23:59:59Z')),
-        missedDate: Timestamp.fromDate(new Date('2025-01-20T23:59:59Z')),
+        deadline: Timestamp.fromDate(new Date('2025-01-21T14:59:59.999Z')), // End of 2025-01-21 in Seoul
+        missedDate: Timestamp.fromDate(new Date('2025-01-20T14:59:59.999Z')), // End of 2025-01-20 in Seoul
       };
       state.originalStreak = 10;
       state.currentStreak = 0;
@@ -226,34 +226,218 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
     });
   });
 
-  describe('Missed rebuild - cross-day 2+ working days', () => {
-    it('transitions to onStreak after posts on 2 different working days', () => {
-      const state = createInitialPhase2Projection();
-      state.status = { type: 'missed' };
-      state.originalStreak = 3;
-      state.currentStreak = 0;
+  describe('Missed rebuild - cross-day consecutive working days', () => {
+    describe('when posts are on consecutive working days', () => {
+      it('transitions to onStreak with streak of 2 (Mon-Tue)', () => {
+        const state = createInitialPhase2Projection();
+        state.status = { type: 'missed' };
+        state.originalStreak = 3;
+        state.currentStreak = 0;
 
-      const events: Event[] = [
-        {
-          seq: 1,
-          type: EventType.POST_CREATED,
-          createdAt: Timestamp.now(),
-          dayKey: '2025-01-20', // Monday
-          payload: { postId: 'p1', boardId: 'b1', contentLength: 100 },
-        },
-        {
-          seq: 2,
-          type: EventType.POST_CREATED,
-          createdAt: Timestamp.now(),
-          dayKey: '2025-01-21', // Tuesday
-          payload: { postId: 'p2', boardId: 'b1', contentLength: 150 },
-        },
-      ];
+        const events: Event[] = [
+          {
+            seq: 1,
+            type: EventType.POST_CREATED,
+            createdAt: Timestamp.now(),
+            dayKey: '2025-01-20', // Monday
+            payload: { postId: 'p1', boardId: 'b1', contentLength: 100 },
+          },
+          {
+            seq: 2,
+            type: EventType.POST_CREATED,
+            createdAt: Timestamp.now(),
+            dayKey: '2025-01-21', // Tuesday
+            payload: { postId: 'p2', boardId: 'b1', contentLength: 150 },
+          },
+        ];
 
-      const result = applyEventsToPhase2Projection(state, events, TZ);
+        const result = applyEventsToPhase2Projection(state, events, TZ);
 
-      expect(result.status.type).toBe('onStreak');
-      expect(result.currentStreak).toBe(5); // originalStreak=3 + restoredStreak=2 (2 working days)
+        expect(result.status.type).toBe('onStreak');
+        expect(result.currentStreak).toBe(5); // originalStreak=3 + restoredStreak=2
+      });
+
+      it('transitions to onStreak skipping weekend (Fri-Mon)', () => {
+        const state = createInitialPhase2Projection();
+        state.status = { type: 'missed' };
+        state.originalStreak = 0;
+        state.currentStreak = 0;
+
+        const events: Event[] = [
+          {
+            seq: 1,
+            type: EventType.POST_CREATED,
+            createdAt: Timestamp.now(),
+            dayKey: '2025-01-17', // Friday
+            payload: { postId: 'p1', boardId: 'b1', contentLength: 100 },
+          },
+          {
+            seq: 2,
+            type: EventType.POST_CREATED,
+            createdAt: Timestamp.now(),
+            dayKey: '2025-01-20', // Monday (next working day after Friday)
+            payload: { postId: 'p2', boardId: 'b1', contentLength: 150 },
+          },
+        ];
+
+        const result = applyEventsToPhase2Projection(state, events, TZ);
+
+        expect(result.status.type).toBe('onStreak');
+        expect(result.currentStreak).toBe(2); // 2 consecutive working days
+      });
+
+      it('transitions to onStreak with initial 2 consecutive days', () => {
+        const state = createInitialPhase2Projection();
+        state.status = { type: 'missed' };
+        state.originalStreak = 0;
+        state.currentStreak = 0;
+
+        const events: Event[] = [
+          {
+            seq: 1,
+            type: EventType.POST_CREATED,
+            createdAt: Timestamp.now(),
+            dayKey: '2025-01-13', // Monday
+            payload: { postId: 'p1', boardId: 'b1', contentLength: 100 },
+          },
+          {
+            seq: 2,
+            type: EventType.POST_CREATED,
+            createdAt: Timestamp.now(),
+            dayKey: '2025-01-14', // Tuesday
+            payload: { postId: 'p2', boardId: 'b1', contentLength: 100 },
+          },
+        ];
+
+        const result = applyEventsToPhase2Projection(state, events, TZ);
+
+        expect(result.status.type).toBe('onStreak');
+        expect(result.currentStreak).toBe(2); // Minimum streak from 2 consecutive days
+      });
+    });
+
+    describe('when posts are NOT consecutive working days', () => {
+      it('stays in missed status when skipping a working day (Mon, Wed)', () => {
+        const state = createInitialPhase2Projection();
+        state.status = { type: 'missed' };
+        state.originalStreak = 5;
+        state.currentStreak = 0;
+
+        const events: Event[] = [
+          {
+            seq: 1,
+            type: EventType.POST_CREATED,
+            createdAt: Timestamp.now(),
+            dayKey: '2025-01-20', // Monday
+            payload: { postId: 'p1', boardId: 'b1', contentLength: 100 },
+          },
+          {
+            seq: 2,
+            type: EventType.POST_CREATED,
+            createdAt: Timestamp.now(),
+            dayKey: '2025-01-22', // Wednesday (skipped Tuesday)
+            payload: { postId: 'p2', boardId: 'b1', contentLength: 150 },
+          },
+        ];
+
+        const result = applyEventsToPhase2Projection(state, events, TZ);
+
+        expect(result.status.type).toBe('missed');
+        expect(result.currentStreak).toBe(0);
+        expect(result.originalStreak).toBe(5);
+      });
+
+      it('stays in missed status with only one working day post', () => {
+        const state = createInitialPhase2Projection();
+        state.status = { type: 'missed' };
+        state.originalStreak = 0;
+        state.currentStreak = 0;
+
+        const events: Event[] = [
+          {
+            seq: 1,
+            type: EventType.POST_CREATED,
+            createdAt: Timestamp.now(),
+            dayKey: '2025-01-20', // Monday only
+            payload: { postId: 'p1', boardId: 'b1', contentLength: 100 },
+          },
+        ];
+
+        const result = applyEventsToPhase2Projection(state, events, TZ);
+
+        expect(result.status.type).toBe('missed');
+        expect(result.currentStreak).toBe(0);
+      });
+
+      it('stays in missed when posts are far apart (Mon week 1, Mon week 2)', () => {
+        const state = createInitialPhase2Projection();
+        state.status = { type: 'missed' };
+        state.originalStreak = 3;
+        state.currentStreak = 0;
+
+        const events: Event[] = [
+          {
+            seq: 1,
+            type: EventType.POST_CREATED,
+            createdAt: Timestamp.now(),
+            dayKey: '2025-01-13', // Monday week 1
+            payload: { postId: 'p1', boardId: 'b1', contentLength: 100 },
+          },
+          {
+            seq: 2,
+            type: EventType.POST_CREATED,
+            createdAt: Timestamp.now(),
+            dayKey: '2025-01-20', // Monday week 2 (not consecutive)
+            payload: { postId: 'p2', boardId: 'b1', contentLength: 150 },
+          },
+        ];
+
+        const result = applyEventsToPhase2Projection(state, events, TZ);
+
+        expect(result.status.type).toBe('missed');
+        expect(result.currentStreak).toBe(0);
+      });
+    });
+
+    describe('when processing incremental events', () => {
+      it('transitions to onStreak when second consecutive post arrives later', () => {
+        // First event batch: posted on Monday
+        const state1 = createInitialPhase2Projection();
+        state1.status = { type: 'missed' };
+        state1.originalStreak = 0;
+
+        const events1: Event[] = [
+          {
+            seq: 1,
+            type: EventType.POST_CREATED,
+            createdAt: Timestamp.now(),
+            dayKey: '2025-10-21', // Monday
+            payload: { postId: 'p1', boardId: 'b1', contentLength: 100 },
+          },
+        ];
+
+        const result1 = applyEventsToPhase2Projection(state1, events1, TZ);
+
+        expect(result1.status.type).toBe('missed');
+        expect(result1.status.missedPostDates).toEqual(['2025-10-21']);
+        expect(result1.currentStreak).toBe(0);
+
+        // Second event batch: posted on Tuesday (next working day)
+        const events2: Event[] = [
+          {
+            seq: 2,
+            type: EventType.POST_CREATED,
+            createdAt: Timestamp.now(),
+            dayKey: '2025-10-22', // Tuesday (consecutive working day)
+            payload: { postId: 'p2', boardId: 'b1', contentLength: 100 },
+          },
+        ];
+
+        const result2 = applyEventsToPhase2Projection(result1, events2, TZ);
+
+        expect(result2.status.type).toBe('onStreak');
+        expect(result2.currentStreak).toBe(2); // 2 consecutive working days
+      });
     });
   });
 
