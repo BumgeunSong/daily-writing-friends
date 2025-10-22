@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Save } from 'lucide-react';
 import React, { useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -50,6 +50,7 @@ function ErrorState({ error }: { error: Error }) {
 
 function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: post } = useQuery(['post', boardId, postId], () => fetchPost(boardId, postId), {
     suspense: true,
@@ -60,7 +61,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
   const [editState, setEditState] = useState({
     title: post?.title || '',
     content: post?.content || '',
-    contentJson: post?.contentJson || null,
+    contentJson: post?.contentJson || undefined,
   });
 
   const setTitle = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -82,6 +83,8 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
     try {
       await updatePost(boardId, postId, editState.title, editState.content, editState.contentJson);
       navigate(`/board/${boardId}/post/${postId}`);
+      // Invalidate after navigation to avoid unnecessary refetching on edit page
+      queryClient.invalidateQueries(['post', boardId, postId]);
     } catch (error) {
       console.error('Error updating post:', error);
       toast({
@@ -126,7 +129,8 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
 
           <div className='flex items-center justify-center text-sm text-muted-foreground pt-4'>
             <p>
-              작성자: {post?.authorName || '?'} | 작성일: {post?.createdAt ? formatDate(post.createdAt.toDate()) : '?'}
+              작성자: {post?.authorName || '?'} | 작성일:{' '}
+              {post?.createdAt ? formatDate(post.createdAt.toDate()) : '?'}
             </p>
           </div>
         </form>
