@@ -60,7 +60,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
   const [editState, setEditState] = useState({
     title: post?.title || '',
     content: post?.content || '',
-    contentJson: post?.contentJson || null,
+    contentJson: post?.contentJson || undefined,
   });
 
   const setTitle = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -126,7 +126,8 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
 
           <div className='flex items-center justify-center text-sm text-muted-foreground pt-4'>
             <p>
-              작성자: {post?.authorName || '?'} | 작성일: {post?.createdAt ? formatDate(post.createdAt.toDate()) : '?'}
+              작성자: {post?.authorName || '?'} | 작성일:{' '}
+              {post?.createdAt ? formatDate(post.createdAt.toDate()) : '?'}
             </p>
           </div>
         </form>
