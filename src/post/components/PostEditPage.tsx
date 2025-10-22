@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Save } from 'lucide-react';
 import React, { useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -50,6 +50,7 @@ function ErrorState({ error }: { error: Error }) {
 
 function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: post } = useQuery(['post', boardId, postId], () => fetchPost(boardId, postId), {
     suspense: true,
@@ -81,6 +82,8 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
 
     try {
       await updatePost(boardId, postId, editState.title, editState.content, editState.contentJson);
+      // Invalidate the post cache to ensure PostDetailPage shows fresh data
+      queryClient.invalidateQueries(['post', boardId, postId]);
       navigate(`/board/${boardId}/post/${postId}`);
     } catch (error) {
       console.error('Error updating post:', error);
