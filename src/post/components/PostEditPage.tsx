@@ -83,7 +83,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
     try {
       await updatePost(boardId, postId, editState.title, editState.content, editState.contentJson);
       // Invalidate the post cache to ensure PostDetailPage shows fresh data
-      queryClient.invalidateQueries(['post', boardId, postId]);
+      await queryClient.invalidateQueries(['post', boardId, postId]);
       navigate(`/board/${boardId}/post/${postId}`);
     } catch (error) {
       console.error('Error updating post:', error);
