@@ -21,7 +21,7 @@ export function createInitialPhase2Projection(): StreamProjectionPhase2 {
     longestStreak: 0,
     lastContributionDate: null,
     appliedSeq: 0,
-    projectorVersion: 'phase2-v1',
+    projectorVersion: 'phase2-v2-consecutive', // Updated for consecutive working days fix
   };
 }
 

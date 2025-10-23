@@ -19,7 +19,7 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
       expect(state.longestStreak).toBe(0);
       expect(state.lastContributionDate).toBeNull();
       expect(state.appliedSeq).toBe(0);
-      expect(state.projectorVersion).toBe('phase2-v1');
+      expect(state.projectorVersion).toBe('phase2-v2-consecutive');
     });
   });
 
