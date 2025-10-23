@@ -18,8 +18,9 @@ export async function loadDeltaEvents(userId: string, fromSeq: number): Promise<
   const allEvents: Event[] = [];
   let lastSeq = fromSeq;
   const batchSize = 1000;
+  let hasMore = true;
 
-  while (true) {
+  while (hasMore) {
     // Query next batch
     const eventsQuery = db
       .collection(`users/${userId}/events`)
@@ -30,6 +31,7 @@ export async function loadDeltaEvents(userId: string, fromSeq: number): Promise<
     const eventsSnap = await eventsQuery.get();
 
     if (eventsSnap.empty) {
+      hasMore = false;
       break;
     }
 
@@ -42,7 +44,7 @@ export async function loadDeltaEvents(userId: string, fromSeq: number): Promise<
 
     // If we got fewer than batchSize, we've reached the end
     if (eventsSnap.size < batchSize) {
-      break;
+      hasMore = false;
     }
   }
 
