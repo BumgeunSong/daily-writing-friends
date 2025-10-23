@@ -104,8 +104,12 @@ export async function computeUserStreakProjection(
   // Check if projection is already up-to-date
   const lastEvaluatedDayKey = currentProjection.lastEvaluatedDayKey;
 
-  if (appliedSeq >= latestSeq && lastEvaluatedDayKey === evaluationCutoff) {
-    // Cache hit: no new events and already evaluated up to cutoff
+  if (
+    appliedSeq >= latestSeq &&
+    lastEvaluatedDayKey === evaluationCutoff &&
+    currentProjection.projectorVersion === 'phase2.1-v2'
+  ) {
+    // Cache hit: no new events and already evaluated up to cutoff with correct version
     return currentProjection;
   }
 
