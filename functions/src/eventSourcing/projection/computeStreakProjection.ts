@@ -14,15 +14,42 @@ import { saveProjectionCache } from './saveProjectionCache';
 const db = admin.firestore();
 
 /**
+ * Determines evaluation cutoff based on optimistic evaluation logic.
+ * - If user has posted today → evaluate up to today (immediate feedback)
+ * - If user hasn't posted today → evaluate only up to yesterday (optimistic)
+ *
+ * @param todayLocal - Today's dayKey in user's timezone
+ * @param yesterdayLocal - Yesterday's dayKey in user's timezone
+ * @param deltaEvents - Events to evaluate
+ * @returns dayKey to evaluate up to
+ */
+function computeOptimisticCutoff(
+  todayLocal: string,
+  yesterdayLocal: string,
+  deltaEvents: Event[],
+): string {
+  const hasPostsToday = deltaEvents.some(
+    (event) => event.type === EventType.POST_CREATED && event.dayKey === todayLocal,
+  );
+
+  return hasPostsToday ? todayLocal : yesterdayLocal;
+}
+
+/**
  * Compute user's streak projection on-demand with virtual DayClosed events.
  *
- * Phase 2.1 main workflow:
+ * Phase 2.1 v2 - Optimistic Evaluation:
+ * - If user posted today: evaluate up to today (immediate streak feedback)
+ * - If user hasn't posted today: evaluate only up to yesterday (give them time)
+ *
+ * Workflow:
  * 1. Load cache (appliedSeq, lastEvaluatedDayKey)
  * 2. Load delta events since appliedSeq
- * 3. Derive virtual closures for working days without posts
- * 4. Reduce events + virtual closures
- * 5. Persist updated cache (write-behind)
- * 6. Return projection immediately
+ * 3. Determine optimistic cutoff based on today's posts
+ * 4. Derive virtual closures for working days without posts (up to cutoff)
+ * 5. Reduce events + virtual closures
+ * 6. Persist updated cache (write-behind)
+ * 7. Return projection immediately
  *
  * @param userId - User ID
  * @param now - Current server timestamp
@@ -63,24 +90,27 @@ export async function computeUserStreakProjection(
     'yyyy-MM-dd',
   );
 
-  // Check if projection is already up-to-date
-  const appliedSeq = currentProjection.appliedSeq;
-  const lastEvaluatedDayKey = currentProjection.lastEvaluatedDayKey;
-
-  if (appliedSeq >= latestSeq && lastEvaluatedDayKey === yesterdayLocal) {
-    // Cache hit: no new events and already evaluated up to yesterday
-    return currentProjection;
-  }
-
   // Step 2: Load delta events
+  const appliedSeq = currentProjection.appliedSeq;
   const allDeltaEvents = await loadDeltaEvents(userId, appliedSeq);
 
   // Filter out old persisted DayClosed events (Phase 2 legacy)
   // Phase 2.1 derives virtual closures instead
-  const deltaEvents = allDeltaEvents.filter(event => event.type !== EventType.DAY_CLOSED);
+  const deltaEvents = allDeltaEvents.filter((event) => event.type !== EventType.DAY_CLOSED);
 
-  // Step 3: Derive virtual closures
-  const startDayKey = lastEvaluatedDayKey || (deltaEvents[0]?.dayKey ?? yesterdayLocal);
+  // Step 3: Determine optimistic evaluation cutoff
+  const evaluationCutoff = computeOptimisticCutoff(todayLocal, yesterdayLocal, deltaEvents);
+
+  // Check if projection is already up-to-date
+  const lastEvaluatedDayKey = currentProjection.lastEvaluatedDayKey;
+
+  if (appliedSeq >= latestSeq && lastEvaluatedDayKey === evaluationCutoff) {
+    // Cache hit: no new events and already evaluated up to cutoff
+    return currentProjection;
+  }
+
+  // Step 4: Derive virtual closures
+  const startDayKey = lastEvaluatedDayKey || (deltaEvents[0]?.dayKey ?? evaluationCutoff);
 
   // Group delta events by dayKey for closure derivation
   const eventsByDayKey = new Map<string, Event[]>();
@@ -90,7 +120,12 @@ export async function computeUserStreakProjection(
     eventsByDayKey.set(event.dayKey, existing);
   }
 
-  const virtualClosures = deriveVirtualClosures(startDayKey, yesterdayLocal, eventsByDayKey, timezone);
+  const virtualClosures = deriveVirtualClosures(
+    startDayKey,
+    evaluationCutoff,
+    eventsByDayKey,
+    timezone,
+  );
 
   // Step 4: Merge delta events and virtual closures, then sort
   const allEvents = [...deltaEvents, ...virtualClosures].sort((a, b) => {
@@ -106,8 +141,8 @@ export async function computeUserStreakProjection(
 
   // Update metadata
   newProjection.appliedSeq = Math.max(latestSeq, appliedSeq);
-  newProjection.lastEvaluatedDayKey = yesterdayLocal;
-  newProjection.projectorVersion = 'phase2.1-v1';
+  newProjection.lastEvaluatedDayKey = evaluationCutoff;
+  newProjection.projectorVersion = 'phase2.1-v2';
 
   // Step 6: Persist (write-behind)
   if (
