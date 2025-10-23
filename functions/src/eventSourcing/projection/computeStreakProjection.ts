@@ -2,7 +2,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { addDays, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import admin from '../../shared/admin';
-import { Event } from '../types/Event';
+import { Event, EventType } from '../types/Event';
 import { StreamProjectionPhase2 } from '../types/StreamProjectionPhase2';
 import { EventMeta } from '../types/EventMeta';
 import { computeDayKey } from '../append/computeDayKey';
@@ -73,7 +73,11 @@ export async function computeUserStreakProjection(
   }
 
   // Step 2: Load delta events
-  const deltaEvents = await loadDeltaEvents(userId, appliedSeq);
+  const allDeltaEvents = await loadDeltaEvents(userId, appliedSeq);
+
+  // Filter out old persisted DayClosed events (Phase 2 legacy)
+  // Phase 2.1 derives virtual closures instead
+  const deltaEvents = allDeltaEvents.filter(event => event.type !== EventType.DAY_CLOSED);
 
   // Step 3: Derive virtual closures
   const startDayKey = lastEvaluatedDayKey || (deltaEvents[0]?.dayKey ?? yesterdayLocal);
