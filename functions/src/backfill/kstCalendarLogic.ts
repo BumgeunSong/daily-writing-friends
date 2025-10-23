@@ -23,8 +23,11 @@ export function isHistoricalWorkingDay(kstDateString: string): boolean {
     throw new Error(`Invalid date string format: ${kstDateString}`);
   }
 
-  // Create date in KST timezone to check day of week
-  const date = new Date(`${kstDateString}T00:00:00+09:00`);
+  // Parse date string directly (YYYY-MM-DD) to get day of week in KST
+  // Using Date with just the date string interprets it as UTC midnight,
+  // then we can safely check the day of week
+  const [year, month, day] = kstDateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day); // months are 0-indexed
 
   // Check if it's a weekend (Saturday = 6, Sunday = 0)
   const dayOfWeek = date.getDay();
