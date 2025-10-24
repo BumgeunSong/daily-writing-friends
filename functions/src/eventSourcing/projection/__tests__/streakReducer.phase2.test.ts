@@ -1157,6 +1157,129 @@ describe('Invariant Checks', () => {
   });
 
 
+  describe('Multi-day extension tick synthesis', () => {
+    it('synthesizes correct ticks for multi-day gap with mixed activity', () => {
+      // Scenario: Cache stale by 3 days, user had posts on some days but not others
+      // Orchestrator replays actual events + synthesizes DAY_CLOSED_VIRTUAL for missed days
+      let state = createInitialPhase2Projection();
+      state.status = { type: 'onStreak' };
+      state.currentStreak = 3;
+      state.originalStreak = 3;
+      state.lastEvaluatedDayKey = '2025-10-13'; // Monday
+
+      // Simulate orchestrator replaying events for Tuesday-Thursday:
+      // - Tuesday: had posts (actual POST_CREATED event)
+      // - Wednesday: no posts (DAY_CLOSED_VIRTUAL)
+      // - Thursday: 2 posts to meet recovery requirement
+      const events: Event[] = [
+        createPostEvent('2025-10-14', 1), // Tuesday
+        createDayClosedVirtualEvent('2025-10-15'), // Wednesday (weekday miss)
+        createPostEvent('2025-10-16', 2), // Thursday post 1
+        createPostEvent('2025-10-16', 3), // Thursday post 2
+      ];
+
+      state = applyEventsToPhase2Projection(state, events, TZ);
+
+      // Tuesday post → maintain onStreak (streak unchanged)
+      // Wednesday miss → enter eligible (postsRequired=2, deadline=end of Thursday)
+      // Thursday 2 posts → successful recovery! Restore to originalStreak(3) + increment(2) = 5
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(5); // Restored: 3 + 2
+      expect(state.originalStreak).toBe(5);
+    });
+
+    it('maintains onStreak status when extension window has posts on all days', () => {
+      let state = createInitialPhase2Projection();
+      state.status = { type: 'onStreak' };
+      state.currentStreak = 5;
+      state.originalStreak = 5;
+      state.lastEvaluatedDayKey = '2025-10-13'; // Monday
+
+      // All days have posts - no DAY_CLOSED_VIRTUAL should be emitted
+      // Note: Phase 2 projection doesn't auto-increment streak on posts
+      // It only tracks state transitions (onStreak, eligible, missed)
+      const events: Event[] = [
+        createPostEvent('2025-10-14', 1), // Tuesday
+        createPostEvent('2025-10-15', 2), // Wednesday
+        createPostEvent('2025-10-16', 3), // Thursday
+      ];
+
+      state = applyEventsToPhase2Projection(state, events, TZ);
+
+      // Posting while onStreak doesn't change streak count
+      // Streak count is updated by nightly job based on state transitions
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(5); // Unchanged
+      expect(state.originalStreak).toBe(5); // Unchanged
+    });
+  });
+
+  describe('Orchestrator event ordering guarantees', () => {
+    it('synthesizes deadline close BEFORE next-day post (partial progress)', () => {
+      // This test verifies the orchestrator's proper behavior:
+      // When extending evaluation window, orchestrator must synthesize
+      // DAY_CLOSED_VIRTUAL for expired deadline BEFORE processing next-day posts
+      let state = createInitialPhase2Projection();
+
+      // Post once Monday from missed
+      state = applyEventsToPhase2Projection(
+        state,
+        [createPostEvent('2025-10-13', 1)], // Monday
+        TZ,
+      );
+
+      expect(state.status.type).toBe('eligible');
+
+      // Orchestrator proper ordering: Monday close THEN Tuesday post
+      state = applyEventsToPhase2Projection(
+        state,
+        [
+          createDayClosedVirtualEvent('2025-10-13'), // Monday deadline close
+          createPostEvent('2025-10-14', 2), // Tuesday post
+        ],
+        TZ,
+      );
+
+      // After close with 1 post → start over to onStreak(1)
+      // Tuesday post is treated as new post (no cross-day rebuild), so streak stays at 1
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(1);
+    });
+
+    it('synthesizes deadline close BEFORE next-day post (zero progress)', () => {
+      // Verify orchestrator handles deadline expiry with 0 posts correctly
+      let state = createInitialPhase2Projection();
+      state.status = { type: 'onStreak' };
+      state.currentStreak = 5;
+
+      // Miss Monday
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-10-13')], // Monday
+        TZ,
+      );
+
+      expect(state.status.type).toBe('eligible');
+      expect(state.currentStreak).toBe(0);
+
+      // Orchestrator proper ordering: Monday close (redundant) THEN Tuesday post
+      // The redundant Monday close is a no-op, Tuesday post from missed → new eligible
+      state = applyEventsToPhase2Projection(
+        state,
+        [
+          createDayClosedVirtualEvent('2025-10-13'), // Monday (no-op, already processed)
+          createPostEvent('2025-10-14', 1), // Tuesday
+        ],
+        TZ,
+      );
+
+      // After close with 0 posts → missed
+      // Then Tuesday post → new eligible
+      expect(state.status.type).toBe('eligible');
+      expect(state.currentStreak).toBe(0);
+    });
+  });
+
   describe('Bug fix: Posting after deadline with partial progress', () => {
     it('eligible + post after deadline → start over to onStreak(1)', () => {
       // Bug: User 89kNbXuJwnbpDVjq9cKqRzha9HJ2

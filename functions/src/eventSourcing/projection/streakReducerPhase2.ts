@@ -82,6 +82,13 @@ export function applyEventsToPhase2Projection(
   const postsPerDay = new Map<string, number>();
 
   for (const event of events) {
+    // Pre-populate postsPerDay map for DAY_ACTIVITY events
+    // This ensures handleDayClosedVirtual can check hadPostsOnDay correctly
+    if (event.type === EventType.DAY_ACTIVITY) {
+      const { dayKey, payload } = event as { dayKey: string; payload: { postsCount: number } };
+      postsPerDay.set(dayKey, (postsPerDay.get(dayKey) || 0) + payload.postsCount);
+    }
+
     switch (event.type) {
       case EventType.POST_CREATED:
         state = handlePostCreated(state, event, timezone, postsPerDay);
@@ -396,8 +403,10 @@ function handleDayClosedVirtual(
 
   const isWorkingDay = isWorkingDayByTz(dayKey, timezone);
   // Check if there were posts on this day:
-  // 1. In current event batch (postsPerDay map)
-  // 2. Or this is the last contribution date (from previous batches)
+  // 1. In current event batch (postsPerDay map from POST_CREATED or DAY_ACTIVITY)
+  // 2. OR this is the last contribution date (for events split across batches in tests)
+  // Note: In production, orchestrator processes all events in single batch,
+  // so lastContributionDate fallback mainly helps with test scenarios
   const hadPostsOnDay = postsPerDay.has(dayKey) || dayKey === state.lastContributionDate;
 
   // First check if this is recovery day close (takes priority)
