@@ -9,6 +9,40 @@ import {
 import { formatInTimeZone } from 'date-fns-tz';
 
 /**
+ * Compare two dayKeys (YYYY-MM-DD format).
+ * @returns -1 if a < b, 0 if a === b, 1 if a > b
+ */
+function compareDayKeys(a: string, b: string): -1 | 0 | 1 {
+  if (a < b) return -1;
+  if (a > b) return 1;
+  return 0;
+}
+
+/**
+ * Helper: Transition to onStreak with streak=1 (start over).
+ * Used when recovery fails with partial progress.
+ */
+function startOverToOnStreak1(state: StreamProjectionPhase2): StreamProjectionPhase2 {
+  const newState = { ...state };
+  newState.status = { type: 'onStreak' };
+  newState.currentStreak = 1;
+  newState.originalStreak = 1;
+  newState.longestStreak = Math.max(newState.longestStreak, 1);
+  return newState;
+}
+
+/**
+ * Helper: Transition to missed with streak=0.
+ * Used when recovery fails with zero progress.
+ */
+function fallToMissed(state: StreamProjectionPhase2): StreamProjectionPhase2 {
+  const newState = { ...state };
+  newState.status = { type: 'missed' };
+  newState.currentStreak = 0;
+  return newState;
+}
+
+/**
  * Runtime guard: validates originalStreak mutations only happen in allowed contexts.
  * In dev/test: throws if originalStreak changes when status is onStreak (should be frozen).
  */
@@ -409,12 +443,13 @@ function handleDayClosedVirtual(
   // so lastContributionDate fallback mainly helps with test scenarios
   const hadPostsOnDay = postsPerDay.has(dayKey) || dayKey === state.lastContributionDate;
 
-  // First check if this is recovery day close (takes priority)
+  // Check if this is recovery day close or overdue close (takes priority)
   if (newState.status.type === 'eligible' && newState.status.deadline) {
     const deadlineDayKey = dayKeyFromTimestamp(newState.status.deadline, timezone);
+    const cmp = compareDayKeys(dayKey, deadlineDayKey);
 
-    if (dayKey === deadlineDayKey) {
-      // Recovery day is closing
+    if (cmp === 0) {
+      // Exact recovery day is closing
       const currentPosts = newState.status.currentPosts || 0;
       const postsRequired = newState.status.postsRequired || 2;
 
@@ -422,23 +457,46 @@ function handleDayClosedVirtual(
         // Already restored by DAY_ACTIVITY or handlePostCreated (no-op)
         // This shouldn't happen in normal flow
       } else if (currentPosts > 0) {
-        // Start over: onStreak with currentStreak = 1
-        newState.status = { type: 'onStreak' };
-        newState.currentStreak = 1;
-        newState.longestStreak = Math.max(newState.longestStreak, 1);
-        newState.originalStreak = 1;
+        // Partial progress → start over
+        const result = startOverToOnStreak1(newState);
+        result.appliedSeq = event.seq;
         postsPerDay.clear();
+        return result;
       } else {
-        // currentPosts == 0: transition to missed
-        newState.status = { type: 'missed' };
-        newState.currentStreak = 0;
+        // Zero progress → missed
+        const result = fallToMissed(newState);
+        result.appliedSeq = event.seq;
         postsPerDay.clear();
+        return result;
       }
 
-      // Recovery day handled, return early
+      // No-op case (already restored)
       newState.appliedSeq = event.seq;
       return newState;
     }
+
+    if (cmp > 0) {
+      // Overdue close: a day AFTER the deadline expired
+      // Treat as if recovery day closed before this day
+      const currentPosts = newState.status.currentPosts || 0;
+
+      if (currentPosts > 0) {
+        // Had partial progress → start over
+        const result = startOverToOnStreak1(newState);
+        result.appliedSeq = event.seq;
+        postsPerDay.clear();
+        return result;
+      }
+
+      // Zero progress → missed
+      const result = fallToMissed(newState);
+      result.appliedSeq = event.seq;
+      postsPerDay.clear();
+      return result;
+    }
+
+    // cmp < 0: Close BEFORE deadline (shouldn't happen if orchestrator is correct)
+    // Ignore and continue to regular logic
   }
 
   // Handle regular day close: working day with no posts from onStreak

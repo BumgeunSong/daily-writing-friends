@@ -1280,6 +1280,124 @@ describe('Invariant Checks', () => {
     });
   });
 
+  describe('Bug fix: Expired deadline handling', () => {
+    it('overdue close with zero progress → transition to missed', () => {
+      // Bug: User 1y06BmkauwhIEwZm9LQmEmgl6Al1
+      // Posted once on Oct 5 from missed → entered eligible with deadline Oct 5
+      // Oct 6-21 virtual closes should transition to missed, but stayed eligible
+      let state = createInitialPhase2Projection();
+      state.status = { type: 'onStreak' };
+      state.currentStreak = 5;
+
+      // Miss Monday (enter eligible with deadline = Tuesday)
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-10-13')], // Monday
+        TZ,
+      );
+
+      expect(state.status.type).toBe('eligible');
+      if (state.status.type === 'eligible') {
+        expect(state.status.currentPosts).toBe(0);
+        expect(state.status.postsRequired).toBe(2);
+        // Deadline is end of Tuesday (next working day)
+      }
+
+      // Virtual close on Wednesday (after Tuesday deadline expired, zero progress)
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-10-15')], // Wednesday (after deadline)
+        TZ,
+      );
+
+      expect(state.status.type).toBe('missed');
+      expect(state.currentStreak).toBe(0);
+    });
+
+    it('overdue close with partial progress → start over to onStreak(1)', () => {
+      let state = createInitialPhase2Projection();
+
+      // Post once Saturday (from missed) → eligible with same-day deadline
+      state = applyEventsToPhase2Projection(
+        state,
+        [createPostEvent('2025-10-05', 1)], // Saturday
+        TZ,
+      );
+
+      expect(state.status.type).toBe('eligible');
+      if (state.status.type === 'eligible') {
+        expect(state.status.currentPosts).toBe(1);
+        expect(state.status.postsRequired).toBe(2);
+        // Deadline is end of Saturday Oct 5
+      }
+
+      // Virtual close on Monday Oct 7 (after Saturday deadline expired, partial progress)
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-10-07')], // Monday (after deadline)
+        TZ,
+      );
+
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(1);
+      expect(state.originalStreak).toBe(1);
+    });
+
+    it('exact deadline day close with partial progress → start over', () => {
+      // Verify existing behavior: exact deadline day (not overdue) still works
+      let state = createInitialPhase2Projection();
+
+      state = applyEventsToPhase2Projection(
+        state,
+        [createPostEvent('2025-10-05', 1)], // Saturday, need 2
+        TZ,
+      );
+
+      expect(state.status.type).toBe('eligible');
+
+      // Close on the exact deadline day (not after)
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-10-05')], // Same day
+        TZ,
+      );
+
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(1);
+    });
+
+    it('multi-day overdue closes in same batch → flip on first overdue', () => {
+      // Eligible with deadline=2025-10-05
+      // Feed multiple overdue closes: 2025-10-06, 2025-10-07
+      // Should flip on first overdue close, subsequent closes see new state
+      let state = createInitialPhase2Projection();
+
+      state = applyEventsToPhase2Projection(
+        state,
+        [createPostEvent('2025-10-05', 1)], // Saturday, partial progress
+        TZ,
+      );
+
+      expect(state.status.type).toBe('eligible');
+
+      // Process multiple overdue closes in one batch
+      state = applyEventsToPhase2Projection(
+        state,
+        [
+          createDayClosedVirtualEvent('2025-10-06'), // Sunday (after deadline)
+          createDayClosedVirtualEvent('2025-10-07'), // Monday (after deadline)
+        ],
+        TZ,
+      );
+
+      // First overdue close → start over to onStreak(1)
+      // Second close sees onStreak, no posts → should enter eligible again
+      expect(state.status.type).toBe('eligible');
+      expect(state.currentStreak).toBe(0);
+      expect(state.originalStreak).toBe(1);
+    });
+  });
+
   describe('Bug fix: Posting after deadline with partial progress', () => {
     it('eligible + post after deadline → start over to onStreak(1)', () => {
       // Bug: User 89kNbXuJwnbpDVjq9cKqRzha9HJ2
