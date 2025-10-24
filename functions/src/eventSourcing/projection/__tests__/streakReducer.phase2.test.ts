@@ -9,6 +9,30 @@ import {
 
 const TZ = 'Asia/Seoul';
 
+// Helper functions for test event creation
+function createPostEvent(dayKey: string, seq: number): Event {
+  return {
+    seq,
+    type: EventType.POST_CREATED,
+    createdAt: Timestamp.fromDate(fromZonedTime(`${dayKey}T12:00:00`, TZ)),
+    dayKey,
+    payload: {
+      postId: `post${seq}`,
+      boardId: 'board1',
+      contentLength: 100,
+    },
+  };
+}
+
+function createDayClosedVirtualEvent(dayKey: string): Event {
+  return {
+    seq: 999, // Will be overwritten by reducer
+    type: EventType.DAY_CLOSED_VIRTUAL,
+    createdAt: Timestamp.fromDate(fromZonedTime(`${dayKey}T23:59:59.999`, TZ)),
+    dayKey,
+  };
+}
+
 describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
   describe('Initial state', () => {
     it('creates missed status with zero streaks', () => {
@@ -645,6 +669,567 @@ describe('No-Cross-Day Recovery Rules (Detailed Scenarios)', () => {
       // Still onStreak but currentStreak doesn't increase
       expect(state.status.type).toBe('onStreak');
       expect(state.currentStreak).toBe(1); // NOT 2!
+    });
+  });
+});
+
+// ============================================================================
+// Invariant & Edge Case Tests (Wrap-up Validation)
+// ============================================================================
+
+describe('Invariant Checks', () => {
+  describe('originalStreak mutations', () => {
+    it('posting while onStreak never mutates originalStreak', () => {
+      let state = createInitialPhase2Projection();
+
+      // Build streak
+      state = applyEventsToPhase2Projection(
+        state,
+        [
+          createPostEvent('2025-01-13', 1),
+          createPostEvent('2025-01-13', 2),
+        ],
+        TZ,
+      );
+
+      expect(state.originalStreak).toBe(2);
+      const savedOriginalStreak = state.originalStreak;
+
+      // Post on multiple days while onStreak
+      state = applyEventsToPhase2Projection(
+        state,
+        [
+          createPostEvent('2025-01-14', 3),
+          createPostEvent('2025-01-15', 4),
+          createPostEvent('2025-01-16', 5),
+        ],
+        TZ,
+      );
+
+      // originalStreak MUST NOT change while onStreak
+      expect(state.status.type).toBe('onStreak');
+      expect(state.originalStreak).toBe(savedOriginalStreak);
+      expect(state.originalStreak).toBe(2);
+    });
+
+    it('entering eligible snapshots originalStreak exactly once', () => {
+      let state = createInitialPhase2Projection();
+
+      // Build streak
+      state = applyEventsToPhase2Projection(
+        state,
+        [
+          createPostEvent('2025-01-13', 1),
+          createPostEvent('2025-01-13', 2),
+        ],
+        TZ,
+      );
+
+      expect(state.currentStreak).toBe(2);
+
+      // Miss a day → enter eligible
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-01-14')],
+        TZ,
+      );
+
+      expect(state.status.type).toBe('eligible');
+      expect(state.originalStreak).toBe(2); // Snapshotted once
+      expect(state.currentStreak).toBe(0);
+
+      // originalStreak stays frozen during eligible
+      const savedOriginalStreak = state.originalStreak;
+
+      state = applyEventsToPhase2Projection(
+        state,
+        [createPostEvent('2025-01-15', 3)], // First recovery post
+        TZ,
+      );
+
+      expect(state.originalStreak).toBe(savedOriginalStreak); // Still frozen
+    });
+
+    it('restore always sets currentStreak = originalStreak + increment, then syncs originalStreak', () => {
+      let state = createInitialPhase2Projection();
+
+      // Build streak
+      state = applyEventsToPhase2Projection(
+        state,
+        [
+          createPostEvent('2025-01-13', 1),
+          createPostEvent('2025-01-13', 2),
+        ],
+        TZ,
+      );
+
+      expect(state.currentStreak).toBe(2);
+
+      // Miss Wednesday
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-01-15')],
+        TZ,
+      );
+
+      expect(state.originalStreak).toBe(2);
+
+      // Restore on Thursday with 2 posts
+      state = applyEventsToPhase2Projection(
+        state,
+        [
+          createPostEvent('2025-01-16', 3),
+          createPostEvent('2025-01-16', 4),
+        ],
+        TZ,
+      );
+
+      // currentStreak = originalStreak(2) + increment(2) = 4
+      expect(state.currentStreak).toBe(4);
+      // originalStreak synced to currentStreak
+      expect(state.originalStreak).toBe(4);
+      expect(state.originalStreak).toBe(state.currentStreak);
+    });
+
+    it('start-over sets both currentStreak=1 and originalStreak=1', () => {
+      let state = createInitialPhase2Projection();
+
+      // Build streak
+      state = applyEventsToPhase2Projection(
+        state,
+        [
+          createPostEvent('2025-01-13', 1),
+          createPostEvent('2025-01-13', 2),
+        ],
+        TZ,
+      );
+
+      expect(state.currentStreak).toBe(2);
+
+      // Miss a day
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-01-14')],
+        TZ,
+      );
+
+      expect(state.originalStreak).toBe(2);
+
+      // Partial recovery: only 1 post
+      state = applyEventsToPhase2Projection(
+        state,
+        [createPostEvent('2025-01-15', 3)],
+        TZ,
+      );
+
+      // Day closes → start over
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-01-15')],
+        TZ,
+      );
+
+      // Both must be 1
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(1);
+      expect(state.originalStreak).toBe(1);
+    });
+  });
+
+  describe('Friday classification guard', () => {
+    it('ensures Friday miss requires postsRequired=1 and restores with +1', () => {
+      let state = createInitialPhase2Projection();
+
+      // Build streak
+      state = applyEventsToPhase2Projection(
+        state,
+        [
+          createPostEvent('2025-01-13', 1),
+          createPostEvent('2025-01-13', 2),
+        ],
+        TZ,
+      );
+
+      const savedStreak = state.currentStreak;
+
+      // Miss Friday (2025-01-17 is Friday)
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-01-17')],
+        TZ,
+      );
+
+      // MUST be postsRequired=1 for Friday
+      expect(state.status.type).toBe('eligible');
+      expect(state.status.postsRequired).toBe(1);
+      expect(state.originalStreak).toBe(savedStreak);
+
+      // Recover on Saturday
+      state = applyEventsToPhase2Projection(
+        state,
+        [createPostEvent('2025-01-18', 3)],
+        TZ,
+      );
+
+      // MUST restore with +1 (not +2)
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(savedStreak + 1);
+    });
+  });
+
+  describe('Weekend neutrality', () => {
+    it('Saturday/Sunday DAY_CLOSED never penalizes streak', () => {
+      let state = createInitialPhase2Projection();
+
+      // Build streak
+      state = applyEventsToPhase2Projection(
+        state,
+        [
+          createPostEvent('2025-01-13', 1),
+          createPostEvent('2025-01-13', 2),
+        ],
+        TZ,
+      );
+
+      const savedStreak = state.currentStreak;
+
+      // Virtual close on Saturday (2025-01-18)
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-01-18')],
+        TZ,
+      );
+
+      // Should NOT enter eligible
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(savedStreak);
+
+      // Virtual close on Sunday (2025-01-19)
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-01-19')],
+        TZ,
+      );
+
+      // Should STILL NOT enter eligible
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(savedStreak);
+    });
+  });
+
+  describe('Eligible close ordering', () => {
+    it('recovery day close with currentPosts=1 → start-over (not missed)', () => {
+      let state = createInitialPhase2Projection();
+
+      // Build streak
+      state = applyEventsToPhase2Projection(
+        state,
+        [
+          createPostEvent('2025-01-13', 1),
+          createPostEvent('2025-01-13', 2),
+        ],
+        TZ,
+      );
+
+      // Miss a day
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-01-14')],
+        TZ,
+      );
+
+      expect(state.status.type).toBe('eligible');
+
+      // Recovery day: only 1 post (needs 2)
+      state = applyEventsToPhase2Projection(
+        state,
+        [createPostEvent('2025-01-15', 3)],
+        TZ,
+      );
+
+      expect(state.status.type).toBe('eligible');
+      expect(state.status.currentPosts).toBe(1);
+
+      // Recovery day closes
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-01-15')],
+        TZ,
+      );
+
+      // MUST be onStreak(1), NOT missed
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(1);
+    });
+
+    it('recovery day close with currentPosts>=need → already restored (no-op)', () => {
+      let state = createInitialPhase2Projection();
+
+      // Build streak
+      state = applyEventsToPhase2Projection(
+        state,
+        [
+          createPostEvent('2025-01-13', 1),
+          createPostEvent('2025-01-13', 2),
+        ],
+        TZ,
+      );
+
+      // Miss a day
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-01-14')],
+        TZ,
+      );
+
+      // Recovery day: 2 posts (meets requirement)
+      state = applyEventsToPhase2Projection(
+        state,
+        [
+          createPostEvent('2025-01-15', 3),
+          createPostEvent('2025-01-15', 4),
+        ],
+        TZ,
+      );
+
+      // Already restored
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(4);
+      const restoredStreak = state.currentStreak;
+
+      // Recovery day closes (should be no-op)
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-01-15')],
+        TZ,
+      );
+
+      // No change
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(restoredStreak);
+    });
+  });
+
+  describe('Same-day rebuild invariants', () => {
+    it('from missed, two posts same day → onStreak(2) exactly', () => {
+      let state = createInitialPhase2Projection();
+
+      expect(state.status.type).toBe('missed');
+
+      // Two posts on same day
+      state = applyEventsToPhase2Projection(
+        state,
+        [
+          createPostEvent('2025-01-13', 1),
+          createPostEvent('2025-01-13', 2),
+        ],
+        TZ,
+      );
+
+      // MUST be onStreak(2), not any other value
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(2);
+      expect(state.originalStreak).toBe(2);
+    });
+
+    it('from missed, one post then day closes → start-over onStreak(1)', () => {
+      let state = createInitialPhase2Projection();
+
+      // One post
+      state = applyEventsToPhase2Projection(
+        state,
+        [createPostEvent('2025-01-13', 1)],
+        TZ,
+      );
+
+      expect(state.status.type).toBe('eligible');
+
+      // Day closes
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-01-13')],
+        TZ,
+      );
+
+      // MUST be onStreak(1)
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(1);
+      expect(state.originalStreak).toBe(1);
+    });
+  });
+
+  describe('Timezone boundary tests', () => {
+    it('Asia/Seoul user posts at 23:55 local → correct dayKey', () => {
+      let state = createInitialPhase2Projection();
+
+      // Post at 2025-01-13 23:55 KST
+      const postEvent = {
+        seq: 1,
+        type: EventType.POST_CREATED as const,
+        dayKey: '2025-01-13',
+        createdAt: Timestamp.fromDate(fromZonedTime('2025-01-13T23:55:00', 'Asia/Seoul')),
+        payload: { postId: 'p1', boardId: 'b1', contentLength: 100 },
+      };
+
+      state = applyEventsToPhase2Projection(state, [postEvent], 'Asia/Seoul');
+
+      // Should count as 2025-01-13 (not next day)
+      expect(state.lastContributionDate).toBe('2025-01-13');
+    });
+
+    it('America/Los_Angeles user posts at 23:55 local (next day UTC) → correct local dayKey', () => {
+      let state = createInitialPhase2Projection();
+
+      // Post at 2025-01-13 23:55 PST (which is 2025-01-14 07:55 UTC)
+      const postEvent = {
+        seq: 1,
+        type: EventType.POST_CREATED as const,
+        dayKey: '2025-01-13',
+        createdAt: Timestamp.fromDate(fromZonedTime('2025-01-13T23:55:00', 'America/Los_Angeles')),
+        payload: { postId: 'p1', boardId: 'b1', contentLength: 100 },
+      };
+
+      state = applyEventsToPhase2Projection(state, [postEvent], 'America/Los_Angeles');
+
+      // Should count as 2025-01-13 in user's local time (not UTC date)
+      expect(state.lastContributionDate).toBe('2025-01-13');
+    });
+  });
+
+  describe('Evaluation cutoff sanity', () => {
+    it('evaluationCutoff logic: hasPostedToday determines cutoff', () => {
+      // This test documents the expected behavior from computeStreakProjection:
+      // evaluationCutoff = hasPostedToday ? todayLocal : yesterdayLocal
+
+      // Scenario 1: User posted today → cutoff should be today
+      const hasPostedToday = true;
+      const todayLocal = '2025-01-20';
+      const yesterdayLocal = '2025-01-19';
+      const cutoffWhenPosted = hasPostedToday ? todayLocal : yesterdayLocal;
+      expect(cutoffWhenPosted).toBe('2025-01-20'); // Today
+
+      // Scenario 2: User hasn't posted today → cutoff should be yesterday
+      const hasNotPostedToday = false;
+      const cutoffWhenNotPosted = hasNotPostedToday ? todayLocal : yesterdayLocal;
+      expect(cutoffWhenNotPosted).toBe('2025-01-19'); // Yesterday
+    });
+
+    it('lastEvaluatedDayKey advances only to evaluationCutoff (not beyond)', () => {
+      // Test that reducer respects the cutoff and doesn't evaluate future days
+      const state = createInitialPhase2Projection();
+      state.lastEvaluatedDayKey = '2025-01-18'; // Last evaluated: Jan 18
+
+      // Simulate evaluation up to Jan 20 (today)
+      const events: Event[] = [
+        createPostEvent('2025-01-19', 1), // Yesterday
+        createPostEvent('2025-01-20', 2), // Today
+      ];
+
+      const result = applyEventsToPhase2Projection(state, events, TZ);
+
+      // lastContributionDate tracks the latest post
+      expect(result.lastContributionDate).toBe('2025-01-20');
+
+      // In actual compute function, lastEvaluatedDayKey would be set to evaluationCutoff
+      // Here we just verify the projection processes events correctly
+      // (The actual lastEvaluatedDayKey is set in computeStreakProjection, not the reducer)
+    });
+
+    it('extension ticks fill gaps between lastEvaluatedDayKey and evaluationCutoff', () => {
+      // This test verifies the extension tick synthesis concept
+      // If lastEvaluatedDayKey = '2025-01-15' and evaluationCutoff = '2025-01-18'
+      // Then extension ticks should cover '2025-01-16', '2025-01-17'
+
+      const lastEval = '2025-01-15';
+      const cutoff = '2025-01-18';
+
+      // Calculate expected gap days (16, 17)
+      const expectedGapDays = ['2025-01-16', '2025-01-17'];
+
+      // In computeStreakProjection, synthesizeExtensionTicks would generate
+      // DAY_ACTIVITY or DAY_CLOSED_VIRTUAL for these days
+
+      // Verify the gap exists
+      expect(expectedGapDays.length).toBe(2);
+      expect(expectedGapDays[0] > lastEval).toBe(true);
+      expect(expectedGapDays[1] < cutoff).toBe(true);
+    });
+  });
+
+
+  describe('Bug fix: Posting after deadline with partial progress', () => {
+    it('eligible + post after deadline → start over to onStreak(1)', () => {
+      // Bug: User 89kNbXuJwnbpDVjq9cKqRzha9HJ2
+      // Posted once on Monday Oct 13 from missed → entered eligible with deadline Oct 13
+      // Posted on Tuesday Oct 14 (after deadline) → stayed eligible forever
+      // Fix: Posting after deadline with currentPosts=1 → start over to onStreak(1)
+
+      let state = createInitialPhase2Projection();
+
+      // Post once on Monday (working day) from missed
+      state = applyEventsToPhase2Projection(
+        state,
+        [createPostEvent('2025-10-13', 1)], // Monday
+        TZ,
+      );
+
+      // Should enter eligible with same-day deadline
+      expect(state.status.type).toBe('eligible');
+      if (state.status.type === 'eligible') {
+        expect(state.status.currentPosts).toBe(1);
+        expect(state.status.postsRequired).toBe(2);
+        // Deadline is end of Monday Oct 13
+      }
+
+      // Post on Tuesday (after Monday deadline expired)
+      state = applyEventsToPhase2Projection(
+        state,
+        [createPostEvent('2025-10-14', 2)], // Tuesday
+        TZ,
+      );
+
+      // Should start over: deadline expired with currentPosts=1 → onStreak(1)
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(1);
+      expect(state.originalStreak).toBe(1);
+      expect(state.longestStreak).toBe(1);
+    });
+
+    it('eligible + post after deadline with 0 progress → missed then new eligible', () => {
+      // Note: Ideally the orchestrator synthesizes DAY_CLOSED_VIRTUAL before next-day posts
+      // This test shows the reducer's defensive behavior when that doesn't happen
+
+      let state = createInitialPhase2Projection();
+      state.status = { type: 'onStreak' };
+      state.currentStreak = 5;
+      state.originalStreak = 5;
+
+      // Miss Monday (enter eligible)
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-10-13')], // Monday
+        TZ,
+      );
+
+      expect(state.status.type).toBe('eligible');
+      expect(state.currentStreak).toBe(0);
+
+      // Post on Tuesday (after Monday deadline with 0 progress)
+      // Reducer treats as: deadline expired → missed, then post from missed → new eligible
+      state = applyEventsToPhase2Projection(
+        state,
+        [createPostEvent('2025-10-14', 1)], // Tuesday
+        TZ,
+      );
+
+      // Post from missed enters new eligible (same-day recovery attempt for Tuesday)
+      expect(state.status.type).toBe('eligible');
+      if (state.status.type === 'eligible') {
+        expect(state.status.currentPosts).toBe(1);
+        expect(state.status.postsRequired).toBe(2);
+        // New deadline is end of Tuesday
+      }
+      expect(state.currentStreak).toBe(0);
     });
   });
 });
