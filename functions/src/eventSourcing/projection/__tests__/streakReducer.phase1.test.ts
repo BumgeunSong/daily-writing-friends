@@ -1,18 +1,10 @@
 import { describe, it, expect } from '@jest/globals';
 import { Timestamp } from 'firebase-admin/firestore';
-import { fromZonedTime } from 'date-fns-tz';
 import { Event, EventType } from '../../types/Event';
 import {
   applyEventsToProjection,
   createInitialProjection,
 } from '../streakReducer';
-import {
-  applyEventsToPhase2Projection,
-  createInitialPhase2Projection,
-} from '../streakReducerPhase2';
-import { getEndOfDay } from '../../utils/workingDayUtils';
-
-const TZ = 'Asia/Seoul';
 
 // ============================================================================
 // PHASE 1: Basic Streak Tracking (phase1-v1)

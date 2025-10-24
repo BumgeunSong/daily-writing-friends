@@ -118,10 +118,6 @@ describe('deriveVirtualClosures', () => {
     });
   });
 });
-import { describe, it, expect } from '@jest/globals';
-import { Event } from '../../types/Event';
-import { deriveVirtualClosures } from '../deriveVirtualClosures';
-import { createPostEvent, groupEventsByDayKey } from './testUtils';
 
 // const TZ = 'Asia/Seoul';
 
@@ -245,9 +241,6 @@ describe('deriveVirtualClosures - Same Day Evaluation', () => {
     });
   });
 });
-import { describe, it, expect } from '@jest/globals';
-import { deriveVirtualClosures } from '../deriveVirtualClosures';
-import { createPostEvent, groupEventsByDayKey } from './testUtils';
 
 // const TZ = 'Asia/Seoul';
 
