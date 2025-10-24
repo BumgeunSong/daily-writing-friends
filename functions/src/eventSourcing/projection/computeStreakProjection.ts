@@ -2,37 +2,122 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { addDays, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import admin from '../../shared/admin';
-import { Event, EventType } from '../types/Event';
+import { Event, EventType, DayActivityEvent, DayClosedEvent } from '../types/Event';
 import { StreamProjectionPhase2 } from '../types/StreamProjectionPhase2';
 import { EventMeta } from '../types/EventMeta';
 import { computeDayKey } from '../append/computeDayKey';
 import { applyEventsToPhase2Projection, createInitialPhase2Projection } from './streakReducerPhase2';
 import { loadDeltaEvents } from './loadDeltaEvents';
-import { deriveVirtualClosures } from './deriveVirtualClosures';
 import { saveProjectionCache } from './saveProjectionCache';
+import { isWorkingDayByTz, getEndOfDay } from '../utils/workingDayUtils';
 
 const db = admin.firestore();
 
 /**
- * Determines evaluation cutoff based on optimistic evaluation logic.
- * - If user has posted today → evaluate up to today (immediate feedback)
- * - If user hasn't posted today → evaluate only up to yesterday (optimistic)
+ * Check if user has posted on a specific day.
+ * Queries events collection directly to avoid missing posts due to cache timing.
  *
- * @param todayLocal - Today's dayKey in user's timezone
- * @param yesterdayLocal - Yesterday's dayKey in user's timezone
- * @param deltaEvents - Events to evaluate
- * @returns dayKey to evaluate up to
+ * @param userId - User ID
+ * @param dayKey - Day key to check
+ * @returns true if user has posted on that day
  */
-function computeOptimisticCutoff(
-  todayLocal: string,
-  yesterdayLocal: string,
-  deltaEvents: Event[],
-): string {
-  const hasPostsToday = deltaEvents.some(
-    (event) => event.type === EventType.POST_CREATED && event.dayKey === todayLocal,
-  );
+async function checkHasPostedOnDay(userId: string, dayKey: string): Promise<boolean> {
+  const eventsQuery = db
+    .collection(`users/${userId}/events`)
+    .where('dayKey', '==', dayKey)
+    .where('type', '==', EventType.POST_CREATED)
+    .limit(1);
 
-  return hasPostsToday ? todayLocal : yesterdayLocal;
+  const snapshot = await eventsQuery.get();
+  return !snapshot.empty;
+}
+
+/**
+ * Synthesize extension ticks for days between lastEvaluatedDayKey and evaluationCutoff.
+ * For each working day in the extension window:
+ * - If day has posts (up to appliedSeq): emit DAY_ACTIVITY with postsCount
+ * - If day has no posts: emit virtual DayClosed
+ *
+ * This allows the reducer to process cached events when extending the evaluation window.
+ *
+ * @param userId - User ID
+ * @param lastEvaluatedDayKey - Last evaluated day (exclusive start)
+ * @param evaluationCutoff - New cutoff day (inclusive end)
+ * @param appliedSeq - Last applied sequence number
+ * @param timezone - User's timezone
+ * @param deltaEventsByDay - Map of dayKey to delta events (to avoid double-counting)
+ * @returns Array of synthetic extension events
+ */
+async function synthesizeExtensionTicks(
+  userId: string,
+  lastEvaluatedDayKey: string,
+  evaluationCutoff: string,
+  appliedSeq: number,
+  timezone: string,
+  deltaEventsByDay: Map<string, Event[]>,
+): Promise<Event[]> {
+  if (!lastEvaluatedDayKey || lastEvaluatedDayKey >= evaluationCutoff) {
+    return []; // No extension needed
+  }
+
+  const extensionTicks: Event[] = [];
+
+  // Generate working days in extension window
+  let currentDay = parseISO(lastEvaluatedDayKey);
+  const endDay = parseISO(evaluationCutoff);
+
+  while (currentDay < endDay) {
+    currentDay = addDays(currentDay, 1);
+    const dayKey = formatInTimeZone(currentDay, timezone, 'yyyy-MM-dd');
+
+    if (dayKey > evaluationCutoff) break;
+
+    // Only process working days
+    if (!isWorkingDayByTz(dayKey, timezone)) {
+      continue;
+    }
+
+    // Skip if this day has delta events (already being processed)
+    if (deltaEventsByDay.has(dayKey)) {
+      continue;
+    }
+
+    // Count posts on this day up to appliedSeq
+    const postsQuery = db
+      .collection(`users/${userId}/events`)
+      .where('dayKey', '==', dayKey)
+      .where('type', '==', EventType.POST_CREATED)
+      .where('seq', '<=', appliedSeq);
+
+    const postsSnap = await postsQuery.get();
+    const postsCount = postsSnap.size;
+
+    const endOfDayTimestamp = getEndOfDay(dayKey, timezone);
+
+    if (postsCount >= 1) {
+      // Emit DAY_ACTIVITY
+      const dayActivityEvent: DayActivityEvent = {
+        seq: 0, // Synthetic event has no seq
+        type: EventType.DAY_ACTIVITY,
+        dayKey,
+        createdAt: endOfDayTimestamp,
+        payload: { postsCount },
+      };
+      extensionTicks.push(dayActivityEvent);
+    } else {
+      // Emit virtual DayClosed
+      const dayClosedEvent: DayClosedEvent = {
+        seq: 0,
+        type: EventType.DAY_CLOSED,
+        dayKey,
+        createdAt: Timestamp.fromMillis(endOfDayTimestamp.toMillis() + 1), // After activity
+        idempotencyKey: `${userId}:${dayKey}:virtual`,
+      };
+      extensionTicks.push(dayClosedEvent);
+    }
+  }
+
+  return extensionTicks;
 }
 
 /**
@@ -99,24 +184,30 @@ export async function computeUserStreakProjection(
   const deltaEvents = allDeltaEvents.filter((event) => event.type !== EventType.DAY_CLOSED);
 
   // Step 3: Determine optimistic evaluation cutoff
-  const evaluationCutoff = computeOptimisticCutoff(todayLocal, yesterdayLocal, deltaEvents);
+  // Check if user posted today by querying today's events directly
+  // (deltaEvents may be empty if cache was updated before today's post)
+  const hasPostedToday = await checkHasPostedOnDay(userId, todayLocal);
+  const evaluationCutoff = hasPostedToday ? todayLocal : yesterdayLocal;
 
   // Check if projection is already up-to-date
   const lastEvaluatedDayKey = currentProjection.lastEvaluatedDayKey;
 
+  // Cache is valid only if:
+  // 1. No new events (appliedSeq >= latestSeq)
+  // 2. Evaluation cutoff hasn't changed (lastEvaluatedDayKey === evaluationCutoff)
+  // 3. Correct version (projectorVersion === 'phase2.1-v2')
+  // 4. No delta events (prevents missing same-day additions)
   if (
     appliedSeq >= latestSeq &&
     lastEvaluatedDayKey === evaluationCutoff &&
-    currentProjection.projectorVersion === 'phase2.1-v2'
+    currentProjection.projectorVersion === 'phase2.1-v2' &&
+    deltaEvents.length === 0
   ) {
     // Cache hit: no new events and already evaluated up to cutoff with correct version
     return currentProjection;
   }
 
-  // Step 4: Derive virtual closures
-  const startDayKey = lastEvaluatedDayKey || (deltaEvents[0]?.dayKey ?? evaluationCutoff);
-
-  // Group delta events by dayKey for closure derivation
+  // Step 4: Group delta events by dayKey
   const eventsByDayKey = new Map<string, Event[]>();
   for (const event of deltaEvents) {
     const existing = eventsByDayKey.get(event.dayKey) || [];
@@ -124,15 +215,18 @@ export async function computeUserStreakProjection(
     eventsByDayKey.set(event.dayKey, existing);
   }
 
-  const virtualClosures = deriveVirtualClosures(
-    startDayKey,
+  // Step 5: Synthesize extension ticks if needed (seq-fresh but date-stale)
+  const extensionTicks = await synthesizeExtensionTicks(
+    userId,
+    lastEvaluatedDayKey || '',
     evaluationCutoff,
-    eventsByDayKey,
+    appliedSeq,
     timezone,
+    eventsByDayKey,
   );
 
-  // Step 4: Merge delta events and virtual closures, then sort
-  const allEvents = [...deltaEvents, ...virtualClosures].sort((a, b) => {
+  // Step 6: Merge delta events and extension ticks, then sort
+  const allEvents = [...deltaEvents, ...extensionTicks].sort((a, b) => {
     // Sort by dayKey first, then by createdAt (for same-day ordering)
     if (a.dayKey !== b.dayKey) {
       return a.dayKey.localeCompare(b.dayKey);
@@ -140,7 +234,7 @@ export async function computeUserStreakProjection(
     return a.createdAt.toMillis() - b.createdAt.toMillis();
   });
 
-  // Step 5: Reduce events
+  // Step 7: Reduce events
   const newProjection = applyEventsToPhase2Projection(currentProjection, allEvents, timezone);
 
   // Update metadata
