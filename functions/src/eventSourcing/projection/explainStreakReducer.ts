@@ -243,16 +243,27 @@ function explainStreakChange(
  * Check if event is virtual (derived at read time).
  */
 function isVirtualEvent(event: Event): boolean {
-  if (event.type !== EventType.DAY_CLOSED) {
-    return false;
+  // DAY_CLOSED_VIRTUAL is always virtual
+  if (event.type === EventType.DAY_CLOSED_VIRTUAL) {
+    return true;
   }
-  return event.idempotencyKey?.startsWith('virtual:') ?? false;
+  // DAY_ACTIVITY is always virtual
+  if (event.type === EventType.DAY_ACTIVITY) {
+    return true;
+  }
+  // Legacy DAY_CLOSED events can be virtual (check idempotency key)
+  if (event.type === EventType.DAY_CLOSED) {
+    return event.idempotencyKey?.startsWith('virtual:') ?? false;
+  }
+  return false;
 }
 
 /**
  * Get human-readable event type name.
  */
-function getEventTypeName(type: EventType): 'PostCreated' | 'PostDeleted' | 'TimezoneChanged' | 'DayClosed' {
+function getEventTypeName(
+  type: EventType,
+): 'PostCreated' | 'PostDeleted' | 'TimezoneChanged' | 'DayClosed' | 'DayClosedVirtual' | 'DayActivity' {
   switch (type) {
     case EventType.POST_CREATED:
       return 'PostCreated';
@@ -262,6 +273,10 @@ function getEventTypeName(type: EventType): 'PostCreated' | 'PostDeleted' | 'Tim
       return 'TimezoneChanged';
     case EventType.DAY_CLOSED:
       return 'DayClosed';
+    case EventType.DAY_CLOSED_VIRTUAL:
+      return 'DayClosedVirtual';
+    case EventType.DAY_ACTIVITY:
+      return 'DayActivity';
     default:
       return 'DayClosed';
   }

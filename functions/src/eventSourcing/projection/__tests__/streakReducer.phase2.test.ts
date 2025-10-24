@@ -57,7 +57,7 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
       expect(state.longestStreak).toBe(0);
       expect(state.lastContributionDate).toBeNull();
       expect(state.appliedSeq).toBe(0);
-      expect(state.projectorVersion).toBe('phase2.1-no-crossday-v1');
+      expect(state.projectorVersion).toBe('phase2.2-daily-increment-v1');
     });
   });
 
@@ -166,9 +166,9 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
       const result = applyEventsToPhase2Projection(state, events, TZ);
 
       expect(result.status.type).toBe('onStreak');
-      expect(result.currentStreak).toBe(12); // 10 + 2 (weekday increment)
-      expect(result.originalStreak).toBe(12);
-      expect(result.longestStreak).toBe(12);
+      expect(result.currentStreak).toBe(11); // 10 + 1 (weekday increment)
+      expect(result.originalStreak).toBe(11);
+      expect(result.longestStreak).toBe(11);
     });
 
     it('transitions to onStreak with +1 increment for Friday miss', () => {
@@ -321,9 +321,9 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
 
         const result2 = applyEventsToPhase2Projection(resultAfterDayClose, events2, TZ);
 
-        // No cross-day increment: stays at streak=1
+        // Phase 2.2: Daily increment happens when posting on new working day
         expect(result2.status.type).toBe('onStreak');
-        expect(result2.currentStreak).toBe(1); // NOT 2
+        expect(result2.currentStreak).toBe(2); // Incremented from 1 to 2
       });
     });
   });
@@ -393,7 +393,7 @@ describe('No-Cross-Day Recovery Rules (Detailed Scenarios)', () => {
   }
 
   describe('Weekday miss full recovery', () => {
-    it('restores streak with +2 when 2+ posts on recovery day', () => {
+    it('restores streak with +1 when 2+ posts on recovery day', () => {
       let state = seedOnStreak(2);
 
       // Miss Wednesday
@@ -415,7 +415,7 @@ describe('No-Cross-Day Recovery Rules (Detailed Scenarios)', () => {
       );
 
       expect(state.status.type).toBe('onStreak');
-      expect(state.currentStreak).toBe(4); // originalStreak(2) + 2
+      expect(state.currentStreak).toBe(3); // originalStreak(2) + 1
     });
   });
 
@@ -534,7 +534,7 @@ describe('No-Cross-Day Recovery Rules (Detailed Scenarios)', () => {
       );
 
       expect(state.status.type).toBe('onStreak');
-      expect(state.currentStreak).toBe(4); // originalStreak(2) + 2
+      expect(state.currentStreak).toBe(3); // originalStreak(2) + 1
     });
 
     it('handles extension window with 1 post (starts over)', () => {
@@ -578,8 +578,8 @@ describe('No-Cross-Day Recovery Rules (Detailed Scenarios)', () => {
     });
   });
 
-  describe('No cross-day rebuild', () => {
-    it('does NOT rebuild with posts on separate days', () => {
+  describe('Daily increment on new working days', () => {
+    it('increments streak by 1 when posting on new working day', () => {
       let state = createInitialPhase2Projection();
 
       // Post on Monday from missed → immediate onStreak(1)
@@ -598,12 +598,12 @@ describe('No-Cross-Day Recovery Rules (Detailed Scenarios)', () => {
       expect(state.status.type).toBe('onStreak');
       expect(state.currentStreak).toBe(1);
 
-      // Post on Wednesday (separate day) - should NOT increment streak
+      // Post on Wednesday (separate day) - SHOULD increment streak by 1
       state = applyEventsToPhase2Projection(state, [createPostEvent('2025-01-15', 2)], TZ);
 
-      // Still onStreak but currentStreak doesn't increase
+      // Streak should increment to 2
       expect(state.status.type).toBe('onStreak');
-      expect(state.currentStreak).toBe(1); // NOT 2!
+      expect(state.currentStreak).toBe(2);
     });
   });
 });
@@ -614,11 +614,10 @@ describe('No-Cross-Day Recovery Rules (Detailed Scenarios)', () => {
 
 describe('Invariant Checks', () => {
   describe('originalStreak mutations', () => {
-    it('posting while onStreak never mutates originalStreak', () => {
+    it('posting while onStreak on new working days increments both streaks', () => {
       let state = seedOnStreak(2);
-      const savedOriginalStreak = state.originalStreak;
 
-      // Post on multiple days while onStreak
+      // Post on multiple NEW working days while onStreak
       state = applyEventsToPhase2Projection(
         state,
         [
@@ -629,10 +628,10 @@ describe('Invariant Checks', () => {
         TZ,
       );
 
-      // originalStreak MUST NOT change while onStreak
+      // In Phase 2.2, daily increments happen - both currentStreak and originalStreak should increase
       expect(state.status.type).toBe('onStreak');
-      expect(state.originalStreak).toBe(savedOriginalStreak);
-      expect(state.originalStreak).toBe(2);
+      expect(state.currentStreak).toBe(5); // 2 + 3 (three new working days)
+      expect(state.originalStreak).toBe(5); // Synced with currentStreak
     });
 
     it('entering eligible snapshots originalStreak exactly once', () => {
@@ -661,7 +660,7 @@ describe('Invariant Checks', () => {
       expect(state.originalStreak).toBe(savedOriginalStreak); // Still frozen
     });
 
-    it('restore always sets currentStreak = originalStreak + increment, then syncs originalStreak', () => {
+    it('restore always sets currentStreak = originalStreak + 1, then syncs originalStreak', () => {
       let state = seedOnStreak(2);
 
       // Miss Wednesday
@@ -683,10 +682,10 @@ describe('Invariant Checks', () => {
         TZ,
       );
 
-      // currentStreak = originalStreak(2) + increment(2) = 4
-      expect(state.currentStreak).toBe(4);
+      // currentStreak = originalStreak(2) + increment(1) = 3
+      expect(state.currentStreak).toBe(3);
       // originalStreak synced to currentStreak
-      expect(state.originalStreak).toBe(4);
+      expect(state.originalStreak).toBe(3);
       expect(state.originalStreak).toBe(state.currentStreak);
     });
 
@@ -870,9 +869,9 @@ describe('Invariant Checks', () => {
         TZ,
       );
 
-      // Already restored
+      // Already restored (originalStreak 2 + 1 = 3)
       expect(state.status.type).toBe('onStreak');
-      expect(state.currentStreak).toBe(4);
+      expect(state.currentStreak).toBe(3);
       const restoredStreak = state.currentStreak;
 
       // Recovery day closes (should be no-op)
@@ -1058,24 +1057,23 @@ describe('Invariant Checks', () => {
 
       state = applyEventsToPhase2Projection(state, events, TZ);
 
-      // Tuesday post → maintain onStreak (streak unchanged)
+      // Tuesday post → increment to 4 (new working day)
       // Wednesday miss → enter eligible (postsRequired=2, deadline=end of Thursday)
-      // Thursday 2 posts → successful recovery! Restore to originalStreak(3) + increment(2) = 5
+      // Thursday 2 posts → successful recovery! Restore to originalStreak(4) + increment(1) = 5
       expect(state.status.type).toBe('onStreak');
-      expect(state.currentStreak).toBe(5); // Restored: 3 + 2
+      expect(state.currentStreak).toBe(5); // Incremented from 3→4 on Tue, then restored: 4 + 1
       expect(state.originalStreak).toBe(5);
     });
 
-    it('maintains onStreak status when extension window has posts on all days', () => {
+    it('increments streak when extension window has posts on all new working days', () => {
       let state = createInitialPhase2Projection();
       state.status = { type: 'onStreak' };
       state.currentStreak = 5;
       state.originalStreak = 5;
       state.lastEvaluatedDayKey = '2025-10-13'; // Monday
 
-      // All days have posts - no DAY_CLOSED_VIRTUAL should be emitted
-      // Note: Phase 2 projection doesn't auto-increment streak on posts
-      // It only tracks state transitions (onStreak, eligible, missed)
+      // All days have posts - each new working day increments the streak
+      // Phase 2.2: Daily increment happens when posting on new working days
       const events: Event[] = [
         createPostEvent('2025-10-14', 1), // Tuesday
         createPostEvent('2025-10-15', 2), // Wednesday
@@ -1084,11 +1082,10 @@ describe('Invariant Checks', () => {
 
       state = applyEventsToPhase2Projection(state, events, TZ);
 
-      // Posting while onStreak doesn't change streak count
-      // Streak count is updated by nightly job based on state transitions
+      // Each new working day increments streak by 1
       expect(state.status.type).toBe('onStreak');
-      expect(state.currentStreak).toBe(5); // Unchanged
-      expect(state.originalStreak).toBe(5); // Unchanged
+      expect(state.currentStreak).toBe(8); // 5 + 3 (three new working days)
+      expect(state.originalStreak).toBe(8); // Synced with currentStreak
     });
   });
 
@@ -1125,9 +1122,9 @@ describe('Invariant Checks', () => {
       );
 
       // After close with 1 post → start over to onStreak(1)
-      // Wednesday post doesn't increment (no cross-day)
+      // Wednesday post DOES increment (Phase 2.2 daily increment)
       expect(state.status.type).toBe('onStreak');
-      expect(state.currentStreak).toBe(1);
+      expect(state.currentStreak).toBe(2);
     });
 
     it('synthesizes deadline close BEFORE next-day post (zero progress)', () => {

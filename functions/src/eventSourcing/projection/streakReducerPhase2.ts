@@ -3,7 +3,6 @@ import { StreamProjectionPhase2 } from '../types/StreamProjectionPhase2';
 import {
   isWorkingDayByTz,
   computeRecoveryWindow,
-  computeStreakIncrement,
   getEndOfDay,
 } from '../utils/workingDayUtils';
 import { formatInTimeZone } from 'date-fns-tz';
@@ -44,7 +43,7 @@ function fallToMissed(state: StreamProjectionPhase2): StreamProjectionPhase2 {
 
 /**
  * Runtime guard: validates originalStreak mutations only happen in allowed contexts.
- * In dev/test: throws if originalStreak changes when status is onStreak (should be frozen).
+ * Phase 2.2: originalStreak CAN change while onStreak due to daily incrementing.
  */
 function validateOriginalStreakMutation(
   before: StreamProjectionPhase2,
@@ -53,25 +52,22 @@ function validateOriginalStreakMutation(
 ): void {
   if (process.env.NODE_ENV === 'production') return;
 
-  // Allow changes when entering eligible (snapshot) or during any recovery/rebuild
+  // Phase 2.2: Allow changes when:
+  // - Entering eligible (snapshot)
+  // - During any recovery/rebuild
+  // - Daily increment while onStreak
   const allowedContexts = [
     'enterEligible',
     'restore',
     'rebuild',
     'startOver',
     'initialization',
+    'dailyIncrement', // Phase 2.2: posting while onStreak increments
   ];
 
   // Detect mutation
   if (before.originalStreak !== after.originalStreak) {
-    // If status was onStreak and stayed onStreak, this is INVALID
-    if (before.status.type === 'onStreak' && after.status.type === 'onStreak') {
-      throw new Error(
-        `[INVARIANT] originalStreak mutated while onStreak (${before.originalStreak} → ${after.originalStreak}) in context: ${context}`,
-      );
-    }
-
-    // Otherwise, ensure we're in an allowed context
+    // Ensure we're in an allowed context
     if (!allowedContexts.includes(context)) {
       console.warn(
         `[GUARD] originalStreak changed in unexpected context: ${context} (${before.originalStreak} → ${after.originalStreak})`,
@@ -92,7 +88,7 @@ export function createInitialPhase2Projection(): StreamProjectionPhase2 {
     longestStreak: 0,
     lastContributionDate: null,
     appliedSeq: 0,
-    projectorVersion: 'phase2.1-no-crossday-v1', // Removed cross-day rebuild logic
+    projectorVersion: 'phase2.2-daily-increment-v1', // Daily streak increment + recovery windows
   };
 }
 
@@ -182,7 +178,16 @@ function handlePostCreated(
   postsPerDay.set(dayKey, (postsPerDay.get(dayKey) || 0) + 1);
 
   // Handle status-specific logic
-  if (newState.status.type === 'eligible') {
+  if (newState.status.type === 'onStreak') {
+    // Phase 2.2: Daily streak increment when posting while onStreak
+    // Only increment if posting on a NEW working day (not same day as lastContributionDate)
+    if (isWorkingDayByTz(dayKey, timezone) && dayKey !== state.lastContributionDate) {
+      newState.currentStreak = state.currentStreak + 1;
+      newState.originalStreak = newState.currentStreak;
+      newState.longestStreak = Math.max(newState.longestStreak, newState.currentStreak);
+    }
+    // Same-day posts or weekend posts: no change to streak
+  } else if (newState.status.type === 'eligible') {
     // Save context before potential transition
     const savedMissedDate = newState.status.missedDate;
     const savedDeadline = newState.status.deadline;
@@ -195,9 +200,11 @@ function handlePostCreated(
       const missedDayKey = dayKeyFromTimestamp(savedMissedDate, timezone);
       const deadlineDayKey = savedDeadline ? dayKeyFromTimestamp(savedDeadline, timezone) : '';
 
-      // Check if this is same-day rebuild (missed + 2 posts same day)
+      // Check if this is same-day recovery (meeting recovery requirement on miss day itself)
       if (missedDayKey === dayKey) {
-        // Same-day rebuild from missed: always streak=2
+        // Same-day recovery from eligible: user posted 2x on the day they missed
+        // This transitions eligible → onStreak with streak=2 (originalStreak + 1 for recovery day)
+        // Note: User must already be in eligible status, having missed earlier in the day
         newState.currentStreak = 2;
         newState.longestStreak = Math.max(newState.longestStreak, 2);
         newState.originalStreak = 2;
@@ -207,9 +214,8 @@ function handlePostCreated(
         newState.longestStreak = Math.max(newState.longestStreak, 1);
         newState.originalStreak = 1;
       } else {
-        // Regular recovery: restore with policy increment
-        const increment = computeStreakIncrement(missedDayKey, timezone);
-        newState.currentStreak = newState.originalStreak + increment;
+        // Regular recovery: restore to originalStreak + 1 (increment for recovery day)
+        newState.currentStreak = newState.originalStreak + 1;
         newState.longestStreak = Math.max(newState.longestStreak, newState.currentStreak);
         newState.originalStreak = newState.currentStreak;
       }
@@ -238,11 +244,13 @@ function handlePostCreated(
 
   // Runtime guard: validate originalStreak mutations
   const context =
-    newState.status.type === 'onStreak' && state.status.type === 'eligible'
-      ? 'restore'
-      : newState.status.type === 'onStreak' && state.status.type === 'missed'
-        ? 'rebuild'
-        : 'postCreated';
+    newState.status.type === 'onStreak' && state.status.type === 'onStreak'
+      ? 'dailyIncrement'
+      : newState.status.type === 'onStreak' && state.status.type === 'eligible'
+        ? 'restore'
+        : newState.status.type === 'onStreak' && state.status.type === 'missed'
+          ? 'rebuild'
+          : 'postCreated';
   validateOriginalStreakMutation(state, newState, context);
 
   return newState;
@@ -279,7 +287,6 @@ function handleDayActivity(
     const missedDate = newState.status.missedDate;
     if (!missedDate) return newState;
 
-    const missedDayKey = dayKeyFromTimestamp(missedDate, timezone);
     const deadlineDayKey = dayKeyFromTimestamp(deadline, timezone);
 
     // Check if dayKey is the recovery day
@@ -292,9 +299,8 @@ function handleDayActivity(
     const postsRequired = newState.status.postsRequired || 0;
 
     if (currentPosts >= postsRequired) {
-      // Recovery requirement met → restore streak
-      const increment = computeStreakIncrement(missedDayKey, timezone);
-      newState.currentStreak = newState.originalStreak + increment;
+      // Recovery requirement met → restore to originalStreak + 1 (increment for recovery day)
+      newState.currentStreak = newState.originalStreak + 1;
       newState.longestStreak = Math.max(newState.longestStreak, newState.currentStreak);
       newState.originalStreak = newState.currentStreak;
       newState.status = { type: 'onStreak' };
