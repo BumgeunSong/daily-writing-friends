@@ -5,7 +5,6 @@ import {
   computeRecoveryWindow,
   computeStreakIncrement,
   getEndOfDay,
-  getNextWorkingDayKey,
 } from '../utils/workingDayUtils';
 import { formatInTimeZone } from 'date-fns-tz';
 
@@ -21,7 +20,7 @@ export function createInitialPhase2Projection(): StreamProjectionPhase2 {
     longestStreak: 0,
     lastContributionDate: null,
     appliedSeq: 0,
-    projectorVersion: 'phase2-v2-consecutive', // Updated for consecutive working days fix
+    projectorVersion: 'phase2.1-no-crossday-v1', // Removed cross-day rebuild logic
   };
 }
 
@@ -55,7 +54,12 @@ export function applyEventsToPhase2Projection(
         break;
 
       case EventType.DAY_CLOSED:
-        state = handleDayClosed(state, event, timezone, postsPerDay);
+        // Legacy persisted events - treat same as DAY_CLOSED_VIRTUAL
+        state = handleDayClosedVirtual(state, event, timezone, postsPerDay);
+        break;
+
+      case EventType.DAY_CLOSED_VIRTUAL:
+        state = handleDayClosedVirtual(state, event, timezone, postsPerDay);
         break;
 
       case EventType.POST_DELETED:
@@ -107,35 +111,33 @@ function handlePostCreated(
 
     // Check if transition to onStreak
     if (newState.status.type === 'onStreak' && savedMissedDate) {
-      // Transition happened - restore streak
       const missedDayKey = dayKeyFromTimestamp(savedMissedDate, timezone);
-      const increment = computeStreakIncrement(missedDayKey, timezone);
-      newState.currentStreak = newState.originalStreak + increment;
-      newState.longestStreak = Math.max(newState.longestStreak, newState.currentStreak);
-      newState.originalStreak = newState.currentStreak;
+
+      // Check if this is same-day rebuild (missed + 2 posts same day)
+      if (missedDayKey === dayKey) {
+        // Same-day rebuild from missed: always streak=2
+        newState.currentStreak = 2;
+        newState.longestStreak = Math.max(newState.longestStreak, 2);
+        newState.originalStreak = 2;
+      } else {
+        // Regular recovery: restore with policy increment
+        const increment = computeStreakIncrement(missedDayKey, timezone);
+        newState.currentStreak = newState.originalStreak + increment;
+        newState.longestStreak = Math.max(newState.longestStreak, newState.currentStreak);
+        newState.originalStreak = newState.currentStreak;
+      }
 
       // Clear eligible fields (already cleared by handleEligiblePost returning { type: 'onStreak' })
     }
   } else if (newState.status.type === 'missed') {
     newState.status = handleMissedPost(newState, dayKey, timezone, postsPerDay);
 
-    // Check if transition to onStreak via rebuild
+    // Check if transition to onStreak via same-day rebuild
     if (newState.status.type === 'onStreak') {
-      // Calculate restored streak from the missedPostDates that were accumulated before transition
-      // Use the old status's missedPostDates to get the count
-      const previousMissedDates = (state.status.type === 'missed' && state.status.missedPostDates)
-        ? state.status.missedPostDates
-        : [];
-
-      // Include the current post that triggered the transition
-      const allMissedDates = [...previousMissedDates, dayKey];
-      const restoredStreak = calculateRestoredStreak(allMissedDates, timezone);
-
-      newState.currentStreak = newState.originalStreak + restoredStreak;
-      newState.longestStreak = Math.max(newState.longestStreak, newState.currentStreak);
-      newState.originalStreak = newState.currentStreak;
-
-      // Status is already { type: 'onStreak' } from handleMissedPost
+      // Same-day rebuild: 2+ posts on one day → streak = 2
+      newState.currentStreak = 2;
+      newState.longestStreak = Math.max(newState.longestStreak, 2);
+      newState.originalStreak = 2;
     }
   }
 
@@ -145,10 +147,10 @@ function handlePostCreated(
 
 /**
  * Handle DAY_ACTIVITY synthetic event (for extension window).
- * Summarizes the daily posting activity when extending evaluation range.
- * - If eligible: increment currentPosts, check if recovery requirement met
- * - If missed: check rebuild conditions (same-day 2+ posts or consecutive working days)
- * - If onStreak: no change (already in good standing)
+ * New rules (no cross-day rebuild):
+ * - If eligible on recovery day: 2+ posts → restore, 1 post → start over at day close
+ * - If missed: first post → enter eligible (same-day recovery), 2+ posts → restore
+ * - If onStreak: no change
  */
 function handleDayActivity(
   state: StreamProjectionPhase2,
@@ -167,7 +169,7 @@ function handleDayActivity(
   }
 
   if (newState.status.type === 'eligible') {
-    // Check if post is within eligible window
+    // Check if this is the recovery day
     const deadline = newState.status.deadline;
     if (!deadline) return newState;
 
@@ -177,9 +179,9 @@ function handleDayActivity(
     const missedDayKey = dayKeyFromTimestamp(missedDate, timezone);
     const deadlineDayKey = dayKeyFromTimestamp(deadline, timezone);
 
-    // Check if dayKey is within recovery window [missedDay, deadline]
-    if (dayKey < missedDayKey || dayKey > deadlineDayKey) {
-      return newState; // Outside recovery window
+    // Check if dayKey is the recovery day
+    if (dayKey !== deadlineDayKey) {
+      return newState; // Not recovery day, no action
     }
 
     // Increment currentPosts
@@ -187,47 +189,37 @@ function handleDayActivity(
     const postsRequired = newState.status.postsRequired || 0;
 
     if (currentPosts >= postsRequired) {
-      // Recovery requirement met → transition to onStreak
+      // Recovery requirement met → restore streak
       const increment = computeStreakIncrement(missedDayKey, timezone);
       newState.currentStreak = newState.originalStreak + increment;
       newState.longestStreak = Math.max(newState.longestStreak, newState.currentStreak);
       newState.originalStreak = newState.currentStreak;
       newState.status = { type: 'onStreak' };
     } else {
-      // Still eligible, update currentPosts
+      // Update currentPosts, will be handled at day close
       newState.status = {
         ...newState.status,
         currentPosts,
       };
     }
   } else if (newState.status.type === 'missed') {
-    // Check rebuild conditions
-    const missedPostDates = [...(newState.status.missedPostDates || []), dayKey];
-
-    // Same-day rebuild: 2+ posts on one day
+    // From missed: first post enters eligible (same-day recovery)
     if (postsCount >= 2) {
+      // Same-day rebuild: 2+ posts → restore with +2 (weekday semantics)
       newState.status = { type: 'onStreak' };
       newState.currentStreak = 2;
       newState.longestStreak = Math.max(newState.longestStreak, 2);
       newState.originalStreak = 2;
-      return newState;
-    }
-
-    // Cross-day rebuild: consecutive working days
-    const uniqueWorkingDays = Array.from(
-      new Set(missedPostDates.filter((day) => isWorkingDayByTz(day, timezone))),
-    ).sort();
-
-    if (hasConsecutiveWorkingDays(uniqueWorkingDays, timezone)) {
-      // Rebuild streak
-      const restoredStreak = calculateRestoredStreak(missedPostDates, timezone);
-      newState.currentStreak = newState.originalStreak + restoredStreak;
-      newState.longestStreak = Math.max(newState.longestStreak, newState.currentStreak);
-      newState.originalStreak = newState.currentStreak;
-      newState.status = { type: 'onStreak' };
     } else {
-      // Still missed, update missedPostDates
-      newState.status = { ...newState.status, missedPostDates };
+      // 1 post: enter eligible for same-day recovery (will close to onStreak(1) at day close)
+      // Treat as recovery-in-progress
+      newState.status = {
+        type: 'eligible',
+        currentPosts: postsCount,
+        postsRequired: 2, // Weekday semantics for missed state
+        missedDate: getEndOfDay(dayKey, timezone), // Mark today as the "miss"
+        deadline: getEndOfDay(dayKey, timezone), // Same-day recovery
+      };
     }
   }
   // If onStreak: no change needed
@@ -270,9 +262,9 @@ function handleEligiblePost(
 
 /**
  * Handle post during missed status.
- * Check rebuild conditions:
- * - Same-day 2 posts: immediate rebuild
- * - 2+ consecutive working days with posts: rebuild
+ * New rules (no cross-day rebuild):
+ * - First post on a working day: enter eligible for same-day recovery
+ * - Second post same day: restore with +2 (weekday semantics)
  */
 function handleMissedPost(
   state: StreamProjectionPhase2,
@@ -284,41 +276,42 @@ function handleMissedPost(
 
   if (status.type !== 'missed') return status;
 
-  // Track this post in missedPostDates (array of all post dates during missed period)
-  const missedPostDates = [...(status.missedPostDates || [])];
-  missedPostDates.push(dayKey);
+  // Count posts on this day (including current one)
+  const postsOnDay = (postsPerDay.get(dayKey) || 0);
 
-  // Check same-day rebuild: count posts on current dayKey (including this one)
-  const postsOnDayKey = missedPostDates.filter(d => d === dayKey).length;
-  if (postsOnDayKey >= 2) {
+  if (postsOnDay >= 2) {
+    // Same-day rebuild: 2+ posts → restore with +2
     return { type: 'onStreak' };
   }
 
-  // Check cross-day rebuild: consecutive working days with posts
-  const uniqueWorkingDays = Array.from(new Set(
-    missedPostDates.filter(day => isWorkingDayByTz(day, timezone))
-  )).sort();
-
-  if (hasConsecutiveWorkingDays(uniqueWorkingDays, timezone)) {
-    return { type: 'onStreak' };
-  }
-
-  // Still in missed status - update with new post date
-  return { ...status, missedPostDates };
+  // First post: enter eligible for same-day recovery
+  return {
+    type: 'eligible',
+    currentPosts: postsOnDay,
+    postsRequired: 2, // Weekday semantics
+    missedDate: getEndOfDay(dayKey, timezone),
+    deadline: getEndOfDay(dayKey, timezone), // Same-day recovery
+  };
 }
 
 /**
- * Handle DayClosed event.
- * - If working day without posts and onStreak: transition to eligible
- * - If eligible and deadline passed without meeting requirement: transition to missed
+ * Handle DAY_CLOSED_VIRTUAL event (working day with 0 posts).
+ * New rules:
+ * - If onStreak: enter eligible (capture originalStreak, set recovery requirements)
+ * - If eligible on recovery day close:
+ *   - currentPosts >= postsRequired: already restored (no-op)
+ *   - currentPosts > 0: start over with onStreak(1)
+ *   - currentPosts == 0: transition to missed(0)
  */
-function handleDayClosed(
+function handleDayClosedVirtual(
   state: StreamProjectionPhase2,
   event: Event,
   timezone: string,
   postsPerDay: Map<string, number>,
 ): StreamProjectionPhase2 {
-  if (event.type !== EventType.DAY_CLOSED) return state;
+  if (event.type !== EventType.DAY_CLOSED && event.type !== EventType.DAY_CLOSED_VIRTUAL) {
+    return state;
+  }
 
   const newState = { ...state };
   const { dayKey } = event;
@@ -326,102 +319,57 @@ function handleDayClosed(
   const isWorkingDay = isWorkingDayByTz(dayKey, timezone);
   const hadPostsOnDay = postsPerDay.has(dayKey);
 
-  // Check for miss on working day
-  if (isWorkingDay && !hadPostsOnDay) {
-    if (newState.status.type === 'onStreak') {
-      // Transition to eligible
-      const { postsRequired, deadline } = computeRecoveryWindow(dayKey, timezone);
-
-      newState.status = {
-        type: 'eligible',
-        postsRequired,
-        currentPosts: 0,
-        deadline,
-        missedDate: getEndOfDay(dayKey, timezone),
-      };
-
-      newState.originalStreak = newState.currentStreak;
-      newState.currentStreak = 0;
-    }
-  }
-
-  // Check if closing recovery deadline day
+  // First check if this is recovery day close (takes priority)
   if (newState.status.type === 'eligible' && newState.status.deadline) {
     const deadlineDayKey = dayKeyFromTimestamp(newState.status.deadline, timezone);
 
     if (dayKey === deadlineDayKey) {
-      // Recovery day is closing - check if requirement met
+      // Recovery day is closing
       const currentPosts = newState.status.currentPosts || 0;
       const postsRequired = newState.status.postsRequired || 2;
 
-      if (currentPosts < postsRequired) {
-        // Transition to missed - preserve partial progress
-        newState.status = {
-          type: 'missed',
-          missedDate: newState.status.missedDate,
-        };
-        newState.currentStreak = currentPosts;
-
-        // Clear postsPerDay for fresh rebuild tracking
+      if (currentPosts >= postsRequired) {
+        // Already restored by DAY_ACTIVITY or handlePostCreated (no-op)
+        // This shouldn't happen in normal flow
+      } else if (currentPosts > 0) {
+        // Start over: onStreak with currentStreak = 1
+        newState.status = { type: 'onStreak' };
+        newState.currentStreak = 1;
+        newState.longestStreak = Math.max(newState.longestStreak, 1);
+        newState.originalStreak = 1;
+        postsPerDay.clear();
+      } else {
+        // currentPosts == 0: transition to missed
+        newState.status = { type: 'missed' };
+        newState.currentStreak = 0;
         postsPerDay.clear();
       }
+
+      // Recovery day handled, return early
+      newState.appliedSeq = event.seq;
+      return newState;
     }
+  }
+
+  // Handle regular day close: working day with no posts from onStreak
+  if (isWorkingDay && !hadPostsOnDay && newState.status.type === 'onStreak') {
+    // Enter eligible (miss on working day)
+    const { postsRequired, deadline } = computeRecoveryWindow(dayKey, timezone);
+
+    newState.status = {
+      type: 'eligible',
+      postsRequired,
+      currentPosts: 0,
+      deadline,
+      missedDate: getEndOfDay(dayKey, timezone),
+    };
+
+    newState.originalStreak = newState.currentStreak;
+    newState.currentStreak = 0;
   }
 
   newState.appliedSeq = event.seq;
   return newState;
-}
-
-/**
- * Check if there are at least 2 consecutive working days in the array.
- * Requires sorted array of dayKeys (YYYY-MM-DD format).
- * Returns true if any two consecutive working days are found.
- */
-function hasConsecutiveWorkingDays(sortedWorkingDays: string[], timezone: string): boolean {
-  if (sortedWorkingDays.length < 2) return false;
-
-  for (let i = 0; i < sortedWorkingDays.length - 1; i++) {
-    const currentDay = sortedWorkingDays[i];
-    const nextDay = sortedWorkingDays[i + 1];
-    const expectedNextDay = getNextWorkingDayKey(currentDay, timezone);
-
-    if (nextDay === expectedNextDay) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-/**
- * Calculate restored streak from posts during missed period.
- * Counts consecutive working days with at least 1 post.
- */
-function calculateRestoredStreak(postDates: string[], timezone: string): number {
-  const uniqueWorkingDays = Array.from(new Set(
-    postDates.filter((day) => isWorkingDayByTz(day, timezone))
-  )).sort();
-
-  if (uniqueWorkingDays.length === 0) return 0;
-
-  // Count longest consecutive streak
-  let currentStreak = 1;
-  let longestStreak = 1;
-
-  for (let i = 0; i < uniqueWorkingDays.length - 1; i++) {
-    const currentDay = uniqueWorkingDays[i];
-    const nextDay = uniqueWorkingDays[i + 1];
-    const expectedNextDay = getNextWorkingDayKey(currentDay, timezone);
-
-    if (nextDay === expectedNextDay) {
-      currentStreak++;
-      longestStreak = Math.max(longestStreak, currentStreak);
-    } else {
-      currentStreak = 1;
-    }
-  }
-
-  return longestStreak;
 }
 
 /**

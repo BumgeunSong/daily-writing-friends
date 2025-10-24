@@ -2,7 +2,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { addDays, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import admin from '../../shared/admin';
-import { Event, EventType, DayActivityEvent, DayClosedEvent } from '../types/Event';
+import { Event, EventType, DayActivityEvent, DayClosedVirtualEvent } from '../types/Event';
 import { StreamProjectionPhase2 } from '../types/StreamProjectionPhase2';
 import { EventMeta } from '../types/EventMeta';
 import { computeDayKey } from '../append/computeDayKey';
@@ -105,15 +105,14 @@ async function synthesizeExtensionTicks(
       };
       extensionTicks.push(dayActivityEvent);
     } else {
-      // Emit virtual DayClosed
-      const dayClosedEvent: DayClosedEvent = {
+      // Emit DAY_CLOSED_VIRTUAL (working day with 0 posts)
+      const dayClosedVirtualEvent: DayClosedVirtualEvent = {
         seq: 0,
-        type: EventType.DAY_CLOSED,
+        type: EventType.DAY_CLOSED_VIRTUAL,
         dayKey,
         createdAt: Timestamp.fromMillis(endOfDayTimestamp.toMillis() + 1), // After activity
-        idempotencyKey: `${userId}:${dayKey}:virtual`,
       };
-      extensionTicks.push(dayClosedEvent);
+      extensionTicks.push(dayClosedVirtualEvent);
     }
   }
 
@@ -195,12 +194,12 @@ export async function computeUserStreakProjection(
   // Cache is valid only if:
   // 1. No new events (appliedSeq >= latestSeq)
   // 2. Evaluation cutoff hasn't changed (lastEvaluatedDayKey === evaluationCutoff)
-  // 3. Correct version (projectorVersion === 'phase2.1-v2')
+  // 3. Correct version (projectorVersion === 'phase2.1-no-crossday-v1')
   // 4. No delta events (prevents missing same-day additions)
   if (
     appliedSeq >= latestSeq &&
     lastEvaluatedDayKey === evaluationCutoff &&
-    currentProjection.projectorVersion === 'phase2.1-v2' &&
+    currentProjection.projectorVersion === 'phase2.1-no-crossday-v1' &&
     deltaEvents.length === 0
   ) {
     // Cache hit: no new events and already evaluated up to cutoff with correct version
@@ -240,7 +239,7 @@ export async function computeUserStreakProjection(
   // Update metadata
   newProjection.appliedSeq = Math.max(latestSeq, appliedSeq);
   newProjection.lastEvaluatedDayKey = evaluationCutoff;
-  newProjection.projectorVersion = 'phase2.1-v2';
+  newProjection.projectorVersion = 'phase2.1-no-crossday-v1';
 
   // Step 6: Persist (write-behind)
   if (

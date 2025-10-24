@@ -200,21 +200,6 @@ describe('explainStreakReducer', () => {
     });
   });
 
-  describe('when missed context exists', () => {
-    it('includes missedContext in snapshot', () => {
-      const initialState = createTestProjection({
-        status: {
-          type: 'missed',
-          missedPostDates: ['2025-10-18'],
-        },
-      });
-      const events = [createPostEvent('2025-10-20', 1)];
-
-      const result = explainStreakReducer(initialState, events, TZ);
-
-      const stateBefore = result.eventExplanations[0].stateBefore;
-      expect(stateBefore.missedContext).toBeDefined();
-      expect(stateBefore.missedContext?.missedPostDates).toEqual(['2025-10-18']);
-    });
-  });
+  // Note: missedContext with missedPostDates removed in phase2.1-no-crossday-v1
+  // (no cross-day rebuild tracking)
 });

@@ -4,7 +4,8 @@ export enum EventType {
   POST_CREATED = 'PostCreated',
   POST_DELETED = 'PostDeleted',
   TIMEZONE_CHANGED = 'TimezoneChanged',
-  DAY_CLOSED = 'DayClosed',
+  DAY_CLOSED = 'DayClosed', // Legacy persisted events (Phase 2)
+  DAY_CLOSED_VIRTUAL = 'DayClosedVirtual', // Synthetic: working day with 0 posts
   DAY_ACTIVITY = 'DayActivity', // Synthetic: summarizes posts for a day during extension
 }
 
@@ -45,6 +46,11 @@ export interface DayClosedEvent extends BaseEvent {
   idempotencyKey: string; // Format: ${userId}:${dayKey}:closed
 }
 
+export interface DayClosedVirtualEvent extends BaseEvent {
+  type: EventType.DAY_CLOSED_VIRTUAL;
+  // No idempotencyKey - synthetic events are never persisted
+}
+
 export interface DayActivityEvent extends BaseEvent {
   type: EventType.DAY_ACTIVITY;
   payload: {
@@ -57,4 +63,5 @@ export type Event =
   | PostDeletedEvent
   | TimezoneChangedEvent
   | DayClosedEvent
+  | DayClosedVirtualEvent
   | DayActivityEvent;

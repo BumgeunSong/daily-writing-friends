@@ -1,5 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
 import { Timestamp } from 'firebase-admin/firestore';
+import { fromZonedTime } from 'date-fns-tz';
 import { Event, EventType } from '../../types/Event';
 import {
   applyEventsToPhase2Projection,
@@ -19,7 +20,7 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
       expect(state.longestStreak).toBe(0);
       expect(state.lastContributionDate).toBeNull();
       expect(state.appliedSeq).toBe(0);
-      expect(state.projectorVersion).toBe('phase2-v2-consecutive');
+      expect(state.projectorVersion).toBe('phase2.1-no-crossday-v1');
     });
   });
 
@@ -102,8 +103,8 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
         type: 'eligible',
         postsRequired: 2,
         currentPosts: 0,
-        deadline: Timestamp.fromDate(new Date('2025-01-21T23:59:59Z')),
-        missedDate: Timestamp.fromDate(new Date('2025-01-20T23:59:59Z')),
+        deadline: Timestamp.fromDate(fromZonedTime('2025-01-21T23:59:59.999', TZ)),
+        missedDate: Timestamp.fromDate(fromZonedTime('2025-01-20T23:59:59.999', TZ)),
       };
       state.originalStreak = 10;
       state.currentStreak = 0;
@@ -139,8 +140,8 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
         type: 'eligible',
         postsRequired: 1,
         currentPosts: 0,
-        deadline: Timestamp.fromDate(new Date('2025-01-18T14:59:59.999Z')), // End of Sat in Seoul (recovery day)
-        missedDate: Timestamp.fromDate(new Date('2025-01-17T14:59:59.999Z')), // End of Fri in Seoul
+        deadline: Timestamp.fromDate(fromZonedTime('2025-01-18T23:59:59.999', TZ)), // End of Sat in Seoul
+        missedDate: Timestamp.fromDate(fromZonedTime('2025-01-17T23:59:59.999', TZ)), // End of Fri in Seoul
       };
       state.originalStreak = 8;
       state.currentStreak = 0;
@@ -164,14 +165,14 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
   });
 
   describe('Eligible recovery failure', () => {
-    it('transitions to missed when deadline passes with partial progress', () => {
+    it('starts over when deadline passes with partial progress', () => {
       const state = createInitialPhase2Projection();
       state.status = {
         type: 'eligible',
         postsRequired: 2,
         currentPosts: 1, // Already made 1 post during recovery window
-        deadline: Timestamp.fromDate(new Date('2025-01-21T14:59:59.999Z')), // End of 2025-01-21 in Seoul
-        missedDate: Timestamp.fromDate(new Date('2025-01-20T14:59:59.999Z')), // End of 2025-01-20 in Seoul
+        deadline: Timestamp.fromDate(fromZonedTime('2025-01-21T23:59:59.999', TZ)), // End of 2025-01-21 in Seoul
+        missedDate: Timestamp.fromDate(fromZonedTime('2025-01-20T23:59:59.999', TZ)), // End of 2025-01-20 in Seoul
       };
       state.originalStreak = 10;
       state.currentStreak = 0;
@@ -189,9 +190,10 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
 
       const result = applyEventsToPhase2Projection(state, events, TZ);
 
-      expect(result.status.type).toBe('missed');
-      expect(result.currentStreak).toBe(1); // Partial progress preserved
-      expect(result.originalStreak).toBe(10); // Original preserved
+      // no-crossday-v1: Partial recovery (1 post when 2 required) → start over with streak=1
+      expect(result.status.type).toBe('onStreak');
+      expect(result.currentStreak).toBe(1);
+      expect(result.originalStreak).toBe(1); // Reset to new streak
     });
   });
 
@@ -222,11 +224,14 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
       const result = applyEventsToPhase2Projection(state, events, TZ);
 
       expect(result.status.type).toBe('onStreak');
-      expect(result.currentStreak).toBe(6); // originalStreak=5 + restoredStreak=1
+      // no-crossday-v1: Same-day rebuild always gives streak=2 (doesn't restore original)
+      expect(result.currentStreak).toBe(2);
     });
   });
 
-  describe('Missed rebuild - cross-day consecutive working days', () => {
+  // OBSOLETE: Cross-day rebuild removed in phase2.1-no-crossday-v1
+  // See noCrossDay.test.ts for new same-day recovery rules
+  describe.skip('Missed rebuild - cross-day consecutive working days (OBSOLETE)', () => {
     describe('when posts are on consecutive working days', () => {
       it('transitions to onStreak with streak of 2 (Mon-Tue)', () => {
         const state = createInitialPhase2Projection();
@@ -399,9 +404,9 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
       });
     });
 
-    describe('when processing incremental events', () => {
-      it('transitions to onStreak when second consecutive post arrives later', () => {
-        // First event batch: posted on Monday
+    describe('when processing incremental events (no-cross-day rules)', () => {
+      it('enters eligible then start-over with separate-day posts', () => {
+        // First event batch: posted on Monday (from missed)
         const state1 = createInitialPhase2Projection();
         state1.status = { type: 'missed' };
         state1.originalStreak = 0;
@@ -418,25 +423,40 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
 
         const result1 = applyEventsToPhase2Projection(state1, events1, TZ);
 
-        expect(result1.status.type).toBe('missed');
-        expect(result1.status.missedPostDates).toEqual(['2025-10-21']);
+        // First post from missed: enter eligible (needs 2 posts same day)
+        expect(result1.status.type).toBe('eligible');
         expect(result1.currentStreak).toBe(0);
 
-        // Second event batch: posted on Tuesday (next working day)
+        // Simulate day close with only 1 post (via DAY_CLOSED_VIRTUAL)
+        const dayCloseEvent: Event = {
+          seq: 0,
+          type: EventType.DAY_CLOSED_VIRTUAL,
+          dayKey: '2025-10-21',
+          createdAt: Timestamp.fromDate(new Date('2025-10-21T23:59:59Z')),
+        };
+
+        const resultAfterDayClose = applyEventsToPhase2Projection(result1, [dayCloseEvent], TZ);
+
+        // Day closes with 1 post: start over with streak=1
+        expect(resultAfterDayClose.status.type).toBe('onStreak');
+        expect(resultAfterDayClose.currentStreak).toBe(1);
+
+        // Second event batch: posted on Tuesday (separate day, no cross-day increment)
         const events2: Event[] = [
           {
             seq: 2,
             type: EventType.POST_CREATED,
             createdAt: Timestamp.now(),
-            dayKey: '2025-10-22', // Tuesday (consecutive working day)
+            dayKey: '2025-10-22', // Tuesday
             payload: { postId: 'p2', boardId: 'b1', contentLength: 100 },
           },
         ];
 
-        const result2 = applyEventsToPhase2Projection(result1, events2, TZ);
+        const result2 = applyEventsToPhase2Projection(resultAfterDayClose, events2, TZ);
 
+        // No cross-day increment: stays at streak=1
         expect(result2.status.type).toBe('onStreak');
-        expect(result2.currentStreak).toBe(2); // 2 consecutive working days
+        expect(result2.currentStreak).toBe(1); // NOT 2
       });
     });
   });

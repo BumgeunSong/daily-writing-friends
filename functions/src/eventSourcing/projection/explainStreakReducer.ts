@@ -107,12 +107,7 @@ function captureStateSnapshot(state: StreamProjectionPhase2): StreakSnapshot {
     };
   }
 
-  // Include missed context if applicable
-  if (state.status.type === 'missed') {
-    snapshot.missedContext = {
-      missedPostDates: state.status.missedPostDates ?? [],
-    };
-  }
+  // No missed context in phase2.1-no-crossday-v1 (no cross-day rebuild tracking)
 
   return snapshot;
 }
