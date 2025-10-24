@@ -190,7 +190,7 @@ function handlePostCreated(
 
     newState.status = handleEligiblePost(newState, dayKey, timezone);
 
-    // Check if transition to onStreak
+    // Check if transition to onStreak or missed
     if (newState.status.type === 'onStreak' && savedMissedDate) {
       const missedDayKey = dayKeyFromTimestamp(savedMissedDate, timezone);
       const deadlineDayKey = savedDeadline ? dayKeyFromTimestamp(savedDeadline, timezone) : '';
@@ -213,17 +213,25 @@ function handlePostCreated(
         newState.longestStreak = Math.max(newState.longestStreak, newState.currentStreak);
         newState.originalStreak = newState.currentStreak;
       }
+    } else if (newState.status.type === 'missed') {
+      // Transitioned to missed (deadline expired with 0 progress)
+      // Now apply missed post logic: immediate onStreak(1)
+      if (isWorkingDayByTz(dayKey, timezone)) {
+        const result = startOverToOnStreak1(newState);
+        result.appliedSeq = event.seq;
+        return result;
+      }
+      // Weekend post: stay missed
     }
   } else if (newState.status.type === 'missed') {
-    newState.status = handleMissedPost(newState, dayKey, timezone, postsPerDay);
-
-    // Check if transition to onStreak via same-day rebuild
-    if (newState.status.type === 'onStreak') {
-      // Same-day rebuild: 2+ posts on one day → streak = 2
-      newState.currentStreak = 2;
-      newState.longestStreak = Math.max(newState.longestStreak, 2);
-      newState.originalStreak = 2;
+    // Policy: Post from missed on working day → immediate onStreak(1), no recovery window
+    // Recovery only exists on FIRST miss (onStreak → eligible), never from missed
+    if (isWorkingDayByTz(dayKey, timezone)) {
+      const result = startOverToOnStreak1(newState);
+      result.appliedSeq = event.seq;
+      return result;
     }
+    // Weekend post: no-op (stay missed, weekends are neutral)
   }
 
   newState.appliedSeq = event.seq;
@@ -242,9 +250,9 @@ function handlePostCreated(
 
 /**
  * Handle DAY_ACTIVITY synthetic event (for extension window).
- * New rules (no cross-day rebuild):
- * - If eligible on recovery day: 2+ posts → restore, 1 post → start over at day close
- * - If missed: first post → enter eligible (same-day recovery), 2+ posts → restore
+ * Policy:
+ * - If eligible on recovery day: postsCount >= postsRequired → restore, else defer to day close
+ * - If missed: any posts on working day → immediate onStreak(1) (no recovery window from missed)
  * - If onStreak: no change
  */
 function handleDayActivity(
@@ -298,24 +306,13 @@ function handleDayActivity(
       };
     }
   } else if (newState.status.type === 'missed') {
-    // From missed: first post enters eligible (same-day recovery)
-    if (postsCount >= 2) {
-      // Same-day rebuild: 2+ posts → restore with +2 (weekday semantics)
-      newState.status = { type: 'onStreak' };
-      newState.currentStreak = 2;
-      newState.longestStreak = Math.max(newState.longestStreak, 2);
-      newState.originalStreak = 2;
-    } else {
-      // 1 post: enter eligible for same-day recovery (will close to onStreak(1) at day close)
-      // Treat as recovery-in-progress
-      newState.status = {
-        type: 'eligible',
-        currentPosts: postsCount,
-        postsRequired: 2, // Weekday semantics for missed state
-        missedDate: getEndOfDay(dayKey, timezone), // Mark today as the "miss"
-        deadline: getEndOfDay(dayKey, timezone), // Same-day recovery
-      };
+    // Policy: Post from missed on working day → immediate onStreak(1)
+    // No same-day rebuild, no eligible transition from missed
+    // Recovery only exists on FIRST miss (onStreak → eligible)
+    if (isWorkingDayByTz(dayKey, timezone)) {
+      return startOverToOnStreak1(newState);
     }
+    // Weekend: no action (weekends are neutral)
   }
   // If onStreak: no change needed
 
@@ -379,39 +376,8 @@ function handleEligiblePost(
   return status;
 }
 
-/**
- * Handle post during missed status.
- * New rules (no cross-day rebuild):
- * - First post on a working day: enter eligible for same-day recovery
- * - Second post same day: restore with +2 (weekday semantics)
- */
-function handleMissedPost(
-  state: StreamProjectionPhase2,
-  dayKey: string,
-  timezone: string,
-  postsPerDay: Map<string, number>,
-): StreamProjectionPhase2['status'] {
-  const status = { ...state.status };
-
-  if (status.type !== 'missed') return status;
-
-  // Count posts on this day (including current one)
-  const postsOnDay = (postsPerDay.get(dayKey) || 0);
-
-  if (postsOnDay >= 2) {
-    // Same-day rebuild: 2+ posts → restore with +2
-    return { type: 'onStreak' };
-  }
-
-  // First post: enter eligible for same-day recovery
-  return {
-    type: 'eligible',
-    currentPosts: postsOnDay,
-    postsRequired: 2, // Weekday semantics
-    missedDate: getEndOfDay(dayKey, timezone),
-    deadline: getEndOfDay(dayKey, timezone), // Same-day recovery
-  };
-}
+// handleMissedPost removed - policy now handled inline in handlePostCreated and handleDayActivity
+// Post from missed → immediate onStreak(1), no recovery window
 
 /**
  * Handle DAY_CLOSED_VIRTUAL event (working day with 0 posts).

@@ -33,6 +33,19 @@ function createDayClosedVirtualEvent(dayKey: string): Event {
   };
 }
 
+/**
+ * Helper: Seed a projection with onStreak status and specified streak.
+ * Use this instead of building streaks from missed, which now produces onStreak(1) per new policy.
+ */
+function seedOnStreak(streak: number) {
+  const state = createInitialPhase2Projection();
+  state.status = { type: 'onStreak' };
+  state.currentStreak = streak;
+  state.originalStreak = streak;
+  state.longestStreak = streak;
+  return state;
+}
+
 describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
   describe('Initial state', () => {
     it('creates missed status with zero streaks', () => {
@@ -221,8 +234,9 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
     });
   });
 
-  describe('Missed rebuild - same-day 2 posts', () => {
-    it('transitions to onStreak after 2 posts on same day', () => {
+  describe('Missed: posting restarts immediately', () => {
+    it('first post from missed → onStreak(1), no same-day rebuild', () => {
+      // Policy: Recovery only on FIRST miss. Posting from missed → immediate onStreak(1)
       const state = createInitialPhase2Projection();
       state.status = { type: 'missed' };
       state.originalStreak = 5;
@@ -247,9 +261,9 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
 
       const result = applyEventsToPhase2Projection(state, events, TZ);
 
+      // First post → onStreak(1), second post doesn't change streak
       expect(result.status.type).toBe('onStreak');
-      // no-crossday-v1: Same-day rebuild always gives streak=2 (doesn't restore original)
-      expect(result.currentStreak).toBe(2);
+      expect(result.currentStreak).toBe(1);
     });
   });
 
@@ -258,7 +272,7 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
 
   describe('Missed rebuild - incremental events', () => {
     describe('when processing incremental events (no-cross-day rules)', () => {
-      it('enters eligible then start-over with separate-day posts', () => {
+      it('restarts immediately to onStreak(1) with separate-day posts', () => {
         // First event batch: posted on Monday (from missed)
         const state1 = createInitialPhase2Projection();
         state1.status = { type: 'missed' };
@@ -276,11 +290,12 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
 
         const result1 = applyEventsToPhase2Projection(state1, events1, TZ);
 
-        // First post from missed: enter eligible (needs 2 posts same day)
-        expect(result1.status.type).toBe('eligible');
-        expect(result1.currentStreak).toBe(0);
+        // Policy: Post from missed on working day → immediate onStreak(1)
+        expect(result1.status.type).toBe('onStreak');
+        expect(result1.currentStreak).toBe(1);
+        expect(result1.originalStreak).toBe(1);
 
-        // Simulate day close with only 1 post (via DAY_CLOSED_VIRTUAL)
+        // Day close doesn't change anything (already onStreak)
         const dayCloseEvent: Event = {
           seq: 0,
           type: EventType.DAY_CLOSED_VIRTUAL,
@@ -290,7 +305,6 @@ describe('Streak Reducer Phase 2 - Recovery Logic Tests', () => {
 
         const resultAfterDayClose = applyEventsToPhase2Projection(result1, [dayCloseEvent], TZ);
 
-        // Day closes with 1 post: start over with streak=1
         expect(resultAfterDayClose.status.type).toBe('onStreak');
         expect(resultAfterDayClose.currentStreak).toBe(1);
 
@@ -380,26 +394,7 @@ describe('No-Cross-Day Recovery Rules (Detailed Scenarios)', () => {
 
   describe('Weekday miss full recovery', () => {
     it('restores streak with +2 when 2+ posts on recovery day', () => {
-      let state = createInitialPhase2Projection();
-
-      // Build streak with 2 posts same day
-      state = applyEventsToPhase2Projection(
-        state,
-        [createPostEvent('2025-01-13', 1), createPostEvent('2025-01-13', 2)], // Mon, 2 posts
-        TZ,
-      );
-
-      expect(state.status.type).toBe('onStreak');
-      expect(state.currentStreak).toBe(2);
-
-      // Continue posting (no increment)
-      state = applyEventsToPhase2Projection(
-        state,
-        [createPostEvent('2025-01-14', 3)], // Tue
-        TZ,
-      );
-
-      expect(state.currentStreak).toBe(2); // No cross-day increment
+      let state = seedOnStreak(2);
 
       // Miss Wednesday
       state = applyEventsToPhase2Projection(
@@ -426,29 +421,7 @@ describe('No-Cross-Day Recovery Rules (Detailed Scenarios)', () => {
 
   describe('Weekday miss partial recovery', () => {
     it('starts over with streak=1 when only 1 post on recovery day', () => {
-      let state = createInitialPhase2Projection();
-
-      // Build streak using same-day 2 posts
-      state = applyEventsToPhase2Projection(
-        state,
-        [createPostEvent('2025-01-13', 1), createPostEvent('2025-01-13', 2)], // Mon, 2 posts
-        TZ,
-      );
-
-      expect(state.status.type).toBe('onStreak');
-      expect(state.currentStreak).toBe(2);
-
-      // Continue streak
-      state = applyEventsToPhase2Projection(
-        state,
-        [
-          createPostEvent('2025-01-14', 3), // Tue
-          createPostEvent('2025-01-15', 4), // Wed
-        ],
-        TZ,
-      );
-
-      expect(state.currentStreak).toBe(2); // Still 2 (no increment for separate days)
+      let state = seedOnStreak(2);
 
       // Miss Thursday
       state = applyEventsToPhase2Projection(
@@ -484,27 +457,7 @@ describe('No-Cross-Day Recovery Rules (Detailed Scenarios)', () => {
 
   describe('Friday miss recovery', () => {
     it('restores with +1 when 1+ post on Saturday', () => {
-      let state = createInitialPhase2Projection();
-
-      // Build streak
-      state = applyEventsToPhase2Projection(
-        state,
-        [createPostEvent('2025-01-13', 1), createPostEvent('2025-01-13', 2)], // Mon, 2 posts
-        TZ,
-      );
-
-      expect(state.status.type).toBe('onStreak');
-      expect(state.currentStreak).toBe(2);
-
-      // Post Thursday (jump to Thu to avoid confusion)
-      state = applyEventsToPhase2Projection(
-        state,
-        [createPostEvent('2025-01-16', 3)], // Thu
-        TZ,
-      );
-
-      expect(state.currentStreak).toBe(2); // Should NOT increment
-      expect(state.originalStreak).toBe(2); // Should NOT change
+      let state = seedOnStreak(2);
 
       // Miss Friday
       state = applyEventsToPhase2Projection(
@@ -529,59 +482,40 @@ describe('No-Cross-Day Recovery Rules (Detailed Scenarios)', () => {
     });
   });
 
-  describe('From missed: same-day rebuild', () => {
-    it('restores with streak=2 when 2 posts same day from missed', () => {
+  describe('From missed: immediate restart', () => {
+    it('first post from missed → onStreak(1) immediately', () => {
+      // Policy: No recovery window from missed
       let state = createInitialPhase2Projection();
 
       expect(state.status.type).toBe('missed');
 
-      // First post: enters eligible
+      // First post: immediate onStreak(1), no eligible transition
       state = applyEventsToPhase2Projection(state, [createPostEvent('2025-01-13', 1)], TZ);
-
-      expect(state.status.type).toBe('eligible');
-      expect(state.status.postsRequired).toBe(2);
-
-      // Second post same day: rebuild with streak=2
-      state = applyEventsToPhase2Projection(state, [createPostEvent('2025-01-13', 2)], TZ);
-
-      expect(state.status.type).toBe('onStreak');
-      expect(state.currentStreak).toBe(2);
-    });
-  });
-
-  describe('From missed: start over', () => {
-    it('starts with streak=1 when day closes with only 1 post', () => {
-      let state = createInitialPhase2Projection();
-
-      // One post on Monday
-      state = applyEventsToPhase2Projection(state, [createPostEvent('2025-01-13', 1)], TZ);
-
-      expect(state.status.type).toBe('eligible');
-
-      // Day closes
-      state = applyEventsToPhase2Projection(
-        state,
-        [createDayClosedVirtualEvent('2025-01-13')],
-        TZ,
-      );
 
       expect(state.status.type).toBe('onStreak');
       expect(state.currentStreak).toBe(1);
+    });
+
+    it('multiple posts same day from missed → still onStreak(1)', () => {
+      let state = createInitialPhase2Projection();
+
+      // First post → onStreak(1)
+      state = applyEventsToPhase2Projection(state, [createPostEvent('2025-01-13', 1)], TZ);
+
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(1);
+
+      // Second post same day → stays onStreak(1)
+      state = applyEventsToPhase2Projection(state, [createPostEvent('2025-01-13', 2)], TZ);
+
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(1); // No auto-increment
     });
   });
 
   describe('DAY_ACTIVITY synthetic events', () => {
     it('handles extension window with 2+ posts', () => {
-      let state = createInitialPhase2Projection();
-
-      // Build initial streak
-      state = applyEventsToPhase2Projection(
-        state,
-        [createPostEvent('2025-01-13', 1), createPostEvent('2025-01-13', 2)],
-        TZ,
-      );
-
-      expect(state.currentStreak).toBe(2);
+      let state = seedOnStreak(2);
 
       // Miss a day
       state = applyEventsToPhase2Projection(
@@ -648,12 +582,13 @@ describe('No-Cross-Day Recovery Rules (Detailed Scenarios)', () => {
     it('does NOT rebuild with posts on separate days', () => {
       let state = createInitialPhase2Projection();
 
-      // Post on Monday
+      // Post on Monday from missed → immediate onStreak(1)
       state = applyEventsToPhase2Projection(state, [createPostEvent('2025-01-13', 1)], TZ);
 
-      expect(state.status.type).toBe('eligible'); // First post from missed
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(1);
 
-      // Day closes with 1 post
+      // Day closes (no change, already onStreak)
       state = applyEventsToPhase2Projection(
         state,
         [createDayClosedVirtualEvent('2025-01-13')],
@@ -680,19 +615,7 @@ describe('No-Cross-Day Recovery Rules (Detailed Scenarios)', () => {
 describe('Invariant Checks', () => {
   describe('originalStreak mutations', () => {
     it('posting while onStreak never mutates originalStreak', () => {
-      let state = createInitialPhase2Projection();
-
-      // Build streak
-      state = applyEventsToPhase2Projection(
-        state,
-        [
-          createPostEvent('2025-01-13', 1),
-          createPostEvent('2025-01-13', 2),
-        ],
-        TZ,
-      );
-
-      expect(state.originalStreak).toBe(2);
+      let state = seedOnStreak(2);
       const savedOriginalStreak = state.originalStreak;
 
       // Post on multiple days while onStreak
@@ -713,19 +636,7 @@ describe('Invariant Checks', () => {
     });
 
     it('entering eligible snapshots originalStreak exactly once', () => {
-      let state = createInitialPhase2Projection();
-
-      // Build streak
-      state = applyEventsToPhase2Projection(
-        state,
-        [
-          createPostEvent('2025-01-13', 1),
-          createPostEvent('2025-01-13', 2),
-        ],
-        TZ,
-      );
-
-      expect(state.currentStreak).toBe(2);
+      let state = seedOnStreak(2);
 
       // Miss a day → enter eligible
       state = applyEventsToPhase2Projection(
@@ -751,19 +662,7 @@ describe('Invariant Checks', () => {
     });
 
     it('restore always sets currentStreak = originalStreak + increment, then syncs originalStreak', () => {
-      let state = createInitialPhase2Projection();
-
-      // Build streak
-      state = applyEventsToPhase2Projection(
-        state,
-        [
-          createPostEvent('2025-01-13', 1),
-          createPostEvent('2025-01-13', 2),
-        ],
-        TZ,
-      );
-
-      expect(state.currentStreak).toBe(2);
+      let state = seedOnStreak(2);
 
       // Miss Wednesday
       state = applyEventsToPhase2Projection(
@@ -792,27 +691,16 @@ describe('Invariant Checks', () => {
     });
 
     it('start-over sets both currentStreak=1 and originalStreak=1', () => {
-      let state = createInitialPhase2Projection();
+      let state = seedOnStreak(2);
 
-      // Build streak
-      state = applyEventsToPhase2Projection(
-        state,
-        [
-          createPostEvent('2025-01-13', 1),
-          createPostEvent('2025-01-13', 2),
-        ],
-        TZ,
-      );
-
-      expect(state.currentStreak).toBe(2);
-
-      // Miss a day
+      // Miss a day → enter eligible
       state = applyEventsToPhase2Projection(
         state,
         [createDayClosedVirtualEvent('2025-01-14')],
         TZ,
       );
 
+      expect(state.status.type).toBe('eligible');
       expect(state.originalStreak).toBe(2);
 
       // Partial recovery: only 1 post
@@ -963,17 +851,7 @@ describe('Invariant Checks', () => {
     });
 
     it('recovery day close with currentPosts>=need → already restored (no-op)', () => {
-      let state = createInitialPhase2Projection();
-
-      // Build streak
-      state = applyEventsToPhase2Projection(
-        state,
-        [
-          createPostEvent('2025-01-13', 1),
-          createPostEvent('2025-01-13', 2),
-        ],
-        TZ,
-      );
+      let state = seedOnStreak(2);
 
       // Miss a day
       state = applyEventsToPhase2Projection(
@@ -1010,13 +888,13 @@ describe('Invariant Checks', () => {
     });
   });
 
-  describe('Same-day rebuild invariants', () => {
-    it('from missed, two posts same day → onStreak(2) exactly', () => {
+  describe('Immediate restart from missed (no same-day recovery)', () => {
+    it('from missed, two posts same day → onStreak(1) immediately', () => {
       let state = createInitialPhase2Projection();
 
       expect(state.status.type).toBe('missed');
 
-      // Two posts on same day
+      // Two posts on same day - first post triggers immediate onStreak(1)
       state = applyEventsToPhase2Projection(
         state,
         [
@@ -1026,32 +904,32 @@ describe('Invariant Checks', () => {
         TZ,
       );
 
-      // MUST be onStreak(2), not any other value
+      // Policy: First post from missed → immediate onStreak(1), second post doesn't increment
       expect(state.status.type).toBe('onStreak');
-      expect(state.currentStreak).toBe(2);
-      expect(state.originalStreak).toBe(2);
+      expect(state.currentStreak).toBe(1);
+      expect(state.originalStreak).toBe(1);
     });
 
-    it('from missed, one post then day closes → start-over onStreak(1)', () => {
+    it('from missed, one post then day closes → onStreak(1)', () => {
       let state = createInitialPhase2Projection();
 
-      // One post
+      // One post from missed → immediate onStreak(1)
       state = applyEventsToPhase2Projection(
         state,
         [createPostEvent('2025-01-13', 1)],
         TZ,
       );
 
-      expect(state.status.type).toBe('eligible');
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(1);
 
-      // Day closes
+      // Day closes (no change, already onStreak)
       state = applyEventsToPhase2Projection(
         state,
         [createDayClosedVirtualEvent('2025-01-13')],
         TZ,
       );
 
-      // MUST be onStreak(1)
       expect(state.status.type).toBe('onStreak');
       expect(state.currentStreak).toBe(1);
       expect(state.originalStreak).toBe(1);
@@ -1216,32 +1094,38 @@ describe('Invariant Checks', () => {
 
   describe('Orchestrator event ordering guarantees', () => {
     it('synthesizes deadline close BEFORE next-day post (partial progress)', () => {
-      // This test verifies the orchestrator's proper behavior:
-      // When extending evaluation window, orchestrator must synthesize
-      // DAY_CLOSED_VIRTUAL for expired deadline BEFORE processing next-day posts
-      let state = createInitialPhase2Projection();
+      let state = seedOnStreak(5);
 
-      // Post once Monday from missed
+      // Miss Monday → enter eligible with Tuesday deadline
       state = applyEventsToPhase2Projection(
         state,
-        [createPostEvent('2025-10-13', 1)], // Monday
+        [createDayClosedVirtualEvent('2025-10-13')],
         TZ,
       );
 
       expect(state.status.type).toBe('eligible');
 
-      // Orchestrator proper ordering: Monday close THEN Tuesday post
+      // Post once on Tuesday (partial progress)
+      state = applyEventsToPhase2Projection(
+        state,
+        [createPostEvent('2025-10-14', 1)],
+        TZ,
+      );
+
+      expect(state.status.type).toBe('eligible'); // Still eligible, need 2 posts
+
+      // Orchestrator proper ordering: Tuesday deadline close THEN Wednesday post
       state = applyEventsToPhase2Projection(
         state,
         [
-          createDayClosedVirtualEvent('2025-10-13'), // Monday deadline close
-          createPostEvent('2025-10-14', 2), // Tuesday post
+          createDayClosedVirtualEvent('2025-10-14'), // Tuesday deadline close with partial progress
+          createPostEvent('2025-10-15', 2), // Wednesday post
         ],
         TZ,
       );
 
       // After close with 1 post → start over to onStreak(1)
-      // Tuesday post is treated as new post (no cross-day rebuild), so streak stays at 1
+      // Wednesday post doesn't increment (no cross-day)
       expect(state.status.type).toBe('onStreak');
       expect(state.currentStreak).toBe(1);
     });
@@ -1315,83 +1199,105 @@ describe('Invariant Checks', () => {
     });
 
     it('overdue close with partial progress → start over to onStreak(1)', () => {
-      let state = createInitialPhase2Projection();
+      let state = seedOnStreak(5);
 
-      // Post once Saturday (from missed) → eligible with same-day deadline
+      // Miss Monday Oct 13 → enter eligible with Tuesday Oct 14 deadline (needs 2 posts)
       state = applyEventsToPhase2Projection(
         state,
-        [createPostEvent('2025-10-05', 1)], // Saturday
+        [createDayClosedVirtualEvent('2025-10-13')], // Monday miss
         TZ,
       );
 
       expect(state.status.type).toBe('eligible');
-      if (state.status.type === 'eligible') {
-        expect(state.status.currentPosts).toBe(1);
-        expect(state.status.postsRequired).toBe(2);
-        // Deadline is end of Saturday Oct 5
-      }
 
-      // Virtual close on Monday Oct 7 (after Saturday deadline expired, partial progress)
+      // Post once on Tuesday (recovery day, partial progress - need 2)
       state = applyEventsToPhase2Projection(
         state,
-        [createDayClosedVirtualEvent('2025-10-07')], // Monday (after deadline)
+        [createPostEvent('2025-10-14', 1)], // Tuesday, 1 post (need 2)
         TZ,
       );
 
+      // Should still be eligible with currentPosts=1
+      expect(state.status.type).toBe('eligible');
+      if (state.status.type === 'eligible') {
+        expect(state.status.currentPosts).toBe(1);
+      }
+
+      // Virtual close on Wednesday (after Tuesday deadline expired, partial progress=1)
+      state = applyEventsToPhase2Projection(
+        state,
+        [createDayClosedVirtualEvent('2025-10-15')], // Wednesday (after deadline)
+        TZ,
+      );
+
+      // Should start over with onStreak(1) because had partial progress
       expect(state.status.type).toBe('onStreak');
       expect(state.currentStreak).toBe(1);
       expect(state.originalStreak).toBe(1);
     });
 
     it('exact deadline day close with partial progress → start over', () => {
-      // Verify existing behavior: exact deadline day (not overdue) still works
-      let state = createInitialPhase2Projection();
+      let state = seedOnStreak(5);
 
+      // Miss Monday → enter eligible with Tuesday deadline (needs 2 posts)
       state = applyEventsToPhase2Projection(
         state,
-        [createPostEvent('2025-10-05', 1)], // Saturday, need 2
+        [createDayClosedVirtualEvent('2025-10-13')],
+        TZ,
+      );
+
+      // Post once on Tuesday (partial progress)
+      state = applyEventsToPhase2Projection(
+        state,
+        [createPostEvent('2025-10-14', 1)],
         TZ,
       );
 
       expect(state.status.type).toBe('eligible');
 
-      // Close on the exact deadline day (not after)
+      // Close on the exact deadline day (Tuesday) with partial progress
       state = applyEventsToPhase2Projection(
         state,
-        [createDayClosedVirtualEvent('2025-10-05')], // Same day
+        [createDayClosedVirtualEvent('2025-10-14')],
         TZ,
       );
 
+      // Should start over with onStreak(1)
       expect(state.status.type).toBe('onStreak');
       expect(state.currentStreak).toBe(1);
     });
 
     it('multi-day overdue closes in same batch → flip on first overdue', () => {
-      // Eligible with deadline=2025-10-05
-      // Feed multiple overdue closes: 2025-10-06, 2025-10-07
-      // Should flip on first overdue close, subsequent closes see new state
-      let state = createInitialPhase2Projection();
+      let state = seedOnStreak(5);
 
+      // Miss Monday Oct 13 → enter eligible with Tuesday Oct 14 deadline
       state = applyEventsToPhase2Projection(
         state,
-        [createPostEvent('2025-10-05', 1)], // Saturday, partial progress
+        [createDayClosedVirtualEvent('2025-10-13')],
+        TZ,
+      );
+
+      // Post once on Tuesday (partial progress)
+      state = applyEventsToPhase2Projection(
+        state,
+        [createPostEvent('2025-10-14', 1)],
         TZ,
       );
 
       expect(state.status.type).toBe('eligible');
 
-      // Process multiple overdue closes in one batch
+      // Process multiple overdue closes in one batch (Wed, Thu after Tue deadline)
       state = applyEventsToPhase2Projection(
         state,
         [
-          createDayClosedVirtualEvent('2025-10-06'), // Sunday (after deadline)
-          createDayClosedVirtualEvent('2025-10-07'), // Monday (after deadline)
+          createDayClosedVirtualEvent('2025-10-15'), // Wednesday (after Tuesday deadline)
+          createDayClosedVirtualEvent('2025-10-16'), // Thursday (after Tuesday deadline)
         ],
         TZ,
       );
 
-      // First overdue close → start over to onStreak(1)
-      // Second close sees onStreak, no posts → should enter eligible again
+      // First overdue close (Wed) → start over to onStreak(1)
+      // Second close (Thu) sees onStreak, no posts → should enter eligible again
       expect(state.status.type).toBe('eligible');
       expect(state.currentStreak).toBe(0);
       expect(state.originalStreak).toBe(1);
@@ -1400,52 +1306,55 @@ describe('Invariant Checks', () => {
 
   describe('Bug fix: Posting after deadline with partial progress', () => {
     it('eligible + post after deadline → start over to onStreak(1)', () => {
-      // Bug: User 89kNbXuJwnbpDVjq9cKqRzha9HJ2
-      // Posted once on Monday Oct 13 from missed → entered eligible with deadline Oct 13
-      // Posted on Tuesday Oct 14 (after deadline) → stayed eligible forever
-      // Fix: Posting after deadline with currentPosts=1 → start over to onStreak(1)
+      let state = seedOnStreak(3);
 
-      let state = createInitialPhase2Projection();
-
-      // Post once on Monday (working day) from missed
+      // Miss Monday → enter eligible with deadline
       state = applyEventsToPhase2Projection(
         state,
-        [createPostEvent('2025-10-13', 1)], // Monday
+        [createDayClosedVirtualEvent('2025-10-13')], // Monday
         TZ,
       );
 
-      // Should enter eligible with same-day deadline
+      expect(state.status.type).toBe('eligible');
+      if (state.status.type === 'eligible') {
+        expect(state.status.currentPosts).toBe(0);
+      }
+
+      // Post once on Tuesday (recovery day)
+      state = applyEventsToPhase2Projection(
+        state,
+        [createPostEvent('2025-10-14', 1)], // Tuesday
+        TZ,
+      );
+
+      // Still eligible with partial progress
       expect(state.status.type).toBe('eligible');
       if (state.status.type === 'eligible') {
         expect(state.status.currentPosts).toBe(1);
         expect(state.status.postsRequired).toBe(2);
-        // Deadline is end of Monday Oct 13
       }
 
-      // Post on Tuesday (after Monday deadline expired)
+      // Post on Wednesday (after Tuesday deadline with currentPosts=1)
       state = applyEventsToPhase2Projection(
         state,
-        [createPostEvent('2025-10-14', 2)], // Tuesday
+        [createPostEvent('2025-10-15', 2)], // Wednesday
         TZ,
       );
 
-      // Should start over: deadline expired with currentPosts=1 → onStreak(1)
+      // Should start over: deadline expired with partial progress → onStreak(1)
       expect(state.status.type).toBe('onStreak');
       expect(state.currentStreak).toBe(1);
       expect(state.originalStreak).toBe(1);
-      expect(state.longestStreak).toBe(1);
+      expect(state.longestStreak).toBe(3);
     });
 
-    it('eligible + post after deadline with 0 progress → missed then new eligible', () => {
+    it('eligible + post after deadline with 0 progress → missed then immediate onStreak(1)', () => {
       // Note: Ideally the orchestrator synthesizes DAY_CLOSED_VIRTUAL before next-day posts
       // This test shows the reducer's defensive behavior when that doesn't happen
 
-      let state = createInitialPhase2Projection();
-      state.status = { type: 'onStreak' };
-      state.currentStreak = 5;
-      state.originalStreak = 5;
+      let state = seedOnStreak(5);
 
-      // Miss Monday (enter eligible)
+      // Miss Monday (enter eligible with Tuesday deadline)
       state = applyEventsToPhase2Projection(
         state,
         [createDayClosedVirtualEvent('2025-10-13')], // Monday
@@ -1455,22 +1364,19 @@ describe('Invariant Checks', () => {
       expect(state.status.type).toBe('eligible');
       expect(state.currentStreak).toBe(0);
 
-      // Post on Tuesday (after Monday deadline with 0 progress)
-      // Reducer treats as: deadline expired → missed, then post from missed → new eligible
+      // Post on Wednesday (after Tuesday deadline with 0 progress)
+      // Policy: deadline expired with 0 progress → missed, then post from missed → immediate onStreak(1)
       state = applyEventsToPhase2Projection(
         state,
-        [createPostEvent('2025-10-14', 1)], // Tuesday
+        [createPostEvent('2025-10-15', 1)], // Wednesday (after Tuesday deadline)
         TZ,
       );
 
-      // Post from missed enters new eligible (same-day recovery attempt for Tuesday)
-      expect(state.status.type).toBe('eligible');
-      if (state.status.type === 'eligible') {
-        expect(state.status.currentPosts).toBe(1);
-        expect(state.status.postsRequired).toBe(2);
-        // New deadline is end of Tuesday
-      }
-      expect(state.currentStreak).toBe(0);
+      // Post from missed → immediate onStreak(1)
+      expect(state.status.type).toBe('onStreak');
+      expect(state.currentStreak).toBe(1);
+      expect(state.originalStreak).toBe(1);
+      expect(state.longestStreak).toBe(5);
     });
   });
 });
