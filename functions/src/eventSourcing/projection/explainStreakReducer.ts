@@ -199,7 +199,7 @@ function explainStatusTransition(
       return 'Met recovery requirement; streak restored';
     }
     if (transition === 'missed → onStreak') {
-      return 'Rebuild condition met (same-day 2 posts or consecutive working days)';
+      return 'Rebuild condition met (same-day 2 posts)';
     }
   }
 

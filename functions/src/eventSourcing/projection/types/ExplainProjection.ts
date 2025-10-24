@@ -48,6 +48,8 @@ export interface StreakSnapshot {
     deadline: string;
     missedDate: string;
   };
+  // missedContext removed in phase2.1-no-crossday-v1 (no cross-day rebuild tracking)
+  // @deprecated - kept for backward compatibility with old explain API responses
   missedContext?: {
     missedPostDates: string[];
   };
