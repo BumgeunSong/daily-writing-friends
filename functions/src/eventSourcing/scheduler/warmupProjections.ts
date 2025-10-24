@@ -27,7 +27,10 @@ export const warmupStreakProjections = onSchedule(
 
 /**
  * Core warmup logic (extracted for testing).
- * Computes projection for all active users using Promise.allSettled.
+ * Computes projection for all active users in batches to avoid overwhelming Firestore.
+ *
+ * Phase 2.1 no-crossday: Uses same compute function (computeUserStreakProjection),
+ * which persists cache automatically via write-behind strategy.
  */
 export async function processWarmupProjections(): Promise<void> {
   console.log('[Warmup] Starting streak projection warmup...');
@@ -44,18 +47,29 @@ export async function processWarmupProjections(): Promise<void> {
       return;
     }
 
-    // Compute projections for all active users
+    // Compute projections in batches (20 concurrent to avoid Firestore throttling)
+    const BATCH_SIZE = 20;
     const now = Timestamp.now();
-    const results = await Promise.allSettled(
-      activeUserIds.map((userId) => computeUserStreakProjection(userId, now)),
-    );
+    const allResults: PromiseSettledResult<any>[] = [];
+
+    for (let i = 0; i < activeUserIds.length; i += BATCH_SIZE) {
+      const batch = activeUserIds.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.allSettled(
+        batch.map((userId) => computeUserStreakProjection(userId, now)),
+      );
+      allResults.push(...batchResults);
+
+      console.log(
+        `[Warmup] Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(activeUserIds.length / BATCH_SIZE)} complete`,
+      );
+    }
 
     // Count successes and failures
-    const succeeded = results.filter((r) => r.status === 'fulfilled').length;
-    const failed = results.filter((r) => r.status === 'rejected').length;
+    const succeeded = allResults.filter((r) => r.status === 'fulfilled').length;
+    const failed = allResults.filter((r) => r.status === 'rejected').length;
 
     // Log failures
-    results.forEach((result, index) => {
+    allResults.forEach((result, index) => {
       if (result.status === 'rejected') {
         const userId = activeUserIds[index];
         console.error(`[Warmup] Failed for user ${userId}:`, result.reason);
