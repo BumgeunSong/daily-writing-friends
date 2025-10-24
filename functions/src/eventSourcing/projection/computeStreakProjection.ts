@@ -116,6 +116,28 @@ async function synthesizeExtensionTicks(
     }
   }
 
+  // Runtime guard: ensure never both DAY_ACTIVITY and DAY_CLOSED_VIRTUAL for same day
+  if (process.env.NODE_ENV !== 'production') {
+    const activityDays = new Set(
+      extensionTicks
+        .filter((e) => e.type === EventType.DAY_ACTIVITY)
+        .map((e) => e.dayKey),
+    );
+    const closedDays = new Set(
+      extensionTicks
+        .filter((e) => e.type === EventType.DAY_CLOSED_VIRTUAL)
+        .map((e) => e.dayKey),
+    );
+
+    activityDays.forEach((dayKey) => {
+      if (closedDays.has(dayKey)) {
+        throw new Error(
+          `[INVARIANT] Both DAY_ACTIVITY and DAY_CLOSED_VIRTUAL emitted for dayKey=${dayKey}`,
+        );
+      }
+    });
+  }
+
   return extensionTicks;
 }
 
@@ -235,6 +257,21 @@ export async function computeUserStreakProjection(
 
   // Step 7: Reduce events
   const newProjection = applyEventsToPhase2Projection(currentProjection, allEvents, timezone);
+
+  // Runtime guard: ensure lastEvaluatedDayKey moves forward with ticks
+  if (process.env.NODE_ENV !== 'production' && lastEvaluatedDayKey) {
+    const daysBetween = Math.abs(
+      (parseISO(evaluationCutoff).getTime() - parseISO(lastEvaluatedDayKey).getTime()) /
+        (1000 * 60 * 60 * 24),
+    );
+
+    // If jumping more than 1 day, ensure we have extension ticks covering the gap
+    if (daysBetween > 1 && extensionTicks.length === 0 && deltaEvents.length === 0) {
+      throw new Error(
+        `[INVARIANT] lastEvaluatedDayKey jumped ${daysBetween} days (${lastEvaluatedDayKey} → ${evaluationCutoff}) without any ticks`,
+      );
+    }
+  }
 
   // Update metadata
   newProjection.appliedSeq = Math.max(latestSeq, appliedSeq);

@@ -9,6 +9,44 @@ import {
 import { formatInTimeZone } from 'date-fns-tz';
 
 /**
+ * Runtime guard: validates originalStreak mutations only happen in allowed contexts.
+ * In dev/test: throws if originalStreak changes when status is onStreak (should be frozen).
+ */
+function validateOriginalStreakMutation(
+  before: StreamProjectionPhase2,
+  after: StreamProjectionPhase2,
+  context: string,
+): void {
+  if (process.env.NODE_ENV === 'production') return;
+
+  // Allow changes when entering eligible (snapshot) or during any recovery/rebuild
+  const allowedContexts = [
+    'enterEligible',
+    'restore',
+    'rebuild',
+    'startOver',
+    'initialization',
+  ];
+
+  // Detect mutation
+  if (before.originalStreak !== after.originalStreak) {
+    // If status was onStreak and stayed onStreak, this is INVALID
+    if (before.status.type === 'onStreak' && after.status.type === 'onStreak') {
+      throw new Error(
+        `[INVARIANT] originalStreak mutated while onStreak (${before.originalStreak} → ${after.originalStreak}) in context: ${context}`,
+      );
+    }
+
+    // Otherwise, ensure we're in an allowed context
+    if (!allowedContexts.includes(context)) {
+      console.warn(
+        `[GUARD] originalStreak changed in unexpected context: ${context} (${before.originalStreak} → ${after.originalStreak})`,
+      );
+    }
+  }
+}
+
+/**
  * Creates initial Phase 2 projection state.
  * Users start with missed status and zero streak.
  */
@@ -104,14 +142,17 @@ function handlePostCreated(
 
   // Handle status-specific logic
   if (newState.status.type === 'eligible') {
-    // Save missedDate before potential transition
+    // Save context before potential transition
     const savedMissedDate = newState.status.missedDate;
+    const savedDeadline = newState.status.deadline;
+    const savedCurrentPosts = newState.status.currentPosts || 0;
 
     newState.status = handleEligiblePost(newState, dayKey, timezone);
 
     // Check if transition to onStreak
     if (newState.status.type === 'onStreak' && savedMissedDate) {
       const missedDayKey = dayKeyFromTimestamp(savedMissedDate, timezone);
+      const deadlineDayKey = savedDeadline ? dayKeyFromTimestamp(savedDeadline, timezone) : '';
 
       // Check if this is same-day rebuild (missed + 2 posts same day)
       if (missedDayKey === dayKey) {
@@ -119,6 +160,11 @@ function handlePostCreated(
         newState.currentStreak = 2;
         newState.longestStreak = Math.max(newState.longestStreak, 2);
         newState.originalStreak = 2;
+      } else if (dayKey > deadlineDayKey && savedCurrentPosts > 0) {
+        // Start-over: posted after deadline with partial progress
+        newState.currentStreak = 1;
+        newState.longestStreak = Math.max(newState.longestStreak, 1);
+        newState.originalStreak = 1;
       } else {
         // Regular recovery: restore with policy increment
         const increment = computeStreakIncrement(missedDayKey, timezone);
@@ -126,8 +172,6 @@ function handlePostCreated(
         newState.longestStreak = Math.max(newState.longestStreak, newState.currentStreak);
         newState.originalStreak = newState.currentStreak;
       }
-
-      // Clear eligible fields (already cleared by handleEligiblePost returning { type: 'onStreak' })
     }
   } else if (newState.status.type === 'missed') {
     newState.status = handleMissedPost(newState, dayKey, timezone, postsPerDay);
@@ -142,6 +186,16 @@ function handlePostCreated(
   }
 
   newState.appliedSeq = event.seq;
+
+  // Runtime guard: validate originalStreak mutations
+  const context =
+    newState.status.type === 'onStreak' && state.status.type === 'eligible'
+      ? 'restore'
+      : newState.status.type === 'onStreak' && state.status.type === 'missed'
+        ? 'rebuild'
+        : 'postCreated';
+  validateOriginalStreakMutation(state, newState, context);
+
   return newState;
 }
 
@@ -224,6 +278,15 @@ function handleDayActivity(
   }
   // If onStreak: no change needed
 
+  // Runtime guard: validate originalStreak mutations
+  const context =
+    newState.status.type === 'onStreak' && state.status.type === 'eligible'
+      ? 'restore'
+      : newState.status.type === 'onStreak' && state.status.type === 'missed'
+        ? 'rebuild'
+        : 'dayActivity';
+  validateOriginalStreakMutation(state, newState, context);
+
   return newState;
 }
 
@@ -231,6 +294,7 @@ function handleDayActivity(
  * Handle post during eligible status.
  * Posts during recovery window increment currentPosts.
  * If requirement met, transition to onStreak.
+ * If post is after deadline, apply "deadline closed" logic first.
  */
 function handleEligiblePost(
   state: StreamProjectionPhase2,
@@ -245,15 +309,29 @@ function handleEligiblePost(
   const deadline = status.deadline;
   if (!deadline) return status;
 
-  const postIsBeforeDeadline = dayKey <= dayKeyFromTimestamp(deadline, timezone);
+  const deadlineDayKey = dayKeyFromTimestamp(deadline, timezone);
+  const postIsBeforeOrOnDeadline = dayKey <= deadlineDayKey;
 
-  if (postIsBeforeDeadline) {
+  if (postIsBeforeOrOnDeadline) {
     status.currentPosts = (status.currentPosts || 0) + 1;
 
     // Check if requirement met
     if (status.currentPosts >= (status.postsRequired || 2)) {
       // Transition to onStreak
       return { type: 'onStreak' };
+    }
+  } else {
+    // Post is after deadline → deadline expired
+    // Apply "recovery day close" logic based on currentPosts at deadline
+    const currentPosts = status.currentPosts || 0;
+
+    if (currentPosts > 0) {
+      // Had partial progress → start over to onStreak(1)
+      // The new post will be processed as onStreak in handlePostCreated
+      return { type: 'onStreak' };
+    } else {
+      // No progress → fall to missed
+      return { type: 'missed' };
     }
   }
 
@@ -317,7 +395,10 @@ function handleDayClosedVirtual(
   const { dayKey } = event;
 
   const isWorkingDay = isWorkingDayByTz(dayKey, timezone);
-  const hadPostsOnDay = postsPerDay.has(dayKey);
+  // Check if there were posts on this day:
+  // 1. In current event batch (postsPerDay map)
+  // 2. Or this is the last contribution date (from previous batches)
+  const hadPostsOnDay = postsPerDay.has(dayKey) || dayKey === state.lastContributionDate;
 
   // First check if this is recovery day close (takes priority)
   if (newState.status.type === 'eligible' && newState.status.deadline) {
@@ -369,6 +450,16 @@ function handleDayClosedVirtual(
   }
 
   newState.appliedSeq = event.seq;
+
+  // Runtime guard: validate originalStreak mutations
+  const context =
+    newState.status.type === 'eligible' && state.status.type === 'onStreak'
+      ? 'enterEligible'
+      : newState.status.type === 'onStreak' && state.status.type === 'eligible'
+        ? 'startOver'
+        : 'dayClosed';
+  validateOriginalStreakMutation(state, newState, context);
+
   return newState;
 }
 
