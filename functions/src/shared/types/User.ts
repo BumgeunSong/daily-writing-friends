@@ -11,4 +11,7 @@ export interface User {
       [boardId: string]: 'read' | 'write'; // Permissions for each board
     };
     recoveryStatus?: RecoveryStatus;
+    profile?: {
+      timezone?: string; // IANA timezone identifier (e.g., 'Asia/Seoul')
+    };
   }

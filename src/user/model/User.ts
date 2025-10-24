@@ -34,6 +34,9 @@ export interface User {
    * - 'success': 복구 성공 (2개 작성 완료)
    */
   recoveryStatus?: RecoveryStatus;
+  profile?: {
+    timezone?: string; // IANA timezone identifier (e.g., 'Asia/Seoul')
+  };
 }
 
 export type UserRequiredFields = {
@@ -60,4 +63,7 @@ export type UserOptionalFields = {
   // blockedBy는 optional로 유지
   blockedBy?: string[];
   recoveryStatus?: RecoveryStatus;
+  profile?: {
+    timezone?: string;
+  };
 };

@@ -67,3 +67,16 @@ export {
   processDayBoundariesBaseline,
   processDayBoundariesPeak
 } from './eventSourcing/scheduler/processDayBoundaries';
+
+// Phase 2.1: On-demand projection with virtual DayClosed
+export {
+  computeUserStreakProjectionHttp
+} from './eventSourcing/projection/computeStreakProjectionHttp';
+
+export {
+  warmupStreakProjections
+} from './eventSourcing/scheduler/warmupProjections';
+
+export {
+  explainUserStreakProjectionHttp
+} from './eventSourcing/projection/explainStreakProjectionHttp';

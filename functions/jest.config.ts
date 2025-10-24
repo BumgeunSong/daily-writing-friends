@@ -11,7 +11,9 @@ const config: Config.InitialOptions = {
     },
     testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.tsx?$',
     testPathIgnorePatterns: [
-        '<rootDir>/src/.*\\.legacy\\.(test|spec)\\.tsx?$'
+        '<rootDir>/src/.*\\.legacy\\.(test|spec)\\.tsx?$',
+        '<rootDir>/src/.*/testUtils\\.ts$',
+        '<rootDir>/src/__tests__/testUtils\\.ts$'
     ],
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
     setupFiles: ['<rootDir>/src/test/setup.ts'],

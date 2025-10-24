@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase-admin/firestore';
 import { addDays, parseISO } from 'date-fns';
-import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
+import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 
 /**
  * Check if a dayKey represents a working day in the given timezone.
@@ -47,7 +47,9 @@ export function getNextWorkingDayKey(dayKey: string, timezone: string): string {
  */
 export function computeDeadline(recoveryDayKey: string, timezone: string): Timestamp {
   // Create end-of-day timestamp in user's timezone
-  const endOfDayLocal = toZonedTime(`${recoveryDayKey}T23:59:59.999`, timezone);
+  // fromZonedTime interprets the date string AS IF it's in the specified timezone
+  // and returns the equivalent UTC Date object
+  const endOfDayLocal = fromZonedTime(`${recoveryDayKey}T23:59:59.999`, timezone);
   return Timestamp.fromDate(endOfDayLocal);
 }
 
