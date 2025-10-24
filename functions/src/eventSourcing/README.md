@@ -1,6 +1,6 @@
 # Event Sourcing Streak System
 
-**Version**: Phase 2.1 No-Crossday (v1)
+**Version**: Phase 2.2 Daily-Increment (v1)
 **Last Updated**: 2025-10-24
 
 ## Overview
@@ -68,41 +68,66 @@ These events are **not persisted** but synthesized during projection:
 
 ```
   ┌──────────┐
-  │ onStreak │ ◄─── Initial state after 2 posts same day
+  │ onStreak │ ◄─── Initial state after first post from missed
   └────┬─────┘
+       │ post on NEW working day → streak +1 (daily increment)
        │ miss working day (0 posts)
        ▼
   ┌──────────┐
-  │ eligible │ ─── Recovery window (same-day only)
+  │ eligible │ ─── Recovery window (first miss only)
   └────┬─────┘
        │
-       ├─── 2+ posts on recovery day ──► onStreak (restored)
+       ├─── 2+ posts on recovery day ──► onStreak (originalStreak + 1)
        ├─── 1 post on recovery day ────► onStreak (start over, streak=1)
        └─── 0 posts on recovery day ───► missed
                                            │
-                                           └─── 2 posts same day ──► onStreak(2)
+                                           └─── 1+ post on working day ──► onStreak(1)
+```
+
+### Daily Streak Increment
+
+**Phase 2.2 Key Feature**: Streaks increment daily like traditional login streaks.
+
+When posting while `onStreak`:
+- **Same day** (dayKey === lastContributionDate): No change to streak
+- **New working day** (dayKey > lastContributionDate): `streak += 1`
+- **Weekend posts**: No penalty, but no increment (neutral)
+
+Example:
+```
+Mon: Post → onStreak(1)
+Tue: Post → onStreak(2)  ✓ increments
+Tue: Post again → onStreak(2)  (same day, no change)
+Wed: Post → onStreak(3)  ✓ increments
 ```
 
 ### Recovery Windows
 
+Recovery windows exist only for FIRST miss from `onStreak`.
+
 **Weekday Miss (Mon-Thu)**:
 - `postsRequired = 2`
 - `deadline = end of next working day`
-- Successful recovery: `streak = originalStreak + 2`
+- Successful recovery: `streak = originalStreak + 1` (increment for recovery day)
 
 **Friday Miss**:
 - `postsRequired = 1`
 - `deadline = end of Saturday`
 - Successful recovery: `streak = originalStreak + 1`
 
-### Same-Day Recovery Rules
+**Partial recovery** (< postsRequired on deadline):
+- Start over with `streak = 1`
 
-From `missed` state, user can recover same-day:
-1. **First post**: Enter `eligible` (deadline = end of today)
-2. **Second post same day**: Restore to `onStreak(2)`
-3. **Day closes with 1 post**: Start over with `onStreak(1)`
+**Zero recovery** (0 posts on deadline):
+- Transition to `missed`
 
-**No cross-day rebuild**: Posts on separate days don't accumulate. This simplifies logic and prevents edge cases.
+### Posting from Missed State
+
+**Policy**: No recovery window from `missed`. First post immediately restarts streak.
+
+- First post on working day → `onStreak(1)`
+- Additional posts same day → stays `onStreak(1)` (same-day rule)
+- Post on next working day → `onStreak(2)` (daily increment)
 
 ## Projection System
 
