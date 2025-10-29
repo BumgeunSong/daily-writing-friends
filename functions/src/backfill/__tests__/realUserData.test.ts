@@ -10,7 +10,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { PostingEvent, DayBucket, SimulationState } from '../types';
 import { groupEventsByDay } from '../eventExtraction';
 import { simulateHistoricalStreak } from '../simulationEngine';
-import { RecoveryStatusType } from '../../recoveryStatus/StreakInfo';
+import { RecoveryStatusType } from '../../shared/types/StreakInfo';
 
 describe('Real User Data Tests', () => {
   describe('User 1IxdUtOSyGPCwFx531gOgNOC3a02 - Gap Detection', () => {

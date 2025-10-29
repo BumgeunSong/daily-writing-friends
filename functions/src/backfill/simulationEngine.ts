@@ -19,7 +19,7 @@ import {
   RecoveryEvent,
   SimulationStats,
 } from './types';
-import { RecoveryStatusType } from '../recoveryStatus/StreakInfo';
+import { RecoveryStatusType } from '../shared/types/StreakInfo';
 import {
   doesSatisfyDailyStreak,
   calculateHistoricalRecoveryWindow,
