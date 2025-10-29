@@ -19,17 +19,13 @@ export {
   onReactionCreatedOnReply
 } from './notifications';
 
-export { 
+export {
   createPosting,
   onPostingCreated,
   updatePosting
 } from './postings';
 
-export { 
-  updateRecoveryStatusOnMidnightV2
-} from './recoveryStatus';
-
-export { 
+export {
   createReplying,
   updateReplying
 } from './replyings';
