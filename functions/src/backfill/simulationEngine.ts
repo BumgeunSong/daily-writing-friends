@@ -12,15 +12,6 @@
 
 import { Timestamp } from 'firebase-admin/firestore';
 import {
-  DayBucket,
-  SimulationState,
-  DaySimulationResult,
-  SimulationResult,
-  RecoveryEvent,
-  SimulationStats,
-} from './types';
-import { RecoveryStatusType } from '../shared/types/StreakInfo';
-import {
   doesSatisfyDailyStreak,
   calculateHistoricalRecoveryWindow,
   countRecoveryContributingPosts,
@@ -30,6 +21,15 @@ import {
   createRecoveryEventFromSimulation,
   buildRecoveryHistoryForSimulation,
 } from './recoveryHistoryGeneration';
+import {
+  DayBucket,
+  SimulationState,
+  DaySimulationResult,
+  SimulationResult,
+  RecoveryEvent,
+  SimulationStats,
+} from './types';
+import { RecoveryStatusType } from '../shared/types/StreakInfo';
 
 /**
  * Main simulation function: processes historical data day-by-day

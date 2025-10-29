@@ -1,7 +1,7 @@
-import admin from '../../shared/admin';
-import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
 import { addDays, parseISO } from 'date-fns';
+import { formatInTimeZone, toZonedTime } from 'date-fns-tz';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
+import admin from '../../shared/admin';
 import { appendDayClosedEvent } from '../append/appendDayClosedEvent';
 import { projectStreakForUser } from '../projection/projectStreakForUser';
 import { EventMeta } from '../types/EventMeta';

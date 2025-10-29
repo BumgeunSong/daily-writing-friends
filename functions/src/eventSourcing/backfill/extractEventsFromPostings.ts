@@ -32,7 +32,7 @@ export interface PostingDocument {
 export function extractEventsFromPostings(
   postings: PostingDocument[],
   timezone: string,
-  startSeq: number = 1,
+  startSeq = 1,
 ): Event[] {
   const events: Event[] = [];
   let seq = startSeq;

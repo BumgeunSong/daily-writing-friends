@@ -1,11 +1,11 @@
-import admin from '../../shared/admin';
-import { Event } from '../types/Event';
-import { StreamProjectionPhase2 } from '../types/StreamProjectionPhase2';
+import { type Transaction, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import {
   applyEventsToPhase2Projection,
   createInitialPhase2Projection,
 } from './streakReducerPhase2';
-import { type Transaction, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
+import admin from '../../shared/admin';
+import { Event } from '../types/Event';
+import { StreamProjectionPhase2 } from '../types/StreamProjectionPhase2';
 
 const db = admin.firestore();
 

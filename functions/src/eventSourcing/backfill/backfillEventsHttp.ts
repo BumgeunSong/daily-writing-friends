@@ -1,6 +1,6 @@
 import { onRequest } from 'firebase-functions/v2/https';
-import { backfillUserEvents } from './backfillUserEventsDb';
 import { backfillAllUsers } from './backfillAllUsersDb';
+import { backfillUserEvents } from './backfillUserEventsDb';
 
 export const backfillHistoricalEventsHttp = onRequest({
   timeoutSeconds: 540,

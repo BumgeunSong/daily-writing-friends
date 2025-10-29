@@ -1,5 +1,5 @@
-import admin from '../../shared/admin';
 import { backfillUserEvents, BackfillStats } from './backfillUserEventsDb';
+import admin from '../../shared/admin';
 
 const db = admin.firestore();
 
@@ -16,7 +16,7 @@ export interface AggregateStats {
  *
  * @param batchSize - Number of users to process in parallel (default: 10)
  */
-export async function backfillAllUsers(batchSize: number = 10): Promise<AggregateStats> {
+export async function backfillAllUsers(batchSize = 10): Promise<AggregateStats> {
   const stats: AggregateStats = {
     totalUsers: 0,
     usersProcessed: 0,

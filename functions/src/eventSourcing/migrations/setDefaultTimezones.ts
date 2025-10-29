@@ -1,5 +1,5 @@
-import admin from '../../shared/admin';
 import { onRequest } from 'firebase-functions/v2/https';
+import admin from '../../shared/admin';
 
 const db = admin.firestore();
 
