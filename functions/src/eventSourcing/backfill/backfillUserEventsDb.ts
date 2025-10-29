@@ -1,11 +1,9 @@
-import admin from '../../shared/admin';
-import { Event, EventType } from '../types/Event';
 import {
   PostingDocument,
   extractEventsFromPostings,
-  filterDuplicateEvents,
-  renumberEvents,
 } from './extractEventsFromPostings';
+import admin from '../../shared/admin';
+import { Event } from '../types/Event';
 
 const db = admin.firestore();
 
@@ -19,17 +17,18 @@ export interface BackfillStats {
 }
 
 /**
- * Imperative Shell: Backfill events for a single user
+ * Imperative Shell: Backfill events for a single user (FULL REBUILD)
  *
  * Process:
  * 1. Fetch user timezone
  * 2. Fetch all postings (ordered by createdAt)
- * 3. Fetch existing events to detect duplicates
- * 4. Extract new events (functional core)
- * 5. Write events in batches (max 500 per batch)
+ * 3. Delete all existing events
+ * 4. Extract events from postings (functional core)
+ * 5. Write events in batches (chronologically ordered, seq starting from 1)
  * 6. Update eventMeta.lastSeq
  *
- * Idempotent: Safe to re-run - skips existing events
+ * WARNING: This deletes and rebuilds the entire event stream.
+ * All existing events (including DayClosed) will be removed.
  */
 export async function backfillUserEvents(userId: string): Promise<BackfillStats> {
   const stats: BackfillStats = {
@@ -66,53 +65,27 @@ export async function backfillUserEvents(userId: string): Promise<BackfillStats>
       doc => doc.data() as PostingDocument
     );
 
-    // 3. Fetch existing events to detect duplicates
-    const existingEventsSnapshot = await db
-      .collection(`users/${userId}/events`)
-      .where('type', '==', EventType.POST_CREATED)
-      .get();
-
-    const existingPostIds = new Set<string>();
-    for (const doc of existingEventsSnapshot.docs) {
-      const event = doc.data() as Event;
-      if (event.type === EventType.POST_CREATED) {
-        existingPostIds.add(event.payload.postId);
-      }
-    }
+    // 3. Delete all existing events (full rebuild)
+    await deleteAllEvents(userId);
+    console.log(`[Backfill] User ${userId}: Deleted all existing events`);
 
     // 4. Extract events (functional core)
-    const allEvents = extractEventsFromPostings(postings, timezone, 1);
+    const events = extractEventsFromPostings(postings, timezone, 1);
 
-    // Filter duplicates
-    const newEvents = filterDuplicateEvents(allEvents, existingPostIds);
-
-    // Calculate starting seq (after existing events)
-    const existingSeqNumbers = existingEventsSnapshot.docs.map(
-      doc => (doc.data() as Event).seq
-    );
-    const maxExistingSeq = existingSeqNumbers.length > 0
-      ? Math.max(...existingSeqNumbers)
-      : 0;
-
-    // Renumber new events to append after existing
-    const finalEvents = renumberEvents(newEvents, maxExistingSeq + 1);
-
-    stats.eventsSkipped = allEvents.length - finalEvents.length;
-
-    if (finalEvents.length === 0) {
-      console.log(`[Backfill] User ${userId}: All events already exist`);
+    if (events.length === 0) {
+      console.log(`[Backfill] User ${userId}: No valid events to create`);
       return stats;
     }
 
     // 5. Write events in batches (Firestore limit: 500 writes per batch)
     const batchSize = 500;
-    for (let i = 0; i < finalEvents.length; i += batchSize) {
-      const batchEvents = finalEvents.slice(i, i + batchSize);
+    for (let i = 0; i < events.length; i += batchSize) {
+      const batchEvents = events.slice(i, i + batchSize);
       await writeBatchEvents(userId, batchEvents);
     }
 
-    stats.eventsCreated = finalEvents.length;
-    stats.finalLastSeq = finalEvents[finalEvents.length - 1].seq;
+    stats.eventsCreated = events.length;
+    stats.finalLastSeq = events[events.length - 1].seq;
 
     // 6. Update eventMeta.lastSeq
     await db.doc(`users/${userId}/eventMeta/meta`).set(
@@ -121,8 +94,8 @@ export async function backfillUserEvents(userId: string): Promise<BackfillStats>
     );
 
     console.log(
-      `[Backfill] User ${userId}: ✅ Created ${stats.eventsCreated} events ` +
-      `(skipped ${stats.eventsSkipped} duplicates, final seq: ${stats.finalLastSeq})`
+      `[Backfill] User ${userId}: ✅ Rebuilt ${stats.eventsCreated} events ` +
+      `(final seq: ${stats.finalLastSeq})`
     );
 
   } catch (error) {
@@ -131,6 +104,44 @@ export async function backfillUserEvents(userId: string): Promise<BackfillStats>
   }
 
   return stats;
+}
+
+/**
+ * Helper: Delete all events for a user
+ */
+async function deleteAllEvents(userId: string): Promise<void> {
+  const eventsRef = db.collection(`users/${userId}/events`);
+  const snapshot = await eventsRef.get();
+
+  if (snapshot.empty) {
+    return;
+  }
+
+  // Delete in batches (Firestore limit: 500 operations per batch)
+  const batchSize = 500;
+  const batches: FirebaseFirestore.WriteBatch[] = [];
+  let currentBatch = db.batch();
+  let batchCount = 0;
+
+  for (const doc of snapshot.docs) {
+    currentBatch.delete(doc.ref);
+    batchCount++;
+
+    if (batchCount === batchSize) {
+      batches.push(currentBatch);
+      currentBatch = db.batch();
+      batchCount = 0;
+    }
+  }
+
+  if (batchCount > 0) {
+    batches.push(currentBatch);
+  }
+
+  // Commit all batches
+  for (const batch of batches) {
+    await batch.commit();
+  }
 }
 
 /**
