@@ -1,5 +1,4 @@
 import admin from '../../shared/admin';
-import { WriteBatch } from 'firebase-admin/firestore';
 import { Event, EventType } from '../types/Event';
 import {
   PostingDocument,

@@ -80,3 +80,8 @@ export {
 export {
   explainUserStreakProjectionHttp
 } from './eventSourcing/projection/explainStreakProjectionHttp';
+
+// Phase 3: Historical event backfill
+export {
+  backfillHistoricalEventsHttp
+} from './eventSourcing/backfill/backfillEventsHttp';
