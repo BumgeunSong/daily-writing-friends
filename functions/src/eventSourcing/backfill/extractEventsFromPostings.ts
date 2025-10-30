@@ -1,5 +1,6 @@
 import { Timestamp } from 'firebase-admin/firestore';
 import { Event, EventType } from '../types/Event';
+import { computeDayKey } from '../append/computeDayKey';
 
 /**
  * Posting document from Firestore (external shape)
@@ -43,7 +44,7 @@ export function extractEventsFromPostings(
       continue;
     }
 
-    const dayKey = computeDayKeyFromTimestamp(posting.createdAt, timezone);
+    const dayKey = computeDayKey(posting.createdAt, timezone);
 
     const event: Event = {
       seq,
@@ -62,25 +63,6 @@ export function extractEventsFromPostings(
   }
 
   return events;
-}
-
-/**
- * Pure helper: Compute dayKey from Timestamp
- */
-function computeDayKeyFromTimestamp(timestamp: Timestamp, timezone: string): string {
-  const date = timestamp.toDate();
-
-  // Convert to timezone
-  const dateStr = date.toLocaleString('en-US', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-
-  // Parse MM/DD/YYYY to YYYY-MM-DD
-  const [month, day, year] = dateStr.split(/[/,\s]+/);
-  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 }
 
 /**
