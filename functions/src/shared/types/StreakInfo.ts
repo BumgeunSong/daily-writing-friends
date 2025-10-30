@@ -1,6 +1,10 @@
 import { Timestamp } from 'firebase-admin/firestore';
 
 /**
+ * Legacy Phase 1 types - kept for backward compatibility with backfill module
+ */
+
+/**
  * Recovery status types for the 3-state system
  */
 export enum RecoveryStatusType {

@@ -1,5 +1,5 @@
-import { onRequest } from 'firebase-functions/v2/https';
 import { Timestamp } from 'firebase-admin/firestore';
+import { onRequest } from 'firebase-functions/v2/https';
 import { computeUserStreakProjection } from './computeStreakProjection';
 
 /**

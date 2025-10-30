@@ -1,6 +1,6 @@
-import { Timestamp } from 'firebase-admin/firestore';
 import { addDays, parseISO } from 'date-fns';
 import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
+import { Timestamp } from 'firebase-admin/firestore';
 
 /**
  * Check if a dayKey represents a working day in the given timezone.
@@ -27,7 +27,7 @@ export function isWorkingDayByTz(dayKey: string, timezone: string): boolean {
  * @returns Next working day in YYYY-MM-DD format
  */
 export function getNextWorkingDayKey(dayKey: string, timezone: string): string {
-  let currentDate = parseISO(dayKey);
+  const currentDate = parseISO(dayKey);
   let nextDate = addDays(currentDate, 1);
 
   while (!isWorkingDayByTz(formatInTimeZone(nextDate, timezone, 'yyyy-MM-dd'), timezone)) {

@@ -1,6 +1,6 @@
+import { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import admin from '../../shared/admin';
 import { Event } from '../types/Event';
-import { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 
 const db = admin.firestore();
 

@@ -1,3 +1,4 @@
+import { formatInTimeZone } from 'date-fns-tz';
 import { Event, EventType } from '../types/Event';
 import { StreamProjectionPhase2 } from '../types/StreamProjectionPhase2';
 import {
@@ -5,7 +6,6 @@ import {
   computeRecoveryWindow,
   getEndOfDay,
 } from '../utils/workingDayUtils';
-import { formatInTimeZone } from 'date-fns-tz';
 
 /**
  * Compare two dayKeys (YYYY-MM-DD format).

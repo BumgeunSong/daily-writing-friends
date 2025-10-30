@@ -118,7 +118,7 @@ function createEmptyBackfillResponse(
 
 async function createInitialSimulationState(): Promise<import('./types').SimulationState> {
   const { Timestamp } = await import('firebase-admin/firestore');
-  const { RecoveryStatusType } = await import('../recoveryStatus/StreakInfo');
+  const { RecoveryStatusType } = await import('../shared/types/StreakInfo');
 
   return {
     status: { type: RecoveryStatusType.MISSED },

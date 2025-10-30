@@ -1,5 +1,5 @@
-import admin from '../shared/admin';
 import { getRemoteConfig } from 'firebase-admin/remote-config';
+import admin from '../shared/admin';
 
 /**
  * 사용자가 활성 보드에 write 권한을 가지고 있는지 확인

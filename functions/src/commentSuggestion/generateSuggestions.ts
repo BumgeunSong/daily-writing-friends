@@ -1,14 +1,14 @@
 import { onRequest } from 'firebase-functions/v2/https';
-import admin from '../shared/admin';
-import { CommentStyleData } from '../commentStyle/types';
 import {
   GenerateSuggestionsRequest,
   GenerateSuggestionsResponse,
   CommentSuggestion,
   GeminiSuggestionResponse,
 } from './types';
-import { GeminiService } from '../commentStyle/geminiService';
 import { geminiApiKey } from '../commentStyle/config';
+import { GeminiService } from '../commentStyle/geminiService';
+import { CommentStyleData } from '../commentStyle/types';
+import admin from '../shared/admin';
 
 /**
  * HTTP Cloud Function to generate personalized comment suggestions

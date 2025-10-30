@@ -24,7 +24,7 @@ export interface ExplainProjectionResponse {
  */
 export interface EventExplanation {
   seq: number;
-  type: 'PostCreated' | 'PostDeleted' | 'TimezoneChanged' | 'DayClosed';
+  type: 'PostCreated' | 'PostDeleted' | 'TimezoneChanged' | 'DayClosed' | 'DayClosedVirtual' | 'DayActivity';
   dayKey: string;
   isVirtual: boolean;
   stateBefore: StreakSnapshot;

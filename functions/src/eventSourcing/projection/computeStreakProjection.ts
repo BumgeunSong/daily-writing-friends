@@ -1,14 +1,14 @@
-import { Timestamp } from 'firebase-admin/firestore';
 import { addDays, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
-import admin from '../../shared/admin';
-import { Event, EventType, DayActivityEvent, DayClosedVirtualEvent } from '../types/Event';
-import { StreamProjectionPhase2 } from '../types/StreamProjectionPhase2';
-import { EventMeta } from '../types/EventMeta';
-import { computeDayKey } from '../append/computeDayKey';
-import { applyEventsToPhase2Projection, createInitialPhase2Projection } from './streakReducerPhase2';
+import { Timestamp } from 'firebase-admin/firestore';
 import { loadDeltaEvents } from './loadDeltaEvents';
 import { saveProjectionCache } from './saveProjectionCache';
+import { applyEventsToPhase2Projection, createInitialPhase2Projection } from './streakReducerPhase2';
+import admin from '../../shared/admin';
+import { computeDayKey } from '../append/computeDayKey';
+import { Event, EventType, DayActivityEvent, DayClosedVirtualEvent } from '../types/Event';
+import { EventMeta } from '../types/EventMeta';
+import { StreamProjectionPhase2 } from '../types/StreamProjectionPhase2';
 import { isWorkingDayByTz, getEndOfDay } from '../utils/workingDayUtils';
 
 const db = admin.firestore();

@@ -15,7 +15,7 @@ export function applyEventsToProjection(
   events: Event[],
   todayDayKey: string,
 ): StreamProjectionPhase1 {
-  let state = { ...currentState };
+  const state = { ...currentState };
 
   for (const event of events) {
     switch (event.type) {

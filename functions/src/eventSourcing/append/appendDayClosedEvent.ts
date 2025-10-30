@@ -1,5 +1,5 @@
-import admin from '../../shared/admin';
 import { Timestamp, type Transaction } from 'firebase-admin/firestore';
+import admin from '../../shared/admin';
 import { Event, EventType } from '../types/Event';
 import { EventMeta } from '../types/EventMeta';
 

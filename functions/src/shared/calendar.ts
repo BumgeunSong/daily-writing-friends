@@ -250,7 +250,7 @@ export function getNextSeoulWorkingDay(date: Date): Date {
   }
 
   // Convert to Seoul timezone for calculations
-  let seoulDate = toZonedTime(date, SEOUL_TIMEZONE);
+  const seoulDate = toZonedTime(date, SEOUL_TIMEZONE);
   let nextDay = addDays(seoulDate, 1);
 
   // Keep advancing until we find a working day (not weekend)
@@ -271,7 +271,7 @@ export function getPreviousSeoulWorkingDay(date: Date): Date {
   }
 
   // Convert to Seoul timezone for calculations
-  let seoulDate = toZonedTime(date, SEOUL_TIMEZONE);
+  const seoulDate = toZonedTime(date, SEOUL_TIMEZONE);
   let previousDay = subDays(seoulDate, 1);
 
   while (isWeekend(previousDay)) {

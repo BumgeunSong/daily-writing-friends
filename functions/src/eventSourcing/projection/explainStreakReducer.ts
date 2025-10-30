@@ -1,6 +1,6 @@
+import { applyEventsToPhase2Projection } from './streakReducerPhase2';
 import { Event, EventType } from '../types/Event';
 import { StreamProjectionPhase2 } from '../types/StreamProjectionPhase2';
-import { applyEventsToPhase2Projection } from './streakReducerPhase2';
 import {
   ExplainProjectionResponse,
   EventExplanation,

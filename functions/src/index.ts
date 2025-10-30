@@ -19,17 +19,13 @@ export {
   onReactionCreatedOnReply
 } from './notifications';
 
-export { 
+export {
   createPosting,
   onPostingCreated,
   updatePosting
 } from './postings';
 
-export { 
-  updateRecoveryStatusOnMidnightV2
-} from './recoveryStatus';
-
-export { 
+export {
   createReplying,
   updateReplying
 } from './replyings';
@@ -80,3 +76,8 @@ export {
 export {
   explainUserStreakProjectionHttp
 } from './eventSourcing/projection/explainStreakProjectionHttp';
+
+// Phase 3: Historical event backfill
+export {
+  backfillHistoricalEventsHttp
+} from './eventSourcing/backfill/backfillEventsHttp';

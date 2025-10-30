@@ -6,8 +6,8 @@
  */
 
 import { Request, Response } from 'express';
-import admin from '../shared/admin';
 import { BackfillRequestParams, BackfillParams, BackfillErrorType } from './types';
+import admin from '../shared/admin';
 
 /**
  * Main HTTP function handler for backfill requests

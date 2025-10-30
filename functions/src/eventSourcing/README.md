@@ -1,7 +1,7 @@
 # Event Sourcing Streak System
 
-**Version**: Phase 2.2 Daily-Increment (v1)
-**Last Updated**: 2025-10-24
+**Version**: Phase 3 (Backfill Complete)
+**Last Updated**: 2025-10-29
 
 ## Overview
 
@@ -199,9 +199,15 @@ type StreakStatus =
 - [`append/appendEvent.ts`](append/appendEvent.ts) - Write events to user's stream
 - [`append/computeDayKey.ts`](append/computeDayKey.ts) - Timezone-aware date calculation
 
+### Backfill Layer (Phase 3)
+- [`backfill/extractEventsFromPostings.ts`](backfill/extractEventsFromPostings.ts) - Pure functions: extract events from postings
+- [`backfill/backfillUserEventsDb.ts`](backfill/backfillUserEventsDb.ts) - Full rebuild: delete + recreate events chronologically
+- [`backfill/backfillEventsHttp.ts`](backfill/backfillEventsHttp.ts) - HTTP endpoint for backfill
+
 ### Projection Layer
 - [`projection/computeStreakProjection.ts`](projection/computeStreakProjection.ts) - Orchestrator (on-demand)
 - [`projection/streakReducerPhase2.ts`](projection/streakReducerPhase2.ts) - Pure reducer (state machine)
+- [`projection/projectStreakForUser.ts`](projection/projectStreakForUser.ts) - Event-triggered projection update
 - [`projection/loadDeltaEvents.ts`](projection/loadDeltaEvents.ts) - Query events since cache
 - [`projection/saveProjectionCache.ts`](projection/saveProjectionCache.ts) - Persist cache
 
@@ -217,16 +223,10 @@ type StreakStatus =
 
 ### Test Coverage
 
-**39 Phase 2 Reducer Tests** ([`__tests__/streakReducer.phase2.test.ts`](projection/__tests__/streakReducer.phase2.test.ts)):
-- Recovery logic (weekday/Friday miss, full/partial recovery)
-- Same-day rebuild mechanics
-- Orchestrator ordering guarantees
-- Multi-day extension tick synthesis
-- Invariant checks (originalStreak mutations, weekend neutrality)
-- Timezone boundary cases
-- Bug fix regressions
+**Phase 2 Reducer**: 43 tests ([`__tests__/streakReducer.phase2.test.ts`](projection/__tests__/streakReducer.phase2.test.ts))
+**Backfill Core**: 14 tests ([`backfill/__tests__/extractEventsFromPostings.test.ts`](backfill/__tests__/extractEventsFromPostings.test.ts))
 
-**Total: 184 tests across 12 suites**
+**Total: 147 tests passing**
 
 ### Testing Strategy
 
@@ -373,20 +373,30 @@ See [`streakReducerPhase2.ts`](projection/streakReducerPhase2.ts) for validation
 
 ### Current Version
 
-`projectorVersion: 'phase2.1-no-crossday-v1'`
+`projectorVersion: 'phase2.2-daily-increment-v1'`
 
-### Cache Invalidation
+### Phase 3: Historical Event Backfill
 
-When `projectorVersion` changes, cache is automatically invalidated and recomputed from events.
+**Status**: Completed (2025-10-29)
+**Changes**:
+- Removed Phase 1 legacy code (recoveryStatus module)
+- Implemented full event stream rebuild from posting history
+- Events now chronologically ordered by createdAt
 
-**No data migration needed**: Event log is immutable, projections are recomputed.
+**Backfill Process**:
+1. Delete all existing events for user
+2. Extract events from `users/{uid}/postings` (ordered by createdAt ASC)
+3. Write events with seq 1..N in chronological order
+4. Update `eventMeta.lastSeq`
 
-### Rollout Process
+**HTTP Endpoint**:
+```bash
+# Single user
+curl -X POST "https://REGION.cloudfunctions.net/backfillHistoricalEventsHttp?userId={uid}"
 
-1. Deploy new reducer logic
-2. Update `projectorVersion` string
-3. Nightly warmup precomputes with new rules
-4. On-demand computation handles remaining users
+# All users
+curl -X POST "https://REGION.cloudfunctions.net/backfillHistoricalEventsHttp?all=true"
+```
 
 ## Performance Considerations
 
@@ -482,4 +492,4 @@ For questions or issues:
 
 ---
 
-**Last verified**: 2025-10-24 | All 184 tests passing
+**Last verified**: 2025-10-29 | Phase 3 complete | 147 tests passing

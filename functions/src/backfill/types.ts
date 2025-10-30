@@ -6,7 +6,7 @@
  */
 
 import { Timestamp } from 'firebase-admin/firestore';
-import { RecoveryStatus } from '../recoveryStatus/StreakInfo';
+import { RecoveryStatus } from '../shared/types/StreakInfo';
 
 /**
  * HTTP Cloud Function request parameters

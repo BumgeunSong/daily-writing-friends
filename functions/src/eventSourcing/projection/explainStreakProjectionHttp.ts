@@ -1,17 +1,17 @@
-import { onRequest } from 'firebase-functions/v2/https';
-import { Timestamp } from 'firebase-admin/firestore';
-import admin from '../../shared/admin';
-import { EventMeta } from '../types/EventMeta';
-import { Event, EventType } from '../types/Event';
-import { computeDayKey } from '../append/computeDayKey';
-import { loadDeltaEvents } from './loadDeltaEvents';
-import { deriveVirtualClosures } from './deriveVirtualClosures';
-import { explainStreakReducer } from './explainStreakReducer';
-import { createInitialPhase2Projection } from './streakReducerPhase2';
-import { StreamProjectionPhase2 } from '../types/StreamProjectionPhase2';
-import { ExplainProjectionResponse, ExplainProjectionOptions } from './types/ExplainProjection';
 import { addDays, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
+import { Timestamp } from 'firebase-admin/firestore';
+import { onRequest } from 'firebase-functions/v2/https';
+import { deriveVirtualClosures } from './deriveVirtualClosures';
+import { explainStreakReducer } from './explainStreakReducer';
+import { loadDeltaEvents } from './loadDeltaEvents';
+import { createInitialPhase2Projection } from './streakReducerPhase2';
+import { ExplainProjectionResponse, ExplainProjectionOptions } from './types/ExplainProjection';
+import admin from '../../shared/admin';
+import { computeDayKey } from '../append/computeDayKey';
+import { Event, EventType } from '../types/Event';
+import { EventMeta } from '../types/EventMeta';
+import { StreamProjectionPhase2 } from '../types/StreamProjectionPhase2';
 
 const db = admin.firestore();
 

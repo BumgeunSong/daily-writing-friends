@@ -2,7 +2,7 @@ import { describe, it, expect } from '@jest/globals';
 import { simulateHistoricalStreak } from '../simulationEngine';
 import { DayBucket, PostingEvent, SimulationState } from '../types';
 import { Timestamp } from 'firebase-admin/firestore';
-import { RecoveryStatusType } from '../../recoveryStatus/StreakInfo';
+import { RecoveryStatusType } from '../../shared/types/StreakInfo';
 
 function makeEvent(id: string, date: string, time: string): PostingEvent {
   const kstTimestamp = new Date(`${date}T${time}:00+09:00`);
