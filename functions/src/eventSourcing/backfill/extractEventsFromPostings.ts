@@ -17,7 +17,12 @@ export interface PostingDocument {
 }
 
 /**
- * Pure function: Extract events from posting documents
+ * Pure function: Extract events from posting documents for FULL REBUILD
+ *
+ * This function is used in the full rebuild backfill strategy:
+ * - All existing events are deleted before calling this function
+ * - Events are created chronologically from seq 1 (or startSeq)
+ * - No duplicate detection needed (clean slate)
  *
  * Business Rules:
  * 1. Events are ordered by posting createdAt (chronological)
@@ -63,35 +68,4 @@ export function extractEventsFromPostings(
   }
 
   return events;
-}
-
-/**
- * Pure function: Detect existing events to avoid duplicates
- *
- * @param eventsToCreate - New events to be created
- * @param existingPostIds - Set of postIds that already have events
- * @returns Filtered events that don't duplicate existing ones
- */
-export function filterDuplicateEvents(
-  eventsToCreate: Event[],
-  existingPostIds: Set<string>,
-): Event[] {
-  return eventsToCreate.filter(event => {
-    if (event.type !== EventType.POST_CREATED) return true;
-    return !existingPostIds.has(event.payload.postId);
-  });
-}
-
-/**
- * Pure function: Renumber events sequentially after filtering
- *
- * @param events - Events to renumber
- * @param startSeq - Starting sequence number
- * @returns Events with updated seq numbers
- */
-export function renumberEvents(events: Event[], startSeq: number): Event[] {
-  return events.map((event, index) => ({
-    ...event,
-    seq: startSeq + index,
-  }));
 }
