@@ -11,7 +11,6 @@ export interface BackfillStats {
   userId: string;
   postingsFound: number;
   eventsCreated: number;
-  eventsSkipped: number;
   finalLastSeq: number;
   error?: string;
 }
@@ -35,7 +34,6 @@ export async function backfillUserEvents(userId: string): Promise<BackfillStats>
     userId,
     postingsFound: 0,
     eventsCreated: 0,
-    eventsSkipped: 0,
     finalLastSeq: 0,
   };
 
