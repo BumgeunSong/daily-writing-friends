@@ -12,6 +12,7 @@ import { computeDayKey } from '../append/computeDayKey';
 import { Event, EventType } from '../types/Event';
 import { EventMeta } from '../types/EventMeta';
 import { StreamProjectionPhase2 } from '../types/StreamProjectionPhase2';
+import { fetchHolidaysForDateRange } from '../utils/workingDayUtils';
 
 const db = admin.firestore();
 
@@ -133,6 +134,15 @@ async function explainUserStreakProjection(
   const todayLocal = computeDayKey(now, timezone);
   const yesterdayLocal = formatInTimeZone(addDays(parseISO(todayLocal), -1), timezone, 'yyyy-MM-dd');
 
+  // Fetch holidays for date range (4 weeks ago to today)
+  // This covers typical evaluation windows for streak calculations
+  const fourWeeksAgo = formatInTimeZone(
+    addDays(parseISO(todayLocal), -28),
+    timezone,
+    'yyyy-MM-dd',
+  );
+  const holidayMap = await fetchHolidaysForDateRange(fourWeeksAgo, todayLocal);
+
   // Load delta events
   // Default to 0 to explain from beginning, not from cached appliedSeq
   const fromSeq = options.fromSeq ?? 0;
@@ -159,7 +169,7 @@ async function explainUserStreakProjection(
     eventsByDayKey.set(event.dayKey, existing);
   }
 
-  const virtualClosures = deriveVirtualClosures(startDayKey, yesterdayLocal, eventsByDayKey, timezone);
+  const virtualClosures = deriveVirtualClosures(startDayKey, yesterdayLocal, eventsByDayKey, timezone, holidayMap);
 
   // Merge delta events and virtual closures, then sort
   const allEvents = [...deltaEvents, ...virtualClosures].sort((a, b) => {
@@ -175,7 +185,7 @@ async function explainUserStreakProjection(
     ? createInitialPhase2Projection()
     : currentProjection;
 
-  return explainStreakReducer(initialState, allEvents, timezone);
+  return explainStreakReducer(initialState, allEvents, timezone, holidayMap);
 }
 
 /**
