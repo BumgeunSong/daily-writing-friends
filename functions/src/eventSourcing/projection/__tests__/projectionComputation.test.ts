@@ -2,6 +2,7 @@ import { describe, it, expect } from '@jest/globals';
 import { Event, EventType } from '../../types/Event';
 import { deriveVirtualClosures } from '../deriveVirtualClosures';
 import { createPostEvent, groupEventsByDayKey } from './testUtils';
+import { toHolidayMap } from '../../types/Holiday';
 
 const TZ = 'Asia/Seoul';
 
@@ -390,6 +391,87 @@ describe('Optimistic Evaluation', () => {
 
       // Assert: Cache is stale (needs update)
       expect(cachedLastEvaluatedDayKey).not.toBe(newCutoff);
+    });
+  });
+});
+
+describe('deriveVirtualClosures - Holiday Support', () => {
+  describe('when range includes holidays', () => {
+    it('does not create virtual closures for holidays', () => {
+      // Arrange: Mon-Wed range where Monday is a holiday
+      const startDayKey = '2025-03-02'; // Sunday
+      const endDayKey = '2025-03-05'; // Wednesday
+      const eventsByDayKey = new Map<string, Event[]>(); // No posts
+      const holidayMap = toHolidayMap([
+        { date: '2025-03-03', name: '삼일절' }, // Monday is holiday
+      ]);
+
+      // Act
+      const result = deriveVirtualClosures(startDayKey, endDayKey, eventsByDayKey, TZ, holidayMap);
+
+      // Assert: Only Tue and Wed get closures (Mon is holiday, Sun is weekend)
+      expect(result).toHaveLength(2);
+      expect(result[0].dayKey).toBe('2025-03-04'); // Tuesday
+      expect(result[1].dayKey).toBe('2025-03-05'); // Wednesday
+    });
+
+    it('creates closures for all working days when no holiday map provided', () => {
+      // Arrange: Same range, but no holiday map
+      const startDayKey = '2025-03-02'; // Sunday
+      const endDayKey = '2025-03-05'; // Wednesday
+      const eventsByDayKey = new Map<string, Event[]>(); // No posts
+
+      // Act
+      const result = deriveVirtualClosures(startDayKey, endDayKey, eventsByDayKey, TZ);
+
+      // Assert: Mon, Tue, Wed all get closures (holiday not considered)
+      expect(result).toHaveLength(3);
+      expect(result[0].dayKey).toBe('2025-03-03'); // Monday (not skipped)
+      expect(result[1].dayKey).toBe('2025-03-04'); // Tuesday
+      expect(result[2].dayKey).toBe('2025-03-05'); // Wednesday
+    });
+
+    it('skips multiple consecutive holidays', () => {
+      // Arrange: Mon-Fri range with Mon-Wed as holidays
+      const startDayKey = '2025-03-02'; // Sunday
+      const endDayKey = '2025-03-07'; // Friday
+      const eventsByDayKey = new Map<string, Event[]>();
+      const holidayMap = toHolidayMap([
+        { date: '2025-03-03', name: 'Holiday 1' }, // Monday
+        { date: '2025-03-04', name: 'Holiday 2' }, // Tuesday
+        { date: '2025-03-05', name: 'Holiday 3' }, // Wednesday
+      ]);
+
+      // Act
+      const result = deriveVirtualClosures(startDayKey, endDayKey, eventsByDayKey, TZ, holidayMap);
+
+      // Assert: Only Thu and Fri get closures
+      expect(result).toHaveLength(2);
+      expect(result[0].dayKey).toBe('2025-03-06'); // Thursday
+      expect(result[1].dayKey).toBe('2025-03-07'); // Friday
+    });
+  });
+
+  describe('when user posts on some days but misses holiday', () => {
+    it('does not create closure for holiday even if missed', () => {
+      // Arrange: User posts on Tue and Wed, but Mon (holiday) has no post
+      const startDayKey = '2025-03-02'; // Sunday
+      const endDayKey = '2025-03-05'; // Wednesday
+      const eventsByDayKey = new Map<string, Event[]>();
+
+      // User posted on Tue and Wed
+      eventsByDayKey.set('2025-03-04', [createPostEvent('2025-03-04', 1, 'post1')]);
+      eventsByDayKey.set('2025-03-05', [createPostEvent('2025-03-05', 1, 'post2')]);
+
+      const holidayMap = toHolidayMap([
+        { date: '2025-03-03', name: '삼일절' }, // Monday is holiday
+      ]);
+
+      // Act
+      const result = deriveVirtualClosures(startDayKey, endDayKey, eventsByDayKey, TZ, holidayMap);
+
+      // Assert: No closures (Mon is holiday, Tue/Wed have posts)
+      expect(result).toHaveLength(0);
     });
   });
 });

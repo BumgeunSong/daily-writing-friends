@@ -2,6 +2,7 @@ import { addDays, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { Event, EventType, DayClosedEvent } from '../types/Event';
 import { isWorkingDayByTz, getEndOfDay } from '../utils/workingDayUtils';
+import { HolidayMap } from '../types/Holiday';
 
 /**
  * Derive virtual DayClosed events for working days that had no posts.
@@ -13,13 +14,15 @@ import { isWorkingDayByTz, getEndOfDay } from '../utils/workingDayUtils';
  * @param endDayKey - End of range (inclusive) in YYYY-MM-DD format
  * @param eventsByDayKey - Map of dayKey to events that occurred on that day
  * @param timezone - User's IANA timezone
- * @returns Array of virtual DayClosed events for working days with no posts
+ * @param holidayMap - Optional pre-fetched holiday map for working day checks
+ * @returns Array of virtual DayClosed events for working days with no posts (holidays excluded)
  */
 export function deriveVirtualClosures(
   startDayKey: string,
   endDayKey: string,
   eventsByDayKey: Map<string, Event[]>,
   timezone: string,
+  holidayMap?: HolidayMap,
 ): DayClosedEvent[] {
   const virtualClosures: DayClosedEvent[] = [];
 
@@ -31,8 +34,8 @@ export function deriveVirtualClosures(
   while (currentDate <= endDate) {
     const dayKey = formatInTimeZone(currentDate, timezone, 'yyyy-MM-dd');
 
-    // Check if this is a working day
-    if (isWorkingDayByTz(dayKey, timezone)) {
+    // Check if this is a working day (excludes weekends and holidays)
+    if (isWorkingDayByTz(dayKey, timezone, holidayMap)) {
       // Check if any PostCreated events exist for this day
       const eventsOnDay = eventsByDayKey.get(dayKey) || [];
       const hasPostsOnDay = eventsOnDay.some((e) => e.type === EventType.POST_CREATED);
