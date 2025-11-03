@@ -117,6 +117,25 @@ export function isWorkingDayByTz(
 }
 
 /**
+ * Async version of isWorkingDayByTz that auto-fetches holidays
+ * Use this when you need standalone holiday checking and can handle async
+ *
+ * For batch operations, prefer fetching holidays once and passing to isWorkingDayByTz()
+ *
+ * @param dayKey - Date string in YYYY-MM-DD format
+ * @param timezone - IANA timezone
+ * @returns Promise<boolean> - true if working day, false if weekend or holiday
+ */
+export async function isWorkingDayByTzAsync(
+  dayKey: string,
+  timezone: string,
+): Promise<boolean> {
+  // Fetch holidays for this day (uses cache)
+  const holidays = await fetchHolidaysForDateRange(dayKey, dayKey);
+  return isWorkingDayByTz(dayKey, timezone, holidays);
+}
+
+/**
  * Get the next working day from a given dayKey in the specified timezone.
  * Skips weekends (Saturday, Sunday).
  *

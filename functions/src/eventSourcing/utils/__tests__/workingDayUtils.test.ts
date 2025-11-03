@@ -1,5 +1,9 @@
 import { describe, it, expect, jest } from '@jest/globals';
-import { isHolidayByDayKey, isWorkingDayByTz } from '../workingDayUtils';
+import {
+  isHolidayByDayKey,
+  isWorkingDayByTz,
+  isWorkingDayByTzAsync,
+} from '../workingDayUtils';
 import { toHolidayMap, createEmptyHolidayMap } from '../../types/Holiday';
 
 // Mock admin
@@ -65,6 +69,32 @@ describe('Working Day Utilities', () => {
         expect(isWorkingDayByTz('2025-03-03', TIMEZONE, emptyMap)).toBe(true); // Monday
         expect(isWorkingDayByTz('2025-03-08', TIMEZONE, emptyMap)).toBe(false); // Saturday
       });
+    });
+  });
+
+  describe('isWorkingDayByTzAsync', () => {
+    it('returns same results as sync version for weekends', async () => {
+      // Saturday
+      const asyncResult1 = await isWorkingDayByTzAsync('2025-03-08', TIMEZONE);
+      const syncResult1 = isWorkingDayByTz('2025-03-08', TIMEZONE);
+      expect(asyncResult1).toBe(syncResult1);
+      expect(asyncResult1).toBe(false);
+
+      // Monday
+      const asyncResult2 = await isWorkingDayByTzAsync('2025-03-03', TIMEZONE);
+      const syncResult2 = isWorkingDayByTz('2025-03-03', TIMEZONE);
+      expect(asyncResult2).toBe(syncResult2);
+      expect(asyncResult2).toBe(true);
+    });
+
+    it('uses cached holidays when called multiple times', async () => {
+      // First call - fetches from Firestore
+      const result1 = await isWorkingDayByTzAsync('2025-05-05', TIMEZONE);
+
+      // Second call - should use cache
+      const result2 = await isWorkingDayByTzAsync('2025-05-05', TIMEZONE);
+
+      expect(result1).toBe(result2);
     });
   });
 });
