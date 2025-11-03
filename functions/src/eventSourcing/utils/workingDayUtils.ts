@@ -1,6 +1,91 @@
 import { addDays, parseISO } from 'date-fns';
 import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { Timestamp } from 'firebase-admin/firestore';
+import admin from '../../shared/admin';
+import { Holiday, YearHolidays, HolidayMap, toHolidayMap } from '../types/Holiday';
+
+// ===== HOLIDAY FETCHING & CACHING =====
+
+// Cache for holidays to minimize Firestore reads
+let holidaysCache: HolidayMap | null = null;
+let holidaysCacheTimestamp = 0;
+const CACHE_TTL = 1000 * 60 * 60; // 1 hour cache
+
+/**
+ * Fetch holidays for a specific year from Firestore
+ * Uses year-sharded structure: /holidays/{year}
+ */
+async function fetchHolidaysForYear(year: string): Promise<Holiday[]> {
+  try {
+    const yearDocRef = admin.firestore().collection('holidays').doc(year);
+    const snapshot = await yearDocRef.get();
+
+    if (!snapshot.exists) {
+      return [];
+    }
+
+    const data = snapshot.data() as YearHolidays;
+    return data?.items ?? [];
+  } catch (error) {
+    console.error(`Error fetching holidays for year ${year}:`, error);
+    return [];
+  }
+}
+
+/**
+ * Fetch holidays for a date range (YYYY-MM-DD format)
+ * Returns HolidayMap for O(1) lookups
+ *
+ * Caches results for 1 hour to reduce Firestore reads
+ */
+export async function fetchHolidaysForDateRange(
+  startDayKey: string,
+  endDayKey: string,
+): Promise<HolidayMap> {
+  const now = Date.now();
+
+  // Return cached data if still valid
+  if (holidaysCache && now - holidaysCacheTimestamp < CACHE_TTL) {
+    return holidaysCache;
+  }
+
+  try {
+    // Extract years from date range
+    const startYear = startDayKey.substring(0, 4);
+    const endYear = endDayKey.substring(0, 4);
+
+    const years = new Set<string>([startYear]);
+    if (endYear !== startYear) {
+      years.add(endYear);
+    }
+
+    // Fetch all years in parallel
+    const yearPromises = Array.from(years).map((y) => fetchHolidaysForYear(y));
+    const yearResults = await Promise.all(yearPromises);
+    const allHolidays = yearResults.flat();
+
+    // Convert to map and cache
+    const holidayMap = toHolidayMap(allHolidays);
+    holidaysCache = holidayMap;
+    holidaysCacheTimestamp = now;
+
+    return holidayMap;
+  } catch (error) {
+    console.error('Error fetching holidays for date range:', error);
+    return new Map<string, string>();
+  }
+}
+
+/**
+ * Check if a dayKey is a holiday
+ * @internal - exported for testing, will be used internally in next step
+ */
+export function isHolidayByDayKey(dayKey: string, holidayMap?: HolidayMap): boolean {
+  if (!holidayMap) return false;
+  return holidayMap.has(dayKey);
+}
+
+// ===== WORKING DAY OPERATIONS =====
 
 /**
  * Check if a dayKey represents a working day in the given timezone.
