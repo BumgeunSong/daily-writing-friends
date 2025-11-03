@@ -6,6 +6,7 @@ import {
   computeRecoveryWindow,
   getEndOfDay,
 } from '../utils/workingDayUtils';
+import { HolidayMap } from '../types/Holiday';
 
 /**
  * Compare two dayKeys (YYYY-MM-DD format).
@@ -99,12 +100,14 @@ export function createInitialPhase2Projection(): StreamProjectionPhase2 {
  * @param currentState - Current Phase 2 projection state
  * @param events - Array of events to apply (ordered by seq)
  * @param timezone - User's IANA timezone
+ * @param holidayMap - Optional pre-fetched holiday map for working day checks
  * @returns New projection state
  */
 export function applyEventsToPhase2Projection(
   currentState: StreamProjectionPhase2,
   events: Event[],
   timezone: string,
+  holidayMap?: HolidayMap,
 ): StreamProjectionPhase2 {
   let state = { ...currentState };
 
@@ -121,20 +124,20 @@ export function applyEventsToPhase2Projection(
 
     switch (event.type) {
       case EventType.POST_CREATED:
-        state = handlePostCreated(state, event, timezone, postsPerDay);
+        state = handlePostCreated(state, event, timezone, postsPerDay, holidayMap);
         break;
 
       case EventType.DAY_ACTIVITY:
-        state = handleDayActivity(state, event, timezone);
+        state = handleDayActivity(state, event, timezone, holidayMap);
         break;
 
       case EventType.DAY_CLOSED:
         // Legacy persisted events - treat same as DAY_CLOSED_VIRTUAL
-        state = handleDayClosedVirtual(state, event, timezone, postsPerDay);
+        state = handleDayClosedVirtual(state, event, timezone, postsPerDay, holidayMap);
         break;
 
       case EventType.DAY_CLOSED_VIRTUAL:
-        state = handleDayClosedVirtual(state, event, timezone, postsPerDay);
+        state = handleDayClosedVirtual(state, event, timezone, postsPerDay, holidayMap);
         break;
 
       case EventType.POST_DELETED:
@@ -163,6 +166,7 @@ function handlePostCreated(
   event: Event,
   timezone: string,
   postsPerDay: Map<string, number>,
+  holidayMap?: HolidayMap,
 ): StreamProjectionPhase2 {
   if (event.type !== EventType.POST_CREATED) return state;
 
@@ -181,19 +185,19 @@ function handlePostCreated(
   if (newState.status.type === 'onStreak') {
     // Phase 2.2: Daily streak increment when posting while onStreak
     // Only increment if posting on a NEW working day (not same day as lastContributionDate)
-    if (isWorkingDayByTz(dayKey, timezone) && dayKey !== state.lastContributionDate) {
+    if (isWorkingDayByTz(dayKey, timezone, holidayMap) && dayKey !== state.lastContributionDate) {
       newState.currentStreak = state.currentStreak + 1;
       newState.originalStreak = newState.currentStreak;
       newState.longestStreak = Math.max(newState.longestStreak, newState.currentStreak);
     }
-    // Same-day posts or weekend posts: no change to streak
+    // Same-day posts, weekend posts, or holiday posts: no change to streak
   } else if (newState.status.type === 'eligible') {
     // Save context before potential transition
     const savedMissedDate = newState.status.missedDate;
     const savedDeadline = newState.status.deadline;
     const savedCurrentPosts = newState.status.currentPosts || 0;
 
-    newState.status = handleEligiblePost(newState, dayKey, timezone);
+    newState.status = handleEligiblePost(newState, dayKey, timezone, holidayMap);
 
     // Check if transition to onStreak or missed
     if (newState.status.type === 'onStreak' && savedMissedDate) {
@@ -222,22 +226,22 @@ function handlePostCreated(
     } else if (newState.status.type === 'missed') {
       // Transitioned to missed (deadline expired with 0 progress)
       // Now apply missed post logic: immediate onStreak(1)
-      if (isWorkingDayByTz(dayKey, timezone)) {
+      if (isWorkingDayByTz(dayKey, timezone, holidayMap)) {
         const result = startOverToOnStreak1(newState);
         result.appliedSeq = event.seq;
         return result;
       }
-      // Weekend post: stay missed
+      // Weekend/holiday post: stay missed
     }
   } else if (newState.status.type === 'missed') {
     // Policy: Post from missed on working day → immediate onStreak(1), no recovery window
     // Recovery only exists on FIRST miss (onStreak → eligible), never from missed
-    if (isWorkingDayByTz(dayKey, timezone)) {
+    if (isWorkingDayByTz(dayKey, timezone, holidayMap)) {
       const result = startOverToOnStreak1(newState);
       result.appliedSeq = event.seq;
       return result;
     }
-    // Weekend post: no-op (stay missed, weekends are neutral)
+    // Weekend/holiday post: no-op (stay missed, weekends/holidays are neutral)
   }
 
   newState.appliedSeq = event.seq;
@@ -267,6 +271,7 @@ function handleDayActivity(
   state: StreamProjectionPhase2,
   event: Event,
   timezone: string,
+  holidayMap?: HolidayMap,
 ): StreamProjectionPhase2 {
   if (event.type !== EventType.DAY_ACTIVITY) return state;
 
@@ -315,10 +320,10 @@ function handleDayActivity(
     // Policy: Post from missed on working day → immediate onStreak(1)
     // No same-day rebuild, no eligible transition from missed
     // Recovery only exists on FIRST miss (onStreak → eligible)
-    if (isWorkingDayByTz(dayKey, timezone)) {
+    if (isWorkingDayByTz(dayKey, timezone, holidayMap)) {
       return startOverToOnStreak1(newState);
     }
-    // Weekend: no action (weekends are neutral)
+    // Weekend/holiday: no action (weekends/holidays are neutral)
   }
   // If onStreak: no change needed
 
@@ -344,6 +349,7 @@ function handleEligiblePost(
   state: StreamProjectionPhase2,
   dayKey: string,
   timezone: string,
+  holidayMap?: HolidayMap,
 ): StreamProjectionPhase2['status'] {
   const status = { ...state.status };
 
@@ -399,6 +405,7 @@ function handleDayClosedVirtual(
   event: Event,
   timezone: string,
   postsPerDay: Map<string, number>,
+  holidayMap?: HolidayMap,
 ): StreamProjectionPhase2 {
   if (event.type !== EventType.DAY_CLOSED && event.type !== EventType.DAY_CLOSED_VIRTUAL) {
     return state;
@@ -407,7 +414,7 @@ function handleDayClosedVirtual(
   const newState = { ...state };
   const { dayKey } = event;
 
-  const isWorkingDay = isWorkingDayByTz(dayKey, timezone);
+  const isWorkingDay = isWorkingDayByTz(dayKey, timezone, holidayMap);
   // Check if there were posts on this day:
   // 1. In current event batch (postsPerDay map from POST_CREATED or DAY_ACTIVITY)
   // 2. OR this is the last contribution date (for events split across batches in tests)
@@ -474,7 +481,7 @@ function handleDayClosedVirtual(
   // Handle regular day close: working day with no posts from onStreak
   if (isWorkingDay && !hadPostsOnDay && newState.status.type === 'onStreak') {
     // Enter eligible (miss on working day)
-    const { postsRequired, deadline } = computeRecoveryWindow(dayKey, timezone);
+    const { postsRequired, deadline } = computeRecoveryWindow(dayKey, timezone, holidayMap);
 
     newState.status = {
       type: 'eligible',

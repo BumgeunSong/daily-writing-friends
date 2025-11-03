@@ -9,7 +9,8 @@ import { computeDayKey } from '../append/computeDayKey';
 import { Event, EventType, DayActivityEvent, DayClosedVirtualEvent } from '../types/Event';
 import { EventMeta } from '../types/EventMeta';
 import { StreamProjectionPhase2 } from '../types/StreamProjectionPhase2';
-import { isWorkingDayByTz, getEndOfDay } from '../utils/workingDayUtils';
+import { isWorkingDayByTz, getEndOfDay, fetchHolidaysForDateRange } from '../utils/workingDayUtils';
+import { HolidayMap } from '../types/Holiday';
 
 const db = admin.firestore();
 
@@ -46,6 +47,7 @@ async function checkHasPostedOnDay(userId: string, dayKey: string): Promise<bool
  * @param appliedSeq - Last applied sequence number
  * @param timezone - User's timezone
  * @param deltaEventsByDay - Map of dayKey to delta events (to avoid double-counting)
+ * @param holidayMap - Optional pre-fetched holiday map for working day checks
  * @returns Array of synthetic extension events
  */
 async function synthesizeExtensionTicks(
@@ -55,6 +57,7 @@ async function synthesizeExtensionTicks(
   appliedSeq: number,
   timezone: string,
   deltaEventsByDay: Map<string, Event[]>,
+  holidayMap?: HolidayMap,
 ): Promise<Event[]> {
   if (!lastEvaluatedDayKey || lastEvaluatedDayKey >= evaluationCutoff) {
     return []; // No extension needed
@@ -72,8 +75,8 @@ async function synthesizeExtensionTicks(
 
     if (dayKey > evaluationCutoff) break;
 
-    // Only process working days
-    if (!isWorkingDayByTz(dayKey, timezone)) {
+    // Only process working days (excludes weekends and holidays)
+    if (!isWorkingDayByTz(dayKey, timezone, holidayMap)) {
       continue;
     }
 
@@ -196,6 +199,15 @@ export async function computeUserStreakProjection(
     'yyyy-MM-dd',
   );
 
+  // Fetch holidays for date range (4 weeks ago to today)
+  // This covers typical evaluation windows for streak calculations
+  const fourWeeksAgo = formatInTimeZone(
+    addDays(parseISO(todayLocal), -28),
+    timezone,
+    'yyyy-MM-dd',
+  );
+  const holidayMap = await fetchHolidaysForDateRange(fourWeeksAgo, todayLocal);
+
   // Step 2: Load delta events
   const appliedSeq = currentProjection.appliedSeq;
   const allDeltaEvents = await loadDeltaEvents(userId, appliedSeq);
@@ -244,6 +256,7 @@ export async function computeUserStreakProjection(
     appliedSeq,
     timezone,
     eventsByDayKey,
+    holidayMap,
   );
 
   // Step 6: Merge delta events and extension ticks, then sort
@@ -256,7 +269,7 @@ export async function computeUserStreakProjection(
   });
 
   // Step 7: Reduce events
-  const newProjection = applyEventsToPhase2Projection(currentProjection, allEvents, timezone);
+  const newProjection = applyEventsToPhase2Projection(currentProjection, allEvents, timezone, holidayMap);
 
   // Runtime guard: ensure lastEvaluatedDayKey moves forward with ticks
   if (process.env.NODE_ENV !== 'production' && lastEvaluatedDayKey) {

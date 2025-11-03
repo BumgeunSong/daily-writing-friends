@@ -1,6 +1,7 @@
 import { applyEventsToPhase2Projection } from './streakReducerPhase2';
 import { Event, EventType } from '../types/Event';
 import { StreamProjectionPhase2 } from '../types/StreamProjectionPhase2';
+import { HolidayMap } from '../types/Holiday';
 import {
   ExplainProjectionResponse,
   EventExplanation,
@@ -16,12 +17,14 @@ import {
  * @param initialState - Starting projection state
  * @param events - Array of events to process (including virtual closures)
  * @param timezone - User's IANA timezone
+ * @param holidayMap - Optional pre-fetched holiday map for working day checks
  * @returns Detailed explanation of state transformations
  */
 export function explainStreakReducer(
   initialState: StreamProjectionPhase2,
   events: Event[],
   timezone: string,
+  holidayMap?: HolidayMap,
 ): ExplainProjectionResponse {
   const eventExplanations: EventExplanation[] = [];
   let currentState = { ...initialState };
@@ -33,7 +36,7 @@ export function explainStreakReducer(
     const stateBefore = captureStateSnapshot(currentState);
 
     // Apply single event to get next state
-    const stateAfter = applyEventsToPhase2Projection(currentState, [event], timezone);
+    const stateAfter = applyEventsToPhase2Projection(currentState, [event], timezone, holidayMap);
     const stateAfterSnapshot = captureStateSnapshot(stateAfter);
 
     const changes = detectChanges(stateBefore, stateAfterSnapshot, event);
