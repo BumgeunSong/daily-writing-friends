@@ -1,9 +1,73 @@
 import { describe, it, expect, jest } from '@jest/globals';
-import { isHolidayByDayKey } from '../workingDayUtils';
+import { isHolidayByDayKey, isWorkingDayByTz } from '../workingDayUtils';
 import { toHolidayMap, createEmptyHolidayMap } from '../../types/Holiday';
 
 // Mock admin
 jest.mock('../../../shared/admin');
+
+describe('Working Day Utilities', () => {
+  const TIMEZONE = 'Asia/Seoul';
+
+  describe('isWorkingDayByTz with holiday support', () => {
+    const koreanHolidays2025 = toHolidayMap([
+      { date: '2025-03-01', name: '삼일절' }, // Saturday
+      { date: '2025-05-05', name: '어린이날' }, // Monday
+      { date: '2025-06-06', name: '현충일' }, // Friday
+    ]);
+
+    describe('when checking weekends', () => {
+      it('returns false for Saturday', () => {
+        expect(isWorkingDayByTz('2025-03-08', TIMEZONE)).toBe(false);
+        expect(isWorkingDayByTz('2025-03-08', TIMEZONE, koreanHolidays2025)).toBe(false);
+      });
+
+      it('returns false for Sunday', () => {
+        expect(isWorkingDayByTz('2025-03-09', TIMEZONE)).toBe(false);
+        expect(isWorkingDayByTz('2025-03-09', TIMEZONE, koreanHolidays2025)).toBe(false);
+      });
+    });
+
+    describe('when checking holidays', () => {
+      it('returns false for weekday holidays', () => {
+        // 어린이날 (Monday)
+        expect(isWorkingDayByTz('2025-05-05', TIMEZONE, koreanHolidays2025)).toBe(false);
+
+        // 현충일 (Friday)
+        expect(isWorkingDayByTz('2025-06-06', TIMEZONE, koreanHolidays2025)).toBe(false);
+      });
+
+      it('returns true for holidays when no holiday map provided', () => {
+        // Without holiday map, only weekends are checked
+        expect(isWorkingDayByTz('2025-05-05', TIMEZONE)).toBe(true); // Monday
+        expect(isWorkingDayByTz('2025-06-06', TIMEZONE)).toBe(true); // Friday
+      });
+
+      it('returns false for weekend holidays', () => {
+        // 삼일절 (Saturday) - weekend takes precedence
+        expect(isWorkingDayByTz('2025-03-01', TIMEZONE, koreanHolidays2025)).toBe(false);
+      });
+    });
+
+    describe('when checking regular working days', () => {
+      it('returns true for Monday-Friday (non-holidays)', () => {
+        expect(isWorkingDayByTz('2025-03-03', TIMEZONE, koreanHolidays2025)).toBe(true); // Monday
+        expect(isWorkingDayByTz('2025-03-04', TIMEZONE, koreanHolidays2025)).toBe(true); // Tuesday
+        expect(isWorkingDayByTz('2025-03-05', TIMEZONE, koreanHolidays2025)).toBe(true); // Wednesday
+        expect(isWorkingDayByTz('2025-03-06', TIMEZONE, koreanHolidays2025)).toBe(true); // Thursday
+        expect(isWorkingDayByTz('2025-03-07', TIMEZONE, koreanHolidays2025)).toBe(true); // Friday
+      });
+    });
+
+    describe('when holiday map is empty', () => {
+      it('behaves same as without holiday map', () => {
+        const emptyMap = createEmptyHolidayMap();
+
+        expect(isWorkingDayByTz('2025-03-03', TIMEZONE, emptyMap)).toBe(true); // Monday
+        expect(isWorkingDayByTz('2025-03-08', TIMEZONE, emptyMap)).toBe(false); // Saturday
+      });
+    });
+  });
+});
 
 describe('Holiday Fetching Utilities', () => {
   describe('isHolidayByDayKey', () => {

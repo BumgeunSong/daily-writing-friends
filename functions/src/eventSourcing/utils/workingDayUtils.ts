@@ -89,18 +89,31 @@ export function isHolidayByDayKey(dayKey: string, holidayMap?: HolidayMap): bool
 
 /**
  * Check if a dayKey represents a working day in the given timezone.
- * Working days: Monday-Friday
- * Non-working days: Saturday-Sunday
+ * Working days: Monday-Friday, excluding weekends and holidays
+ * Non-working days: Saturday-Sunday, and configured holidays
  *
  * @param dayKey - Date string in YYYY-MM-DD format
  * @param timezone - IANA timezone (e.g., 'Asia/Seoul', 'America/New_York')
- * @returns true if working day, false if weekend
+ * @param holidayMap - Optional pre-fetched holiday map for O(1) lookups
+ * @returns true if working day, false if weekend or holiday
  */
-export function isWorkingDayByTz(dayKey: string, timezone: string): boolean {
+export function isWorkingDayByTz(
+  dayKey: string,
+  timezone: string,
+  holidayMap?: HolidayMap,
+): boolean {
   // Parse dayKey and get day-of-week in the specified timezone
   // ISO day-of-week: 1=Mon, 2=Tue, ..., 5=Fri, 6=Sat, 7=Sun
   const dayOfWeek = Number(formatInTimeZone(parseISO(dayKey), timezone, 'i'));
-  return dayOfWeek >= 1 && dayOfWeek <= 5; // Mon-Fri
+  const isWeekend = dayOfWeek < 1 || dayOfWeek > 5;
+
+  // Not a working day if weekend
+  if (isWeekend) return false;
+
+  // Not a working day if it's a configured holiday
+  if (isHolidayByDayKey(dayKey, holidayMap)) return false;
+
+  return true;
 }
 
 /**
