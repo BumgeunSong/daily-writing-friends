@@ -137,17 +137,24 @@ export async function isWorkingDayByTzAsync(
 
 /**
  * Get the next working day from a given dayKey in the specified timezone.
- * Skips weekends (Saturday, Sunday).
+ * Skips weekends (Saturday, Sunday) and holidays.
  *
  * @param dayKey - Starting date string in YYYY-MM-DD format
  * @param timezone - IANA timezone
+ * @param holidayMap - Optional pre-fetched holiday map
  * @returns Next working day in YYYY-MM-DD format
  */
-export function getNextWorkingDayKey(dayKey: string, timezone: string): string {
+export function getNextWorkingDayKey(
+  dayKey: string,
+  timezone: string,
+  holidayMap?: HolidayMap,
+): string {
   const currentDate = parseISO(dayKey);
   let nextDate = addDays(currentDate, 1);
 
-  while (!isWorkingDayByTz(formatInTimeZone(nextDate, timezone, 'yyyy-MM-dd'), timezone)) {
+  while (
+    !isWorkingDayByTz(formatInTimeZone(nextDate, timezone, 'yyyy-MM-dd'), timezone, holidayMap)
+  ) {
     nextDate = addDays(nextDate, 1);
   }
 
@@ -188,15 +195,17 @@ export function computeStreakIncrement(missedDayKey: string, timezone: string): 
 /**
  * Compute the recovery window for a missed day.
  * - Friday miss → recover by end of Saturday (next day)
- * - Mon-Thu miss → recover by end of next working day
+ * - Mon-Thu miss → recover by end of next working day (skips holidays)
  *
  * @param missedDayKey - The dayKey that was missed (YYYY-MM-DD)
  * @param timezone - IANA timezone
+ * @param holidayMap - Optional pre-fetched holiday map
  * @returns Object with recoveryDayKey, postsRequired, and deadline
  */
 export function computeRecoveryWindow(
   missedDayKey: string,
   timezone: string,
+  holidayMap?: HolidayMap,
 ): {
   recoveryDayKey: string;
   postsRequired: 1 | 2;
@@ -215,8 +224,8 @@ export function computeRecoveryWindow(
       deadline: computeDeadline(saturdayDayKey, timezone),
     };
   } else {
-    // Mon-Thu miss → recover on next working day
-    const nextWorkingDayKey = getNextWorkingDayKey(missedDayKey, timezone);
+    // Mon-Thu miss → recover on next working day (skips weekends and holidays)
+    const nextWorkingDayKey = getNextWorkingDayKey(missedDayKey, timezone, holidayMap);
 
     return {
       recoveryDayKey: nextWorkingDayKey,

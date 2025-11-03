@@ -3,6 +3,8 @@ import {
   isHolidayByDayKey,
   isWorkingDayByTz,
   isWorkingDayByTzAsync,
+  getNextWorkingDayKey,
+  computeRecoveryWindow,
 } from '../workingDayUtils';
 import { toHolidayMap, createEmptyHolidayMap } from '../../types/Holiday';
 
@@ -95,6 +97,88 @@ describe('Working Day Utilities', () => {
       const result2 = await isWorkingDayByTzAsync('2025-05-05', TIMEZONE);
 
       expect(result1).toBe(result2);
+    });
+  });
+
+  describe('getNextWorkingDayKey with holiday support', () => {
+    const koreanHolidays2025 = toHolidayMap([
+      { date: '2025-02-28', name: 'Test Holiday' }, // Friday
+      { date: '2025-03-03', name: '삼일절' }, // Monday (moved from Sat)
+      { date: '2025-05-05', name: '어린이날' }, // Monday
+    ]);
+
+    it('skips weekends when finding next working day', () => {
+      // Friday -> skip Sat, Sun -> Monday
+      expect(getNextWorkingDayKey('2025-03-07', TIMEZONE)).toBe('2025-03-10');
+    });
+
+    it('skips holidays when holiday map provided', () => {
+      // Thursday Feb 27 -> skip Fri (holiday), Sat, Sun -> Mon Mar 3 -> skip Mon (holiday) -> Tue Mar 4
+      expect(getNextWorkingDayKey('2025-02-27', TIMEZONE, koreanHolidays2025)).toBe('2025-03-04');
+    });
+
+    it('does not skip holidays when no holiday map provided', () => {
+      // Without holiday map, 어린이날 (May 5, Monday) is considered working day
+      expect(getNextWorkingDayKey('2025-05-02', TIMEZONE)).toBe('2025-05-05');
+    });
+
+    it('skips multiple consecutive holidays', () => {
+      const consecutiveHolidays = toHolidayMap([
+        { date: '2025-03-03', name: 'Holiday 1' }, // Monday
+        { date: '2025-03-04', name: 'Holiday 2' }, // Tuesday
+        { date: '2025-03-05', name: 'Holiday 3' }, // Wednesday
+      ]);
+
+      // Friday Feb 28 -> skip Sat, Sun, Mon, Tue, Wed -> Thu Mar 6
+      expect(getNextWorkingDayKey('2025-02-28', TIMEZONE, consecutiveHolidays)).toBe('2025-03-06');
+    });
+  });
+
+  describe('computeRecoveryWindow with holiday support', () => {
+    const koreanHolidays2025 = toHolidayMap([
+      { date: '2025-03-03', name: '삼일절 (observed)' }, // Monday
+    ]);
+
+    describe('when missing Friday', () => {
+      it('recovers on Saturday (no holiday check)', () => {
+        const result = computeRecoveryWindow('2025-02-28', TIMEZONE, koreanHolidays2025);
+
+        expect(result.recoveryDayKey).toBe('2025-03-01'); // Saturday
+        expect(result.postsRequired).toBe(1);
+      });
+    });
+
+    describe('when missing Monday-Thursday', () => {
+      it('recovers on next working day without holidays', () => {
+        // Miss Tuesday -> recover on Wednesday
+        const result = computeRecoveryWindow('2025-03-04', TIMEZONE);
+
+        expect(result.recoveryDayKey).toBe('2025-03-05'); // Wednesday
+        expect(result.postsRequired).toBe(2);
+      });
+
+      it('skips holidays when finding recovery day', () => {
+        // Miss Monday Feb 24 -> next working day should skip Tue (holiday if it were one)
+        // Let's use a better example: Miss Monday Mar 3 is a holiday, but we need to miss a working day
+        // Actually, let's miss Tuesday Mar 4 -> next working day is Wed Mar 5
+        const mondayHoliday = toHolidayMap([
+          { date: '2025-03-05', name: 'Test Holiday' }, // Wednesday
+        ]);
+
+        // Miss Tuesday Mar 4 -> next should skip Wed (holiday) -> Thu Mar 6
+        const result = computeRecoveryWindow('2025-03-04', TIMEZONE, mondayHoliday);
+
+        expect(result.recoveryDayKey).toBe('2025-03-06'); // Thursday (skip Wed holiday)
+        expect(result.postsRequired).toBe(2);
+      });
+
+      it('does not skip holidays when no holiday map provided', () => {
+        // Miss Tuesday Mar 4 -> next working day is Wed Mar 5 (holiday not checked)
+        const result = computeRecoveryWindow('2025-03-04', TIMEZONE);
+
+        expect(result.recoveryDayKey).toBe('2025-03-05'); // Wednesday
+        expect(result.postsRequired).toBe(2);
+      });
     });
   });
 });
