@@ -7,25 +7,41 @@ import { Holiday, YearHolidays, HolidayMap, toHolidayMap } from '../types/Holida
 // ===== HOLIDAY FETCHING & CACHING =====
 
 // Cache for holidays to minimize Firestore reads
-let holidaysCache: HolidayMap | null = null;
-let holidaysCacheTimestamp = 0;
+// Key: year string (e.g., "2024"), Value: { data, timestamp }
+const holidaysCacheByYear = new Map<string, { data: Holiday[]; timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 60; // 1 hour cache
 
 /**
  * Fetch holidays for a specific year from Firestore
  * Uses year-sharded structure: /holidays/{year}
+ * Implements per-year caching to avoid race conditions
  */
 async function fetchHolidaysForYear(year: string): Promise<Holiday[]> {
+  const now = Date.now();
+
+  // Check cache for this specific year
+  const cached = holidaysCacheByYear.get(year);
+  if (cached && now - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+
   try {
     const yearDocRef = admin.firestore().collection('holidays').doc(year);
     const snapshot = await yearDocRef.get();
 
     if (!snapshot.exists) {
+      // Cache empty result to avoid repeated lookups
+      holidaysCacheByYear.set(year, { data: [], timestamp: now });
       return [];
     }
 
     const data = snapshot.data() as YearHolidays;
-    return data?.items ?? [];
+    const holidays = data?.items ?? [];
+
+    // Cache the result for this specific year
+    holidaysCacheByYear.set(year, { data: holidays, timestamp: now });
+
+    return holidays;
   } catch (error) {
     console.error(`Error fetching holidays for year ${year}:`, error);
     return [];
@@ -36,19 +52,13 @@ async function fetchHolidaysForYear(year: string): Promise<Holiday[]> {
  * Fetch holidays for a date range (YYYY-MM-DD format)
  * Returns HolidayMap for O(1) lookups
  *
- * Caches results for 1 hour to reduce Firestore reads
+ * Uses per-year caching to avoid race conditions in concurrent requests.
+ * Each year is cached independently with its own TTL.
  */
 export async function fetchHolidaysForDateRange(
   startDayKey: string,
   endDayKey: string,
 ): Promise<HolidayMap> {
-  const now = Date.now();
-
-  // Return cached data if still valid
-  if (holidaysCache && now - holidaysCacheTimestamp < CACHE_TTL) {
-    return holidaysCache;
-  }
-
   try {
     // Extract years from date range
     const startYear = startDayKey.substring(0, 4);
@@ -59,17 +69,13 @@ export async function fetchHolidaysForDateRange(
       years.add(endYear);
     }
 
-    // Fetch all years in parallel
+    // Fetch all years in parallel (uses per-year cache internally)
     const yearPromises = Array.from(years).map((y) => fetchHolidaysForYear(y));
     const yearResults = await Promise.all(yearPromises);
     const allHolidays = yearResults.flat();
 
-    // Convert to map and cache
-    const holidayMap = toHolidayMap(allHolidays);
-    holidaysCache = holidayMap;
-    holidaysCacheTimestamp = now;
-
-    return holidayMap;
+    // Convert to map (no global cache - each request builds its own map)
+    return toHolidayMap(allHolidays);
   } catch (error) {
     console.error('Error fetching holidays for date range:', error);
     return new Map<string, string>();
@@ -143,6 +149,7 @@ export async function isWorkingDayByTzAsync(
  * @param timezone - IANA timezone
  * @param holidayMap - Optional pre-fetched holiday map
  * @returns Next working day in YYYY-MM-DD format
+ * @throws Error if no working day found within 365 days (data corruption guard)
  */
 export function getNextWorkingDayKey(
   dayKey: string,
@@ -151,10 +158,21 @@ export function getNextWorkingDayKey(
 ): string {
   const currentDate = parseISO(dayKey);
   let nextDate = addDays(currentDate, 1);
+  const MAX_ITERATIONS = 365; // Guard against infinite loops
+  let iterations = 0;
 
   while (
     !isWorkingDayByTz(formatInTimeZone(nextDate, timezone, 'yyyy-MM-dd'), timezone, holidayMap)
   ) {
+    iterations++;
+    if (iterations >= MAX_ITERATIONS) {
+      // This should never happen unless there's a data corruption issue
+      // (e.g., all days marked as holidays for a year)
+      throw new Error(
+        `Could not find next working day within ${MAX_ITERATIONS} days from ${dayKey}. ` +
+          'Possible holiday data corruption.',
+      );
+    }
     nextDate = addDays(nextDate, 1);
   }
 
