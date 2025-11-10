@@ -1,10 +1,13 @@
 import { ActionFunctionArgs, redirect } from 'react-router-dom';
 import { queryClient } from '@/shared/lib/queryClient';
+import { createPost } from '@/post/utils/postUtils';
+import { deleteDraft } from '@/draft/utils/draftUtils';
+import { sendAnalyticsEvent, AnalyticsEvent } from '@/shared/utils/analyticsUtils';
 
 export async function createPostAction({ request, params }: ActionFunctionArgs) {
   const { boardId } = params;
   const formData = await request.formData();
-  
+
   const title = formData.get('title') as string;
   const content = formData.get('content') as string;
   const authorId = formData.get('authorId') as string;
@@ -17,28 +20,24 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
   if (!title?.trim()) {
     return { error: '제목을 입력해주세요.' };
   }
-  
+
   if (!content?.trim()) {
     return { error: '내용을 입력해주세요.' };
   }
-  
+
   if (!boardId) {
     return { error: '게시판 ID가 누락되었습니다.' };
   }
-  
+
   if (!authorId) {
     return { error: '사용자 인증이 필요합니다.' };
   }
-  
+
   if (!authorName) {
     return { error: '사용자 이름이 누락되었습니다.' };
   }
 
   try {
-    // Import the actual functions
-    const { createPost } = await import('@/post/utils/postUtils');
-    const { deleteDraft } = await import('@/draft/utils/draftUtils');
-    const { sendAnalyticsEvent, AnalyticsEvent } = await import('@/shared/utils/analyticsUtils');
 
     // Create the post with optional contentJson
     await createPost(boardId, title, content, authorId, authorName, undefined, contentJson);

@@ -1,18 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
+import { fetchAllUsers } from '@/user/api/user';
 
-/**
- * 전체 유저 목록을 suspense + 장기 캐시로 가져오는 훅
- */
 export function useAllUsers() {
   return useQuery({
     queryKey: ['allUsers'],
-    queryFn: async () => {
-      const { fetchAllUsers } = await import('@/user/api/user');
-      return fetchAllUsers();
-    },
+    queryFn: fetchAllUsers,
     suspense: true,
-    staleTime: 1000 * 60 * 10, // 10분 캐시
-    cacheTime: 1000 * 60 * 30, // 30분 메모리 보관
+    staleTime: 1000 * 60 * 10,
+    cacheTime: 1000 * 60 * 30,
   });
 }
 
