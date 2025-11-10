@@ -216,9 +216,6 @@ type StreakStatus =
 - [`types/Event.ts`](types/Event.ts) - Event type definitions
 - [`types/StreamProjectionPhase2.ts`](types/StreamProjectionPhase2.ts) - Projection state schema
 
-### Scheduler
-- [`scheduler/warmupProjections.ts`](scheduler/warmupProjections.ts) - Nightly batch warmup (00:05 KST)
-
 ## Testing
 
 ### Test Coverage
@@ -405,14 +402,6 @@ curl -X POST "https://REGION.cloudfunctions.net/backfillHistoricalEventsHttp?all
 - **Cache hits**: Most reads served from cached projection (< 10ms)
 - **Cache misses**: Recompute from events (50-200ms depending on event count)
 - **Extension ticks**: Query events by dayKey + seq range (indexed)
-
-### Batch Processing
-
-Nightly warmup at 00:05 KST:
-- Processes active users (posted in last 30 days)
-- Batch size: 50 users per batch
-- Parallelization: Firestore limit (default 500 concurrent)
-- Runtime: ~2-5 minutes for 1000 active users
 
 ### Scaling
 
