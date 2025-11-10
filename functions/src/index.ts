@@ -64,10 +64,6 @@ export {
 } from './eventSourcing/projection/computeStreakProjectionHttp';
 
 export {
-  warmupStreakProjections
-} from './eventSourcing/scheduler/warmupProjections';
-
-export {
   explainUserStreakProjectionHttp
 } from './eventSourcing/projection/explainStreakProjectionHttp';
 
