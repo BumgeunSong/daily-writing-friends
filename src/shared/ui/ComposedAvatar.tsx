@@ -10,6 +10,13 @@ interface ComposedAvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
 }
 
+function appendGoogleAvatarSizeParam(url: string, size: number): string {
+  if (url.includes('googleusercontent.com') && !url.includes('=s')) {
+    return `${url}=s${size}`;
+  }
+  return url;
+}
+
 const ComposedAvatar: React.FC<ComposedAvatarProps> = ({
   src,
   alt = 'User',
@@ -18,9 +25,11 @@ const ComposedAvatar: React.FC<ComposedAvatarProps> = ({
   className = '',
   ...rest
 }) => {
+  const optimizedSrc = src ? appendGoogleAvatarSizeParam(src, size) : '';
+
   return (
     <Avatar className={className} style={{ width: size, height: size }} {...rest}>
-      <AvatarImage src={src || ''} alt={alt} />
+      <AvatarImage src={optimizedSrc} alt={alt} loading="lazy" decoding="async" />
       <AvatarFallback>
         {fallback.length === 1 ? fallback : <UserIcon className="size-3.5" />}
       </AvatarFallback>
