@@ -84,12 +84,12 @@ export const updateCommenting = onRequest({
                     // Commenting 데이터 모델 생성
                     const commentingData: Commenting = {
                         board: { id: boardId as string },
-                        post: { 
-                            id: postId, 
+                        post: {
+                            id: postId,
                             title: postTitle,
                             authorId: postAuthorId
                         },
-                        comment: { id: commentId },
+                        comment: { id: commentId, content: commentData.content },
                         createdAt: createdAt
                     };
 
