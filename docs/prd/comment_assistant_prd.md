@@ -92,28 +92,17 @@ Store in commentStyleData Collection
 interface CommentStyleData {
   id: string;
   userId: string;           // Comment author
-  postId: string;          // Post being commented on  
+  postId: string;          // Post being commented on
   boardId: string;         // Board ID
   authorId: string;        // Post author ID
   authorNickname: string;  // Post author display name
-  postSummary: string;     // 50-char LLM-generated summary
-  postTone: PostTone;      // Writer's style (11 categories)
-  postMood: PostMood;      // Emotional atmosphere (7 categories)
   userComment: string;     // Original comment text
   createdAt: Timestamp;    // Comment creation time
   processedAt: Timestamp;  // Processing time
 }
-
-// 11 Tone Categories (Writer's Style)
-type PostTone = 'thoughtful' | 'warm' | 'emotional' | 'humorous' 
-  | 'serious' | 'informal' | 'formal' | 'optimistic' 
-  | 'calm' | 'guiding' | 'friendly';
-
-// 7 Mood Categories (Emotional Atmosphere)  
-type PostMood = 'happy_uplifting' | 'sad_gloomy' | 'tense_exciting'
-  | 'romantic_loving' | 'mysterious_curious' | 'funny_lighthearted'
-  | 'peaceful_calm';
 ```
+
+**Simplification Update**: Post analysis fields (postSummary, postTone, postMood) have been removed. Comment suggestions are now generated based purely on the user's comment history, focusing on mimicking their personal writing style without analyzing the posts they commented on. This simplifies the system and reduces API costs while maintaining suggestion quality.
 
 ### 3.4 Post Tone Analysis
 

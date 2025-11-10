@@ -62,25 +62,15 @@ interface CommentStyleData {
   userId: string;               // Comment author
   postId: string;              // Post being commented on
   boardId: string;             // Board ID
-  postSummary: string;         // 50-char summary of post
-  postTone: PostTone;          // Writer's style (11 options)
-  postMood: PostMood;          // Emotional atmosphere (7 options)
+  authorId: string;            // Post author ID
+  authorNickname: string;      // Post author nickname
   userComment: string;         // Original comment text
   createdAt: Timestamp;        // Comment creation time
   processedAt: Timestamp;      // Processing time
 }
 ```
 
-#### `postProcessingCache` Collection
-```typescript
-interface PostProcessingCache {
-  postId: string;
-  summary: string;
-  tone: PostTone;
-  mood: PostMood;
-  processedAt: Timestamp;
-}
-```
+**Note**: Post analysis fields (postSummary, postTone, postMood) have been removed. Comment suggestions are now generated based purely on user's comment history without post context analysis.
 
 ### Classification System
 
