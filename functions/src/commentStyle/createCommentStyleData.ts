@@ -1,7 +1,5 @@
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { CacheService } from "./cacheService";
 import { runtimeOptions } from "./config";
-import { GeminiService } from "./geminiService";
 import { CommentStyleData } from "./types";
 import { isActiveUser } from "./userUtils";
 import admin from "../shared/admin";
@@ -60,31 +58,7 @@ export const createCommentStyleData = onDocumentCreated({
       return;
     }
 
-    // 4. 캐시 서비스 및 Gemini 서비스 초기화
-    const cacheService = new CacheService();
-    let analysis = await cacheService.getCachedPostProcessing(postId);
-
-    if (!analysis) {
-      console.log(`No cache found for post ${postId}, calling Gemini API`);
-      
-      // 5. Gemini로 포스트 분석
-      const geminiService = new GeminiService();
-      const result = await geminiService.generateSummaryToneMood(postData.content);
-      
-      analysis = {
-        summary: result.summary,
-        tone: result.tone,
-        mood: result.mood
-      };
-
-      // 6. 분석 결과를 캐시에 저장
-      await cacheService.cachePostProcessing(postId, analysis);
-      console.log(`Cached analysis result for post ${postId}`);
-    } else {
-      console.log(`Using cached analysis for post ${postId}`);
-    }
-
-    // 7. CommentStyleData 레코드 생성
+    // 4. CommentStyleData 레코드 생성 (포스트 분석 없이 댓글만 저장)
     const commentStyleData: CommentStyleData = {
       id: commentId,
       userId: userId,
@@ -92,9 +66,6 @@ export const createCommentStyleData = onDocumentCreated({
       boardId: boardId,
       authorId: postData.authorId,
       authorNickname: postData.authorName,
-      postSummary: analysis.summary,
-      postTone: analysis.tone,
-      postMood: analysis.mood,
       userComment: commentData.content,
       createdAt: commentData.createdAt || admin.firestore.Timestamp.now(),
       processedAt: admin.firestore.Timestamp.now()

@@ -1,12 +1,9 @@
 import { onRequest } from "firebase-functions/v2/https";
-import { 
-  getUserRecentCommentsWithPosts, 
-  getUniquePostContents, 
-  BackfillProgress 
+import {
+  getUserRecentCommentsWithPosts,
+  BackfillProgress
 } from "./backfillHelpers";
-import { CacheService } from "./cacheService";
 import { backfillRuntimeOptions, PROCESSING_LIMITS } from "./config";
-import { GeminiService } from "./geminiService";
 import { CommentStyleData, BackfillResult } from "./types";
 import { getActiveUsers, getActiveBoardId } from "./userUtils";
 import admin from "../shared/admin";
@@ -161,34 +158,11 @@ async function processUserCommentsWithToneMood(
       };
     }
 
-    // 2. 고유한 포스트들만 추출 (중복 LLM 호출 방지)
-    const uniquePosts = getUniquePostContents(commentsWithPosts);
-    console.log(`User ${userId}: ${commentsWithPosts.length} comments on ${uniquePosts.length} unique posts`);
-
-    // 3. Gemini 배치 분석 수행
-    const geminiService = new GeminiService();
-    const postAnalyses = await geminiService.batchProcessSummaryToneMood(
-      uniquePosts.map(p => p.content)
-    );
-
-    // 4. 포스트 ID별 분석 결과 매핑 생성
-    const analysisMap = new Map();
-    uniquePosts.forEach((post, index) => {
-      analysisMap.set(post.postId, postAnalyses[index]);
-    });
-
-    // 5. CommentStyleData 레코드들을 배치로 생성
+    // 2. CommentStyleData 레코드들을 배치로 생성 (포스트 분석 없이 댓글만 저장)
     const batch = admin.firestore().batch();
     const timestamp = admin.firestore.Timestamp.now();
 
     commentsWithPosts.forEach(comment => {
-      const analysis = analysisMap.get(comment.postId);
-      
-      if (!analysis) {
-        console.warn(`No analysis found for post ${comment.postId}, skipping comment ${comment.commentId}`);
-        return;
-      }
-
       const commentStyleData: CommentStyleData = {
         id: comment.commentId,
         userId: userId,
@@ -196,9 +170,6 @@ async function processUserCommentsWithToneMood(
         boardId: comment.boardId,
         authorId: comment.authorId,
         authorNickname: comment.authorNickname,
-        postSummary: analysis.summary,
-        postTone: analysis.tone,
-        postMood: analysis.mood,
         userComment: comment.commentContent,
         createdAt: comment.createdAt,
         processedAt: timestamp
@@ -212,19 +183,8 @@ async function processUserCommentsWithToneMood(
       batch.set(docRef, commentStyleData);
     });
 
-    // 6. 배치 실행
+    // 3. 배치 실행
     await batch.commit();
-
-    // 7. 포스트 분석 결과를 캐시에 저장
-    const cacheService = new CacheService();
-    const cacheData = uniquePosts.map(post => ({
-      postId: post.postId,
-      summary: analysisMap.get(post.postId).summary,
-      tone: analysisMap.get(post.postId).tone,
-      mood: analysisMap.get(post.postId).mood
-    }));
-    
-    await cacheService.batchCachePostProcessing(cacheData);
 
     console.log(`Successfully processed ${commentsWithPosts.length} comments for user ${userId}`);
 
