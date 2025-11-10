@@ -16,7 +16,6 @@ export {
 } from './reactionOnComment';
 export { onReplyCreatedOnComment } from './replyOnComment';
 export { onReplyCreatedOnPost } from './replyOnPost';
-export { onNotificationCreated } from './sendMessageOnNotification';
 export { updateCommentRepliesCounts } from './updateCommentRepliesCounts';
 export { updatePostDaysFromFirstDay } from './updateDaysFromFirstDay';
 

@@ -10,7 +10,6 @@ import BoardListPage from '@/board/components/BoardListPage';
 import BoardPage from '@/board/components/BoardPage';
 import RecentBoard from '@/board/components/RecentBoard';
 import NotificationsPage from '@/notification/components/NotificationsPage';
-import NotificationSettingPage from '@/notification/components/NotificationSettingPage';
 import StatsPage from '@/stats/components/StatsPage';
 import UserPage from '@/user/components/UserPage';
 import UserSettingPage from '@/user/components/UserSettingPage';
@@ -110,7 +109,6 @@ const privateRoutesWithNav = {
         },
 
         { path: 'notifications', element: <NotificationsPage /> },
-        { path: 'notifications/settings', element: <NotificationSettingPage /> },
         { path: 'account/edit/:userId', element: <EditAccountPage /> },
         { path: 'stats', element: <StatsPage /> },
         { path: 'user', element: <UserPage /> },
