@@ -13,7 +13,6 @@ import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext
 import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
 import { Button } from '@/shared/ui/button';
 import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
-import { StreakRecoveryNotice } from '@/stats/components/StreakRecoveryNotice';
 import { useCurrentUserKnownBuddy } from '@/user/hooks/useCurrentUserKnownBuddy';
 import type React from 'react';
 
@@ -114,7 +113,6 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
 
   return (
     <div className='space-y-4'>
-      <StreakRecoveryNotice onClickContent={() => navigate(`/create/${boardId}`)} />
       {allPosts.map((post) => (
         <PostCard
           key={post.id}
