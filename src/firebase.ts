@@ -54,19 +54,29 @@ export const installations = new Proxy({} as ReturnType<typeof getInstallations>
 });
 
 if (!useEmulators && typeof window !== 'undefined') {
-  requestIdleCallback(
-    () => {
+  try {
+    remoteConfig = getRemoteConfig(app);
+    configureRemoteConfig(remoteConfig);
+
+    const scheduleIdleTask = (callback: () => void) => {
+      if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(callback, { timeout: 2000 });
+      } else {
+        setTimeout(callback, 1);
+      }
+    };
+
+    scheduleIdleTask(() => {
       try {
         performance = getPerformance(app);
         analytics = getAnalytics(app);
-        remoteConfig = getRemoteConfig(app);
-        configureRemoteConfig(remoteConfig);
       } catch (error) {
         console.warn('Analytics/Performance services not available:', error);
       }
-    },
-    { timeout: 2000 },
-  );
+    });
+  } catch (error) {
+    console.warn('Optional Firebase services not available:', error);
+  }
 } else {
   console.log(
     '🧪 Analytics, Performance, and Remote Config disabled in emulator mode - using default values',
