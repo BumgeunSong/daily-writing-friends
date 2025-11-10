@@ -3,7 +3,6 @@ import { useMemo } from "react";
 import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext";
 import { useAuth } from '@/shared/hooks/useAuth';
 import { fetchPostingData } from "@/shared/utils/postingUtils";
-import { fetchStreakInfo } from "@/stats/api/streakInfo";
 
 export interface CompletionHighlight {
   keywords: string[];
@@ -19,7 +18,7 @@ export interface CompletionMessageResult {
   error?: unknown;
 }
 
-export function useCompletionMessage(): CompletionMessageResult {
+export function useCompletionMessage(contentLength: number): CompletionMessageResult {
   const { currentUser } = useAuth();
   const userId = currentUser?.uid;
   const { value: activeBoardId } = useRemoteConfig("active_board_id");
@@ -34,65 +33,30 @@ export function useCompletionMessage(): CompletionMessageResult {
     enabled: !!userId,
   });
 
-  const {
-    data: streakInfo,
-    isLoading: isStreakLoading,
-    error: streakError,
-  } = useQuery({
-    queryKey: ["streakInfo", userId],
-    queryFn: () => (userId ? fetchStreakInfo(userId) : Promise.resolve(null)),
-    enabled: !!userId,
-    staleTime: 1 * 60 * 1000, // 1 minute - fresh data for completion message
-    cacheTime: 5 * 60 * 1000, // 5 minutes cache
-  });
+  const boardPostCount = useMemo(() => {
+    if (!postings || !activeBoardId) return 0;
 
-  const { streak, boardPostCount } = useMemo(() => {
-    if (!postings || !activeBoardId) return { streak: 0, boardPostCount: 0 };
-    
-    // Use server-side streak calculation, defaulting to 0 if not available
-    const currentStreak = streakInfo?.currentStreak || 0;
-    
-    const boardPostCount = postings.filter(
+    return postings.filter(
       (p) => p.board?.id === activeBoardId
     ).length;
-    
-    return { streak: currentStreak, boardPostCount };
-  }, [postings, activeBoardId, streakInfo]);
+  }, [postings, activeBoardId]);
 
-  let titleMessage = "";
-  let contentMessage = "";
-  let highlight: CompletionHighlight = { keywords: [], color: "" };
-  let iconType: "trophy" | "sparkles" = "trophy";
+  const boardPostCountToBe = boardPostCount + 1;
+  const titleMessage = `${boardPostCountToBe}번째 글 작성 완료`;
 
-  const streakToBe = streak + 1
-  const streakMessages = {
-    2: "이틀 연속! 내일도 함께 써봐요.",
-    3: "와! 벌써 3일 연속이네요. 대단해요!",
-    default: "꾸준하게 글쓰는 모습 멋있어요!"
-  } as const;
+  const contentMessage = contentLength >= 250
+    ? "글 정말 재미있어요! 계속 써주세요."
+    : "짧아도 괜찮아요! 매일 리듬을 만들어나가다보면 좋은 글은 알아서 나와요.";
 
-  if (streakToBe >= 2) {
-    titleMessage = `연속 글쓰기 ${streakToBe}일`;
-    contentMessage = streakMessages[streakToBe as keyof typeof streakMessages] || streakMessages.default;
-    highlight = { keywords: [`${streakToBe}일`], color: "yellow" };
-    iconType = "trophy";
-  } else {
-    // 올리고 나면 하나 늘어나므로 +1을 해준다
-    const boardPostCountToBe = boardPostCount + 1
-    titleMessage = `${boardPostCountToBe}번째 글`;
-    contentMessage = `글 정말 재미있어요! 계속 써주세요.`;
-    highlight = { keywords: [`${boardPostCountToBe}`], color: "purple" };
-    iconType = "sparkles";
-  }
-
-  const isLoading = isPostingsLoading || isStreakLoading;
+  const highlight: CompletionHighlight = { keywords: [`${boardPostCountToBe}번째`], color: "purple" };
+  const iconType: "trophy" | "sparkles" = "sparkles";
 
   return {
     titleMessage,
     contentMessage,
     highlight,
     iconType,
-    isLoading,
-    error: postingsError || streakError,
+    isLoading: isPostingsLoading,
+    error: postingsError,
   };
 } 
