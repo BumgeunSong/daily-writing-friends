@@ -12,31 +12,21 @@ interface ContributionItemProps {
 
 type CombinedContribution = Contribution | CommentingContribution | undefined;
 
-const INTENSITY_RECOVERED = -1;
 const INTENSITY_HOLIDAY = -2;
 const INTENSITY_NONE = 0;
 const MAX_INTENSITY_LEVELS = 4;
 const HIGH_INTENSITY_THRESHOLD = 3;
 
-function isWritingContribution(c: CombinedContribution): c is Contribution {
-  return !!c && ('contentLength' in c || 'isRecovered' in c);
-}
-
 function extractContributionFlags(contribution: CombinedContribution) {
-  const isRecovered = isWritingContribution(contribution)
-    ? Boolean(contribution.isRecovered)
-    : false;
   const isHoliday = contribution?.isHoliday ?? false;
-  return { isRecovered, isHoliday };
+  return { isHoliday };
 }
 
 function calculateIntensity(
   value: number | null,
   maxValue: number,
-  isRecovered: boolean,
   isHoliday: boolean,
 ): number {
-  if (isRecovered) return INTENSITY_RECOVERED;
   if (isHoliday) return INTENSITY_HOLIDAY;
   if (!value) return INTENSITY_NONE;
 
@@ -65,17 +55,16 @@ function useContributionMeta(
   maxValue: number,
 ) {
   return useMemo(() => {
-    const { isRecovered, isHoliday } = extractContributionFlags(contribution);
-    const intensity = calculateIntensity(value, maxValue, isRecovered, isHoliday);
+    const { isHoliday } = extractContributionFlags(contribution);
+    const intensity = calculateIntensity(value, maxValue, isHoliday);
     const { yearMonthDay, day } = formatDate(contribution);
     const holidayName = contribution?.holidayName;
 
-    return { intensity, yearMonthDay, day, isRecovered, isHoliday, holidayName };
+    return { intensity, yearMonthDay, day, isHoliday, holidayName };
   }, [contribution, value, maxValue]);
 }
 
-function getBackgroundColorClass(intensity: number, isRecovered: boolean, isHoliday: boolean) {
-  if (isRecovered) return 'bg-blue-400 dark:bg-blue-400/80';
+function getBackgroundColorClass(intensity: number, isHoliday: boolean) {
   if (isHoliday) return 'bg-amber-50 dark:bg-amber-950/40';
 
   const colorMap: Record<number, string> = {
@@ -89,51 +78,45 @@ function getBackgroundColorClass(intensity: number, isRecovered: boolean, isHoli
   return colorMap[intensity] || '';
 }
 
-function getTextColorClass(intensity: number, isRecovered: boolean): string {
-  const shouldUseWhiteText = isRecovered || intensity >= HIGH_INTENSITY_THRESHOLD;
+function getTextColorClass(intensity: number): string {
+  const shouldUseWhiteText = intensity >= HIGH_INTENSITY_THRESHOLD;
   return shouldUseWhiteText ? 'text-white' : 'text-muted-foreground';
 }
 
-function useContributionClasses(intensity: number, isRecovered: boolean, isHoliday: boolean) {
+function useContributionClasses(intensity: number, isHoliday: boolean) {
   const containerClassName = useMemo(() => {
     const baseClasses =
       'aspect-square w-full rounded-sm relative flex items-center justify-center border border-border/30';
-    const bgClass = getBackgroundColorClass(intensity, isRecovered, isHoliday);
+    const bgClass = getBackgroundColorClass(intensity, isHoliday);
     return cn(baseClasses, bgClass);
-  }, [intensity, isRecovered, isHoliday]);
+  }, [intensity, isHoliday]);
 
   const textClassName = useMemo(() => {
     const baseClass = 'text-[0.6rem] font-medium';
-    const colorClass = getTextColorClass(intensity, isRecovered);
+    const colorClass = getTextColorClass(intensity);
     return cn(baseClass, colorClass);
-  }, [intensity, isRecovered]);
+  }, [intensity]);
 
   return { containerClassName, textClassName };
 }
 
 function buildTooltipText(
   yearMonthDay: string,
-  isRecovered: boolean,
   isHoliday: boolean,
   holidayName?: string,
 ): string {
   let text = yearMonthDay;
-  if (isRecovered) text += ' (회복됨)';
   if (isHoliday && holidayName) text += ` (${holidayName})`;
   return text;
 }
 
 function ContributionItemInner({ contribution, value, maxValue }: ContributionItemProps) {
-  const { intensity, yearMonthDay, day, isRecovered, isHoliday, holidayName } =
+  const { intensity, yearMonthDay, day, isHoliday, holidayName } =
     useContributionMeta(contribution, value, maxValue);
 
-  const { containerClassName, textClassName } = useContributionClasses(
-    intensity,
-    isRecovered,
-    isHoliday,
-  );
+  const { containerClassName, textClassName } = useContributionClasses(intensity, isHoliday);
 
-  const tooltipText = buildTooltipText(yearMonthDay, isRecovered, isHoliday, holidayName);
+  const tooltipText = buildTooltipText(yearMonthDay, isHoliday, holidayName);
 
   return (
     <TooltipProvider>
