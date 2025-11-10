@@ -63,12 +63,6 @@ service cloud.firestore {
       }
     }
 
-    // Topic cards - readable by all authenticated users
-    match /topicCards/{cardId} {
-      allow read: if isAuthenticated();
-      allow write: if false; // Only admins should manage topic cards
-    }
-
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;

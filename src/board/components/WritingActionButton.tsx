@@ -1,4 +1,4 @@
-import { Plus, X, PenSquare, CookingPot, Sparkle } from 'lucide-react';
+import { Plus, X, PenSquare, Sparkle } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -70,12 +70,6 @@ function ExpandedMenu({ boardId, isExpanded, onClose }: ExpandedMenuProps) {
       icon: PenSquare,
       label: "일반 글쓰기",
       ariaLabel: "Create Normal Post"
-    },
-    {
-      to: `/board/${boardId}/topic-cards`,
-      icon: CookingPot,
-      label: "글감 목록",
-      ariaLabel: "Show Topic Cards"
     }
   ];
 
