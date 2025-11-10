@@ -5,8 +5,8 @@ import {
   CommentSuggestion,
   GeminiSuggestionResponse,
 } from './types';
-import { geminiApiKey } from '../commentStyle/config';
-import { GeminiService } from '../commentStyle/geminiService';
+import { geminiApiKey } from './config';
+import { GeminiService } from './geminiService';
 import { Commenting } from '../commentings/Commenting';
 import admin from '../shared/admin';
 
