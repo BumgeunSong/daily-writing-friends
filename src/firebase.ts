@@ -35,23 +35,52 @@ let remoteConfig: any = null;
 
 const useEmulators = shouldUseEmulators();
 
-export const storage = new Proxy({} as ReturnType<typeof getStorage>, {
-  get(target, prop) {
-    if (!_storage) {
-      _storage = getStorage(app);
-    }
-    return (_storage as any)[prop];
-  },
-});
+function createLazyStorage() {
+  if (useEmulators) {
+    return getStorage(app);
+  }
 
-export const installations = new Proxy({} as ReturnType<typeof getInstallations>, {
-  get(target, prop) {
-    if (!_installations) {
-      _installations = getInstallations(app);
-    }
-    return (_installations as any)[prop];
-  },
-});
+  return new Proxy({} as ReturnType<typeof getStorage>, {
+    get(target, prop) {
+      if (!_storage) {
+        _storage = getStorage(app);
+      }
+      return (_storage as any)[prop];
+    },
+    set(target, prop, value) {
+      if (!_storage) {
+        _storage = getStorage(app);
+      }
+      (_storage as any)[prop] = value;
+      return true;
+    },
+  });
+}
+
+function createLazyInstallations() {
+  if (useEmulators) {
+    return getInstallations(app);
+  }
+
+  return new Proxy({} as ReturnType<typeof getInstallations>, {
+    get(target, prop) {
+      if (!_installations) {
+        _installations = getInstallations(app);
+      }
+      return (_installations as any)[prop];
+    },
+    set(target, prop, value) {
+      if (!_installations) {
+        _installations = getInstallations(app);
+      }
+      (_installations as any)[prop] = value;
+      return true;
+    },
+  });
+}
+
+export const storage = createLazyStorage();
+export const installations = createLazyInstallations();
 
 if (!useEmulators && typeof window !== 'undefined') {
   try {
