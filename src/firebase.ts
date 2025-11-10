@@ -21,30 +21,52 @@ import { getInstallations } from 'firebase/installations';
 const firebaseConfig = createFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 
-// Initialize core services
+// Initialize critical services only
 const auth = getAuth(app);
 const firestore = getFirestore(app);
-const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
-const installations = getInstallations(app);
 
-// Initialize optional services (analytics, performance, remote config)
-const useEmulators = shouldUseEmulators();
+// Lazy-loaded non-critical services (initialized on first use)
+let _storage: ReturnType<typeof getStorage> | null = null;
+let _installations: ReturnType<typeof getInstallations> | null = null;
 let performance: any = null;
 let analytics: any = null;
 let remoteConfig: any = null;
 
-if (!useEmulators && typeof window !== 'undefined') {
-  try {
-    performance = getPerformance(app);
-    analytics = getAnalytics(app);
-    remoteConfig = getRemoteConfig(app);
+const useEmulators = shouldUseEmulators();
 
-    // Configure Remote Config
-    configureRemoteConfig(remoteConfig);
-  } catch (error) {
-    console.warn('Analytics/Performance services not available:', error);
-  }
+export const storage = new Proxy({} as ReturnType<typeof getStorage>, {
+  get(target, prop) {
+    if (!_storage) {
+      _storage = getStorage(app);
+    }
+    return (_storage as any)[prop];
+  },
+});
+
+export const installations = new Proxy({} as ReturnType<typeof getInstallations>, {
+  get(target, prop) {
+    if (!_installations) {
+      _installations = getInstallations(app);
+    }
+    return (_installations as any)[prop];
+  },
+});
+
+if (!useEmulators && typeof window !== 'undefined') {
+  requestIdleCallback(
+    () => {
+      try {
+        performance = getPerformance(app);
+        analytics = getAnalytics(app);
+        remoteConfig = getRemoteConfig(app);
+        configureRemoteConfig(remoteConfig);
+      } catch (error) {
+        console.warn('Analytics/Performance services not available:', error);
+      }
+    },
+    { timeout: 2000 },
+  );
 } else {
   console.log(
     '🧪 Analytics, Performance, and Remote Config disabled in emulator mode - using default values',
@@ -81,4 +103,4 @@ export const signInWithTestCredentials = (
 export const signInWithTestToken = (customToken: string): Promise<UserCredential> =>
   testTokenSignIn(auth, customToken);
 
-export { auth, firestore, storage, app, performance, remoteConfig, analytics, installations };
+export { auth, firestore, app, performance, remoteConfig, analytics };
