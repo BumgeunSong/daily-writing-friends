@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchCommentingData } from '@/stats/api/stats';
-import { fetchStreakInfo } from '@/stats/api/streakInfo';
 import { WritingBadge } from '@/stats/model/WritingStats';
 
 export function usePostProfileBadges(userId: string) {
@@ -17,29 +16,14 @@ export function usePostProfileBadges(userId: string) {
 
 async function fetchUserBadges(userId: string): Promise<WritingBadge[]> {
     try {
-        const [streakInfo, commentingData] = await Promise.all([
-            fetchStreakInfo(userId),
-            fetchCommentingData(userId, 20)
-        ]);
-        
-        const postingBadges = createStreakBadge(streakInfo?.currentStreak || 0);
+        const commentingData = await fetchCommentingData(userId, 20);
         const commentingBadges = createCommentingBadges(commentingData);
-        
-        return [...postingBadges, ...commentingBadges];
+
+        return commentingBadges;
     } catch (error) {
         console.error('Error fetching user badges:', error);
         return [];
     }
-}
-
-
-function createStreakBadge(streak: number): WritingBadge[] {
-    if (streak < 2) return [];
-
-    return [{
-        name: `연속 ${streak}일`,
-        emoji: '🔥'
-    }];
 }
 
 function calculateCommentTemperature(commentCount: number): number {
