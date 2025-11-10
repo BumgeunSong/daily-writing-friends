@@ -4,6 +4,7 @@ import { limit, query, collection, orderBy, getDocs, startAfter, doc, getDoc, Qu
 import { firestore } from "@/firebase";
 import { Post } from "@/post/model/Post";
 import { Posting } from "@/post/model/Posting";
+import { mapDocumentToPost } from "@/post/utils/postUtils";
 
 const LIMIT_COUNT = 10;
 
@@ -85,20 +86,10 @@ async function fetchUserPosts(userId: string, paginationCursor?: QueryDocumentSn
                         return null;
                     }
 
-                    const postData = postDoc.data();
+                    const post = mapDocumentToPost(postDoc);
 
                     return {
-                        id: postDoc.id,
-                        boardId: board.id,
-                        title: postData.title,
-                        content: postData.content,
-                        authorId: postData.authorId,
-                        authorName: postData.authorName,
-                        createdAt: postData.createdAt,
-                        updatedAt: postData.updatedAt,
-                        visibility: postData.visibility,
-                        countOfComments: postData.countOfComments || 0,
-                        countOfReplies: postData.countOfReplies || 0,
+                        ...post,
                         _paginationCursor: postingDoc,
                         _fetchedFullPage: fetchedFullPage,
                     } as PostWithPaginationMetadata;
