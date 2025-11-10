@@ -1,8 +1,6 @@
 // src/types/User.ts
 import { Timestamp } from 'firebase/firestore';
 
-export type RecoveryStatus = 'none' | 'eligible' | 'partial' | 'success';
-
 export interface User {
   uid: string; // Unique identifier for the user
   realName: string | null;
@@ -26,14 +24,6 @@ export interface User {
    * 이 배열에 내가 포함되어 있으면, 해당 유저의 모든 콘텐츠를 볼 수 없음
    */
   blockedBy?: string[];
-  /**
-   * 스트릭 복구 상태
-   * - 'none': 복구 대상/기간 아님
-   * - 'eligible': 복구 기회 있음 (2개 글 작성 필요)
-   * - 'partial': 1개만 작성됨 (1개 더 필요)
-   * - 'success': 복구 성공 (2개 작성 완료)
-   */
-  recoveryStatus?: RecoveryStatus;
   profile?: {
     timezone?: string; // IANA timezone identifier (e.g., 'Asia/Seoul')
   };
@@ -62,7 +52,6 @@ export type UserOptionalFields = {
   };
   // blockedBy는 optional로 유지
   blockedBy?: string[];
-  recoveryStatus?: RecoveryStatus;
   profile?: {
     timezone?: string;
   };

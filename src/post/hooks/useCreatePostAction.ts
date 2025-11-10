@@ -72,17 +72,12 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
       queryKey: ['posts', boardId],
     });
 
-    // Invalidate streakInfo cache so completion message shows updated streak
-    queryClient.invalidateQueries({
-      queryKey: ['streakInfo', authorId],
-    });
-
     // Invalidate user postings cache for completion message
     queryClient.invalidateQueries({
       queryKey: ['userPostings', authorId],
     });
 
-    return redirect(`/create/${boardId}/completion`);
+    return redirect(`/create/${boardId}/completion?contentLength=${content.length}`);
   } catch (error) {
     console.error('게시물 작성 중 오류가 발생했습니다:', error);
     
