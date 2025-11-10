@@ -1,27 +1,34 @@
 import * as Sentry from '@sentry/react';
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { limit, query, collection, orderBy, where, getDocs, startAfter } from "firebase/firestore";
+import { limit, query, collection, orderBy, getDocs, startAfter, doc, getDoc, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { firestore } from "@/firebase";
 import { Post } from "@/post/model/Post";
-import { mapDocumentToPost } from "@/post/utils/postUtils";
+import { Posting } from "@/post/model/Posting";
 
 const LIMIT_COUNT = 10;
 
+type PostWithPaginationMetadata = Post & {
+    _paginationCursor?: QueryDocumentSnapshot<DocumentData>;
+    _fetchedFullPage?: boolean;
+};
+
 /**
  * 특정 사용자가 작성한 포스트를 가져오는 커스텀 훅
+ * Optimized to use users/{userId}/postings subcollection instead of querying all boards
  * @param userId 사용자 ID
  * @returns InfiniteQuery 객체
  */
 export const useUserPosts = (userId: string) => {
-    return useInfiniteQuery<Post[]>(
+    return useInfiniteQuery<PostWithPaginationMetadata[]>(
         ['userPosts', userId],
         ({ pageParam = null }) => fetchUserPosts(userId, pageParam),
         {
             enabled: !!userId,
             getNextPageParam: (lastPage) => {
-                if (lastPage.length === 0) return undefined;
                 const lastPost = lastPage[lastPage.length - 1];
-                return lastPost ? lastPost.createdAt?.toDate() : undefined;
+                const shouldFetchNextPage = lastPost?._fetchedFullPage && lastPost?._paginationCursor;
+
+                return shouldFetchNextPage ? lastPost._paginationCursor : undefined;
             },
             onError: (error) => {
                 console.error("사용자 게시글을 불러오던 중 에러가 발생했습니다:", error);
@@ -36,53 +43,69 @@ export const useUserPosts = (userId: string) => {
 
 /**
  * 사용자의 게시글을 페이지 단위로 가져오는 함수
+ * Uses users/{userId}/postings subcollection for efficient querying
  * @param userId 사용자 ID
- * @param after 마지막 문서의 timestamp (페이지네이션 용)
+ * @param paginationCursor 마지막 문서 (페이지네이션 용)
  * @returns 게시글 배열
  */
-async function fetchUserPosts(userId: string, after?: Date): Promise<Post[]> {
+async function fetchUserPosts(userId: string, paginationCursor?: QueryDocumentSnapshot<DocumentData>): Promise<PostWithPaginationMetadata[]> {
     try {
-        // 모든 게시판에서 사용자가 작성한 글 가져오기
-        // 실제 환경에서는 boards 컬렉션을 먼저 가져와서 각 게시판 ID를 순회해야 할 수 있음
-        const boardsRef = collection(firestore, "boards");
-        const boardsSnapshot = await getDocs(boardsRef);
-        
-        let allPosts: Post[] = [];
-        
-        // 각 게시판에서 사용자의 게시글 가져오기
-        for (const boardDoc of boardsSnapshot.docs) {
-            const boardId = boardDoc.id;
-            
-            let q = query(
-                collection(firestore, `boards/${boardId}/posts`),
-                where('authorId', '==', userId),
-                orderBy('createdAt', 'desc'),
-                limit(LIMIT_COUNT)
-            );
-            
-            if (after) {
-                q = query(q, startAfter(after));
-            }
-            
-            const postsSnapshot = await getDocs(q);
-            const boardPosts = postsSnapshot.docs.map(doc => ({
-                ...mapDocumentToPost(doc),
-                boardId, // 게시판 ID 추가
-                boardTitle: boardDoc.data().title || '게시판' // 게시판 제목 추가
-            }));
-            
-            allPosts = [...allPosts, ...boardPosts];
+        const postingsRef = collection(firestore, 'users', userId, 'postings');
+
+        let postingsQuery = query(
+            postingsRef,
+            orderBy('createdAt', 'desc'),
+            limit(LIMIT_COUNT)
+        );
+
+        if (paginationCursor) {
+            postingsQuery = query(postingsQuery, startAfter(paginationCursor));
         }
-        
-        // 전체 결과를 날짜 순으로 정렬
-        allPosts.sort((a, b) => {
-            const dateA = a.createdAt?.toDate() || new Date(0);
-            const dateB = b.createdAt?.toDate() || new Date(0);
-            return dateB.getTime() - dateA.getTime();
-        });
-        
-        // 요청된 개수만큼 자르기
-        return allPosts.slice(0, LIMIT_COUNT);
+
+        const postingsSnapshot = await getDocs(postingsQuery);
+        const fetchedPostingCount = postingsSnapshot.docs.length;
+        const fetchedFullPage = fetchedPostingCount === LIMIT_COUNT;
+
+        const postsWithMetadata = await Promise.all(
+            postingsSnapshot.docs.map(async (postingDoc) => {
+                const posting = postingDoc.data() as Posting;
+                const { board, post: postInfo } = posting;
+
+                try {
+                    const postRef = doc(firestore, 'boards', board.id, 'posts', postInfo.id);
+                    const postDoc = await getDoc(postRef);
+
+                    if (!postDoc.exists()) {
+                        console.warn(`Post ${postInfo.id} not found in board ${board.id}`);
+                        return null;
+                    }
+
+                    const postData = postDoc.data();
+
+                    return {
+                        id: postDoc.id,
+                        boardId: board.id,
+                        title: postData.title,
+                        content: postData.content,
+                        authorId: postData.authorId,
+                        authorName: postData.authorName,
+                        createdAt: postData.createdAt,
+                        updatedAt: postData.updatedAt,
+                        visibility: postData.visibility,
+                        countOfComments: postData.countOfComments || 0,
+                        countOfReplies: postData.countOfReplies || 0,
+                        _paginationCursor: postingDoc,
+                        _fetchedFullPage: fetchedFullPage,
+                    } as PostWithPaginationMetadata;
+                } catch (error) {
+                    console.error(`Error fetching post ${postInfo.id}:`, error);
+                    return null;
+                }
+            })
+        );
+
+        const validPosts = postsWithMetadata.filter((post): post is PostWithPaginationMetadata => post !== null);
+        return validPosts;
     } catch (error) {
         console.error("Error fetching user posts:", error);
         Sentry.captureException(error);
