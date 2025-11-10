@@ -57,7 +57,7 @@ const RemoteConfigContext = createContext<RemoteConfigContextValue>({
 });
 
 export function RemoteConfigProvider({ children }: { children: React.ReactNode }) {
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(true);
   const [values, setValues] = useState<RemoteConfigValueTypes>(REMOTE_CONFIG_DEFAULTS);
   const [error, setError] = useState<Error | null>(null);
 
@@ -69,10 +69,7 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
       return;
     }
 
-    setReady(false);
     setError(null);
-
-    // Set default config values
     remoteConfig.defaultConfig = REMOTE_CONFIG_DEFAULTS;
 
     fetchAndActivate(remoteConfig)
@@ -107,10 +104,8 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
         console.error('Failed to fetch Remote Config:', err);
         const error = err instanceof Error ? err : new Error(String(err));
         setError(error);
-        // Use default values if fetch fails
         setValues(REMOTE_CONFIG_DEFAULTS);
-      })
-      .finally(() => setReady(true));
+      });
   }, []);
 
   useEffect(() => {
