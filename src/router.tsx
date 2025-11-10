@@ -45,7 +45,6 @@ import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { PermissionErrorBoundary } from '@/shared/components/PermissionErrorBoundary';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { AppWithTracking } from '@/shared/components/AppWithTracking';
-import TopicCardCarouselPage from './board/components/TopicCardCarouselPage';
 import { BottomTabHandlerProvider } from './shared/contexts/BottomTabHandlerContext';
 import { NavigationProvider } from './shared/contexts/NavigationContext';
 
@@ -103,7 +102,6 @@ const privateRoutesWithNav = {
         },
 
         { path: 'create/:boardId/completion', element: <PostCompletionPage /> },
-        { path: 'board/:boardId/topic-cards', element: <TopicCardCarouselPage /> },
         {
           path: 'board/:boardId/post/:postId',
           element: <PostDetailPage />,

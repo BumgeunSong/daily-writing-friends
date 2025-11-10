@@ -12,10 +12,6 @@ export enum AnalyticsEvent {
     START_FREE_WRITING = 'start_free_writing',
     // Finish FreeWriting
     FINISH_FREE_WRITING = 'finish_free_writing',
-    // Start Topic Card
-    START_TOPIC_CARD = 'start_topic_card',
-    // Finish Topic Card
-    FINISH_TOPIC_CARD = 'finish_topic_card',
 
 }
 
