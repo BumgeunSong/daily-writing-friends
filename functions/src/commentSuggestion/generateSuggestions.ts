@@ -7,14 +7,14 @@ import {
 } from './types';
 import { geminiApiKey } from '../commentStyle/config';
 import { GeminiService } from '../commentStyle/geminiService';
-import { CommentStyleData } from '../commentStyle/types';
+import { Commenting } from '../commentings/Commenting';
 import admin from '../shared/admin';
 
 /**
  * HTTP Cloud Function to generate personalized comment suggestions
  *
  * Process:
- * 1. Fetch user's last 10 commentStyleData records
+ * 1. Fetch user's last 10 commentings records (with content)
  * 2. Fetch target post content
  * 3. Build prompt with examples + instructions
  * 4. Call Gemini API
@@ -56,7 +56,7 @@ export const generateCommentSuggestions = onRequest(
 
       console.log(`Generating suggestions for user ${userId} on post ${postId}`);
 
-      // 1. Fetch user's comment history from commentStyleData
+      // 1. Fetch user's comment history from commentings collection
       const commentHistory = await getUserCommentHistory(userId);
       console.log(`Found ${commentHistory.length} historical comments for user`);
 
@@ -126,33 +126,40 @@ export const generateCommentSuggestions = onRequest(
 );
 
 /**
- * Fetch user's comment history from commentStyleData collection
+ * Fetch user's comment history from commentings collection
+ * Fetches 20 docs, filters to those with content, takes first 10
  */
-async function getUserCommentHistory(userId: string): Promise<CommentStyleData[]> {
+async function getUserCommentHistory(userId: string): Promise<Commenting[]> {
   const snapshot = await admin
     .firestore()
     .collection('users')
     .doc(userId)
-    .collection('commentStyleData')
+    .collection('commentings')
     .orderBy('createdAt', 'desc')
-    .limit(10)
+    .limit(20)
     .get();
 
-  return snapshot.docs.map((doc) => doc.data() as CommentStyleData);
+  // Filter out old Commenting documents that don't have content field
+  const commentsWithContent = snapshot.docs
+    .map((doc) => doc.data() as Commenting)
+    .filter((data) => data.comment.content);
+
+  // Return first 10 comments with content
+  return commentsWithContent.slice(0, 10);
 }
 
 /**
  * Build the prompt for Gemini to generate suggestions
  */
 function buildSuggestionPrompt(
-  commentHistory: CommentStyleData[],
+  commentHistory: Commenting[],
   postContent: string,
   postAuthorName: string,
 ): string {
   // Format comment history examples
   const examples = commentHistory
     .map((data, index) => {
-      return `예시 ${index + 1}: "${data.userComment}"`;
+      return `예시 ${index + 1}: "${data.comment.content}"`;
     })
     .join('\n\n');
 
@@ -189,7 +196,8 @@ ${examples}
 ## 필수 작성 규칙:
 
 ### 스타일 모방:
-- **사용자의 과거 댓글 스타일을 정확히 따라하세요**
+- **사용자의 과거 댓글 스타일을 정확히 따라하세요** 
+- 사용자가 사용하는 종결 어미를 따라하세요. (예: ~해요, ~습니다, ~네요, ~데요, ~어요, ~겠죠, ~걸요, ~군요)
 - 사용자가 사용한 말투, 표현, 이모지만 사용
 - 사용자의 평균 댓글 길이와 비슷하게 (±20%)
 - 사용자가 쓰지 않은 표현이나 이모지는 절대 사용 금지
