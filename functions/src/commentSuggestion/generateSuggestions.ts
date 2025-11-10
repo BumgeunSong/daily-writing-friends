@@ -5,7 +5,7 @@ import {
   CommentSuggestion,
   GeminiSuggestionResponse,
 } from './types';
-import { geminiApiKey } from './config';
+import { geminiApiKey, COMMENT_HISTORY_LIMITS } from './config';
 import { GeminiService } from './geminiService';
 import { Commenting } from '../commentings/Commenting';
 import admin from '../shared/admin';
@@ -60,8 +60,8 @@ export const generateCommentSuggestions = onRequest(
       const commentHistory = await getUserCommentHistory(userId);
       console.log(`Found ${commentHistory.length} historical comments for user`);
 
-      // 2. Check if user has enough history (minimum 3 comments)
-      if (commentHistory.length < 3) {
+      // 2. Check if user has enough history
+      if (commentHistory.length < COMMENT_HISTORY_LIMITS.minCommentsRequired) {
         console.log('User has insufficient comment history, using default suggestions');
         const defaultSuggestions = await generateDefaultSuggestions();
         res.json({
@@ -127,7 +127,7 @@ export const generateCommentSuggestions = onRequest(
 
 /**
  * Fetch user's comment history from commentings collection
- * Fetches 20 docs, filters to those with content, takes first 10
+ * Fetches commentFetchLimit docs, filters to those with content, takes maxCommentHistory
  */
 async function getUserCommentHistory(userId: string): Promise<Commenting[]> {
   const snapshot = await admin
@@ -136,7 +136,7 @@ async function getUserCommentHistory(userId: string): Promise<Commenting[]> {
     .doc(userId)
     .collection('commentings')
     .orderBy('createdAt', 'desc')
-    .limit(20)
+    .limit(COMMENT_HISTORY_LIMITS.commentFetchLimit)
     .get();
 
   // Filter out old Commenting documents that don't have content field
@@ -144,8 +144,8 @@ async function getUserCommentHistory(userId: string): Promise<Commenting[]> {
     .map((doc) => doc.data() as Commenting)
     .filter((data) => data.comment.content);
 
-  // Return first 10 comments with content
-  return commentsWithContent.slice(0, 10);
+  // Return first maxCommentHistory comments with content
+  return commentsWithContent.slice(0, COMMENT_HISTORY_LIMITS.maxCommentHistory);
 }
 
 /**
