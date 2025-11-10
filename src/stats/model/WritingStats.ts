@@ -1,5 +1,3 @@
-import { StreakInfo } from './StreakInfo';
-
 export interface WritingStats {
   user: {
     id: string;
@@ -10,16 +8,12 @@ export interface WritingStats {
   };
   contributions: Contribution[];
   badges: WritingBadge[];
-  /** @deprecated Use streakInfo.currentStreak instead */
   recentStreak: number;
-  /** Enhanced streak information with recovery status */
-  streakInfo?: StreakInfo;
 }
 
 export type Contribution = {
   createdAt: string;
   contentLength: number | null;
-  isRecovered?: boolean;
   isHoliday?: boolean;
   holidayName?: string;
 };
