@@ -13,5 +13,4 @@ export * from './types/Comment';
 export * from './types/Reply';
 export * from './types/Board';
 export * from './types/Notification';
-export * from './types/FirebaseMessagingToken';
 export * from './types/Reaction';

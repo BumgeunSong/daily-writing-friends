@@ -4,11 +4,10 @@
 // Re-export all functions from each feature
 export { createCommenting, updateCommenting } from './commentings';
 
-export { 
+export {
   onCommentCreated,
   onReplyCreatedOnComment,
   onReplyCreatedOnPost,
-  onNotificationCreated,
   updatePostDaysFromFirstDay,
   updateCommentRepliesCounts,
   incrementCommentCountOnCommentCreated,

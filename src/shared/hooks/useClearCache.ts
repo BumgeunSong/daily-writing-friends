@@ -43,7 +43,7 @@ export const useClearCache = () => {
                 cacheKeys.map(key => caches.delete(key));
             }
 
-            // 서비스워커 강제 업데이트/재설치
+            // 서비스워커 초기화
             if (options.clearServiceWorker && 'serviceWorker' in navigator) {
                 const registrations = await navigator.serviceWorker.getRegistrations();
                 for (const registration of registrations) {
@@ -53,14 +53,6 @@ export const useClearCache = () => {
                     } catch (swError) {
                         console.warn('서비스워커 해제 중 오류:', swError);
                     }
-                }
-                // 서비스워커 재등록 시도 (firebase-messaging-sw.js)
-                try {
-                    const swUrl = '/firebase-messaging-sw.js';
-                    await navigator.serviceWorker.register(swUrl);
-                    console.log('서비스워커가 재등록되었습니다:', swUrl);
-                } catch (registerError) {
-                    console.error('서비스워커 재등록 중 오류:', registerError);
                 }
             }
 
