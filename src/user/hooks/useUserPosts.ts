@@ -19,9 +19,17 @@ export const useUserPosts = (userId: string) => {
         {
             enabled: !!userId,
             getNextPageParam: (lastPage) => {
-                if (lastPage.length === 0) return undefined;
+                const hasNoPosts = lastPage.length === 0;
+                const isPartialPage = lastPage.length < LIMIT_COUNT;
+
+                if (hasNoPosts || isPartialPage) {
+                    return undefined;
+                }
+
                 const lastPost = lastPage[lastPage.length - 1];
-                return lastPost ? lastPost.createdAt?.toDate() : undefined;
+                const paginationDate = lastPost?.createdAt?.toDate();
+
+                return paginationDate;
             },
             onError: (error) => {
                 console.error("사용자 게시글을 불러오던 중 에러가 발생했습니다:", error);
