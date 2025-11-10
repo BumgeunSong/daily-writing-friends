@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase-admin/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { getActiveBoardId, getActiveUsers } from '../../commentStyle/userUtils';
+import { getActiveBoardId, getActiveUsers } from '../../shared/userUtils';
 import { computeUserStreakProjection } from '../projection/computeStreakProjection';
 
 /**

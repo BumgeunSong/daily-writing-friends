@@ -43,12 +43,12 @@ export const createCommenting = onDocumentCreated(
             // Commenting 데이터 모델 생성
             const commentingData: Commenting = {
                 board: { id: boardId },
-                post: { 
-                    id: postId, 
+                post: {
+                    id: postId,
                     title: postData.title,
                     authorId: postData.authorId
                 },
-                comment: { id: commentId },
+                comment: { id: commentId, content: commentData.content },
                 createdAt: createdAt || Timestamp.now()
             };
 

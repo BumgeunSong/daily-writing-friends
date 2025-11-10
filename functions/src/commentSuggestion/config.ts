@@ -35,3 +35,10 @@ export const PROCESSING_LIMITS = {
   retryAttempts: 3,               // LLM 호출 재시도 횟수
   retryDelayMs: 1000,             // 재시도 간 대기 시간
 } as const;
+
+// 댓글 히스토리 가져오기 제한
+export const COMMENT_HISTORY_LIMITS = {
+  commentFetchLimit: 20,          // Firestore에서 가져올 댓글 수 (필터링 전)
+  maxCommentHistory: 10,          // 실제 사용할 댓글 수 (필터링 후)
+  minCommentsRequired: 3,         // 개인화 제안에 필요한 최소 댓글 수
+} as const;

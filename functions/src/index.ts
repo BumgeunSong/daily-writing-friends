@@ -37,14 +37,9 @@ export {
   retroactiveBackfillHttp
 } from './backfill/retroactiveBackfillHttp';
 
-export { 
+export {
   backfillAllBoardUsersHttp
 } from './backfill/backfillAllBoardUsers';
-
-export {
-  createCommentStyleData,
-  backfillCommentStyleDataForActiveUsers
-} from './commentStyle';
 
 export {
   generateCommentSuggestions
