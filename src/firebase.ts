@@ -21,29 +21,90 @@ import { getInstallations } from 'firebase/installations';
 const firebaseConfig = createFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 
-// Initialize core services
+// Initialize critical services only
 const auth = getAuth(app);
 const firestore = getFirestore(app);
-const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
-const installations = getInstallations(app);
 
-// Initialize optional services (analytics, performance, remote config)
-const useEmulators = shouldUseEmulators();
+// Lazy-loaded non-critical services (initialized on first use)
+let _storage: ReturnType<typeof getStorage> | null = null;
+let _installations: ReturnType<typeof getInstallations> | null = null;
 let performance: any = null;
 let analytics: any = null;
 let remoteConfig: any = null;
 
+const useEmulators = shouldUseEmulators();
+
+function createLazyStorage() {
+  if (useEmulators) {
+    return getStorage(app);
+  }
+
+  return new Proxy({} as ReturnType<typeof getStorage>, {
+    get(target, prop) {
+      if (!_storage) {
+        _storage = getStorage(app);
+      }
+      return (_storage as any)[prop];
+    },
+    set(target, prop, value) {
+      if (!_storage) {
+        _storage = getStorage(app);
+      }
+      (_storage as any)[prop] = value;
+      return true;
+    },
+  });
+}
+
+function createLazyInstallations() {
+  if (useEmulators) {
+    return getInstallations(app);
+  }
+
+  return new Proxy({} as ReturnType<typeof getInstallations>, {
+    get(target, prop) {
+      if (!_installations) {
+        _installations = getInstallations(app);
+      }
+      return (_installations as any)[prop];
+    },
+    set(target, prop, value) {
+      if (!_installations) {
+        _installations = getInstallations(app);
+      }
+      (_installations as any)[prop] = value;
+      return true;
+    },
+  });
+}
+
+export const storage = createLazyStorage();
+export const installations = createLazyInstallations();
+
 if (!useEmulators && typeof window !== 'undefined') {
   try {
-    performance = getPerformance(app);
-    analytics = getAnalytics(app);
     remoteConfig = getRemoteConfig(app);
-
-    // Configure Remote Config
     configureRemoteConfig(remoteConfig);
+
+    const scheduleIdleTask = (callback: () => void) => {
+      if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(callback, { timeout: 2000 });
+      } else {
+        setTimeout(callback, 1);
+      }
+    };
+
+    scheduleIdleTask(() => {
+      try {
+        performance = getPerformance(app);
+        analytics = getAnalytics(app);
+      } catch (error) {
+        console.warn('Analytics/Performance services not available:', error);
+      }
+    });
   } catch (error) {
-    console.warn('Analytics/Performance services not available:', error);
+    console.warn('Optional Firebase services not available:', error);
   }
 } else {
   console.log(
@@ -81,4 +142,4 @@ export const signInWithTestCredentials = (
 export const signInWithTestToken = (customToken: string): Promise<UserCredential> =>
   testTokenSignIn(auth, customToken);
 
-export { auth, firestore, storage, app, performance, remoteConfig, analytics, installations };
+export { auth, firestore, app, performance, remoteConfig, analytics };
