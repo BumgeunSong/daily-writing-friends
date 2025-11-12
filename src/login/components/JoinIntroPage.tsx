@@ -19,11 +19,13 @@ export default function JoinIntroPage() {
   // Data hooks
   const { data: upcomingBoard } = useUpcomingBoard();
   const { data: activeUsers } = useActiveUser();
-  const { isInWaitingList } = useIsUserInWaitingList();
+  const { isInWaitingList, isLoading: isCheckingWaitingList } = useIsUserInWaitingList();
 
   // Business logic hooks
   const daysRemaining = useDaysUntilCohortStart(upcomingBoard?.firstDay);
-  const { handleLogin, isLoading } = useGoogleLoginWithRedirect();
+  const { handleLogin, isLoading: isLoginLoading } = useGoogleLoginWithRedirect();
+
+  const isLoading = isLoginLoading || isCheckingWaitingList;
 
   return (
     <IntroPageLayout
