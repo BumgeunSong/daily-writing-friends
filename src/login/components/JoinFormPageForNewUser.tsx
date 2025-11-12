@@ -18,7 +18,7 @@ import FormHeader from "./JoinFormHeader"
  */
 export default function JoinFormPageForNewUser() {
     const { currentUser } = useAuth()
-    const { data: upcomingBoard } = useUpcomingBoard()
+    const { data: upcomingBoard, isLoading: isBoardLoading } = useUpcomingBoard()
     const { isInWaitingList, isLoading: isCheckingWaitingList } = useIsUserInWaitingList()
     const { nickname, isLoading: isNicknameLoading } = useUserNickname(currentUser?.uid)
     const [isComplete, setIsComplete] = useState(false)
@@ -51,7 +51,7 @@ export default function JoinFormPageForNewUser() {
         }
     }
 
-    const isLoading = isCheckingWaitingList || (isInWaitingList && isNicknameLoading);
+    const isLoading = isBoardLoading || isCheckingWaitingList || (isInWaitingList && isNicknameLoading);
 
     if (isLoading) {
         return null;

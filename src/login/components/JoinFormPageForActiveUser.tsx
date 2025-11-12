@@ -19,7 +19,7 @@ import FormHeader from "./JoinFormHeader"
 export default function JoinFormPageForActiveUser() {
     const { currentUser } = useAuth()
     const { nickname: userNickname, isLoading: isNicknameLoading } = useUserNickname(currentUser?.uid)
-    const { data: upcomingBoard } = useUpcomingBoard()
+    const { data: upcomingBoard, isLoading: isBoardLoading } = useUpcomingBoard()
     const { isInWaitingList, isLoading: isCheckingWaitingList } = useIsUserInWaitingList()
     const [isComplete, setIsComplete] = useState(false)
     const [completeInfo, setCompleteInfo] = useState<{name: string, cohort: number} | null>(null)
@@ -52,7 +52,7 @@ export default function JoinFormPageForActiveUser() {
       }
     }
 
-    const isLoading = isCheckingWaitingList || (isInWaitingList && isNicknameLoading);
+    const isLoading = isBoardLoading || isCheckingWaitingList || (isInWaitingList && isNicknameLoading);
 
     if (isLoading) {
       return null;

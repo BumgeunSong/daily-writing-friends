@@ -16,9 +16,9 @@ export function RootRedirect() {
   const { isCurrentUserActive, isLoading: activeUserLoading } = useIsCurrentUserActive();
   const { isInWaitingList, isLoading: waitingListLoading } = useIsUserInWaitingList();
   const { nickname, isLoading: nicknameLoading } = useUserNickname(currentUser?.uid);
-  const { data: upcomingBoard } = useUpcomingBoard();
+  const { data: upcomingBoard, isLoading: isBoardLoading } = useUpcomingBoard();
 
-  const isLoading = authLoading || activeUserLoading || waitingListLoading;
+  const isLoading = authLoading || activeUserLoading || waitingListLoading || isBoardLoading;
 
   if (isLoading) {
     return null;
