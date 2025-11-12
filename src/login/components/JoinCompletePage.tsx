@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/shared/ui/button"
+import { useAuth } from "@/shared/hooks/useAuth"
 
 interface JoinCompletePageProps {
   name: string
@@ -8,13 +9,14 @@ interface JoinCompletePageProps {
 
 export default function JoinCompletePage({ name, cohort }: JoinCompletePageProps) {
   const navigate = useNavigate()
+  const { currentUser } = useAuth()
 
-  const handleCloseWindow = () => {
-    if (window.history.length > 1) {
-      window.close()
-    } else {
-      navigate("/")
-    }
+  const handleGoToBoards = () => {
+    navigate("/boards")
+  }
+
+  const handleGoHome = () => {
+    navigate("/")
   }
 
   return (
@@ -34,14 +36,25 @@ export default function JoinCompletePage({ name, cohort }: JoinCompletePageProps
 
       <div className="border-t border-border p-6">
         <div className="mx-auto max-w-3xl lg:max-w-4xl">
-          <Button
-            variant="default"
-            onClick={handleCloseWindow}
-            className="w-full"
-            size="lg"
-          >
-            닫기
-          </Button>
+          {currentUser ? (
+            <Button
+              variant="default"
+              onClick={handleGoToBoards}
+              className="w-full"
+              size="lg"
+            >
+              게시판 보기
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              onClick={handleGoHome}
+              className="w-full"
+              size="lg"
+            >
+              홈으로
+            </Button>
+          )}
         </div>
       </div>
     </div>
