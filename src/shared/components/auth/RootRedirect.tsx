@@ -15,7 +15,7 @@ export function RootRedirect() {
   const { currentUser, loading: authLoading } = useAuth();
   const { isCurrentUserActive } = useIsCurrentUserActive();
   const { isInWaitingList, isLoading: waitingListLoading } = useIsUserInWaitingList();
-  const { nickname } = useUserNickname(currentUser?.uid);
+  const { nickname, isLoading: nicknameLoading } = useUserNickname(currentUser?.uid);
   const { data: upcomingBoard } = useUpcomingBoard();
 
   const isLoading = authLoading || waitingListLoading || isCurrentUserActive === undefined;
@@ -33,6 +33,9 @@ export function RootRedirect() {
   }
 
   if (isInWaitingList) {
+    if (nicknameLoading) {
+      return null;
+    }
     const userName = nickname || currentUser.displayName || "";
     const cohort = upcomingBoard?.cohort || 0;
     return <JoinCompletePage name={userName} cohort={cohort} />;
