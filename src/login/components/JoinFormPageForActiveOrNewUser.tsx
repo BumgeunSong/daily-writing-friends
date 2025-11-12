@@ -2,7 +2,8 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useIsCurrentUserActive } from '@/login/hooks/useIsCurrentUserActive';
 import { useAuth } from '@/shared/hooks/useAuth';
- 
+import { Skeleton } from '@/shared/ui/skeleton';
+
 export function JoinFormPageForActiveOrNewUser() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
@@ -10,11 +11,26 @@ export function JoinFormPageForActiveOrNewUser() {
 
   useEffect(() => {
     if (currentUser && isCurrentUserActive !== undefined) {
-      // 기존 사용자는 active-user 페이지로, 신규 사용자는 new-user 페이지로 리다이렉트
       navigate(isCurrentUserActive ? '/join/form/active-user' : '/join/form/new-user', { replace: true });
     }
   }, [currentUser, isCurrentUserActive, navigate]);
 
-  // 리다이렉트 전까지는 아무것도 렌더링하지 않음
-  return null;
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 lg:max-w-4xl">
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-5 w-48" />
+          </div>
+          <div className="rounded-lg border border-border bg-card p-6 space-y-6">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 } 
