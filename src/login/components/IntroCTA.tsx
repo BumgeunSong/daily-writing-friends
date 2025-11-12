@@ -43,7 +43,7 @@ export default function IntroCTA({
     }
   };
 
-  const isDisabled = isLoading || (isInWaitingList && !showBoardsAccess);
+  const isDisabled = isLoading || (isInWaitingList && !isLoggedIn);
   const statusMessage = getStatusMessage();
 
   return (

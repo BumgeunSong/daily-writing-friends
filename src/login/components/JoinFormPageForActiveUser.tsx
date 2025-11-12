@@ -18,13 +18,13 @@ import FormHeader from "./JoinFormHeader"
  */
 export default function JoinFormPageForActiveUser() {
     const { currentUser } = useAuth()
-    const { nickname: userNickname } = useUserNickname(currentUser?.uid)
+    const { nickname: userNickname, isLoading: isNicknameLoading } = useUserNickname(currentUser?.uid)
     const { data: upcomingBoard } = useUpcomingBoard()
     const { isInWaitingList, isLoading: isCheckingWaitingList } = useIsUserInWaitingList()
     const [isComplete, setIsComplete] = useState(false)
     const [completeInfo, setCompleteInfo] = useState<{name: string, cohort: number} | null>(null)
     const { title, subtitle } = titleAndSubtitle(upcomingBoard)
-    
+
     /**
      * 폼 제출 핸들러
      */
@@ -33,14 +33,14 @@ export default function JoinFormPageForActiveUser() {
         showErrorToast(toast, new Error("필수 정보가 누락되었습니다."));
         return;
       }
-      
+
       const result = await submitActiveUserReview({
         data,
         upcomingBoard: upcomingBoard,
         userId: currentUser.uid,
         nickname: userNickname ?? undefined
       });
-      
+
       if (result.success) {
         setCompleteInfo({
           name: result.name,
@@ -51,16 +51,18 @@ export default function JoinFormPageForActiveUser() {
         showErrorToast(toast, result.error);
       }
     }
-  
-    const shouldShowCompletePage = (isComplete && completeInfo) || isInWaitingList;
-    const userNameForCompletePage = completeInfo?.name || userNickname || "";
-    const cohortForCompletePage = completeInfo?.cohort || upcomingBoard?.cohort || 0;
 
-    if (isCheckingWaitingList) {
+    const isLoading = isCheckingWaitingList || (isInWaitingList && isNicknameLoading);
+
+    if (isLoading) {
       return null;
     }
 
+    const shouldShowCompletePage = (isComplete && completeInfo) || isInWaitingList;
+
     if (shouldShowCompletePage) {
+      const userNameForCompletePage = completeInfo?.name || userNickname || "";
+      const cohortForCompletePage = completeInfo?.cohort || upcomingBoard?.cohort || 0;
       return <JoinCompletePage name={userNameForCompletePage} cohort={cohortForCompletePage} />
     }
 

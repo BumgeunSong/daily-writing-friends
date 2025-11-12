@@ -20,11 +20,11 @@ export default function JoinFormPageForNewUser() {
     const { currentUser } = useAuth()
     const { data: upcomingBoard } = useUpcomingBoard()
     const { isInWaitingList, isLoading: isCheckingWaitingList } = useIsUserInWaitingList()
-    const { nickname } = useUserNickname(currentUser?.uid)
+    const { nickname, isLoading: isNicknameLoading } = useUserNickname(currentUser?.uid)
     const [isComplete, setIsComplete] = useState(false)
     const [completeInfo, setCompleteInfo] = useState<{ name: string, cohort: number } | null>(null)
     const { title, subtitle } = titleAndSubtitle(upcomingBoard)
-    
+
     /**
      * 폼 제출 핸들러
      */
@@ -51,15 +51,17 @@ export default function JoinFormPageForNewUser() {
         }
     }
 
-    const shouldShowCompletePage = (isComplete && completeInfo) || isInWaitingList;
-    const userNameForCompletePage = completeInfo?.name || nickname || "";
-    const cohortForCompletePage = completeInfo?.cohort || upcomingBoard?.cohort || 0;
+    const isLoading = isCheckingWaitingList || (isInWaitingList && isNicknameLoading);
 
-    if (isCheckingWaitingList) {
+    if (isLoading) {
         return null;
     }
 
+    const shouldShowCompletePage = (isComplete && completeInfo) || isInWaitingList;
+
     if (shouldShowCompletePage) {
+        const userNameForCompletePage = completeInfo?.name || nickname || "";
+        const cohortForCompletePage = completeInfo?.cohort || upcomingBoard?.cohort || 0;
         return <JoinCompletePage name={userNameForCompletePage} cohort={cohortForCompletePage} />
     }
 

@@ -7,13 +7,13 @@ import { Skeleton } from '@/shared/ui/skeleton';
 export function JoinFormPageForActiveOrNewUser() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
-  const { isCurrentUserActive } = useIsCurrentUserActive();
+  const { isCurrentUserActive, isLoading } = useIsCurrentUserActive();
 
   useEffect(() => {
-    if (currentUser && isCurrentUserActive !== undefined) {
+    if (currentUser && !isLoading) {
       navigate(isCurrentUserActive ? '/join/form/active-user' : '/join/form/new-user', { replace: true });
     }
-  }, [currentUser, isCurrentUserActive, navigate]);
+  }, [currentUser, isCurrentUserActive, isLoading, navigate]);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

@@ -13,12 +13,12 @@ import { useUpcomingBoard } from '@/login/hooks/useUpcomingBoard';
  */
 export function RootRedirect() {
   const { currentUser, loading: authLoading } = useAuth();
-  const { isCurrentUserActive } = useIsCurrentUserActive();
+  const { isCurrentUserActive, isLoading: activeUserLoading } = useIsCurrentUserActive();
   const { isInWaitingList, isLoading: waitingListLoading } = useIsUserInWaitingList();
   const { nickname, isLoading: nicknameLoading } = useUserNickname(currentUser?.uid);
   const { data: upcomingBoard } = useUpcomingBoard();
 
-  const isLoading = authLoading || waitingListLoading || isCurrentUserActive === undefined;
+  const isLoading = authLoading || activeUserLoading || waitingListLoading;
 
   if (isLoading) {
     return null;
