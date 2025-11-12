@@ -3,9 +3,10 @@ import { toast } from "sonner"
 import { Board } from "@/board/model/Board"
 import { showErrorToast } from "@/login/components/showErrorToast"
 import { useUpcomingBoard } from "@/login/hooks/useUpcomingBoard"
+import { useIsUserInWaitingList } from "@/login/hooks/useIsUserInWaitingList"
 import { JoinFormDataForActiveUser } from "@/login/model/join"
 import { useAuth } from '@/shared/hooks/useAuth'
-import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"  
+import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"
 import { addReviewToBoard } from "@/shared/utils/reviewUtils"
 import { useUserNickname } from "@/user/hooks/useUserNickname"
 import JoinCompletePage from "./JoinCompletePage"
@@ -19,6 +20,7 @@ export default function JoinFormPageForActiveUser() {
     const { currentUser } = useAuth()
     const { nickname: userNickname } = useUserNickname(currentUser?.uid)
     const { data: upcomingBoard } = useUpcomingBoard()
+    const { isInWaitingList, isLoading: isCheckingWaitingList } = useIsUserInWaitingList()
     const [isComplete, setIsComplete] = useState(false)
     const [completeInfo, setCompleteInfo] = useState<{name: string, cohort: number} | null>(null)
     const { title, subtitle } = titleAndSubtitle(upcomingBoard)
@@ -50,10 +52,18 @@ export default function JoinFormPageForActiveUser() {
       }
     }
   
-    if (isComplete && completeInfo) {
-      return <JoinCompletePage name={completeInfo.name} cohort={completeInfo.cohort} />
+    const shouldShowCompletePage = (isComplete && completeInfo) || isInWaitingList;
+    const userNameForCompletePage = completeInfo?.name || userNickname || "";
+    const cohortForCompletePage = completeInfo?.cohort || upcomingBoard?.cohort || 0;
+
+    if (isCheckingWaitingList) {
+      return null;
     }
-    
+
+    if (shouldShowCompletePage) {
+      return <JoinCompletePage name={userNameForCompletePage} cohort={cohortForCompletePage} />
+    }
+
     return (
       <div className="flex min-h-screen flex-col bg-background">
         <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 lg:max-w-4xl">
