@@ -23,7 +23,7 @@ export default function IntroCTA({
   const getButtonText = () => {
     if (isLoading) return '처리 중...';
     if (showBoardsAccess) return '게시판 보기';
-    if (isInWaitingList && cohort) return `${cohort}기 신청 완료`;
+    if (isInWaitingList) return `${cohort}기 신청 완료`;
     if (cohort) return `${cohort}기 시작하기`;
     return '시작하기';
   };
