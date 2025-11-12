@@ -3,10 +3,12 @@ import { toast } from "sonner"
 import { Board } from "@/board/model/Board"
 import { showErrorToast } from "@/login/components/showErrorToast"
 import { useUpcomingBoard } from "@/login/hooks/useUpcomingBoard"
+import { useIsUserInWaitingList } from "@/login/hooks/useIsUserInWaitingList"
 import { JoinFormDataForNewUser } from "@/login/model/join"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"
 import { updateUser, createUserIfNotExists } from "@/user/api/user"
+import { useUserNickname } from "@/user/hooks/useUserNickname"
 import JoinCompletePage from "./JoinCompletePage"
 import JoinFormCardForNewUser from './JoinFormCardForNewUser'
 import FormHeader from "./JoinFormHeader"
@@ -17,6 +19,8 @@ import FormHeader from "./JoinFormHeader"
 export default function JoinFormPageForNewUser() {
     const { currentUser } = useAuth()
     const { data: upcomingBoard } = useUpcomingBoard()
+    const { isInWaitingList, isLoading: isCheckingWaitingList } = useIsUserInWaitingList()
+    const { nickname } = useUserNickname(currentUser?.uid)
     const [isComplete, setIsComplete] = useState(false)
     const [completeInfo, setCompleteInfo] = useState<{ name: string, cohort: number } | null>(null)
     const { title, subtitle } = titleAndSubtitle(upcomingBoard)
@@ -47,8 +51,16 @@ export default function JoinFormPageForNewUser() {
         }
     }
 
-    if (isComplete && completeInfo) {
-        return <JoinCompletePage name={completeInfo.name} cohort={completeInfo.cohort} />
+    const shouldShowCompletePage = (isComplete && completeInfo) || isInWaitingList;
+    const userNameForCompletePage = completeInfo?.name || nickname || "";
+    const cohortForCompletePage = completeInfo?.cohort || upcomingBoard?.cohort || 0;
+
+    if (isCheckingWaitingList) {
+        return null;
+    }
+
+    if (shouldShowCompletePage) {
+        return <JoinCompletePage name={userNameForCompletePage} cohort={cohortForCompletePage} />
     }
 
     return (
