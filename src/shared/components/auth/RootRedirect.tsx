@@ -1,5 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { useIsCurrentUserActive } from '@/login/hooks/useIsCurrentUserActive';
+import { useIsUserInWaitingList } from '@/login/hooks/useIsUserInWaitingList';
 
 /**
  * Root redirect component
@@ -7,18 +9,27 @@ import { useAuth } from '@/shared/hooks/useAuth';
  * Unauthenticated users go to JoinIntroPage (official landing page)
  */
 export function RootRedirect() {
-  const { currentUser, loading } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
+  const { isCurrentUserActive } = useIsCurrentUserActive();
+  const { isInWaitingList, isLoading: waitingListLoading } = useIsUserInWaitingList();
 
-  // If still loading, don't render anything
-  if (loading) {
+  const isLoading = authLoading || waitingListLoading || isCurrentUserActive === undefined;
+
+  if (isLoading) {
     return null;
   }
 
-  // Redirect based on auth state
-  if (currentUser) {
-    return <Navigate to="/boards" replace />;
-  } else {
-    // Root path goes to join page (official landing page)
+  if (!currentUser) {
     return <Navigate to="/join" replace />;
   }
+
+  if (isCurrentUserActive) {
+    return <Navigate to="/boards" replace />;
+  }
+
+  if (isInWaitingList) {
+    return <Navigate to="/join/form" replace />;
+  }
+
+  return <Navigate to="/join" replace />;
 }
