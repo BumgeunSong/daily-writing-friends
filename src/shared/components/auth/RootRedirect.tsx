@@ -2,6 +2,9 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useIsCurrentUserActive } from '@/login/hooks/useIsCurrentUserActive';
 import { useIsUserInWaitingList } from '@/login/hooks/useIsUserInWaitingList';
+import JoinCompletePage from '@/login/components/JoinCompletePage';
+import { useUserNickname } from '@/user/hooks/useUserNickname';
+import { useUpcomingBoard } from '@/login/hooks/useUpcomingBoard';
 
 /**
  * Root redirect component
@@ -12,6 +15,8 @@ export function RootRedirect() {
   const { currentUser, loading: authLoading } = useAuth();
   const { isCurrentUserActive } = useIsCurrentUserActive();
   const { isInWaitingList, isLoading: waitingListLoading } = useIsUserInWaitingList();
+  const { nickname } = useUserNickname(currentUser?.uid);
+  const { data: upcomingBoard } = useUpcomingBoard();
 
   const isLoading = authLoading || waitingListLoading || isCurrentUserActive === undefined;
 
@@ -28,7 +33,9 @@ export function RootRedirect() {
   }
 
   if (isInWaitingList) {
-    return <Navigate to="/join/form" replace />;
+    const userName = nickname || currentUser.displayName || "";
+    const cohort = upcomingBoard?.cohort || 0;
+    return <JoinCompletePage name={userName} cohort={cohort} />;
   }
 
   return <Navigate to="/join" replace />;
