@@ -9,6 +9,14 @@ interface JoinCompletePageProps {
 export default function JoinCompletePage({ name, cohort }: JoinCompletePageProps) {
   const navigate = useNavigate()
 
+  const handleCloseWindow = () => {
+    if (window.history.length > 1) {
+      window.close()
+    } else {
+      navigate("/")
+    }
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <main className="flex flex-1 flex-col items-center justify-center px-6">
@@ -28,11 +36,11 @@ export default function JoinCompletePage({ name, cohort }: JoinCompletePageProps
         <div className="mx-auto max-w-3xl lg:max-w-4xl">
           <Button
             variant="default"
-            onClick={() => navigate("/")}
+            onClick={handleCloseWindow}
             className="w-full"
             size="lg"
           >
-            홈으로
+            닫기
           </Button>
         </div>
       </div>
