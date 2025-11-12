@@ -13,6 +13,7 @@ import { useUpcomingBoard } from '@/login/hooks/useUpcomingBoard';
 import { useDaysUntilCohortStart } from '@/login/hooks/useDaysUntilCohortStart';
 import { useGoogleLoginWithRedirect } from '@/login/hooks/useGoogleLoginWithRedirect';
 import { useIsUserInWaitingList } from '@/login/hooks/useIsUserInWaitingList';
+import { useAuth } from '@/shared/hooks/useAuth';
 import NoticeSection from '@/shared/components/NoticeSection';
 
 export default function JoinIntroPage() {
@@ -20,12 +21,14 @@ export default function JoinIntroPage() {
   const { data: upcomingBoard } = useUpcomingBoard();
   const { data: activeUsers } = useActiveUser();
   const { isInWaitingList, isLoading: isCheckingWaitingList } = useIsUserInWaitingList();
+  const { currentUser } = useAuth();
 
   // Business logic hooks
   const daysRemaining = useDaysUntilCohortStart(upcomingBoard?.firstDay);
   const { handleLogin, isLoading: isLoginLoading } = useGoogleLoginWithRedirect();
 
   const isLoading = isLoginLoading || isCheckingWaitingList;
+  const isLoggedIn = !!currentUser;
 
   return (
     <IntroPageLayout
@@ -35,6 +38,7 @@ export default function JoinIntroPage() {
           cohort={upcomingBoard?.cohort}
           isLoading={isLoading}
           isInWaitingList={isInWaitingList}
+          isLoggedIn={isLoggedIn}
         />
       }
     >
