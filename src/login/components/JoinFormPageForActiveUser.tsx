@@ -3,9 +3,10 @@ import { toast } from "sonner"
 import { Board } from "@/board/model/Board"
 import { showErrorToast } from "@/login/components/showErrorToast"
 import { useUpcomingBoard } from "@/login/hooks/useUpcomingBoard"
+import { useIsUserInWaitingList } from "@/login/hooks/useIsUserInWaitingList"
 import { JoinFormDataForActiveUser } from "@/login/model/join"
 import { useAuth } from '@/shared/hooks/useAuth'
-import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"  
+import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"
 import { addReviewToBoard } from "@/shared/utils/reviewUtils"
 import { useUserNickname } from "@/user/hooks/useUserNickname"
 import JoinCompletePage from "./JoinCompletePage"
@@ -17,12 +18,13 @@ import FormHeader from "./JoinFormHeader"
  */
 export default function JoinFormPageForActiveUser() {
     const { currentUser } = useAuth()
-    const { nickname: userNickname } = useUserNickname(currentUser?.uid)
-    const { data: upcomingBoard } = useUpcomingBoard()
+    const { nickname: userNickname, isLoading: isNicknameLoading } = useUserNickname(currentUser?.uid)
+    const { data: upcomingBoard, isLoading: isBoardLoading } = useUpcomingBoard()
+    const { isInWaitingList, isLoading: isCheckingWaitingList } = useIsUserInWaitingList()
     const [isComplete, setIsComplete] = useState(false)
     const [completeInfo, setCompleteInfo] = useState<{name: string, cohort: number} | null>(null)
     const { title, subtitle } = titleAndSubtitle(upcomingBoard)
-    
+
     /**
      * 폼 제출 핸들러
      */
@@ -31,14 +33,14 @@ export default function JoinFormPageForActiveUser() {
         showErrorToast(toast, new Error("필수 정보가 누락되었습니다."));
         return;
       }
-      
+
       const result = await submitActiveUserReview({
         data,
         upcomingBoard: upcomingBoard,
         userId: currentUser.uid,
         nickname: userNickname ?? undefined
       });
-      
+
       if (result.success) {
         setCompleteInfo({
           name: result.name,
@@ -49,11 +51,21 @@ export default function JoinFormPageForActiveUser() {
         showErrorToast(toast, result.error);
       }
     }
-  
-    if (isComplete && completeInfo) {
-      return <JoinCompletePage name={completeInfo.name} cohort={completeInfo.cohort} />
+
+    const isLoading = isBoardLoading || isCheckingWaitingList || (isInWaitingList && isNicknameLoading);
+
+    if (isLoading) {
+      return null;
     }
-    
+
+    const shouldShowCompletePage = (isComplete && completeInfo) || isInWaitingList;
+
+    if (shouldShowCompletePage) {
+      const userNameForCompletePage = completeInfo?.name || userNickname || "";
+      const cohortForCompletePage = completeInfo?.cohort || upcomingBoard?.cohort || 0;
+      return <JoinCompletePage name={userNameForCompletePage} cohort={cohortForCompletePage} />
+    }
+
     return (
       <div className="flex min-h-screen flex-col bg-background">
         <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 lg:max-w-4xl">

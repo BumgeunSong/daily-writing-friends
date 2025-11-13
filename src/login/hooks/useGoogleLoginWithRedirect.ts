@@ -20,21 +20,21 @@ export function useGoogleLoginWithRedirect(): UseGoogleLoginWithRedirectReturn {
   const [shouldCheckActiveStatus, setShouldCheckActiveStatus] = useState(false);
   
   const { currentUser } = useAuth();
-  const { isCurrentUserActive } = useIsCurrentUserActive();
+  const { isCurrentUserActive, isLoading: isCheckingActiveStatus } = useIsCurrentUserActive();
 
   // Handle navigation after login and active status check
   useEffect(() => {
-    if (!shouldCheckActiveStatus || !currentUser || isCurrentUserActive === undefined) {
+    if (!shouldCheckActiveStatus || !currentUser || isCheckingActiveStatus) {
       return;
     }
 
     // Reset flags and navigate
     setShouldCheckActiveStatus(false);
     setIsLoading(false);
-    
+
     const redirectPath = isCurrentUserActive ? ACTIVE_USER_REDIRECT : NEW_USER_REDIRECT;
     navigate(redirectPath);
-  }, [shouldCheckActiveStatus, currentUser, isCurrentUserActive, navigate]);
+  }, [shouldCheckActiveStatus, currentUser, isCurrentUserActive, isCheckingActiveStatus, navigate]);
 
   const handleLogin = useCallback(async () => {
     try {

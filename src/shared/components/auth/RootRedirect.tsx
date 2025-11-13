@@ -1,5 +1,10 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { useIsCurrentUserActive } from '@/login/hooks/useIsCurrentUserActive';
+import { useIsUserInWaitingList } from '@/login/hooks/useIsUserInWaitingList';
+import JoinCompletePage from '@/login/components/JoinCompletePage';
+import { useUserNickname } from '@/user/hooks/useUserNickname';
+import { useUpcomingBoard } from '@/login/hooks/useUpcomingBoard';
 
 /**
  * Root redirect component
@@ -7,18 +12,34 @@ import { useAuth } from '@/shared/hooks/useAuth';
  * Unauthenticated users go to JoinIntroPage (official landing page)
  */
 export function RootRedirect() {
-  const { currentUser, loading } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
+  const { isCurrentUserActive, isLoading: activeUserLoading } = useIsCurrentUserActive();
+  const { isInWaitingList, isLoading: waitingListLoading } = useIsUserInWaitingList();
+  const { nickname, isLoading: nicknameLoading } = useUserNickname(currentUser?.uid);
+  const { data: upcomingBoard, isLoading: isBoardLoading } = useUpcomingBoard();
 
-  // If still loading, don't render anything
-  if (loading) {
+  const isLoading = authLoading || activeUserLoading || waitingListLoading || isBoardLoading;
+
+  if (isLoading) {
     return null;
   }
 
-  // Redirect based on auth state
-  if (currentUser) {
-    return <Navigate to="/boards" replace />;
-  } else {
-    // Root path goes to join page (official landing page)
+  if (!currentUser) {
     return <Navigate to="/join" replace />;
   }
+
+  if (isCurrentUserActive) {
+    return <Navigate to="/boards" replace />;
+  }
+
+  if (isInWaitingList) {
+    if (nicknameLoading) {
+      return null;
+    }
+    const userName = nickname || currentUser.displayName || "";
+    const cohort = upcomingBoard?.cohort || 0;
+    return <JoinCompletePage name={userName} cohort={cohort} />;
+  }
+
+  return <Navigate to="/join" replace />;
 }

@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom"
 import { Button } from "@/shared/ui/button"
+import { useAuth } from "@/shared/hooks/useAuth"
 
 interface JoinCompletePageProps {
   name: string
@@ -8,6 +9,15 @@ interface JoinCompletePageProps {
 
 export default function JoinCompletePage({ name, cohort }: JoinCompletePageProps) {
   const navigate = useNavigate()
+  const { currentUser } = useAuth()
+
+  const handleGoToBoards = () => {
+    navigate("/boards")
+  }
+
+  const handleGoHome = () => {
+    navigate("/")
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -26,14 +36,25 @@ export default function JoinCompletePage({ name, cohort }: JoinCompletePageProps
 
       <div className="border-t border-border p-6">
         <div className="mx-auto max-w-3xl lg:max-w-4xl">
-          <Button
-            variant="default"
-            onClick={() => navigate("/")}
-            className="w-full"
-            size="lg"
-          >
-            홈으로
-          </Button>
+          {currentUser ? (
+            <Button
+              variant="default"
+              onClick={handleGoToBoards}
+              className="w-full"
+              size="lg"
+            >
+              게시판 보기
+            </Button>
+          ) : (
+            <Button
+              variant="default"
+              onClick={handleGoHome}
+              className="w-full"
+              size="lg"
+            >
+              홈으로
+            </Button>
+          )}
         </div>
       </div>
     </div>
