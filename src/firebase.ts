@@ -21,66 +21,19 @@ import { getInstallations } from 'firebase/installations';
 const firebaseConfig = createFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 
-// Initialize critical services only
+// Initialize core services
 const auth = getAuth(app);
 const firestore = getFirestore(app);
+const storage = getStorage(app);
+const installations = getInstallations(app);
 const provider = new GoogleAuthProvider();
 
-// Lazy-loaded non-critical services (initialized on first use)
-let _storage: ReturnType<typeof getStorage> | null = null;
-let _installations: ReturnType<typeof getInstallations> | null = null;
+// Non-critical services (initialized conditionally)
 let performance: any = null;
 let analytics: any = null;
 let remoteConfig: any = null;
 
 const useEmulators = shouldUseEmulators();
-
-function createLazyStorage() {
-  if (useEmulators) {
-    return getStorage(app);
-  }
-
-  return new Proxy({} as ReturnType<typeof getStorage>, {
-    get(target, prop) {
-      if (!_storage) {
-        _storage = getStorage(app);
-      }
-      return (_storage as any)[prop];
-    },
-    set(target, prop, value) {
-      if (!_storage) {
-        _storage = getStorage(app);
-      }
-      (_storage as any)[prop] = value;
-      return true;
-    },
-  });
-}
-
-function createLazyInstallations() {
-  if (useEmulators) {
-    return getInstallations(app);
-  }
-
-  return new Proxy({} as ReturnType<typeof getInstallations>, {
-    get(target, prop) {
-      if (!_installations) {
-        _installations = getInstallations(app);
-      }
-      return (_installations as any)[prop];
-    },
-    set(target, prop, value) {
-      if (!_installations) {
-        _installations = getInstallations(app);
-      }
-      (_installations as any)[prop] = value;
-      return true;
-    },
-  });
-}
-
-export const storage = createLazyStorage();
-export const installations = createLazyInstallations();
 
 if (!useEmulators && typeof window !== 'undefined') {
   try {
@@ -142,4 +95,4 @@ export const signInWithTestCredentials = (
 export const signInWithTestToken = (customToken: string): Promise<UserCredential> =>
   testTokenSignIn(auth, customToken);
 
-export { auth, firestore, app, performance, remoteConfig, analytics };
+export { auth, firestore, storage, installations, app, performance, remoteConfig, analytics };
