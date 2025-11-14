@@ -8,42 +8,67 @@ import { Like } from '../shared/types/Like';
 export const onLikeCreatedOnPost = onDocumentCreated(
   'boards/{boardId}/posts/{postId}/likes/{likeId}',
   async (event) => {
-    const like = event.data?.data() as Like;
-    const { boardId, postId, likeId } = event.params;
-    const likerUserId = like.userId;
-    const likerName = like.userName;
-    const likerProfile = like.userProfileImage;
+    try {
+      const like = event.data?.data() as Like;
+      const { boardId, postId, likeId } = event.params;
 
-    // 게시글 정보 가져오기
-    const postSnapshot = await admin.firestore().doc(`boards/${boardId}/posts/${postId}`).get();
+      if (!like) {
+        console.error('No like data found in event');
+        return;
+      }
 
-    const postData = postSnapshot.data();
-    if (!postData) return;
+      const likerUserId = like.userId;
+      const likerName = like.userName;
+      const likerProfile = like.userProfileImage;
 
-    const postAuthorId = postData.authorId;
-    const postTitle = postData.title;
+      // 게시글 정보 가져오기
+      const postSnapshot = await admin.firestore().doc(`boards/${boardId}/posts/${postId}`).get();
 
-    // 본인 좋아요면 알림 생성 X
-    if (!shouldGenerateNotification(NotificationType.LIKE_ON_POST, postAuthorId, likerUserId))
-      return;
+      if (!postSnapshot.exists) {
+        console.error(`Post not found: boards/${boardId}/posts/${postId}`);
+        return;
+      }
 
-    // 메시지 생성
-    const message = `${likerName}님이 회원님의 글 "${postTitle}"에 공감했어요.`;
+      const postData = postSnapshot.data();
+      if (!postData) {
+        console.error(`Post data is empty: boards/${boardId}/posts/${postId}`);
+        return;
+      }
 
-    // 알림 객체 생성
-    const notification: Notification = {
-      type: NotificationType.LIKE_ON_POST,
-      fromUserId: likerUserId,
-      fromUserProfileImage: likerProfile,
-      boardId,
-      postId,
-      likeId,
-      message,
-      timestamp: Timestamp.now(),
-      read: false,
-    };
+      const postAuthorId = postData.authorId;
+      const postTitle = postData.title;
 
-    // 게시글 작성자에게 알림 추가
-    await admin.firestore().collection(`users/${postAuthorId}/notifications`).add(notification);
+      // 본인 좋아요면 알림 생성 X
+      if (!shouldGenerateNotification(NotificationType.LIKE_ON_POST, postAuthorId, likerUserId)) {
+        console.info(
+          `Skipping notification for self-like: post ${boardId}/${postId} by user ${likerUserId}`,
+        );
+        return;
+      }
+
+      // 메시지 생성
+      const message = `${likerName}님이 회원님의 글 "${postTitle}"에 공감했어요.`;
+
+      // 알림 객체 생성
+      const notification: Notification = {
+        type: NotificationType.LIKE_ON_POST,
+        fromUserId: likerUserId,
+        fromUserProfileImage: likerProfile,
+        boardId,
+        postId,
+        likeId,
+        message,
+        timestamp: Timestamp.now(),
+        read: false,
+      };
+
+      // 게시글 작성자에게 알림 추가
+      await admin.firestore().collection(`users/${postAuthorId}/notifications`).add(notification);
+
+      console.info(`Created like notification for user ${postAuthorId} on post ${boardId}/${postId}`);
+    } catch (error) {
+      console.error('Error creating like notification:', error);
+      throw error;
+    }
   },
 );
