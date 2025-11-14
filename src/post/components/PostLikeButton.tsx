@@ -35,7 +35,7 @@ export function PostLikeButton({ boardId, postId, authorId }: PostLikeButtonProp
   const showCount = isAuthor && likeCount > 0;
 
   return (
-    <div className='mt-6 flex items-center justify-center border-y border-border py-4'>
+    <div className='mt-6 flex items-center border-t border-border py-4'>
       <Button
         variant='ghost'
         size='sm'
