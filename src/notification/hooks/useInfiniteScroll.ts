@@ -26,10 +26,6 @@ export const useInfiniteScroll = ({
   const observerCallback = useCallback<IntersectionObserverCallback>(
     (entries) => {
       const [entry] = entries;
-      console.log('[InfiniteScroll] Observer callback:', {
-        isIntersecting: entry.isIntersecting,
-        intersectionRatio: entry.intersectionRatio
-      });
       setInView(entry.isIntersecting);
     },
     []
@@ -37,8 +33,6 @@ export const useInfiniteScroll = ({
 
   const setRef = useCallback(
     (node: Element | null) => {
-      console.log('[InfiniteScroll] setRef called with node:', node);
-
       // Cleanup previous observer
       if (observerRef.current) {
         observerRef.current.disconnect();
@@ -56,8 +50,6 @@ export const useInfiniteScroll = ({
         const scrollArea = document.getElementById(scrollAreaId);
         const viewport = scrollArea?.querySelector('[data-radix-scroll-area-viewport]');
 
-        console.log('[InfiniteScroll] Creating observer with root:', viewport);
-
         observerRef.current = new IntersectionObserver(observerCallback, {
           root: viewport,
           rootMargin: '100px',
@@ -70,20 +62,9 @@ export const useInfiniteScroll = ({
     [scrollAreaId, observerCallback]
   );
 
-  // Debug logging
-  useEffect(() => {
-    console.log('[InfiniteScroll] State:', {
-      inView,
-      hasNextPage,
-      isFetchingNextPage,
-      shouldFetch: shouldFetchNextPage(inView, hasNextPage) && !isFetchingNextPage
-    });
-  }, [inView, hasNextPage, isFetchingNextPage]);
-
   // ACTION - 무한 스크롤 효과
   useEffect(() => {
     if (shouldFetchNextPage(inView, hasNextPage) && !isFetchingNextPage) {
-      console.log('[InfiniteScroll] Fetching next page...');
       fetchNextPage();
     }
   }, [inView, hasNextPage, fetchNextPage, isFetchingNextPage]);
