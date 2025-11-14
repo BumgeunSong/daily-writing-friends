@@ -1,5 +1,4 @@
-import { Heart, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { Heart } from 'lucide-react';
 import { usePostLikes } from '@/post/hooks/usePostLikes';
 import { Button } from '@/shared/ui/button';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -12,8 +11,7 @@ interface PostLikeButtonProps {
 
 export function PostLikeButton({ boardId, postId, authorId }: PostLikeButtonProps) {
   const { currentUser } = useAuth();
-  const { hasLiked, likeCount, isLoading, toggleLike } = usePostLikes({ boardId, postId });
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { hasLiked, likeCount, toggleLike } = usePostLikes({ boardId, postId });
 
   const handleToggleLike = async () => {
     if (!currentUser) {
@@ -22,12 +20,9 @@ export function PostLikeButton({ boardId, postId, authorId }: PostLikeButtonProp
     }
 
     try {
-      setIsProcessing(true);
       await toggleLike();
     } catch (error) {
       console.error('좋아요 처리 중 오류 발생:', error);
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -48,21 +43,14 @@ export function PostLikeButton({ boardId, postId, authorId }: PostLikeButtonProp
           flex items-center gap-2 rounded-full border border-border px-4 py-2 transition-all
           bg-transparent text-foreground hover:bg-muted hover:text-foreground hover:scale-105
           active:scale-95 active:bg-accent
-          ${isProcessing ? 'opacity-70' : ''}
           ${isAuthor ? 'cursor-not-allowed opacity-50' : ''}
         `}
         onClick={handleToggleLike}
-        disabled={isLoading || isProcessing || isAuthor}
+        disabled={isAuthor}
       >
-        {isProcessing ? (
-          <Loader2 className='size-5 animate-spin' />
-        ) : (
-          <>
-            <Heart className={`size-5 transition-all ${hasLiked ? 'fill-current' : ''}`} />
-            <span className='text-sm font-medium'>공감</span>
-            {showCount && <span className='text-sm font-semibold'>{likeCount}</span>}
-          </>
-        )}
+        <Heart className={`size-5 transition-all ${hasLiked ? 'fill-current' : ''}`} />
+        <span className='text-sm font-medium'>공감</span>
+        {showCount && <span className='text-sm font-semibold'>{likeCount}</span>}
       </Button>
     </div>
   );
