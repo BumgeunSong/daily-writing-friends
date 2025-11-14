@@ -7,6 +7,7 @@ export interface Notification {
   commentId?: string;
   replyId?: string;
   reactionId?: string;
+  likeId?: string;
   fromUserId: string;
   fromUserProfileImage?: string;
   message: string;
@@ -20,4 +21,5 @@ export enum NotificationType {
   REPLY_ON_POST = 'reply_on_post',
   REACTION_ON_COMMENT = 'reaction_on_comment',
   REACTION_ON_REPLY = 'reaction_on_reply',
+  LIKE_ON_POST = 'like_on_post',
 }
