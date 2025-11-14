@@ -12,6 +12,7 @@ import { PostAdjacentButtons } from './PostAdjacentButtons';
 import { PostBackButton } from './PostBackButton';
 import { PostContent } from './PostContent';
 import { PostDetailHeader } from './PostDetailHeader';
+import { PostLikeButton } from './PostLikeButton';
 import { PostMetaHelmet } from './PostMetaHelmet';
 
 export default function PostDetailPage() {
@@ -61,6 +62,9 @@ export default function PostDetailPage() {
         </article>
         <div className='mt-8 border-t border-border'></div>
         {boardId && postId && <PostAdjacentButtons boardId={boardId} postId={postId} />}
+        {boardId && postId && (
+          <PostLikeButton boardId={boardId} postId={postId} authorId={post.authorId} />
+        )}
         <div className='mt-8'>
           {boardId && postId && (
             <Comments
