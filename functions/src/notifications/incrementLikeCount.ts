@@ -1,4 +1,4 @@
-import { onDocumentCreated, onDocumentDeleted } from 'firebase-functions/firestore';
+import { onDocumentCreated, onDocumentDeleted } from 'firebase-functions/v2/firestore';
 import admin from '../shared/admin';
 
 // 좋아요 생성 시
