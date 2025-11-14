@@ -42,11 +42,11 @@ export function PostLikeButton({ boardId, postId, authorId }: PostLikeButtonProp
   return (
     <div className='mt-6 flex items-center justify-center border-y border-border py-4'>
       <Button
-        variant={hasLiked ? 'default' : 'outline'}
+        variant='ghost'
         size='sm'
         className={`
           flex items-center gap-2 rounded-full px-4 py-2 transition-all
-          ${hasLiked ? 'bg-pink-500 text-white hover:bg-pink-600' : 'hover:bg-muted'}
+          ${hasLiked ? 'bg-pink-500 text-white hover:bg-pink-600' : 'border border-border hover:bg-muted'}
           ${isProcessing ? 'opacity-70' : ''}
           ${isAuthor ? 'cursor-not-allowed opacity-50' : ''}
         `}
