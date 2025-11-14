@@ -50,7 +50,8 @@ const NotificationsPage = () => {
   const { observerRef, isLoading: isLoadingMore } = useInfiniteScroll({
     hasNextPage,
     fetchNextPage,
-    isFetchingNextPage
+    isFetchingNextPage,
+    scrollAreaId: NOTIFICATIONS_CONFIG.SCROLL_ID
   });
   
   // ACTION - Register tab handler
@@ -75,9 +76,9 @@ const NotificationsPage = () => {
 
   return (
     <NotificationsErrorBoundary>
-      <div className="min-h-screen bg-background">
+      <div className="h-screen overflow-hidden bg-background flex flex-col">
         <NotificationsHeader />
-        <main className="container mx-auto px-3 py-2 md:px-4">
+        <main className="container mx-auto px-3 md:px-4 flex-1 overflow-hidden">
           <NotificationsContent
             scrollAreaId={NOTIFICATIONS_CONFIG.SCROLL_ID}
             notifications={allNotifications}
