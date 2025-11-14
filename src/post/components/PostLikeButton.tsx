@@ -39,7 +39,7 @@ export function PostLikeButton({ boardId, postId, authorId }: PostLikeButtonProp
       variant='ghost'
       size='sm'
       className={`
-        flex items-center gap-2 rounded-full border border-border px-4 py-2 transition-all
+        flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-all
         bg-transparent text-foreground hover:bg-muted hover:text-foreground hover:scale-105
         active:scale-95
         ${isAuthor ? 'cursor-not-allowed opacity-50' : ''}
@@ -47,7 +47,7 @@ export function PostLikeButton({ boardId, postId, authorId }: PostLikeButtonProp
       onClick={handleToggleLike}
       disabled={isAuthor}
     >
-      <Heart className={`size-5 transition-all ${hasLiked ? 'fill-current' : ''}`} />
+      <Heart className={`size-4 transition-all ${hasLiked ? 'fill-current' : ''}`} />
       <span className='text-sm font-medium'>공감</span>
       {showCount && <span className='text-sm font-semibold'>{likeCount}</span>}
     </Button>
