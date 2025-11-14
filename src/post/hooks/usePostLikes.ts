@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { createLike, deleteUserLike, GetLikesParams } from '@/post/api/like';
@@ -55,6 +56,10 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
       return { hasLiked, likeCount };
     },
     enabled: !!boardId && !!postId,
+    onError: (error) => {
+      console.error('좋아요 데이터를 불러오던 중 에러가 발생했습니다:', error);
+      Sentry.captureException(error);
+    },
   });
 
   const { hasLiked = false, likeCount = 0 } = likeData || {};
@@ -88,7 +93,9 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
         return { previousData };
       },
       // Rollback on error
-      onError: (_err, _variables, context) => {
+      onError: (error, _variables, context) => {
+        console.error('좋아요 생성 중 에러가 발생했습니다:', error);
+        Sentry.captureException(error);
         if (context?.previousData) {
           queryClient.setQueryData(likesQueryKey, context.previousData);
         }
@@ -123,7 +130,9 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
         return { previousData };
       },
       // Rollback on error
-      onError: (_err, _variables, context) => {
+      onError: (error, _variables, context) => {
+        console.error('좋아요 삭제 중 에러가 발생했습니다:', error);
+        Sentry.captureException(error);
         if (context?.previousData) {
           queryClient.setQueryData(likesQueryKey, context.previousData);
         }
