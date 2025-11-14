@@ -1,4 +1,5 @@
 import { Heart } from 'lucide-react';
+import { toast } from 'sonner';
 import { usePostLikes } from '@/post/hooks/usePostLikes';
 import { Button } from '@/shared/ui/button';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -23,6 +24,9 @@ export function PostLikeButton({ boardId, postId, authorId }: PostLikeButtonProp
       await toggleLike();
     } catch (error) {
       console.error('좋아요 처리 중 오류 발생:', error);
+      toast.error('공감 처리 중 문제가 발생했습니다. 다시 시도해 주세요.', {
+        position: 'bottom-center',
+      });
     }
   };
 
