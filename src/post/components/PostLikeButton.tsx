@@ -35,23 +35,21 @@ export function PostLikeButton({ boardId, postId, authorId }: PostLikeButtonProp
   const showCount = isAuthor && likeCount > 0;
 
   return (
-    <div className='mt-6 flex items-center border-t border-border py-4'>
-      <Button
-        variant='ghost'
-        size='sm'
-        className={`
-          flex items-center gap-2 rounded-full border border-border px-4 py-2 transition-all
-          bg-transparent text-foreground hover:bg-muted hover:text-foreground hover:scale-105
-          active:scale-95
-          ${isAuthor ? 'cursor-not-allowed opacity-50' : ''}
-        `}
-        onClick={handleToggleLike}
-        disabled={isAuthor}
-      >
-        <Heart className={`size-5 transition-all ${hasLiked ? 'fill-current' : ''}`} />
-        <span className='text-sm font-medium'>공감</span>
-        {showCount && <span className='text-sm font-semibold'>{likeCount}</span>}
-      </Button>
-    </div>
+    <Button
+      variant='ghost'
+      size='sm'
+      className={`
+        flex items-center gap-2 rounded-full border border-border px-4 py-2 transition-all
+        bg-transparent text-foreground hover:bg-muted hover:text-foreground hover:scale-105
+        active:scale-95
+        ${isAuthor ? 'cursor-not-allowed opacity-50' : ''}
+      `}
+      onClick={handleToggleLike}
+      disabled={isAuthor}
+    >
+      <Heart className={`size-5 transition-all ${hasLiked ? 'fill-current' : ''}`} />
+      <span className='text-sm font-medium'>공감</span>
+      {showCount && <span className='text-sm font-semibold'>{likeCount}</span>}
+    </Button>
   );
 }

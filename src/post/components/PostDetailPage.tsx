@@ -60,12 +60,15 @@ export default function PostDetailPage() {
           />
           <PostContent post={post} isAuthor={isAuthor} />
         </article>
-        <div className='mt-8 border-t border-border'></div>
-        {boardId && postId && <PostAdjacentButtons boardId={boardId} postId={postId} />}
-        {boardId && postId && (
-          <PostLikeButton boardId={boardId} postId={postId} authorId={post.authorId} />
-        )}
-        <div className='mt-8'>
+
+        <div className='mt-6 flex items-center justify-between border-t border-border py-4'>
+          {boardId && postId && (
+            <PostLikeButton boardId={boardId} postId={postId} authorId={post.authorId} />
+          )}
+          {boardId && postId && <PostAdjacentButtons boardId={boardId} postId={postId} />}
+        </div>
+
+        <div>
           {boardId && postId && (
             <Comments
               boardId={boardId}

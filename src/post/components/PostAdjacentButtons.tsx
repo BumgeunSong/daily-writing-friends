@@ -19,7 +19,7 @@ export function PostAdjacentButtons({ boardId, postId }: PostAdjacentButtonsProp
   );
 
   return (
-    <div className='mt-6 flex justify-between'>
+    <div className='flex gap-4'>
       {adjacentPosts?.prevPost ? (
         <Link to={`/board/${boardId}/post/${adjacentPosts.prevPost}`}>
           <Button variant='ghost' className='px-0 hover:bg-transparent'>
