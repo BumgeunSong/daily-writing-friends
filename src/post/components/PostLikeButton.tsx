@@ -16,7 +16,9 @@ export function PostLikeButton({ boardId, postId, authorId }: PostLikeButtonProp
 
   const handleToggleLike = async () => {
     if (!currentUser) {
-      alert('로그인이 필요합니다.');
+      toast.error('로그인이 필요합니다.', {
+        position: 'bottom-center',
+      });
       return;
     }
 
