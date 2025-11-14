@@ -6,7 +6,7 @@ export const generateMessage = (
   notificationType: NotificationType,
   userName: string,
   contentTitle: string,
-) => {
+): string => {
   const contentSnippet = generateContentSnippet(contentTitle);
   switch (notificationType) {
     case NotificationType.COMMENT_ON_POST:
@@ -19,6 +19,8 @@ export const generateMessage = (
       return `${userName}님이 댓글에 반응을 남겼어요.`;
     case NotificationType.REACTION_ON_REPLY:
       return `${userName}님이 답글에 반응을 남겼어요.`;
+    case NotificationType.LIKE_ON_POST:
+      return `${userName}님이 ${contentSnippet} 글에 공감했어요.`;
   }
 };
 

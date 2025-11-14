@@ -14,6 +14,9 @@ export {
   decrementCommentCountOnCommentDeleted,
   incrementRepliesCountOnReplyCreated,
   decrementRepliesCountOnReplyDeleted,
+  incrementLikeCountOnLikeCreated,
+  decrementLikeCountOnLikeDeleted,
+  onLikeCreatedOnPost,
   onReactionCreatedOnComment,
   onReactionCreatedOnReply
 } from './notifications';

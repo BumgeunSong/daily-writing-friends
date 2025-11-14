@@ -19,26 +19,32 @@ export function PostAdjacentButtons({ boardId, postId }: PostAdjacentButtonsProp
   );
 
   return (
-    <div className='mt-6 flex justify-between'>
+    <div className='flex gap-4'>
       {adjacentPosts?.prevPost ? (
         <Link to={`/board/${boardId}/post/${adjacentPosts.prevPost}`}>
-          <Button variant='ghost' className='px-0 hover:bg-transparent'>
+          <Button
+            variant='ghost'
+            className='px-0 text-foreground hover:bg-transparent hover:text-foreground'
+          >
             <ChevronLeft className='mr-2 size-4' /> 이전 글
           </Button>
         </Link>
       ) : (
-        <Button variant='ghost' disabled className='px-0'>
+        <Button variant='ghost' disabled className='px-0 text-muted-foreground'>
           <ChevronLeft className='mr-2 size-4' /> 이전 글
         </Button>
       )}
       {adjacentPosts?.nextPost ? (
         <Link to={`/board/${boardId}/post/${adjacentPosts.nextPost}`}>
-          <Button variant='ghost' className='px-0 hover:bg-transparent'>
+          <Button
+            variant='ghost'
+            className='px-0 text-foreground hover:bg-transparent hover:text-foreground'
+          >
             다음 글 <ChevronRight className='ml-2 size-4' />
           </Button>
         </Link>
       ) : (
-        <Button variant='ghost' disabled className='px-0'>
+        <Button variant='ghost' disabled className='px-0 text-muted-foreground'>
           다음 글 <ChevronRight className='ml-2 size-4' />
         </Button>
       )}

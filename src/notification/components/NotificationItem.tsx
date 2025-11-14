@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { useNotificationMessage } from '@/notification/hooks/useNotificationMessage';
 import { Notification } from '@/notification/model/Notification';
 import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
 
@@ -12,7 +11,7 @@ function getNotificationLink(notification: Notification): string {
 }
 
 export const NotificationItem = ({ notification }: NotificationItemProps) => {
-  const message = useNotificationMessage(notification);
+  const message = notification.message;
   return (
     <Link to={getNotificationLink(notification)}>
       <div

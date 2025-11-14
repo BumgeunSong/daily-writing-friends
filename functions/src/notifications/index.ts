@@ -2,7 +2,7 @@
 
 // Handlers
 export { onCommentCreated } from './commentOnPost';
-export { 
+export {
   incrementCommentCountOnCommentCreated,
   decrementCommentCountOnCommentDeleted
 } from './incrementCommentCount';
@@ -10,6 +10,11 @@ export {
   incrementRepliesCountOnReplyCreated,
   decrementRepliesCountOnReplyDeleted
 } from './incrementRepliesCount';
+export {
+  incrementLikeCountOnLikeCreated,
+  decrementLikeCountOnLikeDeleted
+} from './incrementLikeCount';
+export { onLikeCreatedOnPost } from './likeOnPost';
 export {
   onReactionCreatedOnComment,
   onReactionCreatedOnReply

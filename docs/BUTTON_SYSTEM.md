@@ -44,14 +44,27 @@
 
 ### 5. Ghost
 **Purpose**: Most subtle button, text-only or simple icon
-**Use Cases**: 
+**Use Cases**:
 - **Edit buttons** in PostDetailPage
 - **Comment/reply actions** (edit, delete comments)
 - **Logout button** (로그아웃)
 - **Icon-only buttons** (navigation, share, back)
 - **Subtle navigation** and secondary interactions
+- **Adjacent post navigation** (이전 글, 다음 글)
 
 **Usage**: `<Button variant="ghost">`
+
+**Important**: When using ghost buttons with custom styling that should remain consistent on hover/active states, explicitly override the default hover behavior:
+
+```typescript
+// Override ghost variant's default accent-foreground hover behavior
+<Button
+  variant="ghost"
+  className="text-foreground hover:bg-transparent hover:text-foreground"
+>
+  Button Text
+</Button>
+```
 
 ## Current Implementation Status
 
@@ -132,6 +145,22 @@ Based on `DESIGN_THEME.md`:
 // Destructive for delete actions (ghost style with red text)
 <Button variant="destructive" size="sm">
   <Trash2 className="h-4 w-4" />
+</Button>
+```
+
+### Post Navigation (Adjacent Buttons)
+```jsx
+// Ghost buttons with explicit color overrides to prevent blue accent on hover
+<Button
+  variant="ghost"
+  className="px-0 text-foreground hover:bg-transparent hover:text-foreground"
+>
+  <ChevronLeft className="mr-2 size-4" /> 이전 글
+</Button>
+
+// Disabled state with muted text
+<Button variant="ghost" disabled className="px-0 text-muted-foreground">
+  다음 글 <ChevronRight className="ml-2 size-4" />
 </Button>
 ```
 
