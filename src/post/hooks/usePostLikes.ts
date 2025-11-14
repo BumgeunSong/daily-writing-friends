@@ -28,7 +28,7 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
   const likesQueryKey = ['postLikes', boardId, postId];
   const postQueryKey = ['post', boardId, postId];
 
-  // Fetch user's like status
+  // Fetch user's like status only
   const {
     data: likeData,
     isLoading,
@@ -38,22 +38,18 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
     queryKey: likesQueryKey,
     queryFn: async () => {
       if (!currentUser) {
-        return { hasLiked: false, likeCount: 0 };
+        return { hasLiked: false };
       }
 
       const postRef = `boards/${boardId}/posts/${postId}`;
       const likesRef = collection(firestore, postRef, 'likes');
 
-      // Get all likes for count
-      const allLikesSnapshot = await getDocs(likesRef);
-      const likeCount = allLikesSnapshot.size;
-
-      // Check if current user has liked
+      // Only check if current user has liked
       const userLikeQuery = query(likesRef, where('userId', '==', currentUser.uid));
       const userLikeSnapshot = await getDocs(userLikeQuery);
       const hasLiked = !userLikeSnapshot.empty;
 
-      return { hasLiked, likeCount };
+      return { hasLiked };
     },
     enabled: !!boardId && !!postId,
     onError: (error) => {
@@ -62,7 +58,11 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
     },
   });
 
-  const { hasLiked = false, likeCount = 0 } = likeData || {};
+  const { hasLiked = false } = likeData || {};
+
+  // Get like count from cached post data
+  const postData = queryClient.getQueryData(postQueryKey) as { countOfLikes?: number } | undefined;
+  const likeCount = postData?.countOfLikes ?? 0;
 
   // Create like mutation with optimistic update
   const createLikeMutation = useMutation(
@@ -82,22 +82,35 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
       // Optimistic update
       onMutate: async () => {
         await queryClient.cancelQueries({ queryKey: likesQueryKey });
+        await queryClient.cancelQueries({ queryKey: postQueryKey });
 
-        const previousData = queryClient.getQueryData(likesQueryKey);
+        const previousLikeData = queryClient.getQueryData(likesQueryKey);
+        const previousPostData = queryClient.getQueryData(postQueryKey);
 
+        // Update like status
         queryClient.setQueryData(likesQueryKey, {
           hasLiked: true,
-          likeCount: likeCount + 1,
         });
 
-        return { previousData };
+        // Update post's like count
+        if (previousPostData) {
+          queryClient.setQueryData(postQueryKey, {
+            ...previousPostData,
+            countOfLikes: likeCount + 1,
+          });
+        }
+
+        return { previousLikeData, previousPostData };
       },
       // Rollback on error
       onError: (error, _variables, context) => {
         console.error('좋아요 생성 중 에러가 발생했습니다:', error);
         Sentry.captureException(error);
-        if (context?.previousData) {
-          queryClient.setQueryData(likesQueryKey, context.previousData);
+        if (context?.previousLikeData) {
+          queryClient.setQueryData(likesQueryKey, context.previousLikeData);
+        }
+        if (context?.previousPostData) {
+          queryClient.setQueryData(postQueryKey, context.previousPostData);
         }
       },
       // Refetch on success
@@ -119,22 +132,35 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
       // Optimistic update
       onMutate: async () => {
         await queryClient.cancelQueries({ queryKey: likesQueryKey });
+        await queryClient.cancelQueries({ queryKey: postQueryKey });
 
-        const previousData = queryClient.getQueryData(likesQueryKey);
+        const previousLikeData = queryClient.getQueryData(likesQueryKey);
+        const previousPostData = queryClient.getQueryData(postQueryKey);
 
+        // Update like status
         queryClient.setQueryData(likesQueryKey, {
           hasLiked: false,
-          likeCount: Math.max(0, likeCount - 1),
         });
 
-        return { previousData };
+        // Update post's like count
+        if (previousPostData) {
+          queryClient.setQueryData(postQueryKey, {
+            ...previousPostData,
+            countOfLikes: Math.max(0, likeCount - 1),
+          });
+        }
+
+        return { previousLikeData, previousPostData };
       },
       // Rollback on error
       onError: (error, _variables, context) => {
         console.error('좋아요 삭제 중 에러가 발생했습니다:', error);
         Sentry.captureException(error);
-        if (context?.previousData) {
-          queryClient.setQueryData(likesQueryKey, context.previousData);
+        if (context?.previousLikeData) {
+          queryClient.setQueryData(likesQueryKey, context.previousLikeData);
+        }
+        if (context?.previousPostData) {
+          queryClient.setQueryData(postQueryKey, context.previousPostData);
         }
       },
       // Refetch on success
