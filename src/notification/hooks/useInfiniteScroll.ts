@@ -46,18 +46,21 @@ export const useInfiniteScroll = ({
       targetRef.current = node;
 
       // Find the scroll root
+      let root: Element | null = null;
       if (scrollAreaId) {
         const scrollArea = document.getElementById(scrollAreaId);
         const viewport = scrollArea?.querySelector('[data-radix-scroll-area-viewport]');
-
-        observerRef.current = new IntersectionObserver(observerCallback, {
-          root: viewport,
-          rootMargin: '100px',
-          threshold: 0,
-        });
-
-        observerRef.current.observe(node);
+        root = viewport || null;
       }
+
+      // Create observer with root (null = viewport, or custom scroll container)
+      observerRef.current = new IntersectionObserver(observerCallback, {
+        root,
+        rootMargin: '100px',
+        threshold: 0,
+      });
+
+      observerRef.current.observe(node);
     },
     [scrollAreaId, observerCallback]
   );
