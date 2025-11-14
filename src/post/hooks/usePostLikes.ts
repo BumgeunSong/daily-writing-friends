@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { createLike, deleteUserLike, GetLikesParams } from '@/post/api/like';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { fetchUser } from '@/user/api/user';
+import { useUser } from '@/user/hooks/useUser';
 import { firestore } from '@/firebase';
 
 interface UsePostLikesProps {
@@ -21,6 +21,7 @@ interface UsePostLikesReturn {
 
 export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLikesReturn {
   const { currentUser } = useAuth();
+  const { userData } = useUser(currentUser?.uid);
   const queryClient = useQueryClient();
 
   const likesQueryKey = ['postLikes', boardId, postId];
@@ -63,7 +64,6 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
     async () => {
       if (!currentUser) throw new Error('로그인이 필요합니다.');
 
-      const userData = await fetchUser(currentUser.uid);
       const likeUser = {
         userId: currentUser.uid,
         userName:
