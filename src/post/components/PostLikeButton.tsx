@@ -45,8 +45,8 @@ export function PostLikeButton({ boardId, postId, authorId }: PostLikeButtonProp
         variant='ghost'
         size='sm'
         className={`
-          flex items-center gap-2 rounded-full px-4 py-2 transition-all
-          ${hasLiked ? 'bg-pink-500 text-white hover:bg-pink-600 hover:text-white' : 'border border-border bg-transparent text-foreground hover:bg-muted hover:text-foreground'}
+          flex items-center gap-2 rounded-full border border-border px-4 py-2 transition-all
+          bg-transparent text-foreground hover:bg-muted hover:text-foreground
           ${isProcessing ? 'opacity-70' : ''}
           ${isAuthor ? 'cursor-not-allowed opacity-50' : ''}
         `}
@@ -57,7 +57,7 @@ export function PostLikeButton({ boardId, postId, authorId }: PostLikeButtonProp
           <Loader2 className='size-5 animate-spin' />
         ) : (
           <>
-            <Heart className={`size-5 ${hasLiked ? 'fill-current' : ''}`} />
+            <Heart className={`size-5 transition-all ${hasLiked ? 'fill-current' : ''}`} />
             <span className='text-sm font-medium'>공감</span>
             {showCount && <span className='text-sm font-semibold'>{likeCount}</span>}
           </>
