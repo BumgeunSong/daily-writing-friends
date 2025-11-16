@@ -18,8 +18,6 @@ export default function IntroCTA({
 }: IntroCTAProps) {
   const navigate = useNavigate();
 
-  const showDualButtons = isLoggedIn;
-
   const getPrimaryButtonText = () => {
     if (isLoading) return '처리 중...';
     if (isInWaitingList) return `${cohort}기 신청 완료`;
@@ -51,38 +49,26 @@ export default function IntroCTA({
         {statusMessage && (
           <p className='mb-2 text-center text-sm text-muted-foreground'>{statusMessage}</p>
         )}
-        {showDualButtons ? (
-          <div className='flex gap-3'>
-            <Button
-              variant='ghost'
-              onClick={handleSecondaryClick}
-              className='flex-1 text-foreground hover:bg-transparent hover:text-foreground'
-              size='lg'
-              disabled={isLoading}
-            >
-              게시판 들어가기
-            </Button>
-            <Button
-              variant='cta'
-              onClick={handlePrimaryClick}
-              className='flex-1'
-              size='lg'
-              disabled={isPrimaryDisabled}
-            >
-              {getPrimaryButtonText()}
-            </Button>
-          </div>
-        ) : (
+        <div className='flex gap-3'>
+          <Button
+            variant='ghost'
+            onClick={handleSecondaryClick}
+            className='flex-1 text-foreground hover:bg-transparent hover:text-foreground'
+            size='lg'
+            disabled={isLoading}
+          >
+            게시판 들어가기
+          </Button>
           <Button
             variant='cta'
             onClick={handlePrimaryClick}
-            className='w-full'
+            className='flex-1'
             size='lg'
             disabled={isPrimaryDisabled}
           >
             {getPrimaryButtonText()}
           </Button>
-        )}
+        </div>
       </div>
     </div>
   );

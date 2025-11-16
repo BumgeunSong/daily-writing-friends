@@ -17,10 +17,11 @@ Add a secondary CTA button for logged-in users to access the board list directly
 - No way to access boards without form submission for non-waiting-list users
 
 ## Desired Behavior
-- Logged-in users see TWO buttons:
+- **All users** (logged-in and non-logged-in) see TWO buttons:
   - **Left (Secondary):** "게시판 들어가기" - navigates to `/boards` (weak/ghost style)
+    - Non-logged-in users: Triggers login flow via route protection
+    - Logged-in users: Direct access to board list
   - **Right (Primary):** Existing CTA behavior - cohort form submission (accent/cta style)
-- Non-logged-in users see single CTA (current behavior)
 - Waiting list users see adjusted messaging
 
 ## Implementation Plan (Git Commit Steps)
@@ -115,21 +116,29 @@ Add a secondary CTA button for logged-in users to access the board list directly
 **Files Modified:** `src/login/components/IntroCTA.tsx`
 **Changes:**
 - Renamed `getButtonText()` to `getPrimaryButtonText()` for clarity
-- Set secondary button text to "게시판 들어가기" (line 63)
-- Simplified logic by removing `showBoardsAccess` in favor of `showDualButtons`
+- Set secondary button text to "게시판 들어가기" (line 60)
+- Simplified logic by removing `showBoardsAccess`
 - Status message logic updated to work with dual button context
-- Non-logged-in users continue to see single CTA button
+
+### Phase 3: ✅ COMPLETED
+**Commit-ready:** Yes (merged with Phases 1 & 2)
+**Files Modified:** `src/login/components/IntroCTA.tsx`
+**Changes:**
+- Removed conditional rendering - dual buttons now always shown for all users
+- Removed `showDualButtons` variable
+- Secondary button leverages route protection for non-logged-in users
+- Simplified component structure by eliminating single/dual button branching logic
 
 ## Current Status
 **Overall Status:** READY_FOR_REVIEW
 **Commit Message Suggestion:**
 ```
-Add dual CTA buttons for logged-in users to access boards
+Add dual CTA buttons for all users to access boards
 
-- Show secondary "게시판 들어가기" button (ghost variant) for logged-in users
-- Secondary button navigates directly to /boards route
+- Show secondary "게시판 들어가기" button (ghost variant) for all users
+- Secondary button navigates to /boards route (triggers login for non-authenticated users)
 - Primary CTA button maintains cohort registration behavior
-- Non-logged-in users see single CTA button (existing behavior)
+- Ghost button follows BUTTON_SYSTEM.md pattern (transparent hover, no accent color)
 - Both buttons use equal width (flex-1) in horizontal layout
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
