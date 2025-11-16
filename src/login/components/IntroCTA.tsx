@@ -56,7 +56,7 @@ export default function IntroCTA({
             <Button
               variant='ghost'
               onClick={handleSecondaryClick}
-              className='flex-1'
+              className='flex-1 text-foreground hover:bg-transparent hover:text-foreground'
               size='lg'
               disabled={isLoading}
             >
