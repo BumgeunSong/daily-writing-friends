@@ -40,6 +40,147 @@ src/[feature]/
 
 ## Code Writing Practices
 
+### Self-Documenting Code Through Expressive Naming
+
+**Core Principle: Code should be self-explanatory through clear naming, not through comments**
+
+Comments tell you WHY, but before writing a comment to explain HOW code works, first try to make the code self-explanatory through better naming.
+
+#### Guidelines for Expressive Naming
+
+1. **Replace Comments with Descriptive Names**
+   - If you find yourself writing a comment to explain what code does, refactor the code to use clearer names instead
+   - ❌ `const d = 7; // days in recovery period`
+   - ✅ `const daysInRecoveryPeriod = 7;`
+
+2. **Avoid Abbreviations**
+   - Use complete, descriptive words instead of shortened forms
+   - Code is read far more often than it's written
+   - ❌ `getUserCmt()`, `calcRecReq()`, `procUsrData()`
+   - ✅ `getUserComment()`, `calculateRecoveryRequirement()`, `processUserData()`
+
+3. **Use Long Names When Needed**
+   - Don't sacrifice clarity for brevity
+   - Modern IDEs provide autocomplete, so typing long names is not a burden
+   - ❌ `isValid()`, `check()`, `process()`
+   - ✅ `isUserEligibleForRecovery()`, `checkIfPostMeetsRequirements()`, `processWritingStreakUpdate()`
+
+4. **Use Intermediate Variables with Descriptive Names**
+   - Break down complex expressions into well-named steps
+   - This makes the logic flow clear without comments
+
+   **❌ Complex, requires comment:**
+   ```typescript
+   // Check if user can recover based on posts and deadline
+   if (posts.length >= 2 && new Date() <= new Date(missedDate.getTime() + 7 * 24 * 60 * 60 * 1000)) {
+     updateStatus('recovering');
+   }
+   ```
+
+   **✅ Self-explanatory with intermediate variables:**
+   ```typescript
+   const hasRequiredPostCount = posts.length >= 2;
+   const recoveryDeadline = new Date(missedDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+   const isWithinRecoveryWindow = new Date() <= recoveryDeadline;
+   const canStartRecovery = hasRequiredPostCount && isWithinRecoveryWindow;
+
+   if (canStartRecovery) {
+     updateStatus('recovering');
+   }
+   ```
+
+5. **Extract Magic Numbers into Named Constants**
+   - Never use unexplained numeric literals in code
+   - ❌ `if (streak >= 21) { badge = 'gold'; }`
+   - ✅ `const GOLD_BADGE_STREAK_THRESHOLD = 21; if (streak >= GOLD_BADGE_STREAK_THRESHOLD) { badge = 'gold'; }`
+
+6. **Name Functions After Their Purpose, Not Implementation**
+   - Focus on WHAT the function does, not HOW it does it
+   - ❌ `loopThroughPostsAndCount()`, `queryDatabaseForUser()`
+   - ✅ `countUserPosts()`, `findUserById()`
+
+7. **Use Domain-Specific Language**
+   - Name things using the language of your business domain
+   - This makes code readable by non-programmers familiar with the domain
+   - ✅ `isUserOnStreak()`, `calculateRecoveryRequirement()`, `transitionToRecovering()`
+
+8. **Boolean Variables Should Read Like Questions**
+   - Use `is`, `has`, `should`, `can`, `did` prefixes
+   - ❌ `eligible`, `recovery`, `deadline`
+   - ✅ `isEligible`, `isRecovering`, `hasPassedDeadline`
+
+9. **Collections Should Use Plural Names**
+   - Make it obvious that a variable contains multiple items
+   - ❌ `const post = getPosts()`, `const user = board.member`
+   - ✅ `const posts = getPosts()`, `const users = board.members`
+
+10. **Avoid Generic Names**
+    - Names like `data`, `item`, `value`, `temp`, `result` are too vague
+    - ❌ `const data = fetchData()`, `const result = calculate()`
+    - ✅ `const userProfile = fetchUserProfile()`, `const streakCount = calculateCurrentStreak()`
+
+#### When Comments Are Still Needed
+
+Even with expressive naming, comments are valuable for:
+
+- **Business logic reasoning**: WHY a specific formula or calculation is used
+- **External constraints**: WHY we handle third-party APIs in a specific way
+- **Performance optimizations**: WHY we chose a specific algorithm
+- **Bug workarounds**: WHY we have unusual code to work around a bug
+- **Complex algorithms**: High-level explanation of the APPROACH (not the implementation details)
+
+#### Before and After Examples
+
+**❌ Before: Comment-heavy code with poor naming**
+```typescript
+function calc(u: User, d: Date): number {
+  // Get posts from last week
+  const p = u.posts.filter(x => x.date >= d);
+  // Count only published ones
+  const c = p.filter(x => x.status === 'published').length;
+  // Return count
+  return c;
+}
+```
+
+**✅ After: Self-documenting code with expressive names**
+```typescript
+function countPublishedPostsSinceDate(user: User, startDate: Date): number {
+  const postsCreatedSinceStartDate = user.posts.filter(post => post.date >= startDate);
+  const publishedPosts = postsCreatedSinceStartDate.filter(post => post.status === 'published');
+  const publishedPostCount = publishedPosts.length;
+
+  return publishedPostCount;
+}
+```
+
+**❌ Before: Magic numbers and unclear intent**
+```typescript
+function updateStreak(user: User) {
+  if (user.posts.length >= 2 && now() - user.lastMiss < 604800000) {
+    user.status = 1;
+  }
+}
+```
+
+**✅ After: Named constants and clear variables**
+```typescript
+const POSTS_REQUIRED_FOR_RECOVERY = 2;
+const MILLISECONDS_IN_ONE_WEEK = 604_800_000;
+const RECOVERING_STATUS = 'recovering';
+
+function updateUserStreakStatus(user: User) {
+  const hasEnoughPostsToRecover = user.posts.length >= POSTS_REQUIRED_FOR_RECOVERY;
+  const millisecondsSinceLastMiss = now() - user.lastMissedDate;
+  const isWithinRecoveryWindow = millisecondsSinceLastMiss < MILLISECONDS_IN_ONE_WEEK;
+  const canRecover = hasEnoughPostsToRecover && isWithinRecoveryWindow;
+
+  if (canRecover) {
+    user.status = RECOVERING_STATUS;
+  }
+}
+```
+
 ### Code Comments Best Practices
 
 Follow these principles for effective code comments:

@@ -18,32 +18,33 @@ export default function IntroCTA({
 }: IntroCTAProps) {
   const navigate = useNavigate();
 
-  const showBoardsAccess = isLoggedIn && isInWaitingList;
-
-  const getButtonText = () => {
+  const getPrimaryButtonText = () => {
     if (isLoading) return '처리 중...';
-    if (showBoardsAccess) return '게시판 보기';
     if (isInWaitingList) return `${cohort}기 신청 완료`;
     if (cohort) return `${cohort}기 시작하기`;
     return '시작하기';
   };
 
   const getStatusMessage = () => {
-    if (showBoardsAccess && cohort) {
+    if (isLoggedIn && isInWaitingList && cohort) {
       return `${cohort}기 신청 완료`;
     }
     return null;
   };
 
-  const handleClick = () => {
-    if (showBoardsAccess) {
+  const handlePrimaryClick = () => {
+    onLogin();
+  };
+
+  const handleSecondaryClick = () => {
+    if (isLoggedIn) {
       navigate('/boards');
     } else {
       onLogin();
     }
   };
 
-  const isDisabled = isLoading || (isInWaitingList && !isLoggedIn);
+  const isPrimaryDisabled = isLoading || isInWaitingList;
   const statusMessage = getStatusMessage();
 
   return (
@@ -52,9 +53,26 @@ export default function IntroCTA({
         {statusMessage && (
           <p className='mb-2 text-center text-sm text-muted-foreground'>{statusMessage}</p>
         )}
-        <Button variant='cta' onClick={handleClick} className='w-full' size='lg' disabled={isDisabled}>
-          {getButtonText()}
-        </Button>
+        <div className='flex gap-3'>
+          <Button
+            variant='ghost'
+            onClick={handleSecondaryClick}
+            className='flex-1 text-foreground hover:bg-transparent hover:text-foreground'
+            size='lg'
+            disabled={isLoading}
+          >
+            게시판 들어가기
+          </Button>
+          <Button
+            variant='cta'
+            onClick={handlePrimaryClick}
+            className='flex-1'
+            size='lg'
+            disabled={isPrimaryDisabled}
+          >
+            {getPrimaryButtonText()}
+          </Button>
+        </div>
       </div>
     </div>
   );
