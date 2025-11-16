@@ -126,8 +126,17 @@ Add a secondary CTA button for logged-in users to access the board list directly
 **Changes:**
 - Removed conditional rendering - dual buttons now always shown for all users
 - Removed `showDualButtons` variable
-- Secondary button leverages route protection for non-logged-in users
 - Simplified component structure by eliminating single/dual button branching logic
+
+### Phase 4: ✅ COMPLETED
+**Commit-ready:** Yes (merged with Phases 1, 2 & 3)
+**Files Modified:** `src/login/components/IntroCTA.tsx`
+**Changes:**
+- Added authentication check in `handleSecondaryClick()` (lines 39-45)
+- Non-logged-in users: Calls `onLogin()` to trigger login flow
+- Logged-in users: Navigates directly to `/boards`
+- Prevents unnecessary navigation cycles and confusing redirect behavior
+- Improves UX by handling authentication before navigation
 
 ## Current Status
 **Overall Status:** READY_FOR_REVIEW
@@ -136,7 +145,9 @@ Add a secondary CTA button for logged-in users to access the board list directly
 Add dual CTA buttons for all users to access boards
 
 - Show secondary "게시판 들어가기" button (ghost variant) for all users
-- Secondary button navigates to /boards route (triggers login for non-authenticated users)
+- Secondary button checks authentication before navigation
+  - Non-logged-in users: Triggers login flow directly
+  - Logged-in users: Navigates to /boards route
 - Primary CTA button maintains cohort registration behavior
 - Ghost button follows BUTTON_SYSTEM.md pattern (transparent hover, no accent color)
 - Both buttons use equal width (flex-1) in horizontal layout

@@ -37,7 +37,11 @@ export default function IntroCTA({
   };
 
   const handleSecondaryClick = () => {
-    navigate('/boards');
+    if (isLoggedIn) {
+      navigate('/boards');
+    } else {
+      onLogin();
+    }
   };
 
   const isPrimaryDisabled = isLoading || isInWaitingList;
