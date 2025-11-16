@@ -1,11 +1,5 @@
-import { 
-  getFirestore, 
-  collectionGroup, 
-  query, 
-  where, 
-  getDocs, 
-  Timestamp
-} from 'firebase/firestore';
+import { collectionGroup, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { firestore } from '@/firebase';
 
 export interface ActivityCount {
   countOfComments: number;
@@ -33,8 +27,6 @@ export async function getUserActivityCount(
       totalCount: 0
     };
   }
-
-  const firestore = getFirestore();
 
   try {
     // 날짜를 Firestore Timestamp로 변환

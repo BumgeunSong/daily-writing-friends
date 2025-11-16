@@ -10,7 +10,11 @@ import { configureRemoteConfig } from './firebase/remote-config';
 // Core Firebase imports
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
 import { getPerformance } from 'firebase/performance';
@@ -23,7 +27,11 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize core services
 const auth = getAuth(app);
-const firestore = getFirestore(app);
+const firestore = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager(),
+  }),
+});
 const storage = getStorage(app);
 const installations = getInstallations(app);
 const provider = new GoogleAuthProvider();
