@@ -22,10 +22,15 @@ export const useNotifications = (userId: string | null, limitCount: number) => {
     return useInfiniteQuery(
         // DATA - Query key using pure function
         createNotificationQueryKey(userId),
-        // ACTION - Fetch function
-        ({ pageParam }) => fetchNotifications(userId!, limitCount, pageParam),
+        // ACTION - Fetch function with explicit null guard
+        ({ pageParam }) => {
+            if (!userId) {
+                throw new Error('User ID is required to fetch notifications');
+            }
+            return fetchNotifications(userId, limitCount, pageParam);
+        },
         {
-            enabled: !!userId,
+            enabled: userId != null,
             // CALCULATION - Get next page parameter using pure function
             getNextPageParam: (lastPage) => getLastNotificationTimestamp(lastPage),
             // ACTION - Error handling
