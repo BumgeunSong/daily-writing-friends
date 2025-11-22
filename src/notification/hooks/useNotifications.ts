@@ -3,7 +3,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { collection, query, orderBy, limit, startAfter, getDocs, Timestamp } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { createNotificationQueryKey, getLastNotificationTimestamp } from '@/notification/utils/notificationUtils';
-import { Notification } from '@/types/Notification';
+import { Notification } from '@/notification/model/Notification';
 
 // DATA - Query configuration
 const NOTIFICATIONS_CONFIG = {
