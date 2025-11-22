@@ -9,7 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog";
-import { Draft } from '@/types/Draft';
+import { Draft } from '@/draft/model/Draft';
 
 interface DeleteDraftDialogProps {
   isOpen: boolean;

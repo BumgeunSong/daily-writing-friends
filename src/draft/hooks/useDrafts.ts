@@ -17,7 +17,7 @@ export function useDrafts(userId: string | undefined, boardId: string | undefine
         ? await getDrafts(userId, boardId) 
         : await getDrafts(userId);
     },
-    enabled: !!userId,
+    enabled: userId != null,
     cacheTime: 0, // 캐시 사용하지 않음
     staleTime: 0, // 항상 최신 데이터 가져오기
   });

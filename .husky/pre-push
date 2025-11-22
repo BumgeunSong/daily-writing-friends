@@ -1,0 +1,11 @@
+echo "🔍 Running TypeScript type check..."
+npm run type-check
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ TypeScript errors found. Push aborted."
+  echo "💡 Fix the errors or use 'git push --no-verify' to skip this check."
+  exit 1
+fi
+
+echo "✅ TypeScript check passed"

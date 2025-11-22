@@ -43,7 +43,7 @@ export function useDraftLoader({
       }
       return null;
     },
-    enabled: !!draftId && !!userId && !!boardId,
+    enabled: draftId != null && userId != null && boardId != null,
     staleTime: Infinity,
     retry: 1,
     onSuccess: (data: Draft | null) => {

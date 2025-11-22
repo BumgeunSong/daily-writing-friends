@@ -3,7 +3,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { collection, query, orderBy, limit, startAfter, getDocs, Timestamp } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { createNotificationQueryKey, getLastNotificationTimestamp } from '@/notification/utils/notificationUtils';
-import { Notification } from '@/types/Notification';
+import { Notification } from '@/notification/model/Notification';
 
 // DATA - Query configuration
 const NOTIFICATIONS_CONFIG = {
@@ -22,10 +22,15 @@ export const useNotifications = (userId: string | null, limitCount: number) => {
     return useInfiniteQuery(
         // DATA - Query key using pure function
         createNotificationQueryKey(userId),
-        // ACTION - Fetch function
-        ({ pageParam }) => fetchNotifications(userId!, limitCount, pageParam),
+        // ACTION - Fetch function with explicit null guard
+        ({ pageParam }) => {
+            if (!userId) {
+                throw new Error('User ID is required to fetch notifications');
+            }
+            return fetchNotifications(userId, limitCount, pageParam);
+        },
         {
-            enabled: !!userId,
+            enabled: userId != null,
             // CALCULATION - Get next page parameter using pure function
             getNextPageParam: (lastPage) => getLastNotificationTimestamp(lastPage),
             // ACTION - Error handling
