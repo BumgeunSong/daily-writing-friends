@@ -26,9 +26,9 @@ import { sentryVitePlugin } from '@sentry/vite-plugin';
  * - 모드는 임의의 값(production, development, staging 등)이 될 수 있으며 import.meta.env.MODE에 반영됩니다.
  */
 export default defineConfig(({ mode }) => {
-  // 환경 변수 로드 - 로컬 .env 파일에서 먼저 로드
+  // 환경 변수 로드 - 모노레포 루트의 .env 파일에서 로드
   // 빈 문자열 접두사를 사용하여 VITE_ 접두사가 없는 변수도 로드합니다
-  const env = loadEnv(mode, process.cwd(), '');
+  const env = loadEnv(mode, path.resolve(__dirname, '../..'), '');
   
   // 환경 변수 설정 - 로컬 .env 파일 또는 CI/CD 환경 변수 사용
   const getEnvVariable = (key: string) => {
