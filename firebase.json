@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist",
+    "public": "packages/web/dist",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -44,7 +44,7 @@
   },
   "functions": [
     {
-      "source": "functions",
+      "source": "packages/functions",
       "codebase": "default",
       "ignore": [
         "node_modules",
@@ -54,8 +54,8 @@
         "*.local"
       ],
       "predeploy": [
-        "npm --prefix \"$RESOURCE_DIR\" run lint",
-        "npm --prefix \"$RESOURCE_DIR\" run build"
+        "pnpm --filter functions run lint",
+        "pnpm --filter functions run build"
       ]
     }
   ],

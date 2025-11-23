@@ -1,0 +1,6 @@
+{
+  "name": "api",
+  "private": true,
+  "version": "0.0.1",
+  "description": "NestJS API server (placeholder for future development)"
+}
