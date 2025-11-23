@@ -638,6 +638,11 @@ pnpm build:functions        # Build functions
 pnpm test                   # Run web tests
 pnpm type-check             # Check types across all packages
 
+# Deployment
+pnpm deploy                 # Deploy both hosting and functions
+pnpm deploy:hosting         # Deploy only web app to Firebase Hosting
+pnpm deploy:functions       # Deploy only Cloud Functions
+
 # Emulators (run from root)
 pnpm emu:start              # Start Firebase emulators
 pnpm dev:emu                # Dev server + emulators
