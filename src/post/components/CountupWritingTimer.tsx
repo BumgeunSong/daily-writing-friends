@@ -1,7 +1,7 @@
-import { Clock } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useInterval } from "@/post/hooks/useInterval"
 import { WritingStatus } from "@/stats/model/WritingStatus"
+import { cn } from "@/shared/utils/cn"
 
 interface CountupWritingTimerProps {
   /**
@@ -56,29 +56,22 @@ export default function CountupWritingTimer({
   }, delay)
 
   return (
-    <div className="container mx-auto max-w-3xl p-4">
-      {/* 프리라이팅 모드 제목과 부제목 */}
-      <div className="mb-3">
-        <h2 className="text-xl font-bold text-foreground">프리라이팅 모드</h2>
-      </div>
+    <div className="flex items-center space-x-2">
+      <span className="text-sm font-medium tabular-nums">
+        {formatTime(elapsedTime)} / {formatTime(targetTime)}
+      </span>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <Clock className="size-5 text-foreground" />
-          <span className="text-lg font-medium">{formatTime(elapsedTime)}</span>
-          <span className="text-sm text-muted-foreground">/ {formatTime(targetTime)}</span>
-        </div>
-        <div
-          className={`rounded-full px-3 py-1 text-xs font-medium ${
-            reached
-              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-              : status === WritingStatus.Writing
-                ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
-                : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
-          }`}
-        >
-          {reached ? "프리라이팅 성공!" : status === WritingStatus.Writing ? "쓰는 중..." : "일시정지"}
-        </div>
+      <div
+        className={cn(
+          "rounded-full px-2 py-1 text-xs font-medium whitespace-nowrap",
+          reached
+            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+            : status === WritingStatus.Writing
+              ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+              : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+        )}
+      >
+        {reached ? "완료" : status === WritingStatus.Writing ? "쓰는 중" : "일시정지"}
       </div>
     </div>
   )
