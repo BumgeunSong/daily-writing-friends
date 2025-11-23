@@ -41,8 +41,8 @@ export function PostFreewritingHeader({
         {/* Row 2: Topic (conditional) */}
         {topic && (
           <div className="mt-3 pt-3 border-t">
-            <p className="text-sm text-muted-foreground text-center truncate">
-              주제: {topic}
+            <p className="text-sm text-muted-foreground text-center break-words">
+              {topic}
             </p>
           </div>
         )}
