@@ -8,16 +8,23 @@ import { Label } from '@/shared/ui/label'
 import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { cn } from "@/shared/utils/cn"
+import {
+  countNonWhitespaceCharacters,
+  isWithinCharacterLimit,
+  truncateToNonWhitespaceLimit
+} from "@/post/utils/topicInputUtils"
 import type React from "react"
 
 const MAX_TOPIC_LENGTH = 50
+const DEFAULT_TARGET_TIME_IN_SECONDS = 10 * 60
+const TARGET_TIME_OPTIONS_IN_MINUTES = [5, 10, 20] as const
 
 const PostFreewritingIntro: React.FC = () => {
   const navigate = useNavigate()
   const { boardId } = useParams<{ boardId: string }>()
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
 
-  const [selectedTargetTime, setSelectedTargetTime] = useState(10 * 60)
+  const [selectedTargetTimeInSeconds, setSelectedTargetTimeInSeconds] = useState(DEFAULT_TARGET_TIME_IN_SECONDS)
   const [topic, setTopic] = useState("")
 
   useEffect(() => {
@@ -25,41 +32,43 @@ const PostFreewritingIntro: React.FC = () => {
   }, [boardId])
 
   const handleTopicChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value
-    const chars = [...newValue]
-    const nonWhitespaceChars = chars.filter(char => char.trim())
+    const inputValue = e.target.value
 
-    if (nonWhitespaceChars.length <= MAX_TOPIC_LENGTH) {
-      setTopic(newValue)
+    if (isWithinCharacterLimit(inputValue, MAX_TOPIC_LENGTH)) {
+      setTopic(inputValue)
     } else {
-      let count = 0
-      const truncated = chars.filter(char => {
-        const isNonWhitespace = char.trim()
-        if (isNonWhitespace) {
-          if (count < MAX_TOPIC_LENGTH) {
-            count++
-            return true
-          }
-          return false
-        }
-        return count === 0 || count < MAX_TOPIC_LENGTH
-      }).join('')
-      setTopic(truncated)
+      const truncatedTopic = truncateToNonWhitespaceLimit(inputValue, MAX_TOPIC_LENGTH)
+      setTopic(truncatedTopic)
     }
   }
 
-  const handleStartFreewriting = () => {
+  const navigateToFreewritingPage = () => {
+    const trimmedTopic = topic.trim()
+    const topicToPass = trimmedTopic || undefined
+
     navigate(`/create/${boardId}/free-writing`, {
       state: {
-        targetTime: selectedTargetTime,
-        topic: topic.trim() || undefined
+        targetTime: selectedTargetTimeInSeconds,
+        topic: topicToPass
       }
     })
   }
 
-  const handleViewTutorial = () => {
+  const navigateToTutorialPage = () => {
     navigate('/free-writing/tutorial')
   }
+
+  const createTimeButtonClickHandler = (timeInMinutes: number) => {
+    const timeInSeconds = timeInMinutes * 60
+    setSelectedTargetTimeInSeconds(timeInSeconds)
+  }
+
+  const isTimeOptionSelected = (timeInMinutes: number): boolean => {
+    const timeInSeconds = timeInMinutes * 60
+    return selectedTargetTimeInSeconds === timeInSeconds
+  }
+
+  const currentNonWhitespaceCharacterCount = countNonWhitespaceCharacters(topic)
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -69,7 +78,7 @@ const PostFreewritingIntro: React.FC = () => {
             <h1 className="text-3xl font-bold text-foreground">프리라이팅 시작하기</h1>
             <Button
               variant="link"
-              onClick={handleViewTutorial}
+              onClick={navigateToTutorialPage}
               className="h-auto p-0 text-sm text-muted-foreground hover:text-foreground"
             >
               프리라이팅이 무엇인가요?
@@ -81,17 +90,17 @@ const PostFreewritingIntro: React.FC = () => {
             <div className="space-y-4">
               <Label className="text-base font-semibold">목표 시간</Label>
               <div className="flex gap-3">
-                {[5, 10, 20].map((minutes) => (
+                {TARGET_TIME_OPTIONS_IN_MINUTES.map((timeInMinutes) => (
                   <Button
-                    key={minutes}
-                    variant={selectedTargetTime === minutes * 60 ? "default" : "outline"}
-                    onClick={() => setSelectedTargetTime(minutes * 60)}
+                    key={timeInMinutes}
+                    variant={isTimeOptionSelected(timeInMinutes) ? "default" : "outline"}
+                    onClick={() => createTimeButtonClickHandler(timeInMinutes)}
                     className={cn(
                       "flex-1 h-12",
-                      selectedTargetTime === minutes * 60 && "ring-2 ring-primary ring-offset-2"
+                      isTimeOptionSelected(timeInMinutes) && "ring-2 ring-primary ring-offset-2"
                     )}
                   >
-                    {minutes}분
+                    {timeInMinutes}분
                   </Button>
                 ))}
               </div>
@@ -111,7 +120,7 @@ const PostFreewritingIntro: React.FC = () => {
                   rows={3}
                 />
                 <p className="text-xs text-muted-foreground text-right">
-                  {[...topic].filter(char => char.trim()).length}/{MAX_TOPIC_LENGTH}
+                  {currentNonWhitespaceCharacterCount}/{MAX_TOPIC_LENGTH}
                 </p>
               </div>
             </div>
@@ -135,7 +144,7 @@ const PostFreewritingIntro: React.FC = () => {
             <Button
               variant="default"
               className="flex-1 py-6 text-lg"
-              onClick={handleStartFreewriting}
+              onClick={navigateToFreewritingPage}
             >
               시작하기
               <ArrowRight className="ml-2 size-5" />
