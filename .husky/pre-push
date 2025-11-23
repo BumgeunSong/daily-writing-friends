@@ -1,5 +1,5 @@
 echo "🔍 Running TypeScript type check..."
-npm run type-check
+pnpm type-check
 
 if [ $? -ne 0 ]; then
   echo ""

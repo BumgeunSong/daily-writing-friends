@@ -58,5 +58,5 @@ export const retroactiveBackfillHttp = onRequest({
 
 
   // Delegate to main handler
-  await handleBackfillRequest(req, res);
+  await handleBackfillRequest(req as any, res as any);
 });
