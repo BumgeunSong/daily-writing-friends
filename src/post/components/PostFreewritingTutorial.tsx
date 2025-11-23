@@ -53,7 +53,7 @@ const PostFreewritingTutorial: React.FC = () => {
             </p>
           </div>
 
-          <div className="mb-12 grid gap-4 md:grid-cols-3">
+          <div className="mb-12 flex flex-col gap-4">
             {FREEWRITING_TUTORIAL_CARDS.map(renderTutorialCard)}
           </div>
         </div>
