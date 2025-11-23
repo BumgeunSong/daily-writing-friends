@@ -80,6 +80,7 @@ const publicRoutes = {
   children: [
     { path: 'login', element: <LoginPage /> },
     { path: 'join', element: <JoinIntroPage /> },
+    { path: 'free-writing/tutorial', element: <PostFreewritingTutorial /> },
   ],
 };
 
@@ -126,7 +127,6 @@ const privateRoutesWithoutNav = {
   path: '',
   element: <PrivateRoutes />,
   children: [
-    { path: 'free-writing/tutorial', element: <PostFreewritingTutorial /> },
     { path: 'board/:boardId/free-writing/intro', element: <PostFreewritingIntro /> },
     { path: 'create/:boardId/free-writing', element: <PostFreewritingPage /> },
     { path: 'create/:boardId', element: <PostCreationPage />, action: createPostAction },
