@@ -66,6 +66,7 @@ export async function createPost(
     authorName,
     countOfComments: 0,
     countOfReplies: 0,
+    countOfLikes: 0,
     createdAt: Timestamp.now(),
     visibility: visibility || PostVisibility.PUBLIC,
   };
