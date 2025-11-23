@@ -9,7 +9,7 @@ export interface TutorialCard {
 }
 
 export const FREEWRITING_TUTORIAL_TITLE = "프리라이팅"
-export const FREEWRITING_TUTORIAL_SUBTITLE = "머릿속의 편집자를 끄고 5분간 써보기"
+export const FREEWRITING_TUTORIAL_SUBTITLE = "머릿속의 편집자를 끄고 목표 시간 동안 써보기"
 
 export const FREEWRITING_TUTORIAL_CARDS: TutorialCard[] = [
   {
@@ -24,8 +24,8 @@ export const FREEWRITING_TUTORIAL_CARDS: TutorialCard[] = [
   },
   {
     emoji: "⏰",
-    title: "5분을 채워보세요",
-    description: "글을 쓰는 동안 시간이 올라갑니다. 5분을 채워야 업로드할 수 있어요! 중간에 나오면 글은 사라져요."
+    title: "목표 시간을 채워보세요",
+    description: "글을 쓰는 동안 시간이 올라갑니다. 목표 시간을 채워야 업로드할 수 있어요! 중간에 나오면 글은 사라져요."
   },
   {
     emoji: "🗑️",

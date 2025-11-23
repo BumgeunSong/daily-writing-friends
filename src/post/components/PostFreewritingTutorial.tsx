@@ -69,7 +69,7 @@ const PostFreewritingTutorial: React.FC = () => {
             className="w-full py-6 text-lg md:w-auto md:px-12"
             onClick={navigateBack}
           >
-            <ArrowLeft className="ml-2 size-5" />
+            <ArrowLeft className="mr-2 size-5" />
             돌아가기
           </Button>
         </div>
