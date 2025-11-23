@@ -34,14 +34,15 @@ const PostFreewritingIntro: React.FC = () => {
     } else {
       let count = 0
       const truncated = chars.filter(char => {
-        if (char.trim()) {
+        const isNonWhitespace = char.trim()
+        if (isNonWhitespace) {
           if (count < MAX_TOPIC_LENGTH) {
             count++
             return true
           }
           return false
         }
-        return count < MAX_TOPIC_LENGTH
+        return count === 0 || count < MAX_TOPIC_LENGTH
       }).join('')
       setTopic(truncated)
     }
