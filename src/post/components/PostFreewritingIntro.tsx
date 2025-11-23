@@ -10,7 +10,7 @@ import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { cn } from "@/shared/utils/cn"
 import type React from "react"
 
-const MAX_TOPIC_LENGTH = 30
+const MAX_TOPIC_LENGTH = 50
 
 const PostFreewritingIntro: React.FC = () => {
   const navigate = useNavigate()
@@ -26,8 +26,24 @@ const PostFreewritingIntro: React.FC = () => {
 
   const handleTopicChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value
-    if ([...newValue].length <= MAX_TOPIC_LENGTH) {
+    const chars = [...newValue]
+    const nonWhitespaceChars = chars.filter(char => char.trim())
+
+    if (nonWhitespaceChars.length <= MAX_TOPIC_LENGTH) {
       setTopic(newValue)
+    } else {
+      let count = 0
+      const truncated = chars.filter(char => {
+        if (char.trim()) {
+          if (count < MAX_TOPIC_LENGTH) {
+            count++
+            return true
+          }
+          return false
+        }
+        return count < MAX_TOPIC_LENGTH
+      }).join('')
+      setTopic(truncated)
     }
   }
 
@@ -89,12 +105,12 @@ const PostFreewritingIntro: React.FC = () => {
                   id="topic"
                   value={topic}
                   onChange={handleTopicChange}
-                  placeholder="요즘 내가 자주 생각하는 사람, 공간, 감정, 대상, 사건 하나를 쓰세요. 그 주제에서부터 프리라이팅을 시작하면 효과적이에요"
+                  placeholder="요즘 내가 자주 생각하는 사람, 공간, 감정, 대상, 사건 하나를 골라주세요. 그 주제에서부터 프리라이팅을 시작하면 효과적입니다."
                   className="min-h-[4.5rem] resize-none"
                   rows={3}
                 />
                 <p className="text-xs text-muted-foreground text-right">
-                  {[...topic].length}/{MAX_TOPIC_LENGTH}
+                  {[...topic].filter(char => char.trim()).length}/{MAX_TOPIC_LENGTH}
                 </p>
               </div>
             </div>
@@ -107,14 +123,23 @@ const PostFreewritingIntro: React.FC = () => {
         isIOS && "pb-6"
       )}>
         <div className="container mx-auto max-w-2xl">
-          <Button
-            variant="default"
-            className="w-full py-6 text-lg"
-            onClick={handleStartFreewriting}
-          >
-            시작하기
-            <ArrowRight className="ml-2 size-5" />
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="py-6 text-lg"
+              onClick={() => navigate(-1)}
+            >
+              돌아가기
+            </Button>
+            <Button
+              variant="default"
+              className="flex-1 py-6 text-lg"
+              onClick={handleStartFreewriting}
+            >
+              시작하기
+              <ArrowRight className="ml-2 size-5" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>
