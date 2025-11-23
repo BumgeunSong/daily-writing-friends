@@ -1,9 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams, useNavigate, useLocation } from "react-router-dom"
 import { toast } from "sonner"
 import { PostVisibility } from '@/post/model/Post'
 import { createPost } from '@/post/utils/postUtils'
-import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
@@ -16,12 +15,19 @@ import { Button } from "@/shared/ui/button"
 import { Loader2 } from "lucide-react"
 import type React from "react"
 
+interface FreewritingConfig {
+  targetTime?: number
+  topic?: string
+}
+
 export default function PostFreewritingPage() {
   const { currentUser } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const { boardId } = useParams<{ boardId: string }>()
   const { nickname: userNickname } = useUserNickname(currentUser?.uid);
-  const { value: freeWritingTargetTime } = useRemoteConfig('free_writing_target_time')
+
+  const { targetTime = 10 * 60, topic } = (location.state as FreewritingConfig) || {}
 
   // 상태 관리
   const POST_TITLE = userNickname ? `${userNickname}님의 프리라이팅` : "프리라이팅"
@@ -106,35 +112,34 @@ export default function PostFreewritingPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {/* Combined Sticky Header with Timer */}
-      <div className="sticky top-0 z-40 bg-background border-b">
-        <PostFreewritingHeader
-          rightActions={
-            <Button
-              variant="default"
-              type="submit"
-              form="freewriting-form"
-              disabled={isSubmitting || !isReached || !POST_TITLE.trim() || !content.trim()}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                  업로드 중...
-                </>
-              ) : (
-                "업로드"
-              )}
-            </Button>
-          }
-        />
-
-        <CountupWritingTimer
-          status={timerStatus}
-          reached={isReached}
-          onReach={handleTimerReach}
-          targetTime={freeWritingTargetTime}
-        />
-      </div>
+      <PostFreewritingHeader
+        topic={topic}
+        timerDisplay={
+          <CountupWritingTimer
+            status={timerStatus}
+            reached={isReached}
+            onReach={handleTimerReach}
+            targetTime={targetTime}
+          />
+        }
+        rightActions={
+          <Button
+            variant="default"
+            type="submit"
+            form="freewriting-form"
+            disabled={isSubmitting || !isReached || !POST_TITLE.trim() || !content.trim()}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 size-4 animate-spin" />
+                업로드 중...
+              </>
+            ) : (
+              "업로드"
+            )}
+          </Button>
+        }
+      />
 
       <div className="container mx-auto max-w-4xl grow px-6 py-8">
         <form id="freewriting-form" onSubmit={handleSubmit} className="space-y-6">
