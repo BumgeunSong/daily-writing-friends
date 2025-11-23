@@ -1,3 +1,10 @@
+#!/bin/sh
+
+# Load shell environment to make pnpm available in Git GUI clients
+if [ -f ~/.zshrc ]; then
+  . ~/.zshrc
+fi
+
 echo "🔍 Running TypeScript type check..."
 pnpm type-check
 
