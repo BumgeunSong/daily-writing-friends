@@ -1,9 +1,8 @@
 #!/bin/sh
 
-# Load shell environment to make pnpm available in Git GUI clients
-if [ -f ~/.zshrc ]; then
-  . ~/.zshrc
-fi
+# Set up PATH to include common package manager locations for Git GUI clients
+# Add nvm node versions and common binary paths
+export PATH="$HOME/.nvm/versions/node/$(ls -t $HOME/.nvm/versions/node 2>/dev/null | head -1)/bin:/usr/local/bin:$HOME/.local/bin:/opt/homebrew/bin:$PATH"
 
 echo "🔍 Running TypeScript type check..."
 pnpm type-check
