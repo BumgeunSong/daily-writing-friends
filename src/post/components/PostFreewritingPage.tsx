@@ -86,7 +86,7 @@ export default function PostFreewritingPage() {
     try {
       const contentWithTopic = prependTopicToContent(content, selectedTopic)
 
-      await createPost(
+      const newPost = await createPost(
         boardId,
         postTitle,
         contentWithTopic,
@@ -100,7 +100,7 @@ export default function PostFreewritingPage() {
 
       sendAnalyticsEvent(AnalyticsEvent.FINISH_FREE_WRITING, { boardId })
 
-      navigate(`/boards/${boardId}`)
+      navigate(`/boards/${boardId}/posts/${newPost.id}`)
     } catch (error) {
       console.error("게시 중 오류:", error)
       toast.error("글을 업로드하는 중 오류가 발생했습니다. 다시 시도해주세요.", {position: 'bottom-center'})

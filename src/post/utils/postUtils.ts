@@ -54,7 +54,7 @@ export async function createPost(
   authorName: string,
   visibility?: PostVisibility,
   contentJson?: ProseMirrorDoc,
-) {
+): Promise<Post> {
   const postRef = doc(collection(firestore, `boards/${boardId}/posts`));
   const post: Post = {
     id: postRef.id,
@@ -66,6 +66,7 @@ export async function createPost(
     authorName,
     countOfComments: 0,
     countOfReplies: 0,
+    countOfLikes: 0,
     createdAt: Timestamp.now(),
     visibility: visibility || PostVisibility.PUBLIC,
   };
@@ -75,7 +76,8 @@ export async function createPost(
     post.contentJson = contentJson;
   }
 
-  return setDoc(postRef, post);
+  await setDoc(postRef, post);
+  return post;
 }
 
 export const updatePost = async (
