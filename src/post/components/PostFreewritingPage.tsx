@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom"
 import { toast } from "sonner"
 import { PostVisibility } from '@/post/model/Post'
 import { createPost } from '@/post/utils/postUtils'
+import { prependTopicToContent } from '@/post/utils/freewritingContentUtils'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
@@ -20,6 +21,9 @@ interface FreewritingConfig {
   topic?: string
 }
 
+const DEFAULT_TARGET_TIME_IN_SECONDS = 10 * 60
+const TYPING_PAUSE_DELAY_IN_MILLISECONDS = 2000
+
 export default function PostFreewritingPage() {
   const { currentUser } = useAuth()
   const navigate = useNavigate()
@@ -27,59 +31,52 @@ export default function PostFreewritingPage() {
   const { boardId } = useParams<{ boardId: string }>()
   const { nickname: userNickname } = useUserNickname(currentUser?.uid);
 
-  const { targetTime = 10 * 60, topic } = (location.state as FreewritingConfig) || {}
+  const freewritingConfig = (location.state as FreewritingConfig) || {}
+  const targetTimeInSeconds = freewritingConfig.targetTime ?? DEFAULT_TARGET_TIME_IN_SECONDS
+  const selectedTopic = freewritingConfig.topic
 
-  // 상태 관리
-  const POST_TITLE = userNickname ? `${userNickname}님의 프리라이팅` : "프리라이팅"
+  const postTitle = userNickname ? `${userNickname}님의 프리라이팅` : "프리라이팅"
   const [content, setContent] = useState("")
   const [contentJson, setContentJson] = useState<any>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [timerStatus, setTimerStatus] = useState<WritingStatus>(WritingStatus.Paused)
-  const [isReached, setIsReached] = useState(false)
+  const [hasReachedTargetTime, setHasReachedTargetTime] = useState(false)
 
-  // 타이핑 감지를 위한 타임아웃 ref
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const typingPauseTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // 타이머 목표 시간 도달 처리
-  const handleTimerReach = useCallback(() => {
-    setIsReached(true)
+  const handleTargetTimeReached = useCallback(() => {
+    setHasReachedTargetTime(true)
     toast.success("목표 시간을 달성했습니다. 이제 글을 업로드할 수 있어요.", {position: 'bottom-center'})
-  }, [toast])
+  }, [])
 
-  // 텍스트 변경 시 타이핑 감지
-  const handleContentChange = (newContent: string) => {
-    setContent(newContent)
-
-    // 타이핑 중이면 WritingStatus를 Writing으로 설정
+  const handleContentChange = (updatedContent: string) => {
+    setContent(updatedContent)
     setTimerStatus(WritingStatus.Writing)
 
-    // 이전 타임아웃이 있으면 제거
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
+    if (typingPauseTimeoutRef.current) {
+      clearTimeout(typingPauseTimeoutRef.current)
     }
 
-    // 2초 동안 타이핑이 없으면 Paused로 설정
-    typingTimeoutRef.current = setTimeout(() => {
+    typingPauseTimeoutRef.current = setTimeout(() => {
       setTimerStatus(WritingStatus.Paused)
-    }, 2000)
+    }, TYPING_PAUSE_DELAY_IN_MILLISECONDS)
   }
 
-  // 컴포넌트 언마운트 시 타임아웃 정리
   useEffect(() => {
     return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current)
+      if (typingPauseTimeoutRef.current) {
+        clearTimeout(typingPauseTimeoutRef.current)
       }
     }
   }, [])
 
-  // 게시물 제출
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!currentUser || !boardId) return
 
-    if (!POST_TITLE.trim() || !content.trim()) {
+    const hasTitleAndContent = postTitle.trim() && content.trim()
+    if (!hasTitleAndContent) {
       toast.error("제목과 내용을 모두 입력해주세요.", {position: 'bottom-center'})
       return
     }
@@ -87,11 +84,17 @@ export default function PostFreewritingPage() {
     setIsSubmitting(true)
 
     try {
-      const contentWithTopic = topic
-        ? `>> 프리라이팅 주제: ${topic}\n\n${content}`
-        : content
+      const contentWithTopic = prependTopicToContent(content, selectedTopic)
 
-      await createPost(boardId, POST_TITLE, contentWithTopic, currentUser.uid, userNickname ?? '', PostVisibility.PRIVATE, contentJson)
+      await createPost(
+        boardId,
+        postTitle,
+        contentWithTopic,
+        currentUser.uid,
+        userNickname ?? '',
+        PostVisibility.PRIVATE,
+        contentJson
+      )
 
       toast.success("프리라이팅으로 쓴 글은 다른 사람에게 보이지 않아요.", {position: 'bottom-center'})
 
@@ -106,6 +109,8 @@ export default function PostFreewritingPage() {
     }
   }
 
+  const isUploadButtonDisabled = isSubmitting || !hasReachedTargetTime || !postTitle.trim() || !content.trim()
+
   if (!currentUser) {
     return <div>Loading user...</div>;
   }
@@ -117,13 +122,13 @@ export default function PostFreewritingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <PostFreewritingHeader
-        topic={topic}
+        topic={selectedTopic}
         timerDisplay={
           <CountupWritingTimer
             status={timerStatus}
-            reached={isReached}
-            onReach={handleTimerReach}
-            targetTime={targetTime}
+            reached={hasReachedTargetTime}
+            onReach={handleTargetTimeReached}
+            targetTime={targetTimeInSeconds}
           />
         }
         rightActions={
@@ -131,7 +136,7 @@ export default function PostFreewritingPage() {
             variant="default"
             type="submit"
             form="freewriting-form"
-            disabled={isSubmitting || !isReached || !POST_TITLE.trim() || !content.trim()}
+            disabled={isUploadButtonDisabled}
           >
             {isSubmitting ? (
               <>
