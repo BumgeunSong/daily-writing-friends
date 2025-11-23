@@ -87,7 +87,11 @@ export default function PostFreewritingPage() {
     setIsSubmitting(true)
 
     try {
-      await createPost(boardId, POST_TITLE, content, currentUser.uid, userNickname ?? '', PostVisibility.PRIVATE, contentJson)
+      const contentWithTopic = topic
+        ? `>> 프리라이팅 주제: ${topic}\n\n${content}`
+        : content
+
+      await createPost(boardId, POST_TITLE, contentWithTopic, currentUser.uid, userNickname ?? '', PostVisibility.PRIVATE, contentJson)
 
       toast.success("프리라이팅으로 쓴 글은 다른 사람에게 보이지 않아요.", {position: 'bottom-center'})
 
