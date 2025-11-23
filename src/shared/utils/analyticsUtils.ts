@@ -12,6 +12,8 @@ export enum AnalyticsEvent {
     START_FREE_WRITING = 'start_free_writing',
     // Finish FreeWriting
     FINISH_FREE_WRITING = 'finish_free_writing',
+    // View FreeWriting Tutorial
+    VIEW_FREE_WRITING_TUTORIAL = 'view_free_writing_tutorial',
 
 }
 
