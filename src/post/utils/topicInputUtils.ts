@@ -7,7 +7,7 @@
  */
 export function countNonWhitespaceCharacters(text: string): number {
   const characters = [...text]
-  const nonWhitespaceCharacters = characters.filter(character => character.trim())
+  const nonWhitespaceCharacters = characters.filter(character => character.trim() !== '')
   return nonWhitespaceCharacters.length
 }
 
@@ -35,7 +35,7 @@ export function truncateToNonWhitespaceLimit(text: string, maxLength: number): s
   let nonWhitespaceCharacterCount = 0
 
   const truncatedCharacters = characters.filter(character => {
-    const isNonWhitespace = character.trim()
+    const isNonWhitespace = character.trim() !== ''
 
     if (isNonWhitespace) {
       const isWithinLimit = nonWhitespaceCharacterCount < maxLength
