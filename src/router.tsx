@@ -31,6 +31,7 @@ import PostDetailPage from '@/post/components/PostDetailPage';
 import PostEditPage from '@/post/components/PostEditPage';
 import PostFreewritingIntro from '@/post/components/PostFreewritingIntro';
 import PostFreewritingPage from '@/post/components/PostFreewritingPage';
+import PostFreewritingTutorial from '@/post/components/PostFreewritingTutorial';
 import { createPostAction } from '@/post/hooks/useCreatePostAction';
 import { postDetailLoader } from '@/post/hooks/usePostDetailLoader';
 
@@ -125,6 +126,7 @@ const privateRoutesWithoutNav = {
   path: '',
   element: <PrivateRoutes />,
   children: [
+    { path: 'free-writing/tutorial', element: <PostFreewritingTutorial /> },
     { path: 'board/:boardId/free-writing/intro', element: <PostFreewritingIntro /> },
     { path: 'create/:boardId/free-writing', element: <PostFreewritingPage /> },
     { path: 'create/:boardId', element: <PostCreationPage />, action: createPostAction },
