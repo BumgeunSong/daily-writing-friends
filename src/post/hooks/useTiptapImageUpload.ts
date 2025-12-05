@@ -1,11 +1,11 @@
 import * as Sentry from '@sentry/react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import heic2any from 'heic2any';
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import type { Editor } from '@tiptap/react';
 import { storage } from '@/firebase';
 import { formatDate } from '@/post/utils/sanitizeHtml';
+import { processImageForUpload } from '@/post/utils/ImageUtils';
 
 interface UseTiptapImageUploadProps {
   editor: Editor | null;
@@ -20,46 +20,19 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
    * Returns the download URL or throws an error
    */
   const uploadFile = useCallback(async (file: File): Promise<string> => {
-    let processedFile = file;
-
-    // File size check (5MB)
+    // File size check (5MB) - check original file before processing
     if (file.size > 5 * 1024 * 1024) {
       throw new Error('File size exceeds 5MB limit');
     }
 
-    // HEIC file conversion
-    if (
-      file.type === 'image/heic' || 
-      file.type === 'image/heif' || 
-      file.name.toLowerCase().endsWith('.heic') || 
-      file.name.toLowerCase().endsWith('.heif')
-    ) {
-      try {
-        const convertedBlob = await heic2any({
-          blob: file,
-          toType: 'image/jpeg',
-          quality: 0.8
-        }) as Blob;
-        
-        // Convert blob to file with proper name
-        const convertedFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
-        processedFile = new File([convertedBlob], convertedFileName, {
-          type: 'image/jpeg',
-          lastModified: Date.now()
-        });
-      } catch (conversionError) {
-        Sentry.captureException(conversionError, {
-          tags: { feature: 'image_upload', operation: 'heic_conversion' },
-          extra: { fileName: file.name, fileSize: file.size, fileType: file.type }
-        });
-        throw new Error('Failed to convert HEIC file');
-      }
-    }
-
-    // File type check (after conversion)
-    if (!processedFile.type.startsWith('image/')) {
+    // File type check (allow HEIC by extension since some browsers don't set MIME type)
+    const isHeicByExtension = /\.(heic|heif)$/i.test(file.name);
+    if (!file.type.startsWith('image/') && !isHeicByExtension) {
       throw new Error('Only image files are allowed');
     }
+
+    // Process image (HEIC conversion + resize)
+    const processedFile = await processImageForUpload(file);
 
     // Generate storage path
     const now = new Date();
@@ -69,10 +42,10 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
 
     // Upload file
     const snapshot = await uploadBytes(storageRef, processedFile);
-    
+
     // Get download URL
     const downloadURL = await getDownloadURL(snapshot.ref);
-    
+
     return downloadURL;
   }, []);
 
