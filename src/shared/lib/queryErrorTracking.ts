@@ -9,6 +9,77 @@ import { getCurrentUserIdFromStorage } from '@/shared/utils/getCurrentUserId';
 const SLOW_QUERY_THRESHOLD = 3000; // 3 seconds
 const VERY_SLOW_QUERY_THRESHOLD = 5000; // 5 seconds
 
+/**
+ * Detect iOS IndexedDB connection errors
+ *
+ * iOS Safari/WebKit aggressively kills IndexedDB connections when:
+ * - App goes to background
+ * - Memory pressure is high
+ * - Tab is suspended
+ *
+ * These are transient errors that typically resolve on retry,
+ * so we handle them gracefully without alarming error reports.
+ */
+export function isIndexedDbConnectionError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+
+  const errorMessage = error.message?.toLowerCase() || '';
+  const isIndexedDbError = errorMessage.includes('indexeddb');
+  const isConnectionLost =
+    errorMessage.includes('connection') ||
+    errorMessage.includes('transaction') ||
+    errorMessage.includes('unavailable');
+
+  return isIndexedDbError && isConnectionLost;
+}
+
+/**
+ * Handle IndexedDB connection errors with minimal noise
+ *
+ * These errors are common on iOS and typically resolve automatically.
+ * We track them at a lower severity and group them together to reduce alert fatigue.
+ */
+function handleIndexedDbConnectionError(
+  _error: unknown,
+  queryKey: unknown[],
+  retryCount: number
+): void {
+  const queryDescription = getQueryKeyDescription(queryKey);
+
+  // Add a breadcrumb for debugging, but don't create a full error report
+  addSentryBreadcrumb(
+    `IndexedDB connection lost (retry ${retryCount}/3): ${queryDescription}`,
+    'indexeddb',
+    { queryKey, retryCount },
+    'warning'
+  );
+
+  // Only report to Sentry after all retries have been exhausted
+  // This reduces noise from transient errors that resolve on retry
+  const allRetriesExhausted = retryCount >= 3;
+
+  if (allRetriesExhausted) {
+    Sentry.withScope((scope) => {
+      // Group all IndexedDB connection errors together
+      scope.setFingerprint(['indexeddb', 'connection-lost']);
+      // Use 'warning' level since this is a known iOS limitation, not a bug
+      scope.setLevel('warning');
+      scope.setTag('error.type', 'indexeddb-connection');
+      scope.setTag('platform.issue', 'ios-webkit-indexeddb');
+      scope.setContext('indexedDb', {
+        queryKey,
+        queryDescription,
+        retryCount,
+        hint: 'iOS Safari/WebKit kills IndexedDB connections when app is backgrounded or under memory pressure. This is a known platform limitation.',
+      });
+      Sentry.captureMessage(
+        `IndexedDB connection lost after ${retryCount} retries: ${queryDescription}`,
+        'warning'
+      );
+    });
+  }
+}
+
 // Query key to Firebase path mappings
 const QUERY_KEY_PATTERNS = {
   posts: (queryKey: unknown[]) => ({ operation: 'read' as const, path: `boards/${queryKey[1]}/posts` }),
@@ -76,6 +147,13 @@ export function trackQueryError(
 ) {
   const { queryKey, state: { fetchFailureCount = 0 }, queryHash } = query;
   const queryDescription = getQueryKeyDescription(queryKey);
+
+  // Handle iOS IndexedDB connection errors gracefully
+  // These are transient errors caused by iOS killing background connections
+  if (isIndexedDbConnectionError(error)) {
+    handleIndexedDbConnectionError(error, queryKey, fetchFailureCount);
+    return;
+  }
 
   // Add error context and breadcrumb
   addErrorContext({
