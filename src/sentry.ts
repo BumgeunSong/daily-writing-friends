@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/react';
+import { isIndexedDbConnectionError } from '@/shared/lib/queryErrorTracking';
 
 // Configuration constants
 const SENTRY_CONFIG = {
@@ -26,6 +27,14 @@ const IGNORED_ERRORS = [
  * Apply custom fingerprinting to group similar errors
  */
 function applyCustomFingerprinting(event: Sentry.Event, error: Error): void {
+  // Group iOS IndexedDB connection errors together
+  // These are transient errors caused by iOS killing background connections
+  if (isIndexedDbConnectionError(error)) {
+    event.fingerprint = ['indexeddb', 'connection-lost'];
+    event.level = 'warning';
+    return;
+  }
+
   // Group Firebase permission errors
   if (error.message?.includes('Missing or insufficient permissions')) {
     event.fingerprint = ['firebase', 'permission-denied'];
