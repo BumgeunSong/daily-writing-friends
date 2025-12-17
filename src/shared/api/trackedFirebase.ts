@@ -119,7 +119,7 @@ function trackOperationError(
 
   if (isInternalAssertionError) {
     Sentry.withScope((scope) => {
-      scope.setFingerprint(['firestore', 'internal-assertion', 'sync-queue']);
+      scope.setFingerprint(['firestore', 'internal-assertion', 'sync-queue', operation]);
       scope.setLevel('warning');
       scope.setTag('firebase.operation', operation);
       scope.setTag('firebase.path', path);
