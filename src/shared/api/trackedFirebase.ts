@@ -30,7 +30,6 @@ import {
   updateDoc as firebaseUpdateDoc,
   deleteDoc as firebaseDeleteDoc,
   enableNetwork,
-  waitForPendingWrites,
   DocumentReference,
   CollectionReference,
   Query,
@@ -48,7 +47,7 @@ import { getCurrentUserIdFromStorage } from '@/shared/utils/getCurrentUserId';
 import { firestore } from '@/firebase';
 
 // Timeout for write operations - prevents infinite hangs when sync queue is corrupted
-const WRITE_OPERATION_TIMEOUT_MS = 30000;
+const WRITE_OPERATION_TIMEOUT_MS = 10000;
 
 // Timeout for re-enabling network connection before writes
 const NETWORK_ENABLE_TIMEOUT_MS = 5000;
@@ -186,11 +185,16 @@ function trackOperationError(
  * and send writes directly to the server.
  */
 async function forceEnableNetworkBeforeWrite(): Promise<void> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
   try {
     const enableNetworkPromise = enableNetwork(firestore);
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Network enable timeout')), NETWORK_ENABLE_TIMEOUT_MS)
-    );
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(
+        () => reject(new Error('Network enable timeout')),
+        NETWORK_ENABLE_TIMEOUT_MS
+      );
+    });
 
     await Promise.race([enableNetworkPromise, timeoutPromise]);
   } catch (error) {
@@ -201,6 +205,10 @@ async function forceEnableNetworkBeforeWrite(): Promise<void> {
       { error: error instanceof Error ? error.message : String(error) },
       'warning'
     );
+  } finally {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
   }
 }
 
@@ -217,43 +225,25 @@ async function executeWriteWithTimeoutProtection<T>(
   operationName: string,
   documentPath: string
 ): Promise<T> {
-  const operationPromise = writeOperation();
-  const timeoutPromise = new Promise<T>((_, reject) =>
-    setTimeout(() => {
-      const timeoutError = new Error(
-        `Firebase ${operationName} timed out after ${WRITE_OPERATION_TIMEOUT_MS}ms on ${documentPath}. ` +
-        'This may indicate network issues or Firestore sync queue corruption.'
-      );
-      reject(timeoutError);
-    }, WRITE_OPERATION_TIMEOUT_MS)
-  );
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-  return Promise.race([operationPromise, timeoutPromise]);
-}
-
-/**
- * Wait for all pending writes to sync to the server.
- * Returns true if sync completed, false if timed out.
- */
-async function waitForPendingWritesToSync(
-  timeoutMs: number = WRITE_OPERATION_TIMEOUT_MS
-): Promise<boolean> {
   try {
-    const syncPromise = waitForPendingWrites(firestore);
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Sync timeout')), timeoutMs)
-    );
+    const operationPromise = writeOperation();
+    const timeoutPromise = new Promise<T>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        const timeoutError = new Error(
+          `Firebase ${operationName} timed out after ${WRITE_OPERATION_TIMEOUT_MS}ms on ${documentPath}. ` +
+          'This may indicate network issues or Firestore sync queue corruption.'
+        );
+        reject(timeoutError);
+      }, WRITE_OPERATION_TIMEOUT_MS);
+    });
 
-    await Promise.race([syncPromise, timeoutPromise]);
-    return true;
-  } catch (error) {
-    addSentryBreadcrumb(
-      'Pending writes sync timed out',
-      'firebase',
-      { error: error instanceof Error ? error.message : String(error) },
-      'warning'
-    );
-    return false;
+    return await Promise.race([operationPromise, timeoutPromise]);
+  } finally {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
   }
 }
 
@@ -512,7 +502,4 @@ export const trackedFirebase = {
   addDoc,
   updateDoc,
   deleteDoc,
-
-  // Utility for waiting on pending writes
-  waitForSync: waitForPendingWritesToSync,
 };
