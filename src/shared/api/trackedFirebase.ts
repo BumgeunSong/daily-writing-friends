@@ -177,6 +177,12 @@ function trackOperationError(
 }
 
 /**
+ * Shared promise for enableNetwork() to prevent redundant concurrent calls.
+ * When multiple writes happen simultaneously, they all await the same enableNetwork() call.
+ */
+let pendingEnableNetworkPromise: Promise<void> | null = null;
+
+/**
  * Force-enable network connection before write operations.
  *
  * WHY THIS IS NEEDED:
@@ -184,33 +190,47 @@ function trackOperationError(
  * subsequent writes queue up in the corrupted offline queue and never complete.
  * By explicitly enabling the network before each write, we bypass the offline queue
  * and send writes directly to the server.
+ *
+ * This function deduplicates concurrent enableNetwork() calls - if multiple writes
+ * happen simultaneously, they all share the same enableNetwork() promise to avoid
+ * race conditions and unnecessary network churn.
  */
 async function forceEnableNetworkBeforeWrite(): Promise<void> {
+  // If enableNetwork is already in progress, reuse that promise
+  if (pendingEnableNetworkPromise !== null) {
+    return pendingEnableNetworkPromise;
+  }
+
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-  try {
-    const enableNetworkPromise = enableNetwork(firestore);
-    const timeoutPromise = new Promise((_, reject) => {
-      timeoutId = setTimeout(
-        () => reject(new Error('Network enable timeout')),
-        NETWORK_ENABLE_TIMEOUT_MS
-      );
-    });
+  pendingEnableNetworkPromise = (async () => {
+    try {
+      const enableNetworkPromise = enableNetwork(firestore);
+      const timeoutPromise = new Promise<void>((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(new Error('Network enable timeout')),
+          NETWORK_ENABLE_TIMEOUT_MS
+        );
+      });
 
-    await Promise.race([enableNetworkPromise, timeoutPromise]);
-  } catch (error) {
-    // Log but don't throw - the write operation itself will fail with a clearer error if truly offline
-    addSentryBreadcrumb(
-      'Failed to force-enable network before write',
-      'firebase',
-      { error: error instanceof Error ? error.message : String(error) },
-      'warning'
-    );
-  } finally {
-    if (timeoutId !== undefined) {
-      clearTimeout(timeoutId);
+      await Promise.race([enableNetworkPromise, timeoutPromise]);
+    } catch (error) {
+      // Log but don't throw - the write operation itself will fail with a clearer error if truly offline
+      addSentryBreadcrumb(
+        'Failed to force-enable network before write',
+        'firebase',
+        { error: error instanceof Error ? error.message : String(error) },
+        'warning'
+      );
+    } finally {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+      pendingEnableNetworkPromise = null;
     }
-  }
+  })();
+
+  return pendingEnableNetworkPromise;
 }
 
 /**
