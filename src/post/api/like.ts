@@ -1,8 +1,6 @@
 import {
   collection,
   doc,
-  addDoc,
-  deleteDoc,
   query,
   where,
   getDocs,
@@ -10,6 +8,7 @@ import {
   DocumentReference,
 } from 'firebase/firestore';
 import { firestore } from '@/firebase';
+import { trackedFirebase } from '@/shared/api/trackedFirebase';
 
 export interface CreateLikeParams {
   boardId: string;
@@ -50,7 +49,7 @@ export async function createLike(params: CreateLikeParams): Promise<string> {
     createdAt: serverTimestamp(),
   };
 
-  const newLikeRef = await addDoc(likesRef, newLikeData);
+  const newLikeRef = await trackedFirebase.addDoc(likesRef, newLikeData);
   return newLikeRef.id;
 }
 
@@ -66,5 +65,5 @@ export async function deleteUserLike(params: GetLikesParams, userId: string): Pr
   }
 
   const likeDoc = snapshot.docs[0];
-  await deleteDoc(likeDoc.ref);
+  await trackedFirebase.deleteDoc(likeDoc.ref);
 }

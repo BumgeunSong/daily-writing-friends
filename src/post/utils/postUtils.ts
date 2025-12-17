@@ -3,8 +3,6 @@ import {
   collection,
   doc,
   getDoc,
-  setDoc,
-  updateDoc,
   getDocs,
   query,
   orderBy,
@@ -14,6 +12,7 @@ import {
 } from 'firebase/firestore';
 
 import { firestore } from '@/firebase';
+import { trackedFirebase } from '@/shared/api/trackedFirebase';
 import { Post, PostVisibility, ProseMirrorDoc } from '@/post/model/Post';
 
 /**
@@ -76,7 +75,8 @@ export async function createPost(
     post.contentJson = contentJson;
   }
 
-  await setDoc(postRef, post);
+  // Use trackedFirebase for online-only write with timeout protection
+  await trackedFirebase.setDoc(postRef, post);
   return post;
 }
 
@@ -100,7 +100,8 @@ export const updatePost = async (
     updateData.contentJson = contentJson;
   }
 
-  await updateDoc(postRef, updateData);
+  // Use trackedFirebase for online-only write with timeout protection
+  await trackedFirebase.updateDoc(postRef, updateData);
 };
 
 export const fetchAdjacentPosts = async (boardId: string, currentPostId: string) => {
