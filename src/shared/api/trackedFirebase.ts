@@ -38,6 +38,7 @@ import {
   DocumentData,
   QuerySnapshot,
   DocumentSnapshot,
+  SetOptions,
 } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
 import * as Sentry from '@sentry/react';
@@ -319,7 +320,8 @@ export async function getDocs<T extends DocumentData>(
  */
 export async function setDoc<T extends DocumentData>(
   reference: DocumentReference<T>,
-  data: WithFieldValue<T>
+  data: WithFieldValue<T>,
+  options?: SetOptions
 ): Promise<void> {
   const documentPath = getPathFromReference(reference);
   const operationStartTime = Date.now();
@@ -330,7 +332,7 @@ export async function setDoc<T extends DocumentData>(
     await forceEnableNetworkBeforeWrite();
 
     await executeWriteWithTimeoutProtection(
-      () => firebaseSetDoc(reference, data),
+      () => options ? firebaseSetDoc(reference, data, options) : firebaseSetDoc(reference, data),
       'setDoc',
       documentPath
     );
