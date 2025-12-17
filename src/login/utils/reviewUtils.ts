@@ -1,5 +1,6 @@
-import { doc, setDoc, getDoc, collection, getDocs, Timestamp } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs, Timestamp } from "firebase/firestore";
 import { firestore } from "@/firebase";
+import { trackedFirebase } from "@/shared/api/trackedFirebase";
 import { JoinFormDataForActiveUser } from "@/login/model/join";
 import { Review } from "@/login/model/Review";
 
@@ -52,7 +53,7 @@ export async function addReviewToBoard(
  */
 export async function createReview(boardId: string, review: Review): Promise<void> {
   const reviewRef = doc(firestore, "boards", boardId, "reviews", review.reviewer.uid);
-  await setDoc(reviewRef, review);
+  await trackedFirebase.setDoc(reviewRef, review);
 }
 
 /**
