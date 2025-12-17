@@ -1,6 +1,7 @@
-import { doc, collection, setDoc, getDoc, getDocs, deleteDoc, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { doc, collection, getDoc, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { firestore } from '@/firebase';
+import { trackedFirebase } from '@/shared/api/trackedFirebase';
 import { Draft } from '@/draft/model/Draft';
 
 export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: string }, userId: string): Promise<Draft> {
@@ -16,8 +17,8 @@ export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: st
   };
   
   const draftRef = doc(firestore, `users/${userId}/drafts`, draftId);
-  await setDoc(draftRef, draftData, { merge: true });
-  
+  await trackedFirebase.setDoc(draftRef, draftData);
+
   return draftData;
 }
 
@@ -50,7 +51,7 @@ export async function getDraftById(userId: string, draftId: string): Promise<Dra
 
 export async function deleteDraft(userId: string, draftId: string): Promise<void> {
   const draftRef = doc(firestore, `users/${userId}/drafts`, draftId);
-  return deleteDoc(draftRef);
+  return trackedFirebase.deleteDoc(draftRef);
 }
 
 
