@@ -3,8 +3,6 @@ import {
   collection,
   doc,
   getDoc,
-  setDoc,
-  updateDoc,
   getDocs,
   query,
   orderBy,
@@ -14,6 +12,7 @@ import {
 } from 'firebase/firestore';
 
 import { firestore } from '@/firebase';
+import { trackedFirebase } from '@/shared/api/trackedFirebase';
 import { Post, PostVisibility } from '@post/model/Post';
 
 /**
@@ -61,7 +60,7 @@ export async function createPost(boardId: string, title: string, content: string
     createdAt: Timestamp.now(),
     visibility: visibility || PostVisibility.PUBLIC,
   };
-  return setDoc(postRef, post);
+  return trackedFirebase.setDoc(postRef, post);
 }
 
 export const updatePost = async (
@@ -71,9 +70,9 @@ export const updatePost = async (
   content: string
 ): Promise<void> => {
   const postRef = doc(firestore, `boards/${boardId}/posts`, postId);
-  await updateDoc(postRef, {
+  await trackedFirebase.updateDoc(postRef, {
     title,
-    content,  
+    content,
     thumbnailImageURL: extractFirstImageUrl(content),
     updatedAt: Timestamp.now(),
   });

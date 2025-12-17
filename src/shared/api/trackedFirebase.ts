@@ -1,3 +1,27 @@
+/**
+ * Tracked Firebase Operations with Online-Only Write Mode
+ *
+ * PROBLEM:
+ * Firestore's offline persistence can get into a corrupted state when:
+ * 1. User navigates away while operations are in progress
+ * 2. Network transitions between online/offline states
+ * 3. Multiple concurrent operations conflict in the sync queue
+ *
+ * When this happens, the internal AsyncQueueImpl throws:
+ * "FIRESTORE INTERNAL ASSERTION FAILED: Unexpected state"
+ *
+ * This causes ALL subsequent Firestore operations to hang indefinitely,
+ * resulting in infinite loading spinners for users.
+ *
+ * SOLUTION:
+ * For write operations (setDoc, addDoc, updateDoc, deleteDoc):
+ * 1. Force enable network before each write to bypass corrupted offline queue
+ * 2. Add timeout protection to prevent infinite hangs
+ * 3. Track and report errors with proper fingerprinting
+ *
+ * Read operations (getDoc, getDocs) continue to use offline cache normally.
+ */
+
 import {
   getDoc as firebaseGetDoc,
   getDocs as firebaseGetDocs,
@@ -5,6 +29,7 @@ import {
   addDoc as firebaseAddDoc,
   updateDoc as firebaseUpdateDoc,
   deleteDoc as firebaseDeleteDoc,
+  enableNetwork,
   DocumentReference,
   CollectionReference,
   Query,
@@ -13,12 +38,23 @@ import {
   DocumentData,
   QuerySnapshot,
   DocumentSnapshot,
+  SetOptions,
 } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
 import * as Sentry from '@sentry/react';
 import { addSentryBreadcrumb, setSentryContext } from '@/sentry';
 import { trackFirebasePermissionError } from '@/shared/utils/firebaseErrorTracking';
 import { getCurrentUserIdFromStorage } from '@/shared/utils/getCurrentUserId';
+import { firestore } from '@/firebase';
+
+// Timeout for write operations - prevents infinite hangs when sync queue is corrupted
+const WRITE_OPERATION_TIMEOUT_MS = 10000;
+
+// Timeout for re-enabling network connection before writes
+const NETWORK_ENABLE_TIMEOUT_MS = 5000;
+
+// Threshold for logging slow operations
+const SLOW_OPERATION_THRESHOLD_MS = 3000;
 
 /**
  * Extract path from Firebase reference using only public APIs
@@ -77,6 +113,29 @@ function trackOperationError(
 ) {
   const userId = getCurrentUserIdFromStorage();
 
+  // Check for Firestore internal assertion errors (sync queue corruption)
+  const isInternalAssertionError =
+    error instanceof Error &&
+    error.message?.includes('INTERNAL ASSERTION FAILED');
+
+  if (isInternalAssertionError) {
+    Sentry.withScope((scope) => {
+      scope.setFingerprint(['firestore', 'internal-assertion', 'sync-queue', operation]);
+      scope.setLevel('warning');
+      scope.setTag('firebase.operation', operation);
+      scope.setTag('firebase.path', path);
+      scope.setTag('error.type', 'firestore-sync-corruption');
+      scope.setContext('firestoreSyncError', {
+        operation,
+        path,
+        userId,
+        hint: 'Firestore sync queue entered unexpected state. This typically happens when operations are interrupted during offline/online transitions.',
+      });
+      Sentry.captureException(error);
+    });
+    return;
+  }
+
   if (error instanceof FirebaseError) {
     if (error.code === 'permission-denied') {
       trackFirebasePermissionError(error, {
@@ -114,6 +173,98 @@ function trackOperationError(
     );
 
     Sentry.captureException(enhancedError);
+  }
+}
+
+/**
+ * Shared promise for enableNetwork() to prevent redundant concurrent calls.
+ * When multiple writes happen simultaneously, they all await the same enableNetwork() call.
+ */
+let pendingEnableNetworkPromise: Promise<void> | null = null;
+
+/**
+ * Force-enable network connection before write operations.
+ *
+ * WHY THIS IS NEEDED:
+ * When Firestore's offline sync queue gets corrupted (e.g., user navigates away mid-operation),
+ * subsequent writes queue up in the corrupted offline queue and never complete.
+ * By explicitly enabling the network before each write, we bypass the offline queue
+ * and send writes directly to the server.
+ *
+ * This function deduplicates concurrent enableNetwork() calls - if multiple writes
+ * happen simultaneously, they all share the same enableNetwork() promise to avoid
+ * race conditions and unnecessary network churn.
+ */
+async function forceEnableNetworkBeforeWrite(): Promise<void> {
+  // If enableNetwork is already in progress, reuse that promise
+  if (pendingEnableNetworkPromise !== null) {
+    return pendingEnableNetworkPromise;
+  }
+
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  pendingEnableNetworkPromise = (async () => {
+    try {
+      const enableNetworkPromise = enableNetwork(firestore);
+      const timeoutPromise = new Promise<void>((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(new Error('Network enable timeout')),
+          NETWORK_ENABLE_TIMEOUT_MS
+        );
+      });
+
+      await Promise.race([enableNetworkPromise, timeoutPromise]);
+    } catch (error) {
+      // Log but don't throw - the write operation itself will fail with a clearer error if truly offline
+      addSentryBreadcrumb(
+        'Failed to force-enable network before write',
+        'firebase',
+        { error: error instanceof Error ? error.message : String(error) },
+        'warning'
+      );
+    } finally {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+      pendingEnableNetworkPromise = null;
+    }
+  })();
+
+  return pendingEnableNetworkPromise;
+}
+
+/**
+ * Execute an operation with timeout protection.
+ *
+ * WHY THIS IS NEEDED:
+ * When Firestore's sync queue is corrupted, operations can hang indefinitely
+ * because the queue never processes them. This wrapper ensures we fail fast
+ * with a clear error instead of showing infinite loading spinners to users.
+ */
+async function executeWriteWithTimeoutProtection<T>(
+  writeOperation: () => Promise<T>,
+  operationName: string,
+  documentPath: string
+): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  try {
+    const operationPromise = writeOperation();
+    const timeoutPromise = new Promise<T>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        const timeoutError = new Error(
+          `Firebase ${operationName} timed out after ${WRITE_OPERATION_TIMEOUT_MS}ms on ${documentPath}. ` +
+          'This may indicate network issues or Firestore sync queue corruption.'
+        );
+        reject(timeoutError);
+      }, WRITE_OPERATION_TIMEOUT_MS);
+    });
+
+    return await Promise.race([operationPromise, timeoutPromise]);
+  } finally {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId);
+    }
   }
 }
 
@@ -180,130 +331,195 @@ export async function getDocs<T extends DocumentData>(
 }
 
 /**
- * Tracked version of setDoc
+ * Write a document with online-only mode to prevent sync queue corruption.
+ *
+ * This wrapper:
+ * 1. Forces network connection before write (bypasses corrupted offline queue)
+ * 2. Adds timeout protection (prevents infinite hangs)
+ * 3. Tracks performance and errors
  */
 export async function setDoc<T extends DocumentData>(
   reference: DocumentReference<T>,
-  data: WithFieldValue<T>
+  data: WithFieldValue<T>,
+  options?: SetOptions
 ): Promise<void> {
-  const path = getPathFromReference(reference);
-  const startTime = Date.now();
+  const documentPath = getPathFromReference(reference);
+  const operationStartTime = Date.now();
 
-  trackOperationStart('setDoc', path);
+  trackOperationStart('setDoc', documentPath);
 
   try {
-    await firebaseSetDoc(reference, data);
-    const duration = Date.now() - startTime;
+    await forceEnableNetworkBeforeWrite();
 
-    if (duration > 3000) {
+    await executeWriteWithTimeoutProtection(
+      () => options ? firebaseSetDoc(reference, data, options) : firebaseSetDoc(reference, data),
+      'setDoc',
+      documentPath
+    );
+
+    const operationDuration = Date.now() - operationStartTime;
+    const isSlowOperation = operationDuration > SLOW_OPERATION_THRESHOLD_MS;
+
+    if (isSlowOperation) {
       addSentryBreadcrumb(
-        `Slow Firebase operation: setDoc took ${duration}ms`,
+        `Slow Firebase setDoc: ${operationDuration}ms`,
         'performance',
-        { path, duration },
+        { path: documentPath, duration: operationDuration },
         'warning'
       );
     }
   } catch (error) {
-    trackOperationError(error, 'write', path);
+    trackOperationError(error, 'write', documentPath);
     throw error;
   }
 }
 
 /**
- * Tracked version of addDoc
+ * Add a new document with online-only mode to prevent sync queue corruption.
+ *
+ * This wrapper:
+ * 1. Forces network connection before write (bypasses corrupted offline queue)
+ * 2. Adds timeout protection (prevents infinite hangs)
+ * 3. Tracks performance and errors
  */
 export async function addDoc<T extends DocumentData>(
   reference: CollectionReference<T>,
   data: WithFieldValue<T>
 ): Promise<DocumentReference<T>> {
-  const path = getPathFromReference(reference);
-  const startTime = Date.now();
+  const collectionPath = getPathFromReference(reference);
+  const operationStartTime = Date.now();
 
-  trackOperationStart('addDoc', path);
+  trackOperationStart('addDoc', collectionPath);
 
   try {
-    const result = await firebaseAddDoc(reference, data);
-    const duration = Date.now() - startTime;
+    await forceEnableNetworkBeforeWrite();
 
-    if (duration > 3000) {
+    const newDocumentRef = await executeWriteWithTimeoutProtection(
+      () => firebaseAddDoc(reference, data),
+      'addDoc',
+      collectionPath
+    );
+
+    const operationDuration = Date.now() - operationStartTime;
+    const isSlowOperation = operationDuration > SLOW_OPERATION_THRESHOLD_MS;
+
+    if (isSlowOperation) {
       addSentryBreadcrumb(
-        `Slow Firebase operation: addDoc took ${duration}ms`,
+        `Slow Firebase addDoc: ${operationDuration}ms`,
         'performance',
-        { path, duration },
+        { path: collectionPath, duration: operationDuration },
         'warning'
       );
     }
 
-    return result;
+    return newDocumentRef;
   } catch (error) {
-    trackOperationError(error, 'create', path);
+    trackOperationError(error, 'create', collectionPath);
     throw error;
   }
 }
 
 /**
- * Tracked version of updateDoc
+ * Update a document with online-only mode to prevent sync queue corruption.
+ *
+ * This wrapper:
+ * 1. Forces network connection before write (bypasses corrupted offline queue)
+ * 2. Adds timeout protection (prevents infinite hangs)
+ * 3. Tracks performance and errors
  */
 export async function updateDoc<T extends DocumentData>(
   reference: DocumentReference<T>,
   data: UpdateData<T>
 ): Promise<void> {
-  const path = getPathFromReference(reference);
-  const startTime = Date.now();
+  const documentPath = getPathFromReference(reference);
+  const operationStartTime = Date.now();
 
-  trackOperationStart('updateDoc', path);
+  trackOperationStart('updateDoc', documentPath);
 
   try {
-    await firebaseUpdateDoc(reference, data);
-    const duration = Date.now() - startTime;
+    await forceEnableNetworkBeforeWrite();
 
-    if (duration > 3000) {
+    await executeWriteWithTimeoutProtection(
+      () => firebaseUpdateDoc(reference, data),
+      'updateDoc',
+      documentPath
+    );
+
+    const operationDuration = Date.now() - operationStartTime;
+    const isSlowOperation = operationDuration > SLOW_OPERATION_THRESHOLD_MS;
+
+    if (isSlowOperation) {
       addSentryBreadcrumb(
-        `Slow Firebase operation: updateDoc took ${duration}ms`,
+        `Slow Firebase updateDoc: ${operationDuration}ms`,
         'performance',
-        { path, duration },
+        { path: documentPath, duration: operationDuration },
         'warning'
       );
     }
   } catch (error) {
-    trackOperationError(error, 'update', path);
+    trackOperationError(error, 'update', documentPath);
     throw error;
   }
 }
 
 /**
- * Tracked version of deleteDoc
+ * Delete a document with online-only mode to prevent sync queue corruption.
+ *
+ * This wrapper:
+ * 1. Forces network connection before write (bypasses corrupted offline queue)
+ * 2. Adds timeout protection (prevents infinite hangs)
+ * 3. Tracks performance and errors
  */
 export async function deleteDoc(reference: DocumentReference): Promise<void> {
-  const path = getPathFromReference(reference);
-  const startTime = Date.now();
+  const documentPath = getPathFromReference(reference);
+  const operationStartTime = Date.now();
 
-  trackOperationStart('deleteDoc', path);
+  trackOperationStart('deleteDoc', documentPath);
 
   try {
-    await firebaseDeleteDoc(reference);
-    const duration = Date.now() - startTime;
+    await forceEnableNetworkBeforeWrite();
 
-    if (duration > 3000) {
+    await executeWriteWithTimeoutProtection(
+      () => firebaseDeleteDoc(reference),
+      'deleteDoc',
+      documentPath
+    );
+
+    const operationDuration = Date.now() - operationStartTime;
+    const isSlowOperation = operationDuration > SLOW_OPERATION_THRESHOLD_MS;
+
+    if (isSlowOperation) {
       addSentryBreadcrumb(
-        `Slow Firebase operation: deleteDoc took ${duration}ms`,
+        `Slow Firebase deleteDoc: ${operationDuration}ms`,
         'performance',
-        { path, duration },
+        { path: documentPath, duration: operationDuration },
         'warning'
       );
     }
   } catch (error) {
-    trackOperationError(error, 'delete', path);
+    trackOperationError(error, 'delete', documentPath);
     throw error;
   }
 }
 
 /**
- * Export tracked Firebase object for easy migration
+ * Tracked Firebase operations with online-only write mode.
+ *
+ * Use these instead of direct Firebase imports for:
+ * - Automatic error tracking and Sentry integration
+ * - Online-only writes that prevent sync queue corruption
+ * - Timeout protection against infinite hangs
+ * - Performance monitoring
+ *
+ * Read operations (getDoc, getDocs) work normally with offline cache.
+ * Write operations (setDoc, addDoc, updateDoc, deleteDoc) force online mode.
  */
 export const trackedFirebase = {
+  // Read operations (use offline cache normally)
   getDoc,
   getDocs,
+
+  // Write operations (force online mode to prevent sync corruption)
   setDoc,
   addDoc,
   updateDoc,

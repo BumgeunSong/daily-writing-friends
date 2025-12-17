@@ -3,7 +3,7 @@
 // Abstract repetitive Firebase logic into helpers
 
 import { User as FirebaseUser } from 'firebase/auth';
-import { doc, setDoc as firebaseSetDoc, updateDoc as firebaseUpdateDoc, deleteDoc as firebaseDeleteDoc, serverTimestamp, collection, where, query, Timestamp, writeBatch, orderBy, CollectionReference, Query, or } from 'firebase/firestore';
+import { doc, serverTimestamp, collection, where, query, Timestamp, writeBatch, orderBy, CollectionReference, Query, or } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, storage } from '@/firebase';
 import { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
@@ -20,7 +20,7 @@ export async function fetchUser(uid: string): Promise<User | null> {
 // Firestore에 User 데이터 생성
 export async function createUser(data: User): Promise<void> {
     const userDocRef = doc(firestore, 'users', data.uid);
-    await firebaseSetDoc(userDocRef, {
+    await trackedFirebase.setDoc(userDocRef, {
         ...data,
         updatedAt: serverTimestamp(),
     });
@@ -29,7 +29,7 @@ export async function createUser(data: User): Promise<void> {
 // Firestore의 User 데이터 수정
 export async function updateUser(uid: string, data: Partial<User>): Promise<void> {
     const userDocRef = doc(firestore, 'users', uid);
-    await firebaseUpdateDoc(userDocRef, {
+    await trackedFirebase.updateDoc(userDocRef, {
         ...data,
         updatedAt: serverTimestamp(),
     });
@@ -38,7 +38,7 @@ export async function updateUser(uid: string, data: Partial<User>): Promise<void
 // Firestore의 User 데이터 삭제
 export async function deleteUser(uid: string): Promise<void> {
     const userDocRef = doc(firestore, 'users', uid);
-    await firebaseDeleteDoc(userDocRef);
+    await trackedFirebase.deleteDoc(userDocRef);
 }
 
 // 특정 boardIds에 write 권한이 있는 모든 사용자 데이터 가져오기

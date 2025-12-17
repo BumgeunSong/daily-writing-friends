@@ -2,15 +2,13 @@ import {
   collection,
   getDocs,
   getCountFromServer,
-  addDoc,
   doc,
   serverTimestamp,
-  updateDoc,
-  deleteDoc,
   getDoc,
 } from 'firebase/firestore';
 import { Reply } from '@/comment/model/Reply';
 import { firestore } from '@/firebase';
+import { trackedFirebase } from '@/shared/api/trackedFirebase';
 import { buildNotInQuery } from '@/user/api/user';
 
 /**
@@ -26,7 +24,7 @@ export async function createReply(
   userProfileImage: string,
 ) {
   const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
-  await addDoc(collection(postRef, 'comments', commentId, 'replies'), {
+  await trackedFirebase.addDoc(collection(postRef, 'comments', commentId, 'replies'), {
     content,
     userId,
     userName,
@@ -46,7 +44,7 @@ export async function updateReplyToComment(
   content: string,
 ) {
   const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
-  await updateDoc(doc(postRef, 'comments', commentId, 'replies', replyId), { content });
+  await trackedFirebase.updateDoc(doc(postRef, 'comments', commentId, 'replies', replyId), { content });
 }
 
 /**
@@ -59,7 +57,7 @@ export async function deleteReplyToComment(
   replyId: string,
 ) {
   const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
-  await deleteDoc(doc(postRef, 'comments', commentId, 'replies', replyId));
+  await trackedFirebase.deleteDoc(doc(postRef, 'comments', commentId, 'replies', replyId));
 }
 
 /**
