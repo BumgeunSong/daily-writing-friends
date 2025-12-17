@@ -1,15 +1,13 @@
 import {
   collection,
   getDocs,
-  addDoc,
   doc,
   serverTimestamp,
-  updateDoc,
-  deleteDoc,
   getDoc,
 } from 'firebase/firestore';
 import { Comment } from '@/comment/model/Comment';
 import { firestore } from '@/firebase';
+import { trackedFirebase } from '@/shared/api/trackedFirebase';
 import { buildNotInQuery } from '@/user/api/user';
 
 /**
@@ -24,7 +22,7 @@ export async function createComment(
   userProfileImage: string,
 ) {
   const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
-  await addDoc(collection(postRef, 'comments'), {
+  await trackedFirebase.addDoc(collection(postRef, 'comments'), {
     content,
     userId,
     userName,
@@ -43,7 +41,7 @@ export async function updateCommentToPost(
   content: string,
 ) {
   const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
-  await updateDoc(doc(postRef, 'comments', commentId), { content });
+  await trackedFirebase.updateDoc(doc(postRef, 'comments', commentId), { content });
 }
 
 /**
@@ -51,7 +49,7 @@ export async function updateCommentToPost(
  */
 export async function deleteCommentToPost(boardId: string, postId: string, commentId: string) {
   const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
-  await deleteDoc(doc(postRef, 'comments', commentId));
+  await trackedFirebase.deleteDoc(doc(postRef, 'comments', commentId));
 }
 
 /**

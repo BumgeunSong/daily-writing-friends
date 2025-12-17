@@ -1,8 +1,6 @@
 import {
   collection,
   doc,
-  addDoc,
-  deleteDoc,
   query,
   where,
   getDocs,
@@ -11,6 +9,7 @@ import {
 } from 'firebase/firestore';
 import { Reaction } from '@/comment/model/Reaction';
 import { firestore } from '@/firebase';
+import { trackedFirebase } from '@/shared/api/trackedFirebase';
 
 export interface CreateReactionParams {
   boardId: string;
@@ -72,7 +71,7 @@ export async function createReaction(params: CreateReactionParams): Promise<stri
     createdAt: serverTimestamp(),
     reactionUser
   };
-  const newReactionRef = await addDoc(reactionsRef, newReactionData);
+  const newReactionRef = await trackedFirebase.addDoc(reactionsRef, newReactionData);
   return newReactionRef.id;
 }
 
@@ -80,7 +79,7 @@ export async function deleteReaction(params: DeleteReactionParams): Promise<void
   const { reactionId } = params;
   const entityRef = getEntityRef(params);
   const reactionRef = doc(entityRef, 'reactions', reactionId);
-  await deleteDoc(reactionRef);
+  await trackedFirebase.deleteDoc(reactionRef);
 }
 
 export async function deleteUserReaction(
@@ -100,7 +99,7 @@ export async function deleteUserReaction(
     return;
   }
   const reactionDoc = snapshot.docs[0];
-  await deleteDoc(reactionDoc.ref);
+  await trackedFirebase.deleteDoc(reactionDoc.ref);
 }
 
 export async function getReactions(params: GetReactionsParams): Promise<Reaction[]> {
