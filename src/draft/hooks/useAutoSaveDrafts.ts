@@ -9,6 +9,7 @@ interface UseAutoSaveDraftsProps {
   content: string;
   initialDraftId?: string;
   intervalMs?: number; // 주기적 저장 (기본 10000)
+  enabled?: boolean; // 자동 저장 활성화 여부 (기본 true)
 }
 
 interface UseAutoSaveDraftsResult {
@@ -33,6 +34,7 @@ interface UseAutoSaveDraftsResult {
  * @param {string} params.content - 현재 입력 중인 본문
  * @param {string} [params.initialDraftId] - 최초 draftId (있으면 해당 draft를 이어서 저장)
  * @param {number} [params.intervalMs=10000] - 주기적 저장 간격(ms)
+ * @param {boolean} [params.enabled=true] - 자동 저장 활성화 여부 (form 제출 중 비활성화용)
  * 
  * @returns {Object} 반환값 객체
  * @returns {string|null} return.draftId - 현재 임시저장 draft의 ID
@@ -64,6 +66,7 @@ export function useAutoSaveDrafts({
   content,
   initialDraftId,
   intervalMs = 10000,
+  enabled = true,
 }: UseAutoSaveDraftsProps): UseAutoSaveDraftsResult {
   const [draftId, setDraftId] = useState<string | null>(initialDraftId || null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
@@ -97,8 +100,10 @@ export function useAutoSaveDrafts({
     await saveDraftMutate();
   }, [saveDraftMutate]);
 
-  // useInterval로 10초마다 자동 저장
+  // useInterval로 10초마다 자동 저장 (enabled가 false면 비활성화)
   useInterval(() => {
+    if (!enabled) return;
+
     const shouldSave = titleRef.current !== lastSavedTitle || contentRef.current !== lastSavedContent;
     if (shouldSave) {
       saveDraftMutate();
