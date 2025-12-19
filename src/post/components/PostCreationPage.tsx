@@ -88,6 +88,7 @@ export default function PostCreationPage() {
     content,
     initialDraftId: loadedDraftId || undefined,
     intervalMs: 10000,
+    enabled: !isSubmitting,
   });
   return (
     <div>
