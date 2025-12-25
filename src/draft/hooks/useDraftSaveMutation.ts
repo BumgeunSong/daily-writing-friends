@@ -1,33 +1,40 @@
+import { MutableRefObject } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { saveDraft } from '@/draft/utils/draftUtils';
+import { Draft } from '@/draft/model/Draft';
 
 interface UseDraftSaveMutationProps {
-  draftId: string | null;
+  draftIdRef: MutableRefObject<string | null>;
   boardId: string;
   userId: string | undefined;
-  title: string;
-  content: string;
-  onSaved?: (savedDraft: any) => void;
+  titleRef: MutableRefObject<string>;
+  contentRef: MutableRefObject<string>;
+  onSaved?: (savedDraft: Draft) => void;
 }
 
 export function useDraftSaveMutation({
-  draftId,
+  draftIdRef,
   boardId,
   userId,
-  title,
-  content,
+  titleRef,
+  contentRef,
   onSaved,
 }: UseDraftSaveMutationProps) {
   return useMutation({
     mutationFn: async () => {
       if (!userId || !boardId) throw new Error('로그인 또는 게시판 정보가 없습니다.');
-      if (!title.trim() && !content.trim()) return null;
+
+      const currentTitle = titleRef.current;
+      const currentContent = contentRef.current;
+
+      if (!currentTitle.trim() && !currentContent.trim()) return null;
+
       const savedDraft = await saveDraft(
         {
-          id: draftId || undefined,
+          id: draftIdRef.current || undefined,
           boardId,
-          title,
-          content,
+          title: currentTitle,
+          content: currentContent,
         },
         userId
       );

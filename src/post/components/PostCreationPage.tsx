@@ -81,7 +81,7 @@ export default function PostCreationPage() {
     }
   }, [actionData?.error]);
 
-  useAutoSaveDrafts({
+  const { draftId: autoSavedDraftId } = useAutoSaveDrafts({
     boardId: boardId || '',
     userId: currentUser?.uid,
     title,
@@ -90,6 +90,9 @@ export default function PostCreationPage() {
     intervalMs: 10000,
     enabled: !isSubmitting,
   });
+
+  // Use the auto-saved draft ID, or fall back to the loaded draft ID
+  const currentDraftId = autoSavedDraftId || loadedDraftId || '';
   return (
     <div>
       <PostEditorHeader
@@ -124,6 +127,7 @@ export default function PostCreationPage() {
           <input type='hidden' name='title' value={title} />
           <input type='hidden' name='content' value={content} />
           <input type='hidden' name='contentJson' value={safeStringifyJson(contentJson)} />
+          <input type='hidden' name='draftId' value={currentDraftId} />
 
           <PostTitleEditor value={title} onChange={(e) => setTitle(e.target.value)} />
           <PostEditor
