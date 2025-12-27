@@ -35,9 +35,7 @@ function useConcurrentOperationGuard() {
     }
   };
 
-  const isOperationInFlight = () => currentOperationPromiseRef.current !== null;
-
-  return { executeWithGuard, isOperationInFlight };
+  return { executeWithGuard };
 }
 
 describe('useLatestValueRef', () => {
@@ -103,24 +101,10 @@ describe('useConcurrentOperationGuard', () => {
       expect(mockOperation).toHaveBeenCalledTimes(1);
       expect(operationResult).toBe('success');
     });
-
-    it('reports isOperationInFlight as false before and after', async () => {
-      const { result } = renderHook(() => useConcurrentOperationGuard());
-
-      expect(result.current.isOperationInFlight()).toBe(false);
-
-      const mockOperation = vi.fn().mockResolvedValue('done');
-
-      await act(async () => {
-        await result.current.executeWithGuard(mockOperation);
-      });
-
-      expect(result.current.isOperationInFlight()).toBe(false);
-    });
   });
 
   describe('when operation is in-flight', () => {
-    it('waits for the current operation to complete before returning', async () => {
+    it('waits for the current operation and returns undefined without executing', async () => {
       const { result } = renderHook(() => useConcurrentOperationGuard());
 
       let resolveFirst: (value: string) => void;
@@ -138,8 +122,6 @@ describe('useConcurrentOperationGuard', () => {
           firstResult = r;
         });
       });
-
-      expect(result.current.isOperationInFlight()).toBe(true);
 
       act(() => {
         result.current.executeWithGuard(secondOperation).then((r) => {
@@ -160,31 +142,10 @@ describe('useConcurrentOperationGuard', () => {
 
       expect(secondOperation).not.toHaveBeenCalled();
     });
-
-    it('reports isOperationInFlight as true during execution', async () => {
-      const { result } = renderHook(() => useConcurrentOperationGuard());
-
-      let resolveOperation: () => void;
-      const operationPromise = new Promise<void>((resolve) => {
-        resolveOperation = resolve;
-      });
-
-      act(() => {
-        result.current.executeWithGuard(() => operationPromise);
-      });
-
-      expect(result.current.isOperationInFlight()).toBe(true);
-
-      await act(async () => {
-        resolveOperation!();
-      });
-
-      expect(result.current.isOperationInFlight()).toBe(false);
-    });
   });
 
   describe('when operation throws an error', () => {
-    it('resets guard state after error', async () => {
+    it('resets guard state and allows subsequent operations', async () => {
       const { result } = renderHook(() => useConcurrentOperationGuard());
 
       const error = new Error('Operation failed');
@@ -197,8 +158,6 @@ describe('useConcurrentOperationGuard', () => {
           expect(e).toBe(error);
         }
       });
-
-      expect(result.current.isOperationInFlight()).toBe(false);
 
       const successOperation = vi.fn().mockResolvedValue('recovered');
       let recoveredResult: string | undefined;

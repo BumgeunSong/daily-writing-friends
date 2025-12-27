@@ -58,9 +58,7 @@ function useConcurrentOperationGuard() {
     }
   }, []);
 
-  const isOperationInFlight = useCallback(() => currentOperationPromiseRef.current !== null, []);
-
-  return { executeWithGuard, isOperationInFlight };
+  return { executeWithGuard };
 }
 
 function hasContentChanged(
@@ -91,7 +89,7 @@ export function useAutoSaveDrafts({
   const currentContentRef = useLatestValueRef(content);
   const isAutoSaveEnabledRef = useLatestValueRef(enabled);
 
-  const { executeWithGuard, isOperationInFlight } = useConcurrentOperationGuard();
+  const { executeWithGuard } = useConcurrentOperationGuard();
 
   const { mutateAsync: saveDraftMutate, isLoading, error } = useDraftSaveMutation({
     draftIdRef,
@@ -114,9 +112,6 @@ export function useAutoSaveDrafts({
   useInterval(() => {
     const isAutoSaveDisabled = !isAutoSaveEnabledRef.current;
     if (isAutoSaveDisabled) return;
-
-    const isSaveAlreadyInProgress = isOperationInFlight();
-    if (isSaveAlreadyInProgress) return;
 
     const currentContent: DraftContent = {
       title: currentTitleRef.current,

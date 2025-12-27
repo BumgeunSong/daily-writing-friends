@@ -91,8 +91,7 @@ export default function PostCreationPage() {
     enabled: !isSubmitting,
   });
 
-  // Use the auto-saved draft ID, or fall back to the loaded draft ID
-  const currentDraftId = autoSavedDraftId || loadedDraftId || '';
+  const draftIdToSubmit = autoSavedDraftId || loadedDraftId || '';
   return (
     <div>
       <PostEditorHeader
@@ -127,7 +126,7 @@ export default function PostCreationPage() {
           <input type='hidden' name='title' value={title} />
           <input type='hidden' name='content' value={content} />
           <input type='hidden' name='contentJson' value={safeStringifyJson(contentJson)} />
-          <input type='hidden' name='draftId' value={currentDraftId} />
+          <input type='hidden' name='draftId' value={draftIdToSubmit} />
 
           <PostTitleEditor value={title} onChange={(e) => setTitle(e.target.value)} />
           <PostEditor
