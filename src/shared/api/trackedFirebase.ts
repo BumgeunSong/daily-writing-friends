@@ -57,6 +57,36 @@ const NETWORK_ENABLE_TIMEOUT_MS = 5000;
 const SLOW_OPERATION_THRESHOLD_MS = 3000;
 
 /**
+ * Page lifecycle state tracking for Mobile Safari compatibility.
+ *
+ * Mobile Safari fires pagehide/visibilitychange events aggressively during navigation,
+ * which can put Firestore's AsyncQueue into "restricted" mode. If we try to enqueue
+ * new operations after this, we get "INTERNAL ASSERTION FAILED: Unexpected state".
+ *
+ * This guard prevents us from starting new Firestore operations during page unload.
+ */
+let isPageUnloading = false;
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', () => {
+    isPageUnloading = true;
+  });
+
+  // Reset on pageshow (handles back-forward cache restoration)
+  window.addEventListener('pageshow', () => {
+    isPageUnloading = false;
+  });
+}
+
+/**
+ * Check if the page is being unloaded or hidden.
+ * Used to prevent Firestore operations that would fail due to SDK shutdown.
+ */
+function isPageBeingUnloaded(): boolean {
+  return isPageUnloading;
+}
+
+/**
  * Extract path from Firebase reference using only public APIs
  */
 function getPathFromReference(ref: DocumentReference | CollectionReference | Query): string {
@@ -119,6 +149,13 @@ function trackOperationError(
     error.message?.includes('INTERNAL ASSERTION FAILED');
 
   if (isInternalAssertionError) {
+    // Suppress errors during page unload - these are expected on Mobile Safari
+    // when Firestore's AsyncQueue enters restricted mode during navigation
+    if (isPageBeingUnloaded()) {
+      console.debug('Suppressed Firestore assertion error during page unload');
+      return;
+    }
+
     Sentry.withScope((scope) => {
       scope.setFingerprint(['firestore', 'internal-assertion', 'sync-queue', operation]);
       scope.setLevel('warning');
@@ -196,6 +233,11 @@ let pendingEnableNetworkPromise: Promise<void> | null = null;
  * race conditions and unnecessary network churn.
  */
 async function forceEnableNetworkBeforeWrite(): Promise<void> {
+  // Skip if page is unloading - Firestore SDK is likely in restricted mode
+  if (isPageBeingUnloaded()) {
+    return;
+  }
+
   // If enableNetwork is already in progress, reuse that promise
   if (pendingEnableNetworkPromise !== null) {
     return pendingEnableNetworkPromise;
@@ -274,6 +316,11 @@ async function executeWriteWithTimeoutProtection<T>(
 export async function getDoc<T extends DocumentData>(
   reference: DocumentReference<T>
 ): Promise<DocumentSnapshot<T>> {
+  // Skip if page is unloading to avoid Firestore assertion errors
+  if (isPageBeingUnloaded()) {
+    throw new Error('Operation cancelled: page is unloading');
+  }
+
   const path = getPathFromReference(reference);
   const startTime = Date.now();
 
@@ -305,6 +352,11 @@ export async function getDoc<T extends DocumentData>(
 export async function getDocs<T extends DocumentData>(
   query: Query<T>
 ): Promise<QuerySnapshot<T>> {
+  // Skip if page is unloading to avoid Firestore assertion errors
+  if (isPageBeingUnloaded()) {
+    throw new Error('Operation cancelled: page is unloading');
+  }
+
   const path = getPathFromReference(query);
   const startTime = Date.now();
 
@@ -343,6 +395,11 @@ export async function setDoc<T extends DocumentData>(
   data: WithFieldValue<T>,
   options?: SetOptions
 ): Promise<void> {
+  // Skip if page is unloading to avoid Firestore assertion errors
+  if (isPageBeingUnloaded()) {
+    throw new Error('Operation cancelled: page is unloading');
+  }
+
   const documentPath = getPathFromReference(reference);
   const operationStartTime = Date.now();
 
@@ -386,6 +443,11 @@ export async function addDoc<T extends DocumentData>(
   reference: CollectionReference<T>,
   data: WithFieldValue<T>
 ): Promise<DocumentReference<T>> {
+  // Skip if page is unloading to avoid Firestore assertion errors
+  if (isPageBeingUnloaded()) {
+    throw new Error('Operation cancelled: page is unloading');
+  }
+
   const collectionPath = getPathFromReference(reference);
   const operationStartTime = Date.now();
 
@@ -431,6 +493,11 @@ export async function updateDoc<T extends DocumentData>(
   reference: DocumentReference<T>,
   data: UpdateData<T>
 ): Promise<void> {
+  // Skip if page is unloading to avoid Firestore assertion errors
+  if (isPageBeingUnloaded()) {
+    throw new Error('Operation cancelled: page is unloading');
+  }
+
   const documentPath = getPathFromReference(reference);
   const operationStartTime = Date.now();
 
@@ -471,6 +538,11 @@ export async function updateDoc<T extends DocumentData>(
  * 3. Tracks performance and errors
  */
 export async function deleteDoc(reference: DocumentReference): Promise<void> {
+  // Skip if page is unloading to avoid Firestore assertion errors
+  if (isPageBeingUnloaded()) {
+    throw new Error('Operation cancelled: page is unloading');
+  }
+
   const documentPath = getPathFromReference(reference);
   const operationStartTime = Date.now();
 
