@@ -87,7 +87,6 @@ export function useAutoSaveDrafts({
   const draftIdRef = useLatestValueRef(draftId);
   const currentTitleRef = useLatestValueRef(title);
   const currentContentRef = useLatestValueRef(content);
-  const isAutoSaveEnabledRef = useLatestValueRef(enabled);
 
   const { executeWithGuard } = useConcurrentOperationGuard();
 
@@ -109,24 +108,24 @@ export function useAutoSaveDrafts({
     await executeWithGuard(() => saveDraftMutate());
   }, [executeWithGuard, saveDraftMutate]);
 
-  useInterval(() => {
-    const isAutoSaveDisabled = !isAutoSaveEnabledRef.current;
-    if (isAutoSaveDisabled) return;
+  useInterval(
+    () => {
+      const currentContent: DraftContent = {
+        title: currentTitleRef.current,
+        content: currentContentRef.current,
+      };
+      const lastSaved: DraftContent = {
+        title: lastSavedTitle,
+        content: lastSavedContent,
+      };
 
-    const currentContent: DraftContent = {
-      title: currentTitleRef.current,
-      content: currentContentRef.current,
-    };
-    const lastSaved: DraftContent = {
-      title: lastSavedTitle,
-      content: lastSavedContent,
-    };
-
-    const shouldSaveDraft = hasContentChanged(currentContent, lastSaved);
-    if (shouldSaveDraft) {
-      executeWithGuard(() => saveDraftMutate());
-    }
-  }, intervalMs);
+      const shouldSaveDraft = hasContentChanged(currentContent, lastSaved);
+      if (shouldSaveDraft) {
+        executeWithGuard(() => saveDraftMutate());
+      }
+    },
+    { delay: intervalMs, enabled: enabled }
+  );
 
   return {
     draftId,
