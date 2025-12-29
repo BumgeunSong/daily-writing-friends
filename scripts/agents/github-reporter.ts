@@ -185,26 +185,69 @@ function generateBranchName(errorMessage: string): string {
   return `fix/sentry-${timestamp}-${sanitized}`;
 }
 
+function escapeForShell(str: string): string {
+  return str.replace(/'/g, "'\\''");
+}
+
+function hasUncommittedChanges(): boolean {
+  try {
+    const status = execSync("git status --porcelain", { encoding: "utf-8" });
+    return status.trim().length > 0;
+  } catch {
+    return false;
+  }
+}
+
+function getCurrentBranch(): string {
+  try {
+    return execSync("git branch --show-current", { encoding: "utf-8" }).trim();
+  } catch {
+    return "unknown";
+  }
+}
+
 export function createBranchAndCommit(
   errorMessage: string,
   summary: string
 ): string {
   const branchName = generateBranchName(errorMessage);
+  const originalBranch = getCurrentBranch();
+
+  // Pre-check: Ensure we have changes to commit
+  if (!hasUncommittedChanges()) {
+    throw new Error("[Git] No changes to commit. Coder may not have made any modifications.");
+  }
 
   try {
+    // Create and switch to new branch
+    console.log(`[Git] Creating branch: ${branchName}`);
     execSync(`git checkout -b ${branchName}`, { stdio: "pipe" });
-    execSync(`git add -A`, { stdio: "pipe" });
 
-    const commitMessage = `fix: ${summary}`;
-    execSync(`git commit -m "${commitMessage}"`, { stdio: "pipe" });
+    // Stage all changes
+    execSync("git add -A", { stdio: "pipe" });
 
+    // Commit with properly escaped message (using single quotes)
+    const escapedSummary = escapeForShell(summary);
+    const commitMessage = `fix: ${escapedSummary}`;
+    execSync(`git commit -m '${commitMessage}'`, { stdio: "pipe" });
+
+    // Push to remote
+    console.log(`[Git] Pushing to origin...`);
     execSync(`git push -u origin ${branchName}`, { stdio: "pipe" });
 
     console.log(`[Git] Created and pushed branch: ${branchName}`);
     return branchName;
   } catch (error) {
-    console.error(`[Git] Failed to create branch:`, error);
-    throw error;
+    // Attempt to restore original branch on failure
+    try {
+      execSync(`git checkout ${originalBranch}`, { stdio: "pipe" });
+    } catch {
+      // Ignore cleanup errors
+    }
+
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    console.error(`[Git] Failed to create branch: ${errorMsg}`);
+    throw new Error(`Git operation failed: ${errorMsg}`);
   }
 }
 
