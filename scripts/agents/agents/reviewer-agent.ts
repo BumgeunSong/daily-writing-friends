@@ -3,6 +3,7 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { AnalysisResult, ReviewResult, ReviewChecks } from "../types";
 import { AGENT_CONFIG } from "../config";
+import { extractJSON, isReviewResponse } from "../json-utils";
 
 function createDefaultReviewChecks(): ReviewChecks {
   return {
@@ -64,19 +65,6 @@ function logReviewerStart(): void {
   console.log(`\n🔎 [REVIEWER] Reviewing changes...`);
 }
 
-function extractReviewResultFromResponse(response: string): Partial<ReviewResult> | null {
-  const jsonMatch = response.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(jsonMatch[0]);
-  } catch {
-    return null;
-  }
-}
-
 function mergeReviewResult(
   defaultResult: ReviewResult,
   parsedResult: Partial<ReviewResult>
@@ -124,12 +112,13 @@ export async function reviewImplementedChanges(
         console.log(`   [DEBUG] Raw result length: ${rawResult.length}`);
         console.log(`   [DEBUG] Raw result preview: ${rawResult.substring(0, 200)}...`);
 
-        const parsedResult = extractReviewResultFromResponse(rawResult);
+        const parsedResult = extractJSON(rawResult, isReviewResponse);
         if (parsedResult) {
           console.log(`   [DEBUG] JSON parsed successfully`);
           return mergeReviewResult(result, parsedResult);
         } else {
-          console.log(`   [DEBUG] No JSON found in result`);
+          console.log(`   [DEBUG] No valid JSON found`);
+          console.log(`   [DEBUG] Raw result preview: ${rawResult.substring(0, 300)}...`);
         }
       } else {
         console.log(`   [DEBUG] Result subtype: ${message.subtype}`);

@@ -3,6 +3,7 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { ErrorContext, AnalysisResult } from "../types";
 import { AGENT_CONFIG } from "../config";
+import { extractJSON, isAnalysisResponse } from "../json-utils";
 
 function buildAnalyzerPrompt(context: ErrorContext): string {
   return `Analyze this error. Should we fix it with code changes?
@@ -29,19 +30,6 @@ function createDefaultAnalysisResult(context: ErrorContext): AnalysisResult {
     priority: "skip",
     reason: "",
   };
-}
-
-function extractJsonFromResponse(response: string): object | null {
-  const jsonMatch = response.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(jsonMatch[0]);
-  } catch {
-    return null;
-  }
 }
 
 function logAnalyzerStart(context: ErrorContext): void {
@@ -82,12 +70,13 @@ export async function analyzeErrorAndDeterminePriority(
         console.log(`   [DEBUG] Raw result length: ${rawResult.length}`);
         console.log(`   [DEBUG] Raw result preview: ${rawResult.substring(0, 200)}...`);
 
-        const parsedJson = extractJsonFromResponse(rawResult);
+        const parsedJson = extractJSON(rawResult, isAnalysisResponse);
         if (parsedJson) {
           console.log(`   [DEBUG] JSON parsed successfully`);
           Object.assign(result, parsedJson);
         } else {
-          console.log(`   [DEBUG] No JSON found in result`);
+          console.log(`   [DEBUG] No valid JSON found`);
+          console.log(`   [DEBUG] Raw result preview: ${rawResult.substring(0, 300)}...`);
         }
       } else {
         console.log(`   [DEBUG] Result subtype: ${message.subtype}`);

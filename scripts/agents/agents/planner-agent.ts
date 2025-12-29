@@ -3,6 +3,7 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { AnalysisResult, ImplementationPlan } from "../types";
 import { AGENT_CONFIG } from "../config";
+import { extractJSON, isPlanResponse } from "../json-utils";
 
 function buildPlannerPrompt(analysis: AnalysisResult): string {
   return `You are a PLANNER for daily-writing-friends (React + Firebase + TypeScript).
@@ -34,19 +35,6 @@ Output JSON when ready:
     {"step": 1, "description": "What to do", "files": ["src/path/file.ts"], "action": "modify"}
   ]
 }`;
-}
-
-function extractPlanFromResponse(response: string): ImplementationPlan | null {
-  const jsonMatch = response.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(jsonMatch[0]) as ImplementationPlan;
-  } catch {
-    return null;
-  }
 }
 
 function logPlannerStart(): void {
@@ -88,15 +76,12 @@ export async function createImplementationPlan(
         console.log(`   [DEBUG] Raw result length: ${rawResult.length}`);
         console.log(`   [DEBUG] Raw result preview: ${rawResult.substring(0, 200)}...`);
 
-        try {
-          plan = extractPlanFromResponse(rawResult);
-          if (plan) {
-            console.log(`   [DEBUG] JSON parsed successfully`);
-          } else {
-            console.log(`   [DEBUG] No JSON found in result`);
-          }
-        } catch (e) {
-          console.log(`   [DEBUG] JSON parse error: ${e}`);
+        plan = extractJSON(rawResult, isPlanResponse) as ImplementationPlan | null;
+        if (plan) {
+          console.log(`   [DEBUG] JSON parsed successfully`);
+        } else {
+          console.log(`   [DEBUG] No valid JSON found`);
+          console.log(`   [DEBUG] Raw result preview: ${rawResult.substring(0, 300)}...`);
         }
       } else {
         console.log(`   [DEBUG] Result subtype: ${message.subtype}`);
