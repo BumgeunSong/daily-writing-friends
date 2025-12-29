@@ -60,7 +60,8 @@
    VITE_FIREBASE_APP_ID=your_app_id
    VITE_FIREBASE_MESSAGING_VAPID_KEY=your_firebase_messaging_vapid_key
    SENTRY_AUTH_TOKEN=your_sentry_token
-   SENTRY_READ_TOKEN=your_sentry_read_token // this is for bug fix workflow.
+   # Sentry bug fix workflow용 읽기 전용 토큰
+   SENTRY_READ_TOKEN=your_sentry_read_token
    ```
 
 ## 로컬에서 프로젝트 실행하기
