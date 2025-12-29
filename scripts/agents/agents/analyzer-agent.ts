@@ -2,6 +2,7 @@
 
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { ErrorContext, AnalysisResult } from "../types";
+import { AGENT_CONFIG } from "../config";
 
 function buildAnalyzerPrompt(context: ErrorContext): string {
   return `Analyze this error. Should we fix it with code changes?
@@ -59,7 +60,10 @@ export async function analyzeErrorAndDeterminePriority(
 
   for await (const message of query({
     prompt,
-    options: { allowedTools: [], maxTurns: 1 },
+    options: {
+      allowedTools: AGENT_CONFIG.analyzer.allowedTools,
+      maxTurns: AGENT_CONFIG.analyzer.maxTurns,
+    },
   })) {
     if (message.type === "system" && "session_id" in message) {
       console.log(`   [DEBUG] Session started: ${message.session_id}`);

@@ -2,6 +2,7 @@
 
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { AnalysisResult, ReviewResult, ReviewChecks } from "../types";
+import { AGENT_CONFIG } from "../config";
 
 function createDefaultReviewChecks(): ReviewChecks {
   return {
@@ -88,9 +89,6 @@ function mergeReviewResult(
   };
 }
 
-const REVIEWER_ALLOWED_TOOLS = ["Read", "Bash", "Grep", "Glob"];
-const REVIEWER_MAX_TURNS = 15;
-
 export async function reviewImplementedChanges(
   analysis: AnalysisResult
 ): Promise<ReviewResult> {
@@ -103,8 +101,8 @@ export async function reviewImplementedChanges(
   for await (const message of query({
     prompt,
     options: {
-      allowedTools: REVIEWER_ALLOWED_TOOLS,
-      maxTurns: REVIEWER_MAX_TURNS,
+      allowedTools: AGENT_CONFIG.reviewer.allowedTools,
+      maxTurns: AGENT_CONFIG.reviewer.maxTurns,
     },
   })) {
     if (message.type === "system" && "session_id" in message) {

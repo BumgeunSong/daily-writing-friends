@@ -26,9 +26,7 @@ import {
   clearTodayCache,
   hasFreshFlag,
 } from "./cache-utils";
-
-const MAX_REVISION_ROUNDS = 2;
-const MAX_ISSUES_TO_ANALYZE = 3;
+import { PIPELINE_CONFIG } from "./config";
 
 // ============================================
 // Pipeline Logging
@@ -38,7 +36,7 @@ function logPipelineHeader(useCache: boolean): void {
   console.log("🚀 Bug Fix Pipeline");
   console.log("=".repeat(60));
   console.log("Stages: ANALYZER → PLANNER → CODER → REVIEWER");
-  console.log("Max revision rounds:", MAX_REVISION_ROUNDS);
+  console.log("Max revision rounds:", PIPELINE_CONFIG.maxRevisionRounds);
   console.log("Cache:", useCache ? "enabled" : "disabled (--fresh)");
   console.log("=".repeat(60));
 }
@@ -207,7 +205,7 @@ async function analyzeTopIssues(mergedIssues: MergedIssue[]): Promise<AnalysisRe
   }
 
   const analyses: AnalysisResult[] = [];
-  const issuesToAnalyze = mergedIssues.slice(0, MAX_ISSUES_TO_ANALYZE);
+  const issuesToAnalyze = mergedIssues.slice(0, PIPELINE_CONFIG.maxIssuesToAnalyze);
 
   for (const mergedIssue of issuesToAnalyze) {
     const stackTrace = await fetchStackTraceForIssue(mergedIssue.representativeIssue.id);
@@ -244,7 +242,7 @@ async function executeCodeReviewLoop(
     console.log(`   [CACHE] Resuming from round ${startRound}`);
   }
 
-  const totalRounds = MAX_REVISION_ROUNDS + 1;
+  const totalRounds = PIPELINE_CONFIG.maxRevisionRounds + 1;
 
   for (let round = startRound; round <= totalRounds; round++) {
     logRoundStart(round, totalRounds);
@@ -267,7 +265,7 @@ async function executeCodeReviewLoop(
       return true;
     }
 
-    const isLastRound = round > MAX_REVISION_ROUNDS;
+    const isLastRound = round > PIPELINE_CONFIG.maxRevisionRounds;
     if (isLastRound) {
       logMaxRevisionsReached();
       return false;

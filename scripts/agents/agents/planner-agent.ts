@@ -2,6 +2,7 @@
 
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { AnalysisResult, ImplementationPlan } from "../types";
+import { AGENT_CONFIG } from "../config";
 
 function buildPlannerPrompt(analysis: AnalysisResult): string {
   return `You are a PLANNER for daily-writing-friends (React + Firebase + TypeScript).
@@ -13,13 +14,20 @@ ROOT CAUSE: ${analysis.rootCause}
 APPROACH: ${analysis.suggestedApproach}
 STACK: ${analysis.context.stackSummary}
 
-RULES:
+EXPLORATION RULES (IMPORTANT):
+1. Be EFFICIENT - don't explore more than needed
+2. Start with stack trace files first
+3. Use Grep to find specific functions/variables, not Glob for all files
+4. Read only the files you need to understand the fix
+5. MAX 10 file reads - then create the plan
+
+PLAN RULES:
 1. Each step = ONE atomic, git-commit-ready change
 2. Specify exact file paths to modify
 3. Be specific about what code to change
 4. Keep changes minimal - fix only what's needed
 
-First explore the codebase to find relevant files, then output JSON:
+Output JSON when ready:
 {
   "summary": "One sentence describing the fix",
   "steps": [
@@ -45,9 +53,6 @@ function logPlannerStart(): void {
   console.log(`\n📋 [PLANNER] Creating fix plan...`);
 }
 
-const PLANNER_ALLOWED_TOOLS = ["Glob", "Read", "Grep"];
-const PLANNER_MAX_TURNS = 10;
-
 export async function createImplementationPlan(
   analysis: AnalysisResult
 ): Promise<ImplementationPlan | null> {
@@ -60,8 +65,8 @@ export async function createImplementationPlan(
   for await (const message of query({
     prompt,
     options: {
-      allowedTools: PLANNER_ALLOWED_TOOLS,
-      maxTurns: PLANNER_MAX_TURNS,
+      allowedTools: AGENT_CONFIG.planner.allowedTools,
+      maxTurns: AGENT_CONFIG.planner.maxTurns,
     },
   })) {
     if (message.type === "system" && "session_id" in message) {

@@ -2,6 +2,7 @@
 
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { AnalysisResult, ImplementationPlan } from "../types";
+import { AGENT_CONFIG } from "../config";
 
 function formatPlanStepsForPrompt(plan: ImplementationPlan): string {
   return plan.steps
@@ -60,9 +61,6 @@ function logImplementationFailure(): void {
   console.log(`   ❌ Implementation failed`);
 }
 
-const CODER_ALLOWED_TOOLS = ["Read", "Edit", "Write", "Bash", "Glob", "Grep"];
-const CODER_MAX_TURNS = 20;
-
 export async function implementFixFromPlan(
   analysis: AnalysisResult,
   plan: ImplementationPlan,
@@ -80,8 +78,8 @@ export async function implementFixFromPlan(
   for await (const message of query({
     prompt,
     options: {
-      allowedTools: CODER_ALLOWED_TOOLS,
-      maxTurns: CODER_MAX_TURNS,
+      allowedTools: AGENT_CONFIG.coder.allowedTools,
+      maxTurns: AGENT_CONFIG.coder.maxTurns,
     },
   })) {
     if (message.type === "system" && "session_id" in message) {
