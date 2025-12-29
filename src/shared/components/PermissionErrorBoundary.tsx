@@ -1,5 +1,6 @@
 import React from 'react';
 import { useRouteError, isRouteErrorResponse, useNavigate } from 'react-router-dom';
+import * as Sentry from '@sentry/react';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -17,6 +18,16 @@ export function PermissionErrorBoundary() {
 
   // Check if it's a 403 permission error
   if (isRouteErrorResponse(error) && error.status === 403) {
+    Sentry.withScope((scope) => {
+      scope.setLevel('warning');
+      scope.setTag('errorType', 'permission-denied');
+      scope.setContext('permission-error', {
+        status: error.status,
+        statusText: error.statusText,
+        data: error.data,
+      });
+      Sentry.captureException(new Error(`Permission denied: ${error.statusText || 'Access forbidden'}`));
+    });
     return (
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent>
@@ -35,16 +46,29 @@ export function PermissionErrorBoundary() {
   }
 
   // For other errors, show a generic error message
+  Sentry.withScope((scope) => {
+    scope.setLevel('error');
+    scope.setTag('errorType', 'route-error');
+    if (isRouteErrorResponse(error)) {
+      scope.setContext('route-error', {
+        status: error.status,
+        statusText: error.statusText,
+        data: error.data,
+      });
+    }
+    Sentry.captureException(error instanceof Error ? error : new Error('Unknown route error'));
+  });
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
       <h2 className="mb-2 text-xl font-semibold">문제가 발생했습니다</h2>
       <p className="mb-4 text-gray-600">
-        {isRouteErrorResponse(error) 
+        {isRouteErrorResponse(error)
           ? `오류 ${error.status}: ${error.data || error.statusText}`
           : '알 수 없는 오류가 발생했습니다.'
         }
       </p>
-      <button 
+      <button
         onClick={() => navigate(-1)}
         className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
       >

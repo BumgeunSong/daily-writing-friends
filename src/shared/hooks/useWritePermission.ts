@@ -1,4 +1,4 @@
-import { captureException } from '@sentry/react';
+import * as Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
 import { doc, getDoc } from "firebase/firestore";
 import { firestore } from "@/firebase";
@@ -25,7 +25,11 @@ export default function useWritePermission(userId: string | null, boardId: strin
             cacheTime: 1000 * 60 * 10, // 10 minutes
             onError: (error) => {
                 console.error(error);
-                captureException(error);
+                Sentry.withScope((scope) => {
+                    scope.setTag('feature', 'write-permission');
+                    scope.setContext('permission-check', { boardId, userId });
+                    Sentry.captureException(error);
+                });
             }
         }
     );
