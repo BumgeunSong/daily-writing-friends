@@ -1,55 +1,35 @@
 // scripts/agents/json-utils.ts
 
+import { extractJsonSync } from "@axync/extract-json";
+
 /**
- * Extract JSON from text that may contain code blocks or multiple JSON objects.
- * Handles:
- * - JSON in code blocks (```json ... ```)
- * - Raw JSON objects
- * - Multiple JSON objects (returns the one matching expected structure)
+ * Extract JSON from text using @axync/extract-json library.
+ * Handles code blocks, nested objects, and malformed JSON.
  */
 export function extractJSON<T extends object>(
   text: string,
   validator?: (obj: unknown) => obj is T
 ): T | null {
-  // Pattern 1: JSON in code block
-  const codeBlockMatch = text.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-  if (codeBlockMatch) {
-    try {
-      const parsed = JSON.parse(codeBlockMatch[1]);
-      if (!validator || validator(parsed)) {
-        return parsed as T;
-      }
-    } catch {
-      // Continue to next pattern
-    }
+  const results = extractJsonSync(text);
+
+  if (results.length === 0) {
+    return null;
   }
 
-  // Pattern 2: Find all JSON-like objects and try parsing
-  const jsonMatches = text.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
-  if (jsonMatches) {
-    // Try from last match (most likely to be the final output)
-    for (let i = jsonMatches.length - 1; i >= 0; i--) {
-      try {
-        const parsed = JSON.parse(jsonMatches[i]);
-        if (!validator || validator(parsed)) {
-          return parsed as T;
-        }
-      } catch {
-        // Continue to next match
+  // If validator provided, find first matching result
+  if (validator) {
+    for (const result of results) {
+      if (validator(result)) {
+        return result as T;
       }
     }
+    return null;
   }
 
-  // Pattern 3: Try the simple greedy match as fallback
-  const greedyMatch = text.match(/\{[\s\S]*\}/);
-  if (greedyMatch) {
-    try {
-      const parsed = JSON.parse(greedyMatch[0]);
-      if (!validator || validator(parsed)) {
-        return parsed as T;
-      }
-    } catch {
-      // Failed to parse
+  // Return first object result (skip arrays/primitives)
+  for (const result of results) {
+    if (typeof result === "object" && result !== null && !Array.isArray(result)) {
+      return result as T;
     }
   }
 
