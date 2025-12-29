@@ -3,6 +3,7 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { AnalysisResult, ImplementationPlan } from "../types";
 import { AGENT_CONFIG } from "../config";
+import { globalTokenTracker } from "../token-tracker";
 
 function formatPlanStepsForPrompt(plan: ImplementationPlan): string {
   return plan.steps
@@ -96,6 +97,7 @@ export async function implementFixFromPlan(
         }
       }
     } else if (message.type === "result") {
+      globalTokenTracker.addFromMessage("Coder", message);
       if (message.subtype === "success") {
         rawResult = message.result;
         console.log(`   [DEBUG] Raw result length: ${rawResult.length}`);

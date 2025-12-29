@@ -4,6 +4,7 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { AnalysisResult, ReviewResult, ReviewChecks } from "../types";
 import { AGENT_CONFIG } from "../config";
 import { extractJSON, isReviewResponse } from "../json-utils";
+import { globalTokenTracker } from "../token-tracker";
 
 function createDefaultReviewChecks(): ReviewChecks {
   return {
@@ -107,6 +108,7 @@ export async function reviewImplementedChanges(
         }
       }
     } else if (message.type === "result") {
+      globalTokenTracker.addFromMessage("Reviewer", message);
       if (message.subtype === "success") {
         rawResult = message.result;
         console.log(`   [DEBUG] Raw result length: ${rawResult.length}`);

@@ -25,3 +25,9 @@ export const PIPELINE_CONFIG = {
   maxRevisionRounds: 2,
   maxIssuesToAnalyze: 3,
 };
+
+// GitHub configurations
+export const GITHUB_CONFIG = {
+  owner: "BumgeunSong",
+  repo: "DailyWritingFriends",
+};

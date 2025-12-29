@@ -53,6 +53,15 @@ import {
   hasFreshFlag,
 } from "./cache-utils";
 import { PIPELINE_CONFIG } from "./config";
+import {
+  reportAnalysisResult,
+  reportPlanResult,
+  reportError,
+  reportSuccess,
+  createPullRequestWithChanges,
+  getChangedFiles,
+} from "./github-reporter";
+import { globalTokenTracker } from "./token-tracker";
 
 // ============================================
 // Pipeline Logging
@@ -352,34 +361,53 @@ async function runBugFixPipeline(): Promise<PipelineResult | undefined> {
 
   logPipelineHeader(useCache);
 
-  const mergedIssues = await fetchAndGroupSentryIssues();
-  const analyses = await analyzeTopIssues(mergedIssues);
+  try {
+    const mergedIssues = await fetchAndGroupSentryIssues();
+    const analyses = await analyzeTopIssues(mergedIssues);
 
-  const fixableAnalyses = filterFixableAnalyses(analyses);
-  const skippedCount = analyses.length - fixableAnalyses.length;
-  logFixableIssuesCount(fixableAnalyses.length, skippedCount);
+    // Report analysis results to GitHub issue
+    await reportAnalysisResult(analyses, globalTokenTracker.getTotal());
 
-  if (fixableAnalyses.length === 0) {
-    logNoIssuesNeedFixing();
-    return;
+    const fixableAnalyses = filterFixableAnalyses(analyses);
+    const skippedCount = analyses.length - fixableAnalyses.length;
+    logFixableIssuesCount(fixableAnalyses.length, skippedCount);
+
+    if (fixableAnalyses.length === 0) {
+      logNoIssuesNeedFixing();
+      return;
+    }
+
+    const plannerResult = await getOrCreatePlan(fixableAnalyses);
+    if (!plannerResult) {
+      logPlannerFailed();
+      await reportError("Planner", new Error("Failed to create plan"), globalTokenTracker.getTotal());
+      return;
+    }
+
+    const { target, plan } = plannerResult;
+    logPlanCreated(plan);
+
+    // Report plan to GitHub issue
+    await reportPlanResult(plan, globalTokenTracker.getTotal());
+
+    const approved = await executeCodeReviewLoop(target, plan);
+    logPipelineComplete(target, approved);
+
+    // Cache the final result
+    writeCache("reviewer", { target, plan, approved });
+
+    if (approved) {
+      // Create PR and report success
+      const prUrl = await createPullRequestWithChanges(target, plan);
+      const changedFiles = getChangedFiles();
+      await reportSuccess(prUrl, changedFiles, globalTokenTracker.getTotal());
+    }
+
+    return { target, plan, approved };
+  } catch (error) {
+    await reportError("Pipeline", error, globalTokenTracker.getTotal());
+    throw error;
   }
-
-  const plannerResult = await getOrCreatePlan(fixableAnalyses);
-  if (!plannerResult) {
-    logPlannerFailed();
-    return;
-  }
-
-  const { target, plan } = plannerResult;
-  logPlanCreated(plan);
-
-  const approved = await executeCodeReviewLoop(target, plan);
-  logPipelineComplete(target, approved);
-
-  // Cache the final result
-  writeCache("reviewer", { target, plan, approved });
-
-  return { target, plan, approved };
 }
 
 runBugFixPipeline().catch(console.error);

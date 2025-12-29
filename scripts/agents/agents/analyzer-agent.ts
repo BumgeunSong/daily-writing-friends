@@ -4,6 +4,7 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { ErrorContext, AnalysisResult } from "../types";
 import { AGENT_CONFIG } from "../config";
 import { extractJSON, isAnalysisResponse } from "../json-utils";
+import { globalTokenTracker } from "../token-tracker";
 
 function buildAnalyzerPrompt(context: ErrorContext): string {
   return `Analyze this error. Should we fix it with code changes?
@@ -65,6 +66,7 @@ export async function analyzeErrorAndDeterminePriority(
         }
       }
     } else if (message.type === "result") {
+      globalTokenTracker.addFromMessage("Analyzer", message);
       if (message.subtype === "success") {
         rawResult = message.result;
         console.log(`   [DEBUG] Raw result length: ${rawResult.length}`);

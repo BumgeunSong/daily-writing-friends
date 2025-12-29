@@ -4,6 +4,7 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { AnalysisResult, ImplementationPlan } from "../types";
 import { AGENT_CONFIG } from "../config";
 import { extractJSON, isPlanResponse } from "../json-utils";
+import { globalTokenTracker } from "../token-tracker";
 
 function buildPlannerPrompt(analysis: AnalysisResult): string {
   return `You are a PLANNER for daily-writing-friends (React + Firebase + TypeScript).
@@ -71,6 +72,7 @@ export async function createImplementationPlan(
         }
       }
     } else if (message.type === "result") {
+      globalTokenTracker.addFromMessage("Planner", message);
       if (message.subtype === "success") {
         rawResult = message.result;
         console.log(`   [DEBUG] Raw result length: ${rawResult.length}`);
