@@ -55,6 +55,7 @@ export async function createImplementationPlan(
 
   const prompt = buildPlannerPrompt(analysis);
   let plan: ImplementationPlan | null = null;
+  let rawResult = "";
 
   for await (const message of query({
     prompt,
@@ -63,9 +64,44 @@ export async function createImplementationPlan(
       maxTurns: PLANNER_MAX_TURNS,
     },
   })) {
-    if (message.type === "result" && message.subtype === "success") {
-      plan = extractPlanFromResponse(message.result);
+    if (message.type === "system" && "session_id" in message) {
+      console.log(`   [DEBUG] Session started: ${message.session_id}`);
+      if ("tools" in message) {
+        console.log(`   [DEBUG] Tools: ${(message as any).tools.join(", ")}`);
+      }
+    } else if (message.type === "assistant") {
+      for (const block of message.message.content) {
+        if (block.type === "text") {
+          console.log(`   [PLANNER] ${block.text.substring(0, 100)}...`);
+        } else if (block.type === "tool_use") {
+          console.log(`   [TOOL] ${block.name}: ${JSON.stringify(block.input).substring(0, 80)}...`);
+        }
+      }
+    } else if (message.type === "result") {
+      if (message.subtype === "success") {
+        rawResult = message.result;
+        console.log(`   [DEBUG] Raw result length: ${rawResult.length}`);
+        console.log(`   [DEBUG] Raw result preview: ${rawResult.substring(0, 200)}...`);
+
+        try {
+          plan = extractPlanFromResponse(rawResult);
+          if (plan) {
+            console.log(`   [DEBUG] JSON parsed successfully`);
+          } else {
+            console.log(`   [DEBUG] No JSON found in result`);
+          }
+        } catch (e) {
+          console.log(`   [DEBUG] JSON parse error: ${e}`);
+        }
+      } else {
+        console.log(`   [DEBUG] Result subtype: ${message.subtype}`);
+        console.log(`   [DEBUG] Errors: ${JSON.stringify((message as any).errors)}`);
+      }
     }
+  }
+
+  if (!plan) {
+    console.log(`   [DEBUG] Final raw result:\n${rawResult}`);
   }
 
   return plan;

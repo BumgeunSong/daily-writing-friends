@@ -63,36 +63,6 @@ function logReviewerStart(): void {
   console.log(`\n🔎 [REVIEWER] Reviewing changes...`);
 }
 
-function identifyCheckType(command: string): string | null {
-  if (command.includes("tsc")) return "type check";
-  if (command.includes("lint")) return "lint";
-  if (command.includes("test")) return "tests";
-  if (command.includes("build")) return "build";
-  return null;
-}
-
-function logCheckExecution(checkType: string): void {
-  console.log(`   🔍 Running ${checkType}...`);
-}
-
-interface ContentBlock {
-  type: string;
-  name?: string;
-  input?: { command?: string };
-}
-
-function processReviewerAssistantMessage(content: ContentBlock[]): void {
-  for (const block of content) {
-    if (block.type === "tool_use" && block.name === "Bash") {
-      const command = block.input?.command || "";
-      const checkType = identifyCheckType(command);
-      if (checkType) {
-        logCheckExecution(checkType);
-      }
-    }
-  }
-}
-
 function extractReviewResultFromResponse(response: string): Partial<ReviewResult> | null {
   const jsonMatch = response.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
@@ -128,6 +98,7 @@ export async function reviewImplementedChanges(
 
   const result = createDefaultReviewResult();
   const prompt = buildReviewerPrompt(analysis);
+  let rawResult = "";
 
   for await (const message of query({
     prompt,
@@ -136,14 +107,41 @@ export async function reviewImplementedChanges(
       maxTurns: REVIEWER_MAX_TURNS,
     },
   })) {
-    if (message.type === "assistant") {
-      processReviewerAssistantMessage(message.message.content as ContentBlock[]);
-    } else if (message.type === "result" && message.subtype === "success") {
-      const parsedResult = extractReviewResultFromResponse(message.result);
-      if (parsedResult) {
-        return mergeReviewResult(result, parsedResult);
+    if (message.type === "system" && "session_id" in message) {
+      console.log(`   [DEBUG] Session started: ${message.session_id}`);
+      if ("tools" in message) {
+        console.log(`   [DEBUG] Tools: ${(message as any).tools.join(", ")}`);
+      }
+    } else if (message.type === "assistant") {
+      for (const block of message.message.content) {
+        if (block.type === "text") {
+          console.log(`   [REVIEWER] ${block.text.substring(0, 100)}...`);
+        } else if (block.type === "tool_use") {
+          console.log(`   [TOOL] ${block.name}: ${JSON.stringify(block.input).substring(0, 80)}...`);
+        }
+      }
+    } else if (message.type === "result") {
+      if (message.subtype === "success") {
+        rawResult = message.result;
+        console.log(`   [DEBUG] Raw result length: ${rawResult.length}`);
+        console.log(`   [DEBUG] Raw result preview: ${rawResult.substring(0, 200)}...`);
+
+        const parsedResult = extractReviewResultFromResponse(rawResult);
+        if (parsedResult) {
+          console.log(`   [DEBUG] JSON parsed successfully`);
+          return mergeReviewResult(result, parsedResult);
+        } else {
+          console.log(`   [DEBUG] No JSON found in result`);
+        }
+      } else {
+        console.log(`   [DEBUG] Result subtype: ${message.subtype}`);
+        console.log(`   [DEBUG] Errors: ${JSON.stringify((message as any).errors)}`);
       }
     }
+  }
+
+  if (rawResult) {
+    console.log(`   [DEBUG] Final raw result:\n${rawResult}`);
   }
 
   return result;

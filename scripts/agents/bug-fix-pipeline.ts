@@ -20,6 +20,12 @@ import {
   implementFixFromPlan,
   reviewImplementedChanges,
 } from "./agents";
+import {
+  readCache,
+  writeCache,
+  clearTodayCache,
+  hasFreshFlag,
+} from "./cache-utils";
 
 const MAX_REVISION_ROUNDS = 2;
 const MAX_ISSUES_TO_ANALYZE = 3;
@@ -28,11 +34,12 @@ const MAX_ISSUES_TO_ANALYZE = 3;
 // Pipeline Logging
 // ============================================
 
-function logPipelineHeader(): void {
+function logPipelineHeader(useCache: boolean): void {
   console.log("🚀 Bug Fix Pipeline");
   console.log("=".repeat(60));
   console.log("Stages: ANALYZER → PLANNER → CODER → REVIEWER");
   console.log("Max revision rounds:", MAX_REVISION_ROUNDS);
+  console.log("Cache:", useCache ? "enabled" : "disabled (--fresh)");
   console.log("=".repeat(60));
 }
 
@@ -192,6 +199,13 @@ async function fetchAndGroupSentryIssues(): Promise<MergedIssue[]> {
 }
 
 async function analyzeTopIssues(mergedIssues: MergedIssue[]): Promise<AnalysisResult[]> {
+  // Try to load from cache first
+  const cachedAnalyses = readCache<AnalysisResult[]>("analyzer");
+  if (cachedAnalyses) {
+    console.log(`   [CACHE] Using ${cachedAnalyses.length} cached analysis results`);
+    return cachedAnalyses;
+  }
+
   const analyses: AnalysisResult[] = [];
   const issuesToAnalyze = mergedIssues.slice(0, MAX_ISSUES_TO_ANALYZE);
 
@@ -202,27 +216,51 @@ async function analyzeTopIssues(mergedIssues: MergedIssue[]): Promise<AnalysisRe
     analyses.push(analysis);
   }
 
+  // Save to cache
+  writeCache("analyzer", analyses);
+
   return analyses;
+}
+
+interface CoderCacheEntry {
+  round: number;
+  succeeded: boolean;
+  review: ReviewResult | null;
 }
 
 async function executeCodeReviewLoop(
   target: AnalysisResult,
   plan: ImplementationPlan
 ): Promise<boolean> {
-  const totalRounds = MAX_REVISION_ROUNDS + 1;
+  // Check for cached coder result
+  const cachedCoder = readCache<CoderCacheEntry>("coder");
+  let startRound = 1;
   let reviewFeedback: string | undefined;
 
-  for (let round = 1; round <= totalRounds; round++) {
+  if (cachedCoder && cachedCoder.review && !cachedCoder.review.approved) {
+    // Resume from cached round
+    startRound = cachedCoder.round + 1;
+    reviewFeedback = cachedCoder.review.issues.join("\n");
+    console.log(`   [CACHE] Resuming from round ${startRound}`);
+  }
+
+  const totalRounds = MAX_REVISION_ROUNDS + 1;
+
+  for (let round = startRound; round <= totalRounds; round++) {
     logRoundStart(round, totalRounds);
 
     const coderSucceeded = await implementFixFromPlan(target, plan, reviewFeedback);
     if (!coderSucceeded) {
       logCoderFailed();
+      writeCache("coder", { round, succeeded: false, review: null });
       return false;
     }
 
     const review = await reviewImplementedChanges(target);
     logReviewResult(review);
+
+    // Cache the coder result
+    writeCache("coder", { round, succeeded: true, review });
 
     if (review.approved) {
       logReviewPassed();
@@ -252,8 +290,43 @@ interface PipelineResult {
   approved: boolean;
 }
 
+interface CachedPlannerResult {
+  target: AnalysisResult;
+  plan: ImplementationPlan;
+}
+
+async function getOrCreatePlan(
+  fixableAnalyses: AnalysisResult[]
+): Promise<CachedPlannerResult | null> {
+  // Try to load from cache first
+  const cachedPlanner = readCache<CachedPlannerResult>("planner");
+  if (cachedPlanner) {
+    console.log(`   [CACHE] Using cached planner result`);
+    return cachedPlanner;
+  }
+
+  const target = selectHighestPriorityTarget(fixableAnalyses);
+  logTargetSelection(target);
+
+  const plan = await createImplementationPlan(target);
+  if (!plan) {
+    return null;
+  }
+
+  const result = { target, plan };
+  writeCache("planner", result);
+  return result;
+}
+
 async function runBugFixPipeline(): Promise<PipelineResult | undefined> {
-  logPipelineHeader();
+  const useCache = !hasFreshFlag();
+
+  // Clear cache if --fresh flag is set
+  if (!useCache) {
+    clearTodayCache();
+  }
+
+  logPipelineHeader(useCache);
 
   const mergedIssues = await fetchAndGroupSentryIssues();
   const analyses = await analyzeTopIssues(mergedIssues);
@@ -267,19 +340,20 @@ async function runBugFixPipeline(): Promise<PipelineResult | undefined> {
     return;
   }
 
-  const target = selectHighestPriorityTarget(fixableAnalyses);
-  logTargetSelection(target);
-
-  const plan = await createImplementationPlan(target);
-  if (!plan) {
+  const plannerResult = await getOrCreatePlan(fixableAnalyses);
+  if (!plannerResult) {
     logPlannerFailed();
     return;
   }
 
+  const { target, plan } = plannerResult;
   logPlanCreated(plan);
 
   const approved = await executeCodeReviewLoop(target, plan);
   logPipelineComplete(target, approved);
+
+  // Cache the final result
+  writeCache("reviewer", { target, plan, approved });
 
   return { target, plan, approved };
 }

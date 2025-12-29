@@ -55,17 +55,45 @@ export async function analyzeErrorAndDeterminePriority(
 
   const result = createDefaultAnalysisResult(context);
   const prompt = buildAnalyzerPrompt(context);
+  let rawResult = "";
 
   for await (const message of query({
     prompt,
     options: { allowedTools: [], maxTurns: 1 },
   })) {
-    if (message.type === "result" && message.subtype === "success") {
-      const parsedJson = extractJsonFromResponse(message.result);
-      if (parsedJson) {
-        Object.assign(result, parsedJson);
+    if (message.type === "system" && "session_id" in message) {
+      console.log(`   [DEBUG] Session started: ${message.session_id}`);
+      if ("tools" in message) {
+        console.log(`   [DEBUG] Tools: ${(message as any).tools.join(", ") || "(none)"}`);
+      }
+    } else if (message.type === "assistant") {
+      for (const block of message.message.content) {
+        if (block.type === "text") {
+          console.log(`   [ANALYZER] ${block.text.substring(0, 100)}...`);
+        }
+      }
+    } else if (message.type === "result") {
+      if (message.subtype === "success") {
+        rawResult = message.result;
+        console.log(`   [DEBUG] Raw result length: ${rawResult.length}`);
+        console.log(`   [DEBUG] Raw result preview: ${rawResult.substring(0, 200)}...`);
+
+        const parsedJson = extractJsonFromResponse(rawResult);
+        if (parsedJson) {
+          console.log(`   [DEBUG] JSON parsed successfully`);
+          Object.assign(result, parsedJson);
+        } else {
+          console.log(`   [DEBUG] No JSON found in result`);
+        }
+      } else {
+        console.log(`   [DEBUG] Result subtype: ${message.subtype}`);
+        console.log(`   [DEBUG] Errors: ${JSON.stringify((message as any).errors)}`);
       }
     }
+  }
+
+  if (!result.shouldFix && rawResult) {
+    console.log(`   [DEBUG] Final raw result:\n${rawResult}`);
   }
 
   return result;

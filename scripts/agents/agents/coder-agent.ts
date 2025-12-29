@@ -52,45 +52,12 @@ function logCoderStart(hasReviewFeedback: boolean): void {
   }
 }
 
-function logToolUse(toolName: string, filePath: string): void {
-  console.log(`   ✏️  ${toolName}: ${filePath}`);
-}
-
-function logTextOutput(text: string): void {
-  const truncatedText = text.substring(0, 100);
-  console.log(`   ${truncatedText}...`);
-}
-
 function logImplementationSuccess(): void {
   console.log(`   ✅ Implementation complete`);
 }
 
 function logImplementationFailure(): void {
   console.log(`   ❌ Implementation failed`);
-}
-
-interface ContentBlock {
-  type: string;
-  text?: string;
-  name?: string;
-  input?: { file_path?: string };
-}
-
-function isFileModificationTool(toolName: string): boolean {
-  return toolName === "Edit" || toolName === "Write";
-}
-
-function processAssistantMessage(content: ContentBlock[]): void {
-  for (const block of content) {
-    if (block.type === "text" && block.text) {
-      logTextOutput(block.text);
-    } else if (block.type === "tool_use" && block.name) {
-      if (isFileModificationTool(block.name)) {
-        const filePath = block.input?.file_path || "file";
-        logToolUse(block.name, filePath);
-      }
-    }
-  }
 }
 
 const CODER_ALLOWED_TOOLS = ["Read", "Edit", "Write", "Bash", "Glob", "Grep"];
@@ -108,6 +75,7 @@ export async function implementFixFromPlan(
     : buildInitialImplementationPrompt(analysis, plan);
 
   let implementationSucceeded = false;
+  let rawResult = "";
 
   for await (const message of query({
     prompt,
@@ -116,16 +84,36 @@ export async function implementFixFromPlan(
       maxTurns: CODER_MAX_TURNS,
     },
   })) {
-    if (message.type === "assistant") {
-      processAssistantMessage(message.message.content as ContentBlock[]);
+    if (message.type === "system" && "session_id" in message) {
+      console.log(`   [DEBUG] Session started: ${message.session_id}`);
+      if ("tools" in message) {
+        console.log(`   [DEBUG] Tools: ${(message as any).tools.join(", ")}`);
+      }
+    } else if (message.type === "assistant") {
+      for (const block of message.message.content) {
+        if (block.type === "text") {
+          console.log(`   [CODER] ${block.text.substring(0, 100)}...`);
+        } else if (block.type === "tool_use") {
+          console.log(`   [TOOL] ${block.name}: ${JSON.stringify(block.input).substring(0, 80)}...`);
+        }
+      }
     } else if (message.type === "result") {
-      implementationSucceeded = message.subtype === "success";
-      if (implementationSucceeded) {
+      if (message.subtype === "success") {
+        rawResult = message.result;
+        console.log(`   [DEBUG] Raw result length: ${rawResult.length}`);
+        console.log(`   [DEBUG] Raw result preview: ${rawResult.substring(0, 200)}...`);
+        implementationSucceeded = true;
         logImplementationSuccess();
       } else {
+        console.log(`   [DEBUG] Result subtype: ${message.subtype}`);
+        console.log(`   [DEBUG] Errors: ${JSON.stringify((message as any).errors)}`);
         logImplementationFailure();
       }
     }
+  }
+
+  if (!implementationSucceeded && rawResult) {
+    console.log(`   [DEBUG] Final raw result:\n${rawResult}`);
   }
 
   return implementationSucceeded;
