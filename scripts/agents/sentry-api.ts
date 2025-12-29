@@ -99,6 +99,7 @@ export async function fetchStackTraceForIssue(issueId: string): Promise<string> 
   });
 
   if (!response.ok) {
+    console.warn(`[Sentry] Failed to fetch stack trace for issue ${issueId}: ${response.status}`);
     return "";
   }
 
