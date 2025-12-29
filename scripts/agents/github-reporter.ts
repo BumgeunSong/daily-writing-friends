@@ -185,15 +185,25 @@ function generateBranchName(errorMessage: string): string {
   return `fix/sentry-${timestamp}-${sanitized}`;
 }
 
+/**
+ * Escape a string for use inside single-quoted shell argument.
+ * In bash, single-quoted strings treat everything literally except single quotes.
+ * We escape single quotes by ending the quote, adding escaped quote, and reopening.
+ * Example: "it's" becomes 'it'\''s'
+ */
 function escapeForShell(str: string): string {
-  return str.replace(/'/g, "'\\''");
+  // Remove any control characters that could cause issues
+  const sanitized = str.replace(/[\x00-\x1f\x7f]/g, "");
+  // Escape single quotes for single-quoted shell strings
+  return sanitized.replace(/'/g, "'\\''");
 }
 
 function hasUncommittedChanges(): boolean {
   try {
     const status = execSync("git status --porcelain", { encoding: "utf-8" });
     return status.trim().length > 0;
-  } catch {
+  } catch (error) {
+    console.warn("[Git] Failed to check uncommitted changes:", error);
     return false;
   }
 }
@@ -201,7 +211,8 @@ function hasUncommittedChanges(): boolean {
 function getCurrentBranch(): string {
   try {
     return execSync("git branch --show-current", { encoding: "utf-8" }).trim();
-  } catch {
+  } catch (error) {
+    console.warn("[Git] Failed to get current branch:", error);
     return "unknown";
   }
 }
