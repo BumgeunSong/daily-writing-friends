@@ -78,6 +78,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Get today's date for cache key
+        id: date
+        run: echo "today=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: Restore pipeline cache
+        if: github.event.inputs.fresh != 'true'
+        uses: actions/cache@v4
+        with:
+          path: scripts/agents/cache/
+          key: pipeline-cache-${{ steps.date.outputs.today }}-${{ github.run_id }}
+          restore-keys: |
+            pipeline-cache-${{ steps.date.outputs.today }}-
+
       - name: Run Bug Fix Pipeline
         id: pipeline
         env:
@@ -92,13 +105,20 @@ jobs:
             npx tsx scripts/agents/bug-fix-pipeline.ts
           fi
 
-      - name: Upload cache artifacts
+      - name: Save pipeline cache
         if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: scripts/agents/cache/
+          key: pipeline-cache-${{ steps.date.outputs.today }}-${{ github.run_id }}
+
+      - name: Upload cache for debugging
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: pipeline-cache-${{ github.run_id }}
+          name: pipeline-cache-debug-${{ github.run_id }}
           path: scripts/agents/cache/
-          retention-days: 7
+          retention-days: 3
 
       - name: Post failure comment
         if: failure() && needs.check-trigger.outputs.issue_number != ''
