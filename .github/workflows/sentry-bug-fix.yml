@@ -1,0 +1,156 @@
+name: Sentry Bug Fix Pipeline
+
+on:
+  # Trigger when 'sentry-auto-fix' label is added to an issue
+  issues:
+    types: [labeled]
+
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      fresh:
+        description: 'Clear cache and start fresh'
+        required: false
+        default: 'false'
+        type: boolean
+      issue_number:
+        description: 'Issue number to report to (optional)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  check-trigger:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+      issue_number: ${{ steps.check.outputs.issue_number }}
+    steps:
+      - name: Check trigger label
+        id: check
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should_run=true" >> $GITHUB_OUTPUT
+            echo "issue_number=${{ github.event.inputs.issue_number }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "issues" ]; then
+            if [ "${{ github.event.label.name }}" = "sentry-auto-fix" ]; then
+              echo "should_run=true" >> $GITHUB_OUTPUT
+              echo "issue_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+            else
+              echo "should_run=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+
+  bug-fix:
+    needs: check-trigger
+    if: needs.check-trigger.outputs.should_run == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Post acknowledgment comment
+        if: needs.check-trigger.outputs.issue_number != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ needs.check-trigger.outputs.issue_number }},
+              body: '## Bug Fix Pipeline Started\n\nAnalyzing Sentry errors now...'
+            });
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SENTRY_READ_TOKEN: ${{ secrets.SENTRY_READ_TOKEN }}
+        run: |
+          missing=""
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            missing="$missing ANTHROPIC_API_KEY"
+          fi
+          if [ -z "$SENTRY_READ_TOKEN" ]; then
+            missing="$missing SENTRY_READ_TOKEN"
+          fi
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required secrets:$missing"
+            exit 1
+          fi
+          echo "All required secrets are configured"
+
+      - name: Configure git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Get today's date for cache key
+        id: date
+        run: echo "today=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: Restore pipeline cache
+        if: github.event.inputs.fresh != 'true'
+        uses: actions/cache@v4
+        with:
+          path: scripts/agents/cache/
+          key: pipeline-cache-${{ steps.date.outputs.today }}-${{ github.run_id }}
+          restore-keys: |
+            pipeline-cache-${{ steps.date.outputs.today }}-
+
+      - name: Run Bug Fix Pipeline
+        id: pipeline
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SENTRY_READ_TOKEN: ${{ secrets.SENTRY_READ_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ needs.check-trigger.outputs.issue_number }}
+        run: |
+          if [ "${{ github.event.inputs.fresh }}" = "true" ]; then
+            npx tsx scripts/agents/bug-fix-pipeline.ts --fresh
+          else
+            npx tsx scripts/agents/bug-fix-pipeline.ts
+          fi
+
+      - name: Save pipeline cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: scripts/agents/cache/
+          key: pipeline-cache-${{ steps.date.outputs.today }}-${{ github.run_id }}
+
+      - name: Upload cache for debugging
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-cache-debug-${{ github.run_id }}
+          path: scripts/agents/cache/
+          retention-days: 3
+
+      - name: Post failure comment
+        if: failure() && needs.check-trigger.outputs.issue_number != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ needs.check-trigger.outputs.issue_number }},
+              body: `## Pipeline Failed\n\nThe bug fix pipeline encountered an error.\n\n[View logs](${runUrl})`
+            });

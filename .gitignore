@@ -58,3 +58,4 @@ functions/src/commentSuggestion/test-suggestions.sh
 /playwright/.cache/
 /tests/storageState.auth.json
 /tests/setup-failure-screenshot.png
+scripts/agents/cache/
