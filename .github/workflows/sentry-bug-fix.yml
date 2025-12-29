@@ -1,9 +1,9 @@
 name: Sentry Bug Fix Pipeline
 
 on:
-  # Trigger on issue creation with specific keywords
+  # Trigger when 'sentry-auto-fix' label is added to an issue
   issues:
-    types: [opened]
+    types: [labeled]
 
   # Manual trigger for testing
   workflow_dispatch:
@@ -30,15 +30,14 @@ jobs:
       should_run: ${{ steps.check.outputs.should_run }}
       issue_number: ${{ steps.check.outputs.issue_number }}
     steps:
-      - name: Check trigger keywords
+      - name: Check trigger label
         id: check
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "should_run=true" >> $GITHUB_OUTPUT
             echo "issue_number=${{ github.event.inputs.issue_number }}" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "issues" ]; then
-            BODY="${{ github.event.issue.body }}"
-            if echo "$BODY" | grep -qi "@claude fix sentry bug" || echo "$BODY" | grep -qi "@claude fix sentry issue"; then
+            if [ "${{ github.event.label.name }}" = "sentry-auto-fix" ]; then
               echo "should_run=true" >> $GITHUB_OUTPUT
               echo "issue_number=${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
             else
