@@ -25,7 +25,16 @@ const SENTRY_AUTH_TOKEN = process.env.SENTRY_READ_TOKEN;
 const ORG_SLUG = "bumgeun-song";
 const PROJECT_SLUG = "daily-writing-friends";
 
+function validateSentryToken(): void {
+  if (!SENTRY_AUTH_TOKEN) {
+    throw new Error(
+      "[Sentry] SENTRY_READ_TOKEN is not set. Please configure it in environment variables or GitHub secrets."
+    );
+  }
+}
+
 function buildSentryApiHeaders(): HeadersInit {
+  validateSentryToken();
   return { Authorization: `Bearer ${SENTRY_AUTH_TOKEN}` };
 }
 
