@@ -27,7 +27,14 @@ export const PIPELINE_CONFIG = {
 };
 
 // GitHub configurations
-export const GITHUB_CONFIG = {
-  owner: "BumgeunSong",
-  repo: "DailyWritingFriends",
-};
+function getGitHubConfig(): { owner: string; repo: string } {
+  const githubRepository = process.env.GITHUB_REPOSITORY;
+  if (githubRepository) {
+    const [owner, repo] = githubRepository.split("/");
+    return { owner, repo };
+  }
+  // Fallback for local development
+  return { owner: "BumgeunSong", repo: "DailyWritingFriends" };
+}
+
+export const GITHUB_CONFIG = getGitHubConfig();
