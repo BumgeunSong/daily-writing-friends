@@ -1,0 +1,51 @@
+name: Sentry Bug Fix Pipeline
+
+on:
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      fresh:
+        description: 'Clear cache and start fresh'
+        required: false
+        default: 'false'
+        type: boolean
+
+  # Schedule: Run daily at 9 AM KST (0 AM UTC)
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  bug-fix:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Bug Fix Pipeline
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SENTRY_READ_TOKEN: ${{ secrets.SENTRY_READ_TOKEN }}
+        run: |
+          if [ "${{ github.event.inputs.fresh }}" = "true" ]; then
+            npx tsx scripts/agents/bug-fix-pipeline.ts --fresh
+          else
+            npx tsx scripts/agents/bug-fix-pipeline.ts
+          fi
+
+      - name: Upload cache artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-cache-${{ github.run_id }}
+          path: scripts/agents/cache/
+          retention-days: 7

@@ -1,6 +1,32 @@
 // scripts/agents/bug-fix-pipeline.ts
 
 import "dotenv/config";
+
+// ============================================
+// Environment Validation
+// ============================================
+
+const REQUIRED_ENV_VARS = ["ANTHROPIC_API_KEY", "SENTRY_READ_TOKEN"] as const;
+
+function validateEnvironment(): void {
+  const missing: string[] = [];
+
+  for (const envVar of REQUIRED_ENV_VARS) {
+    if (!process.env[envVar]) {
+      missing.push(envVar);
+    }
+  }
+
+  if (missing.length > 0) {
+    console.error("❌ Missing required environment variables:");
+    missing.forEach((v) => console.error(`   - ${v}`));
+    console.error("\nSet these in .env file or CI secrets.");
+    process.exit(1);
+  }
+}
+
+validateEnvironment();
+
 import type {
   ErrorContext,
   AnalysisResult,
