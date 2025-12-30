@@ -16,7 +16,7 @@ export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: st
     savedAt: now
   };
   
-  const draftRef = doc(firestore, `users/${userId}/drafts`, draftId);
+  const draftRef = doc(firestore, 'users', userId, 'drafts', draftId);
   await trackedFirebase.setDoc(draftRef, draftData);
 
   return draftData;
@@ -39,7 +39,7 @@ export async function getDrafts(userId: string, boardId?: string): Promise<Draft
 }
 
 export async function getDraftById(userId: string, draftId: string): Promise<Draft | null> {
-  const draftRef = doc(firestore, `users/${userId}/drafts`, draftId);
+  const draftRef = doc(firestore, 'users', userId, 'drafts', draftId);
   const snapshot = await getDoc(draftRef);
   
   if (!snapshot.exists()) {
@@ -50,7 +50,7 @@ export async function getDraftById(userId: string, draftId: string): Promise<Dra
 }
 
 export async function deleteDraft(userId: string, draftId: string): Promise<void> {
-  const draftRef = doc(firestore, `users/${userId}/drafts`, draftId);
+  const draftRef = doc(firestore, 'users', userId, 'drafts', draftId);
   return trackedFirebase.deleteDoc(draftRef);
 }
 
