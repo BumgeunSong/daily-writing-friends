@@ -4,6 +4,7 @@ import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext
 import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext"
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useCommentingStats } from "@/stats/hooks/useCommentingStats"
+import { useCurrentUserWritingStats } from "@/stats/hooks/useCurrentUserWritingStats"
 import { useWritingStats } from "@/stats/hooks/useWritingStats"
 import { getBlockedByUsers } from '@/user/api/user';
 import { useUserInBoard } from "@/user/hooks/useUserInBoard"
@@ -31,7 +32,16 @@ export function useStatsPageData(tab: TabType) {
     );
 
     const filteredActiveUsers = activeUsers.filter(u => !blockedByUsers.includes(u.uid));
+    const currentUserData = filteredActiveUsers.find(u => u.uid === currentUser?.uid);
+    const otherUsers = filteredActiveUsers.filter(u => u.uid !== currentUser?.uid);
 
+    // Priority: Load current user stats first (fast path)
+    const {
+        data: currentUserWritingStats,
+        isLoading: isLoadingCurrentUserStats,
+    } = useCurrentUserWritingStats(currentUserData);
+
+    // Then load all other users' stats
     const {
         data: writingStats,
         isLoading: isLoadingStats,
@@ -42,7 +52,9 @@ export function useStatsPageData(tab: TabType) {
         isLoading: isLoadingCommenting,
         error: commentingError
     } = useCommentingStats(filteredActiveUsers, currentUser?.uid);
+
     const isLoading = isLoadingUsers || isLoadingStats || isLoadingCommenting;
+    const isCurrentUserReady = !isLoadingCurrentUserStats && !!currentUserWritingStats;
     const error = usersError || statsError || commentingError;
     // 통계 새로고침 핸들러
     const handleRefreshStats = () => {
@@ -56,6 +68,9 @@ export function useStatsPageData(tab: TabType) {
     useRegisterTabHandler('Stats', handleRefreshStats);
     return {
         filteredActiveUsers,
+        otherUsersCount: otherUsers.length,
+        currentUserWritingStats,
+        isCurrentUserReady,
         writingStats,
         commentingStats,
         isLoading,
