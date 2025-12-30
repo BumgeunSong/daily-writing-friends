@@ -49,11 +49,9 @@ export class TokenTracker {
           outputTokens += usage.outputTokens ?? 0;
         }
       }
-    }
-
-    // Option 2: Fallback to usage object (Anthropic API format)
-    // usage: { input_tokens, output_tokens, ... }
-    if (inputTokens === 0 && outputTokens === 0 && msg.usage && typeof msg.usage === "object") {
+    } else if (msg.usage && typeof msg.usage === "object") {
+      // Option 2: Fallback to usage object (Anthropic API format)
+      // usage: { input_tokens, output_tokens, ... }
       const usage = msg.usage as { input_tokens?: number; output_tokens?: number };
       inputTokens = usage.input_tokens ?? 0;
       outputTokens = usage.output_tokens ?? 0;
