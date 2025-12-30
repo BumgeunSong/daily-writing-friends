@@ -5,6 +5,7 @@ import { UserPostingStatsCardSkeleton } from './UserPostingStatsCardSkeleton'
 interface UserPostingStatsCardListProps {
   stats: WritingStats[]
   currentUserStats?: WritingStats | null
+  currentUserId?: string
   isCurrentUserReady?: boolean
   isLoadingOthers?: boolean
   otherUsersCount?: number
@@ -14,6 +15,7 @@ interface UserPostingStatsCardListProps {
 export function UserPostingStatsCardList({
   stats,
   currentUserStats,
+  currentUserId,
   isCurrentUserReady = false,
   isLoadingOthers = false,
   otherUsersCount = 0,
@@ -27,6 +29,7 @@ export function UserPostingStatsCardList({
           <UserPostingStatsCard
             key={userStats.user.id}
             stats={userStats}
+            isCurrentUser={userStats.user.id === currentUserId}
             onClick={onCardClick ? () => onCardClick(userStats.user.id) : undefined}
           />
         ))}
@@ -42,6 +45,7 @@ export function UserPostingStatsCardList({
         <UserPostingStatsCard
           key={currentUserStats.user.id}
           stats={currentUserStats}
+          isCurrentUser={true}
           onClick={onCardClick ? () => onCardClick(currentUserStats.user.id) : undefined}
         />
       )}

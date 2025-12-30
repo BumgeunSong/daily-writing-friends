@@ -9,11 +9,19 @@ import { useWritingStats } from "@/stats/hooks/useWritingStats"
 import { getBlockedByUsers } from '@/user/api/user';
 import { useUserInBoard } from "@/user/hooks/useUserInBoard"
 
-/**
- * 통계 페이지 데이터 훅 (내 blockedBy 기반 클라이언트 필터링)
- * @param tab 'posting' | 'commenting'
- */
 type TabType = 'posting' | 'commenting';
+
+/**
+ * Merges current user stats at the front of the list
+ */
+function mergeCurrentUserFirst<T>(
+    currentUserStats: T | undefined,
+    otherUsersStats: T[] | undefined
+): T[] | undefined {
+    if (!otherUsersStats) return undefined;
+    if (!currentUserStats) return otherUsersStats;
+    return [currentUserStats, ...otherUsersStats];
+}
 
 export function useStatsPageData(tab: TabType) {
     const queryClient = useQueryClient();
@@ -41,17 +49,21 @@ export function useStatsPageData(tab: TabType) {
         isLoading: isLoadingCurrentUserStats,
     } = useCurrentUserWritingStats(currentUserData);
 
-    // Then load all other users' stats
+    // Then load other users' stats (excluding current user to avoid duplicate fetch)
     const {
-        data: writingStats,
+        data: otherUsersWritingStats,
         isLoading: isLoadingStats,
         error: statsError
-    } = useWritingStats(filteredActiveUsers, currentUser?.uid);
+    } = useWritingStats(otherUsers, currentUser?.uid);
     const {
-        data: commentingStats,
+        data: otherUsersCommentingStats,
         isLoading: isLoadingCommenting,
         error: commentingError
-    } = useCommentingStats(filteredActiveUsers, currentUser?.uid);
+    } = useCommentingStats(otherUsers, currentUser?.uid);
+
+    // Merge current user stats (priority loaded) with other users' stats
+    const writingStats = mergeCurrentUserFirst(currentUserWritingStats, otherUsersWritingStats);
+    const commentingStats = otherUsersCommentingStats;
 
     const isLoading = isLoadingUsers || isLoadingStats || isLoadingCommenting;
     const isCurrentUserReady = !isLoadingCurrentUserStats && !!currentUserWritingStats;
@@ -69,6 +81,7 @@ export function useStatsPageData(tab: TabType) {
     return {
         filteredActiveUsers,
         otherUsersCount: otherUsers.length,
+        currentUserId: currentUser?.uid,
         currentUserWritingStats,
         isCurrentUserReady,
         writingStats,

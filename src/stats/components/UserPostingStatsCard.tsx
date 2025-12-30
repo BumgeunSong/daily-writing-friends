@@ -7,9 +7,10 @@ import { WritingBadgeComponent } from './WritingBadgeComponent';
 interface UserPostingStatsCardProps {
   stats: WritingStats;
   onClick?: () => void;
+  isCurrentUser?: boolean;
 }
 
-export function UserPostingStatsCard({ stats, onClick }: UserPostingStatsCardProps) {
+export function UserPostingStatsCard({ stats, onClick, isCurrentUser = false }: UserPostingStatsCardProps) {
   const { user, contributions } = stats;
 
   return (
@@ -22,7 +23,11 @@ export function UserPostingStatsCard({ stats, onClick }: UserPostingStatsCardPro
       >
         <div className='flex flex-1 items-start gap-4'>
           <Avatar className='size-12 shrink-0'>
-            <AvatarImage src={user.profilePhotoURL || undefined} alt={user.nickname || 'User'} />
+            <AvatarImage
+              src={user.profilePhotoURL || undefined}
+              alt={user.nickname || 'User'}
+              loading={isCurrentUser ? 'eager' : 'lazy'}
+            />
             <AvatarFallback>{user.nickname?.[0] || user.realname?.[0] || 'U'}</AvatarFallback>
           </Avatar>
           <div className='flex min-w-0 flex-col gap-1.5'>

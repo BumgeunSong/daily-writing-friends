@@ -44,6 +44,7 @@ export default function StatsPage() {
   const {
     writingStats,
     commentingStats,
+    currentUserId,
     currentUserWritingStats,
     isCurrentUserReady,
     otherUsersCount,
@@ -100,6 +101,7 @@ export default function StatsPage() {
                     <UserPostingStatsCardList
                       stats={writingStats || []}
                       currentUserStats={currentUserWritingStats}
+                      currentUserId={currentUserId}
                       isCurrentUserReady={isCurrentUserReady}
                       isLoadingOthers={isLoading}
                       otherUsersCount={otherUsersCount}
@@ -112,6 +114,7 @@ export default function StatsPage() {
                   <React.Suspense fallback={<LoadingState />}>
                     <UserCommentStatsCardList
                       stats={commentingStats || []}
+                      currentUserId={currentUserId}
                       onCardClick={(userId) => navigate(`/user/${userId}`)}
                     />
                   </React.Suspense>

@@ -6,9 +6,10 @@ import { ContributionGraph } from './ContributionGraph';
 interface UserCommentStatsCardProps {
   stats: UserCommentingStats;
   onClick?: () => void;
+  isCurrentUser?: boolean;
 }
 
-export function UserCommentStatsCard({ stats, onClick }: UserCommentStatsCardProps) {
+export function UserCommentStatsCard({ stats, onClick, isCurrentUser = false }: UserCommentStatsCardProps) {
   const { user, contributions } = stats;
 
   return (
@@ -21,7 +22,11 @@ export function UserCommentStatsCard({ stats, onClick }: UserCommentStatsCardPro
       >
         <div className='flex flex-1 items-start gap-4'>
           <Avatar className='size-12 shrink-0'>
-            <AvatarImage src={user.profilePhotoURL || undefined} alt={user.nickname || 'User'} />
+            <AvatarImage
+              src={user.profilePhotoURL || undefined}
+              alt={user.nickname || 'User'}
+              loading={isCurrentUser ? 'eager' : 'lazy'}
+            />
             <AvatarFallback>{user.nickname?.[0] || user.realname?.[0] || 'U'}</AvatarFallback>
           </Avatar>
           <div className='flex min-w-0 flex-col gap-1.5'>
