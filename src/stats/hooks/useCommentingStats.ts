@@ -56,8 +56,11 @@ async function fetchSingleUserCommentingStats(
  * @param currentUserId - Current user ID for sorting
  */
 export function useCommentingStats(users: User[], currentUserId?: string) {
+  // Use sorted string of IDs for stable query key (avoids new array reference on every render)
+  const userIdsKey = users.map(u => u.uid).sort().join(',');
+
   return useQuery({
-    queryKey: ['commentingStats', users.map(u => u.uid), currentUserId],
+    queryKey: ['commentingStats', userIdsKey, currentUserId],
     queryFn: () => fetchMultipleUserCommentingStats(users, currentUserId),
     enabled: users.length > 0,
     // Aggressive caching - stats don't need real-time updates
