@@ -49,7 +49,10 @@ export interface PlanStep {
 }
 
 export interface ImplementationPlan {
-  summary: string;
+  /** English summary for coding agent */
+  summaryEn: string;
+  /** Korean summary for PR title and description */
+  summaryKo: string;
   steps: PlanStep[];
 }
 

@@ -116,7 +116,8 @@ export async function reportPlanResult(
 
   const message = `## Fix Plan
 
-**Summary:** ${plan.summary}
+**Summary:** ${plan.summaryEn}
+${plan.summaryKo}
 
 **Steps:**
 ${stepsLines.join("\n")}${tokenLine}`;
@@ -312,14 +313,16 @@ export async function createPullRequestWithChanges(
 ): Promise<string> {
   const branchName = createBranchAndCommit(
     analysis.context.errorMessage,
-    plan.summary
+    plan.summaryKo
   );
 
   const issueNumber = getIssueNumber();
   const issueRef = issueNumber ? `\n\nCloses #${issueNumber}` : "";
 
   const body = `## Summary
-${plan.summary}
+${plan.summaryKo}
+
+${plan.summaryEn}
 
 ## Changes
 ${plan.steps.map((s) => `- ${s.description}`).join("\n")}
@@ -332,7 +335,7 @@ _Automated fix by Sentry Bug Fix Pipeline_`;
 
   const prUrl = await createPullRequest(
     branchName,
-    `fix: ${plan.summary}`,
+    `fix: ${plan.summaryKo}`,
     body
   );
 

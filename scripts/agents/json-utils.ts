@@ -54,7 +54,8 @@ export function isAnalysisResponse(obj: unknown): obj is {
 }
 
 export function isPlanResponse(obj: unknown): obj is {
-  summary: string;
+  summaryEn: string;
+  summaryKo: string;
   steps: Array<{
     step: number;
     description: string;
@@ -65,7 +66,8 @@ export function isPlanResponse(obj: unknown): obj is {
   return (
     typeof obj === "object" &&
     obj !== null &&
-    "summary" in obj &&
+    "summaryEn" in obj &&
+    "summaryKo" in obj &&
     "steps" in obj &&
     Array.isArray((obj as any).steps)
   );
