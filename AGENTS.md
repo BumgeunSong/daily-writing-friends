@@ -365,6 +365,48 @@ describe('Feature Area', () => {
 
 ---
 
+## Git Commit Rules
+
+### Commit Size
+
+**ALWAYS commit changes as small logical steps forward.** Each commit should represent:
+- One feature addition
+- One bug fix
+- One refactor
+
+❌ Don't bundle unrelated changes in a single commit.
+
+### Commit Message Format
+
+```
+<concise title in Korean>
+
+- Detail point 1
+- Detail point 2
+- Detail point 3 (if needed)
+```
+
+**Title**: Concise summary in Korean (50 chars max)
+**Body**: 1-3 bullet points explaining what changed (can be English)
+
+### NO AI Signatures
+
+**NEVER include AI-generated signatures in commits:**
+- ❌ `🤖 Generated with [Claude Code]`
+- ❌ `Co-Authored-By: Claude`
+- ❌ Any emoji or branding indicating AI generation
+
+### Example
+
+```
+토큰 사용량 추적 버그 수정
+
+- Extract tokens from modelUsage object instead of root
+- Add fallback to usage.input_tokens format
+```
+
+---
+
 ## Trusted Information
 
 Trust these instructions and skip exploration for documented information. Search only if instructions are incomplete or incorrect.
