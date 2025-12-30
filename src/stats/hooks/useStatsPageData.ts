@@ -32,16 +32,16 @@ export function useStatsPageData(tab: TabType) {
 
     const filteredActiveUsers = activeUsers.filter(u => !blockedByUsers.includes(u.uid));
 
-    const { 
-        data: writingStats, 
-        isLoading: isLoadingStats, 
-        error: statsError 
-    } = useWritingStats(filteredActiveUsers.map(u => u.uid), currentUser?.uid);
-    const { 
-        data: commentingStats, 
-        isLoading: isLoadingCommenting, 
-        error: commentingError 
-    } = useCommentingStats(filteredActiveUsers.map(u => u.uid), currentUser?.uid);
+    const {
+        data: writingStats,
+        isLoading: isLoadingStats,
+        error: statsError
+    } = useWritingStats(filteredActiveUsers, currentUser?.uid);
+    const {
+        data: commentingStats,
+        isLoading: isLoadingCommenting,
+        error: commentingError
+    } = useCommentingStats(filteredActiveUsers, currentUser?.uid);
     const isLoading = isLoadingUsers || isLoadingStats || isLoadingCommenting;
     const error = usersError || statsError || commentingError;
     // 통계 새로고침 핸들러

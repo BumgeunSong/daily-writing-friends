@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
-import { createUserInfo, getDateRange, fetchUserSafely } from '@/stats/api/stats';
+import { createUserInfo, getDateRange } from '@/stats/api/stats';
 import { aggregateCommentingContributions, CommentingContribution } from '@/stats/utils/commentingContributionUtils';
+import { sortCommentingStats } from '@/stats/utils/commentingStatsUtils';
 import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
+import { User } from '@/user/model/User';
 
 export type UserCommentingStats = {
   user: {
@@ -15,33 +17,29 @@ export type UserCommentingStats = {
   contributions: CommentingContribution[];
 };
 
-async function fetchMultipleUserCommentingStats(userIds: string[], currentUserId?: string): Promise<UserCommentingStats[]> {
-  if (!userIds.length) return [];
-  
+async function fetchMultipleUserCommentingStats(users: User[], currentUserId?: string): Promise<UserCommentingStats[]> {
+  if (!users.length) return [];
+
   const workingDays = getRecentWorkingDays();
   const dateRange = getDateRange(workingDays);
-  
-  const statsPromises = userIds.map(userId => fetchSingleUserCommentingStats(userId, dateRange, workingDays));
+
+  const statsPromises = users.map(user => fetchSingleUserCommentingStats(user, dateRange, workingDays));
   const results = await Promise.all(statsPromises);
-  
+
   return sortCommentingStats(results.filter((r): r is UserCommentingStats => r !== null), currentUserId);
 }
 
-
 async function fetchSingleUserCommentingStats(
-  userId: string, 
-  dateRange: { start: Date; end: Date }, 
+  user: User,
+  dateRange: { start: Date; end: Date },
   workingDays: Date[]
 ): Promise<UserCommentingStats | null> {
   try {
-    const [user, commentings, replyings] = await Promise.all([
-      fetchUserSafely(userId),
-      fetchUserCommentingsByDateRange(userId, dateRange.start, dateRange.end),
-      fetchUserReplyingsByDateRange(userId, dateRange.start, dateRange.end),
+    const [commentings, replyings] = await Promise.all([
+      fetchUserCommentingsByDateRange(user.uid, dateRange.start, dateRange.end),
+      fetchUserReplyingsByDateRange(user.uid, dateRange.start, dateRange.end),
     ]);
-    
-    if (!user) return null;
-    
+
     return {
       user: createUserInfo(user),
       contributions: aggregateCommentingContributions(commentings, replyings, workingDays),
@@ -52,34 +50,19 @@ async function fetchSingleUserCommentingStats(
   }
 }
 
-
-function sortCommentingStats(stats: UserCommentingStats[], currentUserId?: string): UserCommentingStats[] {
-  return stats.sort((a, b) => {
-    // Current user always comes first
-    if (currentUserId) {
-      if (a.user.id === currentUserId && b.user.id !== currentUserId) {
-        return -1;
-      }
-      if (b.user.id === currentUserId && a.user.id !== currentUserId) {
-        return 1;
-      }
-    }
-
-    // Sort by total comment count (descending)
-    const aTotal = a.contributions.reduce((sum, c) => sum + (c.countOfCommentAndReplies || 0), 0);
-    const bTotal = b.contributions.reduce((sum, c) => sum + (c.countOfCommentAndReplies || 0), 0);
-    return bTotal - aTotal;
-  });
-}
-
-export function useCommentingStats(userIds: string[], currentUserId?: string) {
+/**
+ * Fetches commenting stats for multiple users
+ * @param users - User objects (already fetched by useUserInBoard)
+ * @param currentUserId - Current user ID for sorting
+ */
+export function useCommentingStats(users: User[], currentUserId?: string) {
   return useQuery({
-    queryKey: ['commentingStats', userIds, currentUserId],
-    queryFn: () => fetchMultipleUserCommentingStats(userIds, currentUserId),
-    enabled: userIds.length > 0,
-    staleTime: 1 * 60 * 1000, // 1분
-    cacheTime: 30 * 60 * 1000, // 30분
-    refetchInterval: 5 * 60 * 1000, // 5분
+    queryKey: ['commentingStats', users.map(u => u.uid), currentUserId],
+    queryFn: () => fetchMultipleUserCommentingStats(users, currentUserId),
+    enabled: users.length > 0,
+    staleTime: 1 * 60 * 1000,
+    cacheTime: 30 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
-} 
+}
