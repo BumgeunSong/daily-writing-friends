@@ -176,13 +176,16 @@ ${filesLines}${tokenLine}`;
 }
 
 function generateBranchName(errorMessage: string): string {
-  const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  // Include date and time (HHmmss) for uniqueness
+  const now = new Date();
+  const date = now.toISOString().slice(0, 10).replace(/-/g, "");
+  const time = now.toISOString().slice(11, 19).replace(/:/g, "");
   const sanitized = errorMessage
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
-    .substring(0, 30)
+    .substring(0, 20)
     .replace(/-+$/, "");
-  return `fix/sentry-${timestamp}-${sanitized}`;
+  return `fix/sentry-${date}-${time}-${sanitized}`;
 }
 
 /**
