@@ -24,8 +24,16 @@ function handleKeyDown(e: React.KeyboardEvent, onClick: (e: any) => void) {
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) => {
-  const { authorData, isAuthorLoading, badges, isPrivate, contentPreview, statPageEnabled } =
-    usePostCard(post);
+  const {
+    authorData,
+    isAuthorLoading,
+    badges,
+    streak,
+    isStreakLoading,
+    isPrivate,
+    contentPreview,
+    statPageEnabled,
+  } = usePostCard(post);
 
   const handleCardClick = () => {
     onClick(post.id);
@@ -55,6 +63,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) =>
           authorData={authorData}
           isAuthorLoading={isAuthorLoading}
           badges={badges}
+          streak={streak}
+          isStreakLoading={isStreakLoading}
           statPageEnabled={statPageEnabled}
           onClickProfile={handleProfileClick}
           isMobile={true}
@@ -78,6 +88,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) =>
               authorData={authorData}
               isAuthorLoading={isAuthorLoading}
               badges={badges}
+              streak={streak}
+              isStreakLoading={isStreakLoading}
               statPageEnabled={statPageEnabled}
               onClickProfile={handleProfileClick}
               isMobile={false}

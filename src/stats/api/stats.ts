@@ -50,7 +50,8 @@ export function createUserInfo(user: User) {
  * Calculates date range from working days array
  */
 export function getDateRange(workingDays: Date[]): { start: Date; end: Date } {
-    const start = workingDays[0];
+    const start = new Date(workingDays[0]);
+    start.setHours(0, 0, 0, 0); // Start from beginning of first day
     const end = new Date(workingDays[workingDays.length - 1]);
     end.setHours(23, 59, 59, 999); // Include end of last day
     return { start, end };

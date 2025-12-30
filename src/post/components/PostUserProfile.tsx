@@ -1,5 +1,6 @@
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import { Skeleton } from '@/shared/ui/skeleton';
+import { PostingStreakBadge } from '@/stats/components/PostingStreakBadge';
 import { WritingBadgeComponent } from '@/stats/components/WritingBadgeComponent';
 import { WritingBadge } from '@/stats/model/WritingStats';
 
@@ -17,6 +18,8 @@ interface PostUserProfileProps {
   isLoading: boolean;
   onClickProfile: (e: React.MouseEvent) => void;
   badges?: WritingBadge[];
+  streak?: boolean[];
+  isStreakLoading?: boolean;
 }
 
 export const PostUserProfile: React.FC<PostUserProfileProps> = ({
@@ -24,6 +27,8 @@ export const PostUserProfile: React.FC<PostUserProfileProps> = ({
   isLoading,
   onClickProfile,
   badges,
+  streak,
+  isStreakLoading,
 }) => (
   <div className='flex items-center'>
     {isLoading ? (
@@ -57,9 +62,10 @@ export const PostUserProfile: React.FC<PostUserProfileProps> = ({
           >
             {authorData?.displayName}
           </p>
-          {badges && badges.length > 0 && (
-            <div className='flex flex-wrap gap-1'>
-              {badges.map((badge) => (
+          {(streak || isStreakLoading || (badges && badges.length > 0)) && (
+            <div className='flex flex-wrap items-center gap-1'>
+              <PostingStreakBadge streak={streak} isLoading={isStreakLoading} />
+              {badges?.map((badge) => (
                 <WritingBadgeComponent key={badge.name} badge={badge} />
               ))}
             </div>
