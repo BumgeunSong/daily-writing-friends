@@ -22,10 +22,11 @@ export function useWritingStats(users: User[], currentUserId?: string) {
     queryKey: ['writingStats-v2', users.map(u => u.uid), currentUserId],
     queryFn: () => fetchMultipleUserStats(users, currentUserId),
     enabled: users.length > 0,
-    staleTime: 1 * 60 * 1000,
-    cacheTime: 30 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
-    refetchOnWindowFocus: true,
+    // Aggressive caching - stats don't need real-time updates
+    staleTime: 5 * 60 * 1000, // 5분 동안 fresh 유지 (리페치 안함)
+    cacheTime: 60 * 60 * 1000, // 1시간 동안 캐시 유지
+    refetchOnWindowFocus: false, // 탭 포커스 시 리페치 안함
+    refetchOnMount: false, // 컴포넌트 마운트 시 캐시 있으면 리페치 안함
   });
 }
 

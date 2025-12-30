@@ -8,8 +8,11 @@ export function useUserInBoard(boardIds: string[]) {
     () => fetchUsersWithBoardPermission(boardIds),
     {
       enabled: boardIds.length > 0,
-      staleTime: 5 * 60 * 1000,
-      cacheTime: 10 * 60 * 1000,
+      // User list rarely changes - cache aggressively
+      staleTime: 10 * 60 * 1000, // 10분 동안 fresh 유지
+      cacheTime: 60 * 60 * 1000, // 1시간 동안 캐시 유지
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
     }
   );
 
