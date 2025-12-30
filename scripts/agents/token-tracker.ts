@@ -29,15 +29,36 @@ export class TokenTracker {
 
     const msg = message as Record<string, unknown>;
 
-    if (msg.type === "result" && msg.subtype === "success") {
-      const inputTokens =
-        typeof msg.input_tokens === "number" ? msg.input_tokens : 0;
-      const outputTokens =
-        typeof msg.output_tokens === "number" ? msg.output_tokens : 0;
+    // Only process result messages
+    if (msg.type !== "result") return;
 
-      if (inputTokens > 0 || outputTokens > 0) {
-        this.add(stage, { inputTokens, outputTokens });
+    let inputTokens = 0;
+    let outputTokens = 0;
+
+    // Option 1: Extract from modelUsage (SDK ModelUsage format)
+    // modelUsage: { [modelName]: { inputTokens, outputTokens, ... } }
+    if (msg.modelUsage && typeof msg.modelUsage === "object") {
+      const modelUsage = msg.modelUsage as Record<
+        string,
+        { inputTokens?: number; outputTokens?: number }
+      >;
+      for (const modelName of Object.keys(modelUsage)) {
+        const usage = modelUsage[modelName];
+        if (usage) {
+          inputTokens += usage.inputTokens ?? 0;
+          outputTokens += usage.outputTokens ?? 0;
+        }
       }
+    } else if (msg.usage && typeof msg.usage === "object") {
+      // Option 2: Fallback to usage object (Anthropic API format)
+      // usage: { input_tokens, output_tokens, ... }
+      const usage = msg.usage as { input_tokens?: number; output_tokens?: number };
+      inputTokens = usage.input_tokens ?? 0;
+      outputTokens = usage.output_tokens ?? 0;
+    }
+
+    if (inputTokens > 0 || outputTokens > 0) {
+      this.add(stage, { inputTokens, outputTokens });
     }
   }
 

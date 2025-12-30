@@ -116,7 +116,8 @@ export async function reportPlanResult(
 
   const message = `## Fix Plan
 
-**Summary:** ${plan.summary}
+**Summary:** ${plan.summaryEn}
+${plan.summaryKo}
 
 **Steps:**
 ${stepsLines.join("\n")}${tokenLine}`;
@@ -176,11 +177,13 @@ ${filesLines}${tokenLine}`;
 }
 
 function generateBranchName(errorMessage: string): string {
-  const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  // Short timestamp: MMDD-HHmm (8 chars)
+  const now = new Date();
+  const timestamp = `${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
   const sanitized = errorMessage
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
-    .substring(0, 30)
+    .substring(0, 15)
     .replace(/-+$/, "");
   return `fix/sentry-${timestamp}-${sanitized}`;
 }
@@ -309,14 +312,16 @@ export async function createPullRequestWithChanges(
 ): Promise<string> {
   const branchName = createBranchAndCommit(
     analysis.context.errorMessage,
-    plan.summary
+    plan.summaryKo
   );
 
   const issueNumber = getIssueNumber();
   const issueRef = issueNumber ? `\n\nCloses #${issueNumber}` : "";
 
   const body = `## Summary
-${plan.summary}
+${plan.summaryKo}
+
+${plan.summaryEn}
 
 ## Changes
 ${plan.steps.map((s) => `- ${s.description}`).join("\n")}
@@ -329,7 +334,7 @@ _Automated fix by Sentry Bug Fix Pipeline_`;
 
   const prUrl = await createPullRequest(
     branchName,
-    `fix: ${plan.summary}`,
+    `fix: ${plan.summaryKo}`,
     body
   );
 

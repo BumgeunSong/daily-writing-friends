@@ -103,7 +103,7 @@ function logTargetSelection(analysis: AnalysisResult): void {
 
 function logPlanCreated(plan: ImplementationPlan): void {
   console.log("\n📋 Plan created:");
-  console.log(`   Summary: ${plan.summary}`);
+  console.log(`   Summary: ${plan.summaryEn}`);
   for (const step of plan.steps) {
     console.log(`   ${step.step}. ${step.description}`);
   }

@@ -31,11 +31,16 @@ PLAN RULES:
 
 Output JSON when ready:
 {
-  "summary": "One sentence describing the fix",
+  "summaryEn": "One sentence describing the fix in English",
+  "summaryKo": "Same summary in Korean (keep technical terms in English)",
   "steps": [
     {"step": 1, "description": "What to do", "files": ["src/path/file.ts"], "action": "modify"}
   ]
-}`;
+}
+
+EXAMPLE SUMMARIES:
+- summaryEn: "Fix malformed Firestore document paths in draft operations by passing path segments separately to doc() function"
+- summaryKo: "Firestore 문서 경로가 잘못 형성된 경우, doc() 함수에 경로 세그먼트를 별도로 전달하여 수정합니다"`;
 }
 
 function logPlannerStart(): void {
