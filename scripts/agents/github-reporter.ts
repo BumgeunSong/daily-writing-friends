@@ -177,16 +177,15 @@ ${filesLines}${tokenLine}`;
 }
 
 function generateBranchName(errorMessage: string): string {
-  // Include date and time (HHmmss) for uniqueness
+  // Short timestamp: MMDD-HHmm (8 chars)
   const now = new Date();
-  const date = now.toISOString().slice(0, 10).replace(/-/g, "");
-  const time = now.toISOString().slice(11, 19).replace(/:/g, "");
+  const timestamp = `${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
   const sanitized = errorMessage
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
-    .substring(0, 20)
+    .substring(0, 15)
     .replace(/-+$/, "");
-  return `fix/sentry-${date}-${time}-${sanitized}`;
+  return `fix/sentry-${timestamp}-${sanitized}`;
 }
 
 /**
