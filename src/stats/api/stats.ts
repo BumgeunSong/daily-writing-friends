@@ -1,4 +1,4 @@
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, where, Timestamp } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { Posting } from '@/post/model/Posting';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
@@ -59,24 +59,22 @@ export function getDateRange(workingDays: Date[]): { start: Date; end: Date } {
 
 /**
  * Fetches posting data for contributions (limited to recent working days)
+ * Uses Firestore date range query for efficient server-side filtering
  */
 export async function fetchPostingDataForContributions(userId: string, numberOfDays: number = 20): Promise<Posting[]> {
     const workingDays = getRecentWorkingDays(numberOfDays);
     const dateRange = getDateRange(workingDays);
-    
-    // For contributions, we still fetch all postings and filter by date range
-    // This ensures we get accurate contribution data for the specific time period
+
     const postingsRef = collection(firestore, 'users', userId, 'postings');
-    const q = query(postingsRef, orderBy('createdAt', 'desc'));
+    const q = query(
+        postingsRef,
+        where('createdAt', '>=', Timestamp.fromDate(dateRange.start)),
+        where('createdAt', '<=', Timestamp.fromDate(dateRange.end)),
+        orderBy('createdAt', 'desc')
+    );
     const querySnapshot = await getDocs(q);
-    
-    const allPostings = querySnapshot.docs.map(doc => mapDocumentToPosting(doc));
-    
-    // Filter postings to only include those within the date range
-    return allPostings.filter(posting => {
-        const postingDate = posting.createdAt.toDate();
-        return postingDate >= dateRange.start && postingDate <= dateRange.end;
-    });
+
+    return querySnapshot.docs.map(doc => mapDocumentToPosting(doc));
 }
 
 

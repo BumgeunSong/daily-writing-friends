@@ -11,6 +11,7 @@ import StatsHeader from '@/stats/components/StatsHeader';
 import { StatsNoticeBanner } from '@/stats/components/StatsNoticeBanner';
 import { UserCommentStatsCardList } from '@/stats/components/UserCommentStatsCardList';
 import { UserPostingStatsCardList } from '@/stats/components/UserPostingStatsCardList';
+import { UserPostingStatsCardSkeleton } from '@/stats/components/UserPostingStatsCardSkeleton';
 import { useStatsPageData } from '@/stats/hooks/useStatsPageData';
 
 // 통계 페이지 스크롤 영역의 고유 ID
@@ -40,20 +41,33 @@ export default function StatsPage() {
   const { value: statPageEnabled, isLoading: isConfigLoading } =
     useRemoteConfig('stat_page_enabled');
 
-  const { writingStats, commentingStats, isLoading, error, isLoadingCommenting } =
-    useStatsPageData(tab);
+  const {
+    writingStats,
+    commentingStats,
+    currentUserId,
+    currentUserWritingStats,
+    isCurrentUserReady,
+    otherUsersCount,
+    isLoading,
+    error,
+    isLoadingCommenting,
+  } = useStatsPageData(tab);
 
   // 통계 페이지가 비활성화된 경우 유지보수 알림 표시
   if (!isConfigLoading && !statPageEnabled) {
     return <MaintenanceState />;
   }
 
-  if (isLoading) {
-    return <LoadingState />;
-  }
+  // Show loading state only if current user stats aren't ready yet
+  const showInitialLoading = isLoading && !isCurrentUserReady;
 
   if (error) {
     return <ErrorState error={error instanceof Error ? error : new Error('알 수 없는 오류')} />;
+  }
+
+  // Show full loading state only if current user stats aren't ready
+  if (showInitialLoading) {
+    return <LoadingState />;
   }
 
   return (
@@ -86,6 +100,11 @@ export default function StatsPage() {
                   <React.Suspense fallback={<LoadingState />}>
                     <UserPostingStatsCardList
                       stats={writingStats || []}
+                      currentUserStats={currentUserWritingStats}
+                      currentUserId={currentUserId}
+                      isCurrentUserReady={isCurrentUserReady}
+                      isLoadingOthers={isLoading}
+                      otherUsersCount={otherUsersCount}
                       onCardClick={(userId) => navigate(`/user/${userId}`)}
                     />
                   </React.Suspense>
@@ -95,6 +114,7 @@ export default function StatsPage() {
                   <React.Suspense fallback={<LoadingState />}>
                     <UserCommentStatsCardList
                       stats={commentingStats || []}
+                      currentUserId={currentUserId}
                       onCardClick={(userId) => navigate(`/user/${userId}`)}
                     />
                   </React.Suspense>
@@ -116,29 +136,9 @@ function LoadingState() {
       <main className='container mx-auto px-3 py-2 md:px-4'>
         <ScrollArea className='h-full' id={STATS_SCROLL_ID}>
           <StatsNoticeBanner />
-          <div className='space-y-4 pb-20'>
+          <div className='grid grid-cols-1 gap-4 pb-20 md:grid-cols-2'>
             {[...Array(5)].map((_, index) => (
-              <div
-                key={index}
-                className='reading-shadow w-full rounded-lg border border-border/50 bg-card'
-              >
-                <div className='flex items-start gap-4 p-4'>
-                  <div className='flex flex-1 items-start gap-4'>
-                    <div className='size-12 rounded-full bg-muted' />
-                    <div className='flex flex-col gap-2'>
-                      <div className='h-5 w-24 rounded bg-muted' />
-                      <div className='h-4 w-32 rounded bg-muted' />
-                    </div>
-                  </div>
-                  <div className='flex flex-col items-end gap-2'>
-                    <div className='grid w-24 grid-flow-col grid-rows-4 gap-1'>
-                      {[...Array(20)].map((_, i) => (
-                        <div key={i} className='aspect-square w-full rounded-sm bg-muted' />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <UserPostingStatsCardSkeleton key={index} />
             ))}
           </div>
         </ScrollArea>

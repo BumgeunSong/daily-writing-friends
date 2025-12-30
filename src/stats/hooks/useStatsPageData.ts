@@ -4,15 +4,24 @@ import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext
 import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext"
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useCommentingStats } from "@/stats/hooks/useCommentingStats"
+import { useCurrentUserWritingStats } from "@/stats/hooks/useCurrentUserWritingStats"
 import { useWritingStats } from "@/stats/hooks/useWritingStats"
 import { getBlockedByUsers } from '@/user/api/user';
 import { useUserInBoard } from "@/user/hooks/useUserInBoard"
 
-/**
- * 통계 페이지 데이터 훅 (내 blockedBy 기반 클라이언트 필터링)
- * @param tab 'posting' | 'commenting'
- */
 type TabType = 'posting' | 'commenting';
+
+/**
+ * Merges current user stats at the front of the list
+ */
+function mergeCurrentUserFirst<T>(
+    currentUserStats: T | undefined,
+    otherUsersStats: T[] | undefined
+): T[] | undefined {
+    if (!otherUsersStats) return undefined;
+    if (!currentUserStats) return otherUsersStats;
+    return [currentUserStats, ...otherUsersStats];
+}
 
 export function useStatsPageData(tab: TabType) {
     const queryClient = useQueryClient();
@@ -31,18 +40,33 @@ export function useStatsPageData(tab: TabType) {
     );
 
     const filteredActiveUsers = activeUsers.filter(u => !blockedByUsers.includes(u.uid));
+    const currentUserData = filteredActiveUsers.find(u => u.uid === currentUser?.uid);
+    const otherUsers = filteredActiveUsers.filter(u => u.uid !== currentUser?.uid);
 
-    const { 
-        data: writingStats, 
-        isLoading: isLoadingStats, 
-        error: statsError 
-    } = useWritingStats(filteredActiveUsers.map(u => u.uid), currentUser?.uid);
-    const { 
-        data: commentingStats, 
-        isLoading: isLoadingCommenting, 
-        error: commentingError 
-    } = useCommentingStats(filteredActiveUsers.map(u => u.uid), currentUser?.uid);
+    // Priority: Load current user stats first (fast path)
+    const {
+        data: currentUserWritingStats,
+        isLoading: isLoadingCurrentUserStats,
+    } = useCurrentUserWritingStats(currentUserData);
+
+    // Then load other users' stats (excluding current user to avoid duplicate fetch)
+    const {
+        data: otherUsersWritingStats,
+        isLoading: isLoadingStats,
+        error: statsError
+    } = useWritingStats(otherUsers, currentUser?.uid);
+    const {
+        data: otherUsersCommentingStats,
+        isLoading: isLoadingCommenting,
+        error: commentingError
+    } = useCommentingStats(otherUsers, currentUser?.uid);
+
+    // Merge current user stats (priority loaded) with other users' stats
+    const writingStats = mergeCurrentUserFirst(currentUserWritingStats, otherUsersWritingStats);
+    const commentingStats = otherUsersCommentingStats;
+
     const isLoading = isLoadingUsers || isLoadingStats || isLoadingCommenting;
+    const isCurrentUserReady = !isLoadingCurrentUserStats && !!currentUserWritingStats;
     const error = usersError || statsError || commentingError;
     // 통계 새로고침 핸들러
     const handleRefreshStats = () => {
@@ -56,6 +80,10 @@ export function useStatsPageData(tab: TabType) {
     useRegisterTabHandler('Stats', handleRefreshStats);
     return {
         filteredActiveUsers,
+        otherUsersCount: otherUsers.length,
+        currentUserId: currentUser?.uid,
+        currentUserWritingStats,
+        isCurrentUserReady,
         writingStats,
         commentingStats,
         isLoading,
