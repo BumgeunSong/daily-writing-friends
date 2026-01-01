@@ -68,6 +68,17 @@ describe('optimisticallyUpdatePostingStreak', () => {
       const updatedData = queryClient.getQueryData<{ streak: boolean[] }>(['postingStreak', authorId]);
       expect(updatedData?.streak).toEqual([true, true, true, true, true]);
     });
+
+    it('does not modify cache when streak array is empty', () => {
+      const authorId = 'empty-streak-user';
+      const emptyStreak: boolean[] = [];
+      queryClient.setQueryData(['postingStreak', authorId], { streak: emptyStreak });
+
+      optimisticallyUpdatePostingStreak(authorId);
+
+      const updatedData = queryClient.getQueryData<{ streak: boolean[] }>(['postingStreak', authorId]);
+      expect(updatedData?.streak).toEqual([]);
+    });
   });
 
   describe('when streak cache does not exist', () => {
