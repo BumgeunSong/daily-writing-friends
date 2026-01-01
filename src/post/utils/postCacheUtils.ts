@@ -1,4 +1,5 @@
 import { queryClient } from '@/shared/lib/queryClient';
+import { isWorkingDay } from '@/shared/utils/dateUtils';
 
 /**
  * Invalidate post-related caches after creating a post.
@@ -22,8 +23,17 @@ export function invalidateDraftCaches(authorId: string, draftId: string, boardId
 /**
  * Optimistically update posting streak cache after creating a post.
  * Since the user just posted, today's streak should be true.
+ *
+ * Only updates if today is a working day (not weekend or holiday).
+ * The streak array only contains working days, so updating on non-working days
+ * would incorrectly mark a previous working day as having a post.
  */
 export function optimisticallyUpdatePostingStreak(authorId: string) {
+  const todayIsWorkingDay = isWorkingDay(new Date());
+  if (!todayIsWorkingDay) {
+    return;
+  }
+
   const currentStreakData = queryClient.getQueryData<{ streak: boolean[] }>([
     'postingStreak',
     authorId,
