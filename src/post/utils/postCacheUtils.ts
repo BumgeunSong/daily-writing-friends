@@ -23,12 +23,14 @@ export function optimisticallyUpdatePostingStreak(authorId: string) {
   const postingStreakQueryKey = ['postingStreak', authorId];
   const cachedStreakData = queryClient.getQueryData<{ streak: boolean[] }>(postingStreakQueryKey);
 
-  if (cachedStreakData) {
+  const hasValidStreakCache = cachedStreakData && cachedStreakData.streak.length > 0;
+
+  if (hasValidStreakCache) {
     const streakWithTodayMarkedAsPosted = [...cachedStreakData.streak];
     const todayIndex = streakWithTodayMarkedAsPosted.length - 1;
     streakWithTodayMarkedAsPosted[todayIndex] = true;
     queryClient.setQueryData(postingStreakQueryKey, { streak: streakWithTodayMarkedAsPosted });
-  } else {
+  } else if (!cachedStreakData) {
     queryClient.invalidateQueries({ queryKey: postingStreakQueryKey });
   }
 }
