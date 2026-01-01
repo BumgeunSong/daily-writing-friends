@@ -76,6 +76,11 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
       queryKey: ['userPostings', authorId],
     });
 
+    // Invalidate posting streak cache to show updated streak on PostCard
+    queryClient.invalidateQueries({
+      queryKey: ['postingStreak', authorId],
+    });
+
     return redirect(`/create/${boardId}/completion?contentLength=${content.length}`);
   } catch (error) {
     console.error('게시물 작성 중 오류가 발생했습니다:', error);
