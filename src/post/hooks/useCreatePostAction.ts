@@ -1,8 +1,12 @@
 import { ActionFunctionArgs, redirect } from 'react-router-dom';
-import { queryClient } from '@/shared/lib/queryClient';
 import { createPost } from '@/post/utils/postUtils';
 import { deleteDraft } from '@/draft/utils/draftUtils';
 import { sendAnalyticsEvent, AnalyticsEvent } from '@/shared/utils/analyticsUtils';
+import {
+  invalidateDraftCaches,
+  invalidatePostCaches,
+  optimisticallyUpdatePostingStreak,
+} from '@/post/utils/postCacheUtils';
 
 export async function createPostAction({ request, params }: ActionFunctionArgs) {
   const { boardId } = params;
@@ -53,33 +57,12 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
     // Delete draft if it exists
     if (draftId) {
       await deleteDraft(authorId, draftId);
-      
-      // Remove specific draft from cache
-      queryClient.removeQueries({
-        queryKey: ['draft', authorId, draftId, boardId],
-        exact: true
-      });
-      
-      // Invalidate drafts list
-      queryClient.invalidateQueries({
-        queryKey: ['drafts', authorId],
-      });
+      invalidateDraftCaches(authorId, draftId, boardId);
     }
 
-    // Invalidate posts cache so BoardPage shows the new post
-    queryClient.invalidateQueries({
-      queryKey: ['posts', boardId],
-    });
-
-    // Invalidate user postings cache for completion message
-    queryClient.invalidateQueries({
-      queryKey: ['userPostings', authorId],
-    });
-
-    // Invalidate posting streak cache to show updated streak on PostCard
-    queryClient.invalidateQueries({
-      queryKey: ['postingStreak', authorId],
-    });
+    // Invalidate post-related caches and optimistically update streak
+    invalidatePostCaches(boardId, authorId);
+    optimisticallyUpdatePostingStreak(authorId);
 
     return redirect(`/create/${boardId}/completion?contentLength=${content.length}`);
   } catch (error) {
