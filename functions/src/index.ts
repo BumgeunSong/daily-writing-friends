@@ -48,33 +48,6 @@ export {
   generateCommentSuggestions
 } from './commentSuggestion';
 
-export {
-  onEventCreatedTrigger
-} from './eventSourcing/projection/onEventCreated';
-
-export {
-  migrateDefaultTimezones
-} from './eventSourcing/migrations/setDefaultTimezones';
-
-export {
-  processDayBoundariesBaseline,
-  processDayBoundariesPeak
-} from './eventSourcing/scheduler/processDayBoundaries';
-
-// Phase 2.1: On-demand projection with virtual DayClosed
-export {
-  computeUserStreakProjectionHttp
-} from './eventSourcing/projection/computeStreakProjectionHttp';
-
-export {
-  explainUserStreakProjectionHttp
-} from './eventSourcing/projection/explainStreakProjectionHttp';
-
-// Phase 3: Historical event backfill
-export {
-  backfillHistoricalEventsHttp
-} from './eventSourcing/backfill/backfillEventsHttp';
-
 // Engagement Score
 export {
   updateEngagementScore
