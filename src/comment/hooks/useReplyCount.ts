@@ -12,6 +12,7 @@ export function useReplyCount(boardId: string, postId: string, commentId: string
       const blockedByUsers = userId ? await getBlockedByUsers(userId) : [];
       return fetchReplyCountOnce(boardId, postId, commentId, blockedByUsers);
     },
+    enabled: !!currentUser,
     suspense: false,
     refetchOnWindowFocus: false,
   });
