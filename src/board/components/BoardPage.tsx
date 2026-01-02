@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import BestPostCardList from "@/board/components/BestPostCardList"
 import { BoardPageHeader } from "@/board/components/BoardPageHeader"
@@ -12,7 +12,18 @@ import { Button } from "@/shared/ui/button"
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>()
   const navigate = useNavigate()
-  const [filter, setFilter] = useState<PostFilterType>('recent')
+
+  const [filter, setFilter] = useState<PostFilterType>(() => {
+    if (!boardId) return 'recent';
+    const saved = sessionStorage.getItem(`boardFilter-${boardId}`);
+    return (saved === 'best' || saved === 'recent') ? saved : 'recent';
+  });
+
+  useEffect(() => {
+    if (boardId) {
+      sessionStorage.setItem(`boardFilter-${boardId}`, filter);
+    }
+  }, [filter, boardId]);
 
   const handlePostClick = (postId: string) => {
     navigate(`/board/${boardId}/post/${postId}`)
