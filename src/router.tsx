@@ -1,4 +1,4 @@
-import { createBrowserRouter, redirect, Outlet } from 'react-router-dom';
+import { createBrowserRouter, redirect, ScrollRestoration } from 'react-router-dom';
 import './index.css';
 
 // Providers that need router context
@@ -49,10 +49,11 @@ import { BottomTabHandlerProvider } from './shared/contexts/BottomTabHandlerCont
 import { NavigationProvider } from './shared/contexts/NavigationContext';
 
 // Root layout component with router-dependent providers and tracking
-function RootLayout({ children }: { children?: React.ReactNode }) {
+function RootLayout() {
   return (
     <NavigationProvider debounceTime={500} topThreshold={30} ignoreSmallChanges={10}>
       <BottomTabHandlerProvider>
+        <ScrollRestoration />
         <AppWithTracking />
       </BottomTabHandlerProvider>
     </NavigationProvider>

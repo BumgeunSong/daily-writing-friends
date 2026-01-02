@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { useNavigate } from 'react-router-dom';
 import PostCard from '@/post/components/PostCard';
-import { usePosts } from '@/post/hooks/usePosts';
+import { useRecentPosts } from '@/post/hooks/useRecentPosts';
 import { useScrollRestoration } from '@/post/hooks/useScrollRestoration';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
@@ -16,20 +16,20 @@ import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
 import { useCurrentUserKnownBuddy } from '@/user/hooks/useCurrentUserKnownBuddy';
 import type React from 'react';
 
-interface PostCardListProps {
+interface RecentPostCardListProps {
   boardId: string;
   onPostClick: (postId: string) => void;
   onClickProfile?: (userId: string) => void;
 }
 
 /**
- * 게시글 목록 컴포넌트 (내 컨텐츠 숨김 유저 필터링)
+ * 최근 게시글 목록 컴포넌트 (createdAt 내림차순)
  */
-const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onClickProfile }) => {
+const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPostClick, onClickProfile }) => {
   const navigate = useNavigate();
   const [inViewRef, inView] = useInView();
   const [limitCount] = useState(7);
-  usePerformanceMonitoring('PostCardList');
+  usePerformanceMonitoring('RecentPostCardList');
   const queryClient = useQueryClient();
   const { knownBuddy } = useCurrentUserKnownBuddy();
 
@@ -40,7 +40,7 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = usePosts(boardId, limitCount);
+  } = useRecentPosts(boardId, limitCount);
 
   const allPosts = postPages?.pages.flat() || [];
 
@@ -132,4 +132,4 @@ const PostCardList: React.FC<PostCardListProps> = ({ boardId, onPostClick, onCli
   );
 };
 
-export default PostCardList;
+export default RecentPostCardList;

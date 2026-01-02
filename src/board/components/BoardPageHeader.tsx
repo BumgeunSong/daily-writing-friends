@@ -27,7 +27,7 @@ export const BoardPageHeader: React.FC<BoardHeaderProps> = ({ boardId }) => {
   }
 
   return (
-    <header className="bg-background py-3">
+    <header className="bg-background pt-3 pb-1">
       <div className="container mx-auto flex items-center justify-between px-3 md:px-4">
         <Link
           to="/boards/list"

@@ -3,6 +3,7 @@ import { isWorkingDay } from '@/shared/utils/dateUtils';
 
 export function invalidatePostCaches(boardId: string, authorId: string) {
   queryClient.invalidateQueries({ queryKey: ['posts', boardId] });
+  queryClient.invalidateQueries({ queryKey: ['bestPosts', boardId] });
   queryClient.invalidateQueries({ queryKey: ['userPostings', authorId] });
 }
 

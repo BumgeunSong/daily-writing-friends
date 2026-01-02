@@ -1,5 +1,5 @@
 import { LoaderFunctionArgs } from 'react-router-dom';
-import { fetchPosts } from '@/post/api/post';
+import { fetchRecentPosts } from '@/post/api/post';
 import { getCurrentUser } from '@/shared/utils/authUtils';
 import { getBlockedByUsers } from '@/user/api/user';
 
@@ -22,7 +22,7 @@ export async function boardPostsLoader({ params }: LoaderFunctionArgs) {
     const blockedByUsers = await getBlockedByUsers(currentUser.uid);
     
     // Fetch initial posts (first page with 7 items)
-    const initialPosts = await fetchPosts(boardId, 7, blockedByUsers);
+    const initialPosts = await fetchRecentPosts(boardId, 7, blockedByUsers);
     
     return { 
       boardId, 

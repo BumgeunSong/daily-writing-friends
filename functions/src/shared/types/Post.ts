@@ -11,6 +11,8 @@ export interface Post {
   comments: number;
   countOfComments: number;
   countOfReplies: number;
+  countOfLikes?: number;
+  engagementScore?: number;
   updatedAt?: Timestamp;
   weekDaysFromFirstDay?: number;
 }
