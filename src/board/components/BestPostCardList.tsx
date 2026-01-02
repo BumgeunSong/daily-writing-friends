@@ -1,8 +1,7 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useState, useCallback } from 'react';
-import { useInView } from 'react-intersection-observer';
+import { useEffect, useCallback } from 'react';
 import PostCard from '@/post/components/PostCard';
 import { useBestPosts } from '@/post/hooks/useBestPosts';
 import { useScrollRestoration } from '@/post/hooks/useScrollRestoration';
@@ -12,6 +11,8 @@ import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitorin
 import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
 import { useCurrentUserKnownBuddy } from '@/user/hooks/useCurrentUserKnownBuddy';
 import type React from 'react';
+
+const BEST_POSTS_LIMIT = 20;
 
 interface BestPostCardListProps {
   boardId: string;
@@ -23,22 +24,15 @@ interface BestPostCardListProps {
  * 베스트 게시글 목록 컴포넌트 (최근 7일, engagementScore 내림차순)
  */
 const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClick, onClickProfile }) => {
-  const [inViewRef, inView] = useInView();
-  const [limitCount] = useState(7);
   usePerformanceMonitoring('BestPostCardList');
   const queryClient = useQueryClient();
   const { knownBuddy } = useCurrentUserKnownBuddy();
 
   const {
-    data: postPages,
+    data: posts,
     isLoading,
     isError,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useBestPosts(boardId, limitCount);
-
-  const allPosts = postPages?.pages.flat() || [];
+  } = useBestPosts(boardId, BEST_POSTS_LIMIT);
 
   const { saveScrollPosition, restoreScrollPosition } = useScrollRestoration(`${boardId}-best-posts`);
 
@@ -53,12 +47,6 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
     onPostClick(postId);
     saveScrollPosition();
   };
-
-  useEffect(() => {
-    if (inView && hasNextPage) {
-      fetchNextPage();
-    }
-  }, [inView, hasNextPage, fetchNextPage]);
 
   useEffect(() => {
     if (boardId) {
@@ -85,7 +73,7 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
     );
   }
 
-  if (allPosts.length === 0) {
+  if (!posts || posts.length === 0) {
     return (
       <div className="flex flex-col items-center justify-start p-8 pt-16 text-center">
         <div className="mb-4 text-6xl text-muted-foreground">
@@ -98,7 +86,7 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
 
   return (
     <div className='space-y-4'>
-      {allPosts.map((post) => (
+      {posts.map((post) => (
         <PostCard
           key={post.id}
           post={post}
@@ -107,12 +95,6 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
           isKnownBuddy={post.authorId === knownBuddy?.uid}
         />
       ))}
-      <div ref={inViewRef} />
-      {isFetchingNextPage && (
-        <div className='text-reading-sm flex items-center justify-center p-6 text-muted-foreground'>
-          <span>글을 불러오는 중...</span>
-        </div>
-      )}
     </div>
   );
 };

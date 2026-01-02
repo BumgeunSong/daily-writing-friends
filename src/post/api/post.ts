@@ -33,20 +33,15 @@ export async function fetchPosts(
   return snapshot.docs.map(doc => mapDocumentToPost(doc));
 }
 
-export interface BestPostsCursor {
-  createdAt: Timestamp;
-  engagementScore: number;
-}
-
 /**
  * 최근 7일 내 게시글 중 engagementScore 높은 순으로 불러옴
- * Firestore 복합 인덱스 필요: createdAt(asc) + engagementScore(desc)
+ * 클라이언트 사이드 정렬: Firestore는 range filter 필드가 첫 orderBy여야 하므로
+ * 전체 조회 후 engagementScore로 정렬
  */
 export async function fetchBestPosts(
   boardId: string,
   limitCount: number,
-  blockedByUsers: string[] = [],
-  cursor?: BestPostsCursor
+  blockedByUsers: string[] = []
 ): Promise<Post[]> {
   const postsRef = collection(firestore, `boards/${boardId}/posts`);
   const sevenDaysAgo = new Date();
@@ -55,23 +50,17 @@ export async function fetchBestPosts(
 
   let q = query(
     postsRef,
-    where('createdAt', '>=', sevenDaysAgoTimestamp),
-    orderBy('createdAt', 'asc'),
-    orderBy('engagementScore', 'desc')
+    where('createdAt', '>=', sevenDaysAgoTimestamp)
   );
 
   if (blockedByUsers.length > 0 && blockedByUsers.length <= 10) {
     q = query(q, where('authorId', 'not-in', blockedByUsers));
   }
 
-  if (limitCount) {
-    q = query(q, limit(limitCount));
-  }
-
-  if (cursor) {
-    q = query(q, startAfter(cursor.createdAt, cursor.engagementScore));
-  }
-
   const snapshot = await trackedFirebase.getDocs(q);
-  return snapshot.docs.map(doc => mapDocumentToPost(doc));
+  const posts = snapshot.docs.map(doc => mapDocumentToPost(doc));
+
+  return posts
+    .sort((a, b) => (b.engagementScore ?? 0) - (a.engagementScore ?? 0))
+    .slice(0, limitCount);
 }
