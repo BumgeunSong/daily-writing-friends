@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { useNavigate } from 'react-router-dom';
 import PostCard from '@/post/components/PostCard';
-import { usePosts } from '@/post/hooks/usePosts';
+import { useRecentPosts } from '@/post/hooks/useRecentPosts';
 import { useScrollRestoration } from '@/post/hooks/useScrollRestoration';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
@@ -40,7 +40,7 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = usePosts(boardId, limitCount);
+  } = useRecentPosts(boardId, limitCount);
 
   const allPosts = postPages?.pages.flat() || [];
 

@@ -8,14 +8,14 @@ import { trackedFirebase } from '@/shared/api/trackedFirebase';
 const BEST_POSTS_DAYS_RANGE = 7;
 
 /**
- * Firestore에서 게시글을 불러옴 (blockedByUsers 서버사이드 필터링)
+ * 최근 게시글을 불러옴 (createdAt 내림차순, blockedByUsers 서버사이드 필터링)
  * @param boardId
  * @param limitCount
  * @param blockedByUsers
  * @param after
  * @returns Post[]
  */
-export async function fetchPosts(
+export async function fetchRecentPosts(
   boardId: string,
   limitCount: number,
   blockedByUsers: string[] = [],
