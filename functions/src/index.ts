@@ -74,3 +74,12 @@ export {
 export {
   backfillHistoricalEventsHttp
 } from './eventSourcing/backfill/backfillEventsHttp';
+
+// Engagement Score
+export {
+  updateEngagementScore
+} from './engagementScore';
+
+export {
+  backfillEngagementScoreHttp
+} from './backfill/backfillEngagementScore';
