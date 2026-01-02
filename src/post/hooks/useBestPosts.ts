@@ -30,10 +30,10 @@ export const useBestPosts = (boardId: string, targetCount: number) => {
     {
       enabled: !!boardId && !!currentUser?.uid,
       getNextPageParam: (lastPage, allPages) => {
-        if (lastPage.length < PAGE_SIZE) return undefined;
+        if (lastPage.length === 0 || lastPage.length < PAGE_SIZE) return undefined;
         if (allPages.length >= MAX_PAGES_TO_FETCH) return undefined;
         const lastPost = lastPage[lastPage.length - 1];
-        return lastPost?.engagementScore;
+        return lastPost.engagementScore;
       },
       meta: {
         errorContext: 'Loading best posts',
