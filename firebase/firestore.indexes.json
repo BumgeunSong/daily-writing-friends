@@ -4,7 +4,7 @@
       "collectionGroup": "posts",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "createdAt", "order": "ASCENDING" },
+        { "fieldPath": "authorId", "order": "ASCENDING" },
         { "fieldPath": "engagementScore", "order": "DESCENDING" }
       ]
     }
