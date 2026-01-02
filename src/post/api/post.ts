@@ -34,33 +34,42 @@ export async function fetchPosts(
 }
 
 /**
- * 최근 7일 내 게시글 중 engagementScore 높은 순으로 불러옴
- * 클라이언트 사이드 정렬: Firestore는 range filter 필드가 첫 orderBy여야 하므로
- * 전체 조회 후 engagementScore로 정렬
+ * engagementScore 높은 순으로 게시글 불러옴 (서버 사이드 정렬)
+ * 클라이언트에서 7일 필터링 수행
  */
 export async function fetchBestPosts(
   boardId: string,
   limitCount: number,
-  blockedByUsers: string[] = []
+  blockedByUsers: string[] = [],
+  afterScore?: number
 ): Promise<Post[]> {
   const postsRef = collection(firestore, `boards/${boardId}/posts`);
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - BEST_POSTS_DAYS_RANGE);
-  const sevenDaysAgoTimestamp = Timestamp.fromDate(sevenDaysAgo);
 
   let q = query(
     postsRef,
-    where('createdAt', '>=', sevenDaysAgoTimestamp)
+    orderBy('engagementScore', 'desc'),
+    limit(limitCount)
   );
 
   if (blockedByUsers.length > 0 && blockedByUsers.length <= 10) {
     q = query(q, where('authorId', 'not-in', blockedByUsers));
   }
 
-  const snapshot = await trackedFirebase.getDocs(q);
-  const posts = snapshot.docs.map(doc => mapDocumentToPost(doc));
+  if (afterScore !== undefined) {
+    q = query(q, startAfter(afterScore));
+  }
 
-  return posts
-    .sort((a, b) => (b.engagementScore ?? 0) - (a.engagementScore ?? 0))
-    .slice(0, limitCount);
+  const snapshot = await trackedFirebase.getDocs(q);
+  return snapshot.docs.map(doc => mapDocumentToPost(doc));
+}
+
+/**
+ * 게시글이 최근 7일 내인지 확인
+ */
+export function isWithinDays(post: Post, days: number): boolean {
+  if (!post.createdAt) return false;
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - days);
+  const postDate = post.createdAt.toDate();
+  return postDate >= cutoffDate;
 }

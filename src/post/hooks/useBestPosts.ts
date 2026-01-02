@@ -1,15 +1,20 @@
-import { useQuery } from '@tanstack/react-query';
-import { useState, useEffect } from 'react';
-import { fetchBestPosts } from '@/post/api/post';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { useState, useEffect, useMemo } from 'react';
+import { fetchBestPosts, isWithinDays } from '@/post/api/post';
 import { Post } from '@/post/model/Post';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { getBlockedByUsers } from '@/user/api/user';
 
+const BEST_POSTS_DAYS_RANGE = 7;
+const MAX_PAGES_TO_FETCH = 5;
+const PAGE_SIZE = 20;
+
 /**
  * 최근 7일 내 베스트 게시글을 불러오는 훅 (engagementScore 내림차순)
- * 클라이언트 사이드 정렬로 페이지네이션 없이 상위 N개만 반환
+ * 서버: engagementScore 순 정렬
+ * 클라이언트: 7일 필터링 + 결과 부족 시 자동 추가 페이지 요청
  */
-export const useBestPosts = (boardId: string, limitCount: number) => {
+export const useBestPosts = (boardId: string, targetCount: number) => {
   const { currentUser } = useAuth();
   const [blockedByUsers, setBlockedByUsers] = useState<string[]>([]);
 
@@ -19,11 +24,17 @@ export const useBestPosts = (boardId: string, limitCount: number) => {
     }
   }, [currentUser?.uid]);
 
-  const queryResult = useQuery<Post[]>(
+  const queryResult = useInfiniteQuery<Post[]>(
     ['bestPosts', boardId, blockedByUsers],
-    () => fetchBestPosts(boardId, limitCount, blockedByUsers),
+    ({ pageParam = undefined }) => fetchBestPosts(boardId, PAGE_SIZE, blockedByUsers, pageParam),
     {
       enabled: !!boardId && !!currentUser?.uid,
+      getNextPageParam: (lastPage, allPages) => {
+        if (lastPage.length < PAGE_SIZE) return undefined;
+        if (allPages.length >= MAX_PAGES_TO_FETCH) return undefined;
+        const lastPost = lastPage[lastPage.length - 1];
+        return lastPost?.engagementScore;
+      },
       meta: {
         errorContext: 'Loading best posts',
         feature: 'board-view-best',
@@ -35,8 +46,28 @@ export const useBestPosts = (boardId: string, limitCount: number) => {
     }
   );
 
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = queryResult;
+
+  const recentPosts = useMemo(() => {
+    if (!data?.pages) return [];
+    return data.pages
+      .flat()
+      .filter(post => isWithinDays(post, BEST_POSTS_DAYS_RANGE));
+  }, [data?.pages]);
+
+  useEffect(() => {
+    if (
+      recentPosts.length < targetCount &&
+      hasNextPage &&
+      !isFetchingNextPage
+    ) {
+      fetchNextPage();
+    }
+  }, [recentPosts.length, targetCount, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   return {
     ...queryResult,
+    recentPosts: recentPosts.slice(0, targetCount),
     blockedByUsers,
   };
 };

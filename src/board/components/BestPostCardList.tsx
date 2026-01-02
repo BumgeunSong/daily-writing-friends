@@ -12,7 +12,7 @@ import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
 import { useCurrentUserKnownBuddy } from '@/user/hooks/useCurrentUserKnownBuddy';
 import type React from 'react';
 
-const BEST_POSTS_LIMIT = 20;
+const BEST_POSTS_TARGET = 20;
 
 interface BestPostCardListProps {
   boardId: string;
@@ -29,10 +29,11 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
   const { knownBuddy } = useCurrentUserKnownBuddy();
 
   const {
-    data: posts,
+    recentPosts,
     isLoading,
     isError,
-  } = useBestPosts(boardId, BEST_POSTS_LIMIT);
+    isFetchingNextPage,
+  } = useBestPosts(boardId, BEST_POSTS_TARGET);
 
   const { saveScrollPosition, restoreScrollPosition } = useScrollRestoration(`${boardId}-best-posts`);
 
@@ -73,7 +74,7 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
     );
   }
 
-  if (!posts || posts.length === 0) {
+  if (recentPosts.length === 0 && !isFetchingNextPage) {
     return (
       <div className="flex flex-col items-center justify-start p-8 pt-16 text-center">
         <div className="mb-4 text-6xl text-muted-foreground">
@@ -86,7 +87,7 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
 
   return (
     <div className='space-y-4'>
-      {posts.map((post) => (
+      {recentPosts.map((post) => (
         <PostCard
           key={post.id}
           post={post}
@@ -95,6 +96,11 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
           isKnownBuddy={post.authorId === knownBuddy?.uid}
         />
       ))}
+      {isFetchingNextPage && (
+        <div className='text-reading-sm flex items-center justify-center p-6 text-muted-foreground'>
+          <span>글을 불러오는 중...</span>
+        </div>
+      )}
     </div>
   );
 };
