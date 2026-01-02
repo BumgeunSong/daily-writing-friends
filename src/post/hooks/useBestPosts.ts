@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
-import { fetchBestPosts } from '@/post/api/post';
+import { fetchBestPosts, BestPostsCursor } from '@/post/api/post';
 import { Post } from '@/post/model/Post';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { getBlockedByUsers } from '@/user/api/user';
@@ -23,9 +23,14 @@ export const useBestPosts = (boardId: string, limitCount: number) => {
     ({ pageParam = undefined }) => fetchBestPosts(boardId, limitCount, blockedByUsers, pageParam),
     {
       enabled: !!boardId && !!currentUser?.uid,
-      getNextPageParam: (lastPage) => {
+      getNextPageParam: (lastPage): BestPostsCursor | undefined => {
+        if (lastPage.length < limitCount) return undefined;
         const lastPost = lastPage[lastPage.length - 1];
-        return lastPost?.engagementScore;
+        if (!lastPost?.createdAt) return undefined;
+        return {
+          createdAt: lastPost.createdAt,
+          engagementScore: lastPost.engagementScore ?? 0,
+        };
       },
       meta: {
         errorContext: 'Loading best posts',
