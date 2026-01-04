@@ -68,9 +68,10 @@ describe('userUtils', () => {
       expect(getUserDisplayName(user)).toBe('Nick');
     });
 
-    it('should handle nickname with leading/trailing spaces', () => {
+    // NOTE: Current behavior - function uses trim() to validate but returns untrimmed value.
+    // This may be intentional (preserve formatting) or a bug (inconsistent with validation logic).
+    it('should return untrimmed nickname when nickname has leading/trailing spaces', () => {
       const user = createMockUser({ nickname: '  Nickname  ', realName: 'Real Name' });
-      // The function checks for empty string after trim, but returns the original nickname
       expect(getUserDisplayName(user)).toBe('  Nickname  ');
     });
   });
