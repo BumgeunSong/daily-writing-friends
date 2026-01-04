@@ -314,16 +314,19 @@ CREATE TABLE notifications (
   actor_profile_image TEXT,
   board_id TEXT NOT NULL,
   post_id TEXT NOT NULL,
-  comment_id TEXT,
-  reply_id TEXT,
+  comment_id TEXT NOT NULL DEFAULT '',  -- Empty string instead of NULL for unique constraint
+  reply_id TEXT NOT NULL DEFAULT '',    -- Empty string instead of NULL for unique constraint
   reaction_id TEXT,
   like_id TEXT,
   message TEXT NOT NULL,
   read BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  -- Idempotency constraint: one notification per unique event
-  UNIQUE(recipient_id, type, post_id, COALESCE(comment_id, ''), COALESCE(reply_id, ''), actor_id)
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Idempotency constraint: one notification per unique event
+-- Using DEFAULT '' for nullable fields to enable simple UNIQUE constraint
+CREATE UNIQUE INDEX idx_notifications_idempotency
+  ON notifications(recipient_id, type, post_id, comment_id, reply_id, actor_id);
 
 -- Idempotent write operations log
 CREATE TABLE write_ops (
@@ -485,10 +488,31 @@ FROM notifications n
 LEFT JOIN users u ON u.id = n.recipient_id
 WHERE u.id IS NULL;
 
--- Posts with mismatched comment counts
+-- Posts with mismatched comment counts (optimized with JOIN + GROUP BY)
 SELECT 'comment_count_mismatch' as check_name, COUNT(*) as count
-FROM posts p
-WHERE p.count_of_comments != (SELECT COUNT(*) FROM comments c WHERE c.post_id = p.id);
+FROM (
+  SELECT p.id, p.count_of_comments, COALESCE(c.actual_count, 0) as actual_count
+  FROM posts p
+  LEFT JOIN (
+    SELECT post_id, COUNT(*) as actual_count
+    FROM comments
+    GROUP BY post_id
+  ) c ON c.post_id = p.id
+  WHERE p.count_of_comments != COALESCE(c.actual_count, 0)
+) mismatched;
+
+-- Posts with mismatched reply counts
+SELECT 'reply_count_mismatch' as check_name, COUNT(*) as count
+FROM (
+  SELECT p.id, p.count_of_replies, COALESCE(r.actual_count, 0) as actual_count
+  FROM posts p
+  LEFT JOIN (
+    SELECT post_id, COUNT(*) as actual_count
+    FROM replies
+    GROUP BY post_id
+  ) r ON r.post_id = p.id
+  WHERE p.count_of_replies != COALESCE(r.actual_count, 0)
+) mismatched;
 ```
 
 **Pass condition:**
@@ -517,25 +541,50 @@ function generateOpId(eventType: string, entityId: string, timestamp: number): s
   return `${eventType}_${entityId}_${timestamp}`;
 }
 
-// Idempotent write wrapper
+// Idempotent write wrapper using RPC for atomic check-and-execute
+// This avoids race conditions by using a database function
+
+// First, create the database function:
+/*
+CREATE OR REPLACE FUNCTION try_acquire_write_lock(p_op_id TEXT)
+RETURNS BOOLEAN AS $$
+DECLARE
+  inserted BOOLEAN;
+BEGIN
+  INSERT INTO write_ops (op_id)
+  VALUES (p_op_id)
+  ON CONFLICT (op_id) DO NOTHING
+  RETURNING TRUE INTO inserted;
+
+  RETURN COALESCE(inserted, FALSE);
+END;
+$$ LANGUAGE plpgsql;
+*/
+
 async function idempotentWrite(opId: string, writeOperation: () => Promise<void>): Promise<void> {
-  const { error } = await supabase
-    .from('write_ops')
-    .insert({ op_id: opId })
-    .select();
+  // Atomically try to acquire the write lock
+  const { data: acquired, error } = await supabase
+    .rpc('try_acquire_write_lock', { p_op_id: opId });
 
   if (error) {
-    // 23505 = unique constraint violation, operation already processed
-    if (error.code === '23505') {
-      console.log(`Operation ${opId} already processed, skipping`);
-      return;
-    }
-    // For any other error, throw to prevent silent failures
-    throw new Error(`Failed to record write operation ${opId}: ${error.message}`);
+    throw new Error(`Failed to acquire write lock for ${opId}: ${error.message}`);
   }
 
-  // Only execute writeOperation if op_id was successfully inserted
-  await writeOperation();
+  // If we didn't acquire the lock, operation was already processed
+  if (!acquired) {
+    console.log(`Operation ${opId} already processed, skipping`);
+    return;
+  }
+
+  // We acquired the lock, execute the write operation
+  try {
+    await writeOperation();
+  } catch (writeError) {
+    // If write fails, we should ideally remove the lock to allow retry
+    // But this depends on your retry strategy - leaving lock prevents duplicate attempts
+    console.error(`Write operation failed for ${opId}:`, writeError);
+    throw writeError;
+  }
 }
 ```
 
@@ -633,17 +682,76 @@ describe('Dual-write idempotency', () => {
       content: '',
     };
 
-    // Simulate concurrent writes (both start before either completes)
+    // Use a barrier pattern to ensure true concurrency
+    // Both operations wait at the barrier, then race to the database
+    let barrier = 2;
+    const waitForBarrier = () => new Promise<void>(resolve => {
+      barrier--;
+      const check = () => {
+        if (barrier <= 0) resolve();
+        else setTimeout(check, 1);
+      };
+      check();
+    });
+
+    const concurrentWrite = async () => {
+      await waitForBarrier(); // Wait for both to be ready
+      return idempotentWrite(opId, () => supabase.from('posts').insert(testPost));
+    };
+
+    // Launch truly concurrent writes
     const results = await Promise.allSettled([
-      idempotentWrite(opId, () => supabase.from('posts').insert(testPost)),
-      idempotentWrite(opId, () => supabase.from('posts').insert(testPost)),
+      concurrentWrite(),
+      concurrentWrite(),
     ]);
 
-    // At least one should succeed, the other may succeed or be skipped
+    // Both should complete (one succeeds, one skips) - neither should throw
     const successes = results.filter(r => r.status === 'fulfilled');
-    expect(successes.length).toBeGreaterThanOrEqual(1);
+    expect(successes.length).toBe(2); // Both complete without error
 
     // Final state: exactly 1 write_ops entry, exactly 1 post
+    const { data: writeOps } = await supabase.from('write_ops').select().eq('op_id', opId);
+    const { data: posts } = await supabase.from('posts').select().eq('id', testPostId);
+
+    expect(writeOps?.length).toBe(1);
+    expect(posts?.length).toBe(1);
+  });
+
+  it('should handle high concurrency (10 simultaneous writes)', async () => {
+    const opId = `test_stress_${Date.now()}`;
+    const testPost = {
+      id: testPostId,
+      board_id: 'test-board',
+      author_id: 'test-user',
+      author_name: 'Test',
+      title: 'Test Post',
+      content: '',
+    };
+
+    const CONCURRENCY = 10;
+    let barrier = CONCURRENCY;
+    const waitForBarrier = () => new Promise<void>(resolve => {
+      barrier--;
+      const check = () => {
+        if (barrier <= 0) resolve();
+        else setTimeout(check, 1);
+      };
+      check();
+    });
+
+    // Launch many concurrent writes
+    const results = await Promise.allSettled(
+      Array(CONCURRENCY).fill(null).map(async () => {
+        await waitForBarrier();
+        return idempotentWrite(opId, () => supabase.from('posts').insert(testPost));
+      })
+    );
+
+    // All should complete without throwing
+    const successes = results.filter(r => r.status === 'fulfilled');
+    expect(successes.length).toBe(CONCURRENCY);
+
+    // Final state: exactly 1 of each
     const { data: writeOps } = await supabase.from('write_ops').select().eq('op_id', opId);
     const { data: posts } = await supabase.from('posts').select().eq('id', testPostId);
 
@@ -741,24 +849,30 @@ pnpm test:e2e --filter my-posts
 
 ### Notification Table Design
 
-The notifications table uses an idempotency constraint to prevent duplicate notifications:
+The notifications table uses a unique index for idempotency:
 
 ```sql
--- Idempotency constraint ensures one notification per unique event
-UNIQUE(recipient_id, type, post_id, COALESCE(comment_id, ''), COALESCE(reply_id, ''), actor_id)
+-- comment_id and reply_id use DEFAULT '' instead of NULL
+-- This enables a simple unique index without COALESCE expressions
+CREATE UNIQUE INDEX idx_notifications_idempotency
+  ON notifications(recipient_id, type, post_id, comment_id, reply_id, actor_id);
 ```
 
 ### Notification Insert Logic
 
 ```typescript
-// Insert notification (idempotent via upsert with ignoreDuplicates)
+// Insert notification (idempotent via INSERT ... ON CONFLICT DO NOTHING)
 async function createNotification(notification: NotificationInsert): Promise<void> {
+  // Ensure empty strings for optional fields (not NULL)
+  const normalizedNotification = {
+    ...notification,
+    comment_id: notification.comment_id || '',
+    reply_id: notification.reply_id || '',
+  };
+
   const { error } = await supabase
     .from('notifications')
-    .upsert(notification, {
-      onConflict: 'recipient_id,type,post_id,comment_id,reply_id,actor_id',
-      ignoreDuplicates: true,
-    });
+    .insert(normalizedNotification);
 
   if (error) {
     // 23505 = unique constraint violation (duplicate key), safe to ignore
