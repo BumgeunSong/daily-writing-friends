@@ -353,11 +353,11 @@ CREATE INDEX idx_posts_author_created ON posts(author_id, created_at DESC, id DE
 CREATE INDEX idx_posts_board_engagement ON posts(board_id, engagement_score DESC, created_at DESC, id DESC);
 
 -- Comments indexes
-CREATE INDEX idx_comments_author_created ON comments(author_id, created_at DESC);
+CREATE INDEX idx_comments_user_created ON comments(user_id, created_at DESC);
 CREATE INDEX idx_comments_post_created ON comments(post_id, created_at ASC);
 
 -- Replies indexes
-CREATE INDEX idx_replies_author_created ON replies(author_id, created_at DESC);
+CREATE INDEX idx_replies_user_created ON replies(user_id, created_at DESC);
 CREATE INDEX idx_replies_comment_created ON replies(comment_id, created_at ASC);
 
 -- Notifications index
@@ -452,7 +452,7 @@ function transformTimestamp(firestoreTimestamp: admin.firestore.Timestamp): stri
 
 ```bash
 # Run counts reconciliation
-node scripts/migration/reconcile/counts.ts --date-from 2024-01-01 --date-to 2026-01-04
+node scripts/migration/reconcile/counts.ts --days 30  # or use --date-from/--date-to for specific range
 
 # Run integrity checks
 psql "$DATABASE_URL" -f scripts/migration/sql/integrity_checks.sql
@@ -588,25 +588,74 @@ node scripts/migration/reconcile/recent_writes.ts --minutes 30
 
 ```typescript
 describe('Dual-write idempotency', () => {
+  const testPostId = `test-post-${Date.now()}`;
+
+  afterEach(async () => {
+    // Cleanup test data
+    await supabase.from('posts').delete().eq('id', testPostId);
+    await supabase.from('write_ops').delete().like('op_id', 'test_%');
+  });
+
   it('should only create one record when same op_id is used twice', async () => {
     const opId = `test_${Date.now()}`;
-    const testPost = { id: 'test-post', board_id: 'test', ... };
+    const testPost = {
+      id: testPostId,
+      board_id: 'test-board',
+      author_id: 'test-user',
+      author_name: 'Test',
+      title: 'Test Post',
+      content: '',
+    };
 
-    // First write
+    // First write - should succeed
     await idempotentWrite(opId, () => supabase.from('posts').insert(testPost));
 
-    // Second write with same opId
+    // Second write with same opId - should be skipped
     await idempotentWrite(opId, () => supabase.from('posts').insert(testPost));
 
-    // Should only have one record
-    const { data } = await supabase.from('posts').select().eq('id', 'test-post');
-    expect(data.length).toBe(1);
+    // Verify write_ops has exactly 1 entry
+    const { data: writeOps } = await supabase.from('write_ops').select().eq('op_id', opId);
+    expect(writeOps?.length).toBe(1);
+
+    // Verify posts has exactly 1 entry
+    const { data: posts } = await supabase.from('posts').select().eq('id', testPostId);
+    expect(posts?.length).toBe(1);
+  });
+
+  it('should handle concurrent writes with same op_id', async () => {
+    const opId = `test_concurrent_${Date.now()}`;
+    const testPost = {
+      id: testPostId,
+      board_id: 'test-board',
+      author_id: 'test-user',
+      author_name: 'Test',
+      title: 'Test Post',
+      content: '',
+    };
+
+    // Simulate concurrent writes (both start before either completes)
+    const results = await Promise.allSettled([
+      idempotentWrite(opId, () => supabase.from('posts').insert(testPost)),
+      idempotentWrite(opId, () => supabase.from('posts').insert(testPost)),
+    ]);
+
+    // At least one should succeed, the other may succeed or be skipped
+    const successes = results.filter(r => r.status === 'fulfilled');
+    expect(successes.length).toBeGreaterThanOrEqual(1);
+
+    // Final state: exactly 1 write_ops entry, exactly 1 post
+    const { data: writeOps } = await supabase.from('write_ops').select().eq('op_id', opId);
+    const { data: posts } = await supabase.from('posts').select().eq('id', testPostId);
+
+    expect(writeOps?.length).toBe(1);
+    expect(posts?.length).toBe(1);
   });
 });
 ```
 
 **Pass condition:**
-- Postgres has exactly **one** record per operation (no duplicates from retries)
+- `write_ops` table has exactly **one** entry per operation ID
+- `posts` table has exactly **one** record (no duplicates from retries or concurrency)
 - IDs match between Firestore and Postgres for recent writes
 - No idempotency-related errors in logs
 
@@ -661,8 +710,7 @@ SELECT
   r.post_id,
   r.created_at
 FROM replies r
-JOIN comments c ON c.id = r.comment_id
-JOIN posts p ON p.id = c.post_id;
+JOIN posts p ON p.id = r.post_id;  -- Use denormalized post_id, skip comments join
 
 -- Query user activity
 SELECT * FROM user_activity
@@ -675,7 +723,8 @@ LIMIT 20;
 
 ```bash
 # Static check: ensure no references to fan-out collections
-rg -n "postings|commentings|replyings" src functions scripts --type ts
+# Note: quotes are required to prevent shell from interpreting | as pipe
+rg -n "(postings|commentings|replyings)" src functions scripts --type ts
 
 # E2E test: verify "My posts" page works without fan-out
 pnpm test:e2e --filter my-posts
@@ -869,7 +918,7 @@ node scripts/shadow/run_shadow_reads.ts --samples 200 --feed recent --board-id X
 node scripts/migration/reconcile/top_posts.ts --days 7 --limit 3 --board-id XXX
 
 # Run daily audit
-node scripts/migration/reconcile/daily_audit.ts --date 2026-01-04
+node scripts/migration/reconcile/daily_audit.ts --date today  # or specific date YYYY-MM-DD
 ```
 
 **Pass condition:**
@@ -1131,7 +1180,7 @@ scripts/
 | Phase 1 | `psql "$DATABASE_URL" -f scripts/sql/integrity_checks.sql` |
 | Phase 2 | `node scripts/tests/idempotency.test.ts` |
 | Phase 2 | `node scripts/migration/reconcile/recent_writes.ts --minutes 30` |
-| Phase 3 | `rg -n "postings\|commentings\|replyings" src functions` |
+| Phase 3 | `rg -n "(postings\|commentings\|replyings)" src functions` |
 | Phase 4 | `node scripts/tests/notification_scenarios.test.ts` |
 | Phase 5 | `node scripts/shadow/run_shadow_reads.ts --samples 200` |
 | Phase 5 | `node scripts/migration/reconcile/daily_audit.ts` |
