@@ -308,7 +308,7 @@ CREATE TABLE notifications (
   reaction_id TEXT,
   like_id TEXT,
   message TEXT NOT NULL,
-  read_at TIMESTAMPTZ,
+  read BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   -- Idempotency constraint: one notification per unique event
   UNIQUE(recipient_id, type, post_id, COALESCE(comment_id, ''), COALESCE(reply_id, ''), actor_id)
@@ -319,7 +319,19 @@ CREATE TABLE write_ops (
   op_id TEXT PRIMARY KEY,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Index for cleanup queries
+CREATE INDEX idx_write_ops_created_at ON write_ops(created_at);
+
+-- Cleanup strategy: Delete records older than 30 days
+-- Run this as a scheduled job (e.g., daily via pg_cron or external scheduler)
+-- DELETE FROM write_ops WHERE created_at < NOW() - INTERVAL '30 days';
 ```
+
+> **Cleanup Strategy for `write_ops`**: This table grows with every write operation.
+> Implement a scheduled cleanup job to delete records older than 30 days:
+> - Use `pg_cron` extension: `SELECT cron.schedule('cleanup-write-ops', '0 3 * * *', $$DELETE FROM write_ops WHERE created_at < NOW() - INTERVAL '30 days'$$);`
+> - Or run via external scheduler (Cloud Scheduler, cron job) calling a cleanup endpoint
 
 ### Required Indexes (Non-negotiable)
 
@@ -339,12 +351,12 @@ CREATE INDEX idx_replies_comment_created ON replies(comment_id, created_at ASC);
 
 -- Notifications index
 CREATE INDEX idx_notifications_recipient_created ON notifications(recipient_id, created_at DESC);
-CREATE INDEX idx_notifications_recipient_unread ON notifications(recipient_id, created_at DESC) WHERE read_at IS NULL;
+CREATE INDEX idx_notifications_recipient_unread ON notifications(recipient_id, created_at DESC) WHERE read = FALSE;
 
 -- Blocks indexes
+-- Note: UNIQUE(blocker_id, blocked_id) already creates an index on that pair
 CREATE INDEX idx_blocks_blocker ON blocks(blocker_id);
 CREATE INDEX idx_blocks_blocked ON blocks(blocked_id);
-CREATE INDEX idx_blocks_pair ON blocks(blocker_id, blocked_id);
 
 -- Likes index
 CREATE INDEX idx_likes_post ON likes(post_id);
@@ -501,12 +513,17 @@ async function idempotentWrite(opId: string, writeOperation: () => Promise<void>
     .insert({ op_id: opId })
     .select();
 
-  // If conflict, operation already processed
-  if (error?.code === '23505') {
-    console.log(`Operation ${opId} already processed, skipping`);
-    return;
+  if (error) {
+    // 23505 = unique constraint violation, operation already processed
+    if (error.code === '23505') {
+      console.log(`Operation ${opId} already processed, skipping`);
+      return;
+    }
+    // For any other error, throw to prevent silent failures
+    throw new Error(`Failed to record write operation ${opId}: ${error.message}`);
   }
 
+  // Only execute writeOperation if op_id was successfully inserted
   await writeOperation();
 }
 ```
@@ -674,15 +691,21 @@ UNIQUE(recipient_id, type, post_id, COALESCE(comment_id, ''), COALESCE(reply_id,
 ### Notification Insert Logic
 
 ```typescript
-// Insert notification (idempotent via constraint)
+// Insert notification (idempotent via upsert with ignoreDuplicates)
 async function createNotification(notification: NotificationInsert): Promise<void> {
   const { error } = await supabase
     .from('notifications')
-    .insert(notification)
-    .onConflict('recipient_id,type,post_id,comment_id,reply_id,actor_id')
-    .ignore();
+    .upsert(notification, {
+      onConflict: 'recipient_id,type,post_id,comment_id,reply_id,actor_id',
+      ignoreDuplicates: true,
+    });
 
-  if (error && error.code !== '23505') {
+  if (error) {
+    // 23505 = unique constraint violation (duplicate key), safe to ignore
+    if (error.code === '23505') {
+      console.log('Notification already exists, skipping');
+      return;
+    }
     throw error;
   }
 }
