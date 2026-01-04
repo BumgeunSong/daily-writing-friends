@@ -95,7 +95,7 @@ users/{uid}
 
 ### Current Data Models
 
-**Post** (from `functions/src/shared/types/Post.ts`):
+**Post** (canonical: `src/post/model/Post.ts`):
 ```typescript
 interface Post {
   id: string;
@@ -105,15 +105,17 @@ interface Post {
   authorId: string;
   authorName: string;
   createdAt?: Timestamp;
-  comments: number;
-  countOfComments: number;
+  countOfComments: number;  // Note: legacy 'comments' field exists in functions/types but is unused
   countOfReplies: number;
-  countOfLikes?: number;
+  countOfLikes: number;
   engagementScore?: number;
   updatedAt?: Timestamp;
   weekDaysFromFirstDay?: number;
 }
 ```
+
+> **Legacy Field**: The functions type `Post` has a `comments: number` field alongside `countOfComments`.
+> Only `countOfComments` is actively used. Postgres schema uses only `count_of_comments`.
 
 **Comment** (from `functions/src/shared/types/Comment.ts`):
 ```typescript
@@ -127,8 +129,10 @@ interface Comment {
 }
 ```
 
-**Reply** (from `functions/src/shared/types/Reply.ts`):
+**Reply** (canonical: client version using `firebase/firestore`):
 ```typescript
+import { Timestamp } from 'firebase/firestore';
+
 interface Reply {
   id: string;
   content: string;
@@ -138,6 +142,9 @@ interface Reply {
   createdAt: Timestamp;
 }
 ```
+
+> **Note**: The canonical Reply interface uses `firebase/firestore` Timestamp (client SDK),
+> not `firebase-admin/firestore`. Postgres stores as `TIMESTAMPTZ`.
 
 **Notification** (from `functions/src/shared/types/Notification.ts`):
 ```typescript
@@ -173,6 +180,10 @@ enum NotificationType {
 ### Supabase Tables
 
 Create canonical tables with **Firestore document IDs as primary keys** (TEXT).
+
+> **Note on ID Column Type**: Firestore auto-generated document IDs are 20 alphanumeric characters.
+> We use `TEXT` rather than `VARCHAR(20)` for flexibility, but all IDs should be ~20 chars in practice.
+> This applies to: `boards.id`, `users.id`, `posts.id`, `comments.id`, `replies.id`, `likes.id`, `reactions.id`.
 
 ```sql
 -- Boards table
@@ -820,6 +831,10 @@ CREATE TABLE migration_diffs (
   order_mismatch BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Indexes for efficient querying during reconciliation
+CREATE INDEX idx_migration_diffs_board ON migration_diffs(board_id, created_at DESC);
+CREATE INDEX idx_migration_diffs_feed_type ON migration_diffs(feed_type, created_at DESC);
 ```
 
 ### Daily Reconciliation Job
@@ -962,11 +977,56 @@ Before disabling Firestore writes:
 ### Cutover Steps
 
 1. **Announce maintenance window** (if needed)
-2. **Stop dual-write to Firestore** — modify functions to only write to Supabase
-3. **Keep Firestore read-only** — for short rollback window (1-2 weeks)
-4. **Monitor closely** — error rates, user reports
-5. **Archive Firestore data** — export final backup
-6. **Delete Firestore collections** — after rollback window expires
+2. **Drain period** — handle in-flight writes safely (see below)
+3. **Stop dual-write to Firestore** — modify functions to only write to Supabase
+4. **Keep Firestore read-only** — for short rollback window (1-2 weeks)
+5. **Monitor closely** — error rates, user reports
+6. **Archive Firestore data** — export final backup
+7. **Delete Firestore collections** — after rollback window expires
+
+### Drain Period Protocol
+
+Since cutover happens during maintenance window (night) with few users, use a **drain period** approach:
+
+```
+Timeline (maintenance window):
+
+00:00  Start maintenance
+       ├── Set WRITE_MODE=draining (reject new writes with "maintenance" message)
+       ├── Wait 30-60 seconds for in-flight writes to complete
+       └── All pending Cloud Functions finish executing
+
+00:01  Deploy new functions (Supabase-only writes)
+       ├── Set WRITE_MODE=normal
+       └── Writes now go only to Supabase
+
+00:02  Verify writes working
+       └── Test create post, comment, like flows
+
+00:05  End maintenance
+```
+
+**Implementation**:
+
+```typescript
+// Drain mode flag (environment variable or remote config)
+const WRITE_MODE = process.env.WRITE_MODE || 'normal'; // 'normal' | 'draining'
+
+// In API/Edge Function
+if (WRITE_MODE === 'draining') {
+  return new Response(JSON.stringify({
+    error: 'maintenance',
+    message: '잠시 후 다시 시도해주세요. (서버 점검 중)',
+    retryAfter: 60,
+  }), { status: 503, headers: { 'Retry-After': '60' } });
+}
+```
+
+**Why drain period works**:
+- Maintenance window has minimal traffic
+- 30-60 second drain catches any in-flight writes
+- No complex distributed locking needed
+- Clear user feedback via 503 response
 
 ### Rollback Verification
 
