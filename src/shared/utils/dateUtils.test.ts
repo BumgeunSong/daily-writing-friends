@@ -229,7 +229,6 @@ describe('dateUtils', () => {
     it('should only include weekdays', () => {
       const result = getRecentWorkingDays(10);
       result.forEach((date) => {
-        const day = date.getDay();
         // Not Saturday (6) or Sunday (0) in KST
         const dateInKST = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
         const dayInKST = dateInKST.getDay();
