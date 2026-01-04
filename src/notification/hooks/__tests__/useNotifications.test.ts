@@ -3,7 +3,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 import { Timestamp } from 'firebase/firestore';
-import { useNotifications, fetchNotifications } from '../useNotifications';
+import { useNotifications } from '../useNotifications';
+import { fetchNotifications } from '@/notification/api/notificationApi';
 import { Notification, NotificationType } from '@/notification/model/Notification';
 
 // Mock Firebase
