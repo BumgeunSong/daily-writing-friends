@@ -27,8 +27,9 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 // Mock Sentry
+const mockCaptureException = vi.fn();
 vi.mock('@sentry/react', () => ({
-  captureException: vi.fn(),
+  captureException: (...args: unknown[]) => mockCaptureException(...args),
 }));
 
 const createMockNotification = (id: string, timestamp: Timestamp): Notification => ({
@@ -126,6 +127,24 @@ describe('useNotifications', () => {
       expect(result.current.data?.pages[0]).toHaveLength(0);
     });
   });
+
+  describe('when fetch fails', () => {
+    it('captures exception with Sentry on error', async () => {
+      const mockError = new Error('Firebase fetch failed');
+      mockGetDocs.mockRejectedValue(mockError);
+
+      const { result } = renderHook(
+        () => useNotifications('user-123', 10),
+        { wrapper: createWrapper() }
+      );
+
+      await waitFor(() => {
+        expect(result.current.isError).toBe(true);
+      });
+
+      expect(mockCaptureException).toHaveBeenCalledWith(mockError);
+    });
+  });
 });
 
 describe('fetchNotifications', () => {
@@ -168,5 +187,33 @@ describe('fetchNotifications', () => {
     const result = await fetchNotifications('user-123', 10);
 
     expect(result).toEqual([]);
+  });
+
+  it('fetches paginated results when after timestamp is provided', async () => {
+    const mockTimestamp = { seconds: Date.now() / 1000, nanoseconds: 0 } as Timestamp;
+    const cursorTimestamp = { seconds: Date.now() / 1000 - 1000, nanoseconds: 0 } as Timestamp;
+
+    mockGetDocs.mockResolvedValue({
+      docs: [
+        {
+          id: 'notif-page2-1',
+          data: () => ({
+            type: NotificationType.COMMENT_ON_POST,
+            boardId: 'board-1',
+            postId: 'post-1',
+            fromUserId: 'user-1',
+            message: 'Page 2 notification',
+            timestamp: mockTimestamp,
+            read: false,
+          }),
+        },
+      ],
+    });
+
+    const result = await fetchNotifications('user-123', 10, cursorTimestamp);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('notif-page2-1');
+    expect(result[0].message).toBe('Page 2 notification');
   });
 });

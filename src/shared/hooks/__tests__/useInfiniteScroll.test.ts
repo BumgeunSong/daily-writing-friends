@@ -155,6 +155,28 @@ describe('useInfiniteScroll', () => {
       expect(mockFetchNextPage).not.toHaveBeenCalled();
     });
 
+    it('does not call fetchNextPage when hasNextPage is undefined', async () => {
+      const { result } = renderHook(() =>
+        useInfiniteScroll({
+          hasNextPage: undefined,
+          fetchNextPage: mockFetchNextPage,
+          isFetchingNextPage: false,
+        })
+      );
+
+      act(() => {
+        result.current.observerRef(mockElement);
+      });
+
+      act(() => {
+        intersectionCallback?.([
+          { isIntersecting: true } as IntersectionObserverEntry,
+        ]);
+      });
+
+      expect(mockFetchNextPage).not.toHaveBeenCalled();
+    });
+
     it('does not call fetchNextPage when already fetching', async () => {
       const { result } = renderHook(() =>
         useInfiniteScroll({
