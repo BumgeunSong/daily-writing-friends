@@ -3,7 +3,7 @@ import { NotificationsContent } from '@/notification/components/NotificationsCon
 import { NotificationsErrorBoundary } from '@/notification/components/NotificationsErrorBoundary';
 import NotificationsHeader from '@/notification/components/NotificationsHeader';
 import { NotificationsLoading } from '@/notification/components/NotificationsLoading';
-import { useInfiniteScroll } from '@/notification/hooks/useInfiniteScroll';
+import { useInfiniteScroll } from '@/shared/hooks/useInfiniteScroll';
 import { useNotificationRefresh } from '@/notification/hooks/useNotificationRefresh';
 import { useNotifications } from '@/notification/hooks/useNotifications';
 import { flattenNotificationPages } from '@/notification/utils/notificationUtils';

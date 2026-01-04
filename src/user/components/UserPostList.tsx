@@ -1,5 +1,5 @@
 import { useRef } from "react"
-import { useInfiniteScroll } from "@/notification/hooks/useInfiniteScroll"
+import { useInfiniteScroll } from "@/shared/hooks/useInfiniteScroll"
 import { PostItem, PostItemSkeleton } from "@/user/components/UserPostItem"
 import { useUserPosts } from "../hooks/useUserPosts"
 import type { Post } from "@/post/model/Post"
