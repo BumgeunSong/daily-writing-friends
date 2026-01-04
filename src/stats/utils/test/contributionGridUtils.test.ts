@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import {
   createEmptyMatrices,
   getTimeRange,
@@ -12,17 +12,8 @@ import {
 import type { Contribution } from '@/stats/model/WritingStats'
 import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils'
 
-// Mock current date to ensure consistent test results
-const MOCK_TODAY = new Date('2025-07-29T00:00:00.000Z') // Tuesday
-
-beforeEach(() => {
-  vi.useFakeTimers()
-  vi.setSystemTime(MOCK_TODAY)
-})
-
-afterEach(() => {
-  vi.useRealTimers()
-})
+// Fixed date for deterministic testing: Tuesday, July 29, 2025
+const MOCK_TODAY = new Date('2025-07-29T00:00:00.000Z')
 
 describe('contributionGridUtils', () => {
   describe('createEmptyMatrices', () => {
@@ -50,8 +41,8 @@ describe('contributionGridUtils', () => {
 
   describe('getTimeRange', () => {
     it('should return dates with correct relationship', () => {
-      const result = getTimeRange()
-      
+      const result = getTimeRange(MOCK_TODAY)
+
       expect(result).toHaveProperty('weeksAgo')
       expect(result).toHaveProperty('today')
       expect(result.weeksAgo).toBeInstanceOf(Date)
@@ -60,20 +51,27 @@ describe('contributionGridUtils', () => {
     })
 
     it('should return Monday as start of range', () => {
-      const result = getTimeRange()
-      
+      const result = getTimeRange(MOCK_TODAY)
+
       expect(result.weeksAgo.getDay()).toBe(1) // Monday
     })
 
     it('should span approximately 4 weeks', () => {
-      const result = getTimeRange()
-      
+      const result = getTimeRange(MOCK_TODAY)
+
       const diffInDays = Math.floor(
         (result.today.getTime() - result.weeksAgo.getTime()) / (1000 * 60 * 60 * 24)
       )
-      
+
       expect(diffInDays).toBeGreaterThanOrEqual(21) // At least 3 weeks
       expect(diffInDays).toBeLessThanOrEqual(27) // At most ~4 weeks
+    })
+
+    it('should use provided date as today', () => {
+      const customToday = new Date('2025-08-15T12:00:00.000Z')
+      const result = getTimeRange(customToday)
+
+      expect(result.today.getTime()).toBe(customToday.getTime())
     })
   })
 
@@ -165,14 +163,16 @@ describe('contributionGridUtils', () => {
   })
 
   describe('processPostingContributions', () => {
+    const timeRange = getTimeRange(MOCK_TODAY)
+
     it('should return a complete GridResult', () => {
       const contributions: Contribution[] = [
         { createdAt: '2025-07-15', contentLength: 100 },
         { createdAt: '2025-07-16', contentLength: 200 },
       ]
-      
-      const result = processPostingContributions(contributions)
-      
+
+      const result = processPostingContributions(contributions, undefined, timeRange)
+
       expect(result).toHaveProperty('matrix')
       expect(result).toHaveProperty('weeklyContributions')
       expect(result).toHaveProperty('maxValue')
@@ -185,9 +185,9 @@ describe('contributionGridUtils', () => {
         { createdAt: '2025-07-16', contentLength: 500 },
         { createdAt: '2025-07-17', contentLength: 200 },
       ]
-      
-      const result = processPostingContributions(contributions)
-      
+
+      const result = processPostingContributions(contributions, undefined, timeRange)
+
       expect(result.maxValue).toBe(500)
     })
 
@@ -196,9 +196,9 @@ describe('contributionGridUtils', () => {
         { createdAt: '2025-07-15', contentLength: null },
         { createdAt: '2025-07-16', contentLength: 100 },
       ]
-      
-      const result = processPostingContributions(contributions)
-      
+
+      const result = processPostingContributions(contributions, undefined, timeRange)
+
       expect(result.maxValue).toBe(100)
       expect(result).toBeDefined()
     })
@@ -210,17 +210,17 @@ describe('contributionGridUtils', () => {
         { createdAt: '2025-07-20', contentLength: 999 }, // Sunday
         { createdAt: '2025-07-21', contentLength: 200 }, // Monday
       ]
-      
-      const result = processPostingContributions(contributions)
-      
+
+      const result = processPostingContributions(contributions, undefined, timeRange)
+
       expect(result.maxValue).toBe(200) // Should not include 999 from weekends
     })
 
     it('should create placeholders for days without contributions', () => {
       const contributions: Contribution[] = []
-      
-      const result = processPostingContributions(contributions)
-      
+
+      const result = processPostingContributions(contributions, undefined, timeRange)
+
       // Should have a grid structure even with no contributions
       expect(result.matrix).toHaveLength(WEEKS_TO_DISPLAY)
       expect(result.weeklyContributions).toHaveLength(WEEKS_TO_DISPLAY)
@@ -229,16 +229,18 @@ describe('contributionGridUtils', () => {
   })
 
   describe('processCommentingContributions', () => {
+    const timeRange = getTimeRange(MOCK_TODAY)
+
     it('should return a complete GridResult', () => {
       const contributions: CommentingContribution[] = [
         { createdAt: '2025-07-15', countOfCommentAndReplies: 5 },
         { createdAt: '2025-07-16', countOfCommentAndReplies: 10 },
       ]
-      
-      const result = processCommentingContributions(contributions)
-      
+
+      const result = processCommentingContributions(contributions, undefined, timeRange)
+
       expect(result).toHaveProperty('matrix')
-      expect(result).toHaveProperty('weeklyContributions') 
+      expect(result).toHaveProperty('weeklyContributions')
       expect(result).toHaveProperty('maxValue')
       expect(typeof result.maxValue).toBe('number')
     })
@@ -249,9 +251,9 @@ describe('contributionGridUtils', () => {
         { createdAt: '2025-07-16', countOfCommentAndReplies: 15 },
         { createdAt: '2025-07-17', countOfCommentAndReplies: 7 },
       ]
-      
-      const result = processCommentingContributions(contributions)
-      
+
+      const result = processCommentingContributions(contributions, undefined, timeRange)
+
       expect(result.maxValue).toBe(15)
     })
 
@@ -260,37 +262,39 @@ describe('contributionGridUtils', () => {
         { createdAt: '2025-07-15', countOfCommentAndReplies: null },
         { createdAt: '2025-07-16', countOfCommentAndReplies: 8 },
       ]
-      
-      const result = processCommentingContributions(contributions)
-      
+
+      const result = processCommentingContributions(contributions, undefined, timeRange)
+
       expect(result.maxValue).toBe(8)
       expect(result).toBeDefined()
     })
   })
 
   describe('Grid Structure Validation', () => {
+    const timeRange = getTimeRange(MOCK_TODAY)
+
     it('should maintain consistent grid dimensions across all functions', () => {
-      const postingResult = processPostingContributions([])
-      const commentingResult = processCommentingContributions([])
-      
+      const postingResult = processPostingContributions([], undefined, timeRange)
+      const commentingResult = processCommentingContributions([], undefined, timeRange)
+
       // Both should have same structure
       expect(postingResult.matrix).toHaveLength(WEEKS_TO_DISPLAY)
       expect(commentingResult.matrix).toHaveLength(WEEKS_TO_DISPLAY)
-      
+
       expect(postingResult.matrix[0]).toHaveLength(5)
       expect(commentingResult.matrix[0]).toHaveLength(5)
     })
 
     it('should handle edge case of contributions exactly at time boundaries', () => {
-      const { weeksAgo, today } = getTimeRange()
-      
+      const { weeksAgo, today } = timeRange
+
       const contributions: Contribution[] = [
         { createdAt: weeksAgo.toISOString(), contentLength: 100 },
         { createdAt: today.toISOString(), contentLength: 200 },
       ]
-      
-      const result = processPostingContributions(contributions)
-      
+
+      const result = processPostingContributions(contributions, undefined, timeRange)
+
       // Should process contributions at boundaries correctly
       expect(result).toBeDefined()
       expect(result.maxValue).toBeGreaterThanOrEqual(0)
