@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   isWorkingDay,
   isConfigurableHoliday,
@@ -118,14 +118,6 @@ describe('dateUtils', () => {
   });
 
   describe('getRelativeTime', () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-    });
-
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
     it('should return empty string for null', () => {
       expect(getRelativeTime(null)).toBe('');
     });
@@ -136,54 +128,72 @@ describe('dateUtils', () => {
 
     it('should return "방금 전" for less than 1 minute ago', () => {
       const now = new Date('2025-01-15T12:00:00Z');
-      vi.setSystemTime(now);
-
       const date = new Date('2025-01-15T11:59:30Z'); // 30 seconds ago
-      expect(getRelativeTime(date)).toBe('방금 전');
+
+      expect(getRelativeTime(date, now)).toBe('방금 전');
     });
 
     it('should return minutes ago format', () => {
       const now = new Date('2025-01-15T12:00:00Z');
-      vi.setSystemTime(now);
-
       const date = new Date('2025-01-15T11:45:00Z'); // 15 minutes ago
-      expect(getRelativeTime(date)).toBe('15분 전');
+
+      expect(getRelativeTime(date, now)).toBe('15분 전');
     });
 
     it('should return hours ago format', () => {
       const now = new Date('2025-01-15T12:00:00Z');
-      vi.setSystemTime(now);
-
       const date = new Date('2025-01-15T09:00:00Z'); // 3 hours ago
-      expect(getRelativeTime(date)).toBe('3시간 전');
+
+      expect(getRelativeTime(date, now)).toBe('3시간 전');
     });
 
     it('should return "어제" for yesterday', () => {
-      // Set now to end of Jan 15
       const now = new Date('2025-01-15T23:00:00Z');
-      vi.setSystemTime(now);
-
-      // Use a date that is more than 24 hours ago but still yesterday
-      // The function first checks if < 24 hours (returns hours ago)
-      // Then checks if date >= yesterday midnight (returns "어제")
       const date = new Date('2025-01-14T10:00:00Z'); // More than 24 hours ago, but yesterday
-      expect(getRelativeTime(date)).toBe('어제');
+
+      expect(getRelativeTime(date, now)).toBe('어제');
     });
 
     it('should return days ago format for within a week', () => {
       const now = new Date('2025-01-15T12:00:00Z');
-      vi.setSystemTime(now);
-
       const date = new Date('2025-01-12T12:00:00Z'); // 3 days ago
-      expect(getRelativeTime(date)).toBe('3일 전');
+
+      expect(getRelativeTime(date, now)).toBe('3일 전');
     });
 
     it('should return formatted date for more than a week ago', () => {
       const now = new Date('2025-01-15T12:00:00Z');
-      vi.setSystemTime(now);
-
       const date = new Date('2025-01-01T12:00:00Z'); // 14 days ago
-      expect(getRelativeTime(date)).toBe('2025.01.01');
+
+      expect(getRelativeTime(date, now)).toBe('2025.01.01');
+    });
+
+    it('should return 1분 전 for exactly 1 minute ago', () => {
+      const now = new Date('2025-01-15T12:00:00Z');
+      const date = new Date('2025-01-15T11:59:00Z');
+
+      expect(getRelativeTime(date, now)).toBe('1분 전');
+    });
+
+    it('should return 59분 전 for just under 1 hour', () => {
+      const now = new Date('2025-01-15T12:00:00Z');
+      const date = new Date('2025-01-15T11:01:00Z');
+
+      expect(getRelativeTime(date, now)).toBe('59분 전');
+    });
+
+    it('should return 1시간 전 for exactly 1 hour ago', () => {
+      const now = new Date('2025-01-15T12:00:00Z');
+      const date = new Date('2025-01-15T11:00:00Z');
+
+      expect(getRelativeTime(date, now)).toBe('1시간 전');
+    });
+
+    it('should return 23시간 전 for just under 24 hours', () => {
+      const now = new Date('2025-01-15T12:00:00Z');
+      const date = new Date('2025-01-14T13:00:00Z');
+
+      expect(getRelativeTime(date, now)).toBe('23시간 전');
     });
   });
 
@@ -209,27 +219,29 @@ describe('dateUtils', () => {
   });
 
   describe('getRecentWorkingDays', () => {
+    // Fixed date: Wednesday, January 15, 2025
+    const fixedDate = new Date('2025-01-15T12:00:00+09:00');
+
     it('should return the specified number of working days', () => {
-      const result = getRecentWorkingDays(5);
+      const result = getRecentWorkingDays(5, undefined, fixedDate);
       expect(result).toHaveLength(5);
     });
 
     it('should return 20 working days by default', () => {
-      const result = getRecentWorkingDays();
+      const result = getRecentWorkingDays(20, undefined, fixedDate);
       expect(result).toHaveLength(20);
     });
 
     it('should return dates in ascending order', () => {
-      const result = getRecentWorkingDays(5);
+      const result = getRecentWorkingDays(5, undefined, fixedDate);
       for (let i = 1; i < result.length; i++) {
         expect(result[i].getTime()).toBeGreaterThan(result[i - 1].getTime());
       }
     });
 
     it('should only include weekdays', () => {
-      const result = getRecentWorkingDays(10);
+      const result = getRecentWorkingDays(10, undefined, fixedDate);
       result.forEach((date) => {
-        // Not Saturday (6) or Sunday (0) in KST
         const dateInKST = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
         const dayInKST = dateInKST.getDay();
         expect(dayInKST).not.toBe(0);
@@ -238,17 +250,57 @@ describe('dateUtils', () => {
     });
 
     it('should exclude configurable holidays', () => {
-      // Create a holiday for a specific date
-      const today = new Date();
-      const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-      const holidays = new Map([[todayKey, 'Test Holiday']]);
+      const holidays = new Map([['2025-01-14', 'Test Holiday']]);
+      const result = getRecentWorkingDays(5, holidays, fixedDate);
 
-      const resultWithHoliday = getRecentWorkingDays(5, holidays);
-      const resultWithoutHoliday = getRecentWorkingDays(5);
+      expect(result).toHaveLength(5);
+      const dateKeys = result.map((d) => {
+        const kstDate = new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+        return `${kstDate.getFullYear()}-${String(kstDate.getMonth() + 1).padStart(2, '0')}-${String(kstDate.getDate()).padStart(2, '0')}`;
+      });
+      expect(dateKeys).not.toContain('2025-01-14');
+    });
 
-      // Both should have 5 days, but potentially different dates
-      expect(resultWithHoliday).toHaveLength(5);
-      expect(resultWithoutHoliday).toHaveLength(5);
+    it('should skip weekends when counting back from Friday', () => {
+      // Friday, January 17, 2025
+      const friday = new Date('2025-01-17T12:00:00+09:00');
+      const result = getRecentWorkingDays(3, undefined, friday);
+
+      expect(result).toHaveLength(3);
+      // Should include Fri (17), Thu (16), Wed (15) - skipping weekend
+      const dateKeys = result.map((d) => {
+        const kstDate = new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+        return kstDate.getDate();
+      });
+      expect(dateKeys).toEqual([15, 16, 17]);
+    });
+
+    it('should handle starting from weekend by going to previous Friday', () => {
+      // Saturday, January 18, 2025
+      const saturday = new Date('2025-01-18T12:00:00+09:00');
+      const result = getRecentWorkingDays(3, undefined, saturday);
+
+      expect(result).toHaveLength(3);
+      // Should include Fri (17), Thu (16), Wed (15)
+      const dateKeys = result.map((d) => {
+        const kstDate = new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+        return kstDate.getDate();
+      });
+      expect(dateKeys).toEqual([15, 16, 17]);
+    });
+
+    it('should exclude Korean holidays', () => {
+      // Jan 1, 2025 is a holiday - start from Jan 3 (Friday)
+      const afterNewYear = new Date('2025-01-03T12:00:00+09:00');
+      const result = getRecentWorkingDays(3, undefined, afterNewYear);
+
+      expect(result).toHaveLength(3);
+      const dateKeys = result.map((d) => {
+        const kstDate = new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+        return kstDate.getDate();
+      });
+      // Should skip Jan 1 (holiday) and include Dec 31, Jan 2, Jan 3
+      expect(dateKeys).not.toContain(1);
     });
   });
 });

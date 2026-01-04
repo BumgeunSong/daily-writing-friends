@@ -6,13 +6,20 @@ const KOREAN_HOLIDAYS: Date[] = [
   new Date('2025-01-30T00:00:00Z'),
 ];
 
-// functions to get recent working days (return value's length should be equal to numberOfDays)
+/**
+ * 최근 근무일 목록을 반환합니다.
+ * @param numberOfDays 반환할 근무일 수 (기본값: 20)
+ * @param configurableHolidays 설정 가능한 휴일 맵
+ * @param fromDate 기준 날짜 (테스트용, 기본값: new Date())
+ * @returns 근무일 배열 (과거→현재 순서)
+ */
 export function getRecentWorkingDays(
   numberOfDays: number = 20,
   configurableHolidays?: Map<string, string>,
+  fromDate: Date = new Date(),
 ): Date[] {
   const workingDays: Date[] = [];
-  const currentDate = new Date();
+  const currentDate = new Date(fromDate);
   while (workingDays.length < numberOfDays) {
     if (isWorkingDay(currentDate, 'Asia/Seoul', configurableHolidays)) {
       workingDays.push(new Date(currentDate));
@@ -98,12 +105,15 @@ export const formatDate = (date: Date | undefined | null): string => {
 /**
  * 상대적인 시간을 표시합니다. (예: '3분 전', '2시간 전', '어제', '3일 전' 등)
  * @param date Date 객체 또는 타임스탬프
+ * @param now 현재 시간 (테스트용, 기본값: new Date())
  * @returns 상대 시간 문자열
  */
-export const getRelativeTime = (date: Date | undefined | null): string => {
+export const getRelativeTime = (
+  date: Date | undefined | null,
+  now: Date = new Date(),
+): string => {
   if (!date) return '';
 
-  const now = new Date();
   const diff = now.getTime() - date.getTime();
 
   // 1분 이내
