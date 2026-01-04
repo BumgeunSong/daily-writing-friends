@@ -1,5 +1,4 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { shouldFetchNextPage } from '@/notification/utils/notificationUtils';
 
 interface InfiniteScrollOptions {
   hasNextPage: boolean | undefined;
@@ -67,7 +66,8 @@ export const useInfiniteScroll = ({
 
   // ACTION - 무한 스크롤 효과
   useEffect(() => {
-    if (shouldFetchNextPage(inView, hasNextPage) && !isFetchingNextPage) {
+    const shouldFetch = inView && hasNextPage;
+    if (shouldFetch && !isFetchingNextPage) {
       fetchNextPage();
     }
   }, [inView, hasNextPage, fetchNextPage, isFetchingNextPage]);
@@ -86,4 +86,4 @@ export const useInfiniteScroll = ({
     isInView: inView,
     isLoading: isFetchingNextPage
   };
-}; 
+};
