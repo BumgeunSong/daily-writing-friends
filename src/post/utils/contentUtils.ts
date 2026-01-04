@@ -315,6 +315,7 @@ const convertHtmlToText = (html: string): string => {
 
 export {
   convertUrlsToLinks,
+  convertQuotesToBlockquotes,
   getContentPreview,
   sanitizePostContent,
   sanitizeCommentContent,

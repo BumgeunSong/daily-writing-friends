@@ -78,11 +78,16 @@ function calculateGridStartMonday(currentMonday: Date): Date {
   return mondayStart;
 }
 
-export function getTimeRange(): { weeksAgo: Date; today: Date } {
-  const today = getKoreanToday();
-  const currentMonday = findCurrentWeekMonday(today);
+/**
+ * 그리드 표시를 위한 시간 범위를 계산합니다.
+ * @param today 기준 날짜 (테스트용, 기본값: 현재 한국 날짜)
+ * @returns 시작일(weeksAgo)과 오늘(today) 객체
+ */
+export function getTimeRange(today?: Date): { weeksAgo: Date; today: Date } {
+  const effectiveToday = today ?? getKoreanToday();
+  const currentMonday = findCurrentWeekMonday(effectiveToday);
   const mondayStart = calculateGridStartMonday(currentMonday);
-  return { weeksAgo: mondayStart, today };
+  return { weeksAgo: mondayStart, today: effectiveToday };
 }
 
 function isContributionInDateRange<T extends HasCreatedAt>(
@@ -329,12 +334,20 @@ function extractContentLengthValue(contribution: Contribution): number {
   return contribution.contentLength ?? 0;
 }
 
+/**
+ * 글쓰기 기여도를 그리드 데이터로 처리합니다.
+ * @param contributions 기여도 데이터 배열
+ * @param configurableHolidays 설정 가능한 휴일 맵
+ * @param timeRange 시간 범위 (테스트용, 기본값: getTimeRange())
+ * @returns 그리드 결과 (matrix, weeklyContributions, maxValue)
+ */
 export function processPostingContributions(
   contributions: Contribution[],
   configurableHolidays?: Map<string, string>,
+  timeRange?: { weeksAgo: Date; today: Date },
 ): GridResult {
   const matrices = createEmptyMatrices();
-  const { weeksAgo, today } = getTimeRange();
+  const { weeksAgo, today } = timeRange ?? getTimeRange();
 
   initializeGridWithPlaceholders(matrices, weeksAgo, today, 'posting', configurableHolidays);
   const { maxValue } = processContributionsInGrid(
@@ -356,12 +369,20 @@ function extractCommentAndRepliesCount(contribution: CommentingContribution): nu
   return contribution.countOfCommentAndReplies ?? 0;
 }
 
+/**
+ * 댓글/답글 기여도를 그리드 데이터로 처리합니다.
+ * @param contributions 기여도 데이터 배열
+ * @param configurableHolidays 설정 가능한 휴일 맵
+ * @param timeRange 시간 범위 (테스트용, 기본값: getTimeRange())
+ * @returns 그리드 결과 (matrix, weeklyContributions, maxValue)
+ */
 export function processCommentingContributions(
   contributions: CommentingContribution[],
   configurableHolidays?: Map<string, string>,
+  timeRange?: { weeksAgo: Date; today: Date },
 ): GridResult {
   const matrices = createEmptyMatrices();
-  const { weeksAgo, today } = getTimeRange();
+  const { weeksAgo, today } = timeRange ?? getTimeRange();
 
   initializeGridWithPlaceholders(matrices, weeksAgo, today, 'commenting', configurableHolidays);
   const { maxValue } = processContributionsInGrid(

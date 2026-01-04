@@ -59,3 +59,6 @@ functions/src/commentSuggestion/test-suggestions.sh
 /tests/storageState.auth.json
 /tests/setup-failure-screenshot.png
 scripts/agents/cache/
+
+# Test Coverage
+/coverage/

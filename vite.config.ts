@@ -86,7 +86,8 @@ export default defineConfig(({ mode }) => {
       include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
       coverage: {
         provider: 'v8',
-        reporter: ['text', 'lcov', 'json-summary'],
+        reporter: ['text', 'json-summary', 'json'],
+        reportOnFailure: true,
         exclude: ['node_modules/', 'src/setupTest.ts']
       },
       deps: {
