@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   convertUrlsToLinks,
+  convertQuotesToBlockquotes,
   getContentPreview,
   sanitizePostContent,
   sanitizeCommentContent,
@@ -60,6 +61,89 @@ describe('contentUtils', () => {
       const result = convertUrlsToLinks(content);
 
       expect(result).toContain('https://example.com/page#section');
+    });
+  });
+
+  describe('convertQuotesToBlockquotes', () => {
+    it('should convert single line starting with > to blockquote', () => {
+      const content = '> This is a quote';
+      const result = convertQuotesToBlockquotes(content);
+
+      expect(result).toBe('<blockquote>This is a quote</blockquote>');
+    });
+
+    it('should convert multiple consecutive quote lines to single blockquote', () => {
+      const content = '> Line 1\n> Line 2\n> Line 3';
+      const result = convertQuotesToBlockquotes(content);
+
+      expect(result).toBe('<blockquote>Line 1\nLine 2\nLine 3</blockquote>');
+    });
+
+    it('should preserve non-quote lines', () => {
+      const content = 'Normal line';
+      const result = convertQuotesToBlockquotes(content);
+
+      expect(result).toBe('Normal line');
+    });
+
+    it('should handle quote followed by normal text', () => {
+      const content = '> Quote line\nNormal line';
+      const result = convertQuotesToBlockquotes(content);
+
+      expect(result).toContain('<blockquote>Quote line</blockquote>');
+      expect(result).toContain('Normal line');
+    });
+
+    it('should attach text after blockquote without extra newline', () => {
+      const content = '> Quote\nReply';
+      const result = convertQuotesToBlockquotes(content);
+
+      expect(result).toBe('<blockquote>Quote</blockquote>Reply');
+    });
+
+    it('should handle multiple separate quote blocks', () => {
+      const content = '> First quote\nMiddle text\n> Second quote';
+      const result = convertQuotesToBlockquotes(content);
+
+      expect(result).toContain('<blockquote>First quote</blockquote>');
+      expect(result).toContain('Middle text');
+      expect(result).toContain('<blockquote>Second quote</blockquote>');
+    });
+
+    it('should strip whitespace after > in quote lines', () => {
+      const content = '>  Spaced quote';
+      const result = convertQuotesToBlockquotes(content);
+
+      expect(result).toBe('<blockquote>Spaced quote</blockquote>');
+    });
+
+    it('should handle empty lines between quotes', () => {
+      const content = '> Quote 1\n\n> Quote 2';
+      const result = convertQuotesToBlockquotes(content);
+
+      expect(result).toContain('<blockquote>Quote 1</blockquote>');
+      expect(result).toContain('<blockquote>Quote 2</blockquote>');
+    });
+
+    it('should return empty string for empty input', () => {
+      const result = convertQuotesToBlockquotes('');
+
+      expect(result).toBe('');
+    });
+
+    it('should handle content ending with quote', () => {
+      const content = 'Start\n> End quote';
+      const result = convertQuotesToBlockquotes(content);
+
+      expect(result).toContain('Start');
+      expect(result).toContain('<blockquote>End quote</blockquote>');
+    });
+
+    it('should handle content starting with quote then normal text', () => {
+      const content = '> Opening quote\nFollowing paragraph\nAnother line';
+      const result = convertQuotesToBlockquotes(content);
+
+      expect(result).toBe('<blockquote>Opening quote</blockquote>Following paragraph\nAnother line');
     });
   });
 
