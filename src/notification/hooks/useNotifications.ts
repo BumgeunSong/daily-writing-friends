@@ -1,15 +1,13 @@
 import * as Sentry from '@sentry/react';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { collection, query, orderBy, limit, startAfter, getDocs, Timestamp } from 'firebase/firestore';
-import { firestore } from '@/firebase';
+import { fetchNotifications } from '@/notification/api/notificationApi';
 import { createNotificationQueryKey, getLastNotificationTimestamp } from '@/notification/utils/notificationUtils';
-import { Notification } from '@/notification/model/Notification';
 
 // DATA - Query configuration
 const NOTIFICATIONS_CONFIG = {
-    STALE_TIME: 1000 * 30, // 30초
-    CACHE_TIME: 1000 * 60 * 5, // 5분
-    REFETCH_INTERVAL: 1000 * 60, // 1분
+  STALE_TIME: 1000 * 30, // 30초
+  CACHE_TIME: 1000 * 60 * 5, // 5분
+  REFETCH_INTERVAL: 1000 * 60, // 1분
 } as const;
 
 /**
@@ -19,56 +17,27 @@ const NOTIFICATIONS_CONFIG = {
  * @returns React Query의 useInfiniteQuery 결과 객체
  */
 export const useNotifications = (userId: string | null, limitCount: number) => {
-    return useInfiniteQuery(
-        // DATA - Query key using pure function
-        createNotificationQueryKey(userId),
-        // ACTION - Fetch function with explicit null guard
-        ({ pageParam }) => {
-            if (!userId) {
-                throw new Error('User ID is required to fetch notifications');
-            }
-            return fetchNotifications(userId, limitCount, pageParam);
-        },
-        {
-            enabled: userId != null,
-            // CALCULATION - Get next page parameter using pure function
-            getNextPageParam: (lastPage) => getLastNotificationTimestamp(lastPage),
-            // ACTION - Error handling
-            onError: (error) => {
-                console.error("알림 데이터를 불러오던 중 에러가 발생했습니다:", error);
-                Sentry.captureException(error);
-            },
-            ...NOTIFICATIONS_CONFIG,
-            refetchOnWindowFocus: true,
-        }
-    );
-};
-
-/**
- * 알림 데이터를 가져오는 순수하지 않은 함수 (Firebase 접근)
- */
-export const fetchNotifications = async (
-    userId: string, 
-    limitCount: number, 
-    after?: Timestamp
-): Promise<Notification[]> => {
-    // CALCULATION - Build query
-    let notificationsQuery = query(
-        collection(firestore, `users/${userId}/notifications`),
-        orderBy('timestamp', 'desc'),
-        limit(limitCount)
-    );
-
-    if (after) {
-        notificationsQuery = query(notificationsQuery, startAfter(after));
+  return useInfiniteQuery(
+    // DATA - Query key using pure function
+    createNotificationQueryKey(userId),
+    // ACTION - Fetch function with explicit null guard
+    ({ pageParam }) => {
+      if (!userId) {
+        throw new Error('User ID is required to fetch notifications');
+      }
+      return fetchNotifications(userId, limitCount, pageParam);
+    },
+    {
+      enabled: userId != null,
+      // CALCULATION - Get next page parameter using pure function
+      getNextPageParam: (lastPage) => getLastNotificationTimestamp(lastPage),
+      // ACTION - Error handling
+      onError: (error) => {
+        console.error('알림 데이터를 불러오던 중 에러가 발생했습니다:', error);
+        Sentry.captureException(error);
+      },
+      ...NOTIFICATIONS_CONFIG,
+      refetchOnWindowFocus: true,
     }
-    
-    // ACTION - Fetch data from Firebase
-    const notificationsSnapshot = await getDocs(notificationsQuery);
-    
-    // CALCULATION - Transform data
-    return notificationsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data()
-    } as Notification));
+  );
 };
