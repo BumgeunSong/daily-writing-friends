@@ -5,9 +5,22 @@ import { trackedFirebase } from '@/shared/api/trackedFirebase';
 import { Draft } from '@/draft/model/Draft';
 
 export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: string }, userId: string): Promise<Draft> {
+  if (!userId?.trim()) {
+    throw new Error('userId is required');
+  }
+  if (!draft.boardId?.trim()) {
+    throw new Error('boardId is required');
+  }
+  if (typeof draft.title !== 'string') {
+    throw new Error('title must be a string');
+  }
+  if (typeof draft.content !== 'string') {
+    throw new Error('content must be a string');
+  }
+
   const now = Timestamp.now();
   const draftId = draft.id || uuidv4();
-  
+
   const draftData: Draft = {
     id: draftId,
     boardId: draft.boardId,
@@ -17,7 +30,12 @@ export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: st
   };
   
   const draftRef = doc(firestore, 'users', userId, 'drafts', draftId);
-  await trackedFirebase.setDoc(draftRef, draftData);
+
+  try {
+    await trackedFirebase.setDoc(draftRef, draftData);
+  } catch (error) {
+    throw new Error(`Failed to save draft: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 
   return draftData;
 }
