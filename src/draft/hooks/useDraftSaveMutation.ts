@@ -27,6 +27,10 @@ export function useDraftSaveMutation({
       const currentTitle = titleRef.current;
       const currentContent = contentRef.current;
 
+      if (typeof currentTitle !== 'string' || typeof currentContent !== 'string') {
+        throw new Error('Title and content must be strings');
+      }
+
       if (!currentTitle.trim() && !currentContent.trim()) return null;
 
       const savedDraft = await saveDraft(
