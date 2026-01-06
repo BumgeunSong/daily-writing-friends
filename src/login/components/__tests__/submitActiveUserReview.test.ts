@@ -1,8 +1,24 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Timestamp } from 'firebase/firestore';
-import { submitActiveUserReview } from '../JoinFormPageForActiveUser';
 import { Board } from '@/board/model/Board';
 import { JoinFormDataForActiveUser } from '@/login/model/join';
+
+// Mock Firebase before any imports that use it
+vi.mock('@/firebase', () => ({
+  firestore: {},
+  auth: {},
+}));
+
+vi.mock('firebase/firestore', () => ({
+  Timestamp: {
+    fromDate: (date: Date) => ({ toDate: () => date }),
+    now: () => ({ toDate: () => new Date() }),
+  },
+  doc: vi.fn(),
+  getDoc: vi.fn(),
+  setDoc: vi.fn(),
+  collection: vi.fn(),
+  getDocs: vi.fn(),
+}));
 
 // Mock dependencies
 vi.mock('@/shared/utils/reviewUtils', () => ({
@@ -15,6 +31,7 @@ vi.mock('@/shared/utils/boardUtils', () => ({
 
 import { addReviewToBoard } from '@/shared/utils/reviewUtils';
 import { addUserToBoardWaitingList } from '@/shared/utils/boardUtils';
+import { submitActiveUserReview } from '../JoinFormPageForActiveUser';
 
 const mockAddReviewToBoard = vi.mocked(addReviewToBoard);
 const mockAddUserToBoardWaitingList = vi.mocked(addUserToBoardWaitingList);
@@ -31,8 +48,8 @@ describe('submitActiveUserReview', () => {
   const mockUpcomingBoard: Board = {
     id: 'board-123',
     cohort: 10,
-    firstDay: Timestamp.fromDate(new Date('2026-02-01')),
-    lastDay: Timestamp.fromDate(new Date('2026-02-28')),
+    firstDay: { toDate: () => new Date('2026-02-01') } as any,
+    lastDay: { toDate: () => new Date('2026-02-28') } as any,
     title: '매글프 10기',
     startHour: 0,
     endHour: 24,

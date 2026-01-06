@@ -1,9 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { User as FirebaseUser } from 'firebase/auth';
-import { Timestamp } from 'firebase/firestore';
-import { submitNewUserJoin } from '../JoinFormPageForNewUser';
 import { Board } from '@/board/model/Board';
 import { JoinFormDataForNewUser } from '@/login/model/join';
+
+// Mock Firebase before any imports that use it
+vi.mock('@/firebase', () => ({
+  firestore: {},
+  auth: {},
+}));
+
+vi.mock('firebase/firestore', () => ({
+  Timestamp: {
+    fromDate: (date: Date) => ({ toDate: () => date }),
+    now: () => ({ toDate: () => new Date() }),
+  },
+  doc: vi.fn(),
+  getDoc: vi.fn(),
+  setDoc: vi.fn(),
+  collection: vi.fn(),
+  getDocs: vi.fn(),
+}));
 
 // Mock dependencies
 vi.mock('@/user/api/user', () => ({
@@ -17,6 +33,7 @@ vi.mock('@/shared/utils/boardUtils', () => ({
 
 import { updateUser, createUserIfNotExists } from '@/user/api/user';
 import { addUserToBoardWaitingList } from '@/shared/utils/boardUtils';
+import { submitNewUserJoin } from '../JoinFormPageForNewUser';
 
 const mockUpdateUser = vi.mocked(updateUser);
 const mockCreateUserIfNotExists = vi.mocked(createUserIfNotExists);
@@ -33,8 +50,8 @@ describe('submitNewUserJoin', () => {
   const mockUpcomingBoard: Board = {
     id: 'board-123',
     cohort: 10,
-    firstDay: Timestamp.fromDate(new Date('2026-02-01')),
-    lastDay: Timestamp.fromDate(new Date('2026-02-28')),
+    firstDay: { toDate: () => new Date('2026-02-01') } as any,
+    lastDay: { toDate: () => new Date('2026-02-28') } as any,
     title: '매글프 10기',
     startHour: 0,
     endHour: 24,
