@@ -1,23 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { z } from "zod"
+import { newUserFormSchema } from "@/login/model/formSchemas"
+import { JoinFormDataForNewUser } from "@/login/model/join"
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent } from '@/shared/ui/card'
 import FormField from "./JoinFormField"
-
-const formSchema = z.object({
-  name: z.string().min(2, "이름은 2글자 이상이어야 합니다."),
-  phoneNumber: z.string().regex(/^01[0-9]{8,9}$/, "올바른 전화번호 형식이 아닙니다."),
-  nickname: z.string().optional(),
-  referrer: z.string(),
-})
-
-interface JoinFormDataForNewUser {
-  name: string
-  phoneNumber: string
-  nickname?: string
-  referrer: string
-}
 
 interface JoinFormCardForNewUserProps {
   onSubmit: (data: JoinFormDataForNewUser) => void
@@ -29,7 +16,7 @@ export default function JoinFormCardForNewUser({ onSubmit }: JoinFormCardForNewU
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<JoinFormDataForNewUser>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(newUserFormSchema),
   })
 
   return (

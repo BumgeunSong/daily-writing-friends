@@ -1,3 +1,4 @@
+import { User as FirebaseUser } from 'firebase/auth'
 import { useState } from "react"
 import { toast } from "sonner"
 import { Board } from "@/board/model/Board"
@@ -83,7 +84,7 @@ export default function JoinFormPageForNewUser() {
 export async function submitNewUserJoin(params: {
     data: JoinFormDataForNewUser;
     upcomingBoard: Board;
-    currentUser: any;
+    currentUser: FirebaseUser;
 }): Promise<{ success: true; name: string; cohort: number } | { success: false; error: Error }> {
     const { data, upcomingBoard, currentUser } = params;
 

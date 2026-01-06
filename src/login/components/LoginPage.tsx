@@ -1,6 +1,7 @@
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithGoogle } from '@/firebase';
+import { ROUTES } from '@/login/constants';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
@@ -16,7 +17,7 @@ export default function LoginPage() {
       await createUserIfNotExists(userCredential.user);
 
       // Use redirect path from useAuth context (set by RouterAuthGuard)
-      const redirectTo = redirectPathAfterLogin || '/boards';
+      const redirectTo = redirectPathAfterLogin || ROUTES.BOARDS;
       setRedirectPathAfterLogin(null); // Clear the redirect path
       navigate(redirectTo, { replace: true });
     } catch (error) {
