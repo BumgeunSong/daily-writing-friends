@@ -131,13 +131,14 @@ async function main(): Promise<void> {
   // 1. boards (no dependencies)
   // 2. users (no dependencies)
   // 3. user_board_permissions (depends on users, boards)
-  // 4. posts (depends on boards, users)
-  // 5. comments (depends on posts, users)
-  // 6. replies (depends on comments, users)
-  // 7. likes (depends on posts, users)
-  // 8. reactions (depends on users)
-  // 9. blocks (depends on users)
-  // 10. notifications (depends on users)
+  // 4. board_waiting_users (depends on users, boards)
+  // 5. posts (depends on boards, users)
+  // 6. comments (depends on posts, users)
+  // 7. replies (depends on comments, users)
+  // 8. likes (depends on posts, users)
+  // 9. reactions (depends on users)
+  // 10. blocks (depends on users)
+  // 11. notifications (depends on users)
 
   const results: Record<string, { inserted: number; errors: number }> = {};
 
@@ -148,27 +149,38 @@ async function main(): Promise<void> {
   // 2. Import users and permissions
   await importUsersAndPermissions();
 
-  // 3. Import posts
+  // 3. Import board waiting users (normalized from boards.waitingUsersIds)
+  const boardWaitingUsers = readJsonFile<Record<string, unknown>>('board_waiting_users.json');
+  if (boardWaitingUsers.length > 0) {
+    // Add generated IDs since these don't have Firestore IDs
+    const waitingUsersWithIds = boardWaitingUsers.map((wu, index) => ({
+      ...wu,
+      id: `bwu_${Date.now()}_${index}`,
+    }));
+    results.board_waiting_users = await importTable('board_waiting_users', waitingUsersWithIds, 'id');
+  }
+
+  // 4. Import posts
   const posts = readJsonFile<Record<string, unknown>>('posts.json');
   results.posts = await importTable('posts', posts, 'id');
 
-  // 4. Import comments
+  // 5. Import comments
   const comments = readJsonFile<Record<string, unknown>>('comments.json');
   results.comments = await importTable('comments', comments, 'id');
 
-  // 5. Import replies
+  // 6. Import replies
   const replies = readJsonFile<Record<string, unknown>>('replies.json');
   results.replies = await importTable('replies', replies, 'id');
 
-  // 6. Import likes
+  // 7. Import likes
   const likes = readJsonFile<Record<string, unknown>>('likes.json');
   results.likes = await importTable('likes', likes, 'id');
 
-  // 7. Import reactions
+  // 8. Import reactions
   const reactions = readJsonFile<Record<string, unknown>>('reactions.json');
   results.reactions = await importTable('reactions', reactions, 'id');
 
-  // 8. Import blocks
+  // 9. Import blocks
   const blocks = readJsonFile<Record<string, unknown>>('blocks.json');
   if (blocks.length > 0) {
     // Add generated IDs for blocks since they don't have Firestore IDs
@@ -179,7 +191,7 @@ async function main(): Promise<void> {
     results.blocks = await importTable('blocks', blocksWithIds, 'id');
   }
 
-  // 9. Import notifications
+  // 10. Import notifications
   const notifications = readJsonFile<Record<string, unknown>>('notifications.json');
   results.notifications = await importTable('notifications', notifications, 'id');
 
