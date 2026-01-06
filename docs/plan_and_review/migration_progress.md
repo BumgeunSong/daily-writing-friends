@@ -15,6 +15,8 @@
 2. `eb4db94` - Firestore → Supabase 마이그레이션 스크립트 추가 (Phase 1 준비)
 3. `baa4037` - 스키마 정규화: 배열/중복 필드 제거
 4. `baa5b57` - reactions 테이블 FK 제약조건 추가
+5. `fe737a1` - 마이그레이션 진행 상황 문서화
+6. (pending) - Historical Identity: 성능을 위해 user_name/user_profile_image 유지
 
 **Schema created (13 tables):**
 
@@ -36,10 +38,12 @@
 
 **Key schema decisions:**
 - Normalized `waiting_users_ids` array → `board_waiting_users` join table
-- Removed denormalized user info from comments/replies/likes/reactions (FK only)
 - Removed `known_buddy_nickname/profile_photo_url` from users (keep FK only)
 - Reactions use nullable FKs (`comment_id` OR `reply_id`) with CHECK constraint
-- Kept `author_name` on posts (historical byline)
+- **Historical Identity**: Keep `user_name`, `user_profile_image` on comments/replies/likes/reactions
+  - Rationale: Better read performance (no JOINs on PostDetailPage)
+  - Preserves user identity at the moment of interaction
+  - Trade-off: Profile updates won't reflect in past interactions (acceptable for writing community)
 
 **Files created:**
 ```
@@ -48,7 +52,8 @@ supabase/
 └── migrations/
     ├── 20260106000000_initial_schema.sql
     ├── 20260106000001_normalize_schema.sql
-    └── 20260106000002_reactions_proper_fks.sql
+    ├── 20260106000002_reactions_proper_fks.sql
+    └── 20260106000003_historical_identity.sql
 
 scripts/migration/
 ├── config.ts                    # Firebase Admin + Supabase clients
