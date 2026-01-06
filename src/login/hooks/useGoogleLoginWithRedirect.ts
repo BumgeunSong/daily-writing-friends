@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithGoogle } from '@/firebase';
+import { getLoginRedirectPath } from '@/login/utils/loginUtils';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useIsCurrentUserActive } from './useIsCurrentUserActive';
 
@@ -10,15 +11,12 @@ interface UseGoogleLoginWithRedirectReturn {
   error: Error | null;
 }
 
-const ACTIVE_USER_REDIRECT = '/boards';
-const NEW_USER_REDIRECT = '/join/form';
-
 export function useGoogleLoginWithRedirect(): UseGoogleLoginWithRedirectReturn {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [shouldCheckActiveStatus, setShouldCheckActiveStatus] = useState(false);
-  
+
   const { currentUser } = useAuth();
   const { isCurrentUserActive, isLoading: isCheckingActiveStatus } = useIsCurrentUserActive();
 
@@ -32,7 +30,7 @@ export function useGoogleLoginWithRedirect(): UseGoogleLoginWithRedirectReturn {
     setShouldCheckActiveStatus(false);
     setIsLoading(false);
 
-    const redirectPath = isCurrentUserActive ? ACTIVE_USER_REDIRECT : NEW_USER_REDIRECT;
+    const redirectPath = getLoginRedirectPath(isCurrentUserActive ?? false);
     navigate(redirectPath);
   }, [shouldCheckActiveStatus, currentUser, isCurrentUserActive, isCheckingActiveStatus, navigate]);
 
@@ -40,9 +38,9 @@ export function useGoogleLoginWithRedirect(): UseGoogleLoginWithRedirectReturn {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       await signInWithGoogle();
-      
+
       // Trigger active status check after successful login
       setShouldCheckActiveStatus(true);
     } catch (err) {

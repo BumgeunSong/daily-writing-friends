@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { REMOTE_CONFIG_KEYS } from "@/login/constants";
+import { isUserInActiveList } from "@/login/utils/loginUtils";
 import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext";
 import { useAuth } from '@/shared/hooks/useAuth';
 import { fetchUsersWithBoardPermission } from "@/user/api/user";
@@ -12,7 +13,7 @@ export function useIsCurrentUserActive() {
         enabled: !!activeBoardId,
     });
     const { currentUser } = useAuth();
-    const isCurrentUserActive = userData?.some((user) => user.uid === currentUser?.uid);
+    const isCurrentUserActive = isUserInActiveList(userData, currentUser?.uid);
 
     return { isCurrentUserActive, isLoading };
 }
