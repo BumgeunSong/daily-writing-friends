@@ -70,11 +70,12 @@ CREATE TABLE posts (
 );
 
 -- Comments table
+-- Historical Identity: user_name/user_profile_image stored at comment time
 CREATE TABLE comments (
   id TEXT PRIMARY KEY,
   post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  user_name TEXT NOT NULL,
+  user_name TEXT NOT NULL DEFAULT '',
   user_profile_image TEXT,
   content TEXT NOT NULL,
   count_of_replies INTEGER NOT NULL DEFAULT 0,
@@ -83,12 +84,13 @@ CREATE TABLE comments (
 );
 
 -- Replies table
+-- Historical Identity: user_name/user_profile_image stored at reply time
 CREATE TABLE replies (
   id TEXT PRIMARY KEY,
   comment_id TEXT NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
   post_id TEXT NOT NULL,  -- Denormalized for query efficiency
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  user_name TEXT NOT NULL,
+  user_name TEXT NOT NULL DEFAULT '',
   user_profile_image TEXT,
   content TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -96,24 +98,27 @@ CREATE TABLE replies (
 );
 
 -- Likes table
+-- Historical Identity: user_name/user_profile_image stored at like time
 CREATE TABLE likes (
   id TEXT PRIMARY KEY,
   post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  user_name TEXT,
+  user_name TEXT NOT NULL DEFAULT '',
   user_profile_image TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(post_id, user_id)
 );
 
 -- Reactions table (for comments and replies)
+-- Historical Identity: user_name/user_profile_image stored at reaction time
+-- Note: This table will be replaced in 20260106000002 with proper FK constraints
 CREATE TABLE reactions (
   id TEXT PRIMARY KEY,
   entity_type TEXT NOT NULL CHECK (entity_type IN ('comment', 'reply')),
   entity_id TEXT NOT NULL,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   reaction_type TEXT NOT NULL,  -- emoji character
-  user_name TEXT,
+  user_name TEXT NOT NULL DEFAULT '',
   user_profile_image TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(entity_type, entity_id, user_id)
