@@ -12,9 +12,9 @@
 The `src/comment` feature is a well-structured module responsible for handling comments, replies, reactions, and AI-powered comment suggestions. While the codebase follows consistent patterns and conventions, several opportunities exist to reduce code duplication, improve testability, and enhance maintainability.
 
 **Key Findings:**
-- **42 total files** (4 API, 25 components, 14 hooks, 5 models, 2 utils)
+- **44 total files** (4 API, 21 components, 12 hooks, 5 models, 2 utils)
 - **~2,700 lines of code** across the feature
-- **Significant code duplication** between Comment and Reply implementations (~40% similarity)
+- **Significant code duplication** between Comment and Reply implementations (~85% similarity)
 - **Low test coverage** (~5% - only utility functions tested)
 - **No critical complexity issues** (largest file is 234 lines)
 - **HIGH refactoring potential** with LOW risk due to isolated feature boundary
@@ -74,7 +74,7 @@ The `src/comment` feature is a well-structured module responsible for handling c
 | `reaction.ts` | 116 | 5 | Emoji reaction operations |
 | `reply.ts` | 141 | 6 | Reply CRUD operations |
 
-#### Components (25 files, ~1,600 lines)
+#### Components (21 files, ~1,400 lines)
 
 | File | Lines | Complexity | Risk |
 |------|-------|------------|------|
@@ -100,7 +100,7 @@ The `src/comment` feature is a well-structured module responsible for handling c
 | `ReplySkeleton.tsx` | 25 | LOW | LOW |
 | `ReplyPrompt.tsx` | 9 | LOW | LOW |
 
-#### Hooks (14 files, ~650 lines)
+#### Hooks (12 files, ~650 lines)
 
 | File | Lines | Complexity | Risk |
 |------|-------|------------|------|
@@ -138,7 +138,7 @@ The `src/comment` feature is a well-structured module responsible for handling c
 
 | Metric | Value | Target | Status |
 |--------|-------|--------|--------|
-| Total Files | 42 | N/A | ℹ️ |
+| Total Files | 44 | N/A | ℹ️ |
 | Total Lines | ~2,700 | N/A | ℹ️ |
 | Largest File | 234 | <500 | ✅ |
 | Avg File Size | 64 | <200 | ✅ |
@@ -197,7 +197,12 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ ... }) => {
 **AFTER (Proposed - Shared Component)**:
 ```tsx
 // components/shared/ContentRow.tsx
-interface ContentRowProps<T extends { id: string; userId: string; content: string; createdAt: Timestamp }> {
+import { Timestamp } from 'firebase/firestore';
+
+// Use union type to avoid tight coupling to Firebase Timestamp
+type TimestampLike = Date | Timestamp | { toDate: () => Date };
+
+interface ContentRowProps<T extends { id: string; userId: string; content: string; createdAt: TimestampLike }> {
   item: T;
   entityType: 'comment' | 'reply';
   isAuthor: boolean;
@@ -207,9 +212,17 @@ interface ContentRowProps<T extends { id: string; userId: string; content: strin
   children?: React.ReactNode; // For nested content like replies
 }
 
+// Helper to normalize timestamp to Date
+const toDate = (timestamp: TimestampLike): Date => {
+  if (timestamp instanceof Date) return timestamp;
+  if ('toDate' in timestamp) return timestamp.toDate();
+  return new Date(timestamp);
+};
+
 function ContentRow<T>({ item, entityType, isAuthor, onEdit, onDelete, reactionEntity, children }: ContentRowProps<T>) {
   const [isEditing, setIsEditing] = useState(false);
   const { userData: userProfile } = useUser(item.userId);
+  const createdAtDate = toDate(item.createdAt); // Normalized to Date
 
   // Shared edit/delete handlers
   // Shared render logic
@@ -219,14 +232,15 @@ function ContentRow<T>({ item, entityType, isAuthor, onEdit, onDelete, reactionE
 
 #### useCreateComment.ts vs useCreateReply.ts
 
-**BEFORE (Current - Duplicated Pattern)**:
+**BEFORE (Current - Duplicated Pattern using React Query v3 syntax)**:
 ```tsx
-// useCreateComment.ts
+// useCreateComment.ts - NOTE: Uses legacy v3 positional arguments syntax
 export function useCreateComment(boardId: string, postId: string) {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
   const { userData } = useUser(currentUser?.uid);
 
+  // ⚠️ Technical debt: v3 syntax with positional arguments
   return useMutation(
     async (content: string) => {
       if (!currentUser) throw new Error('로그인이 필요합니다.');
@@ -240,10 +254,10 @@ export function useCreateComment(boardId: string, postId: string) {
   );
 }
 
-// useCreateReply.ts - nearly identical structure
+// useCreateReply.ts - nearly identical structure with same v3 syntax
 ```
 
-**AFTER (Proposed - Hook Factory)**:
+**AFTER (Proposed - Hook Factory with React Query v4 object syntax)**:
 ```tsx
 // hooks/useContentMutation.ts
 interface ContentMutationConfig<T> {
@@ -257,20 +271,19 @@ function useContentMutation<T>(config: ContentMutationConfig<T>) {
   const queryClient = useQueryClient();
   const { userData } = useUser(currentUser?.uid);
 
-  return useMutation(
-    async (content: string) => {
+  // ✅ React Query v4 object syntax
+  return useMutation({
+    mutationFn: async (content: string) => {
       if (!currentUser) throw new Error('로그인이 필요합니다.');
       return config.createFn(content, currentUser, userData);
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: config.queryKey });
-        config.additionalInvalidations?.forEach(key =>
-          queryClient.invalidateQueries({ queryKey: key })
-        );
-      },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: config.queryKey });
+      config.additionalInvalidations?.forEach(key =>
+        queryClient.invalidateQueries({ queryKey: key })
+      );
     },
-  );
+  });
 }
 ```
 
@@ -278,10 +291,13 @@ function useContentMutation<T>(config: ContentMutationConfig<T>) {
 
 | Code Smell | Location | Severity | Notes |
 |------------|----------|----------|-------|
+| React Query v3 Syntax | `useCreateComment.ts`, `useCreateReply.ts`, `useEditComment.ts`, `useEditReply.ts`, `useDeleteComment.ts`, `useDeleteReply.ts` | MEDIUM | Uses deprecated positional arguments instead of v4 object syntax |
 | Large Hook | `useCommentSuggestions.ts` | MEDIUM | 234 lines with inline cache utilities |
 | Unused Component | `ReplyPrompt.tsx` | LOW | Returns empty element |
 | Inline Cache Logic | `useCommentSuggestions.ts` | MEDIUM | Should extract to shared utility |
 | Window.confirm | `CommentRow.tsx:42`, `ReplyRow.tsx:34` | LOW | Should use custom dialog |
+
+> **Note**: The React Query v3 → v4 migration is existing technical debt. The codebase uses @tanstack/react-query v4.36.1 but some hooks still use the legacy v3 positional argument syntax instead of the v4 object configuration syntax. This should be addressed during refactoring.
 
 ---
 
