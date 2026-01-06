@@ -27,12 +27,16 @@ function readJsonFile<T>(filename: string): T[] {
 }
 
 // Import data in batches with upsert
+// Note: onConflict only accepts a single column. For composite unique constraints,
+// we rely on the table's UNIQUE constraint and use ignoreDuplicates to skip conflicts.
 async function importTable<T extends Record<string, unknown>>(
   tableName: string,
   data: T[],
-  conflictColumn: string = 'id'
+  options: { onConflict?: string; ignoreDuplicates?: boolean } = {}
 ): Promise<{ inserted: number; errors: number }> {
   console.log(`\nImporting ${data.length} records to ${tableName}...`);
+
+  const { onConflict = 'id', ignoreDuplicates = false } = options;
 
   let inserted = 0;
   let errors = 0;
@@ -42,7 +46,7 @@ async function importTable<T extends Record<string, unknown>>(
 
     const { error } = await supabase
       .from(tableName)
-      .upsert(batch, { onConflict: conflictColumn, ignoreDuplicates: false });
+      .upsert(batch, { onConflict, ignoreDuplicates });
 
     if (error) {
       console.error(`  Error in batch ${Math.floor(i / BATCH_SIZE) + 1}:`, error.message);
@@ -91,12 +95,13 @@ async function importUsersAndPermissions(): Promise<void> {
   }
 
   // Import users first
-  await importTable('users', cleanUsers, 'id');
+  await importTable('users', cleanUsers);
 
   // Import permissions (needs both users and boards to exist)
+  // Uses composite UNIQUE(user_id, board_id) constraint - skip duplicates
   if (permissions.length > 0) {
     console.log(`\nImporting ${permissions.length} user_board_permissions...`);
-    await importTable('user_board_permissions', permissions, 'user_id,board_id');
+    await importTable('user_board_permissions', permissions, { ignoreDuplicates: true });
   }
 }
 
@@ -144,12 +149,13 @@ async function main(): Promise<void> {
 
   // 1. Import boards
   const boards = readJsonFile<Record<string, unknown>>('boards.json');
-  results.boards = await importTable('boards', boards, 'id');
+  results.boards = await importTable('boards', boards);
 
   // 2. Import users and permissions
   await importUsersAndPermissions();
 
   // 3. Import board waiting users (normalized from boards.waitingUsersIds)
+  // Uses composite UNIQUE(board_id, user_id) constraint - skip duplicates
   const boardWaitingUsers = readJsonFile<Record<string, unknown>>('board_waiting_users.json');
   if (boardWaitingUsers.length > 0) {
     // Add generated IDs since these don't have Firestore IDs
@@ -157,30 +163,33 @@ async function main(): Promise<void> {
       ...wu,
       id: `bwu_${Date.now()}_${index}`,
     }));
-    results.board_waiting_users = await importTable('board_waiting_users', waitingUsersWithIds, 'id');
+    results.board_waiting_users = await importTable('board_waiting_users', waitingUsersWithIds, { ignoreDuplicates: true });
   }
 
   // 4. Import posts
   const posts = readJsonFile<Record<string, unknown>>('posts.json');
-  results.posts = await importTable('posts', posts, 'id');
+  results.posts = await importTable('posts', posts);
 
   // 5. Import comments
   const comments = readJsonFile<Record<string, unknown>>('comments.json');
-  results.comments = await importTable('comments', comments, 'id');
+  results.comments = await importTable('comments', comments);
 
   // 6. Import replies
   const replies = readJsonFile<Record<string, unknown>>('replies.json');
-  results.replies = await importTable('replies', replies, 'id');
+  results.replies = await importTable('replies', replies);
 
   // 7. Import likes
+  // Uses composite UNIQUE(post_id, user_id) constraint - skip duplicates
   const likes = readJsonFile<Record<string, unknown>>('likes.json');
-  results.likes = await importTable('likes', likes, 'id');
+  results.likes = await importTable('likes', likes, { ignoreDuplicates: true });
 
   // 8. Import reactions
+  // Uses partial unique indexes on (comment_id, user_id) and (reply_id, user_id) - skip duplicates
   const reactions = readJsonFile<Record<string, unknown>>('reactions.json');
-  results.reactions = await importTable('reactions', reactions, 'id');
+  results.reactions = await importTable('reactions', reactions, { ignoreDuplicates: true });
 
   // 9. Import blocks
+  // Uses composite UNIQUE(blocker_id, blocked_id) constraint - skip duplicates
   const blocks = readJsonFile<Record<string, unknown>>('blocks.json');
   if (blocks.length > 0) {
     // Add generated IDs for blocks since they don't have Firestore IDs
@@ -188,12 +197,12 @@ async function main(): Promise<void> {
       ...block,
       id: `block_${Date.now()}_${index}`,
     }));
-    results.blocks = await importTable('blocks', blocksWithIds, 'id');
+    results.blocks = await importTable('blocks', blocksWithIds, { ignoreDuplicates: true });
   }
 
   // 10. Import notifications
   const notifications = readJsonFile<Record<string, unknown>>('notifications.json');
-  results.notifications = await importTable('notifications', notifications, 'id');
+  results.notifications = await importTable('notifications', notifications);
 
   // Update calculated fields
   await updateCommentReplyCounts();
