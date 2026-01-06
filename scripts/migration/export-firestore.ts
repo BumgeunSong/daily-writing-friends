@@ -150,6 +150,8 @@ async function exportNestedCollections(): Promise<void> {
           id: commentDoc.id,
           post_id: postDoc.id,
           user_id: commentData.userId,
+          user_name: commentData.userName || '',  // Historical identity
+          user_profile_image: commentData.userProfileImage || null,
           content: commentData.content,
           count_of_replies: 0, // Will be calculated during import
           created_at: convertTimestamp(commentData.createdAt),
@@ -168,6 +170,8 @@ async function exportNestedCollections(): Promise<void> {
             comment_id: commentDoc.id,
             post_id: postDoc.id,
             user_id: replyData.userId,
+            user_name: replyData.userName || '',  // Historical identity
+            user_profile_image: replyData.userProfileImage || null,
             content: replyData.content,
             created_at: convertTimestamp(replyData.createdAt),
             updated_at: convertTimestamp(replyData.createdAt),
@@ -185,6 +189,8 @@ async function exportNestedCollections(): Promise<void> {
               comment_id: null,
               reply_id: replyDoc.id,
               user_id: reactionData.reactionUser?.userId,
+              user_name: reactionData.reactionUser?.userName || null,  // Historical identity
+              user_profile_image: reactionData.reactionUser?.userProfileImage || null,
               reaction_type: reactionData.content,
               created_at: convertTimestamp(reactionData.createdAt),
             });
@@ -203,6 +209,8 @@ async function exportNestedCollections(): Promise<void> {
             comment_id: commentDoc.id,
             reply_id: null,
             user_id: reactionData.reactionUser?.userId,
+            user_name: reactionData.reactionUser?.userName || null,  // Historical identity
+            user_profile_image: reactionData.reactionUser?.userProfileImage || null,
             reaction_type: reactionData.content,
             created_at: convertTimestamp(reactionData.createdAt),
           });
@@ -220,6 +228,8 @@ async function exportNestedCollections(): Promise<void> {
           id: likeDoc.id,
           post_id: postDoc.id,
           user_id: likeData.userId,
+          user_name: likeData.userName || null,  // Historical identity
+          user_profile_image: likeData.userProfileImage || null,
           created_at: convertTimestamp(likeData.createdAt),
         });
       }
