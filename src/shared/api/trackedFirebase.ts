@@ -1,25 +1,13 @@
 /**
- * Tracked Firebase Operations with Online-Only Write Mode
+ * Tracked Firebase Operations
  *
- * PROBLEM:
- * Firestore's offline persistence can get into a corrupted state when:
- * 1. User navigates away while operations are in progress
- * 2. Network transitions between online/offline states
- * 3. Multiple concurrent operations conflict in the sync queue
+ * Provides wrapper functions for Firestore operations with:
+ * - Automatic error tracking and Sentry integration
+ * - Timeout protection against network hangs
+ * - Performance monitoring for slow operations
  *
- * When this happens, the internal AsyncQueueImpl throws:
- * "FIRESTORE INTERNAL ASSERTION FAILED: Unexpected state"
- *
- * This causes ALL subsequent Firestore operations to hang indefinitely,
- * resulting in infinite loading spinners for users.
- *
- * SOLUTION:
- * For write operations (setDoc, addDoc, updateDoc, deleteDoc):
- * 1. Force enable network before each write to bypass corrupted offline queue
- * 2. Add timeout protection to prevent infinite hangs
- * 3. Track and report errors with proper fingerprinting
- *
- * Read operations (getDoc, getDocs) continue to use offline cache normally.
+ * NOTE: Offline persistence is disabled (using memoryLocalCache).
+ * This eliminates sync queue corruption issues but requires network connectivity.
  */
 
 import {
@@ -29,7 +17,6 @@ import {
   addDoc as firebaseAddDoc,
   updateDoc as firebaseUpdateDoc,
   deleteDoc as firebaseDeleteDoc,
-  enableNetwork,
   DocumentReference,
   CollectionReference,
   Query,
@@ -45,46 +32,13 @@ import * as Sentry from '@sentry/react';
 import { addSentryBreadcrumb, setSentryContext } from '@/sentry';
 import { trackFirebasePermissionError } from '@/shared/utils/firebaseErrorTracking';
 import { getCurrentUserIdFromStorage } from '@/shared/utils/getCurrentUserId';
-import { firestore } from '@/firebase';
 
-// Timeout for write operations - prevents infinite hangs when sync queue is corrupted
+// Timeout for write operations - prevents infinite hangs on network issues
 const WRITE_OPERATION_TIMEOUT_MS = 10000;
-
-// Timeout for re-enabling network connection before writes
-const NETWORK_ENABLE_TIMEOUT_MS = 5000;
 
 // Threshold for logging slow operations
 const SLOW_OPERATION_THRESHOLD_MS = 3000;
 
-/**
- * Page lifecycle state tracking for Mobile Safari compatibility.
- *
- * Mobile Safari fires pagehide/visibilitychange events aggressively during navigation,
- * which can put Firestore's AsyncQueue into "restricted" mode. If we try to enqueue
- * new operations after this, we get "INTERNAL ASSERTION FAILED: Unexpected state".
- *
- * This guard prevents us from starting new Firestore operations during page unload.
- */
-let isPageUnloading = false;
-
-if (typeof window !== 'undefined') {
-  window.addEventListener('pagehide', () => {
-    isPageUnloading = true;
-  });
-
-  // Reset on pageshow (handles back-forward cache restoration)
-  window.addEventListener('pageshow', () => {
-    isPageUnloading = false;
-  });
-}
-
-/**
- * Check if the page is being unloaded or hidden.
- * Used to prevent Firestore operations that would fail due to SDK shutdown.
- */
-function isPageBeingUnloaded(): boolean {
-  return isPageUnloading;
-}
 
 /**
  * Extract path from Firebase reference using only public APIs
@@ -143,36 +97,6 @@ function trackOperationError(
 ) {
   const userId = getCurrentUserIdFromStorage();
 
-  // Check for Firestore internal assertion errors (sync queue corruption)
-  const isInternalAssertionError =
-    error instanceof Error &&
-    error.message?.includes('INTERNAL ASSERTION FAILED');
-
-  if (isInternalAssertionError) {
-    // Suppress errors during page unload - these are expected on Mobile Safari
-    // when Firestore's AsyncQueue enters restricted mode during navigation
-    if (isPageBeingUnloaded()) {
-      console.debug('Suppressed Firestore assertion error during page unload');
-      return;
-    }
-
-    Sentry.withScope((scope) => {
-      scope.setFingerprint(['firestore', 'internal-assertion', 'sync-queue', operation]);
-      scope.setLevel('warning');
-      scope.setTag('firebase.operation', operation);
-      scope.setTag('firebase.path', path);
-      scope.setTag('error.type', 'firestore-sync-corruption');
-      scope.setContext('firestoreSyncError', {
-        operation,
-        path,
-        userId,
-        hint: 'Firestore sync queue entered unexpected state. This typically happens when operations are interrupted during offline/online transitions.',
-      });
-      Sentry.captureException(error);
-    });
-    return;
-  }
-
   if (error instanceof FirebaseError) {
     if (error.code === 'permission-denied') {
       trackFirebasePermissionError(error, {
@@ -214,74 +138,8 @@ function trackOperationError(
 }
 
 /**
- * Shared promise for enableNetwork() to prevent redundant concurrent calls.
- * When multiple writes happen simultaneously, they all await the same enableNetwork() call.
- */
-let pendingEnableNetworkPromise: Promise<void> | null = null;
-
-/**
- * Force-enable network connection before write operations.
- *
- * WHY THIS IS NEEDED:
- * When Firestore's offline sync queue gets corrupted (e.g., user navigates away mid-operation),
- * subsequent writes queue up in the corrupted offline queue and never complete.
- * By explicitly enabling the network before each write, we bypass the offline queue
- * and send writes directly to the server.
- *
- * This function deduplicates concurrent enableNetwork() calls - if multiple writes
- * happen simultaneously, they all share the same enableNetwork() promise to avoid
- * race conditions and unnecessary network churn.
- */
-async function forceEnableNetworkBeforeWrite(): Promise<void> {
-  // Skip if page is unloading - Firestore SDK is likely in restricted mode
-  if (isPageBeingUnloaded()) {
-    return;
-  }
-
-  // If enableNetwork is already in progress, reuse that promise
-  if (pendingEnableNetworkPromise !== null) {
-    return pendingEnableNetworkPromise;
-  }
-
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-
-  pendingEnableNetworkPromise = (async () => {
-    try {
-      const enableNetworkPromise = enableNetwork(firestore);
-      const timeoutPromise = new Promise<void>((_, reject) => {
-        timeoutId = setTimeout(
-          () => reject(new Error('Network enable timeout')),
-          NETWORK_ENABLE_TIMEOUT_MS
-        );
-      });
-
-      await Promise.race([enableNetworkPromise, timeoutPromise]);
-    } catch (error) {
-      // Log but don't throw - the write operation itself will fail with a clearer error if truly offline
-      addSentryBreadcrumb(
-        'Failed to force-enable network before write',
-        'firebase',
-        { error: error instanceof Error ? error.message : String(error) },
-        'warning'
-      );
-    } finally {
-      if (timeoutId !== undefined) {
-        clearTimeout(timeoutId);
-      }
-      pendingEnableNetworkPromise = null;
-    }
-  })();
-
-  return pendingEnableNetworkPromise;
-}
-
-/**
  * Execute an operation with timeout protection.
- *
- * WHY THIS IS NEEDED:
- * When Firestore's sync queue is corrupted, operations can hang indefinitely
- * because the queue never processes them. This wrapper ensures we fail fast
- * with a clear error instead of showing infinite loading spinners to users.
+ * Ensures we fail fast with a clear error instead of hanging indefinitely on network issues.
  */
 async function executeWriteWithTimeoutProtection<T>(
   writeOperation: () => Promise<T>,
@@ -296,7 +154,7 @@ async function executeWriteWithTimeoutProtection<T>(
       timeoutId = setTimeout(() => {
         const timeoutError = new Error(
           `Firebase ${operationName} timed out after ${WRITE_OPERATION_TIMEOUT_MS}ms on ${documentPath}. ` +
-          'This may indicate network issues or Firestore sync queue corruption.'
+          'This may indicate network connectivity issues.'
         );
         reject(timeoutError);
       }, WRITE_OPERATION_TIMEOUT_MS);
@@ -311,16 +169,11 @@ async function executeWriteWithTimeoutProtection<T>(
 }
 
 /**
- * Tracked version of getDoc
+ * Tracked version of getDoc with error tracking and performance monitoring.
  */
 export async function getDoc<T extends DocumentData>(
   reference: DocumentReference<T>
 ): Promise<DocumentSnapshot<T>> {
-  // Skip if page is unloading to avoid Firestore assertion errors
-  if (isPageBeingUnloaded()) {
-    throw new Error('Operation cancelled: page is unloading');
-  }
-
   const path = getPathFromReference(reference);
   const startTime = Date.now();
 
@@ -347,16 +200,11 @@ export async function getDoc<T extends DocumentData>(
 }
 
 /**
- * Tracked version of getDocs
+ * Tracked version of getDocs with error tracking and performance monitoring.
  */
 export async function getDocs<T extends DocumentData>(
   query: Query<T>
 ): Promise<QuerySnapshot<T>> {
-  // Skip if page is unloading to avoid Firestore assertion errors
-  if (isPageBeingUnloaded()) {
-    throw new Error('Operation cancelled: page is unloading');
-  }
-
   const path = getPathFromReference(query);
   const startTime = Date.now();
 
@@ -383,31 +231,19 @@ export async function getDocs<T extends DocumentData>(
 }
 
 /**
- * Write a document with online-only mode to prevent sync queue corruption.
- *
- * This wrapper:
- * 1. Forces network connection before write (bypasses corrupted offline queue)
- * 2. Adds timeout protection (prevents infinite hangs)
- * 3. Tracks performance and errors
+ * Tracked version of setDoc with timeout protection and error tracking.
  */
 export async function setDoc<T extends DocumentData>(
   reference: DocumentReference<T>,
   data: WithFieldValue<T>,
   options?: SetOptions
 ): Promise<void> {
-  // Skip if page is unloading to avoid Firestore assertion errors
-  if (isPageBeingUnloaded()) {
-    throw new Error('Operation cancelled: page is unloading');
-  }
-
   const documentPath = getPathFromReference(reference);
   const operationStartTime = Date.now();
 
   trackOperationStart('setDoc', documentPath);
 
   try {
-    await forceEnableNetworkBeforeWrite();
-
     await executeWriteWithTimeoutProtection(
       () => options ? firebaseSetDoc(reference, data, options) : firebaseSetDoc(reference, data),
       'setDoc',
@@ -432,30 +268,18 @@ export async function setDoc<T extends DocumentData>(
 }
 
 /**
- * Add a new document with online-only mode to prevent sync queue corruption.
- *
- * This wrapper:
- * 1. Forces network connection before write (bypasses corrupted offline queue)
- * 2. Adds timeout protection (prevents infinite hangs)
- * 3. Tracks performance and errors
+ * Tracked version of addDoc with timeout protection and error tracking.
  */
 export async function addDoc<T extends DocumentData>(
   reference: CollectionReference<T>,
   data: WithFieldValue<T>
 ): Promise<DocumentReference<T>> {
-  // Skip if page is unloading to avoid Firestore assertion errors
-  if (isPageBeingUnloaded()) {
-    throw new Error('Operation cancelled: page is unloading');
-  }
-
   const collectionPath = getPathFromReference(reference);
   const operationStartTime = Date.now();
 
   trackOperationStart('addDoc', collectionPath);
 
   try {
-    await forceEnableNetworkBeforeWrite();
-
     const newDocumentRef = await executeWriteWithTimeoutProtection(
       () => firebaseAddDoc(reference, data),
       'addDoc',
@@ -482,30 +306,18 @@ export async function addDoc<T extends DocumentData>(
 }
 
 /**
- * Update a document with online-only mode to prevent sync queue corruption.
- *
- * This wrapper:
- * 1. Forces network connection before write (bypasses corrupted offline queue)
- * 2. Adds timeout protection (prevents infinite hangs)
- * 3. Tracks performance and errors
+ * Tracked version of updateDoc with timeout protection and error tracking.
  */
 export async function updateDoc<T extends DocumentData>(
   reference: DocumentReference<T>,
   data: UpdateData<T>
 ): Promise<void> {
-  // Skip if page is unloading to avoid Firestore assertion errors
-  if (isPageBeingUnloaded()) {
-    throw new Error('Operation cancelled: page is unloading');
-  }
-
   const documentPath = getPathFromReference(reference);
   const operationStartTime = Date.now();
 
   trackOperationStart('updateDoc', documentPath);
 
   try {
-    await forceEnableNetworkBeforeWrite();
-
     await executeWriteWithTimeoutProtection(
       () => firebaseUpdateDoc(reference, data),
       'updateDoc',
@@ -530,27 +342,15 @@ export async function updateDoc<T extends DocumentData>(
 }
 
 /**
- * Delete a document with online-only mode to prevent sync queue corruption.
- *
- * This wrapper:
- * 1. Forces network connection before write (bypasses corrupted offline queue)
- * 2. Adds timeout protection (prevents infinite hangs)
- * 3. Tracks performance and errors
+ * Tracked version of deleteDoc with timeout protection and error tracking.
  */
 export async function deleteDoc(reference: DocumentReference): Promise<void> {
-  // Skip if page is unloading to avoid Firestore assertion errors
-  if (isPageBeingUnloaded()) {
-    throw new Error('Operation cancelled: page is unloading');
-  }
-
   const documentPath = getPathFromReference(reference);
   const operationStartTime = Date.now();
 
   trackOperationStart('deleteDoc', documentPath);
 
   try {
-    await forceEnableNetworkBeforeWrite();
-
     await executeWriteWithTimeoutProtection(
       () => firebaseDeleteDoc(reference),
       'deleteDoc',
@@ -575,23 +375,16 @@ export async function deleteDoc(reference: DocumentReference): Promise<void> {
 }
 
 /**
- * Tracked Firebase operations with online-only write mode.
+ * Tracked Firebase operations.
  *
  * Use these instead of direct Firebase imports for:
  * - Automatic error tracking and Sentry integration
- * - Online-only writes that prevent sync queue corruption
- * - Timeout protection against infinite hangs
- * - Performance monitoring
- *
- * Read operations (getDoc, getDocs) work normally with offline cache.
- * Write operations (setDoc, addDoc, updateDoc, deleteDoc) force online mode.
+ * - Timeout protection against network hangs
+ * - Performance monitoring for slow operations
  */
 export const trackedFirebase = {
-  // Read operations (use offline cache normally)
   getDoc,
   getDocs,
-
-  // Write operations (force online mode to prevent sync corruption)
   setDoc,
   addDoc,
   updateDoc,

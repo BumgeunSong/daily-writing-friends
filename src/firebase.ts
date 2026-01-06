@@ -10,11 +10,7 @@ import { configureRemoteConfig } from './firebase/remote-config';
 // Core Firebase imports
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import {
-  initializeFirestore,
-  persistentLocalCache,
-  persistentSingleTabManager,
-} from 'firebase/firestore';
+import { initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
 import { getPerformance } from 'firebase/performance';
@@ -27,14 +23,13 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize core services
 const auth = getAuth(app);
-// Use single-tab persistence to avoid:
-// 1. Permission errors during auth token refresh (multi-tab sync timing issues)
-// 2. IndexedDB connection loss on iOS Safari (multi-tab lock conflicts)
-// See PR #387 for details
+// Use memory-only cache (no offline persistence) to avoid:
+// - "FIRESTORE INTERNAL ASSERTION FAILED: Unexpected state" errors
+// - PersistentWriteStream sync queue corruption on Mobile Safari
+// - IndexedDB issues during network transitions
+// Trade-off: App requires network connection, no offline support
 const firestore = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentSingleTabManager({ forceOwnership: true }),
-  }),
+  localCache: memoryLocalCache(),
 });
 const storage = getStorage(app);
 const installations = getInstallations(app);
