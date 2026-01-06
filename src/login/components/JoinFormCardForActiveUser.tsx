@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { z } from "zod"
 import { Board } from '@/board/model/Board'
+import { activeUserFormSchema } from "@/login/model/formSchemas"
 import { JoinFormDataForActiveUser } from "@/login/model/join"
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent } from '@/shared/ui/card'
@@ -10,14 +10,6 @@ import { RadioGroup, RadioGroupItem } from '@/shared/ui/radio-group'
 import { Slider } from '@/shared/ui/slider'
 import { formatStartDate } from '@/shared/utils/boardUtils'
 import FormField from "./JoinFormField"
-
-const formSchema = z.object({
-  keep: z.string().optional(),
-  problem: z.string().optional(),
-  try: z.string().optional(),
-  nps: z.number().min(1).max(10),
-  willContinue: z.enum(["yes", "no"]),
-})
 
 interface JoinFormCardForActiveUserProps {
   upcomingBoard: Board | null
@@ -35,7 +27,7 @@ export default function JoinFormCardForActiveUser({
     setValue,
     watch,
   } = useForm<JoinFormDataForActiveUser>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(activeUserFormSchema),
     defaultValues: {
       nps: 5,
       willContinue: "yes"
