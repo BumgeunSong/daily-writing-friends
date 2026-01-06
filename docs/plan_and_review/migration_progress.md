@@ -16,7 +16,8 @@
 3. `baa4037` - 스키마 정규화: 배열/중복 필드 제거
 4. `baa5b57` - reactions 테이블 FK 제약조건 추가
 5. `fe737a1` - 마이그레이션 진행 상황 문서화
-6. (pending) - Historical Identity: 성능을 위해 user_name/user_profile_image 유지
+6. `a251cbd` - Historical Identity: 성능을 위해 user_name/user_profile_image 유지
+7. `630a617` - fix: onConflict 파라미터를 단일 컬럼만 지원하도록 수정
 
 **Schema created (13 tables):**
 
@@ -50,10 +51,9 @@
 supabase/
 ├── config.toml
 └── migrations/
-    ├── 20260106000000_initial_schema.sql
-    ├── 20260106000001_normalize_schema.sql
-    ├── 20260106000002_reactions_proper_fks.sql
-    └── 20260106000003_historical_identity.sql
+    ├── 20260106000000_initial_schema.sql      # Core tables with Historical Identity
+    ├── 20260106000001_normalize_schema.sql    # waiting_users_ids → join table
+    └── 20260106000002_reactions_proper_fks.sql # Proper FK constraints for reactions
 
 scripts/migration/
 ├── config.ts                    # Firebase Admin + Supabase clients
