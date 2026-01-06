@@ -5,6 +5,10 @@ import {
   transformBoardWithId,
   isUserInActiveList,
   getLoginRedirectPath,
+  validateActiveUserSubmitParams,
+  validateNewUserSubmitParams,
+  createSuccessResult,
+  wrapError,
 } from './loginUtils';
 
 describe('loginUtils', () => {
@@ -116,6 +120,135 @@ describe('loginUtils', () => {
 
     it('returns /join/form for new users', () => {
       expect(getLoginRedirectPath(false)).toBe('/join/form');
+    });
+  });
+
+  describe('validateActiveUserSubmitParams', () => {
+    it('returns isValid true when both params are provided', () => {
+      const result = validateActiveUserSubmitParams('board-123', 'user-456');
+      expect(result).toEqual({ isValid: true });
+    });
+
+    it('returns error when boardId is missing', () => {
+      const result = validateActiveUserSubmitParams(undefined, 'user-456');
+      expect(result.isValid).toBe(false);
+      if (!result.isValid) {
+        expect(result.error.message).toBe('신청 가능한 기수 정보를 찾을 수 없습니다.');
+      }
+    });
+
+    it('returns error when boardId is empty string', () => {
+      const result = validateActiveUserSubmitParams('', 'user-456');
+      expect(result.isValid).toBe(false);
+    });
+
+    it('returns error when userId is missing', () => {
+      const result = validateActiveUserSubmitParams('board-123', undefined);
+      expect(result.isValid).toBe(false);
+      if (!result.isValid) {
+        expect(result.error.message).toBe('사용자 정보를 찾을 수 없습니다. 로그인 상태를 확인해주세요.');
+      }
+    });
+
+    it('returns error when userId is empty string', () => {
+      const result = validateActiveUserSubmitParams('board-123', '');
+      expect(result.isValid).toBe(false);
+    });
+
+    it('checks boardId before userId', () => {
+      const result = validateActiveUserSubmitParams('', '');
+      expect(result.isValid).toBe(false);
+      if (!result.isValid) {
+        expect(result.error.message).toBe('신청 가능한 기수 정보를 찾을 수 없습니다.');
+      }
+    });
+  });
+
+  describe('validateNewUserSubmitParams', () => {
+    it('returns isValid true when both params are provided', () => {
+      const result = validateNewUserSubmitParams('board-123', 'user-456');
+      expect(result).toEqual({ isValid: true });
+    });
+
+    it('returns error when boardId is missing', () => {
+      const result = validateNewUserSubmitParams(undefined, 'user-456');
+      expect(result.isValid).toBe(false);
+      if (!result.isValid) {
+        expect(result.error.message).toBe('신청 가능한 기수 정보를 찾을 수 없습니다.');
+      }
+    });
+
+    it('returns error when userId is missing', () => {
+      const result = validateNewUserSubmitParams('board-123', undefined);
+      expect(result.isValid).toBe(false);
+      if (!result.isValid) {
+        expect(result.error.message).toBe('사용자 정보를 찾을 수 없습니다. 로그인 상태를 확인해주세요.');
+      }
+    });
+  });
+
+  describe('createSuccessResult', () => {
+    it('creates success result with provided values', () => {
+      const result = createSuccessResult('홍길동', 10);
+      expect(result).toEqual({
+        success: true,
+        name: '홍길동',
+        cohort: 10,
+      });
+    });
+
+    it('defaults name to empty string when undefined', () => {
+      const result = createSuccessResult(undefined, 10);
+      expect(result.name).toBe('');
+    });
+
+    it('defaults cohort to 0 when undefined', () => {
+      const result = createSuccessResult('홍길동', undefined);
+      expect(result.cohort).toBe(0);
+    });
+
+    it('handles both undefined values', () => {
+      const result = createSuccessResult(undefined, undefined);
+      expect(result).toEqual({
+        success: true,
+        name: '',
+        cohort: 0,
+      });
+    });
+  });
+
+  describe('wrapError', () => {
+    it('wraps Error instance preserving message', () => {
+      const originalError = new Error('Something went wrong');
+      const result = wrapError(originalError);
+      expect(result).toEqual({
+        success: false,
+        error: originalError,
+      });
+    });
+
+    it('wraps string error with generic message', () => {
+      const result = wrapError('string error');
+      expect(result.success).toBe(false);
+      expect(result.error.message).toBe('알 수 없는 오류가 발생했습니다.');
+    });
+
+    it('wraps null with generic message', () => {
+      const result = wrapError(null);
+      expect(result.success).toBe(false);
+      expect(result.error.message).toBe('알 수 없는 오류가 발생했습니다.');
+    });
+
+    it('wraps undefined with generic message', () => {
+      const result = wrapError(undefined);
+      expect(result.success).toBe(false);
+      expect(result.error.message).toBe('알 수 없는 오류가 발생했습니다.');
+    });
+
+    it('wraps object with generic message', () => {
+      const result = wrapError({ code: 'ERR_001' });
+      expect(result.success).toBe(false);
+      expect(result.error.message).toBe('알 수 없는 오류가 발생했습니다.');
     });
   });
 });

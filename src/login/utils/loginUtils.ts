@@ -1,5 +1,9 @@
 import { Board } from "@/board/model/Board";
 
+// ============================================================================
+// 날짜 및 캐시 유틸리티
+// ============================================================================
+
 /**
  * 연도-월 문자열을 반환합니다.
  * @param date 날짜 객체 (기본값: 현재 날짜)
@@ -55,4 +59,80 @@ export function isUserInActiveList(
  */
 export function getLoginRedirectPath(isActiveUser: boolean): string {
     return isActiveUser ? '/boards' : '/join/form';
+}
+
+// ============================================================================
+// 폼 제출 검증 유틸리티
+// ============================================================================
+
+export type SubmitValidationResult =
+    | { isValid: true }
+    | { isValid: false; error: Error };
+
+/**
+ * 기존 사용자 리뷰 제출을 위한 필수 파라미터를 검증합니다.
+ * @param boardId 보드 ID
+ * @param userId 사용자 ID
+ * @returns 검증 결과
+ */
+export function validateActiveUserSubmitParams(
+    boardId: string | undefined,
+    userId: string | undefined
+): SubmitValidationResult {
+    if (!boardId) {
+        return { isValid: false, error: new Error("신청 가능한 기수 정보를 찾을 수 없습니다.") };
+    }
+    if (!userId) {
+        return { isValid: false, error: new Error("사용자 정보를 찾을 수 없습니다. 로그인 상태를 확인해주세요.") };
+    }
+    return { isValid: true };
+}
+
+/**
+ * 신규 사용자 가입을 위한 필수 파라미터를 검증합니다.
+ * @param boardId 보드 ID
+ * @param userId 사용자 ID
+ * @returns 검증 결과
+ */
+export function validateNewUserSubmitParams(
+    boardId: string | undefined,
+    userId: string | undefined
+): SubmitValidationResult {
+    if (!boardId) {
+        return { isValid: false, error: new Error("신청 가능한 기수 정보를 찾을 수 없습니다.") };
+    }
+    if (!userId) {
+        return { isValid: false, error: new Error("사용자 정보를 찾을 수 없습니다. 로그인 상태를 확인해주세요.") };
+    }
+    return { isValid: true };
+}
+
+/**
+ * 성공 응답 객체를 생성합니다.
+ * @param name 사용자 이름
+ * @param cohort 기수 번호
+ * @returns 성공 응답 객체
+ */
+export function createSuccessResult(name: string | undefined, cohort: number | undefined): {
+    success: true;
+    name: string;
+    cohort: number;
+} {
+    return {
+        success: true,
+        name: name ?? "",
+        cohort: cohort ?? 0
+    };
+}
+
+/**
+ * 에러를 표준 에러 응답 객체로 래핑합니다.
+ * @param error 원본 에러
+ * @returns 에러 응답 객체
+ */
+export function wrapError(error: unknown): { success: false; error: Error } {
+    return {
+        success: false,
+        error: error instanceof Error ? error : new Error("알 수 없는 오류가 발생했습니다.")
+    };
 }
