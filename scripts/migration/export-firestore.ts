@@ -9,6 +9,7 @@
  * Output:
  *   data/migration-export/
  *   ├── boards.json
+ *   ├── board_waiting_users.json  (normalized from boards.waitingUsersIds)
  *   ├── users.json
  *   ├── posts.json
  *   ├── comments.json
@@ -149,8 +150,6 @@ async function exportNestedCollections(): Promise<void> {
           id: commentDoc.id,
           post_id: postDoc.id,
           user_id: commentData.userId,
-          user_name: commentData.userName,
-          user_profile_image: commentData.userProfileImage || null,
           content: commentData.content,
           count_of_replies: 0, // Will be calculated during import
           created_at: convertTimestamp(commentData.createdAt),
@@ -169,8 +168,6 @@ async function exportNestedCollections(): Promise<void> {
             comment_id: commentDoc.id,
             post_id: postDoc.id,
             user_id: replyData.userId,
-            user_name: replyData.userName,
-            user_profile_image: replyData.userProfileImage || null,
             content: replyData.content,
             created_at: convertTimestamp(replyData.createdAt),
             updated_at: convertTimestamp(replyData.createdAt),
@@ -189,8 +186,6 @@ async function exportNestedCollections(): Promise<void> {
               entity_id: replyDoc.id,
               user_id: reactionData.reactionUser?.userId,
               reaction_type: reactionData.content,
-              user_name: reactionData.reactionUser?.userName || null,
-              user_profile_image: reactionData.reactionUser?.userProfileImage || null,
               created_at: convertTimestamp(reactionData.createdAt),
             });
           }
@@ -209,8 +204,6 @@ async function exportNestedCollections(): Promise<void> {
             entity_id: commentDoc.id,
             user_id: reactionData.reactionUser?.userId,
             reaction_type: reactionData.content,
-            user_name: reactionData.reactionUser?.userName || null,
-            user_profile_image: reactionData.reactionUser?.userProfileImage || null,
             created_at: convertTimestamp(reactionData.createdAt),
           });
         }
@@ -227,8 +220,6 @@ async function exportNestedCollections(): Promise<void> {
           id: likeDoc.id,
           post_id: postDoc.id,
           user_id: likeData.userId,
-          user_name: likeData.userName || null,
-          user_profile_image: likeData.userProfileImage || null,
           created_at: convertTimestamp(likeData.createdAt),
         });
       }
@@ -276,7 +267,6 @@ async function exportNotifications(): Promise<void> {
         recipient_id: userId,
         type: notifData.type,
         actor_id: notifData.fromUserId,
-        actor_profile_image: notifData.fromUserProfileImage || null,
         board_id: notifData.boardId,
         post_id: notifData.postId,
         comment_id: notifData.commentId || '',
@@ -328,9 +318,19 @@ async function main(): Promise<void> {
   console.log(`Export directory: ${EXPORT_DIR}\n`);
 
   // Export top-level collections
+  // Store waiting users for separate export
+  const boardWaitingUsers: { board_id: string; user_id: string }[] = [];
+
   await exportCollection('boards', 'boards.json', (doc) => {
     const data = doc.data();
     if (!data) return null;
+
+    // Collect waiting users for normalized table
+    const waitingUsersIds = data.waitingUsersIds || [];
+    for (const userId of waitingUsersIds) {
+      boardWaitingUsers.push({ board_id: doc.id, user_id: userId });
+    }
+
     return {
       id: doc.id,
       title: data.title,
@@ -338,11 +338,19 @@ async function main(): Promise<void> {
       first_day: convertTimestamp(data.firstDay) || null,
       last_day: convertTimestamp(data.lastDay) || null,
       cohort: data.cohort ?? null,
-      waiting_users_ids: data.waitingUsersIds || [],
       created_at: convertTimestamp(data.createdAt) || new Date().toISOString(),
       updated_at: convertTimestamp(data.createdAt) || new Date().toISOString(),
     };
   });
+
+  // Export board waiting users to separate file
+  if (boardWaitingUsers.length > 0) {
+    fs.writeFileSync(
+      path.join(EXPORT_DIR, 'board_waiting_users.json'),
+      JSON.stringify(boardWaitingUsers, null, 2)
+    );
+    console.log(`Exported ${boardWaitingUsers.length} board waiting users`);
+  }
 
   await exportCollection('users', 'users.json', (doc) => {
     const data = doc.data();
@@ -358,9 +366,7 @@ async function main(): Promise<void> {
       referrer: data.referrer || null,
       recovery_status: data.recoveryStatus || null,
       timezone: data.profile?.timezone || null,
-      known_buddy_uid: data.knownBuddy?.uid || null,
-      known_buddy_nickname: data.knownBuddy?.nickname || null,
-      known_buddy_profile_photo_url: data.knownBuddy?.profilePhotoURL || null,
+      known_buddy_uid: data.knownBuddy?.uid || null,  // FK only, no denormalized data
       created_at: convertTimestamp(data.createdAt) || new Date().toISOString(),
       updated_at: convertTimestamp(data.updatedAt) || new Date().toISOString(),
       // Store board permissions for separate import
