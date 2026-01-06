@@ -182,8 +182,8 @@ async function exportNestedCollections(): Promise<void> {
             const reactionData = reactionDoc.data();
             reactions.push({
               id: reactionDoc.id,
-              entity_type: 'reply',
-              entity_id: replyDoc.id,
+              comment_id: null,
+              reply_id: replyDoc.id,
               user_id: reactionData.reactionUser?.userId,
               reaction_type: reactionData.content,
               created_at: convertTimestamp(reactionData.createdAt),
@@ -200,8 +200,8 @@ async function exportNestedCollections(): Promise<void> {
           const reactionData = reactionDoc.data();
           reactions.push({
             id: reactionDoc.id,
-            entity_type: 'comment',
-            entity_id: commentDoc.id,
+            comment_id: commentDoc.id,
+            reply_id: null,
             user_id: reactionData.reactionUser?.userId,
             reaction_type: reactionData.content,
             created_at: convertTimestamp(reactionData.createdAt),
