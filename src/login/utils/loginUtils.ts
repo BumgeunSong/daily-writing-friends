@@ -71,31 +71,12 @@ export type SubmitValidationResult =
     | { isValid: false; error: Error };
 
 /**
- * 기존 사용자 리뷰 제출을 위한 필수 파라미터를 검증합니다.
+ * 폼 제출을 위한 필수 파라미터를 검증합니다.
  * @param boardId 보드 ID
  * @param userId 사용자 ID
  * @returns 검증 결과
  */
-export function validateActiveUserSubmitParams(
-    boardId: string | undefined,
-    userId: string | undefined
-): SubmitValidationResult {
-    if (!boardId) {
-        return { isValid: false, error: new Error("신청 가능한 기수 정보를 찾을 수 없습니다.") };
-    }
-    if (!userId) {
-        return { isValid: false, error: new Error("사용자 정보를 찾을 수 없습니다. 로그인 상태를 확인해주세요.") };
-    }
-    return { isValid: true };
-}
-
-/**
- * 신규 사용자 가입을 위한 필수 파라미터를 검증합니다.
- * @param boardId 보드 ID
- * @param userId 사용자 ID
- * @returns 검증 결과
- */
-export function validateNewUserSubmitParams(
+export function validateSubmitParams(
     boardId: string | undefined,
     userId: string | undefined
 ): SubmitValidationResult {

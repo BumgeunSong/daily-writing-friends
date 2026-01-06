@@ -6,8 +6,7 @@ import {
   transformBoardWithId,
   isUserInActiveList,
   getLoginRedirectPath,
-  validateActiveUserSubmitParams,
-  validateNewUserSubmitParams,
+  validateSubmitParams,
   createSuccessResult,
   wrapError,
 } from './loginUtils';
@@ -124,14 +123,14 @@ describe('loginUtils', () => {
     });
   });
 
-  describe('validateActiveUserSubmitParams', () => {
+  describe('validateSubmitParams', () => {
     it('returns isValid true when both params are provided', () => {
-      const result = validateActiveUserSubmitParams('board-123', 'user-456');
+      const result = validateSubmitParams('board-123', 'user-456');
       expect(result).toEqual({ isValid: true });
     });
 
     it('returns error when boardId is missing', () => {
-      const result = validateActiveUserSubmitParams(undefined, 'user-456');
+      const result = validateSubmitParams(undefined, 'user-456');
       expect(result.isValid).toBe(false);
       if (!result.isValid) {
         expect(result.error.message).toBe('신청 가능한 기수 정보를 찾을 수 없습니다.');
@@ -139,12 +138,12 @@ describe('loginUtils', () => {
     });
 
     it('returns error when boardId is empty string', () => {
-      const result = validateActiveUserSubmitParams('', 'user-456');
+      const result = validateSubmitParams('', 'user-456');
       expect(result.isValid).toBe(false);
     });
 
     it('returns error when userId is missing', () => {
-      const result = validateActiveUserSubmitParams('board-123', undefined);
+      const result = validateSubmitParams('board-123', undefined);
       expect(result.isValid).toBe(false);
       if (!result.isValid) {
         expect(result.error.message).toBe('사용자 정보를 찾을 수 없습니다. 로그인 상태를 확인해주세요.');
@@ -152,38 +151,15 @@ describe('loginUtils', () => {
     });
 
     it('returns error when userId is empty string', () => {
-      const result = validateActiveUserSubmitParams('board-123', '');
+      const result = validateSubmitParams('board-123', '');
       expect(result.isValid).toBe(false);
     });
 
     it('checks boardId before userId', () => {
-      const result = validateActiveUserSubmitParams('', '');
+      const result = validateSubmitParams('', '');
       expect(result.isValid).toBe(false);
       if (!result.isValid) {
         expect(result.error.message).toBe('신청 가능한 기수 정보를 찾을 수 없습니다.');
-      }
-    });
-  });
-
-  describe('validateNewUserSubmitParams', () => {
-    it('returns isValid true when both params are provided', () => {
-      const result = validateNewUserSubmitParams('board-123', 'user-456');
-      expect(result).toEqual({ isValid: true });
-    });
-
-    it('returns error when boardId is missing', () => {
-      const result = validateNewUserSubmitParams(undefined, 'user-456');
-      expect(result.isValid).toBe(false);
-      if (!result.isValid) {
-        expect(result.error.message).toBe('신청 가능한 기수 정보를 찾을 수 없습니다.');
-      }
-    });
-
-    it('returns error when userId is missing', () => {
-      const result = validateNewUserSubmitParams('board-123', undefined);
-      expect(result.isValid).toBe(false);
-      if (!result.isValid) {
-        expect(result.error.message).toBe('사용자 정보를 찾을 수 없습니다. 로그인 상태를 확인해주세요.');
       }
     });
   });
