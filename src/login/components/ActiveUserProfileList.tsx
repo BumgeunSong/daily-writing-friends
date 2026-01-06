@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useRef, useState, useEffect } from "react"
+import { UI_CONSTANTS } from "@/login/constants"
 import { Avatar, AvatarImage, AvatarFallback } from "@/shared/ui/avatar"
 import { cn } from "@/shared/utils/cn"
 import type { User } from "@/user/model/User"
@@ -55,11 +56,10 @@ export default function ActiveUserProfileList({ users, className }: ActiveUserPr
   const handleScroll = (direction: "left" | "right") => {
     if (!scrollContainerRef.current) return
 
-    const scrollAmount = 200
     const currentScroll = scrollContainerRef.current.scrollLeft
 
     scrollContainerRef.current.scrollTo({
-      left: direction === "left" ? currentScroll - scrollAmount : currentScroll + scrollAmount,
+      left: direction === "left" ? currentScroll - UI_CONSTANTS.SCROLL_AMOUNT : currentScroll + UI_CONSTANTS.SCROLL_AMOUNT,
       behavior: "smooth",
     })
   }

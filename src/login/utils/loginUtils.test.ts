@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { ROUTES } from '@/login/constants';
 import {
   formatYearMonth,
   createBoardCacheKey,
@@ -115,11 +116,11 @@ describe('loginUtils', () => {
 
   describe('getLoginRedirectPath', () => {
     it('returns /boards for active users', () => {
-      expect(getLoginRedirectPath(true)).toBe('/boards');
+      expect(getLoginRedirectPath(true)).toBe(ROUTES.BOARDS);
     });
 
     it('returns /join/form for new users', () => {
-      expect(getLoginRedirectPath(false)).toBe('/join/form');
+      expect(getLoginRedirectPath(false)).toBe(ROUTES.JOIN_FORM);
     });
   });
 

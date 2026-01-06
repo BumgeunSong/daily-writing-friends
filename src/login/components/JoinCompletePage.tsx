@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom"
+import { ROUTES } from "@/login/constants"
 import { Button } from "@/shared/ui/button"
 import { useAuth } from "@/shared/hooks/useAuth"
 
@@ -12,7 +13,7 @@ export default function JoinCompletePage({ name, cohort }: JoinCompletePageProps
   const { currentUser } = useAuth()
 
   const handleGoToBoards = () => {
-    navigate("/boards")
+    navigate(ROUTES.BOARDS)
   }
 
   const handleGoHome = () => {

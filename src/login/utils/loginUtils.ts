@@ -1,4 +1,5 @@
 import { Board } from "@/board/model/Board";
+import { ROUTES } from "@/login/constants";
 
 // ============================================================================
 // 날짜 및 캐시 유틸리티
@@ -58,7 +59,7 @@ export function isUserInActiveList(
  * @returns 리다이렉트할 경로
  */
 export function getLoginRedirectPath(isActiveUser: boolean): string {
-    return isActiveUser ? '/boards' : '/join/form';
+    return isActiveUser ? ROUTES.BOARDS : ROUTES.JOIN_FORM;
 }
 
 // ============================================================================

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '@/login/constants';
 import { Button } from '@/shared/ui/button';
 
 interface IntroCTAProps {
@@ -38,7 +39,7 @@ export default function IntroCTA({
 
   const handleSecondaryClick = () => {
     if (isLoggedIn) {
-      navigate('/boards');
+      navigate(ROUTES.BOARDS);
     } else {
       onLogin();
     }
