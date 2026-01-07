@@ -46,7 +46,8 @@ tasks/
 
 .cursor/
 .roo/
-.claude/
+.claude/*
+!.claude/skills/
 
 # Security: Test scripts with real data
 functions/src/commentSuggestion/test-suggestions.sh
