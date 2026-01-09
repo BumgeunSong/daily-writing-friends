@@ -40,7 +40,6 @@ import {
   groupAndMergeIssuesByPattern,
 } from "./sentry-api";
 import { runSingleAgentFix } from "./agents/single-agent";
-import { PIPELINE_CONFIG } from "./config";
 import {
   reportAnalysisResult,
   reportPlanResult,
