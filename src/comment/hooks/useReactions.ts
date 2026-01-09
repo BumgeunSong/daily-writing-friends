@@ -81,8 +81,8 @@ export function useReactions({ entity }: UseReactionsProps): UseReactionsReturn 
   });
 
   // 리액션 생성
-  const createReactionMutation = useMutation(
-    async (emoji: string) => {
+  const createReactionMutation = useMutation({
+    mutationFn: async (emoji: string) => {
       if (!currentUser) throw new Error('로그인이 필요합니다.');
       const userData = await fetchUser(currentUser.uid);
       const reactionUser: ReactionUser = {
@@ -92,25 +92,21 @@ export function useReactions({ entity }: UseReactionsProps): UseReactionsReturn 
       };
       await createReaction({ ...getEntityParams(), content: emoji, reactionUser });
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: reactionsQueryKey });
-      },
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: reactionsQueryKey });
+    },
+  });
 
   // 리액션 삭제
-  const deleteReactionMutation = useMutation(
-    async ({ emoji, userId }: { emoji: string; userId: string }) => {
+  const deleteReactionMutation = useMutation({
+    mutationFn: async ({ emoji, userId }: { emoji: string; userId: string }) => {
       if (!currentUser || currentUser.uid !== userId) throw new Error('자신의 반응만 삭제할 수 있습니다.');
       await deleteUserReaction(getEntityParams(), userId, emoji);
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: reactionsQueryKey });
-      },
-    }
-  );
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: reactionsQueryKey });
+    },
+  });
 
   return {
     reactions,

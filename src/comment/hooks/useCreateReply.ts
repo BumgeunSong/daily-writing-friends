@@ -8,8 +8,8 @@ export function useCreateReply(boardId: string, postId: string, commentId: strin
   const queryClient = useQueryClient();
   const { userData } = useUser(currentUser?.uid);
 
-  return useMutation(
-    async (content: string) => {
+  return useMutation({
+    mutationFn: async (content: string) => {
       if (!currentUser) throw new Error('로그인이 필요합니다.');
       return createReply(
         boardId,
@@ -21,26 +21,22 @@ export function useCreateReply(boardId: string, postId: string, commentId: strin
         userData?.profilePhotoURL ?? currentUser.photoURL,
       );
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['replies', boardId, postId, commentId] });
-        queryClient.invalidateQueries({ queryKey: ['replyCount', boardId, postId, commentId] });
-      },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['replies', boardId, postId, commentId] });
+      queryClient.invalidateQueries({ queryKey: ['replyCount', boardId, postId, commentId] });
     },
-  );
+  });
 }
 
 export function useEditReply(boardId: string, postId: string, commentId: string, replyId: string) {
   const queryClient = useQueryClient();
-  return useMutation(
-    (content: string) => updateReplyToComment(boardId, postId, commentId, replyId, content),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['replies', boardId, postId, commentId] });
-        queryClient.invalidateQueries({ queryKey: ['replyCount', boardId, postId, commentId] });
-      },
+  return useMutation({
+    mutationFn: (content: string) => updateReplyToComment(boardId, postId, commentId, replyId, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['replies', boardId, postId, commentId] });
+      queryClient.invalidateQueries({ queryKey: ['replyCount', boardId, postId, commentId] });
     },
-  );
+  });
 }
 
 export function useDeleteReply(
@@ -50,7 +46,8 @@ export function useDeleteReply(
   replyId: string,
 ) {
   const queryClient = useQueryClient();
-  return useMutation(() => deleteReplyToComment(boardId, postId, commentId, replyId), {
+  return useMutation({
+    mutationFn: () => deleteReplyToComment(boardId, postId, commentId, replyId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['replies', boardId, postId, commentId] });
       queryClient.invalidateQueries({ queryKey: ['replyCount', boardId, postId, commentId] });

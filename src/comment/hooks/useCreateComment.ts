@@ -8,8 +8,8 @@ export function useCreateComment(boardId: string, postId: string) {
   const queryClient = useQueryClient();
   const { userData } = useUser(currentUser?.uid);
 
-  return useMutation(
-    async (content: string) => {
+  return useMutation({
+    mutationFn: async (content: string) => {
       if (!currentUser) throw new Error('로그인이 필요합니다.');
       return createComment(
         boardId,
@@ -20,29 +20,26 @@ export function useCreateComment(boardId: string, postId: string) {
         userData?.profilePhotoURL ?? currentUser.photoURL,
       );
     },
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] });
-      },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] });
     },
-  );
+  });
 }
 
 export function useEditComment(boardId: string, postId: string, commentId: string) {
   const queryClient = useQueryClient();
-  return useMutation(
-    (content: string) => updateCommentToPost(boardId, postId, commentId, content),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] });
-      },
+  return useMutation({
+    mutationFn: (content: string) => updateCommentToPost(boardId, postId, commentId, content),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] });
     },
-  );
+  });
 }
 
 export function useDeleteComment(boardId: string, postId: string, commentId: string) {
   const queryClient = useQueryClient();
-  return useMutation(() => deleteCommentToPost(boardId, postId, commentId), {
+  return useMutation({
+    mutationFn: () => deleteCommentToPost(boardId, postId, commentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] });
     },
