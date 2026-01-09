@@ -323,57 +323,27 @@ try {
 
 ## Test Writing Standards
 
-### Core Testing Principles
+**Skills**: See `.claude/skills/testing/` and `.claude/skills/refactoring/` for detailed patterns.
 
-**CRITICAL: Test behavior, NOT implementation details**
+### Core Principles
 
-- ❌ Don't test: Mock call counts, internal method calls, private state
-- ✅ Do test: User-facing behavior, business outcomes, API contracts
+1. **Functional Core, Imperative Shell** - Extract pure functions before testing
+2. **Output-based tests only** - Test pure functions with input/output assertions
+3. **Never unit test**: hooks, components, or code with side effects
+4. **Test naming**: `describe('when [condition]')` → `it('[outcome]')`
 
-**Functional Core, Imperative Shell Pattern**
+### Quick Reference
 
-Before writing tests, refactor code to separate:
-- **Functional Core**: Pure functions with no side effects (testable with output-based tests)
-- **Imperative Shell**: Thin wrappers handling I/O, state, and side effects (not unit tested)
+| Testable (utils/) | NOT Unit Tested |
+|-------------------|-----------------|
+| Pure functions | React hooks (useX) |
+| Calculations | Components (*.tsx) |
+| Validators | API/Firebase calls |
+| Formatters | localStorage, Date.now() |
 
-```typescript
-// ✅ Functional Core - TESTABLE (pure function)
-export const isCacheValid = (entry: CacheEntry, currentTime: number, ttl: number): boolean =>
-  currentTime - entry.timestamp <= ttl;
+### Red Flags in Tests
 
-// ❌ Imperative Shell - NOT unit tested (side effects)
-export const loadFromCache = (key: string): Data | undefined => {
-  const cached = localStorage.getItem(key);  // side effect
-  if (!cached) return undefined;
-  const entry = JSON.parse(cached);
-  return isCacheValid(entry, Date.now(), CACHE_TTL) ? entry.data : undefined;
-};
-```
-
-- Extract pure logic from hooks/components before testing
-- Inject dependencies (time, random, etc.) to make functions pure
-- Write output-based tests only for the functional core
-
-### Test Naming Convention
-
-```typescript
-describe('Feature Area', () => {
-  describe('when specific condition exists', () => {
-    it('produces expected outcome', () => {
-      // Arrange - Act - Assert
-    });
-  });
-});
-```
-
-### Key Testing Rules
-
-1. **Test behavior outcomes, not implementation details**
-2. **Use descriptive test names following `when [condition]` → `it [outcome]` pattern**
-3. **No branching logic in tests - separate test cases instead**
-4. **Keep tests small and focused - one behavior per test**
-5. **Mock external dependencies, not units under test**
-6. **Use clear arrange-act-assert structure**
+Stop if you're writing: `vi.mock()`, `renderHook()`, `render()`, `QueryClientProvider`
 
 ---
 
