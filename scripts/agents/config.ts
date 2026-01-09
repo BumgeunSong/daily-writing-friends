@@ -18,6 +18,11 @@ export const AGENT_CONFIG = {
     maxTurns: 20, // Run 4 checks + read files
     allowedTools: ["Read", "Bash", "Grep", "Glob"],
   },
+  // Single agent: combines analyzer + planner + coder + reviewer
+  singleAgent: {
+    maxTurns: 100, // Needs to do everything in one session
+    allowedTools: ["Read", "Edit", "Write", "Bash", "Glob", "Grep"],
+  },
 };
 
 // Pipeline configurations
