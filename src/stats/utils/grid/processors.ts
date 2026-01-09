@@ -1,19 +1,19 @@
 import { Contribution } from '@/stats/model/WritingStats';
 import { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
+import { createEmptyMatrices, updateMatricesAtPosition } from './gridMatrix';
+import {
+  calculateGridPosition,
+  normalizeToMidnight,
+  filterWeekdayContributions,
+} from './gridPosition';
+import { initializeGridWithPlaceholders } from './placeholders';
+import { getTimeRange, filterContributionsInTimeRange } from './timeRange';
 import {
   ContributionMatrix,
   ContributionDataMatrix,
   ContributionData,
   GridResult,
 } from './types';
-import { getTimeRange, filterContributionsInTimeRange } from './timeRange';
-import {
-  calculateGridPosition,
-  normalizeToMidnight,
-  filterWeekdayContributions,
-} from './gridPosition';
-import { createEmptyMatrices, updateMatricesAtPosition } from './gridMatrix';
-import { initializeGridWithPlaceholders } from './placeholders';
 
 export function placeContributionInGrid(
   contribution: ContributionData,
