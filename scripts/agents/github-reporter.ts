@@ -6,6 +6,14 @@ import type { AnalysisResult, ImplementationPlan } from "./types";
 import type { TokenUsage } from "./token-tracker";
 import { GITHUB_CONFIG } from "./config";
 
+// Agent type for distinguishing comments
+export type AgentType = "multi-agent" | "single-agent";
+
+function formatAgentHeader(agentType: AgentType, title: string): string {
+  const prefix = agentType === "single-agent" ? "[Single-Agent]" : "[Multi-Agent]";
+  return `## ${prefix} ${title}`;
+}
+
 function getOctokit(): Octokit | null {
   const token = process.env.GITHUB_TOKEN;
   if (!token) return null;
@@ -58,7 +66,8 @@ export async function commentOnIssue(message: string): Promise<void> {
 
 export async function reportAnalysisResult(
   analyses: AnalysisResult[],
-  tokenUsage?: TokenUsage
+  tokenUsage?: TokenUsage,
+  agentType: AgentType = "multi-agent"
 ): Promise<void> {
   const fixable = analyses.filter((a) => a.shouldFix);
   const skipped = analyses.filter((a) => !a.shouldFix);
@@ -93,7 +102,7 @@ export async function reportAnalysisResult(
     ? `\n\n_Token usage: ${formatTokenUsage(tokenUsage)}_`
     : "";
 
-  const message = `## Analysis Result
+  const message = `${formatAgentHeader(agentType, "Analysis Result")}
 
 Found ${analyses.length} errors, ${fixable.length} fixable:
 
@@ -104,7 +113,8 @@ ${[...fixableLines, ...skippedLines].join("\n")}${targetLine}${tokenLine}`;
 
 export async function reportPlanResult(
   plan: ImplementationPlan,
-  tokenUsage?: TokenUsage
+  tokenUsage?: TokenUsage,
+  agentType: AgentType = "multi-agent"
 ): Promise<void> {
   const stepsLines = plan.steps.map(
     (s) => `${s.step}. ${s.description} (${s.files.join(", ")})`
@@ -114,7 +124,7 @@ export async function reportPlanResult(
     ? `\n\n_Token usage: ${formatTokenUsage(tokenUsage)}_`
     : "";
 
-  const message = `## Fix Plan
+  const message = `${formatAgentHeader(agentType, "Fix Plan")}
 
 **Summary:** ${plan.summaryEn}
 ${plan.summaryKo}
@@ -128,7 +138,8 @@ ${stepsLines.join("\n")}${tokenLine}`;
 export async function reportError(
   stage: string,
   error: unknown,
-  tokenUsage?: TokenUsage
+  tokenUsage?: TokenUsage,
+  agentType: AgentType = "multi-agent"
 ): Promise<void> {
   const errorMessage =
     error instanceof Error ? error.message : String(error);
@@ -139,7 +150,7 @@ export async function reportError(
     ? `\n\n_Token usage so far: ${formatTokenUsage(tokenUsage)}_`
     : "";
 
-  const message = `## Pipeline Error
+  const message = `${formatAgentHeader(agentType, "Pipeline Error")}
 
 **Stage:** ${stage}
 **Error:** ${errorMessage}
@@ -158,7 +169,8 @@ ${errorStack}
 export async function reportSuccess(
   prUrl: string,
   changedFiles: string[],
-  totalTokenUsage?: TokenUsage
+  totalTokenUsage?: TokenUsage,
+  agentType: AgentType = "multi-agent"
 ): Promise<void> {
   const filesLines = changedFiles.map((f) => `- ${f}`).join("\n");
 
@@ -166,7 +178,7 @@ export async function reportSuccess(
     ? `\n\n_Total token usage: ${formatTokenUsage(totalTokenUsage)}_`
     : "";
 
-  const message = `## Fix Ready!
+  const message = `${formatAgentHeader(agentType, "Fix Ready!")}
 
 **Created PR:** ${prUrl}
 
@@ -176,7 +188,7 @@ ${filesLines}${tokenLine}`;
   await commentOnIssue(message);
 }
 
-function generateBranchName(errorMessage: string): string {
+function generateBranchName(errorMessage: string, agentType: AgentType = "multi-agent"): string {
   // Short timestamp: MMDD-HHmm (8 chars)
   const now = new Date();
   const timestamp = `${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
@@ -185,7 +197,8 @@ function generateBranchName(errorMessage: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .substring(0, 15)
     .replace(/-+$/, "");
-  return `fix/sentry-${timestamp}-${sanitized}`;
+  // Branch prefix: multi-agent/fix-... or single-agent/fix-...
+  return `${agentType}/fix-${timestamp}-${sanitized}`;
 }
 
 /**
@@ -222,9 +235,10 @@ function getCurrentBranch(): string {
 
 export function createBranchAndCommit(
   errorMessage: string,
-  summary: string
+  summary: string,
+  agentType: AgentType = "multi-agent"
 ): string {
-  const branchName = generateBranchName(errorMessage);
+  const branchName = generateBranchName(errorMessage, agentType);
   const originalBranch = getCurrentBranch();
 
   // Pre-check: Ensure we have changes to commit
@@ -308,16 +322,19 @@ export function getChangedFiles(): string[] {
 
 export async function createPullRequestWithChanges(
   analysis: AnalysisResult,
-  plan: ImplementationPlan
+  plan: ImplementationPlan,
+  agentType: AgentType = "multi-agent"
 ): Promise<string> {
   const branchName = createBranchAndCommit(
     analysis.context.errorMessage,
-    plan.summaryKo
+    plan.summaryKo,
+    agentType
   );
 
   const issueNumber = getIssueNumber();
   const issueRef = issueNumber ? `\n\nCloses #${issueNumber}` : "";
 
+  const agentLabel = agentType === "single-agent" ? "[Single-Agent]" : "[Multi-Agent]";
   const body = `## Summary
 ${plan.summaryKo}
 
@@ -330,7 +347,7 @@ ${plan.steps.map((s) => `- ${s.description}`).join("\n")}
 ${analysis.context.sentryLink}${issueRef}
 
 ---
-_Automated fix by Sentry Bug Fix Pipeline_`;
+_Automated fix by Sentry Bug Fix Pipeline (${agentLabel})_`;
 
   const prUrl = await createPullRequest(
     branchName,
