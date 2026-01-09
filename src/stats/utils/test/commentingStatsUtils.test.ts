@@ -6,7 +6,17 @@ import {
 import type { UserCommentingStats } from '@/stats/hooks/useCommentingStats';
 import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 
-function createMockCommentingStats(
+function createMockContribution(
+  countOfCommentAndReplies: number | null,
+  createdAt = '2025-01-15',
+): CommentingContribution {
+  return {
+    createdAt,
+    countOfCommentAndReplies,
+  };
+}
+
+function createMockUserCommentingStats(
   userId: string,
   contributions: CommentingContribution[],
 ): UserCommentingStats {
@@ -25,10 +35,10 @@ function createMockCommentingStats(
 describe('commentingStatsUtils', () => {
   describe('getTotalCommentCount', () => {
     it('should sum all comment counts', () => {
-      const contributions: CommentingContribution[] = [
-        { createdAt: '2025-01-01', countOfCommentAndReplies: 5 },
-        { createdAt: '2025-01-02', countOfCommentAndReplies: 3 },
-        { createdAt: '2025-01-03', countOfCommentAndReplies: 7 },
+      const contributions = [
+        createMockContribution(5),
+        createMockContribution(3),
+        createMockContribution(7),
       ];
 
       const result = getTotalCommentCount(contributions);
@@ -37,10 +47,10 @@ describe('commentingStatsUtils', () => {
     });
 
     it('should treat null counts as 0', () => {
-      const contributions: CommentingContribution[] = [
-        { createdAt: '2025-01-01', countOfCommentAndReplies: 5 },
-        { createdAt: '2025-01-02', countOfCommentAndReplies: null },
-        { createdAt: '2025-01-03', countOfCommentAndReplies: 3 },
+      const contributions = [
+        createMockContribution(5),
+        createMockContribution(null),
+        createMockContribution(3),
       ];
 
       const result = getTotalCommentCount(contributions);
@@ -55,23 +65,44 @@ describe('commentingStatsUtils', () => {
     });
 
     it('should return 0 when all counts are null', () => {
-      const contributions: CommentingContribution[] = [
-        { createdAt: '2025-01-01', countOfCommentAndReplies: null },
-        { createdAt: '2025-01-02', countOfCommentAndReplies: null },
+      const contributions = [
+        createMockContribution(null),
+        createMockContribution(null),
+        createMockContribution(null),
       ];
 
       const result = getTotalCommentCount(contributions);
 
       expect(result).toBe(0);
     });
+
+    it('should handle single contribution', () => {
+      const contributions = [createMockContribution(10)];
+
+      const result = getTotalCommentCount(contributions);
+
+      expect(result).toBe(10);
+    });
+
+    it('should handle contribution with zero count', () => {
+      const contributions = [
+        createMockContribution(5),
+        createMockContribution(0),
+        createMockContribution(3),
+      ];
+
+      const result = getTotalCommentCount(contributions);
+
+      expect(result).toBe(8);
+    });
   });
 
   describe('sortCommentingStats', () => {
     it('should place current user first', () => {
       const stats = [
-        createMockCommentingStats('user1', [{ createdAt: '2025-01-01', countOfCommentAndReplies: 20 }]),
-        createMockCommentingStats('user2', [{ createdAt: '2025-01-01', countOfCommentAndReplies: 5 }]),
-        createMockCommentingStats('user3', [{ createdAt: '2025-01-01', countOfCommentAndReplies: 10 }]),
+        createMockUserCommentingStats('user1', [createMockContribution(50)]),
+        createMockUserCommentingStats('user2', [createMockContribution(10)]),
+        createMockUserCommentingStats('user3', [createMockContribution(30)]),
       ];
 
       const result = sortCommentingStats(stats, 'user2');
@@ -81,30 +112,30 @@ describe('commentingStatsUtils', () => {
 
     it('should sort by total comment count descending after current user', () => {
       const stats = [
-        createMockCommentingStats('user1', [{ createdAt: '2025-01-01', countOfCommentAndReplies: 5 }]),
-        createMockCommentingStats('user2', [{ createdAt: '2025-01-01', countOfCommentAndReplies: 20 }]),
-        createMockCommentingStats('user3', [{ createdAt: '2025-01-01', countOfCommentAndReplies: 10 }]),
+        createMockUserCommentingStats('user1', [createMockContribution(10)]),
+        createMockUserCommentingStats('user2', [createMockContribution(50)]),
+        createMockUserCommentingStats('user3', [createMockContribution(30)]),
       ];
 
       const result = sortCommentingStats(stats, 'user1');
 
       expect(result[0].user.id).toBe('user1'); // Current user first
-      expect(result[1].user.id).toBe('user2'); // 20 comments
-      expect(result[2].user.id).toBe('user3'); // 10 comments
+      expect(result[1].user.id).toBe('user2'); // 50 comments
+      expect(result[2].user.id).toBe('user3'); // 30 comments
     });
 
     it('should sort by total comment count when no current user', () => {
       const stats = [
-        createMockCommentingStats('user1', [{ createdAt: '2025-01-01', countOfCommentAndReplies: 5 }]),
-        createMockCommentingStats('user2', [{ createdAt: '2025-01-01', countOfCommentAndReplies: 20 }]),
-        createMockCommentingStats('user3', [{ createdAt: '2025-01-01', countOfCommentAndReplies: 10 }]),
+        createMockUserCommentingStats('user1', [createMockContribution(10)]),
+        createMockUserCommentingStats('user2', [createMockContribution(50)]),
+        createMockUserCommentingStats('user3', [createMockContribution(30)]),
       ];
 
       const result = sortCommentingStats(stats);
 
-      expect(result[0].user.id).toBe('user2'); // 20
-      expect(result[1].user.id).toBe('user3'); // 10
-      expect(result[2].user.id).toBe('user1'); // 5
+      expect(result[0].user.id).toBe('user2'); // 50
+      expect(result[1].user.id).toBe('user3'); // 30
+      expect(result[2].user.id).toBe('user1'); // 10
     });
 
     it('should handle empty array', () => {
@@ -115,31 +146,75 @@ describe('commentingStatsUtils', () => {
 
     it('should sum multiple contributions per user', () => {
       const stats = [
-        createMockCommentingStats('user1', [
-          { createdAt: '2025-01-01', countOfCommentAndReplies: 5 },
-          { createdAt: '2025-01-02', countOfCommentAndReplies: 5 },
+        createMockUserCommentingStats('user1', [
+          createMockContribution(10),
+          createMockContribution(10),
         ]),
-        createMockCommentingStats('user2', [
-          { createdAt: '2025-01-01', countOfCommentAndReplies: 8 },
-        ]),
+        createMockUserCommentingStats('user2', [createMockContribution(15)]),
       ];
 
       const result = sortCommentingStats(stats);
 
-      expect(result[0].user.id).toBe('user1'); // 10 total
-      expect(result[1].user.id).toBe('user2'); // 8 total
+      expect(result[0].user.id).toBe('user1'); // 20 total
+      expect(result[1].user.id).toBe('user2'); // 15 total
+    });
+
+    it('should handle null counts in sorting', () => {
+      const stats = [
+        createMockUserCommentingStats('user1', [createMockContribution(null)]),
+        createMockUserCommentingStats('user2', [createMockContribution(10)]),
+        createMockUserCommentingStats('user3', [createMockContribution(null)]),
+      ];
+
+      const result = sortCommentingStats(stats);
+
+      expect(result[0].user.id).toBe('user2'); // 10 comments
     });
 
     it('should not mutate original array', () => {
       const stats = [
-        createMockCommentingStats('user1', [{ createdAt: '2025-01-01', countOfCommentAndReplies: 5 }]),
-        createMockCommentingStats('user2', [{ createdAt: '2025-01-01', countOfCommentAndReplies: 20 }]),
+        createMockUserCommentingStats('user1', [createMockContribution(10)]),
+        createMockUserCommentingStats('user2', [createMockContribution(50)]),
       ];
       const originalFirst = stats[0].user.id;
 
       sortCommentingStats(stats);
 
       expect(stats[0].user.id).toBe(originalFirst);
+    });
+
+    it('should handle current user not in list', () => {
+      const stats = [
+        createMockUserCommentingStats('user1', [createMockContribution(30)]),
+        createMockUserCommentingStats('user2', [createMockContribution(10)]),
+      ];
+
+      const result = sortCommentingStats(stats, 'user99');
+
+      expect(result[0].user.id).toBe('user1'); // 30
+      expect(result[1].user.id).toBe('user2'); // 10
+    });
+
+    it('should handle single user', () => {
+      const stats = [createMockUserCommentingStats('user1', [createMockContribution(10)])];
+
+      const result = sortCommentingStats(stats, 'user1');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].user.id).toBe('user1');
+    });
+
+    it('should handle users with equal comment counts', () => {
+      const stats = [
+        createMockUserCommentingStats('user1', [createMockContribution(20)]),
+        createMockUserCommentingStats('user2', [createMockContribution(20)]),
+        createMockUserCommentingStats('user3', [createMockContribution(20)]),
+      ];
+
+      const result = sortCommentingStats(stats);
+
+      expect(result).toHaveLength(3);
+      expect(result.every((s) => getTotalCommentCount(s.contributions) === 20)).toBe(true);
     });
   });
 });

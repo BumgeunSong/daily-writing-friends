@@ -1,38 +1,26 @@
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
-import { Alert, AlertDescription } from '@/shared/ui/alert';
 import { ScrollArea } from '@/shared/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/ui/tabs';
 import StatsHeader from '@/stats/components/StatsHeader';
 import { StatsNoticeBanner } from '@/stats/components/StatsNoticeBanner';
+import {
+  StatsLoadingState,
+  StatsMaintenanceState,
+  StatsErrorState,
+} from '@/stats/components/StatsPageStates';
 import { UserCommentStatsCardList } from '@/stats/components/UserCommentStatsCardList';
 import { UserPostingStatsCardList } from '@/stats/components/UserPostingStatsCardList';
-import { UserPostingStatsCardSkeleton } from '@/stats/components/UserPostingStatsCardSkeleton';
 import { useStatsPageData } from '@/stats/hooks/useStatsPageData';
 
-// 통계 페이지 스크롤 영역의 고유 ID
 const STATS_SCROLL_ID = 'stats-scroll';
 
 type TabType = 'posting' | 'commenting';
 
-/**
- * Custom hook to fetch and manage data for the stats page.
- *
- * @param {TabType} tab - The active tab type, either 'posting' or 'commenting'.
- * @returns {Object} An object containing:
- *   - activeUsers: Array of active users in the board.
- *   - writingStats: Statistics related to user postings.
- *   - commentingStats: Statistics related to user comments.
- *   - isLoading: Boolean indicating if data is still loading.
- *   - error: Any error encountered during data fetching.
- *   - handleRefreshStats: Function to refresh the stats data.
- *   - navigate: Function to navigate between routes.
- *   - isLoadingCommenting: Boolean indicating if commenting stats are loading.
- */
 export default function StatsPage() {
   usePerformanceMonitoring('StatsPage');
   const navigate = useNavigate();
@@ -53,21 +41,18 @@ export default function StatsPage() {
     isLoadingCommenting,
   } = useStatsPageData(tab);
 
-  // 통계 페이지가 비활성화된 경우 유지보수 알림 표시
   if (!isConfigLoading && !statPageEnabled) {
-    return <MaintenanceState />;
+    return <StatsMaintenanceState />;
   }
 
-  // Show loading state only if current user stats aren't ready yet
   const showInitialLoading = isLoading && !isCurrentUserReady;
 
   if (error) {
-    return <ErrorState error={error instanceof Error ? error : new Error('알 수 없는 오류')} />;
+    return <StatsErrorState error={error instanceof Error ? error : new Error('알 수 없는 오류')} />;
   }
 
-  // Show full loading state only if current user stats aren't ready
   if (showInitialLoading) {
-    return <LoadingState />;
+    return <StatsLoadingState />;
   }
 
   return (
@@ -97,7 +82,7 @@ export default function StatsPage() {
             <div className='mt-4'>
               {tab === 'posting' ? (
                 <TabsContent value='posting'>
-                  <React.Suspense fallback={<LoadingState />}>
+                  <React.Suspense fallback={<StatsLoadingState />}>
                     <UserPostingStatsCardList
                       stats={writingStats || []}
                       currentUserStats={currentUserWritingStats}
@@ -111,7 +96,7 @@ export default function StatsPage() {
                 </TabsContent>
               ) : (
                 <TabsContent value='commenting'>
-                  <React.Suspense fallback={<LoadingState />}>
+                  <React.Suspense fallback={<StatsLoadingState />}>
                     <UserCommentStatsCardList
                       stats={commentingStats || []}
                       currentUserId={currentUserId}
@@ -123,66 +108,6 @@ export default function StatsPage() {
             </div>
           </Tabs>
         </ScrollArea>
-      </main>
-    </div>
-  );
-}
-
-// LoadingState 컴포넌트 - 스켈레톤 UI 표시
-function LoadingState() {
-  return (
-    <div className='min-h-screen bg-background'>
-      <StatsHeader />
-      <main className='container mx-auto px-3 py-2 md:px-4'>
-        <ScrollArea className='h-full' id={STATS_SCROLL_ID}>
-          <StatsNoticeBanner />
-          <div className='grid grid-cols-1 gap-4 pb-20 md:grid-cols-2'>
-            {[...Array(5)].map((_, index) => (
-              <UserPostingStatsCardSkeleton key={index} />
-            ))}
-          </div>
-        </ScrollArea>
-      </main>
-    </div>
-  );
-}
-
-// MaintenanceState 컴포넌트 - 유지보수 알림 표시
-function MaintenanceState() {
-  return (
-    <div className='min-h-screen bg-background'>
-      <StatsHeader />
-      <main className='container mx-auto px-3 py-2 md:px-4'>
-        <ScrollArea className='h-full' id={STATS_SCROLL_ID}>
-          <div className='flex flex-col items-center justify-center space-y-6 py-16'>
-            <img
-              src='/admin-poodle-icon.webp'
-              alt='점검 중인 강아지'
-              className='size-24 rounded-full object-cover'
-            />
-            <div className='space-y-4 text-center'>
-              <h2 className='text-2xl font-semibold text-foreground'>
-                잔디 기록 페이지가 잠시 점검 중이에요
-              </h2>
-              <p className='max-w-md text-lg text-muted-foreground'>조금만 기다려주세요 🙏</p>
-            </div>
-          </div>
-        </ScrollArea>
-      </main>
-    </div>
-  );
-}
-
-// ErrorState 컴포넌트 - 오류 메시지 표시
-function ErrorState({ error }: { error: Error }) {
-  return (
-    <div className='min-h-screen bg-background'>
-      <StatsHeader />
-      <main className='container mx-auto flex flex-col items-center justify-center px-3 py-8 md:px-4'>
-        <h2 className='text-xl font-semibold text-red-600'>오류: {error.message}</h2>
-        <p className='text-muted-foreground'>
-          데이터를 불러올 수 없습니다. 나중에 다시 시도해주세요.
-        </p>
       </main>
     </div>
   );
