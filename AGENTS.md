@@ -330,6 +330,30 @@ try {
 - ❌ Don't test: Mock call counts, internal method calls, private state
 - ✅ Do test: User-facing behavior, business outcomes, API contracts
 
+**Functional Core, Imperative Shell Pattern**
+
+Before writing tests, refactor code to separate:
+- **Functional Core**: Pure functions with no side effects (testable with output-based tests)
+- **Imperative Shell**: Thin wrappers handling I/O, state, and side effects (not unit tested)
+
+```typescript
+// ✅ Functional Core - TESTABLE (pure function)
+export const isCacheValid = (entry: CacheEntry, currentTime: number, ttl: number): boolean =>
+  currentTime - entry.timestamp <= ttl;
+
+// ❌ Imperative Shell - NOT unit tested (side effects)
+export const loadFromCache = (key: string): Data | undefined => {
+  const cached = localStorage.getItem(key);  // side effect
+  if (!cached) return undefined;
+  const entry = JSON.parse(cached);
+  return isCacheValid(entry, Date.now(), CACHE_TTL) ? entry.data : undefined;
+};
+```
+
+- Extract pure logic from hooks/components before testing
+- Inject dependencies (time, random, etc.) to make functions pure
+- Write output-based tests only for the functional core
+
 ### Test Naming Convention
 
 ```typescript
