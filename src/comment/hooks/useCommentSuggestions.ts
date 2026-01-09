@@ -3,7 +3,14 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { generateCommentSuggestions } from '../api/commentSuggestions';
 import type { CommentSuggestion } from '../model/CommentSuggestion';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-
+import {
+  createCacheKey,
+  createCacheEntry,
+  isCacheValid,
+  parseCacheEntry,
+  serializeCacheEntry,
+  type CacheEntry,
+} from '../utils/cacheUtils';
 
 // Hook parameter types
 interface UseCommentSuggestionsParams {
@@ -12,52 +19,23 @@ interface UseCommentSuggestionsParams {
   enabled?: boolean;
 }
 
-// Hook return type
-interface UseCommentSuggestionsReturn {
-  data: CommentSuggestion[] | undefined;
-  isLoading: boolean;
-  isError: boolean;
-  error: unknown;
-  refresh: () => Promise<void>;
-}
-
-// Constants
-const CACHE_KEY = 'comment-suggestions-cache';
+// Cache configuration constants
+const CACHE_KEY_PREFIX = 'comment-suggestions-cache';
 const CACHE_VERSION = 'v1';
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
-// Types
-interface CacheEntry {
-  data: CommentSuggestion[];
-  timestamp: number;
-  version: string;
-}
-
+// Imperative shell - handles side effects (localStorage)
 type CacheOperationResult<T> = {
   success: boolean;
   data?: T;
   error?: Error;
 };
 
-// Cache utilities - pure functions
-const createCacheKey = (key: string): string => `${CACHE_KEY}-${key}`;
-
-const createCacheEntry = (data: CommentSuggestion[]): CacheEntry => ({
-  data,
-  timestamp: Date.now(),
-  version: CACHE_VERSION,
-});
-
-const isCacheValid = (entry: CacheEntry): boolean => {
-  return entry.version === CACHE_VERSION && 
-         Date.now() - entry.timestamp <= CACHE_TTL;
-};
-
 const saveToCache = (key: string, data: CommentSuggestion[]): CacheOperationResult<void> => {
   try {
-    const cacheKey = createCacheKey(key);
-    const cacheEntry = createCacheEntry(data);
-    localStorage.setItem(cacheKey, JSON.stringify(cacheEntry));
+    const cacheKey = createCacheKey(CACHE_KEY_PREFIX, key);
+    const cacheEntry = createCacheEntry(data, Date.now(), CACHE_VERSION);
+    localStorage.setItem(cacheKey, serializeCacheEntry(cacheEntry));
     return { success: true };
   } catch (error) {
     const err = error instanceof Error ? error : new Error('Unknown cache save error');
@@ -68,16 +46,15 @@ const saveToCache = (key: string, data: CommentSuggestion[]): CacheOperationResu
 
 const loadFromCache = (key: string): CacheOperationResult<CommentSuggestion[]> => {
   try {
-    const cacheKey = createCacheKey(key);
+    const cacheKey = createCacheKey(CACHE_KEY_PREFIX, key);
     const cached = localStorage.getItem(cacheKey);
-    
-    if (!cached) {
+    const cacheEntry = parseCacheEntry<CommentSuggestion[]>(cached);
+
+    if (!cacheEntry) {
       return { success: true, data: undefined };
     }
 
-    const cacheEntry: CacheEntry = JSON.parse(cached);
-    
-    if (!isCacheValid(cacheEntry)) {
+    if (!isCacheValid(cacheEntry, Date.now(), CACHE_TTL, CACHE_VERSION)) {
       localStorage.removeItem(cacheKey);
       return { success: true, data: undefined };
     }
@@ -92,7 +69,7 @@ const loadFromCache = (key: string): CacheOperationResult<CommentSuggestion[]> =
 
 const clearCache = (key: string): CacheOperationResult<void> => {
   try {
-    const cacheKey = createCacheKey(key);
+    const cacheKey = createCacheKey(CACHE_KEY_PREFIX, key);
     localStorage.removeItem(cacheKey);
     return { success: true };
   } catch (error) {
