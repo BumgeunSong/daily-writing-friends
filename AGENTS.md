@@ -323,33 +323,27 @@ try {
 
 ## Test Writing Standards
 
-### Core Testing Principles
+**Skills**: See `.claude/skills/testing/` and `.claude/skills/refactoring/` for detailed patterns.
 
-**CRITICAL: Test behavior, NOT implementation details**
+### Core Principles
 
-- ❌ Don't test: Mock call counts, internal method calls, private state
-- ✅ Do test: User-facing behavior, business outcomes, API contracts
+1. **Functional Core, Imperative Shell** - Extract pure functions before testing
+2. **Output-based tests only** - Test pure functions with input/output assertions
+3. **Never unit test**: hooks, components, or code with side effects
+4. **Test naming**: `describe('when [condition]')` → `it('[outcome]')`
 
-### Test Naming Convention
+### Quick Reference
 
-```typescript
-describe('Feature Area', () => {
-  describe('when specific condition exists', () => {
-    it('produces expected outcome', () => {
-      // Arrange - Act - Assert
-    });
-  });
-});
-```
+| Testable (utils/) | NOT Unit Tested |
+|-------------------|-----------------|
+| Pure functions | React hooks (useX) |
+| Calculations | Components (*.tsx) |
+| Validators | API/Firebase calls |
+| Formatters | localStorage, Date.now() |
 
-### Key Testing Rules
+### Red Flags in Tests
 
-1. **Test behavior outcomes, not implementation details**
-2. **Use descriptive test names following `when [condition]` → `it [outcome]` pattern**
-3. **No branching logic in tests - separate test cases instead**
-4. **Keep tests small and focused - one behavior per test**
-5. **Mock external dependencies, not units under test**
-6. **Use clear arrange-act-assert structure**
+Stop if you're writing: `vi.mock()`, `renderHook()`, `render()`, `QueryClientProvider`
 
 ---
 
