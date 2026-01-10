@@ -7,6 +7,17 @@ description: PR stacking workflow for breaking large features into smaller, depe
 
 Break large features into logical, dependent PRs for better code quality and easier reviews.
 
+## Prerequisites
+
+```bash
+# Install GitHub CLI (required for PR creation)
+brew install gh        # macOS
+# or: sudo apt install gh   # Ubuntu/Debian
+
+# Authenticate
+gh auth login
+```
+
 ## When to Stack
 
 Stack PRs when:
