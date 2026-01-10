@@ -138,122 +138,10 @@ Copy `config/.env.example` to `.env` at root and configure Firebase credentials.
 
 ## Code Writing Practices
 
-### Self-Documenting Code Through Expressive Naming
-
-**Core Principle: Code should be self-explanatory through clear naming, not through comments**
-
-#### Guidelines for Expressive Naming
-
-1. **Replace Comments with Descriptive Names**
-   - ❌ `const d = 7; // days in recovery period`
-   - ✅ `const daysInRecoveryPeriod = 7;`
-
-2. **Avoid Abbreviations**
-   - ❌ `getUserCmt()`, `calcRecReq()`
-   - ✅ `getUserComment()`, `calculateRecoveryRequirement()`
-
-3. **Use Long Names When Needed**
-   - ❌ `isValid()`, `check()`
-   - ✅ `isUserEligibleForRecovery()`, `checkIfPostMeetsRequirements()`
-
-4. **Use Intermediate Variables with Descriptive Names**
-   ```typescript
-   // ✅ Self-explanatory with intermediate variables
-   const hasRequiredPostCount = posts.length >= 2;
-   const isWithinRecoveryWindow = new Date() <= recoveryDeadline;
-   const canStartRecovery = hasRequiredPostCount && isWithinRecoveryWindow;
-   ```
-
-5. **Extract Magic Numbers into Named Constants**
-   - ✅ `const GOLD_BADGE_STREAK_THRESHOLD = 21;`
-
-6. **Boolean Variables Should Read Like Questions**
-   - ❌ `eligible`, `recovery`
-   - ✅ `isEligible`, `isRecovering`, `hasPassedDeadline`
-
-7. **Collections Should Use Plural Names**
-   - ❌ `const post = getPosts()`
-   - ✅ `const posts = getPosts()`
-
-### Code Comments Best Practices
-
-**Core Principle: Code tells you HOW, Comments tell you WHY**
-
-- Comments should provide additional insight, not restate what's already clear
-- Use `TODO:` comments to highlight known limitations
-- Update comments when changing code
-- Remove obsolete comments
-
-### Component Structure
-
-Follow this pattern for all React components:
-
-```typescript
-// 1. External imports
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-
-// 2. Internal shared imports
-import { Button } from '@/shared/ui/button';
-import { useAuth } from '@/shared/hooks/useAuth';
-
-// 3. Feature-specific imports
-import { usePostEditor } from '../hooks/usePostEditor';
-
-// 4. Component definition with TypeScript
-interface PostEditorProps {
-  boardId: string;
-  initialContent?: string;
-}
-
-export function PostEditor({ boardId, initialContent }: PostEditorProps) {
-  // Component logic
-}
-```
-
-### API Layer Pattern
-
-All API functions should be in `[feature]/api/`:
-
-```typescript
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '@/firebase';
-import type { Post } from '../model/Post';
-
-export async function createPost(
-  boardId: string,
-  postData: Omit<Post, 'id' | 'createdAt'>,
-): Promise<Post> {
-  const postsRef = collection(db, 'boards', boardId, 'posts');
-  const docRef = await addDoc(postsRef, {
-    ...postData,
-    createdAt: new Date(),
-  });
-  return { ...postData, id: docRef.id, createdAt: new Date() };
-}
-```
-
-### Custom Hooks Pattern
-
-Place business logic in custom hooks in `[feature]/hooks/`:
-
-```typescript
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createPost } from '../api/post';
-
-export function usePostEditor(boardId: string) {
-  const queryClient = useQueryClient();
-
-  const createMutation = useMutation({
-    mutationFn: (data: CreatePostData) => createPost(boardId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts', boardId] });
-    },
-  });
-
-  return { createMutation };
-}
-```
+**Skills** (auto-activated):
+- `code-style` - Naming, comments, function design principles
+- `react-component` - Component structure, import order, hooks patterns
+- `api-layer` - API functions, Firestore patterns
 
 ---
 
@@ -280,44 +168,7 @@ export function usePostEditor(boardId: string) {
 
 ## Firebase Functions Patterns
 
-### Function Structure Pattern
-
-```typescript
-import { onDocumentCreated } from 'firebase-functions/v2/firestore';
-import admin from '../admin';
-import { Post } from '../types/Post';
-
-export const createPosting = onDocumentCreated('boards/{boardId}/posts/{postId}', async (event) => {
-  const postData = event.data?.data() as Post;
-  const { boardId, postId } = event.params;
-
-  if (!postData) {
-    console.error('No post data found.');
-    return null;
-  }
-
-  try {
-    await admin.firestore().collection('users').doc(postData.authorId).collection('postings').add(postingData);
-    console.log(`Created posting activity for user ${postData.authorId}`);
-  } catch (error) {
-    console.error('Error writing posting activity:', error);
-  }
-
-  return null;
-});
-```
-
-### Error Handling Pattern
-
-```typescript
-try {
-  await admin.firestore().collection('...').add(data);
-  console.log(`Successfully created ${resourceType}`);
-} catch (error) {
-  console.error(`Error creating ${resourceType}:`, error);
-  // Don't throw - let function complete gracefully
-}
-```
+**See `.claude/skills/firebase-functions/SKILL.md`** - enforced via `firebase-functions` skill.
 
 ---
 
@@ -361,43 +212,7 @@ Stop if you're writing: `vi.mock()`, `renderHook()`, `render()`, `QueryClientPro
 
 ## Git Commit Rules
 
-### Commit Size
-
-**ALWAYS commit changes as small logical steps forward.** Each commit should represent:
-- One feature addition
-- One bug fix
-- One refactor
-
-❌ Don't bundle unrelated changes in a single commit.
-
-### Commit Message Format
-
-```
-<concise title in Korean>
-
-- Detail point 1
-- Detail point 2
-- Detail point 3 (if needed)
-```
-
-**Title**: Concise summary in Korean (50 chars max)
-**Body**: 1-3 bullet points explaining what changed (can be English)
-
-### NO AI Signatures
-
-**NEVER include AI-generated signatures in commits:**
-- ❌ `🤖 Generated with [Claude Code]`
-- ❌ `Co-Authored-By: Claude`
-- ❌ Any emoji or branding indicating AI generation
-
-### Example
-
-```
-토큰 사용량 추적 버그 수정
-
-- Extract tokens from modelUsage object instead of root
-- Add fallback to usage.input_tokens format
-```
+**See `.claude/skills/commit/SKILL.md`** - enforced via `/commit` skill.
 
 ---
 
