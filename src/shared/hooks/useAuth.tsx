@@ -5,7 +5,7 @@ import { auth } from '@/firebase';
 import { setSentryUser } from '@/sentry';
 import { User as FirebaseUser } from 'firebase/auth';
 interface AuthContextType {
-  currentUser: any;
+  currentUser: FirebaseUser | null;
   loading: boolean;
   redirectPathAfterLogin: string | null;
   setRedirectPathAfterLogin: (path: string | null) => void;
@@ -15,6 +15,7 @@ const AuthContext = createContext<AuthContextType>({
   currentUser: null,
   loading: true,
   redirectPathAfterLogin: null,
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   setRedirectPathAfterLogin: () => {},
 });
 

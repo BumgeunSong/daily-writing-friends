@@ -1,5 +1,6 @@
 import { Lock } from 'lucide-react';
 import { CardHeader } from '@/shared/ui/card';
+import { WritingBadge } from '@/stats/model/WritingStats';
 import { PostAuthorData, PostUserProfile } from './PostUserProfile';
 
 interface PostCardHeaderProps {
@@ -7,7 +8,7 @@ interface PostCardHeaderProps {
   isPrivate: boolean;
   authorData: PostAuthorData;
   isAuthorLoading: boolean;
-  badges?: any;
+  badges?: WritingBadge[];
   streak?: boolean[];
   isStreakLoading?: boolean;
   statPageEnabled: boolean;
@@ -33,7 +34,7 @@ export const PostCardHeader: React.FC<PostCardHeaderProps> = ({
         <PostUserProfile
           authorData={authorData}
           isLoading={isAuthorLoading}
-          onClickProfile={onClickProfile || (() => {})}
+          onClickProfile={onClickProfile ?? undefined}
           badges={statPageEnabled ? badges : undefined}
           streak={statPageEnabled ? streak : undefined}
           isStreakLoading={statPageEnabled ? isStreakLoading : false}

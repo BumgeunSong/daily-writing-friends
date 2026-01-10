@@ -1,7 +1,13 @@
+interface StoredUser {
+  uid: string;
+  email?: string;
+  displayName?: string;
+}
+
 /**
  * Safely parse user data from localStorage
  */
-function parseStoredUser(): any | null {
+function parseStoredUser(): StoredUser | null {
   try {
     const storedUser = localStorage.getItem('currentUser');
     if (storedUser) {
