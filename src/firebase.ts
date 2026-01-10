@@ -3,12 +3,12 @@
 // Core Firebase imports (alphabetically ordered)
 import { Analytics, getAnalytics } from 'firebase/analytics';
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, UserCredential } from 'firebase/auth';
 import { initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { getInstallations } from 'firebase/installations';
 import { FirebasePerformance, getPerformance } from 'firebase/performance';
-import { getRemoteConfig, RemoteConfig } from 'firebase/remote-config';
 import { getStorage } from 'firebase/storage';
+import { getAuth, GoogleAuthProvider, UserCredential } from 'firebase/auth';
+import { getRemoteConfig, RemoteConfig } from 'firebase/remote-config';
 
 // Internal imports (alphabetically ordered)
 import {
