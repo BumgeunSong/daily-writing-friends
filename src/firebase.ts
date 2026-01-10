@@ -1,14 +1,14 @@
 // src/firebase.ts
 
 // Core Firebase imports (alphabetically ordered)
-import { getAnalytics } from 'firebase/analytics';
+import { Analytics, getAnalytics } from 'firebase/analytics';
 import { initializeApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, UserCredential } from 'firebase/auth';
 import { initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { getInstallations } from 'firebase/installations';
-import { getPerformance } from 'firebase/performance';
+import { FirebasePerformance, getPerformance } from 'firebase/performance';
+import { getRemoteConfig, RemoteConfig } from 'firebase/remote-config';
 import { getStorage } from 'firebase/storage';
-import { getAuth, GoogleAuthProvider, UserCredential } from 'firebase/auth';
-import { getRemoteConfig } from 'firebase/remote-config';
 
 // Internal imports (alphabetically ordered)
 import {
@@ -41,9 +41,9 @@ const installations = getInstallations(app);
 const provider = new GoogleAuthProvider();
 
 // Non-critical services (initialized conditionally)
-let performance: any = null;
-let analytics: any = null;
-let remoteConfig: any = null;
+let performance: FirebasePerformance | null = null;
+let analytics: Analytics | null = null;
+let remoteConfig: RemoteConfig | null = null;
 
 const useEmulators = shouldUseEmulators();
 
@@ -54,7 +54,7 @@ if (!useEmulators && typeof window !== 'undefined') {
 
     const scheduleIdleTask = (callback: () => void) => {
       if ('requestIdleCallback' in window) {
-        (window as any).requestIdleCallback(callback, { timeout: 2000 });
+        (window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback(callback, { timeout: 2000 });
       } else {
         setTimeout(callback, 1);
       }
