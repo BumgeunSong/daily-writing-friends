@@ -1,4 +1,3 @@
-import type { User as FirebaseUser } from 'firebase/auth';
 import { getId } from 'firebase/installations';
 import { Copy, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -7,6 +6,7 @@ import { installations, auth } from '@/firebase';
 import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
+import type { User as FirebaseUser } from 'firebase/auth';
 
 // Helper function to get status badge styles
 const getStatusBadgeClass = (isEnabled: boolean, type: 'boolean' | 'feature' = 'feature') => {

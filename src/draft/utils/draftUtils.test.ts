@@ -44,6 +44,7 @@ function createMockDraft(overrides: Partial<Draft> = {}): Draft {
     boardId: 'board-1',
     title: 'Test Title',
     content: '<p>Test content</p>',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Mock object for test
     savedAt: createMockTimestamp(new Date('2025-01-15T12:00:00Z')) as any,
     ...overrides,
   };
