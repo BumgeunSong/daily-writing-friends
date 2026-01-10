@@ -104,6 +104,7 @@ const createUlFromOl = (ol: Element): HTMLUListElement => {
  * @param html - 변환할 HTML 문자열
  * @returns 변환된 HTML 문자열
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Legacy function kept for potential future use
 const _convertBulletListToUl = (html: string): string => {
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = html;

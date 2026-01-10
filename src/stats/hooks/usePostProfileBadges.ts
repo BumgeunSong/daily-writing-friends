@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchCommentingData } from '@/stats/api/stats';
 import { WritingBadge } from '@/stats/model/WritingStats';
+import type { Commenting } from '@/user/model/Commenting';
+import type { Replying } from '@/user/model/Replying';
 
 export function usePostProfileBadges(userId: string) {
     return useQuery(
@@ -46,7 +48,7 @@ function calculateCommentTemperature(commentCount: number): number {
     return Math.round(cappedTemperature * 10) / 10; // Round to 1 decimal place
 }
 
-function createCommentingBadges(commentingData: { commentings: any[], replyings: any[] }): WritingBadge[] {
+function createCommentingBadges(commentingData: { commentings: Commenting[], replyings: Replying[] }): WritingBadge[] {
     const { commentings, replyings } = commentingData;
     const totalComments = commentings.length + replyings.length;
     const temperature = calculateCommentTemperature(totalComments);
