@@ -59,8 +59,14 @@ git commit -m "Add Notification type and Firestore schema"
 
 ```bash
 git push -u origin feat/notifications-1-model
-gh pr create --title "Add notification model" --body "..."
 ```
+
+Then create PR via GitHub web UI:
+1. Go to repository on GitHub
+2. Click "Compare & pull request" banner (or "New pull request")
+3. Set base branch to `main`
+4. Fill in title and description
+5. Click "Create pull request"
 
 ### Step 5: Stack Next Branch
 
@@ -140,8 +146,11 @@ git checkout feat/notifications-2-api
 git rebase main
 git push --force-with-lease
 
-# 3. Update PR base branch in GitHub UI
-# Change base from feat/notifications-1-model to main
+# 3. Update PR base branch in GitHub UI:
+#    - Open the PR page
+#    - Click "Edit" button next to base branch (top of PR)
+#    - Select new base branch (e.g., "main")
+#    - Confirm the change
 ```
 
 ### Squash vs. Merge Commit
