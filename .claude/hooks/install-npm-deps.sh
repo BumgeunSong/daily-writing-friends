@@ -26,12 +26,34 @@ fi
 
 # Install root project dependencies
 echo "Installing root dependencies..."
-npm install
+if npm install; then
+  echo "Root dependencies installed successfully."
+else
+  echo "ERROR: Failed to install root dependencies."
+  exit 1
+fi
+
+# Verify node_modules exists
+if [ ! -d "node_modules" ]; then
+  echo "ERROR: node_modules directory not found after npm install."
+  exit 1
+fi
 
 # Install Firebase Functions dependencies
 echo "Installing Firebase Functions dependencies..."
 cd functions
-npm install
+if npm install; then
+  echo "Firebase Functions dependencies installed successfully."
+else
+  echo "ERROR: Failed to install Firebase Functions dependencies."
+  exit 1
+fi
+
+# Verify functions/node_modules exists
+if [ ! -d "node_modules" ]; then
+  echo "ERROR: functions/node_modules directory not found after npm install."
+  exit 1
+fi
 cd ..
 
-echo "npm dependencies installed."
+echo "All npm dependencies installed successfully."
