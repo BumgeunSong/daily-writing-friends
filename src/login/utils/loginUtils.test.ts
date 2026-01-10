@@ -64,6 +64,7 @@ describe('loginUtils', () => {
     };
 
     it('adds id to board object when board exists', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Mock object for test
       const result = transformBoardWithId(mockBoard as any, 'board-456');
       expect(result).toEqual({ ...mockBoard, id: 'board-456' });
     });
@@ -74,6 +75,7 @@ describe('loginUtils', () => {
     });
 
     it('preserves all original board properties', () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Mock object for test
       const result = transformBoardWithId(mockBoard as any, 'board-789');
       expect(result?.cohort).toBe(10);
       expect(result?.title).toBe('매글프 10기');

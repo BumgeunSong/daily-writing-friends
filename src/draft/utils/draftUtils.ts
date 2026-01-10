@@ -74,7 +74,7 @@ export async function deleteDraft(userId: string, draftId: string): Promise<void
 
 
 // 임시 저장 글 날짜 포맷팅 - 사용자의 로케일 기반
-export const formatDraftDate = (timestamp: any) => {
+export const formatDraftDate = (timestamp: Timestamp) => {
   const date = timestamp.toDate();
   return new Intl.DateTimeFormat(navigator.language || 'ko-KR', {
     year: 'numeric',
