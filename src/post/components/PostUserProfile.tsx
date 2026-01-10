@@ -77,7 +77,7 @@ export const PostUserProfile: React.FC<PostUserProfileProps> = ({
 );
 
 // 키보드 접근성: role="button"에서 Enter/Space로 클릭 지원
-function handleKeyDown(e: React.KeyboardEvent, onClick: (e: any) => void) {
+function handleKeyDown(e: React.KeyboardEvent, onClick: (e: React.KeyboardEvent | React.MouseEvent) => void) {
   if (e.key === 'Enter' || e.key === ' ') {
     e.preventDefault();
     onClick(e);

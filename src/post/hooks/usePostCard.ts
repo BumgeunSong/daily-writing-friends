@@ -6,12 +6,13 @@ import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { getUserDisplayName } from '@/shared/utils/userUtils';
 import { usePostingStreak } from '@/stats/hooks/usePostingStreak';
 import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';
+import { WritingBadge } from '@/stats/model/WritingStats';
 import { useUser } from '@/user/hooks/useUser';
 
 export interface UsePostCardReturn {
   authorData: PostAuthorData;
   isAuthorLoading: boolean;
-  badges: any;
+  badges: WritingBadge[] | undefined;
   streak?: boolean[];
   isStreakLoading: boolean;
   isPrivate: boolean;

@@ -16,7 +16,7 @@ interface PostCardProps {
   isKnownBuddy: boolean;
 }
 
-function handleKeyDown(e: React.KeyboardEvent, onClick: (e: any) => void) {
+function handleKeyDown(e: React.KeyboardEvent, onClick: (e: React.KeyboardEvent | React.MouseEvent) => void) {
   if (e.key === 'Enter' || e.key === ' ') {
     e.preventDefault();
     onClick(e);
