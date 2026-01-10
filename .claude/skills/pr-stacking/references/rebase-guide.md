@@ -105,6 +105,15 @@ Order matters: Always rebase from bottom of stack upward.
 
 ## Using --update-refs (Git 2.38+)
 
+First, check your Git version:
+
+```bash
+git --version
+# Needs 2.38 or later for --update-refs
+```
+
+### If Git 2.38+
+
 Modern Git can update multiple branches in one rebase:
 
 ```bash
@@ -114,10 +123,29 @@ git rebase --update-refs feat-1-model
 
 This updates all branch pointers in the stack automatically.
 
-Check your Git version:
+### If Older Than Git 2.38
+
+Rebase each branch manually from bottom to top:
+
 ```bash
-git --version
-# Needs 2.38 or later for --update-refs
+# Rebase each branch in order
+git checkout feat-2-api
+git rebase feat-1-model
+git push --force-with-lease
+
+git checkout feat-3-ui
+git rebase feat-2-api
+git push --force-with-lease
+```
+
+To upgrade Git:
+```bash
+# macOS
+brew upgrade git
+
+# Ubuntu/Debian
+sudo add-apt-repository ppa:git-core/ppa
+sudo apt update && sudo apt install git
 ```
 
 ## Interactive Rebase for Cleanup

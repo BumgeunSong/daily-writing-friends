@@ -11,18 +11,44 @@ echo '{"async": true, "asyncTimeout": 300000}'
 
 echo "Installing Claude Code plugins..."
 
+# Track installation results
+SUCCEEDED=()
+FAILED=()
+
+install_plugin() {
+  local plugin="$1"
+  if claude plugin install "$plugin" --scope user 2>/dev/null; then
+    SUCCEEDED+=("$plugin")
+  else
+    FAILED+=("$plugin")
+  fi
+}
+
 # Add third-party marketplaces
-claude plugin marketplace add superpowers-marketplace || true
+if claude plugin marketplace add superpowers-marketplace 2>/dev/null; then
+  echo "Added superpowers-marketplace"
+else
+  echo "Warning: Failed to add superpowers-marketplace"
+fi
 
 # Install plugins from official marketplace
-claude plugin install feature-dev@claude-plugins-official --scope user || true
-claude plugin install supabase@claude-plugins-official --scope user || true
-claude plugin install pr-review-toolkit@claude-plugins-official --scope user || true
-claude plugin install greptile@claude-plugins-official --scope user || true
-claude plugin install sentry@claude-plugins-official --scope user || true
-claude plugin install code-simplifier@claude-plugins-official --scope user || true
+install_plugin "feature-dev@claude-plugins-official"
+install_plugin "supabase@claude-plugins-official"
+install_plugin "pr-review-toolkit@claude-plugins-official"
+install_plugin "greptile@claude-plugins-official"
+install_plugin "sentry@claude-plugins-official"
+install_plugin "code-simplifier@claude-plugins-official"
 
 # Install plugins from third-party marketplaces
-claude plugin install superpowers@superpowers-marketplace --scope user || true
+install_plugin "superpowers@superpowers-marketplace"
 
-echo "Claude Code plugins installed."
+# Summary
+echo ""
+echo "=== Plugin Installation Summary ==="
+if [ ${#SUCCEEDED[@]} -gt 0 ]; then
+  echo "Installed: ${SUCCEEDED[*]}"
+fi
+if [ ${#FAILED[@]} -gt 0 ]; then
+  echo "Failed: ${FAILED[*]}"
+fi
+echo "==================================="
