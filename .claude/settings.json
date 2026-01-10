@@ -9,6 +9,24 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/stop-guardrail.sh"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/stop-suggestion.sh"
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {
