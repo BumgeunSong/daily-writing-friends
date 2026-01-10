@@ -53,7 +53,7 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
     if (boardId) {
       restoreScrollPosition();
     }
-  }, [boardId]);
+  }, [boardId, restoreScrollPosition]);
 
   if (isLoading) {
     return (

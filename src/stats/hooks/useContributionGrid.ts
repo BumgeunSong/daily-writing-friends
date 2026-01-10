@@ -72,6 +72,8 @@ export function useContributionGridData(
 
   return useMemo(
     () => processGridData(contributions, type, holidayMap),
+    // contributionsHash is used instead of contributions to avoid recalculations when reference changes but content is same
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [type, contributionsHash, holidayMap],
   );
 }

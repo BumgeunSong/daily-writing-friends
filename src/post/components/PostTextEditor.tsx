@@ -216,7 +216,7 @@ export function PostTextEditor({
         },
       },
     }),
-    [toast]
+    [imageHandler]
   );
 
   useEffect(() => {
