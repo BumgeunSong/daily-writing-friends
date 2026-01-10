@@ -24,7 +24,7 @@ interface ActionData {
   success?: boolean;
 }
 
-function safeStringifyJson(data: any): string {
+function safeStringifyJson(data: unknown): string {
   if (!data) return '';
 
   try {
@@ -71,7 +71,7 @@ export default function PostCreationPage() {
     initialContent,
   });
 
-  const [contentJson, setContentJson] = useState<any>(null);
+  const [contentJson, setContentJson] = useState<unknown>(null);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const isSubmitting = navigation.state === 'submitting';
 

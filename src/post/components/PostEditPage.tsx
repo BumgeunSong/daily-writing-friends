@@ -72,7 +72,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
     setEditState((prev) => ({ ...prev, content }));
   };
 
-  const setContentJson = (contentJson: any) => {
+  const setContentJson = (contentJson: unknown) => {
     setEditState((prev) => ({ ...prev, contentJson }));
   };
 
