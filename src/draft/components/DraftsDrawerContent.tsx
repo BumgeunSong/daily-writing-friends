@@ -1,8 +1,8 @@
 import { Loader2 } from 'lucide-react';
 import React from 'react';
+import { Draft } from '@/draft/model/Draft';
 import { ScrollArea } from '@/shared/ui/scroll-area';
 import { DraftItem } from './DraftItem';
-import { Draft } from '@/draft/model/Draft';
 
 interface DraftsDrawerContentProps {
     isLoading: boolean;

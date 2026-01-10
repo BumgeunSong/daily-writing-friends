@@ -1,11 +1,12 @@
-import { collection, startAfter, limit, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, startAfter, limit, query, where, orderBy } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { Post } from '@/post/model/Post';
 import { mapDocumentToPost } from '@/post/utils/postUtils';
-import { buildNotInQuery } from '@/user/api/user';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
+import { buildNotInQuery } from '@/user/api/user';
 
-const BEST_POSTS_DAYS_RANGE = 7;
+// TODO: Re-enable when best posts feature is implemented
+// const BEST_POSTS_DAYS_RANGE = 7;
 
 /**
  * 최근 게시글을 불러옴 (createdAt 내림차순, blockedByUsers 서버사이드 필터링)

@@ -1,8 +1,8 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
-import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
-import { PostTextEditor } from './PostTextEditor'; // Quill editor
-import { EditorTiptap, type EditorTiptapHandle } from './EditorTiptap'; // TipTap editor
 import { ProseMirrorDoc } from '@/post/model/Post';
+import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
+import { EditorTiptap, type EditorTiptapHandle } from './EditorTiptap'; // TipTap editor
+import { PostTextEditor } from './PostTextEditor'; // Quill editor
 
 interface PostEditorProps {
   value: string;

@@ -1,8 +1,8 @@
 import { Heart } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePostLikes } from '@/post/hooks/usePostLikes';
-import { Button } from '@/shared/ui/button';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { Button } from '@/shared/ui/button';
 
 interface PostLikeButtonProps {
   boardId: string;
@@ -45,8 +45,8 @@ export function PostLikeButton({ boardId, postId, authorId }: PostLikeButtonProp
       variant='ghost'
       size='sm'
       className={`
-        flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 transition-all
-        bg-transparent text-foreground hover:bg-muted hover:text-foreground hover:scale-105
+        flex items-center gap-1.5 rounded-full border border-border bg-transparent px-3 py-1.5
+        text-foreground transition-all hover:scale-105 hover:bg-muted hover:text-foreground
         active:scale-95
         ${isAuthor ? 'cursor-not-allowed opacity-50' : ''}
       `}

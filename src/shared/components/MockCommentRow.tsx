@@ -1,5 +1,4 @@
 import { Timestamp } from 'firebase/firestore';
-import { MessageCircle } from 'lucide-react';
 import { Comment } from '@/comment/model/Comment';
 import { sanitizeCommentContent } from '@/post/utils/contentUtils';
 import { AvatarFallback, AvatarImage, Avatar } from '@/shared/ui/avatar';

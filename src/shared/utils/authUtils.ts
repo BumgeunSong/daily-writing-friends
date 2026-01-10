@@ -1,5 +1,5 @@
-import { User } from 'firebase/auth';
 import { auth } from '@/firebase';
+import { User } from 'firebase/auth';
 
 /**
  * Wait for Firebase Auth to initialize (for use in loaders)

@@ -1,5 +1,3 @@
-import { useState } from 'react';
-import type { Editor } from '@tiptap/react';
 import { useEditorState } from '@tiptap/react';
 import {
   Bold,
@@ -15,13 +13,15 @@ import {
   Check,
   X,
 } from 'lucide-react';
-import { Button } from '@/shared/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover';
-import { Input } from '@/shared/ui/input';
-import { isValidHttpUrl } from '@/post/utils/sanitizeHtml';
-import { cn } from '@/shared/utils/cn';
+import { useState } from 'react';
 import { useScrollIndicators } from '@/post/hooks/useScrollIndicators';
+import { isValidHttpUrl } from '@/post/utils/sanitizeHtml';
+import { Button } from '@/shared/ui/button';
+import { Input } from '@/shared/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover';
+import { cn } from '@/shared/utils/cn';
 import { ToolbarButton } from './ToolbarButton';
+import type { Editor } from '@tiptap/react';
 
 interface EditorToolbarProps {
   editor: Editor;

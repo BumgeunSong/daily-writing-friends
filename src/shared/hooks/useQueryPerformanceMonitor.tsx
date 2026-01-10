@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { getQueryPerformanceStats } from '@/shared/lib/queryErrorTracking';
+import { useEffect, useState } from 'react';
 import { addSentryBreadcrumb } from '@/sentry';
+import { getQueryPerformanceStats } from '@/shared/lib/queryErrorTracking';
 
 interface QueryPerformanceData {
   activeQueries: number;

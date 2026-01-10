@@ -31,7 +31,7 @@ export function sanitize(html: string): string {
   };
 
   // Sanitize the HTML
-  let sanitized = DOMPurify.sanitize(html, config);
+  const sanitized = DOMPurify.sanitize(html, config);
 
   // Post-process to ensure all links have target="_blank" and rel="noopener noreferrer"
   const tempDiv = document.createElement('div');

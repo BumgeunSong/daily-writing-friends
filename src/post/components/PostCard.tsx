@@ -1,11 +1,11 @@
 'use client';
 
+import { usePostCard } from '@/post/hooks/usePostCard';
 import { type Post } from '@/post/model/Post';
 import { Card } from '@/shared/ui/card';
-import { usePostCard } from '@/post/hooks/usePostCard';
-import { PostCardHeader } from './PostCardHeader';
 import { PostCardContent } from './PostCardContent';
 import { PostCardFooter } from './PostCardFooter';
+import { PostCardHeader } from './PostCardHeader';
 import { PostCardThumbnail } from './PostCardThumbnail';
 import type React from 'react';
 
@@ -81,7 +81,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) =>
       <div className='hidden lg:block'>
         <div className='flex'>
           {/* Main content area */}
-          <div className='flex flex-col flex-1'>
+          <div className='flex flex-1 flex-col'>
             <PostCardHeader
               title={post.title}
               isPrivate={isPrivate}

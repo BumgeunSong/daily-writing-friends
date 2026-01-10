@@ -2,17 +2,17 @@ import { ArrowRight, Info } from "lucide-react"
 import { useEffect, useState, type ChangeEvent } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 
-import { Button } from '@/shared/ui/button'
-import { Textarea } from '@/shared/ui/textarea'
-import { Label } from '@/shared/ui/label'
-import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
-import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
-import { cn } from "@/shared/utils/cn"
 import {
   countNonWhitespaceCharacters,
   isWithinCharacterLimit,
   truncateToNonWhitespaceLimit
 } from "@/post/utils/topicInputUtils"
+import { Button } from '@/shared/ui/button'
+import { Label } from '@/shared/ui/label'
+import { Textarea } from '@/shared/ui/textarea'
+import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
+import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
+import { cn } from "@/shared/utils/cn"
 import type React from "react"
 
 const MAX_TOPIC_LENGTH = 50
@@ -119,7 +119,7 @@ const PostFreewritingIntro: React.FC = () => {
                   className="min-h-[4.5rem] resize-none"
                   rows={3}
                 />
-                <p className="text-xs text-muted-foreground text-right">
+                <p className="text-right text-xs text-muted-foreground">
                   {currentNonWhitespaceCharacterCount}/{MAX_TOPIC_LENGTH}
                 </p>
               </div>

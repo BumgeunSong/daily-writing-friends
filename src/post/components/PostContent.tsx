@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { AlertCircle, Lock } from 'lucide-react';
-import { useEffect, useRef, useCallback } from 'react';
+import { useRef, useCallback } from 'react';
 import { useCopyHandler } from '@/post/hooks/useCopyHandler';
 import { Post, PostVisibility } from '@/post/model/Post';
 import { sanitizePostContent } from '@/post/utils/contentUtils';
@@ -65,7 +65,7 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
                     <div
                         ref={contentRef}
                         dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-                        className="prose prose-lg prose-slate mt-6 max-w-none overflow-wrap-break-word dark:prose-invert
+                        className="overflow-wrap-break-word prose prose-lg prose-slate mt-6 max-w-none dark:prose-invert
                             prose-h1:text-3xl prose-h1:font-semibold
                             prose-h2:text-2xl prose-h2:font-semibold
                             prose-p:my-2 prose-p:break-words

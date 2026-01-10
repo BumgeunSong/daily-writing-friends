@@ -1,12 +1,12 @@
 import { ActionFunctionArgs, redirect } from 'react-router-dom';
-import { createPost } from '@/post/utils/postUtils';
 import { deleteDraft } from '@/draft/utils/draftUtils';
-import { sendAnalyticsEvent, AnalyticsEvent } from '@/shared/utils/analyticsUtils';
 import {
   invalidateDraftCaches,
   invalidatePostCaches,
   optimisticallyUpdatePostingStreak,
 } from '@/post/utils/postCacheUtils';
+import { createPost } from '@/post/utils/postUtils';
+import { sendAnalyticsEvent, AnalyticsEvent } from '@/shared/utils/analyticsUtils';
 
 export async function createPostAction({ request, params }: ActionFunctionArgs) {
   const { boardId } = params;

@@ -2,12 +2,12 @@
 // Use a consistent naming convention; fetchX() → read-only function, createX(), updateX() → write, cacheX() → caching helpers (if used outside)
 // Abstract repetitive Firebase logic into helpers
 
-import { User as FirebaseUser } from 'firebase/auth';
 import { doc, serverTimestamp, collection, where, query, Timestamp, writeBatch, orderBy, CollectionReference, Query, or } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, storage } from '@/firebase';
-import { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
+import { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
+import { User as FirebaseUser } from 'firebase/auth';
 
 // Firestore에서 User 데이터 읽기
 export async function fetchUser(uid: string): Promise<User | null> {

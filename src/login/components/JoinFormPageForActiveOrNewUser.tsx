@@ -23,7 +23,7 @@ export function JoinFormPageForActiveOrNewUser() {
             <Skeleton className="h-8 w-64" />
             <Skeleton className="h-5 w-48" />
           </div>
-          <div className="rounded-lg border border-border bg-card p-6 space-y-6">
+          <div className="space-y-6 rounded-lg border border-border bg-card p-6">
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />

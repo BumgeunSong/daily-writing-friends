@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
 import { getId } from 'firebase/installations';
+import { Copy, Check } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { installations, auth } from '@/firebase';
+import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
-import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
-import { Copy, Check } from 'lucide-react';
-import { toast } from 'sonner';
 
 // Helper function to get status badge styles
 const getStatusBadgeClass = (isEnabled: boolean, type: 'boolean' | 'feature' = 'feature') => {
@@ -30,14 +30,14 @@ const ConfigRow = ({ label, value, type = 'feature' }: ConfigRowProps) => {
   const isBoolean = typeof value === 'boolean';
 
   return (
-    <div className='flex items-center justify-between p-3 bg-muted/50 rounded-lg'>
+    <div className='flex items-center justify-between rounded-lg bg-muted/50 p-3'>
       <span className='font-medium'>{label}</span>
       {isBoolean ? (
         <span className={getStatusBadgeClass(value, type)}>
           {value ? (type === 'boolean' ? 'TRUE' : 'ENABLED') : (type === 'boolean' ? 'FALSE' : 'DISABLED')}
         </span>
       ) : (
-        <code className='text-sm font-mono text-muted-foreground'>{value}</code>
+        <code className='font-mono text-sm text-muted-foreground'>{value}</code>
       )}
     </div>
   );
@@ -94,7 +94,7 @@ export function DebugInfo() {
 
   return (
     <div className='container mx-auto max-w-4xl p-6'>
-      <h1 className='text-3xl font-bold mb-6'>Debug Information</h1>
+      <h1 className='mb-6 text-3xl font-bold'>Debug Information</h1>
 
       {/* Firebase Installation ID */}
       <Card className='mb-6'>
@@ -106,17 +106,17 @@ export function DebugInfo() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className='animate-pulse bg-muted h-10 rounded'></div>
+            <div className='h-10 animate-pulse rounded bg-muted'></div>
           ) : (
             <div className='flex items-center gap-4'>
-              <code className='flex-1 p-3 bg-muted rounded-md font-mono text-sm break-all'>
+              <code className='flex-1 break-all rounded-md bg-muted p-3 font-mono text-sm'>
                 {fid}
               </code>
               <Button onClick={copyToClipboard} variant='outline' size='icon' className='shrink-0'>
                 {copied ? (
-                  <Check className='h-4 w-4 text-green-600' />
+                  <Check className='size-4 text-green-600' />
                 ) : (
-                  <Copy className='h-4 w-4' />
+                  <Copy className='size-4' />
                 )}
               </Button>
             </div>
@@ -137,7 +137,7 @@ export function DebugInfo() {
             </span>
 
             <span className='font-medium'>UID:</span>
-            <span className='font-mono text-muted-foreground break-all'>{user?.uid || 'N/A'}</span>
+            <span className='break-all font-mono text-muted-foreground'>{user?.uid || 'N/A'}</span>
 
             <span className='font-medium'>Display Name:</span>
             <span className='text-muted-foreground'>{user?.displayName || 'N/A'}</span>

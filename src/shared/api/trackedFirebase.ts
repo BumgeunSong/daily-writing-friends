@@ -10,6 +10,8 @@
  * This eliminates sync queue corruption issues but requires network connectivity.
  */
 
+import * as Sentry from '@sentry/react';
+import { FirebaseError } from 'firebase/app';
 import {
   getDoc as firebaseGetDoc,
   getDocs as firebaseGetDocs,
@@ -27,8 +29,6 @@ import {
   DocumentSnapshot,
   SetOptions,
 } from 'firebase/firestore';
-import { FirebaseError } from 'firebase/app';
-import * as Sentry from '@sentry/react';
 import { addSentryBreadcrumb, setSentryContext } from '@/sentry';
 import { trackFirebasePermissionError } from '@/shared/utils/firebaseErrorTracking';
 import { getCurrentUserIdFromStorage } from '@/shared/utils/getCurrentUserId';

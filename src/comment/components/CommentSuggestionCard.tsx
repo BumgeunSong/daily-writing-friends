@@ -33,7 +33,7 @@ export function CommentSuggestionCard({
     >
       {/* Suggestion text */}
       <div className='flex-1'>
-        <p className='text-xs sm:text-sm leading-relaxed break-words'>{suggestion.text}</p>
+        <p className='break-words text-xs leading-relaxed sm:text-sm'>{suggestion.text}</p>
       </div>
     </div>
   );

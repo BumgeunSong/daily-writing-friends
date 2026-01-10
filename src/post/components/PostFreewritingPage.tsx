@@ -1,10 +1,12 @@
+import { Loader2 } from "lucide-react"
 import { useState, useRef, useEffect, useCallback } from "react"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
 import { toast } from "sonner"
 import { PostVisibility } from '@/post/model/Post'
-import { createPost } from '@/post/utils/postUtils'
 import { prependTopicToContent } from '@/post/utils/freewritingContentUtils'
+import { createPost } from '@/post/utils/postUtils'
 import { useAuth } from '@/shared/hooks/useAuth'
+import { Button } from "@/shared/ui/button"
 import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { WritingStatus } from "@/stats/model/WritingStatus"
@@ -12,8 +14,6 @@ import { useUserNickname } from '@/user/hooks/useUserNickname'
 import CountupWritingTimer from "./CountupWritingTimer"
 import { PostEditor } from "./PostEditor"
 import { PostFreewritingHeader } from "./PostFreewritingHeader"
-import { Button } from "@/shared/ui/button"
-import { Loader2 } from "lucide-react"
 import type React from "react"
 
 interface FreewritingConfig {

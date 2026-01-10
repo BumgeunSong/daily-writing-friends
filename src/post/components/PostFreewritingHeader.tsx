@@ -18,10 +18,10 @@ export function PostFreewritingHeader({
   rightActions
 }: PostFreewritingHeaderProps) {
   return (
-    <div className="sticky top-0 z-40 bg-background border-b">
+    <div className="sticky top-0 z-40 border-b bg-background">
       <div className="container mx-auto max-w-4xl px-6 py-3">
         {/* Row 1: 3-column layout */}
-        <div className="grid grid-cols-[auto_1fr_auto] gap-4 items-center">
+        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-4">
           {/* Left: Back button */}
           <div className="flex justify-start">
             <PostBackButton />
@@ -40,8 +40,8 @@ export function PostFreewritingHeader({
 
         {/* Row 2: Topic (conditional) */}
         {topic && (
-          <div className="mt-3 pt-3 border-t">
-            <p className="text-sm text-muted-foreground text-center break-words">
+          <div className="mt-3 border-t pt-3">
+            <p className="break-words text-center text-sm text-muted-foreground">
               {topic}
             </p>
           </div>

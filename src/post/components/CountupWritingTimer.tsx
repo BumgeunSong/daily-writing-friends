@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useInterval } from "@/post/hooks/useInterval"
-import { WritingStatus } from "@/stats/model/WritingStatus"
 import { cn } from "@/shared/utils/cn"
+import { WritingStatus } from "@/stats/model/WritingStatus"
 
 interface CountupWritingTimerProps {
   /**

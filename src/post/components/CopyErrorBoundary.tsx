@@ -1,6 +1,6 @@
+import * as Sentry from '@sentry/react';
 import { AlertCircle } from 'lucide-react';
 import React, { Component, ReactNode } from 'react';
-import * as Sentry from '@sentry/react';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 
 interface CopyErrorBoundaryProps {

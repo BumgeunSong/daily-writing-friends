@@ -9,22 +9,16 @@ import './index.css';
 import BoardListPage from '@/board/components/BoardListPage';
 import BoardPage from '@/board/components/BoardPage';
 import RecentBoard from '@/board/components/RecentBoard';
-import NotificationsPage from '@/notification/components/NotificationsPage';
-import StatsPage from '@/stats/components/StatsPage';
-import UserPage from '@/user/components/UserPage';
-import UserSettingPage from '@/user/components/UserSettingPage';
-import EditAccountPage from '@/user/components/EditAccountPage';
-import BlockedUsersPage from '@/user/components/BlockedUsersPage';
+
+// Loaders and actions from feature hooks
+import { boardLoader } from '@/board/hooks/useBoardLoader';
+import { boardsLoader } from '@/board/hooks/useBoardsLoader';
 import { JoinFormPageForActiveOrNewUser } from '@/login/components/JoinFormPageForActiveOrNewUser';
 import JoinFormPageForActiveUser from '@/login/components/JoinFormPageForActiveUser';
 import JoinFormPageForNewUser from '@/login/components/JoinFormPageForNewUser';
 import JoinIntroPage from '@/login/components/JoinIntroPage';
 import LoginPage from '@/login/components/LoginPage';
-import { DebugInfo } from '@/shared/components/DebugInfo';
-
-// Loaders and actions from feature hooks
-import { boardsLoader } from '@/board/hooks/useBoardsLoader';
-import { boardLoader } from '@/board/hooks/useBoardLoader';
+import NotificationsPage from '@/notification/components/NotificationsPage';
 import PostCompletionPage from '@/post/components/PostCompletionPage';
 import PostCreationPage from '@/post/components/PostCreationPage';
 import PostDetailPage from '@/post/components/PostDetailPage';
@@ -36,15 +30,21 @@ import { createPostAction } from '@/post/hooks/useCreatePostAction';
 import { postDetailLoader } from '@/post/hooks/usePostDetailLoader';
 
 // Auth guards and components
+
+// Error boundary
+import { AppWithTracking } from '@/shared/components/AppWithTracking';
 import { RootRedirect } from '@/shared/components/auth/RootRedirect';
 import { PrivateRoutes, PublicRoutes } from '@/shared/components/auth/RouteGuards';
 import { BottomNavigatorLayout } from '@/shared/components/BottomNavigatorLayout';
-
-// Error boundary
+import { DebugInfo } from '@/shared/components/DebugInfo';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { PermissionErrorBoundary } from '@/shared/components/PermissionErrorBoundary';
 import StatusMessage from '@/shared/components/StatusMessage';
-import { AppWithTracking } from '@/shared/components/AppWithTracking';
+import StatsPage from '@/stats/components/StatsPage';
+import BlockedUsersPage from '@/user/components/BlockedUsersPage';
+import EditAccountPage from '@/user/components/EditAccountPage';
+import UserPage from '@/user/components/UserPage';
+import UserSettingPage from '@/user/components/UserSettingPage';
 import { BottomTabHandlerProvider } from './shared/contexts/BottomTabHandlerContext';
 import { NavigationProvider } from './shared/contexts/NavigationContext';
 

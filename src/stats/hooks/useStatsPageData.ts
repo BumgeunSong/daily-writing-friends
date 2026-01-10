@@ -23,7 +23,7 @@ function mergeCurrentUserFirst<T>(
     return [currentUserStats, ...otherUsersStats];
 }
 
-export function useStatsPageData(tab: TabType) {
+export function useStatsPageData(_tab: TabType) {
     const queryClient = useQueryClient();
     const { value: activeBoardId } = useRemoteConfig('active_board_id');
     const { users: activeUsers, isLoading: isLoadingUsers, error: usersError } = useUserInBoard(

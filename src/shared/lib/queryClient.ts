@@ -1,5 +1,5 @@
 import { QueryClient, QueryCache, MutationCache } from '@tanstack/react-query';
-import { trackQueryError, trackMutationError, trackQueryStart, trackQuerySuccess } from './queryErrorTracking';
+import { trackQueryError, trackMutationError, trackQuerySuccess } from './queryErrorTracking';
 
 // Create QueryCache with error handling
 const queryCache = new QueryCache({

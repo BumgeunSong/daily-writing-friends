@@ -1,5 +1,5 @@
-import { useCallback, useRef, useEffect } from 'react';
 import { type Editor } from '@tiptap/react';
+import { useCallback, useRef, useEffect } from 'react';
 import { useCopyHandler } from './useCopyHandler';
 
 // Types for better type safety
@@ -64,10 +64,11 @@ function applyMarksToText(text: string, marks: readonly ProseMirrorMark[]): stri
         return `<u>${formattedText}</u>`;
       case MARK_TYPES.STRIKE:
         return `<s>${formattedText}</s>`;
-      case MARK_TYPES.LINK:
+      case MARK_TYPES.LINK: {
         const href = mark.attrs?.href || '#';
         const target = mark.attrs?.target || '_blank';
         return `<a href="${href}" target="${target}">${formattedText}</a>`;
+      }
       case MARK_TYPES.CODE:
         return `<code>${formattedText}</code>`;
       default:
@@ -91,9 +92,10 @@ function nodeToHtml(node: ProseMirrorNode): string {
   switch (type.name) {
     case NODE_TYPES.PARAGRAPH:
       return `<p>${formattedText}</p>`;
-    case NODE_TYPES.HEADING:
+    case NODE_TYPES.HEADING: {
       const level = Math.max(1, Math.min(6, attrs.level || 1));
       return `<h${level}>${formattedText}</h${level}>`;
+    }
     case NODE_TYPES.BLOCKQUOTE:
       return `<blockquote>${formattedText}</blockquote>`;
     case NODE_TYPES.CODE_BLOCK:

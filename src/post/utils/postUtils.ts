@@ -12,8 +12,8 @@ import {
 } from 'firebase/firestore';
 
 import { firestore } from '@/firebase';
-import { trackedFirebase } from '@/shared/api/trackedFirebase';
 import { Post, PostVisibility, ProseMirrorDoc } from '@/post/model/Post';
+import { trackedFirebase } from '@/shared/api/trackedFirebase';
 
 /**
  * Firebase 문서를 Post 객체로 변환하는 유틸리티 함수
