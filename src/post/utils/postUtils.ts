@@ -88,7 +88,7 @@ export const updatePost = async (
   contentJson?: ProseMirrorDoc,
 ): Promise<void> => {
   const postRef = doc(firestore, `boards/${boardId}/posts`, postId);
-  const updateData: any = {
+  const updateData: Partial<Post> = {
     title,
     content,
     thumbnailImageURL: extractFirstImageUrl(content),

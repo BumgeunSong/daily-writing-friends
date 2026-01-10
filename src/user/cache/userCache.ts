@@ -3,13 +3,14 @@ import { User } from '@/user/model/User';
 
 const CACHE_EXPIRE_MS = 1000 * 60 * 60 * 24; // 24시간
 
-function isValidUserData(data: any): data is User {
+function isValidUserData(data: unknown): data is User {
+  if (!data || typeof data !== 'object') return false;
+  const userData = data as Record<string, unknown>;
   return (
-    data &&
-    typeof data.uid === 'string' &&
-    typeof data.nickname === 'string' &&
-    typeof data.profilePhotoURL === 'string' &&
-    data.updatedAt
+    typeof userData.uid === 'string' &&
+    typeof userData.nickname === 'string' &&
+    typeof userData.profilePhotoURL === 'string' &&
+    userData.updatedAt !== undefined
   );
 }
 

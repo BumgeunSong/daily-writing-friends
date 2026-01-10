@@ -8,8 +8,17 @@ const ProseMirrorMarkSchema = z.object({
   attrs: z.record(z.unknown()).optional(),
 });
 
+// ProseMirror Node type for recursive schema
+interface ProseMirrorNode {
+  type: string;
+  attrs?: Record<string, unknown>;
+  content?: ProseMirrorNode[];
+  marks?: Array<{ type: string; attrs?: Record<string, unknown> }>;
+  text?: string;
+}
+
 // Schema for ProseMirror Node (recursive)
-const ProseMirrorNodeSchema: z.ZodType<any> = z.lazy(() =>
+const ProseMirrorNodeSchema: z.ZodType<ProseMirrorNode> = z.lazy(() =>
   z.object({
     type: z.string(),
     attrs: z.record(z.unknown()).optional(),

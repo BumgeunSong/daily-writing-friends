@@ -29,15 +29,19 @@ export function mapDocumentToPosting(doc: QueryDocumentSnapshot): Posting {
 
 
 
-function ensureTimestamp(value: any): Timestamp {
+function ensureTimestamp(value: unknown): Timestamp {
     if (value instanceof Timestamp) {
         return value;
     }
   
-    if (value && 
-        typeof value.seconds === "number" && 
-        typeof value.nanoseconds === "number") {
-        return new Timestamp(value.seconds, value.nanoseconds);
+    if (value &&
+        typeof value === 'object' &&
+        'seconds' in value &&
+        'nanoseconds' in value &&
+        typeof (value as { seconds: unknown }).seconds === "number" &&
+        typeof (value as { nanoseconds: unknown }).nanoseconds === "number") {
+        const timestampLike = value as { seconds: number; nanoseconds: number };
+        return new Timestamp(timestampLike.seconds, timestampLike.nanoseconds);
     }
   
     return Timestamp.now();

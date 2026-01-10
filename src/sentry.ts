@@ -150,7 +150,7 @@ export const setSentryUser = (
 export const addSentryBreadcrumb = (
   message: string,
   category: string,
-  data?: Record<string, any>,
+  data?: Record<string, unknown>,
   level: Sentry.SeverityLevel = 'info',
 ) => {
   Sentry.addBreadcrumb({
@@ -165,7 +165,7 @@ export const addSentryBreadcrumb = (
 /**
  * Set context for current feature/page
  */
-export const setSentryContext = (key: string, context: Record<string, any>) => {
+export const setSentryContext = (key: string, context: Record<string, unknown>) => {
   Sentry.setContext(key, context);
 };
 

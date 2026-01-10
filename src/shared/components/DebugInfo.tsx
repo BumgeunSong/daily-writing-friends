@@ -1,3 +1,4 @@
+import type { User as FirebaseUser } from 'firebase/auth';
 import { getId } from 'firebase/installations';
 import { Copy, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -47,7 +48,7 @@ export function DebugInfo() {
   const [fid, setFid] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
 
   // Get all remote config values
   const { value: tiptapEnabled } = useRemoteConfig('tiptap_editor_enabled');
