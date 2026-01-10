@@ -1,7 +1,7 @@
 import { Edit, Trash2 } from "lucide-react";
 import { Share } from "lucide-react";
 import { Link } from "react-router-dom";
-import { PostVisibility } from '@/post/model/Post';
+import { Post, PostVisibility } from '@/post/model/Post';
 import { Button } from '@/shared/ui/button';
 import { formatDateToKorean } from '@/shared/utils/dateUtils';
 
@@ -15,7 +15,7 @@ export function PostDetailHeader({
     onDelete,
     navigate,
   }: {
-    post: any;
+    post: Post;
     authorNickname: string | undefined;
     isAuthor: boolean;
     boardId?: string;

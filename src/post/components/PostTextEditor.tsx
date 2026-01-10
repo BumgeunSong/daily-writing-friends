@@ -188,7 +188,7 @@ export function PostTextEditor({
   onChange, 
   placeholder = '내용을 입력하세요...', 
 }: PostTextEditorProps) {
-  const quillRef = useRef<any>(null);
+  const quillRef = useRef<ReactQuill | null>(null);
   const editorElementRef = useRef<HTMLElement | null>(null);
   const { imageHandler, isUploading, uploadProgress } = useImageUpload({ insertImage: (url: string) => {
     const editor = quillRef.current?.getEditor();
