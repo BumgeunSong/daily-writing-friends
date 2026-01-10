@@ -4,7 +4,7 @@
 # This hook requires Claude to explicitly evaluate each available skill
 # before proceeding with implementation.
 #
-# Installation: Copy to .claude/hooks/UserPromptSubmit
+# Configured via .claude/settings.json under hooks.UserPromptSubmit
 
 cat <<'EOF'
 INSTRUCTION: MANDATORY SKILL ACTIVATION SEQUENCE

@@ -66,16 +66,20 @@ For complete endpoint docs:
 Creating type-safe React components with hooks and TypeScript interfaces.
 
 ### Structure
+
 ```
-
-react-patterns/ ├── SKILL.md # Core patterns and conventions ├──
-references/ │ ├── component-library.md # Catalog of existing
-components │ ├── hooks-patterns.md # Custom hooks and state management
-│ └── routing-patterns.md # React Router conventions └── assets/ └──
-component-templates/ ├── basic-component.tsx ├── form-component.tsx
-└── list-component.tsx
-
-````
+react-patterns/
+├── SKILL.md                    # Core patterns and conventions
+├── references/
+│   ├── component-library.md    # Catalog of existing components
+│   ├── hooks-patterns.md       # Custom hooks and state management
+│   └── routing-patterns.md     # React Router conventions
+└── assets/
+    └── component-templates/
+        ├── basic-component.tsx
+        ├── form-component.tsx
+        └── list-component.tsx
+```
 
 ### SKILL.md Excerpt
 ```markdown
@@ -128,15 +132,17 @@ For complete component library:
 Implementing GitHub OAuth, fetching profiles, managing connections.
 
 ### Structure
+
 ```
-
-github-integration/ ├── SKILL.md # Auth patterns, common operations
-├── references/ │ ├── api-endpoints.md # GitHub API reference │ └──
-oauth-flow.md # Complete OAuth implementation └── scripts/ ├──
-test_connection.js # Validate GitHub credentials └──
-check_rate_limit.js # Monitor API usage
-
-````
+github-integration/
+├── SKILL.md                    # Auth patterns, common operations
+├── references/
+│   ├── api-endpoints.md        # GitHub API reference
+│   └── oauth-flow.md           # Complete OAuth implementation
+└── scripts/
+    ├── test_connection.js      # Validate GitHub credentials
+    └── check_rate_limit.js     # Monitor API usage
+```
 
 ### SKILL.md Excerpt
 ```markdown
@@ -179,14 +185,16 @@ Check rate limits: `node scripts/check_rate_limit.js`
 Consistent component styling, theme usage, form patterns.
 
 ### Structure
+
 ```
-
-daisyui-conventions/ ├── SKILL.md # Core components and patterns ├──
-references/ │ ├── component-reference.md # All DaisyUI components │
-└── theme-tokens.md # Color system and usage └── assets/ └──
-theme-preview.html # Visual reference
-
-````
+daisyui-conventions/
+├── SKILL.md                    # Core components and patterns
+├── references/
+│   ├── component-reference.md  # All DaisyUI components
+│   └── theme-tokens.md         # Color system and usage
+└── assets/
+    └── theme-preview.html      # Visual reference
+```
 
 ### SKILL.md Excerpt
 ```markdown
@@ -405,9 +413,4 @@ Before considering a skill "done":
 
 ## Resources
 
-- See main
-  [SKILLS-ARCHITECTURE.md](../../../docs/SKILLS-ARCHITECTURE.md) for
-  system design
-- See [SKILL-EXAMPLES.md](../../../docs/SKILL-EXAMPLES.md) for
-  Anthropic examples
-- See skill-creator SKILL.md for 6-step process
+- See skill-creator SKILL.md for the 6-step skill creation process
