@@ -65,7 +65,7 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
                     <div
                         ref={contentRef}
                         dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-                        className="overflow-wrap-break-word prose prose-lg prose-slate mt-6 max-w-none dark:prose-invert
+                        className="prose prose-lg prose-slate mt-6 max-w-none dark:prose-invert
                             prose-h1:text-3xl prose-h1:font-semibold
                             prose-h2:text-2xl prose-h2:font-semibold
                             prose-p:my-2 prose-p:break-words
