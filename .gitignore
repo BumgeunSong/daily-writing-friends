@@ -46,7 +46,12 @@ tasks/
 
 .cursor/
 .roo/
-.claude/
+
+# Claude Code - ignore local/private, share project settings
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
+!.claude/skills/
 
 # Security: Test scripts with real data
 functions/src/commentSuggestion/test-suggestions.sh
