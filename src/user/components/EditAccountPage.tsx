@@ -186,7 +186,7 @@ function ProfilePhotoUploader({
 
 function LoadingOverlay() {
   return (
-    <div className='absolute inset-0 z-50 flex items-center justify-center bg-white bg-opacity-75'>
+    <div className='absolute inset-0 z-50 flex items-center justify-center bg-white/75'>
       <Loader2 className='size-8 animate-spin text-gray-600' />
     </div>
   );
