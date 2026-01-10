@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 
 // 스크롤 위치 복원 함수
 const restoreScrollPosition = (key: string) => {
@@ -29,15 +29,15 @@ const saveScrollPosition = (key: string) => {
 };
 
 export const useScrollRestoration = (key: string) => {
-  const handleRestoreScroll = () => {
+  const handleRestoreScroll = useCallback(() => {
     if (!key) return;
     restoreScrollPosition(key);
-  };
+  }, [key]);
 
-  const handleSaveScroll = () => {
+  const handleSaveScroll = useCallback(() => {
     if (!key) return;
     saveScrollPosition(key);
-  };
+  }, [key]);
 
   useEffect(() => {
     handleRestoreScroll();
@@ -49,7 +49,7 @@ export const useScrollRestoration = (key: string) => {
       window.removeEventListener('beforeunload', handleSaveScroll);
       window.removeEventListener('popstate', handleSaveScroll);
     };
-  }, [key]);
+  }, [key, handleRestoreScroll, handleSaveScroll]);
 
   return {
     saveScrollPosition: handleSaveScroll,

@@ -15,7 +15,7 @@ export default function UserPage() {
   const { value: secretBuddyEnabled } = useRemoteConfig('secret_buddy_enabled')
   const userId = paramUserId || currentUser?.uid
 
-  useRegisterTabHandler('User', useCallback(() => window.scrollTo({ top: 0, behavior: 'smooth' }), [userId]));
+  useRegisterTabHandler('User', useCallback(() => window.scrollTo({ top: 0, behavior: 'smooth' }), []));
 
   if (!userId) {
     return <StatusMessage errorMessage="유저 정보를 찾을 수 없습니다." />

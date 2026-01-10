@@ -69,7 +69,7 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
     if (boardId) {
       restoreScrollPosition();
     }
-  }, [boardId]);
+  }, [boardId, restoreScrollPosition]);
 
   if (isLoading) {
     return (
