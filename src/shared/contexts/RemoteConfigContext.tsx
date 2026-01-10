@@ -50,6 +50,7 @@ const RemoteConfigContext = createContext<RemoteConfigContextValue>({
   ready: false,
   values: REMOTE_CONFIG_DEFAULTS,
   error: null,
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   refetch: () => {},
 });
 
