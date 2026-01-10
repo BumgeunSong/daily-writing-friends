@@ -104,6 +104,7 @@
   "devDependencies": {
     "@playwright/test": "^1.52.0",
     "@rollup/plugin-replace": "^6.0.1",
+    "@supabase/supabase-js": "^2.89.0",
     "@tanstack/eslint-plugin-query": "^4.38.0",
     "@types/canvas-confetti": "^1.9.0",
     "@types/dompurify": "^3.0.5",
@@ -119,7 +120,7 @@
     "chai": "^4.3.4",
     "concurrently": "^9.2.0",
     "cross-env": "^10.0.0",
-    "dotenv": "^17.2.1",
+    "dotenv": "^17.2.3",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-import-resolver-typescript": "^3.6.3",
