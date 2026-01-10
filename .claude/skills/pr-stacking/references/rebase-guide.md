@@ -170,8 +170,11 @@ git checkout feat-2-api
 git rebase main
 git push --force-with-lease
 
-# 3. Change PR base branch in GitHub
-#    Edit PR → Change base from feat-1-model to main
+# 3. Change PR base branch in GitHub UI:
+#    - Open the PR page on GitHub
+#    - Click "Edit" button next to the base branch selector (top of PR)
+#    - Select "main" as the new base branch
+#    - Confirm the change
 ```
 
 ### Scenario: Conflict in the Middle of Stack
