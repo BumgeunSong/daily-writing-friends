@@ -30,6 +30,9 @@ dist-ssr
 firebase-debug.log
 firestore-debug.log
 emulator-data/
+
+# Supabase
+supabase/.temp/
 # Sentry Config File
 .env.sentry-build-plugin
 

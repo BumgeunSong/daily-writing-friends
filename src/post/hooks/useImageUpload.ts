@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { storage } from '@/firebase';
 import { processImageForUpload } from '@/post/utils/ImageUtils';
@@ -13,7 +13,7 @@ export function useImageUpload({ insertImage }: UseImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  const imageHandler = async () => {
+  const imageHandler = useCallback(async () => {
     const input = document.createElement('input');
     input.setAttribute('type', 'file');
     input.setAttribute('accept', 'image/*');
@@ -90,7 +90,7 @@ export function useImageUpload({ insertImage }: UseImageUploadProps) {
         }, 500);
       }
     };
-  };
+  }, [insertImage]);
 
   return { imageHandler, isUploading, uploadProgress };
 } 

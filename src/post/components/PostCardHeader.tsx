@@ -3,6 +3,9 @@ import { CardHeader } from '@/shared/ui/card';
 import { WritingBadge } from '@/stats/model/WritingStats';
 import { PostAuthorData, PostUserProfile } from './PostUserProfile';
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function -- Fallback for optional click handler
+const noopClickHandler = () => {};
+
 interface PostCardHeaderProps {
   title: string;
   isPrivate: boolean;
@@ -34,7 +37,7 @@ export const PostCardHeader: React.FC<PostCardHeaderProps> = ({
         <PostUserProfile
           authorData={authorData}
           isLoading={isAuthorLoading}
-          onClickProfile={onClickProfile ?? undefined}
+          onClickProfile={onClickProfile || noopClickHandler}
           badges={statPageEnabled ? badges : undefined}
           streak={statPageEnabled ? streak : undefined}
           isStreakLoading={statPageEnabled ? isStreakLoading : false}
