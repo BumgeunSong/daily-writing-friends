@@ -133,7 +133,8 @@ function highlightMessageParts(message: string, highlight: CompletionHighlight) 
     const parts = message.split(pattern)
     return parts.map((part, i) =>
         sortedKeywords.includes(part) ? (
-            <span key={i} className={`text- font-bold${highlight.color}-500`}>{part}</span>
+            // eslint-disable-next-line tailwindcss/no-custom-classname -- dynamic color class
+            <span key={i} className={`font-bold text-${highlight.color}-500`}>{part}</span>
         ) : (
             <span key={i}>{part}</span>
         )

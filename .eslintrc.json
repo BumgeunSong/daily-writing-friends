@@ -48,7 +48,16 @@
         }
       }
     ],
-    "tailwindcss/no-custom-classname": "warn",
+    "tailwindcss/no-custom-classname": ["warn", {
+      "whitelist": [
+        "scrollbar-hide",
+        "toaster",
+        "destructive",
+        "selection",
+        "text-purple-500",
+        "bg-selection/60"
+      ]
+    }],
     "tailwindcss/enforces-negative-arbitrary-values": "warn",
     "tailwindcss/enforces-shorthand": "warn",
     "react/react-in-jsx-scope": "off",
