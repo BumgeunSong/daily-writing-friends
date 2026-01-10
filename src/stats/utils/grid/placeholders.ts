@@ -1,6 +1,8 @@
+import { isConfigurableHoliday } from '@/shared/utils/dateUtils';
 import { Contribution } from '@/stats/model/WritingStats';
 import { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
-import { isConfigurableHoliday } from '@/shared/utils/dateUtils';
+import { calculateGridPositionDate } from './gridPosition';
+import { formatDateInKoreanTimezone, isDateWithinTodayInclusive } from './timeRange';
 import {
   WEEKS_TO_DISPLAY,
   WEEKDAYS_COUNT,
@@ -8,8 +10,6 @@ import {
   ContributionDataMatrix,
   ContributionData,
 } from './types';
-import { formatDateInKoreanTimezone, isDateWithinTodayInclusive } from './timeRange';
-import { calculateGridPositionDate } from './gridPosition';
 
 function createPostingPlaceholderWithZeroContent(
   dateStr: string,

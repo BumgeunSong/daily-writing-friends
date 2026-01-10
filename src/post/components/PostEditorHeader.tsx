@@ -11,7 +11,7 @@ interface PostEditorHeaderProps {
  */
 export function PostEditorHeader({ rightActions }: PostEditorHeaderProps) {
   return (
-    <div className="sticky top-0 z-40 bg-background border-b">
+    <div className="sticky top-0 z-40 border-b bg-background">
       <div className="container mx-auto max-w-4xl px-6 py-3">
         <div className="flex items-center justify-between">
           <PostBackButton />

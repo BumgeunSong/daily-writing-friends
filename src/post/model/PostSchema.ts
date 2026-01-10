@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { Timestamp } from 'firebase/firestore';
+import { z } from 'zod';
 import { PostVisibility } from './Post';
 
 // Schema for ProseMirror Mark

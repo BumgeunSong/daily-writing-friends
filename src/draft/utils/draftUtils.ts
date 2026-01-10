@@ -1,8 +1,8 @@
 import { doc, collection, getDoc, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
+import { Draft } from '@/draft/model/Draft';
 import { firestore } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
-import { Draft } from '@/draft/model/Draft';
 
 export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: string }, userId: string): Promise<Draft> {
   if (!userId?.trim()) {

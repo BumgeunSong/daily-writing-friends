@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom"
 import { ROUTES } from "@/login/constants"
-import { Button } from "@/shared/ui/button"
 import { useAuth } from "@/shared/hooks/useAuth"
+import { Button } from "@/shared/ui/button"
 
 interface JoinCompletePageProps {
   name: string

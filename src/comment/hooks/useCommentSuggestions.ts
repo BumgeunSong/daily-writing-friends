@@ -1,8 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { generateCommentSuggestions } from '../api/commentSuggestions';
 import type { CommentSuggestion } from '../model/CommentSuggestion';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 
 
 // Hook parameter types
@@ -107,11 +107,11 @@ const clearCache = (key: string): CacheOperationResult<void> => {
  * Based on comment_assistant_prd.md specifications
  * Includes localStorage persistence for 24-hour cross-session caching
  */
-export function useCommentSuggestions({ 
-  postId, 
-  boardId, 
-  enabled = true 
-}: UseCommentSuggestionsParams) {
+export function useCommentSuggestions({
+  postId,
+  boardId,
+  enabled = true
+}: UseCommentSuggestionsParams): UseCommentSuggestionsReturn {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);

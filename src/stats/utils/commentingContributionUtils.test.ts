@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
+import { describe, it, expect } from 'vitest';
 import { aggregateCommentingContributions } from './commentingContributionUtils';
 import type { Commenting } from '@/user/model/Commenting';
 import type { Replying } from '@/user/model/Replying';

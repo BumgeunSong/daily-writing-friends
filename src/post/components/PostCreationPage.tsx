@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Form, useNavigation, useActionData, useSearchParams } from 'react-router-dom';
 import { DraftsDrawer } from '@/draft/components/DraftsDrawer';
-import { PostEditorHeader } from './PostEditorHeader';
 import { useAutoSaveDrafts } from '@/draft/hooks/useAutoSaveDrafts';
 import { useDraftLoader } from '@/draft/hooks/useDraftLoader';
 import { usePostEditor } from '@/post/hooks/usePostEditor';
@@ -17,6 +16,7 @@ import {
 } from '@/shared/ui/alert-dialog';
 import { Button } from '@/shared/ui/button';
 import { PostEditor } from './PostEditor';
+import { PostEditorHeader } from './PostEditorHeader';
 import { PostTitleEditor } from './PostTitleEditor';
 
 interface ActionData {

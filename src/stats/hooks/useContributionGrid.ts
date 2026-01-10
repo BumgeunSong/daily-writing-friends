@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useHolidays } from '@/shared/hooks/useHolidays';
 import { Contribution } from '@/stats/model/WritingStats';
 import { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 import {
@@ -7,7 +8,6 @@ import {
   createEmptyGridResult,
   type GridResult,
 } from '@/stats/utils/contributionGridUtils';
-import { useHolidays } from '@/shared/hooks/useHolidays';
 
 export type ContributionType = 'posting' | 'commenting';
 

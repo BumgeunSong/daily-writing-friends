@@ -1,12 +1,12 @@
+import Dropcursor from '@tiptap/extension-dropcursor';
+import Image from '@tiptap/extension-image';
+import Link from '@tiptap/extension-link';
+import Placeholder from '@tiptap/extension-placeholder';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
-import Image from '@tiptap/extension-image';
-import Placeholder from '@tiptap/extension-placeholder';
-import Dropcursor from '@tiptap/extension-dropcursor';
 import { useRef, useEffect } from 'react';
-import { sanitize } from '@/post/utils/sanitizeHtml';
 import { ProseMirrorDoc } from '@/post/model/Post';
+import { sanitize } from '@/post/utils/sanitizeHtml';
 
 // Editor configuration constants
 const DEFAULT_DEBOUNCE_DELAY = 300; // milliseconds

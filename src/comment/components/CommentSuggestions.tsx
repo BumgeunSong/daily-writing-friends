@@ -1,10 +1,10 @@
 import { RefreshCw } from 'lucide-react';
 import { useState, useCallback } from 'react';
+import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { Button } from '@/shared/ui/button';
 import { CommentSuggestionCard } from './CommentSuggestionCard';
 import { CommentSuggestionSkeleton } from './CommentSuggestionSkeleton';
 import { useCommentSuggestions } from '../hooks/useCommentSuggestions';
-import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import type { CommentSuggestion } from '../model/CommentSuggestion';
 
 interface CommentSuggestionsProps {
@@ -31,13 +31,13 @@ interface SuccessStateProps {
 }
 
 // Loading state component
-function LoadingState({}: LoadingStateProps) {
+function LoadingState(_props: LoadingStateProps) {
   return (
     <div className='mb-3 sm:mb-4'>
-      <div className='flex items-center gap-2 mb-2 sm:mb-3'>
+      <div className='mb-2 flex items-center gap-2 sm:mb-3'>
         <span className='text-sm font-medium'>💡 댓글 제안</span>
         <div className='size-2 animate-pulse rounded-full bg-primary sm:hidden' />
-        <div className='hidden sm:block w-3 h-3 animate-spin rounded-full border-2 border-primary border-t-transparent' />
+        <div className='hidden size-3 animate-spin rounded-full border-2 border-primary border-t-transparent sm:block' />
       </div>
       <CommentSuggestionSkeleton />
     </div>
@@ -47,11 +47,11 @@ function LoadingState({}: LoadingStateProps) {
 // Error state component
 function ErrorState({ error, onRetry }: ErrorStateProps) {
   return (
-    <div className='mb-3 sm:mb-4 p-3 rounded-lg border border-red-200 bg-red-50'>
+    <div className='mb-3 rounded-lg border border-red-200 bg-red-50 p-3 sm:mb-4'>
       <div className='flex items-center justify-between'>
         <div>
           <p className='text-sm text-red-800'>Failed to load suggestions</p>
-          <p className='text-xs text-red-600 mt-1'>
+          <p className='mt-1 text-xs text-red-600'>
             {error?.message || 'Something went wrong'}
           </p>
         </div>
@@ -59,9 +59,9 @@ function ErrorState({ error, onRetry }: ErrorStateProps) {
           variant='outline'
           size='sm'
           onClick={onRetry}
-          className='text-red-700 border-red-300 hover:bg-red-100'
+          className='border-red-300 text-red-700 hover:bg-red-100'
         >
-          <RefreshCw className='w-3 h-3 mr-1' />
+          <RefreshCw className='mr-1 size-3' />
           Retry
         </Button>
       </div>
@@ -83,16 +83,16 @@ function RefreshButton({
       size='sm'
       onClick={onRefresh}
       disabled={isLoading}
-      className='h-6 w-6 p-0 text-muted-foreground hover:text-foreground disabled:opacity-50'
+      className='size-6 p-0 text-muted-foreground hover:text-foreground disabled:opacity-50'
       title='댓글 제안 새로고침'
     >
       {isLoading ? (
         <>
           <div className='size-2 animate-pulse rounded-full bg-current sm:hidden' />
-          <div className='hidden sm:block w-3 h-3 animate-spin rounded-full border-2 border-current border-t-transparent' />
+          <div className='hidden size-3 animate-spin rounded-full border-2 border-current border-t-transparent sm:block' />
         </>
       ) : (
-        <RefreshCw className='w-3 h-3' />
+        <RefreshCw className='size-3' />
       )}
     </Button>
   );
@@ -108,12 +108,12 @@ function SuccessState({
 }: SuccessStateProps) {
   return (
     <div className='mb-3 sm:mb-4'>
-      <div className='flex items-center gap-2 mb-2 sm:mb-3'>
+      <div className='mb-2 flex items-center gap-2 sm:mb-3'>
         <span className='text-sm font-medium'>💡 댓글 제안</span>
         <RefreshButton onRefresh={onRefresh} isLoading={isLoading} />
       </div>
 
-      <div className='flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide'>
+      <div className='scrollbar-hide flex gap-2 overflow-x-auto pb-2 sm:gap-3'>
         {suggestions.map((suggestion, index) => (
           <CommentSuggestionCard
             key={`${suggestion.type}-${index}`}

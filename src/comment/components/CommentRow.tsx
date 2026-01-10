@@ -26,7 +26,7 @@ const CommentRow: React.FC<CommentRowProps> = ({
   postId,
   comment,
   isAuthor,
-  postVisibility,
+  postVisibility: _postVisibility,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const deleteComment = useDeleteComment(boardId, postId, comment.id);

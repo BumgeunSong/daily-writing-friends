@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
+import { describe, it, expect } from 'vitest';
 import {
   accumulatePostingLengths,
   toContribution,
@@ -7,8 +7,8 @@ import {
   getTotalContentLength,
   sortWritingStats,
 } from '../writingStatsUtils';
-import type { WritingStats, Contribution } from '@/stats/model/WritingStats';
 import type { Posting } from '@/post/model/Posting';
+import type { WritingStats, Contribution } from '@/stats/model/WritingStats';
 
 function createMockWritingStats(
   userId: string,

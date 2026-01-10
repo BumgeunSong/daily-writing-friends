@@ -1,4 +1,5 @@
 import { Loader2 } from 'lucide-react';
+import { Draft } from '@/draft/model/Draft';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,7 +10,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/shared/ui/alert-dialog";
-import { Draft } from '@/draft/model/Draft';
 
 interface DeleteDraftDialogProps {
   isOpen: boolean;

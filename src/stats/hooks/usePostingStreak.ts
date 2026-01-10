@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchPostingDataForContributions } from '@/stats/api/stats';
 import { getRecentWorkingDays, getDateKey } from '@/shared/utils/dateUtils';
+import { fetchPostingDataForContributions } from '@/stats/api/stats';
 
 export interface PostingStreakData {
   streak: boolean[];

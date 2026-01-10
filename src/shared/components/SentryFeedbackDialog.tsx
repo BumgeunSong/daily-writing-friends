@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { MessageCircle, Send, Paperclip, X, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { auth } from '@/firebase';
 import {
@@ -13,8 +13,8 @@ import {
   AlertDialogTrigger,
 } from '@/shared/ui/alert-dialog';
 import { Button } from '@/shared/ui/button';
-import { useUser } from '@/user/hooks/useUser';
 import { uploadFeedbackScreenshot } from '@/shared/utils/uploadFeedbackScreenshot';
+import { useUser } from '@/user/hooks/useUser';
 
 interface SentryFeedbackDialogProps {
   triggerButton?: React.ReactNode;
@@ -127,7 +127,7 @@ export function SentryFeedbackDialog({ triggerButton }: SentryFeedbackDialogProp
           </Button>
         )}
       </AlertDialogTrigger>
-      <AlertDialogContent className='max-w-md w-[calc(100vw-2rem)]'>
+      <AlertDialogContent className='w-[calc(100vw-2rem)] max-w-md'>
         <AlertDialogHeader>
           <AlertDialogTitle>피드백 보내기</AlertDialogTitle>
         </AlertDialogHeader>
@@ -159,10 +159,10 @@ export function SentryFeedbackDialog({ triggerButton }: SentryFeedbackDialogProp
               className='flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
             />
           </div>
-          <div className='space-y-2 min-w-0'>
+          <div className='min-w-0 space-y-2'>
             <label className='text-sm font-medium text-foreground'>스크린샷 (선택)</label>
             {screenshotFile ? (
-              <div className='flex items-center gap-2 rounded-md border border-input bg-muted/50 p-2 min-w-0'>
+              <div className='flex min-w-0 items-center gap-2 rounded-md border border-input bg-muted/50 p-2'>
                 {isUploading ? (
                   <Loader2 className='size-4 shrink-0 animate-spin text-muted-foreground' />
                 ) : (
@@ -177,7 +177,7 @@ export function SentryFeedbackDialog({ triggerButton }: SentryFeedbackDialogProp
                   size='sm'
                   onClick={handleRemoveScreenshot}
                   disabled={isUploading}
-                  className='h-6 w-6 shrink-0 p-0'
+                  className='size-6 shrink-0 p-0'
                 >
                   <X className='size-4' />
                 </Button>

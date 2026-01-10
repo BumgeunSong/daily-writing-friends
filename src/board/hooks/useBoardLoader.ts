@@ -1,9 +1,9 @@
+import { FirebaseError } from 'firebase/app';
 import { LoaderFunctionArgs } from 'react-router-dom';
 import { getCurrentUser } from '@/shared/utils/authUtils';
-import { fetchUser } from '@/user/api/user';
 import { trackFirebasePermissionError, getPermissionErrorHints } from '@/shared/utils/firebaseErrorTracking';
 import { getCurrentUserIdFromStorage } from '@/shared/utils/getCurrentUserId';
-import { FirebaseError } from 'firebase/app';
+import { fetchUser } from '@/user/api/user';
 
 export async function boardLoader({ params }: LoaderFunctionArgs) {
   const { boardId } = params;

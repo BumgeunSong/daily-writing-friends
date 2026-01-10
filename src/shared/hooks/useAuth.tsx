@@ -1,9 +1,9 @@
 // src/contexts/AuthContext.tsx
-import { User as FirebaseUser } from 'firebase/auth';
 import React, { useContext, useState, useEffect, createContext } from 'react';
 
 import { auth } from '@/firebase';
 import { setSentryUser } from '@/sentry';
+import { User as FirebaseUser } from 'firebase/auth';
 interface AuthContextType {
   currentUser: any;
   loading: boolean;

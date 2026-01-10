@@ -2,19 +2,19 @@ import ActiveUserProfileList from '@/login/components/ActiveUserProfileList';
 import CohortDetailsCard from '@/login/components/CohortDetailsCard';
 import CountdownSection from '@/login/components/CountdownSection';
 import GoalSection from '@/login/components/GoalSection';
+import { IntroContentSection, SectionWrapper } from '@/login/components/IntroContentSection';
 import IntroCTA from '@/login/components/IntroCTA';
 import IntroHeader from '@/login/components/IntroHeader';
 import IntroHero from '@/login/components/IntroHero';
 import { IntroPageLayout } from '@/login/components/IntroPageLayout';
-import { IntroContentSection, SectionWrapper } from '@/login/components/IntroContentSection';
 import ReviewCarousel from '@/login/components/ReviewCarousel';
 import { useActiveUser } from '@/login/hooks/useActiveUser';
-import { useUpcomingBoard } from '@/login/hooks/useUpcomingBoard';
 import { useDaysUntilCohortStart } from '@/login/hooks/useDaysUntilCohortStart';
 import { useGoogleLoginWithRedirect } from '@/login/hooks/useGoogleLoginWithRedirect';
 import { useIsUserInWaitingList } from '@/login/hooks/useIsUserInWaitingList';
-import { useAuth } from '@/shared/hooks/useAuth';
+import { useUpcomingBoard } from '@/login/hooks/useUpcomingBoard';
 import NoticeSection from '@/shared/components/NoticeSection';
+import { useAuth } from '@/shared/hooks/useAuth';
 
 export default function JoinIntroPage() {
   // Data hooks

@@ -1,6 +1,6 @@
-import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { remoteConfig } from '@/firebase';
+import { fetchAndActivate, getValue } from 'firebase/remote-config';
 
 // Remote Config key union type
 export type RemoteConfigKey =

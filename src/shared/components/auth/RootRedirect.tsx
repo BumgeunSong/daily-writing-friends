@@ -1,10 +1,10 @@
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/shared/hooks/useAuth';
+import JoinCompletePage from '@/login/components/JoinCompletePage';
 import { useIsCurrentUserActive } from '@/login/hooks/useIsCurrentUserActive';
 import { useIsUserInWaitingList } from '@/login/hooks/useIsUserInWaitingList';
-import JoinCompletePage from '@/login/components/JoinCompletePage';
-import { useUserNickname } from '@/user/hooks/useUserNickname';
 import { useUpcomingBoard } from '@/login/hooks/useUpcomingBoard';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { useUserNickname } from '@/user/hooks/useUserNickname';
 
 /**
  * Root redirect component

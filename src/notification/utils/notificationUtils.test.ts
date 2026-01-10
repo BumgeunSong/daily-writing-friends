@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
+import { describe, it, expect } from 'vitest';
+import { NotificationType } from '@/notification/model/Notification';
 import {
   createNotificationQueryKey,
   flattenNotificationPages,
@@ -7,7 +8,6 @@ import {
   getLastNotificationTimestamp,
 } from './notificationUtils';
 import type { Notification } from '@/notification/model/Notification';
-import { NotificationType } from '@/notification/model/Notification';
 
 function createMockNotification(overrides: Partial<Notification> = {}): Notification {
   return {

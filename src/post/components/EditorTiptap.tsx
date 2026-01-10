@@ -1,13 +1,13 @@
 import { useImperativeHandle, forwardRef, useEffect } from 'react';
+import { useEditorCopy } from '@/post/hooks/useEditorCopy';
 import { useTiptapEditor } from '@/post/hooks/useTiptapEditor';
 import { useTiptapImageUpload } from '@/post/hooks/useTiptapImageUpload';
-import { useEditorCopy } from '@/post/hooks/useEditorCopy';
-import { UploadProgress } from './UploadProgress';
+import { ProseMirrorDoc } from '@/post/model/Post';
+import { CopyErrorBoundary } from './CopyErrorBoundary';
 import { EditorContentArea } from './EditorContentArea';
 import { ResponsiveEditorToolbar } from './ResponsiveEditorToolbar';
-import { CopyErrorBoundary } from './CopyErrorBoundary';
+import { UploadProgress } from './UploadProgress';
 import { useIsMobile } from '../../shared/hooks/useWindowSize';
-import { ProseMirrorDoc } from '@/post/model/Post';
 
 interface EditorTiptapProps {
   initialHtml?: string;

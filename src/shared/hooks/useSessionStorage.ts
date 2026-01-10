@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
  * sessionStorage를 사용하여 상태를 저장하고 복원하는 훅

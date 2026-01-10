@@ -3,16 +3,16 @@ import { ArrowLeft } from "lucide-react"
 import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { Button } from '@/shared/ui/button'
-import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
-import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
-import { cn } from "@/shared/utils/cn"
 import {
   FREEWRITING_TUTORIAL_TITLE,
   FREEWRITING_TUTORIAL_SUBTITLE,
   FREEWRITING_TUTORIAL_CARDS,
   type TutorialCard
 } from "@/post/data/freewritingTutorialContent"
+import { Button } from '@/shared/ui/button'
+import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
+import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
+import { cn } from "@/shared/utils/cn"
 import type React from "react"
 
 const PostFreewritingTutorial: React.FC = () => {

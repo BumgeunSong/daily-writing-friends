@@ -1,11 +1,11 @@
-import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import React from 'react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { Timestamp } from 'firebase/firestore';
-import { useNotifications } from '../useNotifications';
+import React from 'react';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { fetchNotifications } from '@/notification/api/notificationApi';
 import { Notification, NotificationType } from '@/notification/model/Notification';
+import { useNotifications } from '../useNotifications';
 
 // Mock Firebase
 vi.mock('@/firebase', () => ({

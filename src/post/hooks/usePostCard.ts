@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
+import { PostAuthorData } from '@/post/components/PostUserProfile';
 import { type Post, PostVisibility } from '@/post/model/Post';
 import { getContentPreview } from '@/post/utils/contentUtils';
 import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
-import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';
-import { usePostingStreak } from '@/stats/hooks/usePostingStreak';
-import { useUser } from '@/user/hooks/useUser';
 import { getUserDisplayName } from '@/shared/utils/userUtils';
-import { PostAuthorData } from '@/post/components/PostUserProfile';
+import { usePostingStreak } from '@/stats/hooks/usePostingStreak';
+import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';
+import { useUser } from '@/user/hooks/useUser';
 
 export interface UsePostCardReturn {
   authorData: PostAuthorData;

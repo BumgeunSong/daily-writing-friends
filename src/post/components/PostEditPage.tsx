@@ -2,14 +2,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Save } from 'lucide-react';
 import React, { useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { fetchPost, updatePost } from '@/post/utils/postUtils';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { toast } from '@/shared/hooks/use-toast';
 import { Button } from '@/shared/ui/button';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { formatDate } from '@/shared/utils/dateUtils';
-import { fetchPost, updatePost } from '@/post/utils/postUtils';
-import { PostEditorHeader } from './PostEditorHeader';
 import { PostEditor } from './PostEditor';
+import { PostEditorHeader } from './PostEditorHeader';
 import { PostTitleEditor } from './PostTitleEditor';
 
 export default function PostEditPage() {
@@ -127,7 +127,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
             placeholder='내용을 수정하세요...'
           />
 
-          <div className='flex items-center justify-center text-sm text-muted-foreground pt-4'>
+          <div className='flex items-center justify-center pt-4 text-sm text-muted-foreground'>
             <p>
               작성자: {post?.authorName || '?'} | 작성일:{' '}
               {post?.createdAt ? formatDate(post.createdAt.toDate()) : '?'}

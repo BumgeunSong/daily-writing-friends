@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchHolidays } from '@/shared/api/holidays';
 import { useMemo } from 'react';
+import { fetchHolidays } from '@/shared/api/holidays';
 
 /**
  * Hook to fetch and cache configurable holidays

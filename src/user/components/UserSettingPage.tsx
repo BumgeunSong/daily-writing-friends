@@ -1,4 +1,3 @@
-import { signOut } from 'firebase/auth';
 import { LogOut, Trash2, SquareArrowRight, Moon, Sun } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -19,6 +18,7 @@ import {
 } from '@/shared/ui/alert-dialog';
 import { Button } from '@/shared/ui/button';
 import { Switch } from '@/shared/ui/switch';
+import { signOut } from 'firebase/auth';
 
 export default function UserSettingPage() {
   const navigate = useNavigate();

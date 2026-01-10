@@ -1,8 +1,8 @@
 import { doc, getDoc, collection, getDocs, Timestamp } from "firebase/firestore";
 import { firestore } from "@/firebase";
-import { trackedFirebase } from "@/shared/api/trackedFirebase";
 import { JoinFormDataForActiveUser } from "@/login/model/join";
 import { Review } from "@/login/model/Review";
+import { trackedFirebase } from "@/shared/api/trackedFirebase";
 
 /**
  * 보드에 리뷰를 추가합니다.

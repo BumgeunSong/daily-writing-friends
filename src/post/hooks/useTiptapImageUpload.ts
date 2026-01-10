@@ -2,10 +2,10 @@ import * as Sentry from '@sentry/react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import type { Editor } from '@tiptap/react';
 import { storage } from '@/firebase';
-import { formatDate } from '@/post/utils/sanitizeHtml';
 import { processImageForUpload } from '@/post/utils/ImageUtils';
+import { formatDate } from '@/post/utils/sanitizeHtml';
+import type { Editor } from '@tiptap/react';
 
 interface UseTiptapImageUploadProps {
   editor: Editor | null;
