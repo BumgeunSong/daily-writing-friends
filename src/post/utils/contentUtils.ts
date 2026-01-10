@@ -99,22 +99,6 @@ const createUlFromOl = (ol: Element): HTMLUListElement => {
 };
 
 /**
- * HTML 문자열에서 Quill 에디터의 글머리 기호 목록을 ul 태그로 변환
- * 
- * @param html - 변환할 HTML 문자열
- * @returns 변환된 HTML 문자열
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Legacy function kept for potential future use
-const _convertBulletListToUl = (html: string): string => {
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = html;
-  
-  convertQuillBulletLists(tempDiv);
-  
-  return tempDiv.innerHTML;
-};
-
-/**
  * ">" 기호로 시작하는 라인들을 HTML blockquote로 변환
  * 
  * @param content - 변환할 텍스트 콘텐츠
