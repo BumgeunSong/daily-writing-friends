@@ -19,6 +19,7 @@ import { Input } from "@/shared/ui/input"
 import { Separator } from "@/shared/ui/separator"
 import { blockUser, unblockUser, getBlockedUsers, fetchUser } from '@/user/api/user'
 import useUserSearch from '@/user/hooks/useUserSearch'
+import type { User } from '@/user/model/User'
 import type React from "react"
 
 // 검색 서제스트 드롭다운만 별도 컴포넌트로 분리 (Suspense 지원)
@@ -33,9 +34,9 @@ function SuggestionsDropdown({
   suggestionsRef,
 }: {
   searchQuery: string
-  blockedUsers: any[]
-  currentUser: any
-  handleBlock: (user: any) => void
+  blockedUsers: User[]
+  currentUser: User | null
+  handleBlock: (user: User) => void
   selectedSuggestionIndex: number
   setSelectedSuggestionIndex: (idx: number) => void
   loading: boolean
@@ -98,7 +99,7 @@ function SuggestionsDropdown({
 
 export default function BlockedUsersPage() {
   const { currentUser } = useAuth()
-  const [blockedUsers, setBlockedUsers] = useState<any[]>([])
+  const [blockedUsers, setBlockedUsers] = useState<User[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1)
@@ -174,7 +175,7 @@ export default function BlockedUsersPage() {
   }, [])
 
   // Block user
-  const handleBlock = async (user: any) => {
+  const handleBlock = async (user: User) => {
     if (!currentUser) return;
     if (blockedUsers.length >= 10) {
       setShowLimitDialog(true)

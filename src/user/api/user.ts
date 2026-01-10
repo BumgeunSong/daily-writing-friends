@@ -2,7 +2,7 @@
 // Use a consistent naming convention; fetchX() → read-only function, createX(), updateX() → write, cacheX() → caching helpers (if used outside)
 // Abstract repetitive Firebase logic into helpers
 
-import { doc, serverTimestamp, collection, where, query, Timestamp, writeBatch, orderBy, CollectionReference, Query, or } from 'firebase/firestore';
+import { doc, serverTimestamp, collection, where, query, Timestamp, writeBatch, orderBy, CollectionReference, Query, or, DocumentData } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, storage } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
@@ -195,7 +195,7 @@ export async function getBlockedByUsers(userId: string): Promise<string[]> {
  * @param restOrderBy 추가 orderBy 조건
  * @returns Query
  */
-export function buildNotInQuery<T = any>(
+export function buildNotInQuery<T = DocumentData>(
   ref: CollectionReference<T>,
   field: string,
   notInList: string[],

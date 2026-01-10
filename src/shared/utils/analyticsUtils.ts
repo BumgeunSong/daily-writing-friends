@@ -17,7 +17,7 @@ export enum AnalyticsEvent {
 
 }
 
-export function sendAnalyticsEvent(event: AnalyticsEvent, params?: Record<string, any>) {
+export function sendAnalyticsEvent(event: AnalyticsEvent, params?: Record<string, unknown>) {
   logEvent(analytics, event, params);
 }
 

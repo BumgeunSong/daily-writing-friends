@@ -15,7 +15,7 @@ interface FirebasePermissionContext {
     userId?: string;
     email?: string;
   };
-  additionalInfo?: Record<string, any>;
+  additionalInfo?: Record<string, unknown>;
 }
 
 /**
@@ -27,7 +27,7 @@ export function trackFirebasePermissionError(
     operation: FirebasePermissionContext['operation'];
     path: string;
     userId?: string;
-    additionalInfo?: Record<string, any>;
+    additionalInfo?: Record<string, unknown>;
   }
 ) {
   if (error.code !== 'permission-denied') {
@@ -172,7 +172,7 @@ export function getPermissionErrorHints(
 /**
  * Enhanced wrapper for Firestore operations with permission tracking
  */
-export function withPermissionTracking<T extends (...args: any[]) => Promise<any>>(
+export function withPermissionTracking<T extends (...args: unknown[]) => Promise<unknown>>(
   fn: T,
   context: {
     operation: FirebasePermissionContext['operation'];

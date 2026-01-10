@@ -45,7 +45,8 @@ const SLOW_OPERATION_THRESHOLD_MS = 3000;
  */
 function getPathFromReference(ref: DocumentReference | CollectionReference | Query): string {
   // DocumentReference and CollectionReference have public path property
-  if ('path' in ref && typeof (ref as any).path === 'string') {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Runtime type check requires dynamic property access
+  if ('path' in ref && typeof (ref as Record<string, unknown>).path === 'string') {
     return (ref as DocumentReference | CollectionReference).path;
   }
 
