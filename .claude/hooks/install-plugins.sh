@@ -6,19 +6,9 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
 
-cd "$CLAUDE_PROJECT_DIR"
+# Async mode - runs in background while session starts
+echo '{"async": true, "asyncTimeout": 300000}'
 
-# Install root project dependencies
-echo "Installing root dependencies..."
-npm install
-
-# Install Firebase Functions dependencies
-echo "Installing Firebase Functions dependencies..."
-cd functions
-npm install
-cd ..
-
-# Install Claude Code plugins
 echo "Installing Claude Code plugins..."
 
 # Add third-party marketplaces
@@ -35,4 +25,4 @@ claude plugin install code-simplifier@claude-plugins-official --scope user || tr
 # Install plugins from third-party marketplaces
 claude plugin install superpowers@superpowers-marketplace --scope user || true
 
-echo "Session start setup complete."
+echo "Claude Code plugins installed."
