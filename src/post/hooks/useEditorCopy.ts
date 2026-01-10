@@ -7,16 +7,16 @@ interface ProseMirrorNode {
   type: { name: string };
   textContent: string;
   marks?: readonly ProseMirrorMark[];
-  attrs?: Record<string, any>;
+  attrs?: Record<string, unknown>;
 }
 
 interface ProseMirrorMark {
   type: { name: string };
-  attrs?: Record<string, any>;
+  attrs?: Record<string, unknown>;
 }
 
 interface ProseMirrorFragment {
-  content: { forEach: (callback: (node: any, offset?: number, index?: number) => void) => void };
+  content: { forEach: (callback: (node: ProseMirrorNode, offset?: number, index?: number) => void) => void };
   textContent: string;
 }
 
@@ -51,11 +51,11 @@ function applyMarksToText(text: string, marks: readonly ProseMirrorMark[]): stri
   return [...marks].reverse().reduce((formattedText, mark) => {
     const markType = mark.type.name;
 
-    if (MARK_TYPES.BOLD.includes(markType as any)) {
+    if ((MARK_TYPES.BOLD as readonly string[]).includes(markType)) {
       return `<strong>${formattedText}</strong>`;
     }
 
-    if (MARK_TYPES.ITALIC.includes(markType as any)) {
+    if ((MARK_TYPES.ITALIC as readonly string[]).includes(markType)) {
       return `<em>${formattedText}</em>`;
     }
 
