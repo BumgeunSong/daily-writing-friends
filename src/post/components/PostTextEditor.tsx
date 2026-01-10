@@ -1,10 +1,11 @@
 import { useEffect, useRef, useMemo, useCallback } from 'react';
 import ReactQuill from 'react-quill-new';
-import { toast } from 'sonner';
-import { Progress } from '@/shared/ui/progress';
 import 'react-quill-new/dist/quill.snow.css';
-import { useImageUpload } from '@/post/hooks/useImageUpload';
+
 import { useCopyHandler } from '@/post/hooks/useCopyHandler';
+import { useImageUpload } from '@/post/hooks/useImageUpload';
+import { Progress } from '@/shared/ui/progress';
+
 import { CopyErrorBoundary } from './CopyErrorBoundary';
 
 interface PostTextEditorProps {

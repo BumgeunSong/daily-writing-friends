@@ -1,21 +1,26 @@
 // src/firebase.ts
 
-// Import individual initialization functions for direct use
-import { createFirebaseConfig, shouldUseEmulators, createEmulatorConfig } from './firebase/utils';
-import { connectToEmulators } from './firebase/emulator';
-import { configureRemoteConfig } from './firebase/remote-config';
-
-// Core Firebase imports
+// Core Firebase imports (alphabetically ordered)
 import { getAnalytics } from 'firebase/analytics';
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { getInstallations } from 'firebase/installations';
 import { getPerformance } from 'firebase/performance';
 import { getStorage } from 'firebase/storage';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { UserCredential } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, UserCredential } from 'firebase/auth';
 import { getRemoteConfig } from 'firebase/remote-config';
-import { configureAuthPersistence } from './firebase/auth';
+
+// Internal imports (alphabetically ordered)
+import {
+  configureAuthPersistence,
+  signInWithGoogle as googleSignIn,
+  signOutUser as userSignOut,
+  signInWithTestCredentials as testCredentialsSignIn,
+  signInWithTestToken as testTokenSignIn,
+} from './firebase/auth';
+import { connectToEmulators } from './firebase/emulator';
+import { configureRemoteConfig } from './firebase/remote-config';
+import { createEmulatorConfig, createFirebaseConfig, shouldUseEmulators } from './firebase/utils';
 
 // Initialize Firebase app
 const firebaseConfig = createFirebaseConfig();
@@ -83,14 +88,6 @@ connectToEmulators(auth, firestore, storage);
 // Export configuration flags for other modules
 export const isUsingEmulators = useEmulators;
 export const emulatorConfiguration = createEmulatorConfig();
-
-// Import and re-export auth functions with Firebase services injected
-import {
-  signInWithGoogle as googleSignIn,
-  signOutUser as userSignOut,
-  signInWithTestCredentials as testCredentialsSignIn,
-  signInWithTestToken as testTokenSignIn,
-} from './firebase/auth';
 
 // Auth function wrappers that use our initialized services
 export const signInWithGoogle = (): Promise<UserCredential> => googleSignIn(auth, provider);
