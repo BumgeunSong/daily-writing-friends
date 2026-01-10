@@ -1,7 +1,8 @@
 import { Helmet } from "react-helmet-async";
+import { Post } from "@/post/model/Post";
 
 interface PostHelmetProps {
-    post: any;
+    post: Post;
     boardId: string | undefined;
     postId: string | undefined;
 }
