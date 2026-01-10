@@ -37,7 +37,7 @@ export default function PostFreewritingPage() {
 
   const postTitle = userNickname ? `${userNickname}님의 프리라이팅` : "프리라이팅"
   const [content, setContent] = useState("")
-  const [contentJson, setContentJson] = useState<any>(null)
+  const [contentJson, setContentJson] = useState<unknown>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [timerStatus, setTimerStatus] = useState<WritingStatus>(WritingStatus.Paused)
   const [hasReachedTargetTime, setHasReachedTargetTime] = useState(false)
