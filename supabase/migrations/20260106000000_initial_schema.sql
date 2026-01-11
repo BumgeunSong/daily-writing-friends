@@ -15,7 +15,6 @@ CREATE TABLE boards (
   first_day TIMESTAMPTZ,
   last_day TIMESTAMPTZ,
   cohort INTEGER,
-  waiting_users_ids TEXT[] DEFAULT '{}',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -33,8 +32,6 @@ CREATE TABLE users (
   recovery_status TEXT CHECK (recovery_status IN ('none', 'eligible', 'partial', 'success')),
   timezone TEXT,
   known_buddy_uid TEXT,
-  known_buddy_nickname TEXT,
-  known_buddy_profile_photo_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -47,6 +44,15 @@ CREATE TABLE user_board_permissions (
   permission TEXT NOT NULL CHECK (permission IN ('read', 'write')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(user_id, board_id)
+);
+
+-- Board waiting users (normalized from boards.waiting_users_ids array)
+CREATE TABLE board_waiting_users (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  board_id TEXT NOT NULL REFERENCES boards(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(board_id, user_id)
 );
 
 -- Posts table
@@ -88,7 +94,7 @@ CREATE TABLE comments (
 CREATE TABLE replies (
   id TEXT PRIMARY KEY,
   comment_id TEXT NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
-  post_id TEXT NOT NULL,  -- Denormalized for query efficiency
+  post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,  -- Denormalized for query efficiency
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   user_name TEXT NOT NULL DEFAULT '',
   user_profile_image TEXT,
@@ -111,7 +117,7 @@ CREATE TABLE likes (
 
 -- Reactions table (for comments and replies)
 -- Historical Identity: user_name/user_profile_image stored at reaction time
--- Note: This table will be replaced in 20260106000002 with proper FK constraints
+-- Note: Schema migrated in 20260106000002 to use proper FK constraints
 CREATE TABLE reactions (
   id TEXT PRIMARY KEY,
   entity_type TEXT NOT NULL CHECK (entity_type IN ('comment', 'reply')),
@@ -147,10 +153,10 @@ CREATE TABLE notifications (
   )),
   actor_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   actor_profile_image TEXT,
-  board_id TEXT NOT NULL,
-  post_id TEXT NOT NULL,
-  comment_id TEXT NOT NULL DEFAULT '',
-  reply_id TEXT NOT NULL DEFAULT '',
+  board_id TEXT NOT NULL REFERENCES boards(id) ON DELETE CASCADE,
+  post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  comment_id TEXT REFERENCES comments(id) ON DELETE CASCADE,
+  reply_id TEXT REFERENCES replies(id) ON DELETE CASCADE,
   reaction_id TEXT,
   like_id TEXT,
   message TEXT NOT NULL,
@@ -198,8 +204,9 @@ CREATE INDEX idx_replies_post ON replies(post_id);
 -- Notifications indexes
 CREATE INDEX idx_notifications_recipient_created ON notifications(recipient_id, created_at DESC);
 CREATE INDEX idx_notifications_recipient_unread ON notifications(recipient_id, created_at DESC) WHERE read = FALSE;
+-- Use COALESCE for nullable columns to ensure proper uniqueness constraint
 CREATE UNIQUE INDEX idx_notifications_idempotency
-  ON notifications(recipient_id, type, post_id, comment_id, reply_id, actor_id);
+  ON notifications(recipient_id, type, post_id, COALESCE(comment_id, ''), COALESCE(reply_id, ''), actor_id);
 
 -- Blocks indexes
 CREATE INDEX idx_blocks_blocker ON blocks(blocker_id);
@@ -212,6 +219,10 @@ CREATE INDEX idx_likes_user ON likes(user_id);
 -- User board permissions indexes
 CREATE INDEX idx_permissions_user ON user_board_permissions(user_id);
 CREATE INDEX idx_permissions_board ON user_board_permissions(board_id);
+
+-- Board waiting users indexes
+CREATE INDEX idx_board_waiting_users_board ON board_waiting_users(board_id);
+CREATE INDEX idx_board_waiting_users_user ON board_waiting_users(user_id);
 
 -- Write ops index
 CREATE INDEX idx_write_ops_created_at ON write_ops(created_at);
@@ -250,3 +261,5 @@ $$ LANGUAGE plpgsql;
 -- 4. Activity fan-out removed: postings/commentings/replyings replaced by indexed queries
 -- 5. Notifications materialized: explicit table with idempotency constraint
 -- 6. write_ops table: For dual-write idempotency during migration
+-- 7. Normalized schema: board_waiting_users as join table (no array columns)
+-- 8. Proper FK constraints: All relationships have referential integrity
