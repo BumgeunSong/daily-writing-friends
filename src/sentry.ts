@@ -21,6 +21,9 @@ const IGNORED_ERRORS = [
   'Failed to fetch',
   // User-initiated cancellations
   'AbortError',
+  // Firestore internal errors (SDK issues we cannot control)
+  'FIRESTORE (10.14.1) INTERNAL ASSERTION FAILED',
+  'FIRESTORE INTERNAL ASSERTION FAILED',
 ] as const;
 
 /**
@@ -31,6 +34,13 @@ function applyCustomFingerprinting(event: Sentry.Event, error: Error): void {
   // These are transient errors caused by iOS killing background connections
   if (isIndexedDbConnectionError(error)) {
     event.fingerprint = ['indexeddb', 'connection-lost'];
+    event.level = 'warning';
+    return;
+  }
+
+  // Group Firestore internal assertion errors
+  if (error.message?.includes('FIRESTORE') && error.message?.includes('INTERNAL ASSERTION FAILED')) {
+    event.fingerprint = ['firestore', 'internal-assertion'];
     event.level = 'warning';
     return;
   }
