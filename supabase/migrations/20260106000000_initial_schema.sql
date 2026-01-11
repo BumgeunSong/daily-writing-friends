@@ -31,7 +31,7 @@ CREATE TABLE users (
   referrer TEXT,
   recovery_status TEXT CHECK (recovery_status IN ('none', 'eligible', 'partial', 'success')),
   timezone TEXT,
-  known_buddy_uid TEXT,
+  known_buddy_uid TEXT REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -247,6 +247,23 @@ BEGIN
   RETURNING TRUE INTO inserted;
 
   RETURN COALESCE(inserted, FALSE);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Update comment reply counts from actual replies
+-- Called after bulk import to fix denormalized counts
+CREATE OR REPLACE FUNCTION update_comment_reply_counts()
+RETURNS void AS $$
+BEGIN
+  UPDATE comments c
+  SET count_of_replies = COALESCE(r.actual_count, 0)
+  FROM (
+    SELECT comment_id, COUNT(*) as actual_count
+    FROM replies
+    GROUP BY comment_id
+  ) r
+  WHERE c.id = r.comment_id
+    AND c.count_of_replies != COALESCE(r.actual_count, 0);
 END;
 $$ LANGUAGE plpgsql;
 

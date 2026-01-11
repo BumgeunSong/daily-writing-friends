@@ -14,6 +14,7 @@
 import { supabase, BATCH_SIZE, EXPORT_DIR } from './config';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as crypto from 'crypto';
 
 // Read JSON file
 function readJsonFile<T>(filename: string): T[] {
@@ -112,8 +113,18 @@ async function updateCommentReplyCounts(): Promise<void> {
   const { error } = await supabase.rpc('update_comment_reply_counts');
 
   if (error) {
-    // If RPC doesn't exist, do it with a raw SQL approach
-    console.log('  RPC not available, skipping count update (will be done manually)');
+    console.error('  Failed to update reply counts:', error.message);
+    console.log('  Run this SQL manually in Supabase SQL Editor:');
+    console.log(`
+    UPDATE comments c
+    SET count_of_replies = COALESCE(r.actual_count, 0)
+    FROM (
+      SELECT comment_id, COUNT(*) as actual_count
+      FROM replies
+      GROUP BY comment_id
+    ) r
+    WHERE c.id = r.comment_id;
+    `);
     return;
   }
 
@@ -158,10 +169,10 @@ async function main(): Promise<void> {
   // Uses composite UNIQUE(board_id, user_id) constraint - skip duplicates
   const boardWaitingUsers = readJsonFile<Record<string, unknown>>('board_waiting_users.json');
   if (boardWaitingUsers.length > 0) {
-    // Add generated IDs since these don't have Firestore IDs
-    const waitingUsersWithIds = boardWaitingUsers.map((wu, index) => ({
+    // Add generated UUIDs since these don't have Firestore IDs
+    const waitingUsersWithIds = boardWaitingUsers.map((wu) => ({
       ...wu,
-      id: `bwu_${Date.now()}_${index}`,
+      id: crypto.randomUUID(),
     }));
     results.board_waiting_users = await importTable('board_waiting_users', waitingUsersWithIds, { ignoreDuplicates: true });
   }
@@ -192,10 +203,10 @@ async function main(): Promise<void> {
   // Uses composite UNIQUE(blocker_id, blocked_id) constraint - skip duplicates
   const blocks = readJsonFile<Record<string, unknown>>('blocks.json');
   if (blocks.length > 0) {
-    // Add generated IDs for blocks since they don't have Firestore IDs
-    const blocksWithIds = blocks.map((block, index) => ({
+    // Add generated UUIDs for blocks since they don't have Firestore IDs
+    const blocksWithIds = blocks.map((block) => ({
       ...block,
-      id: `block_${Date.now()}_${index}`,
+      id: crypto.randomUUID(),
     }));
     results.blocks = await importTable('blocks', blocksWithIds, { ignoreDuplicates: true });
   }
