@@ -25,25 +25,6 @@ async function countFirestoreCollection(collectionPath: string): Promise<number>
   return snapshot.data().count;
 }
 
-// Count nested Firestore documents (posts, comments, etc.)
-async function countNestedDocuments(
-  parentCollection: string,
-  nestedCollection: string
-): Promise<number> {
-  let total = 0;
-  const parentsSnapshot = await firestore.collection(parentCollection).get();
-
-  for (const parentDoc of parentsSnapshot.docs) {
-    const nestedSnapshot = await firestore
-      .collection(`${parentCollection}/${parentDoc.id}/${nestedCollection}`)
-      .count()
-      .get();
-    total += nestedSnapshot.data().count;
-  }
-
-  return total;
-}
-
 // Count deeply nested documents (comments under posts under boards)
 async function countDeeplyNestedDocuments(): Promise<{
   posts: number;
