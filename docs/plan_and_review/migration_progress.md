@@ -1,8 +1,8 @@
 # Firebase → Supabase Migration Progress
 
-**Last Updated**: 2026-01-06
+**Last Updated**: 2026-01-11
 **Branch**: `supabase-migration`
-**Status**: Phase 0 complete, Phase 1 ready to execute
+**Status**: Phase 0 complete, Phase 1 ready to execute (scripts validated)
 
 ---
 
@@ -18,6 +18,13 @@
 5. `fe737a1` - 마이그레이션 진행 상황 문서화
 6. `a251cbd` - Historical Identity: 성능을 위해 user_name/user_profile_image 유지
 7. `630a617` - fix: onConflict 파라미터를 단일 컬럼만 지원하도록 수정
+8. `8a88b5e` - refactor: 마이그레이션 통합 - Historical Identity를 초기 스키마에 포함
+9. `0fae757` - fix: 스키마 정합성 개선 및 마이그레이션 비파괴적으로 수정
+10. `f55acb4` - chore: 마이그레이션 스크립트 정리
+11. `3adabc9` - fix: 마이그레이션 스크립트 안정성 개선
+12. `d7d51ab` - fix: reactions 내보내기 시 null user_id 검증 추가
+13. `ef5a6d3` - feat: reactions 테이블에 대한 orphan 체크 추가
+14. `2526ce9` - feat: Summary Query에 모든 무결성 검사 포함
 
 **Schema created (13 tables):**
 
@@ -45,6 +52,11 @@
   - Rationale: Better read performance (no JOINs on PostDetailPage)
   - Preserves user identity at the moment of interaction
   - Trade-off: Profile updates won't reflect in past interactions (acceptable for writing community)
+
+**Recent script improvements (2026-01-11):**
+- Export script validates `user_id` before adding reactions (prevents FK violations)
+- Integrity checks include orphan detection for reactions table
+- Summary query now covers all 17 integrity checks (orphans, count mismatches, duplicates, invalid types)
 
 **Files created:**
 ```
