@@ -148,6 +148,7 @@ WHERE b.id IS NULL;
 -- Summary Query (run all checks at once)
 -- ================================================
 SELECT * FROM (
+  -- Orphan checks
   SELECT 'orphan_comments' as check_name, COUNT(*) as count
   FROM comments c LEFT JOIN posts p ON p.id = c.post_id WHERE p.id IS NULL
   UNION ALL
@@ -165,6 +166,54 @@ SELECT * FROM (
   UNION ALL
   SELECT 'orphan_posts_author', COUNT(*)
   FROM posts p LEFT JOIN users u ON u.id = p.author_id WHERE u.id IS NULL
+  UNION ALL
+  SELECT 'orphan_reactions_comment', COUNT(*)
+  FROM reactions r LEFT JOIN comments c ON c.id = r.comment_id WHERE r.comment_id IS NOT NULL AND c.id IS NULL
+  UNION ALL
+  SELECT 'orphan_reactions_reply', COUNT(*)
+  FROM reactions r LEFT JOIN replies rp ON rp.id = r.reply_id WHERE r.reply_id IS NOT NULL AND rp.id IS NULL
+  UNION ALL
+  SELECT 'orphan_permissions_user', COUNT(*)
+  FROM user_board_permissions p LEFT JOIN users u ON u.id = p.user_id WHERE u.id IS NULL
+  UNION ALL
+  SELECT 'orphan_permissions_board', COUNT(*)
+  FROM user_board_permissions p LEFT JOIN boards b ON b.id = p.board_id WHERE b.id IS NULL
+  UNION ALL
+  -- Count mismatch checks
+  SELECT 'comment_count_mismatch', COUNT(*) FROM (
+    SELECT p.id FROM posts p
+    LEFT JOIN (SELECT post_id, COUNT(*) as actual_count FROM comments GROUP BY post_id) c ON c.post_id = p.id
+    WHERE p.count_of_comments != COALESCE(c.actual_count, 0)
+  ) m
+  UNION ALL
+  SELECT 'reply_count_mismatch', COUNT(*) FROM (
+    SELECT p.id FROM posts p
+    LEFT JOIN (SELECT post_id, COUNT(*) as actual_count FROM replies GROUP BY post_id) r ON r.post_id = p.id
+    WHERE p.count_of_replies != COALESCE(r.actual_count, 0)
+  ) m
+  UNION ALL
+  SELECT 'like_count_mismatch', COUNT(*) FROM (
+    SELECT p.id FROM posts p
+    LEFT JOIN (SELECT post_id, COUNT(*) as actual_count FROM likes GROUP BY post_id) l ON l.post_id = p.id
+    WHERE p.count_of_likes != COALESCE(l.actual_count, 0)
+  ) m
+  UNION ALL
+  -- Duplicate checks
+  SELECT 'duplicate_likes', COUNT(*) FROM (
+    SELECT post_id, user_id FROM likes GROUP BY post_id, user_id HAVING COUNT(*) > 1
+  ) d
+  UNION ALL
+  SELECT 'duplicate_reactions_comment', COUNT(*) FROM (
+    SELECT comment_id, user_id FROM reactions WHERE comment_id IS NOT NULL GROUP BY comment_id, user_id HAVING COUNT(*) > 1
+  ) d
+  UNION ALL
+  SELECT 'duplicate_reactions_reply', COUNT(*) FROM (
+    SELECT reply_id, user_id FROM reactions WHERE reply_id IS NOT NULL GROUP BY reply_id, user_id HAVING COUNT(*) > 1
+  ) d
+  UNION ALL
+  -- Invalid notification types
+  SELECT 'invalid_notification_types', COUNT(*)
+  FROM notifications WHERE type NOT IN ('comment_on_post', 'reply_on_comment', 'reply_on_post', 'reaction_on_comment', 'reaction_on_reply', 'like_on_post')
 ) checks
 WHERE count > 0;
 
