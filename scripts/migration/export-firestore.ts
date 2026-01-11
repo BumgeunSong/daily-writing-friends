@@ -184,11 +184,16 @@ async function exportNestedCollections(): Promise<void> {
 
           for (const reactionDoc of replyReactionsSnapshot.docs) {
             const reactionData = reactionDoc.data();
+            const userId = reactionData.reactionUser?.userId;
+            if (!userId) {
+              console.warn(`  Skipping reaction ${reactionDoc.id} on reply ${replyDoc.id}: missing user_id`);
+              continue;
+            }
             reactions.push({
               id: reactionDoc.id,
               comment_id: null,
               reply_id: replyDoc.id,
-              user_id: reactionData.reactionUser?.userId,
+              user_id: userId,
               user_name: reactionData.reactionUser?.userName || null,  // Historical identity
               user_profile_image: reactionData.reactionUser?.userProfileImage || null,
               reaction_type: reactionData.content,
@@ -204,11 +209,16 @@ async function exportNestedCollections(): Promise<void> {
 
         for (const reactionDoc of commentReactionsSnapshot.docs) {
           const reactionData = reactionDoc.data();
+          const userId = reactionData.reactionUser?.userId;
+          if (!userId) {
+            console.warn(`  Skipping reaction ${reactionDoc.id} on comment ${commentDoc.id}: missing user_id`);
+            continue;
+          }
           reactions.push({
             id: reactionDoc.id,
             comment_id: commentDoc.id,
             reply_id: null,
-            user_id: reactionData.reactionUser?.userId,
+            user_id: userId,
             user_name: reactionData.reactionUser?.userName || null,  // Historical identity
             user_profile_image: reactionData.reactionUser?.userProfileImage || null,
             reaction_type: reactionData.content,
