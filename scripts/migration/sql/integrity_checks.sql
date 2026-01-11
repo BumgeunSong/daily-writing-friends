@@ -88,12 +88,23 @@ FROM (
   HAVING COUNT(*) > 1
 ) duplicates;
 
--- Duplicate reactions (same user reacting to same entity)
-SELECT 'duplicate_reactions' as check_name, COUNT(*) as count
+-- Duplicate reactions on comments (same user reacting to same comment)
+SELECT 'duplicate_reactions_comment' as check_name, COUNT(*) as count
 FROM (
-  SELECT entity_type, entity_id, user_id, COUNT(*) as cnt
+  SELECT comment_id, user_id, COUNT(*) as cnt
   FROM reactions
-  GROUP BY entity_type, entity_id, user_id
+  WHERE comment_id IS NOT NULL
+  GROUP BY comment_id, user_id
+  HAVING COUNT(*) > 1
+) duplicates;
+
+-- Duplicate reactions on replies (same user reacting to same reply)
+SELECT 'duplicate_reactions_reply' as check_name, COUNT(*) as count
+FROM (
+  SELECT reply_id, user_id, COUNT(*) as cnt
+  FROM reactions
+  WHERE reply_id IS NOT NULL
+  GROUP BY reply_id, user_id
   HAVING COUNT(*) > 1
 ) duplicates;
 
