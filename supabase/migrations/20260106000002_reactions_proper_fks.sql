@@ -4,36 +4,33 @@
 -- ================================================
 -- Replace polymorphic entity_type/entity_id with proper nullable FKs.
 -- This provides referential integrity and better query performance.
+-- NON-DESTRUCTIVE: Uses ALTER TABLE to preserve existing data.
 
--- Drop existing reactions table (which uses polymorphic pattern)
-DROP TABLE IF EXISTS reactions;
+-- Step 1: Add new FK columns (nullable initially)
+ALTER TABLE reactions ADD COLUMN comment_id TEXT REFERENCES comments(id) ON DELETE CASCADE;
+ALTER TABLE reactions ADD COLUMN reply_id TEXT REFERENCES replies(id) ON DELETE CASCADE;
 
--- Recreate with proper FK relationships
--- Historical Identity: user_name/user_profile_image stored at reaction time
-CREATE TABLE reactions (
-  id TEXT PRIMARY KEY,
-  comment_id TEXT REFERENCES comments(id) ON DELETE CASCADE,
-  reply_id TEXT REFERENCES replies(id) ON DELETE CASCADE,
-  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  reaction_type TEXT NOT NULL,  -- emoji character
-  user_name TEXT NOT NULL DEFAULT '',
-  user_profile_image TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+-- Step 2: Migrate existing data from polymorphic to proper FKs
+UPDATE reactions SET comment_id = entity_id WHERE entity_type = 'comment';
+UPDATE reactions SET reply_id = entity_id WHERE entity_type = 'reply';
 
-  -- Exactly one of comment_id or reply_id must be set
-  CONSTRAINT reactions_single_entity CHECK (
-    (comment_id IS NOT NULL AND reply_id IS NULL) OR
-    (comment_id IS NULL AND reply_id IS NOT NULL)
-  )
+-- Step 3: Drop the old polymorphic constraint and columns
+ALTER TABLE reactions DROP CONSTRAINT IF EXISTS reactions_entity_type_check;
+ALTER TABLE reactions DROP CONSTRAINT IF EXISTS reactions_entity_type_entity_id_user_id_key;
+ALTER TABLE reactions DROP COLUMN entity_type;
+ALTER TABLE reactions DROP COLUMN entity_id;
+
+-- Step 4: Add new constraint - exactly one of comment_id or reply_id must be set
+ALTER TABLE reactions ADD CONSTRAINT reactions_single_entity CHECK (
+  (comment_id IS NOT NULL AND reply_id IS NULL) OR
+  (comment_id IS NULL AND reply_id IS NOT NULL)
 );
 
--- Indexes for lookups
-CREATE INDEX idx_reactions_comment ON reactions(comment_id) WHERE comment_id IS NOT NULL;
-CREATE INDEX idx_reactions_reply ON reactions(reply_id) WHERE reply_id IS NOT NULL;
-CREATE INDEX idx_reactions_user ON reactions(user_id);
+-- Step 5: Add indexes for lookups
+CREATE INDEX IF NOT EXISTS idx_reactions_comment ON reactions(comment_id) WHERE comment_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_reactions_reply ON reactions(reply_id) WHERE reply_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_reactions_user ON reactions(user_id);
 
--- One reaction per user per comment
-CREATE UNIQUE INDEX idx_reactions_comment_user ON reactions(comment_id, user_id) WHERE comment_id IS NOT NULL;
-
--- One reaction per user per reply
-CREATE UNIQUE INDEX idx_reactions_reply_user ON reactions(reply_id, user_id) WHERE reply_id IS NOT NULL;
+-- Step 6: Add unique constraints - one reaction per user per entity
+CREATE UNIQUE INDEX IF NOT EXISTS idx_reactions_comment_user ON reactions(comment_id, user_id) WHERE comment_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_reactions_reply_user ON reactions(reply_id, user_id) WHERE reply_id IS NOT NULL;
