@@ -120,6 +120,18 @@ WHERE type NOT IN (
   'like_on_post'
 );
 
+-- Orphan reactions (reactions on non-existent comments)
+SELECT 'orphan_reactions_comment' as check_name, COUNT(*) as count
+FROM reactions r
+LEFT JOIN comments c ON c.id = r.comment_id
+WHERE r.comment_id IS NOT NULL AND c.id IS NULL;
+
+-- Orphan reactions (reactions on non-existent replies)
+SELECT 'orphan_reactions_reply' as check_name, COUNT(*) as count
+FROM reactions r
+LEFT JOIN replies rp ON rp.id = r.reply_id
+WHERE r.reply_id IS NOT NULL AND rp.id IS NULL;
+
 -- Users without valid board permissions
 SELECT 'orphan_permissions_user' as check_name, COUNT(*) as count
 FROM user_board_permissions p
