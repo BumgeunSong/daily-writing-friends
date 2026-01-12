@@ -183,18 +183,23 @@ const quillStyles = `
 `;
 
 
-export function PostTextEditor({ 
-  value, 
-  onChange, 
-  placeholder = '내용을 입력하세요...', 
+export function PostTextEditor({
+  value,
+  onChange,
+  placeholder = '내용을 입력하세요...',
 }: PostTextEditorProps) {
   const quillRef = useRef<ReactQuill | null>(null);
   const editorElementRef = useRef<HTMLElement | null>(null);
-  const { imageHandler, isUploading, uploadProgress } = useImageUpload({ insertImage: (url: string) => {
+
+  const insertImage = useCallback((url: string) => {
     const editor = quillRef.current?.getEditor();
     const range = editor?.getSelection(true);
-    editor?.insertEmbed(range?.index, 'image', url);
-  } });  
+    if (range) {
+      editor?.insertEmbed(range.index, 'image', url);
+    }
+  }, []);
+
+  const { imageHandler, isUploading, uploadProgress } = useImageUpload({ insertImage });  
 
   const formats = [
     'bold', 'italic', 'underline', 'strike',
