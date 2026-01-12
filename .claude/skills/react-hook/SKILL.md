@@ -3,11 +3,27 @@ name: react-hook
 description: Use when passing callbacks to custom hooks, fixing react-hooks/exhaustive-deps warnings, or debugging unexpected re-renders in React components.
 ---
 
-# React Hook Stability Patterns
+# React Hook Patterns
 
 ## Overview
 
-**Core principle:** Callbacks passed to hooks must be wrapped in `useCallback`. Inline functions break memoization chains.
+**Core principles:**
+- Callbacks passed to hooks must be wrapped in `useCallback`
+- One hook per file, organized by feature domain
+- Only abstract when logic is reused or complex
+
+## Custom Hook Rules
+
+| Rule | Why |
+|------|-----|
+| Must start with `use` | React's hook detection |
+| One hook per file | Maintainability |
+| Never call conditionally | Breaks hook order |
+| Never return side effects | Unpredictable behavior |
+| Type inputs and outputs | Clarity and safety |
+| Test in isolation | Reliability |
+
+**On memoization:** Only use `useMemo`/`useCallback` when logic is computationally heavy. Otherwise they degrade readability without meaningful benefit. Exception: callbacks passed TO hooks (see stability section below).
 
 ## When to Use
 
