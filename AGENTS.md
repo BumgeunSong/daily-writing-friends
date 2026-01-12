@@ -143,6 +143,23 @@ Copy `config/.env.example` to `.env` at root and configure Firebase credentials.
 - `react-component` - Component structure, import order, hooks patterns
 - `api-layer` - API functions, Firestore patterns
 
+### React Hook Callback Stability
+
+When passing callbacks to custom hooks, always wrap in `useCallback`:
+
+```tsx
+// ❌ BAD - creates new function every render, breaks memoization chains
+const { handler } = useCustomHook({
+  onComplete: (result) => doSomething(result)
+});
+
+// ✅ GOOD - stable reference
+const onComplete = useCallback((result) => doSomething(result), []);
+const { handler } = useCustomHook({ onComplete });
+```
+
+**Why:** Inline callbacks break memoization chains. If the hook uses the callback in `useMemo` or `useCallback`, an unstable reference causes cascading re-renders.
+
 ---
 
 ## Database Schema Reference
