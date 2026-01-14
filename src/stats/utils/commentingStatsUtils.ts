@@ -1,4 +1,4 @@
-import { createUserInfo } from '@/stats/api/stats';
+import { createUserInfo } from '@/stats/utils/userInfoUtils';
 import type { UserCommentingStats } from '@/stats/hooks/useCommentingStats';
 import { aggregateCommentingContributions } from '@/stats/utils/commentingContributionUtils';
 import type { Commenting } from '@/user/model/Commenting';
