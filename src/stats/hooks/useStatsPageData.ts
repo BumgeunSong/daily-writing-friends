@@ -4,24 +4,14 @@ import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext
 import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext"
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useCommentingStats } from "@/stats/hooks/useCommentingStats"
+import { useCurrentUserCommentingStats } from "@/stats/hooks/useCurrentUserCommentingStats"
 import { useCurrentUserWritingStats } from "@/stats/hooks/useCurrentUserWritingStats"
 import { useWritingStats } from "@/stats/hooks/useWritingStats"
+import { mergeCurrentUserFirst } from "@/stats/utils/mergeStatsUtils"
 import { getBlockedByUsers } from '@/user/api/user';
 import { useUserInBoard } from "@/user/hooks/useUserInBoard"
 
 type TabType = 'posting' | 'commenting';
-
-/**
- * Merges current user stats at the front of the list
- */
-function mergeCurrentUserFirst<T>(
-    currentUserStats: T | undefined,
-    otherUsersStats: T[] | undefined
-): T[] | undefined {
-    if (!otherUsersStats) return undefined;
-    if (!currentUserStats) return otherUsersStats;
-    return [currentUserStats, ...otherUsersStats];
-}
 
 export function useStatsPageData(_tab: TabType) {
     const queryClient = useQueryClient();
@@ -46,8 +36,12 @@ export function useStatsPageData(_tab: TabType) {
     // Priority: Load current user stats first (fast path)
     const {
         data: currentUserWritingStats,
-        isLoading: isLoadingCurrentUserStats,
+        isLoading: isLoadingCurrentUserWritingStats,
     } = useCurrentUserWritingStats(currentUserData);
+    const {
+        data: currentUserCommentingStats,
+        isLoading: isLoadingCurrentUserCommentingStats,
+    } = useCurrentUserCommentingStats(currentUserData);
 
     // Then load other users' stats (excluding current user to avoid duplicate fetch)
     const {
@@ -63,18 +57,21 @@ export function useStatsPageData(_tab: TabType) {
 
     // Merge current user stats (priority loaded) with other users' stats
     const writingStats = mergeCurrentUserFirst(currentUserWritingStats, otherUsersWritingStats);
-    const commentingStats = otherUsersCommentingStats;
+    const commentingStats = mergeCurrentUserFirst(currentUserCommentingStats, otherUsersCommentingStats);
 
     const isLoading = isLoadingUsers || isLoadingStats || isLoadingCommenting;
-    const isCurrentUserReady = !isLoadingCurrentUserStats && !!currentUserWritingStats;
+    const isCurrentUserWritingReady = !isLoadingCurrentUserWritingStats && !!currentUserWritingStats;
+    const isCurrentUserCommentingReady = !isLoadingCurrentUserCommentingStats && !!currentUserCommentingStats;
     const error = usersError || statsError || commentingError;
     // 통계 새로고침 핸들러
     const handleRefreshStats = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        // 2. 통계 관련 쿼리 캐시 무효화
+        // 통계 관련 쿼리 캐시 무효화
         queryClient.invalidateQueries(['activeUsers', activeBoardId]);
         queryClient.invalidateQueries(['writingStatsV2']);
         queryClient.invalidateQueries(['commentingStats']);
+        queryClient.invalidateQueries(['currentUserWritingStats']);
+        queryClient.invalidateQueries(['currentUserCommentingStats']);
     };
     // Stats 탭 핸들러 등록
     useRegisterTabHandler('Stats', handleRefreshStats);
@@ -83,7 +80,9 @@ export function useStatsPageData(_tab: TabType) {
         otherUsersCount: otherUsers.length,
         currentUserId: currentUser?.uid,
         currentUserWritingStats,
-        isCurrentUserReady,
+        currentUserCommentingStats,
+        isCurrentUserWritingReady,
+        isCurrentUserCommentingReady,
         writingStats,
         commentingStats,
         isLoading,
