@@ -34,7 +34,9 @@ export default function StatsPage() {
     commentingStats,
     currentUserId,
     currentUserWritingStats,
-    isCurrentUserReady,
+    currentUserCommentingStats,
+    isCurrentUserWritingReady,
+    isCurrentUserCommentingReady,
     otherUsersCount,
     isLoading,
     error,
@@ -45,7 +47,7 @@ export default function StatsPage() {
     return <StatsMaintenanceState />;
   }
 
-  const showInitialLoading = isLoading && !isCurrentUserReady;
+  const showInitialLoading = isLoading && !isCurrentUserWritingReady && !isCurrentUserCommentingReady;
 
   if (error) {
     return <StatsErrorState error={error instanceof Error ? error : new Error('알 수 없는 오류')} />;
@@ -87,7 +89,7 @@ export default function StatsPage() {
                       stats={writingStats || []}
                       currentUserStats={currentUserWritingStats}
                       currentUserId={currentUserId}
-                      isCurrentUserReady={isCurrentUserReady}
+                      isCurrentUserReady={isCurrentUserWritingReady}
                       isLoadingOthers={isLoading}
                       otherUsersCount={otherUsersCount}
                       onCardClick={(userId) => navigate(`/user/${userId}`)}
@@ -99,7 +101,11 @@ export default function StatsPage() {
                   <React.Suspense fallback={<StatsLoadingState />}>
                     <UserCommentStatsCardList
                       stats={commentingStats || []}
+                      currentUserStats={currentUserCommentingStats}
                       currentUserId={currentUserId}
+                      isCurrentUserReady={isCurrentUserCommentingReady}
+                      isLoadingOthers={isLoadingCommenting}
+                      otherUsersCount={otherUsersCount}
                       onCardClick={(userId) => navigate(`/user/${userId}`)}
                     />
                   </React.Suspense>
