@@ -3,9 +3,13 @@ import { firestore } from '@/firebase';
 import { Posting } from '@/post/model/Posting';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { mapDocumentToPosting } from '@/shared/utils/postingUtils';
+import { createUserInfo } from '@/stats/utils/userInfoUtils';
 import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
 import { fetchUser } from '@/user/api/user';
 import { User } from '@/user/model/User';
+
+// Re-export for backward compatibility
+export { createUserInfo };
 
 /**
  * Fetches posting data for a specific user
@@ -33,18 +37,6 @@ export async function fetchCommentingData(userId: string, numberOfDays: number =
     return { commentings, replyings };
 }
 
-/**
- * Creates a standardized user info object from User model
- */
-export function createUserInfo(user: User) {
-    return {
-        id: user.uid,
-        nickname: user.nickname || null,
-        realname: user.realName || null,
-        profilePhotoURL: user.profilePhotoURL || null,
-        bio: user.bio || null
-    };
-}
 
 /**
  * Calculates date range from working days array
