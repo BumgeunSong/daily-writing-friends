@@ -9,7 +9,18 @@ import type { CommentingContribution } from '@/stats/utils/commentingContributio
 import type { User } from '@/user/model/User';
 import type { Commenting } from '@/user/model/Commenting';
 import type { Replying } from '@/user/model/Replying';
-import { Timestamp } from 'firebase/firestore';
+
+// Mock Timestamp to avoid Firebase SDK initialization
+const createMockTimestamp = (date: Date) => ({
+  toDate: () => date,
+  seconds: Math.floor(date.getTime() / 1000),
+  nanoseconds: (date.getTime() % 1000) * 1000000,
+});
+
+const MockTimestamp = {
+  now: () => createMockTimestamp(new Date()),
+  fromDate: (date: Date) => createMockTimestamp(date),
+};
 
 function createMockContribution(
   countOfCommentAndReplies: number | null,
@@ -232,8 +243,8 @@ describe('commentingStatsUtils', () => {
         profilePhotoURL: 'https://example.com/photo.jpg',
         bio: 'Test bio',
         email: 'test@example.com',
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
+        createdAt: MockTimestamp.now(),
+        updatedAt: MockTimestamp.now(),
       } as unknown as User;
     }
 
@@ -243,7 +254,7 @@ describe('commentingStatsUtils', () => {
         id: 'c1',
         postId: 'p1',
         userId: 'u1',
-        createdAt: Timestamp.fromDate(date),
+        createdAt: MockTimestamp.fromDate(date),
       } as unknown as Commenting;
     }
 
@@ -253,7 +264,7 @@ describe('commentingStatsUtils', () => {
         id: 'r1',
         commentId: 'c1',
         userId: 'u1',
-        createdAt: Timestamp.fromDate(date),
+        createdAt: MockTimestamp.fromDate(date),
       } as unknown as Replying;
     }
 
