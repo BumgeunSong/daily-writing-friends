@@ -1,4 +1,24 @@
+import { createUserInfo } from '@/stats/api/stats';
 import type { UserCommentingStats } from '@/stats/hooks/useCommentingStats';
+import { aggregateCommentingContributions } from '@/stats/utils/commentingContributionUtils';
+import type { Commenting } from '@/user/model/Commenting';
+import type { Replying } from '@/user/model/Replying';
+import type { User } from '@/user/model/User';
+
+/**
+ * Creates UserCommentingStats from raw data (pure function)
+ */
+export function createUserCommentingStats(
+  user: User,
+  commentings: Commenting[],
+  replyings: Replying[],
+  workingDays: Date[],
+): UserCommentingStats {
+  return {
+    user: createUserInfo(user),
+    contributions: aggregateCommentingContributions(commentings, replyings, workingDays),
+  };
+}
 
 /**
  * Gets total comment and reply count from contributions

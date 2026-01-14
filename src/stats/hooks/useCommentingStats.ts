@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
-import { createUserInfo, getDateRange } from '@/stats/api/stats';
-import { aggregateCommentingContributions, CommentingContribution } from '@/stats/utils/commentingContributionUtils';
-import { sortCommentingStats } from '@/stats/utils/commentingStatsUtils';
+import { getDateRange } from '@/stats/api/stats';
+import { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
+import { createUserCommentingStats, sortCommentingStats } from '@/stats/utils/commentingStatsUtils';
 import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
 import { User } from '@/user/model/User';
 
@@ -40,10 +40,7 @@ async function fetchSingleUserCommentingStats(
       fetchUserReplyingsByDateRange(user.uid, dateRange.start, dateRange.end),
     ]);
 
-    return {
-      user: createUserInfo(user),
-      contributions: aggregateCommentingContributions(commentings, replyings, workingDays),
-    };
+    return createUserCommentingStats(user, commentings, replyings, workingDays);
   } catch (error) {
     console.error('Error fetching user commenting stats:', error);
     return null;
