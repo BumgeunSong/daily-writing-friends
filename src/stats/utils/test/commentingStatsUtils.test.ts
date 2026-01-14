@@ -1,10 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import {
+  createUserCommentingStats,
   getTotalCommentCount,
   sortCommentingStats,
 } from '../commentingStatsUtils';
 import type { UserCommentingStats } from '@/stats/hooks/useCommentingStats';
 import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
+import type { User } from '@/user/model/User';
+import type { Commenting } from '@/user/model/Commenting';
+import type { Replying } from '@/user/model/Replying';
+import { Timestamp } from 'firebase/firestore';
 
 function createMockContribution(
   countOfCommentAndReplies: number | null,
@@ -215,6 +220,83 @@ describe('commentingStatsUtils', () => {
 
       expect(result).toHaveLength(3);
       expect(result.every((s) => getTotalCommentCount(s.contributions) === 20)).toBe(true);
+    });
+  });
+
+  describe('createUserCommentingStats', () => {
+    function createMockUser(uid: string, nickname: string): User {
+      return {
+        uid,
+        nickname,
+        realName: 'Real Name',
+        profilePhotoURL: 'https://example.com/photo.jpg',
+        bio: 'Test bio',
+        email: 'test@example.com',
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      } as unknown as User;
+    }
+
+    function createMockCommenting(dateStr: string): Commenting {
+      const date = new Date(dateStr);
+      return {
+        id: 'c1',
+        postId: 'p1',
+        userId: 'u1',
+        createdAt: Timestamp.fromDate(date),
+      } as unknown as Commenting;
+    }
+
+    function createMockReplying(dateStr: string): Replying {
+      const date = new Date(dateStr);
+      return {
+        id: 'r1',
+        commentId: 'c1',
+        userId: 'u1',
+        createdAt: Timestamp.fromDate(date),
+      } as unknown as Replying;
+    }
+
+    it('should create stats with user info and aggregated contributions', () => {
+      const user = createMockUser('user-123', 'TestUser');
+      const commentings = [createMockCommenting('2025-01-15')];
+      const replyings = [createMockReplying('2025-01-15')];
+      const workingDays = [new Date('2025-01-15')];
+
+      const result = createUserCommentingStats(user, commentings, replyings, workingDays);
+
+      expect(result.user.id).toBe('user-123');
+      expect(result.user.nickname).toBe('TestUser');
+      expect(result.contributions).toHaveLength(1);
+      expect(result.contributions[0].countOfCommentAndReplies).toBe(2);
+    });
+
+    it('should handle empty commentings and replyings', () => {
+      const user = createMockUser('user-123', 'TestUser');
+      const workingDays = [new Date('2025-01-15')];
+
+      const result = createUserCommentingStats(user, [], [], workingDays);
+
+      expect(result.user.id).toBe('user-123');
+      expect(result.contributions).toHaveLength(1);
+      expect(result.contributions[0].countOfCommentAndReplies).toBeNull();
+    });
+
+    it('should aggregate multiple days correctly', () => {
+      const user = createMockUser('user-123', 'TestUser');
+      const commentings = [
+        createMockCommenting('2025-01-14'),
+        createMockCommenting('2025-01-15'),
+        createMockCommenting('2025-01-15'),
+      ];
+      const replyings = [createMockReplying('2025-01-14')];
+      const workingDays = [new Date('2025-01-14'), new Date('2025-01-15')];
+
+      const result = createUserCommentingStats(user, commentings, replyings, workingDays);
+
+      expect(result.contributions).toHaveLength(2);
+      expect(result.contributions[0].countOfCommentAndReplies).toBe(2); // 1 comment + 1 reply on 14th
+      expect(result.contributions[1].countOfCommentAndReplies).toBe(2); // 2 comments on 15th
     });
   });
 });
