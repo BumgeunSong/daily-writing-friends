@@ -50,6 +50,21 @@ cd functions && npm run build
 cd functions && npm test
 ```
 
+### Running TypeScript Scripts
+
+This project uses **ESM modules** (`"type": "module"` in package.json). Use `tsx` instead of `ts-node`:
+
+```bash
+# ✅ CORRECT - use tsx for ESM compatibility
+npx tsx scripts/migration/export-firestore.ts
+
+# ❌ WRONG - ts-node fails with ESM modules
+npx ts-node scripts/migration/export-firestore.ts
+# Error: Unknown file extension ".ts"
+```
+
+**Why:** `ts-node` requires additional configuration for ESM. `tsx` works out of the box with ESM modules.
+
 ## CI/CD Pipeline
 
 Pull requests trigger these checks automatically:
