@@ -70,3 +70,4 @@ scripts/agents/cache/
 
 # Test Coverage
 /coverage/
+data/*
