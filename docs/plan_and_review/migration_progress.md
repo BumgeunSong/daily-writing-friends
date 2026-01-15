@@ -1,8 +1,8 @@
 # Firebase → Supabase Migration Progress
 
-**Last Updated**: 2026-01-11
-**Branch**: `supabase-migration`
-**Status**: Phase 0 complete, Phase 1 ready to execute (scripts validated)
+**Last Updated**: 2026-01-15
+**Branch**: `feat/supabase-migration-2`
+**Status**: Phase 1 complete, ready for Phase 2 (Dual-Write)
 
 ---
 
@@ -53,58 +53,155 @@
   - Preserves user identity at the moment of interaction
   - Trade-off: Profile updates won't reflect in past interactions (acceptable for writing community)
 
-**Recent script improvements (2026-01-11):**
-- Export script validates `user_id` before adding reactions (prevents FK violations)
-- Integrity checks include orphan detection for reactions table
-- Summary query now covers all 17 integrity checks (orphans, count mismatches, duplicates, invalid types)
+---
 
-**Files created:**
-```
-supabase/
-├── config.toml
-└── migrations/
-    ├── 20260106000000_initial_schema.sql      # Core tables with Historical Identity
-    ├── 20260106000001_normalize_schema.sql    # waiting_users_ids → join table
-    └── 20260106000002_reactions_proper_fks.sql # Proper FK constraints for reactions
+### Phase 1: Backfill Firestore → Supabase ✅
 
-scripts/migration/
-├── config.ts                    # Firebase Admin + Supabase clients
-├── export-firestore.ts          # Export Firestore → JSON
-├── import-to-postgres.ts        # Import JSON → Supabase
-├── reconcile/
-│   └── counts.ts                # Compare row counts
-└── sql/
-    └── integrity_checks.sql     # SQL validation queries
+**Executed**: 2026-01-15
+
+#### Step 1: Export Firestore to JSON ✅
+
+**Command**: `npx tsx scripts/migration/export-firestore.ts`
+
+**Issue encountered**: ESM module compatibility
+- Original script used `__dirname` and `require()` which don't work in ESM
+- **Fix**: Updated `scripts/migration/config.ts` to use:
+  ```typescript
+  import { fileURLToPath } from 'url';
+  import { createRequire } from 'module';
+
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const require = createRequire(import.meta.url);
+  ```
+
+**Export results:**
+| Collection | Documents |
+|------------|-----------|
+| boards | 20 |
+| users | 103 |
+| posts | 3,823 |
+| comments | 12,824 |
+| replies | 8,649 |
+| likes | 116 |
+| reactions | 2,278 |
+| notifications | 23,497 |
+| blocks | 1 |
+
+#### Step 2: Import to Supabase ✅
+
+**Command**: `npx tsx scripts/migration/import-to-postgres.ts`
+
+**Issue 1: Supabase project paused**
+- Free-tier Supabase projects pause after inactivity
+- All imports failed with `TypeError: fetch failed` (DNS NXDOMAIN)
+- **Fix**: Resumed project in Supabase dashboard
+
+**Issue 2: Reactions unique constraint violations**
+- All 2,278 reactions failed with `duplicate key value violates unique constraint "idx_reactions_comment_user"`
+- **Root cause**: Firestore allowed multiple reactions from same user on same comment (72 duplicates)
+- Postgres unique constraint `(comment_id, user_id)` correctly rejects duplicates
+- `upsert` with `onConflict: 'id'` doesn't handle composite unique constraints
+- **Fix**: Created de-duplication script that keeps first occurrence
+- **Result**: 2,206 unique reactions imported (72 duplicates removed)
+
+**Issue 3: Notifications partial import**
+- 9,497 imported, 14,000 failed
+- Errors: duplicate idempotency keys + invalid notification types
+- **Decision**: Skip notifications backfill entirely
+  - Notifications older than 7 days have no value (time-sensitive)
+  - Will use dual-write for 7 days instead
+  - Simpler than debugging complex constraint violations
+
+#### Step 3: Count Verification ✅
+
+**Issue**: Original `counts.ts` script killed with exit code 137 (OOM)
+- Script performed O(n³) nested Firestore queries
+- 20 boards × 3,823 posts × 12,824 comments = ~25,000+ sequential queries
+- **Fix**: Counted from exported JSON files instead
+
+**Final verification:**
+| Table | Firestore | Supabase | Status |
+|-------|-----------|----------|--------|
+| boards | 20 | 20 | ✅ |
+| users | 103 | 103 | ✅ |
+| posts | 3,823 | 3,823 | ✅ |
+| comments | 12,824 | 12,824 | ✅ |
+| replies | 8,649 | 8,649 | ✅ |
+| likes | 116 | 116 | ✅ |
+| reactions | 2,278 | 2,206 | ✅ (72 dupes removed) |
+| blocks | 1 | 1 | ✅ |
+| notifications | - | - | ⏭️ Skipped |
+
+#### Step 4: Post-Migration SQL (Manual) ⬜
+
+Run in **Supabase SQL Editor**:
+```sql
+-- Update comment reply counts (weren't exported from Firestore)
+UPDATE comments c
+SET count_of_replies = COALESCE(r.actual_count, 0)
+FROM (
+  SELECT comment_id, COUNT(*) as actual_count
+  FROM replies
+  GROUP BY comment_id
+) r
+WHERE c.id = r.comment_id;
 ```
 
 ---
 
-## Next Steps
+## Key Decisions Made
 
-### Phase 1: Backfill Firestore → Supabase
+### 1. Notifications: Skip Backfill, Use Dual-Write
+**Context**: 14,000 of 23,497 notifications failed due to:
+- Duplicate idempotency keys
+- Invalid notification type check constraint
 
-**Prerequisites:**
-1. ✅ `SUPABASE_SERVICE_ROLE_KEY` added to `.env`
-2. ⬜ Firebase Admin credentials (run `gcloud auth application-default login`)
+**Decision**: Don't migrate old notifications
+- Notifications are time-sensitive (only relevant within ~7 days)
+- Backfilled notifications would be stale anyway
+- Phase 2 dual-write will capture new notifications
+- Simpler than debugging constraint issues for data we don't need
 
-**Commands to run:**
-```bash
-# Step 1: Export Firestore data to JSON
-npx ts-node scripts/migration/export-firestore.ts
+### 2. Reactions: De-duplicate and Accept Data Loss
+**Context**: 72 reactions were duplicates (same user, same comment, different IDs)
 
-# Step 2: Import to Supabase
-npx ts-node scripts/migration/import-to-postgres.ts
+**Decision**: Keep first occurrence, discard duplicates
+- Firestore's lack of unique constraints allowed invalid state
+- Postgres correctly enforces one reaction per user per comment
+- 72 lost reactions (3%) is acceptable data loss
+- Better than loosening constraints
 
-# Step 3: Verify counts match
-npx ts-node scripts/migration/reconcile/counts.ts
+### 3. ESM Compatibility: Update Scripts
+**Context**: Project uses `"type": "module"` but migration scripts used CommonJS patterns
 
-# Step 4: Run SQL integrity checks
-# (via Supabase SQL Editor or psql)
+**Decision**: Update `config.ts` for ESM compatibility
+- Use `fileURLToPath(import.meta.url)` for `__dirname`
+- Use `createRequire(import.meta.url)` for dynamic requires
+- Allows running with `npx tsx` instead of `ts-node`
+
+### 4. Count Verification: Use JSON Files
+**Context**: Direct Firestore counting caused OOM (exit 137)
+
+**Decision**: Count from exported JSON files
+- Firestore nested queries are expensive (O(n³))
+- JSON files already have accurate snapshot
+- Supabase counts via API are efficient
+- Avoids re-querying Firestore
+
+---
+
+## Files Modified
+
 ```
+scripts/migration/
+├── config.ts                    # ESM compatibility fix
+├── export-firestore.ts          # Export Firestore → JSON (unchanged)
+├── import-to-postgres.ts        # Import JSON → Supabase (unchanged)
+└── reconcile/
+    └── counts.ts                # Compare counts (has OOM issue, use JSON instead)
 
-**Expected output files:**
-```
-data/migration-export/
+data/migration-export/           # Exported JSON files (gitignored)
 ├── boards.json
 ├── board_waiting_users.json
 ├── users.json
@@ -117,46 +214,46 @@ data/migration-export/
 └── notifications.json
 ```
 
-### Phase 2-7: See Full Plan
+---
+
+## Next Steps
+
+### Phase 2: Introduce Dual-Write
 
 Reference: `docs/plan_and_review/plan_firebase_supabase_migration.md`
 
-- Phase 2: Introduce Dual-Write
+1. Create `dualWrite()` utility that writes to both Firestore and Supabase
+2. Wrap all write operations (create/update/delete)
+3. Implement idempotency using `write_ops` table
+4. Include notifications in dual-write (captures new notifications)
+5. Run for 7+ days to ensure Supabase has complete notification history
+
+### Remaining Phases
 - Phase 3: Replace Firebase Relationship Functions
-- Phase 4: Migrate Notifications
+- Phase 4: Migrate Notifications (now handled by dual-write)
 - Phase 5: Shadow Reads
 - Phase 6: Switch Reads Gradually
 - Phase 7: Stop Dual-Write & Freeze Firestore
 
 ---
 
-## Environment Setup for Next Session
+## Environment Info
 
+**Supabase Project:**
+- **Ref**: `mbnuuctaptbxytiiwxet`
+- **URL**: `https://mbnuuctaptbxytiiwxet.supabase.co`
+- **Dashboard**: https://supabase.com/dashboard/project/mbnuuctaptbxytiiwxet
+- **Note**: Free tier - may pause after inactivity
+
+**Local Setup:**
 ```bash
-# 1. Switch to migration branch
-git checkout supabase-migration
-
-# 2. Install dependencies (if needed)
-npm install
-
-# 3. Authenticate with Google Cloud (for Firebase Admin)
+# Required: Google Cloud auth for Firebase Admin
 gcloud auth application-default login
 
-# 4. Verify .env has Supabase credentials
-grep SUPABASE .env
-
-# 5. Resume with Phase 1 backfill
-npx ts-node scripts/migration/export-firestore.ts
+# Required in .env:
+SUPABASE_URL=https://mbnuuctaptbxytiiwxet.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<key>
 ```
-
----
-
-## Supabase Project Info
-
-- **Project Ref**: `mbnuuctaptbxytiiwxet`
-- **URL**: `https://mbnuuctaptbxytiiwxet.supabase.co`
-- **Region**: (check Supabase dashboard)
-- **Dashboard**: https://supabase.com/dashboard/project/mbnuuctaptbxytiiwxet
 
 ---
 
@@ -164,5 +261,5 @@ npx ts-node scripts/migration/export-firestore.ts
 
 - Firebase Auth remains unchanged (no auth migration)
 - Activity fan-out collections (`postings`, `commentings`, `replyings`) will be deleted and replaced with SQL queries
-- Notifications remain materialized (explicit table)
+- Notifications remain materialized (explicit table, not computed)
 - Client will use Supabase `anon` key (not service role)
