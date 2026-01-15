@@ -31,7 +31,7 @@ Run incremental sync script to find and migrate missing records.
 
 ```typescript
 // Find records created after export timestamp
-const EXPORT_TIMESTAMP = new Date('2026-01-15T21:52:00Z');
+const EXPORT_TIMESTAMP = new Date('2026-01-15T12:52:00Z'); // UTC (21:52 KST)
 
 // For each collection:
 // 1. Query Firestore for records with createdAt > EXPORT_TIMESTAMP
