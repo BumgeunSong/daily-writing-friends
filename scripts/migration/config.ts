@@ -14,6 +14,14 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { createRequire } from 'module';
+
+// ESM-compatible __dirname and require
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const require = createRequire(import.meta.url);
 
 // Load environment variables from root .env
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
@@ -28,7 +36,6 @@ function initializeFirebase() {
   const serviceAccountPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
   if (serviceAccountPath) {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const serviceAccount = require(serviceAccountPath);
     initializeApp({
       credential: cert(serviceAccount),
