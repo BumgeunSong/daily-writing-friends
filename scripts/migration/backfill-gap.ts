@@ -171,7 +171,7 @@ async function findRecentReactions(): Promise<GapRecord[]> {
 
         for (const reactionDoc of commentReactionsSnapshot.docs) {
           const data = reactionDoc.data();
-          if (!data.userId) continue;
+          if (!data.reactionUser?.userId) continue;
 
           records.push({
             id: reactionDoc.id,
@@ -196,7 +196,7 @@ async function findRecentReactions(): Promise<GapRecord[]> {
 
           for (const reactionDoc of replyReactionsSnapshot.docs) {
             const data = reactionDoc.data();
-            if (!data.userId) continue;
+            if (!data.reactionUser?.userId) continue;
 
             records.push({
               id: reactionDoc.id,
@@ -342,13 +342,19 @@ function mapReactionToSupabase(
   commentId: string | null,
   replyId: string | null
 ): Record<string, unknown> {
+  const reactionUser = (data.reactionUser || {}) as {
+    userId?: string;
+    userName?: string;
+    userProfileImage?: string | null;
+  };
+
   return {
     id: reactionId,
     comment_id: commentId,
     reply_id: replyId,
-    user_id: data.userId,
-    user_name: data.userName || '',
-    user_profile_image: data.userProfileImage || null,
+    user_id: reactionUser.userId ?? data.userId,
+    user_name: reactionUser.userName ?? data.userName ?? '',
+    user_profile_image: reactionUser.userProfileImage ?? data.userProfileImage ?? null,
     reaction_type: data.reactionType || data.content || null,
     created_at: convertTimestamp(data.createdAt) || new Date().toISOString(),
   };
