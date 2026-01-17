@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { Draft } from '@/draft/model/Draft';
 import { firestore } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
+import { dualWrite } from '@/shared/api/dualWrite';
+import { getSupabaseClient } from '@/shared/api/supabaseClient';
 
 export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: string }, userId: string): Promise<Draft> {
   if (!userId?.trim()) {
@@ -33,6 +35,24 @@ export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: st
 
   try {
     await trackedFirebase.setDoc(draftRef, draftData);
+
+    // Dual-write to Supabase
+    await dualWrite({
+      entityType: 'draft',
+      operationType: 'create',
+      entityId: draftId,
+      supabaseWrite: async () => {
+        const supabase = getSupabaseClient();
+        await supabase.from('drafts').upsert({
+          id: draftId,
+          user_id: userId,
+          board_id: draft.boardId,
+          title: draft.title,
+          content: draft.content,
+          saved_at: now.toDate().toISOString(),
+        });
+      },
+    });
   } catch (error) {
     throw new Error(`Failed to save draft: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
@@ -69,7 +89,18 @@ export async function getDraftById(userId: string, draftId: string): Promise<Dra
 
 export async function deleteDraft(userId: string, draftId: string): Promise<void> {
   const draftRef = doc(firestore, 'users', userId, 'drafts', draftId);
-  return trackedFirebase.deleteDoc(draftRef);
+  await trackedFirebase.deleteDoc(draftRef);
+
+  // Dual-write to Supabase
+  await dualWrite({
+    entityType: 'draft',
+    operationType: 'delete',
+    entityId: draftId,
+    supabaseWrite: async () => {
+      const supabase = getSupabaseClient();
+      await supabase.from('drafts').delete().eq('id', draftId);
+    },
+  });
 }
 
 

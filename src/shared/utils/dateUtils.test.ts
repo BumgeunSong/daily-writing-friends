@@ -148,8 +148,9 @@ describe('dateUtils', () => {
     });
 
     it('should return "어제" for yesterday', () => {
-      const now = new Date('2025-01-15T23:00:00Z');
-      const date = new Date('2025-01-14T10:00:00Z'); // More than 24 hours ago, but yesterday
+      // Use dates that are "yesterday" in both UTC and KST timezones
+      const now = new Date('2025-01-15T14:00:00Z'); // Jan 15 14:00 UTC = Jan 15 23:00 KST
+      const date = new Date('2025-01-14T12:00:00Z'); // Jan 14 12:00 UTC = Jan 14 21:00 KST (26 hours ago)
 
       expect(getRelativeTime(date, now)).toBe('어제');
     });

@@ -6,6 +6,7 @@ import admin from '../shared/admin';
 import { Comment } from '../shared/types/Comment';
 import { Notification, NotificationType } from '../shared/types/Notification';
 import { Reply } from '../shared/types/Reply';
+import { dualWriteServer, getSupabaseAdmin } from '../shared/supabaseAdmin';
 
 export const onReplyCreatedOnComment = onDocumentCreated(
   'boards/{boardId}/posts/{postId}/comments/{commentId}/replies/{replyId}',
@@ -37,6 +38,7 @@ export const onReplyCreatedOnComment = onDocumentCreated(
     if (
       shouldGenerateNotification(NotificationType.REPLY_ON_COMMENT, commentAuthorId, replyAuthorId)
     ) {
+      const timestamp = Timestamp.now();
       const notification: Notification = {
         type: NotificationType.REPLY_ON_COMMENT,
         fromUserId: replyAuthorId,
@@ -46,14 +48,38 @@ export const onReplyCreatedOnComment = onDocumentCreated(
         commentId: commentId,
         replyId: replyId,
         message: message,
-        timestamp: Timestamp.now(),
+        timestamp: timestamp,
         read: false,
       };
 
-      await admin
+      const docRef = await admin
         .firestore()
         .collection(`users/${commentAuthorId}/notifications`)
         .add(notification);
+
+      // Dual-write to Supabase
+      await dualWriteServer(
+        'notification',
+        'create',
+        docRef.id,
+        async () => {
+          const supabase = getSupabaseAdmin();
+          await supabase.from('notifications').insert({
+            id: docRef.id,
+            user_id: commentAuthorId,
+            type: NotificationType.REPLY_ON_COMMENT,
+            from_user_id: replyAuthorId,
+            from_user_profile_image: replyAuthorProfile,
+            board_id: boardId,
+            post_id: postId,
+            comment_id: commentId,
+            reply_id: replyId,
+            message: message,
+            created_at: timestamp.toDate().toISOString(),
+            is_read: false,
+          });
+        }
+      );
     }
   },
 );

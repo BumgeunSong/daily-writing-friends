@@ -6,6 +6,8 @@ import { doc, serverTimestamp, collection, where, query, Timestamp, writeBatch, 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, storage } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
+import { dualWrite, dualWriteBatch } from '@/shared/api/dualWrite';
+import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
 import { User as FirebaseUser } from 'firebase/auth';
 
@@ -24,6 +26,26 @@ export async function createUser(data: User): Promise<void> {
         ...data,
         updatedAt: serverTimestamp(),
     });
+
+    // Dual-write to Supabase
+    await dualWrite({
+        entityType: 'user',
+        operationType: 'create',
+        entityId: data.uid,
+        supabaseWrite: async () => {
+            const supabase = getSupabaseClient();
+            await supabase.from('users').insert({
+                id: data.uid,
+                real_name: data.realName || null,
+                nickname: data.nickname || null,
+                email: data.email || null,
+                profile_photo_url: data.profilePhotoURL || null,
+                bio: data.bio || null,
+                phone_number: data.phoneNumber || null,
+                referrer: data.referrer || null,
+            });
+        },
+    });
 }
 
 // Firestore의 User 데이터 수정
@@ -33,12 +55,44 @@ export async function updateUser(uid: string, data: Partial<User>): Promise<void
         ...data,
         updatedAt: serverTimestamp(),
     });
+
+    // Dual-write to Supabase
+    await dualWrite({
+        entityType: 'user',
+        operationType: 'update',
+        entityId: uid,
+        supabaseWrite: async () => {
+            const supabase = getSupabaseClient();
+            const updateData: Record<string, unknown> = {};
+            if (data.realName !== undefined) updateData.real_name = data.realName;
+            if (data.nickname !== undefined) updateData.nickname = data.nickname;
+            if (data.email !== undefined) updateData.email = data.email;
+            if (data.profilePhotoURL !== undefined) updateData.profile_photo_url = data.profilePhotoURL;
+            if (data.bio !== undefined) updateData.bio = data.bio;
+            if (data.phoneNumber !== undefined) updateData.phone_number = data.phoneNumber;
+            if (data.referrer !== undefined) updateData.referrer = data.referrer;
+            if (Object.keys(updateData).length > 0) {
+                await supabase.from('users').update(updateData).eq('id', uid);
+            }
+        },
+    });
 }
 
 // Firestore의 User 데이터 삭제
 export async function deleteUser(uid: string): Promise<void> {
     const userDocRef = doc(firestore, 'users', uid);
     await trackedFirebase.deleteDoc(userDocRef);
+
+    // Dual-write to Supabase
+    await dualWrite({
+        entityType: 'user',
+        operationType: 'delete',
+        entityId: uid,
+        supabaseWrite: async () => {
+            const supabase = getSupabaseClient();
+            await supabase.from('users').delete().eq('id', uid);
+        },
+    });
 }
 
 // 특정 boardIds에 write 권한이 있는 모든 사용자 데이터 가져오기
@@ -165,6 +219,20 @@ export async function blockUser(blockerId: string, blockedId: string) {
   batch.set(doc(firestore, `users/${blockerId}/blockedUsers/${blockedId}`), { blockedAt: serverTimestamp() });
   batch.set(doc(firestore, `users/${blockedId}/blockedByUsers/${blockerId}`), { blockedAt: serverTimestamp() });
   await batch.commit();
+
+  // Dual-write to Supabase
+  await dualWrite({
+    entityType: 'block',
+    operationType: 'create',
+    entityId: `${blockerId}_${blockedId}`,
+    supabaseWrite: async () => {
+      const supabase = getSupabaseClient();
+      await supabase.from('blocks').insert({
+        blocker_id: blockerId,
+        blocked_id: blockedId,
+      });
+    },
+  });
 }
 
 /** 차단 해제 */
@@ -173,6 +241,20 @@ export async function unblockUser(blockerId: string, blockedId: string) {
   batch.delete(doc(firestore, `users/${blockerId}/blockedUsers/${blockedId}`));
   batch.delete(doc(firestore, `users/${blockedId}/blockedByUsers/${blockerId}`));
   await batch.commit();
+
+  // Dual-write to Supabase
+  await dualWrite({
+    entityType: 'block',
+    operationType: 'delete',
+    entityId: `${blockerId}_${blockedId}`,
+    supabaseWrite: async () => {
+      const supabase = getSupabaseClient();
+      await supabase.from('blocks').delete().match({
+        blocker_id: blockerId,
+        blocked_id: blockedId,
+      });
+    },
+  });
 }
 
 /** 내가 차단한 유저 목록 */

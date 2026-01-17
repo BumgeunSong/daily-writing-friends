@@ -3,12 +3,14 @@ import {
   getDocs,
   getCountFromServer,
   doc,
-  serverTimestamp,
   getDoc,
+  Timestamp,
 } from 'firebase/firestore';
 import { Reply } from '@/comment/model/Reply';
 import { firestore } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
+import { dualWrite } from '@/shared/api/dualWrite';
+import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { buildNotInQuery } from '@/user/api/user';
 
 /**
@@ -24,12 +26,33 @@ export async function createReply(
   userProfileImage: string,
 ) {
   const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
-  await trackedFirebase.addDoc(collection(postRef, 'comments', commentId, 'replies'), {
+  const createdAt = Timestamp.now();
+  const docRef = await trackedFirebase.addDoc(collection(postRef, 'comments', commentId, 'replies'), {
     content,
     userId,
     userName,
     userProfileImage,
-    createdAt: serverTimestamp(),
+    createdAt,
+  });
+
+  // Dual-write to Supabase
+  await dualWrite({
+    entityType: 'reply',
+    operationType: 'create',
+    entityId: docRef.id,
+    supabaseWrite: async () => {
+      const supabase = getSupabaseClient();
+      await supabase.from('replies').insert({
+        id: docRef.id,
+        comment_id: commentId,
+        post_id: postId,
+        user_id: userId,
+        user_name: userName,
+        user_profile_image: userProfileImage,
+        content,
+        created_at: createdAt.toDate().toISOString(),
+      });
+    },
   });
 }
 
@@ -45,6 +68,17 @@ export async function updateReplyToComment(
 ) {
   const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
   await trackedFirebase.updateDoc(doc(postRef, 'comments', commentId, 'replies', replyId), { content });
+
+  // Dual-write to Supabase
+  await dualWrite({
+    entityType: 'reply',
+    operationType: 'update',
+    entityId: replyId,
+    supabaseWrite: async () => {
+      const supabase = getSupabaseClient();
+      await supabase.from('replies').update({ content }).eq('id', replyId);
+    },
+  });
 }
 
 /**
@@ -58,6 +92,17 @@ export async function deleteReplyToComment(
 ) {
   const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
   await trackedFirebase.deleteDoc(doc(postRef, 'comments', commentId, 'replies', replyId));
+
+  // Dual-write to Supabase
+  await dualWrite({
+    entityType: 'reply',
+    operationType: 'delete',
+    entityId: replyId,
+    supabaseWrite: async () => {
+      const supabase = getSupabaseClient();
+      await supabase.from('replies').delete().eq('id', replyId);
+    },
+  });
 }
 
 /**

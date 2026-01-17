@@ -4,6 +4,7 @@ import { shouldGenerateNotification } from './shouldGenerateNotification';
 import admin from '../shared/admin';
 import { Notification, NotificationType } from '../shared/types/Notification';
 import { Like } from '../shared/types/Like';
+import { dualWriteServer, getSupabaseAdmin } from '../shared/supabaseAdmin';
 
 export const onLikeCreatedOnPost = onDocumentCreated(
   'boards/{boardId}/posts/{postId}/likes/{likeId}',
@@ -48,6 +49,7 @@ export const onLikeCreatedOnPost = onDocumentCreated(
 
       // 메시지 생성
       const message = `${likerName}님이 회원님의 글 "${postTitle}"에 공감했어요.`;
+      const timestamp = Timestamp.now();
 
       // 알림 객체 생성
       const notification: Notification = {
@@ -58,12 +60,35 @@ export const onLikeCreatedOnPost = onDocumentCreated(
         postId,
         likeId,
         message,
-        timestamp: Timestamp.now(),
+        timestamp: timestamp,
         read: false,
       };
 
       // 게시글 작성자에게 알림 추가
-      await admin.firestore().collection(`users/${postAuthorId}/notifications`).add(notification);
+      const docRef = await admin.firestore().collection(`users/${postAuthorId}/notifications`).add(notification);
+
+      // Dual-write to Supabase
+      await dualWriteServer(
+        'notification',
+        'create',
+        docRef.id,
+        async () => {
+          const supabase = getSupabaseAdmin();
+          await supabase.from('notifications').insert({
+            id: docRef.id,
+            user_id: postAuthorId,
+            type: NotificationType.LIKE_ON_POST,
+            from_user_id: likerUserId,
+            from_user_profile_image: likerProfile,
+            board_id: boardId,
+            post_id: postId,
+            like_id: likeId,
+            message: message,
+            created_at: timestamp.toDate().toISOString(),
+            is_read: false,
+          });
+        }
+      );
 
       console.info(`Created like notification for user ${postAuthorId} on post ${boardId}/${postId}`);
     } catch (error) {

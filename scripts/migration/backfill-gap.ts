@@ -256,8 +256,8 @@ function mapUserToSupabase(
     bio: data.bio || null,
     phone_number: data.phoneNumber || null,
     referrer: data.referrer || null,
-    created_at: convertTimestamp(data.createdAt),
-    updated_at: convertTimestamp(data.updatedAt),
+    created_at: convertTimestamp(data.createdAt) || new Date().toISOString(),
+    updated_at: convertTimestamp(data.updatedAt) || convertTimestamp(data.createdAt) || new Date().toISOString(),
   };
 }
 
@@ -270,17 +270,19 @@ function mapPostToSupabase(
     id: postId,
     board_id: boardId,
     author_id: data.authorId,
-    author_name: data.authorName || null,
+    author_name: data.authorName || '',
     title: data.title || '',
     content: data.content || '',
     content_json: data.contentJson || null,
-    thumbnail: data.thumbnail || null,
+    thumbnail_image_url: data.thumbnailImageURL || null,
     visibility: data.visibility || 'public',
     count_of_comments: data.countOfComments || 0,
     count_of_replies: data.countOfReplies || 0,
     count_of_likes: data.countOfLikes || 0,
-    created_at: convertTimestamp(data.createdAt),
-    updated_at: convertTimestamp(data.updatedAt),
+    engagement_score: data.engagementScore || 0,
+    week_days_from_first_day: data.weekDaysFromFirstDay ?? null,
+    created_at: convertTimestamp(data.createdAt) || new Date().toISOString(),
+    updated_at: convertTimestamp(data.updatedAt) || convertTimestamp(data.createdAt) || new Date().toISOString(),
   };
 }
 
@@ -293,12 +295,12 @@ function mapCommentToSupabase(
     id: commentId,
     post_id: postId,
     user_id: data.userId,
-    user_name: data.userName || null,
+    user_name: data.userName || '',
     user_profile_image: data.userProfileImage || null,
     content: data.content || '',
     count_of_replies: data.countOfReplies || 0,
-    created_at: convertTimestamp(data.createdAt),
-    updated_at: convertTimestamp(data.updatedAt),
+    created_at: convertTimestamp(data.createdAt) || new Date().toISOString(),
+    updated_at: convertTimestamp(data.updatedAt) || convertTimestamp(data.createdAt) || new Date().toISOString(),
   };
 }
 
@@ -311,11 +313,11 @@ function mapReplyToSupabase(
     id: replyId,
     comment_id: commentId,
     user_id: data.userId,
-    user_name: data.userName || null,
+    user_name: data.userName || '',
     user_profile_image: data.userProfileImage || null,
     content: data.content || '',
-    created_at: convertTimestamp(data.createdAt),
-    updated_at: convertTimestamp(data.updatedAt),
+    created_at: convertTimestamp(data.createdAt) || new Date().toISOString(),
+    updated_at: convertTimestamp(data.updatedAt) || convertTimestamp(data.createdAt) || new Date().toISOString(),
   };
 }
 
@@ -328,9 +330,9 @@ function mapLikeToSupabase(
     id: likeId,
     post_id: postId,
     user_id: data.userId,
-    user_name: data.userName || null,
+    user_name: data.userName || '',
     user_profile_image: data.userProfileImage || null,
-    created_at: convertTimestamp(data.createdAt),
+    created_at: convertTimestamp(data.createdAt) || new Date().toISOString(),
   };
 }
 
@@ -345,10 +347,10 @@ function mapReactionToSupabase(
     comment_id: commentId,
     reply_id: replyId,
     user_id: data.userId,
-    user_name: data.userName || null,
+    user_name: data.userName || '',
     user_profile_image: data.userProfileImage || null,
     reaction_type: data.reactionType || data.content || null,
-    created_at: convertTimestamp(data.createdAt),
+    created_at: convertTimestamp(data.createdAt) || new Date().toISOString(),
   };
 }
 

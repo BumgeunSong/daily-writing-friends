@@ -14,6 +14,8 @@ import {
 import { firestore } from '@/firebase';
 import { Post, PostVisibility, ProseMirrorDoc } from '@/post/model/Post';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
+import { dualWrite } from '@/shared/api/dualWrite';
+import { getSupabaseClient } from '@/shared/api/supabaseClient';
 
 /**
  * Firebase 문서를 Post 객체로 변환하는 유틸리티 함수
@@ -55,6 +57,7 @@ export async function createPost(
   contentJson?: ProseMirrorDoc,
 ): Promise<Post> {
   const postRef = doc(collection(firestore, `boards/${boardId}/posts`));
+  const createdAt = Timestamp.now();
   const post: Post = {
     id: postRef.id,
     boardId,
@@ -66,7 +69,7 @@ export async function createPost(
     countOfComments: 0,
     countOfReplies: 0,
     countOfLikes: 0,
-    createdAt: Timestamp.now(),
+    createdAt,
     visibility: visibility || PostVisibility.PUBLIC,
   };
 
@@ -77,6 +80,32 @@ export async function createPost(
 
   // Use trackedFirebase for online-only write with timeout protection
   await trackedFirebase.setDoc(postRef, post);
+
+  // Dual-write to Supabase
+  await dualWrite({
+    entityType: 'post',
+    operationType: 'create',
+    entityId: post.id,
+    supabaseWrite: async () => {
+      const supabase = getSupabaseClient();
+      await supabase.from('posts').insert({
+        id: post.id,
+        board_id: boardId,
+        author_id: authorId,
+        author_name: authorName,
+        title,
+        content,
+        content_json: contentJson || null,
+        thumbnail_image_url: post.thumbnailImageURL || null,
+        visibility: post.visibility,
+        count_of_comments: 0,
+        count_of_replies: 0,
+        count_of_likes: 0,
+        created_at: createdAt.toDate().toISOString(),
+      });
+    },
+  });
+
   return post;
 }
 
@@ -88,11 +117,12 @@ export const updatePost = async (
   contentJson?: ProseMirrorDoc,
 ): Promise<void> => {
   const postRef = doc(firestore, `boards/${boardId}/posts`, postId);
+  const updatedAt = Timestamp.now();
   const updateData: Partial<Post> = {
     title,
     content,
     thumbnailImageURL: extractFirstImageUrl(content),
-    updatedAt: Timestamp.now(),
+    updatedAt,
   };
 
   // Only update contentJson if provided
@@ -102,6 +132,26 @@ export const updatePost = async (
 
   // Use trackedFirebase for online-only write with timeout protection
   await trackedFirebase.updateDoc(postRef, updateData);
+
+  // Dual-write to Supabase
+  await dualWrite({
+    entityType: 'post',
+    operationType: 'update',
+    entityId: postId,
+    supabaseWrite: async () => {
+      const supabase = getSupabaseClient();
+      const supabaseData: Record<string, unknown> = {
+        title,
+        content,
+        thumbnail_image_url: updateData.thumbnailImageURL || null,
+        updated_at: updatedAt.toDate().toISOString(),
+      };
+      if (contentJson !== undefined) {
+        supabaseData.content_json = contentJson;
+      }
+      await supabase.from('posts').update(supabaseData).eq('id', postId);
+    },
+  });
 };
 
 export const fetchAdjacentPosts = async (boardId: string, currentPostId: string) => {
