@@ -1,9 +1,36 @@
 # Firebase → Supabase Migration Plan
 
 **Project**: Daily Writing Friends
-**Document Version**: 1.0
+**Document Version**: 1.1
 **Created**: 2026-01-04
-**Branch**: `claude/plan-firebase-supabase-migration-AVdVJ`
+**Last Updated**: 2026-01-17
+**Branch**: `feat/supabase-migration-3`
+
+---
+
+## Current Status (Handoff Notes)
+
+**As of 2026-01-17:**
+
+| Phase | Status | Notes |
+|-------|--------|-------|
+| Phase 0: Schema | ✅ Complete | Tables & indexes created in Supabase |
+| Phase 1: Backfill | ✅ Complete | All data migrated except notifications |
+| Phase 2: Dual-Write | ✅ Deployed | Firestore writes sync to Supabase |
+| Phase 3: Remove Fan-out | ⏳ Pending | |
+| Phase 4: Notifications | ⏳ In Progress | Dual-write running, wait 7 days |
+| Phase 5: Shadow Reads | ⏳ Pending | |
+| Phase 6: Switch Reads | ⏳ Pending | |
+| Phase 7: Freeze Firestore | ⏳ Pending | |
+
+**Next Steps:**
+1. Monitor dual-write for 7 days (until 2026-01-24)
+2. Verify data consistency between Firestore and Supabase
+3. Proceed to Phase 3 (remove activity fan-out functions)
+
+**Key Commits:**
+- `6620977` - Phase 2 Dual-Write 구현: Firestore 쓰기 작업을 Supabase에 동기화
+- `af0bf1c` - PR 리뷰 피드백 반영
 
 ---
 
@@ -420,7 +447,9 @@ LIMIT 20;"
 3. `comments`, `replies`
 4. `likes`, `reactions`
 5. `blocks`
-6. `notifications` (optional historical data)
+
+> **Note**: Notifications are NOT backfilled. Stale notifications have no value.
+> New notifications will accumulate via dual-write (Phase 2/4) over 7 days before cutover.
 
 ### Backfill Scripts
 
@@ -847,6 +876,16 @@ pnpm test:e2e --filter my-posts
 
 ## Phase 4: Migrate Notifications
 
+### Strategy: No Backfill, Dual-Write Only
+
+**Key insight**: Stale notifications have no user value. Users don't care about week-old notifications.
+
+**Approach**:
+1. Start dual-write for notifications (as part of Phase 2)
+2. Run dual-write for **7 days** minimum
+3. After 7 days, all relevant notifications exist in Supabase
+4. Switch reads to Supabase, delete Firestore notification data
+
 ### Notification Table Design
 
 The notifications table uses a unique index for idempotency:
@@ -885,7 +924,7 @@ async function createNotification(notification: NotificationInsert): Promise<voi
 }
 ```
 
-### Migration Mapping
+### Dual-Write Mapping
 
 | Firebase Function | Postgres Notification Insert |
 |-------------------|------------------------------|
@@ -899,47 +938,17 @@ async function createNotification(notification: NotificationInsert): Promise<voi
 ### Verification Commands for Phase 4
 
 ```bash
+# Verify dual-write is working (check last 24h of notifications)
+node scripts/migration/reconcile/notifications.ts --hours 24
+
 # Test notification deduplication
 node scripts/tests/notifications_dedupe.test.ts
-
-# Test notification scenarios
-node scripts/tests/notification_scenarios.test.ts
-```
-
-**Notification Scenario Tests** (`scripts/tests/notification_scenarios.test.ts`):
-
-```typescript
-describe('Notification scenarios', () => {
-  it('creates COMMENT_ON_POST notification when comment is created', async () => {
-    // Arrange: create post by user A
-    // Act: user B comments on post
-    // Assert: user A receives one notification of type 'comment_on_post'
-  });
-
-  it('creates LIKE_ON_POST notification when post is liked', async () => {
-    // Arrange: create post by user A
-    // Act: user B likes post
-    // Assert: user A receives one notification of type 'like_on_post'
-  });
-
-  it('creates REPLY_ON_COMMENT notification when comment is replied to', async () => {
-    // Arrange: create post, user A comments
-    // Act: user B replies to comment
-    // Assert: user A receives one notification of type 'reply_on_comment'
-  });
-
-  it('does not create self-notification', async () => {
-    // Arrange: create post by user A
-    // Act: user A comments on own post
-    // Assert: user A receives NO notification
-  });
-});
 ```
 
 **Pass condition:**
-- Each scenario produces exactly the expected notification(s)
+- Dual-write running for 7+ days
+- Recent notifications (last 7 days) exist in both Firestore and Supabase
 - No duplicate notifications from retries
-- Self-actions do not generate notifications
 
 ---
 
@@ -1311,7 +1320,7 @@ Before declaring migration complete:
 - [ ] **Phase 1**: Backfill complete, row counts match, integrity checks pass
 - [ ] **Phase 2**: Dual-write idempotent and stable, no duplicate records
 - [ ] **Phase 3**: Activity fan-out functions removed, no references in code
-- [ ] **Phase 4**: Notifications materialized + idempotent, scenarios pass
+- [ ] **Phase 4**: Notification dual-write running 7+ days, recent notifications in Supabase
 - [ ] **Phase 5**: Shadow reads show no ordering/membership diffs
 - [ ] **Phase 6**: Read paths behind feature flags, all E2E tests pass
 - [ ] **Phase 7**: Rollback switch tested and works
@@ -1320,8 +1329,10 @@ Before declaring migration complete:
 
 | Checkpoint | Status | Date | Notes |
 |------------|--------|------|-------|
-| Backfill complete | | | |
-| Dual-write stable (7+ days) | | | |
+| Backfill complete (excl. notifications) | ✅ | 2026-01-17 | Phase 1 complete |
+| Dual-write deployed | ✅ | 2026-01-17 | Phase 2 deployed, monitoring starts |
+| Dual-write stable (7+ days) | ⏳ | | Target: 2026-01-24 |
+| Notification dual-write (7+ days) | ⏳ | | Target: 2026-01-24, then delete stale |
 | Shadow diff rate < 0.1% | | | |
 | All E2E tests passing | | | |
 | Rollback tested | | | |
