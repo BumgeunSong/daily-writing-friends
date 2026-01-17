@@ -2,12 +2,14 @@ import {
   collection,
   getDocs,
   doc,
-  serverTimestamp,
   getDoc,
+  Timestamp,
 } from 'firebase/firestore';
 import { Comment } from '@/comment/model/Comment';
 import { firestore } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
+import { dualWrite } from '@/shared/api/dualWrite';
+import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { buildNotInQuery } from '@/user/api/user';
 
 /**
@@ -22,12 +24,33 @@ export async function createComment(
   userProfileImage: string,
 ) {
   const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
-  await trackedFirebase.addDoc(collection(postRef, 'comments'), {
+  const createdAt = Timestamp.now();
+  const docRef = await trackedFirebase.addDoc(collection(postRef, 'comments'), {
     content,
     userId,
     userName,
     userProfileImage,
-    createdAt: serverTimestamp(),
+    createdAt,
+  });
+
+  // Dual-write to Supabase
+  await dualWrite({
+    entityType: 'comment',
+    operationType: 'create',
+    entityId: docRef.id,
+    supabaseWrite: async () => {
+      const supabase = getSupabaseClient();
+      await supabase.from('comments').insert({
+        id: docRef.id,
+        post_id: postId,
+        user_id: userId,
+        user_name: userName,
+        user_profile_image: userProfileImage,
+        content,
+        count_of_replies: 0,
+        created_at: createdAt.toDate().toISOString(),
+      });
+    },
   });
 }
 
@@ -42,6 +65,17 @@ export async function updateCommentToPost(
 ) {
   const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
   await trackedFirebase.updateDoc(doc(postRef, 'comments', commentId), { content });
+
+  // Dual-write to Supabase
+  await dualWrite({
+    entityType: 'comment',
+    operationType: 'update',
+    entityId: commentId,
+    supabaseWrite: async () => {
+      const supabase = getSupabaseClient();
+      await supabase.from('comments').update({ content }).eq('id', commentId);
+    },
+  });
 }
 
 /**
@@ -50,6 +84,17 @@ export async function updateCommentToPost(
 export async function deleteCommentToPost(boardId: string, postId: string, commentId: string) {
   const postRef = doc(firestore, `boards/${boardId}/posts/${postId}`);
   await trackedFirebase.deleteDoc(doc(postRef, 'comments', commentId));
+
+  // Dual-write to Supabase
+  await dualWrite({
+    entityType: 'comment',
+    operationType: 'delete',
+    entityId: commentId,
+    supabaseWrite: async () => {
+      const supabase = getSupabaseClient();
+      await supabase.from('comments').delete().eq('id', commentId);
+    },
+  });
 }
 
 /**

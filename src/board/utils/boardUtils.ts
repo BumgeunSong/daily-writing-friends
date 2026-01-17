@@ -3,6 +3,8 @@ import { collection, getDocs, query, where, doc, getDoc, updateDoc, arrayUnion, 
 import { firestore } from '@/firebase';
 import { User } from '@/user/model/User';
 import { Board } from '../model/Board';
+import { dualWrite } from '@/shared/api/dualWrite';
+import { getSupabaseClient } from '@/shared/api/supabaseClient';
 
 export async function fetchBoardTitle(boardId: string): Promise<string> {
   try {
@@ -99,6 +101,21 @@ export async function addUserToBoardWaitingList(boardId: string, userId: string)
   try {
     const boardDocRef = doc(firestore, 'boards', boardId);
     await updateDoc(boardDocRef, { waitingUsersIds: arrayUnion(userId) });
+
+    // Dual-write to Supabase
+    await dualWrite({
+      entityType: 'board_waiting_user',
+      operationType: 'create',
+      entityId: `${boardId}_${userId}`,
+      supabaseWrite: async () => {
+        const supabase = getSupabaseClient();
+        await supabase.from('board_waiting_users').upsert({
+          board_id: boardId,
+          user_id: userId,
+        });
+      },
+    });
+
     return true;
   } catch (error) {
     console.error(`Error adding user ${userId} to board ${boardId} waiting list:`, error);
@@ -121,6 +138,22 @@ export async function removeUserFromBoardWaitingList(boardId: string, userId: st
   try {
     const boardDocRef = doc(firestore, 'boards', boardId);
     await updateDoc(boardDocRef, { waitingUsersIds: arrayRemove(userId) });
+
+    // Dual-write to Supabase
+    await dualWrite({
+      entityType: 'board_waiting_user',
+      operationType: 'delete',
+      entityId: `${boardId}_${userId}`,
+      supabaseWrite: async () => {
+        const supabase = getSupabaseClient();
+        await supabase
+          .from('board_waiting_users')
+          .delete()
+          .eq('board_id', boardId)
+          .eq('user_id', userId);
+      },
+    });
+
     return true;
   } catch (error) {
     console.error(`Error removing user ${userId} from board ${boardId} waiting list:`, error);

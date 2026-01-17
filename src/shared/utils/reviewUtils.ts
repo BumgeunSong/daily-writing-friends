@@ -3,6 +3,8 @@ import { firestore } from "@/firebase";
 import { JoinFormDataForActiveUser } from "@/login/model/join";
 import { Review } from "@/login/model/Review";
 import { trackedFirebase } from "@/shared/api/trackedFirebase";
+import { dualWrite } from "@/shared/api/dualWrite";
+import { getSupabaseClient } from "@/shared/api/supabaseClient";
 
 /**
  * 보드에 리뷰를 추가합니다.
@@ -54,6 +56,28 @@ export async function addReviewToBoard(
 export async function createReview(boardId: string, review: Review): Promise<void> {
   const reviewRef = doc(firestore, "boards", boardId, "reviews", review.reviewer.uid);
   await trackedFirebase.setDoc(reviewRef, review);
+
+  // Dual-write to Supabase
+  await dualWrite({
+    entityType: 'review',
+    operationType: 'create',
+    entityId: review.reviewer.uid,
+    supabaseWrite: async () => {
+      const supabase = getSupabaseClient();
+      await supabase.from('reviews').upsert({
+        id: review.reviewer.uid,
+        board_id: boardId,
+        reviewer_id: review.reviewer.uid,
+        reviewer_nickname: review.reviewer.nickname || null,
+        keep_text: review.keep || null,
+        problem_text: review.problem || null,
+        try_text: review.try || null,
+        nps: review.nps ?? null,
+        will_continue: review.willContinue ?? null,
+        created_at: review.createdAt.toDate().toISOString(),
+      });
+    },
+  });
 }
 
 /**

@@ -17,4 +17,4 @@ service-account.json
 
 # Jest Coverage Reports
 coverage/
-*.lcov
+*.lcovfunctions/.env

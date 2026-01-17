@@ -4,12 +4,14 @@ import {
   query,
   where,
   getDocs,
-  serverTimestamp,
+  Timestamp,
   DocumentReference
 } from 'firebase/firestore';
 import { Reaction } from '@/comment/model/Reaction';
 import { firestore } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
+import { dualWrite } from '@/shared/api/dualWrite';
+import { getSupabaseClient } from '@/shared/api/supabaseClient';
 
 export interface CreateReactionParams {
   boardId: string;
@@ -54,7 +56,7 @@ function getEntityRef(params: {
 }
 
 export async function createReaction(params: CreateReactionParams): Promise<string> {
-  const { content, reactionUser } = params;
+  const { content, reactionUser, commentId, replyId } = params;
   const entityRef = getEntityRef(params);
   const reactionsRef = collection(entityRef, 'reactions');
   const existingQuery = query(
@@ -66,12 +68,34 @@ export async function createReaction(params: CreateReactionParams): Promise<stri
   if (!existingSnapshot.empty) {
     return existingSnapshot.docs[0].id;
   }
+  const createdAt = Timestamp.now();
   const newReactionData = {
     content,
-    createdAt: serverTimestamp(),
+    createdAt,
     reactionUser
   };
   const newReactionRef = await trackedFirebase.addDoc(reactionsRef, newReactionData);
+
+  // Dual-write to Supabase
+  await dualWrite({
+    entityType: 'reaction',
+    operationType: 'create',
+    entityId: newReactionRef.id,
+    supabaseWrite: async () => {
+      const supabase = getSupabaseClient();
+      await supabase.from('reactions').insert({
+        id: newReactionRef.id,
+        comment_id: replyId ? null : commentId,
+        reply_id: replyId || null,
+        user_id: reactionUser.userId,
+        user_name: reactionUser.userName,
+        user_profile_image: reactionUser.userProfileImage,
+        reaction_type: content,
+        created_at: createdAt.toDate().toISOString(),
+      });
+    },
+  });
+
   return newReactionRef.id;
 }
 
@@ -80,6 +104,17 @@ export async function deleteReaction(params: DeleteReactionParams): Promise<void
   const entityRef = getEntityRef(params);
   const reactionRef = doc(entityRef, 'reactions', reactionId);
   await trackedFirebase.deleteDoc(reactionRef);
+
+  // Dual-write to Supabase
+  await dualWrite({
+    entityType: 'reaction',
+    operationType: 'delete',
+    entityId: reactionId,
+    supabaseWrite: async () => {
+      const supabase = getSupabaseClient();
+      await supabase.from('reactions').delete().eq('id', reactionId);
+    },
+  });
 }
 
 export async function deleteUserReaction(
@@ -100,6 +135,17 @@ export async function deleteUserReaction(
   }
   const reactionDoc = snapshot.docs[0];
   await trackedFirebase.deleteDoc(reactionDoc.ref);
+
+  // Dual-write to Supabase
+  await dualWrite({
+    entityType: 'reaction',
+    operationType: 'delete',
+    entityId: reactionDoc.id,
+    supabaseWrite: async () => {
+      const supabase = getSupabaseClient();
+      await supabase.from('reactions').delete().eq('id', reactionDoc.id);
+    },
+  });
 }
 
 export async function getReactions(params: GetReactionsParams): Promise<Reaction[]> {
