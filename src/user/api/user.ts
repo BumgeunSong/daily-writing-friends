@@ -6,7 +6,7 @@ import { doc, serverTimestamp, collection, where, query, Timestamp, writeBatch, 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, storage } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
-import { dualWrite, dualWriteBatch } from '@/shared/api/dualWrite';
+import { dualWrite } from '@/shared/api/dualWrite';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
 import { User as FirebaseUser } from 'firebase/auth';

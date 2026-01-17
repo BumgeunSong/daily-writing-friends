@@ -39,7 +39,7 @@ export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: st
     // Dual-write to Supabase
     await dualWrite({
       entityType: 'draft',
-      operationType: 'create',
+      operationType: draft.id ? 'update' : 'create',
       entityId: draftId,
       supabaseWrite: async () => {
         const supabase = getSupabaseClient();
