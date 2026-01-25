@@ -198,10 +198,22 @@ export async function fetchReplyingsByDateRangeFromSupabase(
   const startIso = start.toISOString();
   const endIso = end.toISOString();
 
-  // Minimal query without joins to isolate the issue
+  // Test: add only posts join
   const { data, error } = await supabase
     .from('replies')
-    .select('id, created_at, comment_id, post_id, user_id')
+    .select(`
+      id,
+      created_at,
+      comment_id,
+      post_id,
+      user_id,
+      posts (
+        id,
+        title,
+        author_id,
+        board_id
+      )
+    `)
     .eq('user_id', userId)
     .gte('created_at', startIso)
     .lt('created_at', endIso)
@@ -212,10 +224,18 @@ export async function fetchReplyingsByDateRangeFromSupabase(
     throw error;
   }
 
-  // Minimal mapping for testing - no join data available
-  return (data || []).map((row: { id: string; created_at: string; comment_id: string; post_id: string; user_id: string }) => ({
-    board: { id: '' }, // TODO: need post data to get board_id
-    post: { id: row.post_id, title: '', authorId: '' }, // TODO: need posts join
+  // Test mapping with posts join only
+  interface TestRow {
+    id: string;
+    created_at: string;
+    comment_id: string;
+    post_id: string;
+    user_id: string;
+    posts: { id: string; title: string; author_id: string; board_id: string } | null;
+  }
+  return (data || []).map((row: TestRow) => ({
+    board: { id: row.posts?.board_id || '' },
+    post: { id: row.posts?.id || row.post_id, title: row.posts?.title || '', authorId: row.posts?.author_id || '' },
     comment: { id: row.comment_id, authorId: '' },
     reply: { id: row.id },
     createdAt: new Date(row.created_at),
