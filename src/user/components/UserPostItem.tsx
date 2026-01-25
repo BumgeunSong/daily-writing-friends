@@ -3,7 +3,7 @@ import { Link } from "react-router-dom"
 import { getContentPreview } from "@/post/utils/contentUtils"
 import { Card, CardContent, CardFooter } from "@/shared/ui/card"
 import { Skeleton } from "@/shared/ui/skeleton"
-import { formatDate } from "@/shared/utils/dateUtils"
+import { formatDate, toDate } from "@/shared/utils/dateUtils"
 import type { Post } from "@/post/model/Post"
 
 interface PostItemProps {
@@ -28,7 +28,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post }) => {
                         )}
                     </CardContent>
                     <CardFooter className="flex items-center justify-between px-3 pb-3 pt-0 text-xs text-muted-foreground md:px-4">
-                        <span>{formatDate(post.createdAt?.toDate())}</span>
+                        <span>{formatDate(toDate(post.createdAt))}</span>
                         <div className="flex items-center">
                             <MessageCircle className="mr-1 size-3" />
                             <span>{post.countOfComments + post.countOfReplies}</span>

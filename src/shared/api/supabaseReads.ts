@@ -205,7 +205,7 @@ export async function fetchReplyingsByDateRangeFromSupabase(
         id,
         user_id
       ),
-      posts:post_id (
+      posts!post_id (
         id,
         title,
         author_id,
