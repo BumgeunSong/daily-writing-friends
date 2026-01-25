@@ -64,16 +64,23 @@ export async function fetchPostingData(userId: string): Promise<Posting[]> {
   }
 
   if (readSource === 'shadow') {
-    const [firestoreData, supabaseData] = await Promise.all([
-      fetchPostingDataFromFirestore(userId),
-      fetchPostingsFromSupabase(userId),
-    ]);
+    const firestoreData = await fetchPostingDataFromFirestore(userId);
 
-    const result = compareShadowResults(firestoreData, supabaseData, (item) => item.post.id);
-
-    if (!result.match) {
-      logShadowMismatch('postings', userId, result);
-    }
+    // Shadow comparison in background - Supabase failure should not affect Firestore result
+    fetchPostingsFromSupabase(userId)
+      .then((supabaseData) => {
+        const result = compareShadowResults(
+          firestoreData,
+          supabaseData,
+          (item) => item.post.id
+        );
+        if (!result.match) {
+          logShadowMismatch('postings', userId, result);
+        }
+      })
+      .catch((error) => {
+        console.error('Shadow read failed for postings:', error);
+      });
 
     return firestoreData;
   }
@@ -129,16 +136,27 @@ export async function fetchPostingDataForContributions(
   }
 
   if (readSource === 'shadow') {
-    const [firestoreData, supabaseData] = await Promise.all([
-      fetchPostingDataForContributionsFromFirestore(userId, dateRange.start, dateRange.end),
-      fetchPostingsByDateRangeFromSupabase(userId, dateRange.start, dateRange.end),
-    ]);
+    const firestoreData = await fetchPostingDataForContributionsFromFirestore(
+      userId,
+      dateRange.start,
+      dateRange.end
+    );
 
-    const result = compareShadowResults(firestoreData, supabaseData, (item) => item.post.id);
-
-    if (!result.match) {
-      logShadowMismatch('postingsForContributions', userId, result);
-    }
+    // Shadow comparison in background - Supabase failure should not affect Firestore result
+    fetchPostingsByDateRangeFromSupabase(userId, dateRange.start, dateRange.end)
+      .then((supabaseData) => {
+        const result = compareShadowResults(
+          firestoreData,
+          supabaseData,
+          (item) => item.post.id
+        );
+        if (!result.match) {
+          logShadowMismatch('postingsForContributions', userId, result);
+        }
+      })
+      .catch((error) => {
+        console.error('Shadow read failed for postingsForContributions:', error);
+      });
 
     return firestoreData;
   }

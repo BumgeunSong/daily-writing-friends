@@ -17,6 +17,7 @@ import { Post } from '@/post/model/Post';
 import { Posting } from '@/post/model/Posting';
 import { mapDocumentToPost } from '@/post/utils/postUtils';
 import { getReadSource, getSupabaseClient } from '@/shared/api/supabaseClient';
+import { compareShadowResults, logShadowMismatch } from '@/shared/api/shadowReads';
 
 const LIMIT_COUNT = 10;
 
@@ -34,10 +35,37 @@ export const useUserPosts = (userId: string) => {
 
   return useInfiniteQuery<PostWithPaginationMetadata[]>(
     ['userPosts', userId, readSource],
-    ({ pageParam = null }) => {
-      if (readSource === 'supabase' || readSource === 'shadow') {
+    async ({ pageParam = null }) => {
+      if (readSource === 'supabase') {
         return fetchUserPostsFromSupabase(userId, pageParam as string | null);
       }
+
+      if (readSource === 'shadow') {
+        // Shadow mode: fetch from Firestore, compare with Supabase in background
+        const firestoreData = await fetchUserPostsFromFirestore(
+          userId,
+          pageParam as QueryDocumentSnapshot<DocumentData> | null
+        );
+
+        // Shadow comparison in background - Supabase failure should not affect Firestore result
+        fetchUserPostsFromSupabase(userId, null) // First page for comparison
+          .then((supabaseData) => {
+            const result = compareShadowResults(
+              firestoreData,
+              supabaseData,
+              (item) => item.id
+            );
+            if (!result.match) {
+              logShadowMismatch('userPosts', userId, result);
+            }
+          })
+          .catch((error) => {
+            console.error('Shadow read failed for userPosts:', error);
+          });
+
+        return firestoreData;
+      }
+
       return fetchUserPostsFromFirestore(userId, pageParam as QueryDocumentSnapshot<DocumentData> | null);
     },
     {
@@ -88,22 +116,25 @@ async function fetchUserPostsFromSupabase(
     return [];
   }
 
-  const posts = (data || []).map((row) => ({
+  const posts: PostWithPaginationMetadata[] = (data || []).map((row) => ({
     id: row.id,
     boardId: row.board_id,
     title: row.title,
     content: row.content || '',
+    contentJson: row.content_json ?? undefined,
+    thumbnailImageURL: row.thumbnail_image_url ?? null,
     authorId: row.author_id,
     authorName: row.author_name,
     createdAt: new Date(row.created_at),
-    countOfComments: row.count_of_comments,
-    countOfReplies: row.count_of_replies,
-    countOfLikes: row.count_of_likes,
-    engagementScore: row.engagement_score,
-    weekDaysFromFirstDay: row.week_days_from_first_day,
+    countOfComments: row.count_of_comments ?? 0,
+    countOfReplies: row.count_of_replies ?? 0,
+    countOfLikes: row.count_of_likes ?? 0,
+    engagementScore: row.engagement_score ?? 0,
+    weekDaysFromFirstDay: row.week_days_from_first_day ?? 0,
+    visibility: row.visibility ?? undefined,
     _paginationCursor: row.created_at,
     _fetchedFullPage: data.length === LIMIT_COUNT,
-  })) as PostWithPaginationMetadata[];
+  }));
 
   return posts;
 }

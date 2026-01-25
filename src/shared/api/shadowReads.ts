@@ -19,13 +19,14 @@ export interface ShadowCompareResult {
  * Compare two arrays of items by ID.
  * Used to validate Supabase reads match Firestore.
  */
-export function compareShadowResults<T extends { id?: string }>(
-  firestoreData: T[],
-  supabaseData: T[],
-  getId: (item: T) => string
+export function compareShadowResults<F, S>(
+  firestoreData: F[],
+  supabaseData: S[],
+  getFirestoreId: (item: F) => string,
+  getSupabaseId?: (item: S) => string
 ): ShadowCompareResult {
-  const firestoreIds = new Set(firestoreData.map(getId));
-  const supabaseIds = new Set(supabaseData.map(getId));
+  const firestoreIds = new Set(firestoreData.map(getFirestoreId));
+  const supabaseIds = new Set(supabaseData.map(getSupabaseId ?? (getFirestoreId as unknown as (item: S) => string)));
 
   const missingInSupabase = [...firestoreIds].filter((id) => !supabaseIds.has(id));
   const missingInFirestore = [...supabaseIds].filter((id) => !firestoreIds.has(id));

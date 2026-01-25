@@ -92,22 +92,25 @@ export async function fetchUserCommentingsByDateRange(
   }
 
   if (readSource === 'shadow') {
-    const [firestoreData, supabaseData] = await Promise.all([
-      fetchCommentingsFromFirestore(userId, start, end),
-      fetchCommentingsByDateRangeFromSupabase(userId, start, end),
-    ]);
+    const firestoreData = await fetchCommentingsFromFirestore(userId, start, end);
 
-    const result = compareShadowResults(
-      firestoreData,
-      supabaseData,
-      (item) => ('comment' in item ? item.comment.id : (item as SupabaseCommenting).comment.id)
-    );
+    // Shadow comparison in background - Supabase failure should not affect Firestore result
+    fetchCommentingsByDateRangeFromSupabase(userId, start, end)
+      .then((supabaseData) => {
+        const result = compareShadowResults(
+          firestoreData,
+          supabaseData,
+          (item) => item.comment.id
+        );
+        if (!result.match) {
+          logShadowMismatch('commentings', userId, result);
+        }
+      })
+      .catch((error) => {
+        console.error('Shadow read failed for commentings:', error);
+      });
 
-    if (!result.match) {
-      logShadowMismatch('commentings', userId, result);
-    }
-
-    return firestoreData; // Return Firestore data during shadow mode
+    return firestoreData;
   }
 
   // Default: Firestore
@@ -128,20 +131,23 @@ export async function fetchUserReplyingsByDateRange(
   }
 
   if (readSource === 'shadow') {
-    const [firestoreData, supabaseData] = await Promise.all([
-      fetchReplyingsFromFirestore(userId, start, end),
-      fetchReplyingsByDateRangeFromSupabase(userId, start, end),
-    ]);
+    const firestoreData = await fetchReplyingsFromFirestore(userId, start, end);
 
-    const result = compareShadowResults(
-      firestoreData,
-      supabaseData,
-      (item) => ('reply' in item ? item.reply.id : (item as SupabaseReplying).reply.id)
-    );
-
-    if (!result.match) {
-      logShadowMismatch('replyings', userId, result);
-    }
+    // Shadow comparison in background - Supabase failure should not affect Firestore result
+    fetchReplyingsByDateRangeFromSupabase(userId, start, end)
+      .then((supabaseData) => {
+        const result = compareShadowResults(
+          firestoreData,
+          supabaseData,
+          (item) => item.reply.id
+        );
+        if (!result.match) {
+          logShadowMismatch('replyings', userId, result);
+        }
+      })
+      .catch((error) => {
+        console.error('Shadow read failed for replyings:', error);
+      });
 
     return firestoreData;
   }
