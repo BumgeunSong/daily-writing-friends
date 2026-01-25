@@ -1,8 +1,8 @@
 # Firebase → Supabase Migration Progress
 
-**Last Updated**: 2026-01-15
-**Branch**: `feat/supabase-migration-2`
-**Status**: Phase 1 complete, ready for Phase 2 (Dual-Write)
+**Last Updated**: 2026-01-25
+**Branch**: `main`
+**Status**: Phase 5 (Shadow Reads) implemented, ready for verification
 
 ---
 
@@ -216,23 +216,82 @@ data/migration-export/           # Exported JSON files (gitignored)
 
 ---
 
+### Phase 2: Dual-Write ✅
+
+**Deployed**: 2026-01-17
+
+Dual-write implemented for all write operations. All Firestore writes now sync to Supabase.
+
+**Key commits:**
+- `d84c58a` - Phase 2 Dual-Write 구현: Firestore 쓰기 작업을 Supabase에 동기화
+- `8d2a8eb` - PR 리뷰 피드백 반영
+
+**Implementation:**
+- `src/shared/api/dualWrite.ts` - Client-side dual-write utility
+- `src/shared/api/supabaseClient.ts` - Browser Supabase client with anon key
+- `functions/src/shared/supabaseAdmin.ts` - Server-side admin client
+- Feature flag: `VITE_DUAL_WRITE_ENABLED`
+
+**Entities with dual-write:**
+- Users, Posts, Comments, Replies, Likes, Reactions, Blocks
+
+---
+
+### Phase 5: Shadow Reads ✅
+
+**Implemented**: 2026-01-25
+
+Shadow reads allow comparing Firestore and Supabase query results during migration.
+
+**Key files created/modified:**
+
+| File | Purpose |
+|------|---------|
+| `src/shared/api/supabaseReads.ts` | Supabase query functions for posts, comments, replies |
+| `src/shared/api/shadowReads.ts` | Comparison utility, logs mismatches to console + Sentry |
+| `src/shared/api/supabaseClient.ts` | Added `getReadSource()` feature flag |
+| `src/user/api/commenting.ts` | Read source switching for commentings/replyings |
+| `src/stats/api/stats.ts` | Read source switching for postings |
+| `src/user/hooks/useUserPosts.ts` | Read source switching for user posts |
+
+**Feature flag:** `VITE_READ_SOURCE`
+- `firestore` (default): Read from Firestore only
+- `supabase`: Read from Supabase only
+- `shadow`: Read from both, compare, return Firestore result
+
+**Verification status:**
+
+| Query Type | Shadow Tested | Mismatches |
+|------------|---------------|------------|
+| postings | ⏳ | |
+| postingsForContributions | ⏳ | |
+| commentings | ⏳ | |
+| replyings | ⏳ | |
+| userPosts | ⏳ | |
+
+---
+
 ## Next Steps
 
-### Phase 2: Introduce Dual-Write
+### Phase 6: Switch Reads Gradually
 
-Reference: `docs/plan_and_review/plan_firebase_supabase_migration.md`
+1. Run shadow mode (`VITE_READ_SOURCE=shadow`) for 24-48 hours
+2. Monitor Sentry for mismatch warnings
+3. Fix any data inconsistencies found
+4. Switch to Supabase reads (`VITE_READ_SOURCE=supabase`)
+5. Monitor for issues, keep rollback ready
 
-1. Create `dualWrite()` utility that writes to both Firestore and Supabase
-2. Wrap all write operations (create/update/delete)
-3. Implement idempotency using `write_ops` table
-4. Include notifications in dual-write (captures new notifications)
-5. Run for 7+ days to ensure Supabase has complete notification history
+### Phase 3: Remove Fan-out Functions (moved to last)
+
+After Phase 6 confirms Supabase reads work:
+- Delete `functions/src/postings/`
+- Delete `functions/src/commentings/`
+- Delete `functions/src/replyings/`
+- Remove exports from `functions/src/index.ts`
+
+**Note:** Phase order changed from original plan. Reads must switch before fan-out removal, otherwise new data won't appear in "My Posts" etc.
 
 ### Remaining Phases
-- Phase 3: Replace Firebase Relationship Functions
-- Phase 4: Migrate Notifications (now handled by dual-write)
-- Phase 5: Shadow Reads
-- Phase 6: Switch Reads Gradually
 - Phase 7: Stop Dual-Write & Freeze Firestore
 
 ---
