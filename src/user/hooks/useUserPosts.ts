@@ -1,110 +1,165 @@
 import * as Sentry from '@sentry/react';
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { limit, query, collection, orderBy, getDocs, startAfter, doc, getDoc, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
-import { firestore } from "@/firebase";
-import { Post } from "@/post/model/Post";
-import { Posting } from "@/post/model/Posting";
-import { mapDocumentToPost } from "@/post/utils/postUtils";
+import { useInfiniteQuery } from '@tanstack/react-query';
+import {
+  limit,
+  query,
+  collection,
+  orderBy,
+  getDocs,
+  startAfter,
+  doc,
+  getDoc,
+  QueryDocumentSnapshot,
+  DocumentData,
+} from 'firebase/firestore';
+import { firestore } from '@/firebase';
+import { Post } from '@/post/model/Post';
+import { Posting } from '@/post/model/Posting';
+import { mapDocumentToPost } from '@/post/utils/postUtils';
+import { getReadSource, getSupabaseClient } from '@/shared/api/supabaseClient';
 
 const LIMIT_COUNT = 10;
 
 type PostWithPaginationMetadata = Post & {
-    _paginationCursor?: QueryDocumentSnapshot<DocumentData>;
-    _fetchedFullPage?: boolean;
+  _paginationCursor?: QueryDocumentSnapshot<DocumentData> | string;
+  _fetchedFullPage?: boolean;
 };
 
 /**
  * 특정 사용자가 작성한 포스트를 가져오는 커스텀 훅
- * Optimized to use users/{userId}/postings subcollection instead of querying all boards
- * @param userId 사용자 ID
- * @returns InfiniteQuery 객체
+ * Supports both Firestore and Supabase read sources
  */
 export const useUserPosts = (userId: string) => {
-    return useInfiniteQuery<PostWithPaginationMetadata[]>(
-        ['userPosts', userId],
-        ({ pageParam = null }) => fetchUserPosts(userId, pageParam),
-        {
-            enabled: !!userId,
-            getNextPageParam: (lastPage) => {
-                const hasNoPosts = lastPage.length === 0;
-                if (hasNoPosts) {
-                    return undefined;
-                }
+  const readSource = getReadSource();
 
-                const lastPost = lastPage[lastPage.length - 1];
-                const shouldFetchNextPage = lastPost?._fetchedFullPage && lastPost?._paginationCursor;
-
-                return shouldFetchNextPage ? lastPost._paginationCursor : undefined;
-            },
-            onError: (error) => {
-                console.error("사용자 게시글을 불러오던 중 에러가 발생했습니다:", error);
-                Sentry.captureException(error);
-            },
-            staleTime: 1000 * 60, // 1분
-            cacheTime: 1000 * 60 * 5, // 5분
-            refetchOnWindowFocus: false,
-        }
-    );
+  return useInfiniteQuery<PostWithPaginationMetadata[]>(
+    ['userPosts', userId, readSource],
+    ({ pageParam = null }) => {
+      if (readSource === 'supabase' || readSource === 'shadow') {
+        return fetchUserPostsFromSupabase(userId, pageParam as string | null);
+      }
+      return fetchUserPostsFromFirestore(userId, pageParam as QueryDocumentSnapshot<DocumentData> | null);
+    },
+    {
+      enabled: !!userId,
+      getNextPageParam: (lastPage) => {
+        if (lastPage.length === 0) return undefined;
+        const lastPost = lastPage[lastPage.length - 1];
+        return lastPost?._fetchedFullPage && lastPost?._paginationCursor
+          ? lastPost._paginationCursor
+          : undefined;
+      },
+      onError: (error) => {
+        console.error('사용자 게시글을 불러오던 중 에러가 발생했습니다:', error);
+        Sentry.captureException(error);
+      },
+      staleTime: 1000 * 60,
+      cacheTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: false,
+    }
+  );
 };
 
 /**
- * 사용자의 게시글을 페이지 단위로 가져오는 함수
- * Uses users/{userId}/postings subcollection for efficient querying
- * @param userId 사용자 ID
- * @param paginationCursor 마지막 문서 (페이지네이션 용)
- * @returns 게시글 배열
+ * Fetch user posts from Supabase posts table
  */
-async function fetchUserPosts(userId: string, paginationCursor?: QueryDocumentSnapshot<DocumentData>): Promise<PostWithPaginationMetadata[]> {
-    try {
-        const postingsRef = collection(firestore, 'users', userId, 'postings');
+async function fetchUserPostsFromSupabase(
+  userId: string,
+  cursor: string | null
+): Promise<PostWithPaginationMetadata[]> {
+  const supabase = getSupabaseClient();
 
-        let postingsQuery = query(
-            postingsRef,
-            orderBy('createdAt', 'desc'),
-            limit(LIMIT_COUNT)
-        );
+  let queryBuilder = supabase
+    .from('posts')
+    .select('*')
+    .eq('author_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(LIMIT_COUNT);
 
-        if (paginationCursor) {
-            postingsQuery = query(postingsQuery, startAfter(paginationCursor));
-        }
+  if (cursor) {
+    queryBuilder = queryBuilder.lt('created_at', cursor);
+  }
 
-        const postingsSnapshot = await getDocs(postingsQuery);
-        const fetchedPostingCount = postingsSnapshot.docs.length;
-        const fetchedFullPage = fetchedPostingCount === LIMIT_COUNT;
+  const { data, error } = await queryBuilder;
 
-        const postsWithMetadata = await Promise.all(
-            postingsSnapshot.docs.map(async (postingDoc) => {
-                const posting = postingDoc.data() as Posting;
-                const { board, post: postInfo } = posting;
+  if (error) {
+    console.error('Supabase fetchUserPosts error:', error);
+    Sentry.captureException(error);
+    return [];
+  }
 
-                try {
-                    const postRef = doc(firestore, 'boards', board.id, 'posts', postInfo.id);
-                    const postDoc = await getDoc(postRef);
+  const posts = (data || []).map((row) => ({
+    id: row.id,
+    boardId: row.board_id,
+    title: row.title,
+    content: row.content || '',
+    authorId: row.author_id,
+    authorName: row.author_name,
+    createdAt: new Date(row.created_at),
+    countOfComments: row.count_of_comments,
+    countOfReplies: row.count_of_replies,
+    countOfLikes: row.count_of_likes,
+    engagementScore: row.engagement_score,
+    weekDaysFromFirstDay: row.week_days_from_first_day,
+    _paginationCursor: row.created_at,
+    _fetchedFullPage: data.length === LIMIT_COUNT,
+  })) as PostWithPaginationMetadata[];
 
-                    if (!postDoc.exists()) {
-                        console.warn(`Post ${postInfo.id} not found in board ${board.id}`);
-                        return null;
-                    }
+  return posts;
+}
 
-                    const post = mapDocumentToPost(postDoc);
+/**
+ * Original Firestore implementation
+ */
+async function fetchUserPostsFromFirestore(
+  userId: string,
+  paginationCursor: QueryDocumentSnapshot<DocumentData> | null
+): Promise<PostWithPaginationMetadata[]> {
+  try {
+    const postingsRef = collection(firestore, 'users', userId, 'postings');
 
-                    return {
-                        ...post,
-                        _paginationCursor: postingDoc,
-                        _fetchedFullPage: fetchedFullPage,
-                    } as PostWithPaginationMetadata;
-                } catch (error) {
-                    console.error(`Error fetching post ${postInfo.id}:`, error);
-                    return null;
-                }
-            })
-        );
+    let postingsQuery = query(postingsRef, orderBy('createdAt', 'desc'), limit(LIMIT_COUNT));
 
-        const validPosts = postsWithMetadata.filter((post): post is PostWithPaginationMetadata => post !== null);
-        return validPosts;
-    } catch (error) {
-        console.error("Error fetching user posts:", error);
-        Sentry.captureException(error);
-        return [];
+    if (paginationCursor) {
+      postingsQuery = query(postingsQuery, startAfter(paginationCursor));
     }
-} 
+
+    const postingsSnapshot = await getDocs(postingsQuery);
+    const fetchedPostingCount = postingsSnapshot.docs.length;
+    const fetchedFullPage = fetchedPostingCount === LIMIT_COUNT;
+
+    const postsWithMetadata = await Promise.all(
+      postingsSnapshot.docs.map(async (postingDoc) => {
+        const posting = postingDoc.data() as Posting;
+        const { board, post: postInfo } = posting;
+
+        try {
+          const postRef = doc(firestore, 'boards', board.id, 'posts', postInfo.id);
+          const postDoc = await getDoc(postRef);
+
+          if (!postDoc.exists()) {
+            console.warn(`Post ${postInfo.id} not found in board ${board.id}`);
+            return null;
+          }
+
+          const post = mapDocumentToPost(postDoc);
+
+          return {
+            ...post,
+            _paginationCursor: postingDoc,
+            _fetchedFullPage: fetchedFullPage,
+          } as PostWithPaginationMetadata;
+        } catch (error) {
+          console.error(`Error fetching post ${postInfo.id}:`, error);
+          return null;
+        }
+      })
+    );
+
+    return postsWithMetadata.filter((post): post is PostWithPaginationMetadata => post !== null);
+  } catch (error) {
+    console.error('Error fetching user posts:', error);
+    Sentry.captureException(error);
+    return [];
+  }
+}
