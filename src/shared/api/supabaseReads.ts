@@ -34,9 +34,9 @@ interface ReplyRow {
   created_at: string;
   comment_id: string;
   post_id: string;
+  user_id: string;
   comments: {
     id: string;
-    user_id: string;
   };
   posts: {
     id: string;
@@ -205,9 +205,9 @@ export async function fetchReplyingsByDateRangeFromSupabase(
       created_at,
       comment_id,
       post_id,
+      user_id,
       comments!inner (
-        id,
-        user_id
+        id
       ),
       posts!inner (
         id,
@@ -216,9 +216,9 @@ export async function fetchReplyingsByDateRangeFromSupabase(
         board_id
       )
     `)
-    .eq('replies.user_id', userId)
-    .gte('replies.created_at', startIso)
-    .lt('replies.created_at', endIso)
+    .eq('user_id', userId)
+    .gte('created_at', startIso)
+    .lt('created_at', endIso)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -229,7 +229,7 @@ export async function fetchReplyingsByDateRangeFromSupabase(
   return (data || []).map((row: ReplyRow) => ({
     board: { id: row.posts.board_id },
     post: { id: row.posts.id, title: row.posts.title, authorId: row.posts.author_id },
-    comment: { id: row.comments.id, authorId: row.comments.user_id },
+    comment: { id: row.comments.id, authorId: '' }, // TODO: comment author not available due to column ambiguity
     reply: { id: row.id },
     createdAt: new Date(row.created_at),
   }));
