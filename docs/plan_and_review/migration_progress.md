@@ -263,11 +263,15 @@ Shadow reads allow comparing Firestore and Supabase query results during migrati
 
 | Query Type | Shadow Tested | Mismatches |
 |------------|---------------|------------|
-| postings | ⏳ | |
-| postingsForContributions | ⏳ | |
-| commentings | ⏳ | |
-| replyings | ⏳ | |
-| userPosts | ⏳ | |
+| postings | ✅ | None observed |
+| postingsForContributions | ✅ | None observed |
+| commentings | ✅ | None observed |
+| replyings | ✅ | None observed |
+| userPosts | ✅ | None observed |
+
+**Issue fixed during implementation:**
+- `replies.post_id` had no FK constraint to `posts`, causing PostgREST to reject the join
+- Fixed by running: `ALTER TABLE replies ADD CONSTRAINT replies_post_id_fkey FOREIGN KEY (post_id) REFERENCES posts(id);`
 
 ---
 
