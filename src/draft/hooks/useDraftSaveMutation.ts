@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { MutableRefObject } from 'react';
+import { toast } from 'sonner';
 import { Draft } from '@/draft/model/Draft';
 import { saveDraft } from '@/draft/utils/draftUtils';
 
@@ -44,6 +45,20 @@ export function useDraftSaveMutation({
       );
       onSaved?.(savedDraft);
       return savedDraft;
+    },
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 8000),
+    onError: (error: Error) => {
+      const isTimeout = error.message?.includes('timed out');
+      toast.warning(
+        isTimeout
+          ? '네트워크 연결이 불안정해서 임시 저장하지 못했어요'
+          : '임시 저장에 문제가 생겼어요',
+        {
+          position: 'bottom-center',
+          duration: 5000,
+        }
+      );
     },
   });
 } 
