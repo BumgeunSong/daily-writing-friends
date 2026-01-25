@@ -205,18 +205,20 @@ export async function fetchReplyingsByDateRangeFromSupabase(
       created_at,
       comment_id,
       post_id,
-      comments (
+      comments!comment_id (
         id,
         user_id
       ),
-      posts (
+      posts!post_id (
         id,
         title,
         author_id,
         board_id
       )
     `)
-    .or(`and(user_id.eq.${userId},created_at.gte.${startIso},created_at.lt.${endIso})`)
+    .eq('user_id', userId)
+    .gte('created_at', startIso)
+    .lt('created_at', endIso)
     .order('created_at', { ascending: false });
 
   if (error) {
