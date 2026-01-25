@@ -194,6 +194,10 @@ export async function fetchReplyingsByDateRangeFromSupabase(
 ): Promise<SupabaseReplying[]> {
   const supabase = getSupabaseClient();
 
+  // Use compound filter to avoid duplicate created_at params issue
+  const startIso = start.toISOString();
+  const endIso = end.toISOString();
+
   const { data, error } = await supabase
     .from('replies')
     .select(`
@@ -212,9 +216,7 @@ export async function fetchReplyingsByDateRangeFromSupabase(
         board_id
       )
     `)
-    .eq('user_id', userId)
-    .gte('created_at', start.toISOString())
-    .lt('created_at', end.toISOString())
+    .or(`and(user_id.eq.${userId},created_at.gte.${startIso},created_at.lt.${endIso})`)
     .order('created_at', { ascending: false });
 
   if (error) {
