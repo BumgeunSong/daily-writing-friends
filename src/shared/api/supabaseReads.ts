@@ -216,9 +216,9 @@ export async function fetchReplyingsByDateRangeFromSupabase(
         board_id
       )
     `)
-    .eq('user_id', userId)
-    .gte('created_at', startIso)
-    .lt('created_at', endIso)
+    .eq('replies.user_id', userId)
+    .gte('replies.created_at', startIso)
+    .lt('replies.created_at', endIso)
     .order('created_at', { ascending: false });
 
   if (error) {
