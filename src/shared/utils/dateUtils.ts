@@ -75,6 +75,20 @@ export function isConfigurableHoliday(
   return configurableHolidays.has(dateKey);
 }
 
+/**
+ * Normalize a date value that may be a Firestore Timestamp or JavaScript Date.
+ * Used during Supabase migration where data can come from either source.
+ */
+export function toDate(value: unknown): Date | undefined {
+  if (!value) return undefined;
+  if (value instanceof Date) return value;
+  // Firestore Timestamp has a toDate() method
+  if (typeof value === 'object' && 'toDate' in value && typeof (value as { toDate: () => Date }).toDate === 'function') {
+    return (value as { toDate: () => Date }).toDate();
+  }
+  return undefined;
+}
+
 // 날짜를 YYYY.MM.DD HH:MM 형식으로 포매팅하는 함수
 export const formatDateToKorean = (date: Date): string => {
   return new Intl.DateTimeFormat('ko', {

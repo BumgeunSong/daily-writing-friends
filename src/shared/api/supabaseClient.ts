@@ -44,3 +44,19 @@ export function getSupabaseClient(): SupabaseClient {
 export function isDualWriteEnabled(): boolean {
   return import.meta.env.VITE_DUAL_WRITE_ENABLED === 'true';
 }
+
+/**
+ * Read source for gradual migration.
+ * - 'firestore': Read from Firestore (current behavior)
+ * - 'supabase': Read from Supabase
+ * - 'shadow': Read from both, compare, return Firestore result
+ */
+export type ReadSource = 'firestore' | 'supabase' | 'shadow';
+
+export function getReadSource(): ReadSource {
+  const source = import.meta.env.VITE_READ_SOURCE;
+  if (source === 'supabase' || source === 'shadow') {
+    return source;
+  }
+  return 'firestore'; // Default to Firestore during migration
+}
