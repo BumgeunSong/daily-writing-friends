@@ -201,7 +201,7 @@ export async function fetchReplyingsByDateRangeFromSupabase(
       created_at,
       comment_id,
       post_id,
-      comments!inner (
+      comments (
         id,
         user_id
       ),
