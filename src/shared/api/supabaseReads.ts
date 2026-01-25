@@ -16,6 +16,36 @@ interface PostRow {
   created_at: string;
 }
 
+interface CommentRow {
+  id: string;
+  content: string;
+  created_at: string;
+  post_id: string;
+  posts: {
+    id: string;
+    title: string;
+    author_id: string;
+    board_id: string;
+  };
+}
+
+interface ReplyRow {
+  id: string;
+  created_at: string;
+  comment_id: string;
+  post_id: string;
+  comments: {
+    id: string;
+    user_id: string;
+  };
+  posts: {
+    id: string;
+    title: string;
+    author_id: string;
+    board_id: string;
+  };
+}
+
 // Types matching the Firestore fan-out models for compatibility
 export interface SupabasePosting {
   board: { id: string };
@@ -100,6 +130,103 @@ export async function fetchPostingsByDateRangeFromSupabase(
       title: row.title,
       contentLength: (row.content || '').length,
     },
+    createdAt: new Date(row.created_at),
+  }));
+}
+
+/**
+ * Fetch user's comments within a date range from Supabase.
+ * Replaces: users/{userId}/commentings subcollection
+ * Uses index: idx_comments_user_created
+ *
+ * Note: Requires JOIN with posts table to get post title and author_id
+ */
+export async function fetchCommentingsByDateRangeFromSupabase(
+  userId: string,
+  start: Date,
+  end: Date
+): Promise<SupabaseCommenting[]> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('comments')
+    .select(`
+      id,
+      content,
+      created_at,
+      post_id,
+      posts!inner (
+        id,
+        title,
+        author_id,
+        board_id
+      )
+    `)
+    .eq('user_id', userId)
+    .gte('created_at', start.toISOString())
+    .lt('created_at', end.toISOString())
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Supabase fetchCommentings error:', error);
+    throw error;
+  }
+
+  return (data || []).map((row: CommentRow) => ({
+    board: { id: row.posts.board_id },
+    post: { id: row.posts.id, title: row.posts.title, authorId: row.posts.author_id },
+    comment: { id: row.id, content: row.content },
+    createdAt: new Date(row.created_at),
+  }));
+}
+
+/**
+ * Fetch user's replies within a date range from Supabase.
+ * Replaces: users/{userId}/replyings subcollection
+ * Uses index: idx_replies_user_created
+ *
+ * Note: Uses denormalized post_id on replies table for efficiency
+ */
+export async function fetchReplyingsByDateRangeFromSupabase(
+  userId: string,
+  start: Date,
+  end: Date
+): Promise<SupabaseReplying[]> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('replies')
+    .select(`
+      id,
+      created_at,
+      comment_id,
+      post_id,
+      comments!inner (
+        id,
+        user_id
+      ),
+      posts:post_id (
+        id,
+        title,
+        author_id,
+        board_id
+      )
+    `)
+    .eq('user_id', userId)
+    .gte('created_at', start.toISOString())
+    .lt('created_at', end.toISOString())
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Supabase fetchReplyings error:', error);
+    throw error;
+  }
+
+  return (data || []).map((row: ReplyRow) => ({
+    board: { id: row.posts.board_id },
+    post: { id: row.posts.id, title: row.posts.title, authorId: row.posts.author_id },
+    comment: { id: row.comments.id, authorId: row.comments.user_id },
+    reply: { id: row.id },
     createdAt: new Date(row.created_at),
   }));
 }
