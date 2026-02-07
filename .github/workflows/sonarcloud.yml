@@ -4,12 +4,17 @@ on:
   push:
     branches: [main]
   pull_request:
+    branches: [main]
     types: [opened, synchronize, reopened]
 
 jobs:
   sonarcloud:
     name: SonarCloud
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: read
 
     steps:
       - uses: actions/checkout@v4
