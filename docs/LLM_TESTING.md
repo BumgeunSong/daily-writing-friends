@@ -22,18 +22,18 @@ npm run supabase:start
 
 Note the anon key from the output.
 
-### 2. Seed the Database
+### 2. Generate and Seed the Database
 
-```bash
-npm run supabase:reset
-```
-
-This runs migrations and the seed file (`supabase/seed.sql`).
-
-To regenerate seed data from production:
+First, generate the seed file from production (requires `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in `.env`):
 
 ```bash
 npm run supabase:seed:extract
+```
+
+This creates `supabase/seed.sql` with anonymized data. Then apply migrations and seed:
+
+```bash
+npm run supabase:reset
 ```
 
 ### 3. Configure Environment
