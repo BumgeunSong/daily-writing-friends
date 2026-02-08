@@ -334,18 +334,23 @@ async function main() {
 
 `;
 
-  // Insert test user into auth.users
+  // Auth user creation note
   sql += `-- ================================================
 -- AUTH USER (test login)
 -- ================================================
-INSERT INTO auth.users (
-  id, instance_id, email, encrypted_password, email_confirmed_at,
-  role, aud, created_at, updated_at, confirmation_token, recovery_token
-) VALUES (
-  ${escapeSql(testUserId)}, '00000000-0000-0000-0000-000000000000', 'test@test.local',
-  '$2a$10$PwGmm3MvJ8rHGjJuVVlC7.YoxvlLVw/9ZYKyBqQiYy7K0KuKY.TKK',
-  now(), 'authenticated', 'authenticated', now(), now(), '', ''
-) ON CONFLICT (id) DO NOTHING;
+-- The auth user for test@test.local is NOT created by this seed script.
+-- Create it via Supabase Dashboard or CLI so that:
+--   * auth.users.id is a valid UUID
+--   * auth.identities has a matching row for password sign-in
+--
+-- Example using supabase CLI (after supabase start):
+--   curl -X POST 'http://localhost:54321/auth/v1/admin/users' \\
+--     -H 'Authorization: Bearer <service_role_key>' \\
+--     -H 'Content-Type: application/json' \\
+--     -d '{"email":"test@test.local","password":"test1234","email_confirm":true}'
+--
+-- Then update the first app user to link to the auth UUID:
+--   UPDATE users SET id = '<auth-uuid>' WHERE id = '${testUserId}';
 
 `;
 
