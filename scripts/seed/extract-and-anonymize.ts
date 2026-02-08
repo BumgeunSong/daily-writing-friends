@@ -227,28 +227,7 @@ async function main() {
 
   console.log(`✅ Fetched ${reactions.length} reactions`);
 
-  // Step 6: Collect all user IDs referenced
-  const userIds = new Set<string>();
-  posts.forEach((p: Post) => userIds.add(p.author_id));
-  comments.forEach((c: Comment) => userIds.add(c.user_id));
-  replies.forEach((r: Reply) => userIds.add(r.user_id));
-  reactions.forEach((r: Reaction) => userIds.add(r.user_id));
-
-  // Step 7: Fetch users
-  console.log(`👤 Fetching ${userIds.size} users...`);
-  const { data: users, error: usersError } = await supabase
-    .from('users')
-    .select('*')
-    .in('id', Array.from(userIds));
-
-  if (usersError || !users) {
-    console.error('❌ Failed to fetch users:', usersError);
-    process.exit(1);
-  }
-
-  console.log(`✅ Fetched ${users.length} users`);
-
-  // Step 8: Fetch user_board_permissions for the board
+  // Step 6: Fetch user_board_permissions for the board
   console.log('🔐 Fetching user board permissions...');
   const { data: permissions, error: permissionsError } = await supabase
     .from('user_board_permissions')
@@ -261,6 +240,28 @@ async function main() {
   }
 
   console.log(`✅ Fetched ${permissions.length} permissions`);
+
+  // Step 7: Collect all user IDs referenced (including permissions)
+  const userIds = new Set<string>();
+  posts.forEach((p: Post) => userIds.add(p.author_id));
+  comments.forEach((c: Comment) => userIds.add(c.user_id));
+  replies.forEach((r: Reply) => userIds.add(r.user_id));
+  reactions.forEach((r: Reaction) => userIds.add(r.user_id));
+  permissions.forEach((p: UserBoardPermission) => userIds.add(p.user_id));
+
+  // Step 8: Fetch users
+  console.log(`👤 Fetching ${userIds.size} users...`);
+  const { data: users, error: usersError } = await supabase
+    .from('users')
+    .select('*')
+    .in('id', Array.from(userIds));
+
+  if (usersError || !users) {
+    console.error('❌ Failed to fetch users:', usersError);
+    process.exit(1);
+  }
+
+  console.log(`✅ Fetched ${users.length} users`);
 
   // Step 9: Anonymize data
   console.log('🎭 Anonymizing data...');
@@ -282,6 +283,7 @@ async function main() {
       phone_number: null,
       bio: `Test bio for user ${userCounter}`,
       referrer: null,
+      known_buddy_uid: null,
     };
 
     anonymizedUsers.push(anonymizedUser);
