@@ -156,64 +156,83 @@ async function main() {
   const postIds = posts.map((p: Post) => p.id);
 
   // Step 3: Fetch comments on those posts
-  console.log('💬 Fetching comments...');
-  const { data: comments, error: commentsError } = await supabase
-    .from('comments')
-    .select('*')
-    .in('post_id', postIds);
+  let comments: Comment[] = [];
+  let commentIds: string[] = [];
 
-  if (commentsError || !comments) {
-    console.error('❌ Failed to fetch comments:', commentsError);
-    process.exit(1);
+  if (postIds.length > 0) {
+    console.log('💬 Fetching comments...');
+    const { data: commentsData, error: commentsError } = await supabase
+      .from('comments')
+      .select('*')
+      .in('post_id', postIds);
+
+    if (commentsError || !commentsData) {
+      console.error('❌ Failed to fetch comments:', commentsError);
+      process.exit(1);
+    }
+
+    comments = commentsData;
+    commentIds = comments.map((c: Comment) => c.id);
   }
 
   console.log(`✅ Fetched ${comments.length} comments`);
 
-  const commentIds = comments.map((c: Comment) => c.id);
-
   // Step 4: Fetch replies on those comments
-  console.log('↩️  Fetching replies...');
-  const { data: replies, error: repliesError } = await supabase
-    .from('replies')
-    .select('*')
-    .in('comment_id', commentIds);
+  let replies: Reply[] = [];
 
-  if (repliesError || !replies) {
-    console.error('❌ Failed to fetch replies:', repliesError);
-    process.exit(1);
+  if (commentIds.length > 0) {
+    console.log('↩️  Fetching replies...');
+    const { data: repliesData, error: repliesError } = await supabase
+      .from('replies')
+      .select('*')
+      .in('comment_id', commentIds);
+
+    if (repliesError || !repliesData) {
+      console.error('❌ Failed to fetch replies:', repliesError);
+      process.exit(1);
+    }
+
+    replies = repliesData;
   }
 
   console.log(`✅ Fetched ${replies.length} replies`);
 
   // Step 5: Fetch reactions on comments and replies
-  console.log('❤️  Fetching reactions...');
   const replyIds = replies.map((r: Reply) => r.id);
-  
-  let reactionsQuery = supabase.from('reactions').select('*');
-  
-  if (commentIds.length > 0 && replyIds.length > 0) {
-    reactionsQuery = reactionsQuery.or(`comment_id.in.(${commentIds.join(',')}),reply_id.in.(${replyIds.join(',')})`);
-  } else if (commentIds.length > 0) {
-    reactionsQuery = reactionsQuery.in('comment_id', commentIds);
-  } else if (replyIds.length > 0) {
-    reactionsQuery = reactionsQuery.in('reply_id', replyIds);
+  let reactions: Reaction[] = [];
+
+  if (commentIds.length === 0 && replyIds.length === 0) {
+    console.log('✅ No comments or replies, skipping reactions fetch');
+  } else {
+    console.log('❤️  Fetching reactions...');
+    let reactionsQuery = supabase.from('reactions').select('*');
+
+    if (commentIds.length > 0 && replyIds.length > 0) {
+      reactionsQuery = reactionsQuery.or(`comment_id.in.(${commentIds.join(',')}),reply_id.in.(${replyIds.join(',')})`);
+    } else if (commentIds.length > 0) {
+      reactionsQuery = reactionsQuery.in('comment_id', commentIds);
+    } else {
+      reactionsQuery = reactionsQuery.in('reply_id', replyIds);
+    }
+
+    const { data: reactionsData, error: reactionsError } = await reactionsQuery;
+
+    if (reactionsError) {
+      console.error('❌ Failed to fetch reactions:', reactionsError);
+      process.exit(1);
+    }
+
+    reactions = reactionsData || [];
   }
 
-  const { data: reactions, error: reactionsError } = await reactionsQuery;
-
-  if (reactionsError) {
-    console.error('❌ Failed to fetch reactions:', reactionsError);
-    process.exit(1);
-  }
-
-  console.log(`✅ Fetched ${reactions?.length || 0} reactions`);
+  console.log(`✅ Fetched ${reactions.length} reactions`);
 
   // Step 6: Collect all user IDs referenced
   const userIds = new Set<string>();
   posts.forEach((p: Post) => userIds.add(p.author_id));
   comments.forEach((c: Comment) => userIds.add(c.user_id));
   replies.forEach((r: Reply) => userIds.add(r.user_id));
-  (reactions || []).forEach((r: Reaction) => userIds.add(r.user_id));
+  reactions.forEach((r: Reaction) => userIds.add(r.user_id));
 
   // Step 7: Fetch users
   console.log(`👤 Fetching ${userIds.size} users...`);
@@ -292,7 +311,7 @@ async function main() {
   }));
 
   // Anonymize reactions
-  const anonymizedReactions = (reactions || []).map((reaction: Reaction) => ({
+  const anonymizedReactions = reactions.map((reaction: Reaction) => ({
     ...reaction,
     user_name: `TestUser${userMapping.get(reaction.user_id)}`,
     user_profile_image: null,
