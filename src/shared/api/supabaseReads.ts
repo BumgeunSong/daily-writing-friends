@@ -17,6 +17,12 @@ import type { Reaction } from '@/comment/model/Reaction';
 import type { User } from '@/user/model/User';
 import { Timestamp } from 'firebase/firestore';
 
+/** Format string array as PostgREST `in.(...)` value with proper quoting */
+function formatInFilter(values: string[]): string {
+  const quoted = values.map((v) => `"${v.replace(/"/g, '""')}"`);
+  return `(${quoted.join(',')})`;
+}
+
 // Supabase row types for query results
 interface PostRow {
   id: string;
@@ -343,7 +349,15 @@ export async function fetchBoardTitleFromSupabase(boardId: string): Promise<stri
     .eq('id', boardId)
     .single();
 
-  if (error || !data) {
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return 'Board not found';
+    }
+    console.error('Supabase fetchBoardTitle error:', error);
+    throw error;
+  }
+
+  if (!data) {
     return 'Board not found';
   }
 
@@ -373,7 +387,7 @@ export async function fetchRecentPostsFromSupabase(
 
   if (blockedByUsers.length > 0) {
     // Supabase doesn't have a direct not-in for arrays > 0, use .not().in()
-    q = q.not('author_id', 'in', `(${blockedByUsers.join(',')})`);
+    q = q.not('author_id', 'in', formatInFilter(blockedByUsers));
   }
 
   if (after) {
@@ -415,7 +429,7 @@ export async function fetchBestPostsFromSupabase(
     .limit(limitCount);
 
   if (blockedByUsers.length > 0) {
-    q = q.not('author_id', 'in', `(${blockedByUsers.join(',')})`);
+    q = q.not('author_id', 'in', formatInFilter(blockedByUsers));
   }
 
   if (afterScore !== undefined) {
@@ -491,7 +505,7 @@ export async function fetchCommentsFromSupabase(
     .order('created_at', { ascending: true });
 
   if (blockedByUsers.length > 0) {
-    q = q.not('user_id', 'in', `(${blockedByUsers.join(',')})`);
+    q = q.not('user_id', 'in', formatInFilter(blockedByUsers));
   }
 
   const { data, error } = await q;
@@ -728,7 +742,7 @@ export async function fetchRepliesFromSupabase(
     .order('created_at', { ascending: true });
 
   if (blockedByUsers.length > 0) {
-    q = q.not('user_id', 'in', `(${blockedByUsers.join(',')})`);
+    q = q.not('user_id', 'in', formatInFilter(blockedByUsers));
   }
 
   const { data, error } = await q;
@@ -764,7 +778,7 @@ export async function fetchReplyCountFromSupabase(
     .eq('comment_id', commentId);
 
   if (blockedByUsers.length > 0) {
-    q = q.not('user_id', 'in', `(${blockedByUsers.join(',')})`);
+    q = q.not('user_id', 'in', formatInFilter(blockedByUsers));
   }
 
   const { count, error } = await q;

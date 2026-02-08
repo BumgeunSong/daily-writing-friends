@@ -6,6 +6,7 @@ import { trackedFirebase } from '@/shared/api/trackedFirebase';
 import { buildNotInQuery } from '@/user/api/user';
 import { getReadSource } from '@/shared/api/supabaseClient';
 import { fetchRecentPostsFromSupabase, fetchBestPostsFromSupabase } from '@/shared/api/supabaseReads';
+import { compareShadowResults, logShadowMismatch } from '@/shared/api/shadowReads';
 
 // TODO: Re-enable when best posts feature is implemented
 // const BEST_POSTS_DAYS_RANGE = 7;
@@ -38,7 +39,22 @@ export async function fetchRecentPosts(
     q = query(q, startAfter(after));
   }
   const snapshot = await trackedFirebase.getDocs(q);
-  return snapshot.docs.map(doc => mapDocumentToPost(doc));
+  const firestoreData = snapshot.docs.map(doc => mapDocumentToPost(doc));
+
+  if (readSource === 'shadow') {
+    fetchRecentPostsFromSupabase(boardId, limitCount, blockedByUsers, after)
+      .then((supabaseData) => {
+        const result = compareShadowResults(firestoreData, supabaseData, (item) => item.id);
+        if (!result.match) {
+          logShadowMismatch('recentPosts', boardId, result);
+        }
+      })
+      .catch((error) => {
+        console.error('Shadow read failed for recentPosts:', error);
+      });
+  }
+
+  return firestoreData;
 }
 
 /**
@@ -73,7 +89,22 @@ export async function fetchBestPosts(
   }
 
   const snapshot = await trackedFirebase.getDocs(q);
-  return snapshot.docs.map(doc => mapDocumentToPost(doc));
+  const firestoreData = snapshot.docs.map(doc => mapDocumentToPost(doc));
+
+  if (readSource === 'shadow') {
+    fetchBestPostsFromSupabase(boardId, limitCount, blockedByUsers, afterScore)
+      .then((supabaseData) => {
+        const result = compareShadowResults(firestoreData, supabaseData, (item) => item.id);
+        if (!result.match) {
+          logShadowMismatch('bestPosts', boardId, result);
+        }
+      })
+      .catch((error) => {
+        console.error('Shadow read failed for bestPosts:', error);
+      });
+  }
+
+  return firestoreData;
 }
 
 /**
