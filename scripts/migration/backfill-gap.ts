@@ -14,8 +14,8 @@
 import { firestore, supabase, BATCH_SIZE } from './config';
 import { Timestamp } from 'firebase-admin/firestore';
 
-// Timestamp when export-firestore.ts completed
-const EXPORT_COMPLETED_AT = new Date('2026-01-15T12:52:00Z'); // UTC (21:52 KST)
+// Supabase에 마지막으로 동기화된 시점 (이 시점 이후의 레코드를 백필)
+const GAP_START_AT = new Date('2026-01-16T15:06:37Z'); // UTC - last synced post in Supabase
 
 interface GapRecord {
   id: string;
@@ -35,7 +35,7 @@ interface GapSummary {
 async function findRecentUsers(): Promise<GapRecord[]> {
   const snapshot = await firestore
     .collection('users')
-    .where('updatedAt', '>', Timestamp.fromDate(EXPORT_COMPLETED_AT))
+    .where('updatedAt', '>', Timestamp.fromDate(GAP_START_AT))
     .get();
 
   return snapshot.docs.map((doc) => ({
@@ -51,7 +51,7 @@ async function findRecentPosts(): Promise<GapRecord[]> {
   for (const boardDoc of boardsSnapshot.docs) {
     const postsSnapshot = await firestore
       .collection(`boards/${boardDoc.id}/posts`)
-      .where('createdAt', '>', Timestamp.fromDate(EXPORT_COMPLETED_AT))
+      .where('createdAt', '>', Timestamp.fromDate(GAP_START_AT))
       .get();
 
     for (const postDoc of postsSnapshot.docs) {
@@ -75,7 +75,7 @@ async function findRecentComments(): Promise<GapRecord[]> {
     for (const postDoc of postsSnapshot.docs) {
       const commentsSnapshot = await firestore
         .collection(`boards/${boardDoc.id}/posts/${postDoc.id}/comments`)
-        .where('createdAt', '>', Timestamp.fromDate(EXPORT_COMPLETED_AT))
+        .where('createdAt', '>', Timestamp.fromDate(GAP_START_AT))
         .get();
 
       for (const commentDoc of commentsSnapshot.docs) {
@@ -107,7 +107,7 @@ async function findRecentReplies(): Promise<GapRecord[]> {
           .collection(
             `boards/${boardDoc.id}/posts/${postDoc.id}/comments/${commentDoc.id}/replies`
           )
-          .where('createdAt', '>', Timestamp.fromDate(EXPORT_COMPLETED_AT))
+          .where('createdAt', '>', Timestamp.fromDate(GAP_START_AT))
           .get();
 
         for (const replyDoc of repliesSnapshot.docs) {
@@ -133,7 +133,7 @@ async function findRecentLikes(): Promise<GapRecord[]> {
     for (const postDoc of postsSnapshot.docs) {
       const likesSnapshot = await firestore
         .collection(`boards/${boardDoc.id}/posts/${postDoc.id}/likes`)
-        .where('createdAt', '>', Timestamp.fromDate(EXPORT_COMPLETED_AT))
+        .where('createdAt', '>', Timestamp.fromDate(GAP_START_AT))
         .get();
 
       for (const likeDoc of likesSnapshot.docs) {
@@ -166,7 +166,7 @@ async function findRecentReactions(): Promise<GapRecord[]> {
           .collection(
             `boards/${boardDoc.id}/posts/${postDoc.id}/comments/${commentDoc.id}/reactions`
           )
-          .where('createdAt', '>', Timestamp.fromDate(EXPORT_COMPLETED_AT))
+          .where('createdAt', '>', Timestamp.fromDate(GAP_START_AT))
           .get();
 
         for (const reactionDoc of commentReactionsSnapshot.docs) {
@@ -191,7 +191,7 @@ async function findRecentReactions(): Promise<GapRecord[]> {
             .collection(
               `boards/${boardDoc.id}/posts/${postDoc.id}/comments/${commentDoc.id}/replies/${replyDoc.id}/reactions`
             )
-            .where('createdAt', '>', Timestamp.fromDate(EXPORT_COMPLETED_AT))
+            .where('createdAt', '>', Timestamp.fromDate(GAP_START_AT))
             .get();
 
           for (const reactionDoc of replyReactionsSnapshot.docs) {
@@ -218,7 +218,7 @@ async function findRecentBlocks(): Promise<GapRecord[]> {
   for (const userDoc of usersSnapshot.docs) {
     const blocksSnapshot = await firestore
       .collection(`users/${userDoc.id}/blockedUsers`)
-      .where('blockedAt', '>', Timestamp.fromDate(EXPORT_COMPLETED_AT))
+      .where('blockedAt', '>', Timestamp.fromDate(GAP_START_AT))
       .get();
 
     for (const blockDoc of blocksSnapshot.docs) {
@@ -432,7 +432,7 @@ async function syncCollection(
 
   console.log('  Finding recent records in Firestore...');
   const recentRecords = await findRecords();
-  console.log(`  Found ${recentRecords.length} records after export timestamp`);
+  console.log(`  Found ${recentRecords.length} records after gap start`);
 
   if (recentRecords.length === 0) {
     return {
@@ -478,7 +478,7 @@ async function main(): Promise<void> {
   const isDryRun = process.argv.includes('--dry-run');
 
   console.log('=== Backfill Gap Migration ===');
-  console.log(`Export completed at: ${EXPORT_COMPLETED_AT.toISOString()}`);
+  console.log(`Gap start at: ${GAP_START_AT.toISOString()}`);
   console.log(`Mode: ${isDryRun ? 'DRY-RUN (no changes)' : 'LIVE'}`);
 
   const summaries: GapSummary[] = [];
