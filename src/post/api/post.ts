@@ -4,6 +4,8 @@ import { Post } from '@/post/model/Post';
 import { mapDocumentToPost } from '@/post/utils/postUtils';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
 import { buildNotInQuery } from '@/user/api/user';
+import { getReadSource } from '@/shared/api/supabaseClient';
+import { fetchRecentPostsFromSupabase, fetchBestPostsFromSupabase } from '@/shared/api/supabaseReads';
 
 // TODO: Re-enable when best posts feature is implemented
 // const BEST_POSTS_DAYS_RANGE = 7;
@@ -22,6 +24,11 @@ export async function fetchRecentPosts(
   blockedByUsers: string[] = [],
   after?: Date
 ): Promise<Post[]> {
+  const readSource = getReadSource();
+  if (readSource === 'supabase') {
+    return fetchRecentPostsFromSupabase(boardId, limitCount, blockedByUsers, after);
+  }
+
   const postsRef = collection(firestore, `boards/${boardId}/posts`);
   let q = buildNotInQuery(postsRef, 'authorId', blockedByUsers, ['createdAt', 'desc']);
   if (limitCount) {
@@ -44,6 +51,11 @@ export async function fetchBestPosts(
   blockedByUsers: string[] = [],
   afterScore?: number
 ): Promise<Post[]> {
+  const readSource = getReadSource();
+  if (readSource === 'supabase') {
+    return fetchBestPostsFromSupabase(boardId, limitCount, blockedByUsers, afterScore);
+  }
+
   const postsRef = collection(firestore, `boards/${boardId}/posts`);
 
   let q = query(

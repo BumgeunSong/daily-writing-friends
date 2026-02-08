@@ -7,12 +7,17 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, storage } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
 import { dualWrite } from '@/shared/api/dualWrite';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient, getReadSource } from '@/shared/api/supabaseClient';
+import { fetchUserFromSupabase, fetchAllUsersFromSupabase, fetchUsersWithBoardPermissionFromSupabase } from '@/shared/api/supabaseReads';
 import { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
 import { User as FirebaseUser } from 'firebase/auth';
 
 // Firestore에서 User 데이터 읽기
 export async function fetchUser(uid: string): Promise<User | null> {
+    const readSource = getReadSource();
+    if (readSource === 'supabase') {
+        return fetchUserFromSupabase(uid);
+    }
     const userDocRef = doc(firestore, 'users', uid);
     const userDoc = await trackedFirebase.getDoc(userDocRef);
     if (!userDoc.exists()) return null;
@@ -98,30 +103,35 @@ export async function deleteUser(uid: string): Promise<void> {
 // 특정 boardIds에 write 권한이 있는 모든 사용자 데이터 가져오기
 export async function fetchUsersWithBoardPermission(boardIds: string[]): Promise<User[]> {
     try {
+        const readSource = getReadSource();
+        if (readSource === 'supabase') {
+            return fetchUsersWithBoardPermissionFromSupabase(boardIds);
+        }
+
         if (boardIds.length === 0) return [];
-        
+
         // Use OR query for multiple board permissions (Firestore v9+)
-        const conditions = boardIds.map(boardId => 
+        const conditions = boardIds.map(boardId =>
             where(`boardPermissions.${boardId}`, '==', 'write')
         );
-        
+
         const q = query(
             collection(firestore, 'users'),
             or(...conditions)
         );
-        
+
         const snapshot = await trackedFirebase.getDocs(q);
         const users: User[] = [];
-        
+
         snapshot.docs.forEach(doc => {
             const userData = doc.data() as User;
             // Ensure document ID is included
-            users.push({ 
+            users.push({
                 ...userData,
                 uid: doc.id // Override with actual document ID
             });
         });
-        
+
         return users;
     } catch (error) {
         console.error('Error fetching users with board permission:', error);
@@ -205,6 +215,10 @@ export async function removeBlockedUser(myUid: string, blockedUid: string): Prom
  */
 export async function fetchAllUsers(): Promise<User[]> {
     try {
+        const readSource = getReadSource();
+        if (readSource === 'supabase') {
+            return fetchAllUsersFromSupabase();
+        }
         const usersSnap = await trackedFirebase.getDocs(collection(firestore, 'users'));
         return usersSnap.docs.map(doc => doc.data() as User);
     } catch (error) {

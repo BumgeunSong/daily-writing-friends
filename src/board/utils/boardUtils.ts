@@ -4,13 +4,23 @@ import { firestore } from '@/firebase';
 import { User } from '@/user/model/User';
 import { Board } from '../model/Board';
 import { dualWrite } from '@/shared/api/dualWrite';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient, getReadSource } from '@/shared/api/supabaseClient';
+import { fetchBoardsFromSupabase, fetchBoardByIdFromSupabase, fetchBoardTitleFromSupabase } from '@/shared/api/supabaseReads';
 
 export async function fetchBoardTitle(boardId: string): Promise<string> {
   try {
     const cachedTitle = localStorage.getItem(`boardTitle_${boardId}`);
     if (cachedTitle) {
       return cachedTitle;
+    }
+
+    const readSource = getReadSource();
+    if (readSource === 'supabase') {
+      const title = await fetchBoardTitleFromSupabase(boardId);
+      if (title !== 'Board not found') {
+        localStorage.setItem(`boardTitle_${boardId}`, title);
+      }
+      return title;
     }
 
     const boardDocRef = doc(firestore, 'boards', boardId);
@@ -34,6 +44,10 @@ export async function fetchBoardTitle(boardId: string): Promise<string> {
 
 export async function fetchBoardsWithUserPermissions(userId: string): Promise<Board[]> {
   try {
+    const readSource = getReadSource();
+    if (readSource === 'supabase') {
+      return await fetchBoardsFromSupabase(userId);
+    }
 
     const userDocRef = doc(firestore, 'users', userId);
     const userDoc = await getDoc(userDocRef);
@@ -71,14 +85,19 @@ export async function fetchBoardById(boardId: string): Promise<Board | null> {
   }
 
   try {
+    const readSource = getReadSource();
+    if (readSource === 'supabase') {
+      return await fetchBoardByIdFromSupabase(boardId);
+    }
+
     const boardDocRef = doc(firestore, 'boards', boardId);
     const boardDoc = await getDoc(boardDocRef);
-    
-    if (!boardDoc.exists()) { 
+
+    if (!boardDoc.exists()) {
       console.warn(`Board with id ${boardId} does not exist`);
       return null;
     }
-    
+
     return { ...boardDoc.data(), id: boardDoc.id } as Board;
   } catch (error) {
     console.error(`Error fetching board with id ${boardId}:`, error);

@@ -9,7 +9,8 @@ import { Comment } from '@/comment/model/Comment';
 import { firestore } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
 import { dualWrite } from '@/shared/api/dualWrite';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient, getReadSource } from '@/shared/api/supabaseClient';
+import { fetchCommentsFromSupabase, fetchCommentByIdFromSupabase } from '@/shared/api/supabaseReads';
 import { buildNotInQuery } from '@/user/api/user';
 
 /**
@@ -105,6 +106,11 @@ export async function fetchCommentsOnce(
   postId: string,
   blockedByUsers: string[] = [],
 ): Promise<Comment[]> {
+  const readSource = getReadSource();
+  if (readSource === 'supabase') {
+    return fetchCommentsFromSupabase(postId, blockedByUsers);
+  }
+
   const commentsRef = collection(firestore, 'boards', boardId, 'posts', postId, 'comments');
   const q = buildNotInQuery(commentsRef, 'userId', blockedByUsers, ['createdAt', 'asc']);
   const snapshot = await getDocs(q);
@@ -125,6 +131,11 @@ export async function fetchCommentById(
   postId: string,
   commentId: string,
 ): Promise<Comment | null> {
+  const readSource = getReadSource();
+  if (readSource === 'supabase') {
+    return fetchCommentByIdFromSupabase(commentId);
+  }
+
   const commentRef = doc(firestore, 'boards', boardId, 'posts', postId, 'comments', commentId);
   const snapshot = await getDoc(commentRef);
   if (!snapshot.exists()) return null;

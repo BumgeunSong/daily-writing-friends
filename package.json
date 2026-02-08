@@ -32,6 +32,10 @@
     "e2e:ui": "cross-env NODE_ENV=test playwright test --ui",
     "e2e:debug": "cross-env NODE_ENV=test playwright test --debug",
     "e2e:headed": "cross-env NODE_ENV=test playwright test --headed",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:reset": "supabase db reset",
+    "supabase:seed:extract": "npx tsx scripts/seed/extract-and-anonymize.ts",
     "prepare": "husky"
   },
   "dependencies": {

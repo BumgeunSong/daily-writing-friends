@@ -1,11 +1,21 @@
 /**
  * Supabase Read Functions
  *
- * Direct table queries replacing Firestore fan-out subcollections.
- * Uses indexes: idx_posts_author_created, idx_comments_user_created, idx_replies_user_created
+ * Direct table queries replacing Firestore fan-out subcollections AND core entity reads.
+ * Uses indexes: idx_posts_author_created, idx_comments_user_created, idx_replies_user_created,
+ *   idx_posts_board_created, idx_posts_board_engagement, idx_comments_post_created,
+ *   idx_replies_comment_created, idx_permissions_user
  */
 
 import { getSupabaseClient } from './supabaseClient';
+import type { Board } from '@/board/model/Board';
+import type { Post } from '@/post/model/Post';
+import { PostVisibility } from '@/post/model/Post';
+import type { Comment } from '@/comment/model/Comment';
+import type { Reply } from '@/comment/model/Reply';
+import type { Reaction } from '@/comment/model/Reaction';
+import type { User } from '@/user/model/User';
+import { Timestamp } from 'firebase/firestore';
 
 // Supabase row types for query results
 interface PostRow {
@@ -16,28 +26,8 @@ interface PostRow {
   created_at: string;
 }
 
-interface CommentRow {
-  id: string;
-  content: string;
-  created_at: string;
-  post_id: string;
-  posts: {
-    id: string;
-    title: string;
-    author_id: string;
-    board_id: string;
-  };
-}
-
-interface ReplyRow {
-  id: string;
-  created_at: string;
-  comment_id: string;
-  post_id: string;
-  user_id: string;
-  comments: { id: string };
-  posts: { id: string; title: string; author_id: string; board_id: string };
-}
+// Note: Supabase join selects return arrays at the type level,
+// but !inner guarantees exactly one row. We use type assertions in the mappers.
 
 // Types matching the Firestore fan-out models for compatibility
 export interface SupabasePosting {
@@ -165,12 +155,16 @@ export async function fetchCommentingsByDateRangeFromSupabase(
     throw error;
   }
 
-  return (data || []).map((row: CommentRow) => ({
-    board: { id: row.posts.board_id },
-    post: { id: row.posts.id, title: row.posts.title, authorId: row.posts.author_id },
-    comment: { id: row.id, content: row.content },
-    createdAt: new Date(row.created_at),
-  }));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data || []).map((row: any) => {
+    const post = Array.isArray(row.posts) ? row.posts[0] : row.posts;
+    return {
+      board: { id: post.board_id },
+      post: { id: post.id, title: post.title, authorId: post.author_id },
+      comment: { id: row.id, content: row.content },
+      createdAt: new Date(row.created_at),
+    };
+  });
 }
 
 /**
@@ -219,11 +213,640 @@ export async function fetchReplyingsByDateRangeFromSupabase(
     throw error;
   }
 
-  return (data || []).map((row: ReplyRow) => ({
-    board: { id: row.posts.board_id },
-    post: { id: row.posts.id, title: row.posts.title, authorId: row.posts.author_id },
-    comment: { id: row.comments.id, authorId: '' }, // comment author not available (column ambiguity)
-    reply: { id: row.id },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data || []).map((row: any) => {
+    const post = Array.isArray(row.posts) ? row.posts[0] : row.posts;
+    const comment = Array.isArray(row.comments) ? row.comments[0] : row.comments;
+    return {
+      board: { id: post.board_id },
+      post: { id: post.id, title: post.title, authorId: post.author_id },
+      comment: { id: comment.id, authorId: '' }, // comment author not available (column ambiguity)
+      reply: { id: row.id },
+      createdAt: new Date(row.created_at),
+    };
+  });
+}
+
+// ================================================
+// Core Entity Read Functions (Phase A migration)
+// ================================================
+
+// --- Boards ---
+
+/**
+ * Fetch boards the user has permission to access.
+ * Replaces: fetchBoardsWithUserPermissions in boardUtils.ts
+ * Uses index: idx_permissions_user
+ */
+export async function fetchBoardsFromSupabase(userId: string): Promise<Board[]> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('user_board_permissions')
+    .select(`
+      board_id,
+      permission,
+      boards!inner (
+        id,
+        title,
+        description,
+        first_day,
+        last_day,
+        cohort,
+        created_at
+      )
+    `)
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error('Supabase fetchBoards error:', error);
+    return [];
+  }
+
+  // Fetch waiting users for each board
+  const boardIds = (data || []).map((row: { board_id: string }) => row.board_id);
+  const { data: waitingData } = await supabase
+    .from('board_waiting_users')
+    .select('board_id, user_id')
+    .in('board_id', boardIds.length > 0 ? boardIds : ['__none__']);
+
+  const waitingByBoard: Record<string, string[]> = {};
+  for (const w of waitingData || []) {
+    if (!waitingByBoard[w.board_id]) waitingByBoard[w.board_id] = [];
+    waitingByBoard[w.board_id].push(w.user_id);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data || []).map((row: any) => {
+    const board = Array.isArray(row.boards) ? row.boards[0] : row.boards;
+    return {
+      id: board.id,
+      title: board.title,
+      description: board.description || '',
+      createdAt: new Date(board.created_at),
+      firstDay: board.first_day ? Timestamp.fromDate(new Date(board.first_day)) : undefined,
+      lastDay: board.last_day ? Timestamp.fromDate(new Date(board.last_day)) : undefined,
+      cohort: board.cohort ?? undefined,
+      waitingUsersIds: waitingByBoard[board.id] || [],
+    };
+  });
+}
+
+/**
+ * Fetch a single board by ID.
+ * Replaces: fetchBoardById in boardUtils.ts
+ */
+export async function fetchBoardByIdFromSupabase(boardId: string): Promise<Board | null> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('boards')
+    .select('id, title, description, first_day, last_day, cohort, created_at')
+    .eq('id', boardId)
+    .single();
+
+  if (error || !data) {
+    if (error?.code !== 'PGRST116') { // not "no rows" error
+      console.error('Supabase fetchBoardById error:', error);
+    }
+    return null;
+  }
+
+  // Fetch waiting users
+  const { data: waitingData } = await supabase
+    .from('board_waiting_users')
+    .select('user_id')
+    .eq('board_id', boardId);
+
+  return {
+    id: data.id,
+    title: data.title,
+    description: data.description || '',
+    createdAt: new Date(data.created_at),
+    firstDay: data.first_day ? Timestamp.fromDate(new Date(data.first_day)) : undefined,
+    lastDay: data.last_day ? Timestamp.fromDate(new Date(data.last_day)) : undefined,
+    cohort: data.cohort ?? undefined,
+    waitingUsersIds: (waitingData || []).map((w: { user_id: string }) => w.user_id),
+  };
+}
+
+/**
+ * Fetch board title by ID.
+ * Replaces: fetchBoardTitle in boardUtils.ts
+ */
+export async function fetchBoardTitleFromSupabase(boardId: string): Promise<string> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('boards')
+    .select('title')
+    .eq('id', boardId)
+    .single();
+
+  if (error || !data) {
+    return 'Board not found';
+  }
+
+  return data.title;
+}
+
+// --- Posts ---
+
+/**
+ * Fetch recent posts for a board.
+ * Replaces: fetchRecentPosts in post.ts
+ * Uses index: idx_posts_board_created
+ */
+export async function fetchRecentPostsFromSupabase(
+  boardId: string,
+  limitCount: number,
+  blockedByUsers: string[] = [],
+  after?: Date
+): Promise<Post[]> {
+  const supabase = getSupabaseClient();
+
+  let q = supabase
+    .from('posts')
+    .select('*')
+    .eq('board_id', boardId)
+    .order('created_at', { ascending: false });
+
+  if (blockedByUsers.length > 0) {
+    // Supabase doesn't have a direct not-in for arrays > 0, use .not().in()
+    q = q.not('author_id', 'in', `(${blockedByUsers.join(',')})`);
+  }
+
+  if (after) {
+    q = q.lt('created_at', after.toISOString());
+  }
+
+  if (limitCount) {
+    q = q.limit(limitCount);
+  }
+
+  const { data, error } = await q;
+
+  if (error) {
+    console.error('Supabase fetchRecentPosts error:', error);
+    throw error;
+  }
+
+  return (data || []).map(mapRowToPost);
+}
+
+/**
+ * Fetch best (highest engagement) posts for a board.
+ * Replaces: fetchBestPosts in post.ts
+ * Uses index: idx_posts_board_engagement
+ */
+export async function fetchBestPostsFromSupabase(
+  boardId: string,
+  limitCount: number,
+  blockedByUsers: string[] = [],
+  afterScore?: number
+): Promise<Post[]> {
+  const supabase = getSupabaseClient();
+
+  let q = supabase
+    .from('posts')
+    .select('*')
+    .eq('board_id', boardId)
+    .order('engagement_score', { ascending: false })
+    .limit(limitCount);
+
+  if (blockedByUsers.length > 0) {
+    q = q.not('author_id', 'in', `(${blockedByUsers.join(',')})`);
+  }
+
+  if (afterScore !== undefined) {
+    q = q.lt('engagement_score', afterScore);
+  }
+
+  const { data, error } = await q;
+
+  if (error) {
+    console.error('Supabase fetchBestPosts error:', error);
+    throw error;
+  }
+
+  return (data || []).map(mapRowToPost);
+}
+
+/** Map a Supabase posts row to Post model */
+function mapRowToPost(row: {
+  id: string;
+  board_id: string;
+  author_id: string;
+  author_name: string;
+  title: string;
+  content: string;
+  content_json: unknown;
+  thumbnail_image_url: string | null;
+  visibility: string | null;
+  count_of_comments: number;
+  count_of_replies: number;
+  count_of_likes: number;
+  engagement_score: number;
+  week_days_from_first_day: number | null;
+  created_at: string;
+  updated_at: string;
+}): Post {
+  return {
+    id: row.id,
+    boardId: row.board_id,
+    title: row.title,
+    content: row.content,
+    contentJson: row.content_json as Post['contentJson'],
+    thumbnailImageURL: row.thumbnail_image_url,
+    authorId: row.author_id,
+    authorName: row.author_name,
+    createdAt: Timestamp.fromDate(new Date(row.created_at)),
+    updatedAt: row.updated_at ? Timestamp.fromDate(new Date(row.updated_at)) : undefined,
+    countOfComments: row.count_of_comments,
+    countOfReplies: row.count_of_replies,
+    countOfLikes: row.count_of_likes,
+    engagementScore: row.engagement_score,
+    weekDaysFromFirstDay: row.week_days_from_first_day ?? undefined,
+    visibility: (row.visibility as PostVisibility) || PostVisibility.PUBLIC,
+  };
+}
+
+// --- Comments ---
+
+/**
+ * Fetch all comments for a post.
+ * Replaces: fetchCommentsOnce in comment.ts
+ * Uses index: idx_comments_post_created
+ */
+export async function fetchCommentsFromSupabase(
+  postId: string,
+  blockedByUsers: string[] = [],
+): Promise<Comment[]> {
+  const supabase = getSupabaseClient();
+
+  let q = supabase
+    .from('comments')
+    .select('id, content, user_id, user_name, user_profile_image, created_at')
+    .eq('post_id', postId)
+    .order('created_at', { ascending: true });
+
+  if (blockedByUsers.length > 0) {
+    q = q.not('user_id', 'in', `(${blockedByUsers.join(',')})`);
+  }
+
+  const { data, error } = await q;
+
+  if (error) {
+    console.error('Supabase fetchComments error:', error);
+    throw error;
+  }
+
+  return (data || []).map(mapRowToComment);
+}
+
+/**
+ * Fetch a single comment by ID.
+ * Replaces: fetchCommentById in comment.ts
+ */
+export async function fetchCommentByIdFromSupabase(
+  commentId: string,
+): Promise<Comment | null> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('comments')
+    .select('id, content, user_id, user_name, user_profile_image, created_at')
+    .eq('id', commentId)
+    .single();
+
+  if (error || !data) {
+    if (error?.code !== 'PGRST116') {
+      console.error('Supabase fetchCommentById error:', error);
+    }
+    return null;
+  }
+
+  return mapRowToComment(data);
+}
+
+function mapRowToComment(row: {
+  id: string;
+  content: string;
+  user_id: string;
+  user_name: string;
+  user_profile_image: string | null;
+  created_at: string;
+}): Comment {
+  return {
+    id: row.id,
+    content: row.content,
+    userId: row.user_id,
+    userName: row.user_name,
+    userProfileImage: row.user_profile_image || '',
+    createdAt: Timestamp.fromDate(new Date(row.created_at)),
+  };
+}
+
+// --- Users ---
+
+/**
+ * Fetch a single user by ID.
+ * Replaces: fetchUser in user.ts
+ */
+export async function fetchUserFromSupabase(uid: string): Promise<User | null> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, real_name, nickname, email, profile_photo_url, bio, phone_number, referrer, timezone, known_buddy_uid')
+    .eq('id', uid)
+    .single();
+
+  if (error || !data) {
+    if (error?.code !== 'PGRST116') {
+      console.error('Supabase fetchUser error:', error);
+    }
+    return null;
+  }
+
+  // Fetch board permissions
+  const { data: permData } = await supabase
+    .from('user_board_permissions')
+    .select('board_id, permission')
+    .eq('user_id', uid);
+
+  const boardPermissions: Record<string, 'read' | 'write'> = {};
+  for (const p of permData || []) {
+    boardPermissions[p.board_id] = p.permission as 'read' | 'write';
+  }
+
+  // Fetch known buddy info if exists
+  let knownBuddy: User['knownBuddy'] = undefined;
+  if (data.known_buddy_uid) {
+    const { data: buddyData } = await supabase
+      .from('users')
+      .select('id, nickname, profile_photo_url')
+      .eq('id', data.known_buddy_uid)
+      .single();
+    if (buddyData) {
+      knownBuddy = {
+        uid: buddyData.id,
+        nickname: buddyData.nickname,
+        profilePhotoURL: buddyData.profile_photo_url,
+      };
+    }
+  }
+
+  return {
+    uid: data.id,
+    realName: data.real_name,
+    nickname: data.nickname,
+    email: data.email,
+    profilePhotoURL: data.profile_photo_url,
+    bio: data.bio,
+    phoneNumber: data.phone_number,
+    referrer: data.referrer,
+    boardPermissions,
+    updatedAt: null,
+    knownBuddy,
+    profile: data.timezone ? { timezone: data.timezone } : undefined,
+  };
+}
+
+/**
+ * Fetch all users.
+ * Replaces: fetchAllUsers in user.ts
+ */
+export async function fetchAllUsersFromSupabase(): Promise<User[]> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, real_name, nickname, email, profile_photo_url, bio, phone_number, referrer, timezone');
+
+  if (error) {
+    console.error('Supabase fetchAllUsers error:', error);
+    return [];
+  }
+
+  return (data || []).map((row) => ({
+    uid: row.id,
+    realName: row.real_name,
+    nickname: row.nickname,
+    email: row.email,
+    profilePhotoURL: row.profile_photo_url,
+    bio: row.bio,
+    phoneNumber: row.phone_number,
+    referrer: row.referrer,
+    boardPermissions: {},
+    updatedAt: null,
+  }));
+}
+
+/**
+ * Fetch users with write permission on given boards.
+ * Replaces: fetchUsersWithBoardPermission in user.ts
+ * Uses index: idx_permissions_board
+ */
+export async function fetchUsersWithBoardPermissionFromSupabase(
+  boardIds: string[]
+): Promise<User[]> {
+  if (boardIds.length === 0) return [];
+
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('user_board_permissions')
+    .select(`
+      user_id,
+      board_id,
+      permission,
+      users!inner (
+        id,
+        real_name,
+        nickname,
+        email,
+        profile_photo_url,
+        bio,
+        phone_number,
+        referrer,
+        timezone
+      )
+    `)
+    .in('board_id', boardIds)
+    .eq('permission', 'write');
+
+  if (error) {
+    console.error('Supabase fetchUsersWithBoardPermission error:', error);
+    return [];
+  }
+
+  // Deduplicate users (a user may have permissions on multiple boards)
+  const userMap = new Map<string, User>();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const row of (data || []) as any[]) {
+    const u = Array.isArray(row.users) ? row.users[0] : row.users;
+    if (!userMap.has(u.id)) {
+      userMap.set(u.id, {
+        uid: u.id,
+        realName: u.real_name,
+        nickname: u.nickname,
+        email: u.email,
+        profilePhotoURL: u.profile_photo_url,
+        bio: u.bio,
+        phoneNumber: u.phone_number,
+        referrer: u.referrer,
+        boardPermissions: {},
+        updatedAt: null,
+        profile: u.timezone ? { timezone: u.timezone } : undefined,
+      });
+    }
+    const user = userMap.get(u.id)!;
+    user.boardPermissions[row.board_id] = row.permission as 'read' | 'write';
+  }
+
+  return Array.from(userMap.values());
+}
+
+// --- Replies ---
+
+/**
+ * Fetch all replies for a comment.
+ * Replaces: fetchRepliesOnce in reply.ts
+ * Uses index: idx_replies_comment_created
+ */
+export async function fetchRepliesFromSupabase(
+  commentId: string,
+  blockedByUsers: string[] = [],
+): Promise<Reply[]> {
+  const supabase = getSupabaseClient();
+
+  let q = supabase
+    .from('replies')
+    .select('id, content, user_id, user_name, user_profile_image, created_at')
+    .eq('comment_id', commentId)
+    .order('created_at', { ascending: true });
+
+  if (blockedByUsers.length > 0) {
+    q = q.not('user_id', 'in', `(${blockedByUsers.join(',')})`);
+  }
+
+  const { data, error } = await q;
+
+  if (error) {
+    console.error('Supabase fetchReplies error:', error);
+    throw error;
+  }
+
+  return (data || []).map((row) => ({
+    id: row.id,
+    content: row.content,
+    userId: row.user_id,
+    userName: row.user_name,
+    userProfileImage: row.user_profile_image || '',
+    createdAt: Timestamp.fromDate(new Date(row.created_at)),
+  }));
+}
+
+/**
+ * Fetch reply count for a comment.
+ * Replaces: fetchReplyCountOnce in reply.ts
+ */
+export async function fetchReplyCountFromSupabase(
+  commentId: string,
+  blockedByUsers: string[] = [],
+): Promise<number> {
+  const supabase = getSupabaseClient();
+
+  let q = supabase
+    .from('replies')
+    .select('id', { count: 'exact', head: true })
+    .eq('comment_id', commentId);
+
+  if (blockedByUsers.length > 0) {
+    q = q.not('user_id', 'in', `(${blockedByUsers.join(',')})`);
+  }
+
+  const { count, error } = await q;
+
+  if (error) {
+    console.error('Supabase fetchReplyCount error:', error);
+    throw error;
+  }
+
+  return count ?? 0;
+}
+
+/**
+ * Fetch a single reply by ID.
+ * Replaces: fetchReplyById in reply.ts
+ */
+export async function fetchReplyByIdFromSupabase(
+  replyId: string,
+): Promise<Reply | null> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('replies')
+    .select('id, content, user_id, user_name, user_profile_image, created_at')
+    .eq('id', replyId)
+    .single();
+
+  if (error || !data) {
+    if (error?.code !== 'PGRST116') {
+      console.error('Supabase fetchReplyById error:', error);
+    }
+    return null;
+  }
+
+  return {
+    id: data.id,
+    content: data.content,
+    userId: data.user_id,
+    userName: data.user_name,
+    userProfileImage: data.user_profile_image || '',
+    createdAt: Timestamp.fromDate(new Date(data.created_at)),
+  };
+}
+
+// --- Reactions ---
+
+/**
+ * Fetch reactions for a comment or reply.
+ * Replaces: getReactions in reaction.ts
+ * Uses index: idx_reactions_comment or idx_reactions_reply
+ */
+export async function fetchReactionsFromSupabase(params: {
+  commentId: string;
+  replyId?: string;
+}): Promise<Reaction[]> {
+  const supabase = getSupabaseClient();
+
+  let q = supabase
+    .from('reactions')
+    .select('id, reaction_type, user_id, user_name, user_profile_image, created_at');
+
+  if (params.replyId) {
+    q = q.eq('reply_id', params.replyId);
+  } else {
+    q = q.eq('comment_id', params.commentId);
+  }
+
+  const { data, error } = await q;
+
+  if (error) {
+    console.error('Supabase fetchReactions error:', error);
+    throw error;
+  }
+
+  return (data || []).map((row) => ({
+    id: row.id,
+    content: row.reaction_type,
     createdAt: new Date(row.created_at),
+    reactionUser: {
+      userId: row.user_id,
+      userName: row.user_name,
+      userProfileImage: row.user_profile_image || '',
+    },
   }));
 }

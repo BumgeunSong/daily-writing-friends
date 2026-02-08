@@ -71,3 +71,9 @@ scripts/agents/cache/
 # Test Coverage
 /coverage/
 data/*
+
+# Git worktrees
+.worktrees/
+
+# Seed data with PII
+scripts/seed/raw-*
