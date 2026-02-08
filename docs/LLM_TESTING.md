@@ -77,7 +77,7 @@ npm run supabase:stop
 ## Troubleshooting
 
 - **Blank page after login**: Check `.env.local` has `VITE_READ_SOURCE=supabase`
-- **Auth fails**: Run `supabase db reset` to recreate the auth user
+- **Auth fails**: The seed script does not create auth users. Create one via Supabase Dashboard (Auth > Users > Add user) or Admin API, then link `users.id` to the auth UUID
 - **No data**: Ensure `supabase/seed.sql` exists and has INSERT statements
 
 ## Architecture Notes
