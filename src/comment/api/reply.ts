@@ -10,8 +10,13 @@ import { Reply } from '@/comment/model/Reply';
 import { firestore } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
 import { dualWrite } from '@/shared/api/dualWrite';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient, getReadSource } from '@/shared/api/supabaseClient';
 import { buildNotInQuery } from '@/user/api/user';
+import {
+  fetchRepliesFromSupabase,
+  fetchReplyCountFromSupabase,
+  fetchReplyByIdFromSupabase,
+} from '@/shared/api/supabaseReads';
 
 /**
  * 답글 추가 (순수 데이터 mutation 함수)
@@ -114,6 +119,11 @@ export async function fetchRepliesOnce(
   commentId: string,
   blockedByUsers: string[] = [],
 ): Promise<Reply[]> {
+  const readSource = getReadSource();
+  if (readSource === 'supabase') {
+    return fetchRepliesFromSupabase(commentId, blockedByUsers);
+  }
+
   const repliesRef = collection(
     firestore,
     'boards',
@@ -144,6 +154,11 @@ export async function fetchReplyCountOnce(
   commentId: string,
   blockedByUsers: string[] = [],
 ): Promise<number> {
+  const readSource = getReadSource();
+  if (readSource === 'supabase') {
+    return fetchReplyCountFromSupabase(commentId, blockedByUsers);
+  }
+
   const repliesRef = collection(
     firestore,
     'boards',
@@ -168,6 +183,11 @@ export async function fetchReplyById(
   commentId: string,
   replyId: string,
 ): Promise<Reply | null> {
+  const readSource = getReadSource();
+  if (readSource === 'supabase') {
+    return fetchReplyByIdFromSupabase(replyId);
+  }
+
   const replyRef = doc(
     firestore,
     'boards',

@@ -11,7 +11,8 @@ import { Reaction } from '@/comment/model/Reaction';
 import { firestore } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
 import { dualWrite } from '@/shared/api/dualWrite';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient, getReadSource } from '@/shared/api/supabaseClient';
+import { fetchReactionsFromSupabase } from '@/shared/api/supabaseReads';
 
 export interface CreateReactionParams {
   boardId: string;
@@ -149,6 +150,14 @@ export async function deleteUserReaction(
 }
 
 export async function getReactions(params: GetReactionsParams): Promise<Reaction[]> {
+  const readSource = getReadSource();
+  if (readSource === 'supabase') {
+    return fetchReactionsFromSupabase({
+      commentId: params.commentId,
+      replyId: params.replyId,
+    });
+  }
+
   const entityRef = getEntityRef(params);
   const reactionsRef = collection(entityRef, 'reactions');
   const snapshot = await getDocs(reactionsRef);

@@ -113,7 +113,7 @@ async function findRecentReplies(): Promise<GapRecord[]> {
         for (const replyDoc of repliesSnapshot.docs) {
           records.push({
             id: replyDoc.id,
-            data: mapReplyToSupabase(commentDoc.id, replyDoc.id, replyDoc.data()),
+            data: mapReplyToSupabase(commentDoc.id, replyDoc.id, replyDoc.data(), postDoc.id),
           });
         }
       }
@@ -307,11 +307,13 @@ function mapCommentToSupabase(
 function mapReplyToSupabase(
   commentId: string,
   replyId: string,
-  data: FirebaseFirestore.DocumentData
+  data: FirebaseFirestore.DocumentData,
+  postId: string
 ): Record<string, unknown> {
   return {
     id: replyId,
     comment_id: commentId,
+    post_id: postId,
     user_id: data.userId,
     user_name: data.userName || '',
     user_profile_image: data.userProfileImage || null,
@@ -402,6 +404,30 @@ async function insertMissingRecords(
 
   let inserted = 0;
   let errors = 0;
+
+  // Tables with composite unique constraints need row-by-row insert to skip duplicates
+  // Tables with composite unique constraints need row-by-row insert to skip duplicates
+  const needsRowByRow = ['reactions'];
+
+  if (needsRowByRow.includes(tableName)) {
+    for (const record of records) {
+      const { error } = await supabase
+        .from(tableName)
+        .upsert(record.data, { onConflict: 'id', ignoreDuplicates: true });
+
+      if (error) {
+        if (error.message.includes('duplicate key') || error.message.includes('unique constraint') || error.message.includes('foreign key constraint')) {
+          // Skip duplicates and orphaned references silently
+          continue;
+        }
+        console.error(`  Error inserting ${record.id}: ${error.message}`);
+        errors++;
+      } else {
+        inserted++;
+      }
+    }
+    return { inserted, errors };
+  }
 
   for (let i = 0; i < records.length; i += BATCH_SIZE) {
     const batch = records.slice(i, i + BATCH_SIZE);
