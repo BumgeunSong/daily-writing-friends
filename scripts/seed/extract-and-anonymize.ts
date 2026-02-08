@@ -16,7 +16,7 @@ function escapeSql(value: string | null): string {
 
 // Format timestamp for SQL
 function formatTimestamp(date: string | null): string {
-  if (!date) return 'NOW()';
+  if (date === null) return 'NULL';
   return `'${date}'`;
 }
 
@@ -346,7 +346,7 @@ INSERT INTO auth.users (
 -- BOARDS
 -- ================================================
 INSERT INTO boards (id, title, description, first_day, last_day, cohort, created_at, updated_at) VALUES (
-  ${escapeSql(board.id)}, ${escapeSql(board.title)}, ${escapeSql(board.description)}, ${formatTimestamp(board.first_day)}, ${formatTimestamp(board.last_day)}, ${board.cohort || 'NULL'}, ${formatTimestamp(board.created_at)}, ${formatTimestamp(board.updated_at)}
+  ${escapeSql(board.id)}, ${escapeSql(board.title)}, ${escapeSql(board.description)}, ${formatTimestamp(board.first_day)}, ${formatTimestamp(board.last_day)}, ${board.cohort ?? 'NULL'}, ${formatTimestamp(board.created_at)}, ${formatTimestamp(board.updated_at)}
 ) ON CONFLICT (id) DO NOTHING;
 
 `;
@@ -370,9 +370,9 @@ INSERT INTO boards (id, title, description, first_day, last_day, cohort, created
 -- ================================================
 `;
   anonymizedPosts.forEach((post: Post) => {
-    const contentJson = post.content_json ? `'${JSON.stringify(post.content_json).replace(/'/g, "''")}'::jsonb` : 'NULL';
+    const contentJson = post.content_json ? `'${JSON.stringify(post.content_json).replace(/\\/g, '\\\\').replace(/'/g, "''")}'::jsonb` : 'NULL';
     sql += `INSERT INTO posts (id, board_id, author_id, author_name, title, content, content_json, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at) VALUES (
-  ${escapeSql(post.id)}, ${escapeSql(post.board_id)}, ${escapeSql(post.author_id)}, ${escapeSql(post.author_name)}, ${escapeSql(post.title)}, ${escapeSql(post.content)}, ${contentJson}, ${escapeSql(post.thumbnail_image_url)}, ${escapeSql(post.visibility)}, ${post.count_of_comments}, ${post.count_of_replies}, ${post.count_of_likes}, ${post.engagement_score}, ${post.week_days_from_first_day || 'NULL'}, ${formatTimestamp(post.created_at)}, ${formatTimestamp(post.updated_at)}
+  ${escapeSql(post.id)}, ${escapeSql(post.board_id)}, ${escapeSql(post.author_id)}, ${escapeSql(post.author_name)}, ${escapeSql(post.title)}, ${escapeSql(post.content)}, ${contentJson}, ${escapeSql(post.thumbnail_image_url)}, ${escapeSql(post.visibility)}, ${post.count_of_comments}, ${post.count_of_replies}, ${post.count_of_likes}, ${post.engagement_score}, ${post.week_days_from_first_day ?? 'NULL'}, ${formatTimestamp(post.created_at)}, ${formatTimestamp(post.updated_at)}
 ) ON CONFLICT (id) DO NOTHING;
 `;
   });
