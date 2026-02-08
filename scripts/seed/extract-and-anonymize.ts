@@ -250,13 +250,19 @@ async function main() {
   permissions.forEach((p: UserBoardPermission) => userIds.add(p.user_id));
 
   // Step 8: Fetch users
+  if (userIds.size === 0) {
+    console.error('❌ No user IDs found. The selected board may have no activity.');
+    process.exit(1);
+  }
+
   console.log(`👤 Fetching ${userIds.size} users...`);
   const { data: users, error: usersError } = await supabase
     .from('users')
     .select('*')
-    .in('id', Array.from(userIds));
+    .in('id', Array.from(userIds))
+    .order('id');
 
-  if (usersError || !users) {
+  if (usersError || !users || users.length === 0) {
     console.error('❌ Failed to fetch users:', usersError);
     process.exit(1);
   }
@@ -269,9 +275,15 @@ async function main() {
   const userMapping = new Map<string, number>();
   const anonymizedUsers: User[] = [];
 
-  // Map the first user as test@test.local (test login user)
+  // Use first post author as stable test user, sorted users as fallback
+  const testAuthorId = posts.length > 0 ? posts[0].author_id : users[0].id;
+  const sortedUsers = [
+    users.find((u: User) => u.id === testAuthorId)!,
+    ...users.filter((u: User) => u.id !== testAuthorId),
+  ];
+
   let userCounter = 1;
-  users.forEach((user: User, index: number) => {
+  sortedUsers.forEach((user: User, index: number) => {
     userMapping.set(user.id, userCounter);
 
     const anonymizedUser: User = {
@@ -290,32 +302,34 @@ async function main() {
     userCounter++;
   });
 
-  const testUserId = users[0].id;
+  const testUserId = sortedUsers[0].id;
+
+  const anonName = (userId: string) => `TestUser${userMapping.get(userId) ?? 0}`;
 
   // Anonymize posts (update author_name)
   const anonymizedPosts = posts.map((post: Post) => ({
     ...post,
-    author_name: `TestUser${userMapping.get(post.author_id)}`,
+    author_name: anonName(post.author_id),
   }));
 
   // Anonymize comments
   const anonymizedComments = comments.map((comment: Comment) => ({
     ...comment,
-    user_name: `TestUser${userMapping.get(comment.user_id)}`,
+    user_name: anonName(comment.user_id),
     user_profile_image: null,
   }));
 
   // Anonymize replies
   const anonymizedReplies = replies.map((reply: Reply) => ({
     ...reply,
-    user_name: `TestUser${userMapping.get(reply.user_id)}`,
+    user_name: anonName(reply.user_id),
     user_profile_image: null,
   }));
 
   // Anonymize reactions
   const anonymizedReactions = reactions.map((reaction: Reaction) => ({
     ...reaction,
-    user_name: `TestUser${userMapping.get(reaction.user_id)}`,
+    user_name: anonName(reaction.user_id),
     user_profile_image: null,
   }));
 
