@@ -61,7 +61,6 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
   const [editState, setEditState] = useState({
     title: post?.title || '',
     content: post?.content || '',
-    contentJson: post?.contentJson || undefined,
   });
 
   const setTitle = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -72,16 +71,12 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
     setEditState((prev) => ({ ...prev, content }));
   };
 
-  const setContentJson = (contentJson: unknown) => {
-    setEditState((prev) => ({ ...prev, contentJson }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editState.title.trim() || !editState.content.trim()) return;
 
     try {
-      await updatePost(boardId, postId, editState.title, editState.content, editState.contentJson);
+      await updatePost(boardId, postId, editState.title, editState.content);
       navigate(`/board/${boardId}/post/${postId}`);
       // Invalidate after navigation to avoid unnecessary refetching on edit page
       queryClient.invalidateQueries(['post', boardId, postId]);
@@ -122,8 +117,6 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
           <PostEditor
             value={editState.content}
             onChange={setContent}
-            contentJson={editState.contentJson}
-            onJsonChange={setContentJson}
             placeholder='내용을 수정하세요...'
           />
 
