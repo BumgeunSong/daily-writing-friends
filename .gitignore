@@ -77,3 +77,12 @@ data/*
 
 # Seed data with PII
 scripts/seed/raw-*
+
+# OMC state
+.omc/
+
+# Playwright MCP
+.playwright-mcp/
+
+# SonarQube
+.scannerwork/
