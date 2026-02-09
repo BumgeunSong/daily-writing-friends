@@ -1,7 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from "sonner"
-import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { updateUser, uploadUserProfilePhoto } from '@/user/api/user';
 import { removeCachedUserData } from '@/user/cache/userCache';
@@ -18,7 +17,6 @@ interface UpdateUserDataParams {
 export function useUpdateUserData() {
   const { currentUser } = useAuth();
   const queryClient = useQueryClient();
-  const { value: cacheVersion } = useRemoteConfig('user_cache_version');
 
   const mutation = useMutation({
     mutationFn: async ({ userId, nickname, profilePhotoFile, bio }: UpdateUserDataParams) => {
@@ -41,7 +39,7 @@ export function useUpdateUserData() {
       }
 
       // 캐시 무효화: localStorage에서 해당 유저 캐시 삭제
-      removeCachedUserData(userId, cacheVersion ?? 'v2');
+      removeCachedUserData(userId, 'v2');
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['user', variables.userId] });
