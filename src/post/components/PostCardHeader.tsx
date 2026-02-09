@@ -14,7 +14,6 @@ interface PostCardHeaderProps {
   badges?: WritingBadge[];
   streak?: boolean[];
   isStreakLoading?: boolean;
-  statPageEnabled: boolean;
   onClickProfile?: (e: React.MouseEvent) => void;
   isMobile?: boolean;
 }
@@ -27,7 +26,6 @@ export const PostCardHeader: React.FC<PostCardHeaderProps> = ({
   badges,
   streak,
   isStreakLoading,
-  statPageEnabled,
   onClickProfile,
   isMobile = false,
 }) => {
@@ -38,9 +36,9 @@ export const PostCardHeader: React.FC<PostCardHeaderProps> = ({
           authorData={authorData}
           isLoading={isAuthorLoading}
           onClickProfile={onClickProfile || noopClickHandler}
-          badges={statPageEnabled ? badges : undefined}
-          streak={statPageEnabled ? streak : undefined}
-          isStreakLoading={statPageEnabled ? isStreakLoading : false}
+          badges={badges}
+          streak={streak}
+          isStreakLoading={isStreakLoading}
         />
       </div>
       <h2
