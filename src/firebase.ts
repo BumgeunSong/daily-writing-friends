@@ -40,17 +40,23 @@ const storage = getStorage(app);
 const installations = getInstallations(app);
 const provider = new GoogleAuthProvider();
 
-// Non-critical services (initialized conditionally)
-let performance: FirebasePerformance | null = null;
-let analytics: Analytics | null = null;
-let remoteConfig: RemoteConfig | null = null;
+// Non-critical services (initialized conditionally, wrapped in object to avoid mutable exports)
+const optionalServices: {
+  performance: FirebasePerformance | null;
+  analytics: Analytics | null;
+  remoteConfig: RemoteConfig | null;
+} = {
+  performance: null,
+  analytics: null,
+  remoteConfig: null,
+};
 
 const useEmulators = shouldUseEmulators();
 
 if (!useEmulators && typeof window !== 'undefined') {
   try {
-    remoteConfig = getRemoteConfig(app);
-    configureRemoteConfig(remoteConfig);
+    optionalServices.remoteConfig = getRemoteConfig(app);
+    configureRemoteConfig(optionalServices.remoteConfig);
 
     const scheduleIdleTask = (callback: () => void) => {
       if ('requestIdleCallback' in window) {
@@ -62,8 +68,8 @@ if (!useEmulators && typeof window !== 'undefined') {
 
     scheduleIdleTask(() => {
       try {
-        performance = getPerformance(app);
-        analytics = getAnalytics(app);
+        optionalServices.performance = getPerformance(app);
+        optionalServices.analytics = getAnalytics(app);
       } catch (error) {
         console.warn('Analytics/Performance services not available:', error);
       }
@@ -99,4 +105,12 @@ export const signInWithTestCredentials = (
 export const signInWithTestToken = (customToken: string): Promise<UserCredential> =>
   testTokenSignIn(auth, customToken);
 
-export { auth, firestore, storage, installations, app, performance, remoteConfig, analytics };
+// Getter functions for lazily-initialized services
+export const getFirebaseRemoteConfig = () => optionalServices.remoteConfig;
+export const getFirebasePerformance = () => optionalServices.performance;
+export const getFirebaseAnalytics = () => optionalServices.analytics;
+
+// Backward-compatible named exports (remoteConfig is set synchronously at module init)
+const remoteConfig = optionalServices.remoteConfig;
+
+export { auth, firestore, storage, installations, app, remoteConfig };
