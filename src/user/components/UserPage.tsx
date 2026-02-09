@@ -2,17 +2,14 @@ import { useCallback } from "react"
 import { useParams } from "react-router-dom"
 import StatusMessage from "@/shared/components/StatusMessage"
 import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
-import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext"
 import { useAuth } from "@/shared/hooks/useAuth"
 import { UserPageHeader } from "@/user/components/UserPageHeader"
 import UserPostsList from "@/user/components/UserPostList"
 import UserProfile from "@/user/components/UserProfile"
-import { UserKnownBuddy } from './UserKnownBuddy'
 
 export default function UserPage() {
   const { userId: paramUserId } = useParams()
   const { currentUser } = useAuth()
-  const { value: secretBuddyEnabled } = useRemoteConfig('secret_buddy_enabled')
   const userId = paramUserId || currentUser?.uid
 
   useRegisterTabHandler('User', useCallback(() => window.scrollTo({ top: 0, behavior: 'smooth' }), []));
@@ -31,8 +28,6 @@ export default function UserPage() {
         {/* User profile section */}
         <div className="mb-2">
           <UserProfile uid={userId} />
-          {/* Known Buddy 정보 표시 */}
-          {isMyPage && secretBuddyEnabled && <UserKnownBuddy />}
         </div>
 
         {/* Posts content */}

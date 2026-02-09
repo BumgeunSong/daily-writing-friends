@@ -78,7 +78,11 @@ data/*
 # Seed data with PII
 scripts/seed/raw-*
 
-# Tool-generated directories
+# OMC state
 .omc/
+
+# Playwright MCP
 .playwright-mcp/
+
+# SonarQube
 .scannerwork/

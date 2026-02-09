@@ -24,30 +24,6 @@ interface ActionData {
   success?: boolean;
 }
 
-function safeStringifyJson(data: unknown): string {
-  if (!data) return '';
-
-  try {
-    return JSON.stringify(data);
-  } catch (error) {
-    try {
-      const seen = new WeakSet();
-      return JSON.stringify(data, (_key, value) => {
-        if (typeof value === 'object' && value !== null) {
-          if (seen.has(value)) return '[Circular Reference]';
-          seen.add(value);
-        }
-        if (typeof value === 'function') return '[Function]';
-        if (value instanceof Date) return value.toISOString();
-        if (value === undefined) return null;
-        return value;
-      });
-    } catch {
-      return '';
-    }
-  }
-}
-
 export default function PostCreationPage() {
   const { currentUser } = useAuth();
   const { boardId } = useParams<{ boardId: string }>();
@@ -71,7 +47,6 @@ export default function PostCreationPage() {
     initialContent,
   });
 
-  const [contentJson, setContentJson] = useState<unknown>(null);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const isSubmitting = navigation.state === 'submitting';
 
@@ -125,15 +100,12 @@ export default function PostCreationPage() {
           />
           <input type='hidden' name='title' value={title} />
           <input type='hidden' name='content' value={content} />
-          <input type='hidden' name='contentJson' value={safeStringifyJson(contentJson)} />
           <input type='hidden' name='draftId' value={draftIdToSubmit} />
 
           <PostTitleEditor value={title} onChange={(e) => setTitle(e.target.value)} />
           <PostEditor
             value={content}
             onChange={setContent}
-            contentJson={contentJson}
-            onJsonChange={setContentJson}
           />
         </Form>
       </div>

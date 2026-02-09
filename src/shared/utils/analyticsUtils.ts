@@ -1,5 +1,5 @@
 import { logEvent } from 'firebase/analytics';
-import { analytics } from '@/firebase';
+import { getFirebaseAnalytics } from '@/firebase';
 
 export enum AnalyticsEvent {
     // Create comment
@@ -18,6 +18,8 @@ export enum AnalyticsEvent {
 }
 
 export function sendAnalyticsEvent(event: AnalyticsEvent, params?: Record<string, unknown>) {
+  const analytics = getFirebaseAnalytics();
+  if (!analytics) return;
   logEvent(analytics, event, params);
 }
 

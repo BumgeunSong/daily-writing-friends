@@ -81,9 +81,6 @@ const Comments: React.FC<CommentsProps> = ({
         <CommentInput
           onSubmit={handleSubmit}
           placeholder={placeholder}
-          postId={postId}
-          boardId={boardId}
-          enableSuggestions={currentUser?.uid !== postAuthorId && postVisibility !== 'private'}
         />
       </div>
     </section>

@@ -51,12 +51,8 @@ export function DebugInfo() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
 
   // Get all remote config values
-  const { value: tiptapEnabled } = useRemoteConfig('tiptap_editor_enabled');
   const { value: activeBoardId } = useRemoteConfig('active_board_id');
   const { value: blockUserEnabled } = useRemoteConfig('block_user_feature_enabled');
-  const { value: secretBuddyEnabled } = useRemoteConfig('secret_buddy_enabled');
-  const { value: statPageEnabled } = useRemoteConfig('stat_page_enabled');
-  const { value: commentAssistantEnabled } = useRemoteConfig('comment_assistant_enabled');
 
   useEffect(() => {
     // Get Firebase Installation ID
@@ -154,12 +150,8 @@ export function DebugInfo() {
         </CardHeader>
         <CardContent>
           <div className='space-y-3'>
-            <ConfigRow label='TipTap Editor Enabled' value={tiptapEnabled} type='boolean' />
             <ConfigRow label='Active Board ID' value={activeBoardId} type='text' />
             <ConfigRow label='Block User Feature' value={blockUserEnabled} type='feature' />
-            <ConfigRow label='Secret Buddy' value={secretBuddyEnabled} type='feature' />
-            <ConfigRow label='Stats Page' value={statPageEnabled} type='feature' />
-            <ConfigRow label='Comment Assistant' value={commentAssistantEnabled} type='feature' />
           </div>
         </CardContent>
       </Card>
