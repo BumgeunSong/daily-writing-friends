@@ -13,7 +13,6 @@ import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext
 import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
 import { Button } from '@/shared/ui/button';
 import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
-import { useCurrentUserKnownBuddy } from '@/user/hooks/useCurrentUserKnownBuddy';
 import type React from 'react';
 
 interface RecentPostCardListProps {
@@ -31,7 +30,6 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
   const [limitCount] = useState(7);
   usePerformanceMonitoring('RecentPostCardList');
   const queryClient = useQueryClient();
-  const { knownBuddy } = useCurrentUserKnownBuddy();
 
   const {
     data: postPages,
@@ -119,7 +117,6 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
           post={post}
           onClick={() => handlePostClick(post.id)}
           onClickProfile={onClickProfile}
-          isKnownBuddy={post.authorId === knownBuddy?.uid}
         />
       ))}
       <div ref={inViewRef} />

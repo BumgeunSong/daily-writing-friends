@@ -9,7 +9,6 @@ import StatusMessage from '@/shared/components/StatusMessage';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
 import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
 import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
-import { useCurrentUserKnownBuddy } from '@/user/hooks/useCurrentUserKnownBuddy';
 import type React from 'react';
 
 const BEST_POSTS_TARGET = 20;
@@ -26,7 +25,6 @@ interface BestPostCardListProps {
 const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClick, onClickProfile }) => {
   usePerformanceMonitoring('BestPostCardList');
   const queryClient = useQueryClient();
-  const { knownBuddy } = useCurrentUserKnownBuddy();
 
   const {
     recentPosts,
@@ -93,7 +91,6 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
           post={post}
           onClick={() => handlePostClick(post.id)}
           onClickProfile={onClickProfile}
-          isKnownBuddy={post.authorId === knownBuddy?.uid}
         />
       ))}
       {isFetchingNextPage && (
