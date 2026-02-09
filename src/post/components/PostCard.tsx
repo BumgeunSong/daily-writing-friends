@@ -13,7 +13,6 @@ interface PostCardProps {
   post: Post;
   onClick: (postId: string) => void;
   onClickProfile?: (userId: string) => void;
-  isKnownBuddy: boolean;
 }
 
 function handleKeyDown(e: React.KeyboardEvent, onClick: (e: React.KeyboardEvent | React.MouseEvent) => void) {
@@ -32,7 +31,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) =>
     isStreakLoading,
     isPrivate,
     contentPreview,
-    statPageEnabled,
   } = usePostCard(post);
 
   const handleCardClick = () => {
@@ -65,7 +63,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) =>
           badges={badges}
           streak={streak}
           isStreakLoading={isStreakLoading}
-          statPageEnabled={statPageEnabled}
           onClickProfile={handleProfileClick}
           isMobile={true}
         />
@@ -90,7 +87,6 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) =>
               badges={badges}
               streak={streak}
               isStreakLoading={isStreakLoading}
-              statPageEnabled={statPageEnabled}
               onClickProfile={handleProfileClick}
               isMobile={false}
             />

@@ -6,37 +6,22 @@ import { fetchAndActivate, getValue } from 'firebase/remote-config';
 export type RemoteConfigKey =
   | 'active_board_id'
   | 'upcoming_board_id'
-  | 'user_cache_version'
   | 'stats_notice_banner_text'
-  | 'block_user_feature_enabled'
-  | 'secret_buddy_enabled'
-  | 'stat_page_enabled'
-  | 'tiptap_editor_enabled'
-  | 'comment_assistant_enabled';
+  | 'block_user_feature_enabled';
 
 // 각 key별 타입 정의
 interface RemoteConfigValueTypes {
   active_board_id: string;
   upcoming_board_id: string;
-  user_cache_version: string;
   stats_notice_banner_text: string;
   block_user_feature_enabled: boolean;
-  secret_buddy_enabled: boolean;
-  stat_page_enabled: boolean;
-  tiptap_editor_enabled: boolean;
-  comment_assistant_enabled: boolean;
 }
 
 export const REMOTE_CONFIG_DEFAULTS: RemoteConfigValueTypes = {
   active_board_id: 'rW3Y3E2aEbpB0KqGiigd',
   upcoming_board_id: 'rW3Y3E2aEbpB0KqGiigd',
-  user_cache_version: 'v2',
   stats_notice_banner_text: '',
   block_user_feature_enabled: false,
-  secret_buddy_enabled: true,
-  stat_page_enabled: true,
-  tiptap_editor_enabled: true,
-  comment_assistant_enabled: false,
 };
 
 interface RemoteConfigContextValue {
@@ -79,9 +64,6 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
           upcoming_board_id:
             getValue(remoteConfig, 'upcoming_board_id').asString() ||
             REMOTE_CONFIG_DEFAULTS.upcoming_board_id,
-          user_cache_version:
-            getValue(remoteConfig, 'user_cache_version').asString() ||
-            REMOTE_CONFIG_DEFAULTS.user_cache_version,
           stats_notice_banner_text:
             getValue(remoteConfig, 'stats_notice_banner_text').asString() ||
             REMOTE_CONFIG_DEFAULTS.stats_notice_banner_text,
@@ -89,10 +71,6 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
             remoteConfig,
             'block_user_feature_enabled',
           ).asBoolean(),
-          secret_buddy_enabled: getValue(remoteConfig, 'secret_buddy_enabled').asBoolean(),
-          stat_page_enabled: getValue(remoteConfig, 'stat_page_enabled').asBoolean(),
-          tiptap_editor_enabled: getValue(remoteConfig, 'tiptap_editor_enabled').asBoolean(),
-          comment_assistant_enabled: getValue(remoteConfig, 'comment_assistant_enabled').asBoolean(),
         });
       })
       .catch((err) => {

@@ -32,7 +32,7 @@ export function PostingStreakBadge({ streak, isLoading }: PostingStreakBadgeProp
     >
       {streak.map((posted, index) => (
         <div
-          key={index}
+          key={`streak-${index}`}
           className={cn(
             'size-2 rounded-full transition-all duration-300',
             posted

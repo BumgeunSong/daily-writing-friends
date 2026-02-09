@@ -37,7 +37,6 @@ export default function PostFreewritingPage() {
 
   const postTitle = userNickname ? `${userNickname}님의 프리라이팅` : "프리라이팅"
   const [content, setContent] = useState("")
-  const [contentJson, setContentJson] = useState<unknown>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [timerStatus, setTimerStatus] = useState<WritingStatus>(WritingStatus.Paused)
   const [hasReachedTargetTime, setHasReachedTargetTime] = useState(false)
@@ -93,7 +92,6 @@ export default function PostFreewritingPage() {
         currentUser.uid,
         userNickname ?? '',
         PostVisibility.PRIVATE,
-        contentJson
       )
 
       toast.success("프리라이팅으로 쓴 글은 다른 사람에게 보이지 않아요.", {position: 'bottom-center'})
@@ -155,8 +153,6 @@ export default function PostFreewritingPage() {
           <PostEditor
             value={content}
             onChange={handleContentChange}
-            contentJson={contentJson}
-            onJsonChange={setContentJson}
           />
         </form>
       </div>

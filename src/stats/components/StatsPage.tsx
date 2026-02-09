@@ -2,7 +2,6 @@ import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
 import { ScrollArea } from '@/shared/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/ui/tabs';
@@ -10,7 +9,6 @@ import StatsHeader from '@/stats/components/StatsHeader';
 import { StatsNoticeBanner } from '@/stats/components/StatsNoticeBanner';
 import {
   StatsLoadingState,
-  StatsMaintenanceState,
   StatsErrorState,
 } from '@/stats/components/StatsPageStates';
 import { UserCommentStatsCardList } from '@/stats/components/UserCommentStatsCardList';
@@ -26,9 +24,6 @@ export default function StatsPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<TabType>('posting');
 
-  const { value: statPageEnabled, isLoading: isConfigLoading } =
-    useRemoteConfig('stat_page_enabled');
-
   const {
     writingStats,
     commentingStats,
@@ -42,10 +37,6 @@ export default function StatsPage() {
     error,
     isLoadingCommenting,
   } = useStatsPageData(tab);
-
-  if (!isConfigLoading && !statPageEnabled) {
-    return <StatsMaintenanceState />;
-  }
 
   const showInitialLoading = isLoading && !isCurrentUserWritingReady && !isCurrentUserCommentingReady;
 
