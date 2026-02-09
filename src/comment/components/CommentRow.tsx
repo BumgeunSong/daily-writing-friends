@@ -87,9 +87,6 @@ const CommentRow: React.FC<CommentRowProps> = ({
           <CommentInput
             onSubmit={handleEditSubmit}
             initialValue={comment.content}
-            postId={postId}
-            boardId={boardId}
-            enableSuggestions={false}
           />
         ) : (
           <div
