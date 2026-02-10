@@ -282,7 +282,7 @@ Shadow reads allow comparing Firestore and Supabase query results during migrati
 
 **Implemented**: 2026-02-10
 
-Shadow reads detected **60 unresolved Sentry issues** — data in Firestore fan-out collections missing from Supabase tables.
+Shadow reads detected **60+ unresolved Sentry issues** (62 at final count) — data in Firestore fan-out collections missing from Supabase tables.
 
 **Root causes identified:**
 1. **Primary**: `VITE_DUAL_WRITE_ENABLED` was missing from CI until Feb 8 (commit `93437eb5`). Dual write never ran in production for ~3 weeks (Jan 16 → Feb 8).
