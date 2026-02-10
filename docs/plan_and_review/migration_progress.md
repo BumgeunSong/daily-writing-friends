@@ -5,7 +5,7 @@
 
 **Last Updated**: 2026-02-10
 **Branch**: `shadow-read-mismatch`
-**Status**: Phase 5.1 (Shadow Read Mismatch Fix) complete, backfill running
+**Status**: Phase 6 (Switch Reads to Supabase) in progress
 
 ---
 
@@ -282,7 +282,7 @@ Shadow reads allow comparing Firestore and Supabase query results during migrati
 
 **Implemented**: 2026-02-10
 
-Shadow reads detected **60 unresolved Sentry issues** — data in Firestore fan-out collections missing from Supabase tables.
+Shadow reads detected **60+ unresolved Sentry issues** (62 at final count) — data in Firestore fan-out collections missing from Supabase tables.
 
 **Root causes identified:**
 1. **Primary**: `VITE_DUAL_WRITE_ENABLED` was missing from CI until Feb 8 (commit `93437eb5`). Dual write never ran in production for ~3 weeks (Jan 16 → Feb 8).
@@ -311,17 +311,25 @@ Shadow reads detected **60 unresolved Sentry issues** — data in Firestore fan-
 
 ---
 
+## Phase 6: Switch Reads to Supabase (In Progress)
+
+**Started**: 2026-02-10
+
+### Checklist
+
+1. ✅ Verify backfill completed successfully
+2. ✅ Run shadow mode (`VITE_READ_SOURCE=shadow`) — ran Jan 25 → Feb 10
+3. ✅ Monitor Sentry for mismatch warnings — 62 issues analyzed, all false positives
+   - Root cause: orphaned fan-out entries (`users/{uid}/commentings`, `replyings`, `postings`) referencing deleted comments/replies
+   - Comment/reply deletion removes from main collection + Supabase, but does NOT clean up fan-out subcollections
+   - Supabase SQL queries produce more accurate results than stale fan-out data
+4. ✅ `VITE_READ_SOURCE` GitHub secret updated to `supabase` (2026-02-10)
+5. ⬜ Deploy to production (merge to main triggers CI)
+6. ⬜ Monitor for issues, keep rollback ready (`VITE_READ_SOURCE=firestore`)
+
+---
+
 ## Next Steps
-
-### Phase 6: Switch Reads Gradually
-
-1. Verify backfill completed successfully (mismatch count should drop to near 0)
-2. Monitor `_supabase_write_failures` collection — should remain empty
-3. Run shadow mode (`VITE_READ_SOURCE=shadow`) for 24-48 hours
-4. Monitor Sentry for mismatch warnings
-5. Fix any remaining data inconsistencies
-6. Switch to Supabase reads (`VITE_READ_SOURCE=supabase`)
-7. Monitor for issues, keep rollback ready
 
 ### Phase 3: Remove Fan-out Functions (moved to last)
 
