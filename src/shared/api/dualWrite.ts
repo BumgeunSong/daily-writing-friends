@@ -8,8 +8,23 @@
  */
 
 import * as Sentry from '@sentry/react';
+import type { PostgrestError } from '@supabase/supabase-js';
 import { getSupabaseClient, isDualWriteEnabled } from './supabaseClient';
 import { addSentryBreadcrumb, setSentryContext } from '@/sentry';
+
+export class SupabaseDualWriteError extends Error {
+  constructor(public readonly postgrestError: PostgrestError) {
+    super(`Supabase dual-write error: ${postgrestError.message} (code: ${postgrestError.code}, details: ${postgrestError.details})`);
+    this.name = 'SupabaseDualWriteError';
+  }
+}
+
+/** Execute a Supabase operation and throw on error */
+export function throwOnError(result: { error: PostgrestError | null }): void {
+  if (result.error) {
+    throw new SupabaseDualWriteError(result.error);
+  }
+}
 
 export interface DualWriteOptions {
   /** Entity type: 'post', 'comment', 'user', etc. */
@@ -88,6 +103,18 @@ function logDualWriteError(error: unknown, options: DualWriteOptions): void {
   });
 }
 
+async function persistFailedWrite(options: DualWriteOptions): Promise<void> {
+  const { addDoc, collection, Timestamp } = await import('firebase/firestore');
+  const { firestore } = await import('@/firebase');
+  await addDoc(collection(firestore, '_supabase_write_failures'), {
+    entityType: options.entityType,
+    operationType: options.operationType,
+    entityId: options.entityId,
+    failedAt: Timestamp.now(),
+    retried: false,
+  });
+}
+
 /**
  * Execute a dual-write operation.
  *
@@ -144,6 +171,9 @@ export async function dualWrite(options: DualWriteOptions): Promise<void> {
   } catch (error) {
     // Log error but don't throw - Firestore is source of truth
     logDualWriteError(error, options);
+    if (error instanceof SupabaseDualWriteError) {
+      persistFailedWrite(options).catch(console.error);
+    }
   }
 }
 
