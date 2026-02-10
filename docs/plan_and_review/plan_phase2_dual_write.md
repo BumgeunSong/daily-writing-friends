@@ -1,5 +1,9 @@
 # Phase 2: Dual-Write Implementation Plan
 
+> **Status**: ✅ Complete (deployed 2026-01-17, error handling fixed 2026-02-10)
+> **Single source of truth**: See [migration_progress.md](./migration_progress.md) for current migration state.
+> This document is kept as archived reference for the original implementation plan.
+
 ## Summary
 
 Implement client-side dual-write to synchronize all Firestore writes to Supabase. Firestore remains primary; Supabase errors are logged but don't block users.
