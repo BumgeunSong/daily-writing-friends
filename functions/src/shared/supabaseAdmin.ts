@@ -5,7 +5,8 @@
  * Uses service role key for full database access.
  */
 
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient, PostgrestError } from "@supabase/supabase-js";
+import admin from "./admin";
 
 let supabaseInstance: SupabaseClient | null = null;
 
@@ -43,6 +44,20 @@ export function isDualWriteEnabled(): boolean {
   return process.env.DUAL_WRITE_ENABLED === "true";
 }
 
+export class SupabaseDualWriteError extends Error {
+  constructor(public readonly postgrestError: PostgrestError) {
+    super(`Supabase dual-write error: ${postgrestError.message} (code: ${postgrestError.code}, details: ${postgrestError.details})`);
+    this.name = 'SupabaseDualWriteError';
+  }
+}
+
+/** Execute a Supabase operation and throw on error */
+export function throwOnError(result: { error: PostgrestError | null }): void {
+  if (result.error) {
+    throw new SupabaseDualWriteError(result.error);
+  }
+}
+
 /**
  * Try to acquire a write lock for idempotency.
  * Returns true if this is the first attempt, false if already processed.
@@ -60,6 +75,17 @@ export async function tryAcquireWriteLock(opId: string): Promise<boolean> {
   }
 
   return data === true;
+}
+
+async function persistFailedWrite(entityType: string, operationType: string, entityId: string): Promise<void> {
+  await admin.firestore().collection('_supabase_write_failures').add({
+    entityType,
+    operationType,
+    entityId,
+    failedAt: admin.firestore.Timestamp.now(),
+    retried: false,
+    source: 'cloud_function',
+  });
 }
 
 /**
@@ -89,6 +115,9 @@ export async function dualWriteServer(
     console.log(`Dual-write success: ${entityType}/${operationType}/${entityId}`);
   } catch (error) {
     console.error(`Dual-write error: ${entityType}/${operationType}/${entityId}`, error);
+    if (error instanceof SupabaseDualWriteError) {
+      persistFailedWrite(entityType, operationType, entityId).catch(console.error);
+    }
     // Don't throw - Firestore is source of truth
   }
 }
