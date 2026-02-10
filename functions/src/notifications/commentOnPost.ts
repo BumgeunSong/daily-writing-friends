@@ -6,7 +6,7 @@ import admin from "../shared/admin";
 import { Comment } from "../shared/types/Comment";
 import { Notification, NotificationType } from "../shared/types/Notification";
 import { Post } from "../shared/types/Post";
-import { dualWriteServer, getSupabaseAdmin } from "../shared/supabaseAdmin";
+import { dualWriteServer, getSupabaseAdmin, throwOnError } from "../shared/supabaseAdmin";
 
 export const onCommentCreated = onDocumentCreated(
     "boards/{boardId}/posts/{postId}/comments/{commentId}",
@@ -57,7 +57,7 @@ export const onCommentCreated = onDocumentCreated(
                 docRef.id,
                 async () => {
                     const supabase = getSupabaseAdmin();
-                    await supabase.from("notifications").insert({
+                    throwOnError(await supabase.from("notifications").upsert({
                         id: docRef.id,
                         user_id: postAuthorId,
                         type: NotificationType.COMMENT_ON_POST,
@@ -69,7 +69,7 @@ export const onCommentCreated = onDocumentCreated(
                         message: message,
                         created_at: timestamp.toDate().toISOString(),
                         is_read: false,
-                    });
+                    }, { onConflict: 'id' }));
                 }
             );
         }
