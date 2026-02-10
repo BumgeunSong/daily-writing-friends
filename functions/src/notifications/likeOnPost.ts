@@ -4,7 +4,7 @@ import { shouldGenerateNotification } from './shouldGenerateNotification';
 import admin from '../shared/admin';
 import { Notification, NotificationType } from '../shared/types/Notification';
 import { Like } from '../shared/types/Like';
-import { dualWriteServer, getSupabaseAdmin } from '../shared/supabaseAdmin';
+import { dualWriteServer, getSupabaseAdmin, throwOnError } from '../shared/supabaseAdmin';
 
 export const onLikeCreatedOnPost = onDocumentCreated(
   'boards/{boardId}/posts/{postId}/likes/{likeId}',
@@ -74,7 +74,7 @@ export const onLikeCreatedOnPost = onDocumentCreated(
         docRef.id,
         async () => {
           const supabase = getSupabaseAdmin();
-          await supabase.from('notifications').insert({
+          throwOnError(await supabase.from('notifications').upsert({
             id: docRef.id,
             user_id: postAuthorId,
             type: NotificationType.LIKE_ON_POST,
@@ -86,14 +86,13 @@ export const onLikeCreatedOnPost = onDocumentCreated(
             message: message,
             created_at: timestamp.toDate().toISOString(),
             is_read: false,
-          });
+          }, { onConflict: 'id' }));
         }
       );
 
       console.info(`Created like notification for user ${postAuthorId} on post ${boardId}/${postId}`);
     } catch (error) {
       console.error('Error creating like notification:', error);
-      throw error;
     }
   },
 );

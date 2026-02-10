@@ -18,13 +18,23 @@ export function getSupabaseClient(): SupabaseClient {
     return supabaseInstance;
   }
 
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const rawUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!rawUrl || !supabaseAnonKey) {
     throw new Error(
       'Missing Supabase configuration. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env'
     );
+  }
+
+  // Normalize URL: add protocol if missing (http for localhost, https otherwise)
+  let supabaseUrl: string;
+  if (/^https?:\/\//i.test(rawUrl)) {
+    supabaseUrl = rawUrl;
+  } else if (/^(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(rawUrl)) {
+    supabaseUrl = `http://${rawUrl}`;
+  } else {
+    supabaseUrl = `https://${rawUrl}`;
   }
 
   const isLocal = supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1');

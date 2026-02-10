@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Draft } from '@/draft/model/Draft';
 import { firestore } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
-import { dualWrite } from '@/shared/api/dualWrite';
+import { dualWrite, throwOnError } from '@/shared/api/dualWrite';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 
 export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: string }, userId: string): Promise<Draft> {
@@ -43,14 +43,14 @@ export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: st
       entityId: draftId,
       supabaseWrite: async () => {
         const supabase = getSupabaseClient();
-        await supabase.from('drafts').upsert({
+        throwOnError(await supabase.from('drafts').upsert({
           id: draftId,
           user_id: userId,
           board_id: draft.boardId,
           title: draft.title,
           content: draft.content,
           saved_at: now.toDate().toISOString(),
-        });
+        }));
       },
     });
   } catch (error) {
@@ -98,7 +98,7 @@ export async function deleteDraft(userId: string, draftId: string): Promise<void
     entityId: draftId,
     supabaseWrite: async () => {
       const supabase = getSupabaseClient();
-      await supabase.from('drafts').delete().eq('id', draftId);
+      throwOnError(await supabase.from('drafts').delete().eq('id', draftId));
     },
   });
 }

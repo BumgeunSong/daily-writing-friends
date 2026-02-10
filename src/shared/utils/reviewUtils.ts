@@ -3,7 +3,7 @@ import { firestore } from "@/firebase";
 import { JoinFormDataForActiveUser } from "@/login/model/join";
 import { Review } from "@/login/model/Review";
 import { trackedFirebase } from "@/shared/api/trackedFirebase";
-import { dualWrite } from "@/shared/api/dualWrite";
+import { dualWrite, throwOnError } from "@/shared/api/dualWrite";
 import { getSupabaseClient } from "@/shared/api/supabaseClient";
 
 /**
@@ -64,7 +64,7 @@ export async function createReview(boardId: string, review: Review): Promise<voi
     entityId: review.reviewer.uid,
     supabaseWrite: async () => {
       const supabase = getSupabaseClient();
-      await supabase.from('reviews').upsert({
+      throwOnError(await supabase.from('reviews').upsert({
         id: review.reviewer.uid,
         board_id: boardId,
         reviewer_id: review.reviewer.uid,
@@ -75,7 +75,7 @@ export async function createReview(boardId: string, review: Review): Promise<voi
         nps: review.nps ?? null,
         will_continue: review.willContinue ?? null,
         created_at: review.createdAt.toDate().toISOString(),
-      });
+      }));
     },
   });
 }

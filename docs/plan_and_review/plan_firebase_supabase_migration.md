@@ -1,10 +1,13 @@
 # Firebase → Supabase Migration Plan
 
+> **Single source of truth for current state**: See [migration_progress.md](./migration_progress.md)
+> This document is the original architectural plan. For what actually happened, see the progress doc.
+
 **Project**: Daily Writing Friends
-**Document Version**: 1.1
+**Document Version**: 1.2
 **Created**: 2026-01-04
-**Last Updated**: 2026-01-17
-**Branch**: `feat/supabase-migration-3`
+**Last Updated**: 2026-02-10
+**Branch**: `shadow-read-mismatch`
 
 ---
 
@@ -17,16 +20,18 @@
 | Phase 0: Schema | ✅ Complete | Tables & indexes created in Supabase |
 | Phase 1: Backfill | ✅ Complete | All data migrated except notifications |
 | Phase 2: Dual-Write | ✅ Deployed | Firestore writes sync to Supabase |
+| Phase 2.1: Dual-Write Error Fix | ✅ Complete | throwOnError + dead-letter queue |
 | Phase 3: Remove Fan-out | ⏳ Pending | |
-| Phase 4: Notifications | ⏳ In Progress | Dual-write running, wait 7 days |
-| Phase 5: Shadow Reads | ⏳ Pending | |
-| Phase 6: Switch Reads | ⏳ Pending | |
+| Phase 4: Notifications | ✅ Complete | Dual-write running since Jan 17 |
+| Phase 5: Shadow Reads | ✅ Complete | Implemented Jan 25 |
+| Phase 5.1: Shadow Read Mismatch Fix | ✅ Complete | Error handling + backfill gap |
+| Phase 6: Switch Reads | ⏳ Next | Blocked on backfill completion |
 | Phase 7: Freeze Firestore | ⏳ Pending | |
 
 **Next Steps:**
-1. Monitor dual-write for 7 days (until 2026-01-24)
-2. Verify data consistency between Firestore and Supabase
-3. Proceed to Phase 3 (remove activity fan-out functions)
+1. Verify backfill completed (mismatch count → near 0)
+2. Monitor `_supabase_write_failures` collection — should remain empty
+3. Run shadow mode for 24-48h, then switch reads to Supabase
 
 **Key Commits:**
 - `6620977` - Phase 2 Dual-Write 구현: Firestore 쓰기 작업을 Supabase에 동기화
@@ -1330,10 +1335,13 @@ Before declaring migration complete:
 | Checkpoint | Status | Date | Notes |
 |------------|--------|------|-------|
 | Backfill complete (excl. notifications) | ✅ | 2026-01-17 | Phase 1 complete |
-| Dual-write deployed | ✅ | 2026-01-17 | Phase 2 deployed, monitoring starts |
-| Dual-write stable (7+ days) | ⏳ | | Target: 2026-01-24 |
-| Notification dual-write (7+ days) | ⏳ | | Target: 2026-01-24, then delete stale |
-| Shadow diff rate < 0.1% | | | |
+| Dual-write deployed | ✅ | 2026-01-17 | Phase 2 deployed |
+| CI env var fix (VITE_DUAL_WRITE_ENABLED) | ✅ | 2026-02-08 | Was missing from CI for 3 weeks |
+| Dual-write error handling (throwOnError) | ✅ | 2026-02-10 | Phase 2.1 — silent failures fixed |
+| Dead-letter queue (_supabase_write_failures) | ✅ | 2026-02-10 | Failed writes now persisted for recovery |
+| Shadow reads implemented | ✅ | 2026-01-25 | Phase 5 complete |
+| Shadow read mismatch fix + backfill | ✅ | 2026-02-10 | Phase 5.1 — gap backfill running |
+| Shadow diff rate < 0.1% | ⏳ | | Pending backfill completion |
 | All E2E tests passing | | | |
 | Rollback tested | | | |
 | Firestore writes stopped | | | |

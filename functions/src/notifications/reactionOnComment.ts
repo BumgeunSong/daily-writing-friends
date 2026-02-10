@@ -4,7 +4,7 @@ import { shouldGenerateNotification } from './shouldGenerateNotification';
 import admin from '../shared/admin';
 import { Notification, NotificationType } from '../shared/types/Notification';
 import { Reaction } from '../shared/types/Reaction';
-import { dualWriteServer, getSupabaseAdmin } from '../shared/supabaseAdmin';
+import { dualWriteServer, getSupabaseAdmin, throwOnError } from '../shared/supabaseAdmin';
 
 export const onReactionCreatedOnComment = onDocumentCreated(
   'boards/{boardId}/posts/{postId}/comments/{commentId}/reactions/{reactionId}',
@@ -59,7 +59,7 @@ export const onReactionCreatedOnComment = onDocumentCreated(
       docRef.id,
       async () => {
         const supabase = getSupabaseAdmin();
-        await supabase.from('notifications').insert({
+        throwOnError(await supabase.from('notifications').upsert({
           id: docRef.id,
           user_id: commentAuthorId,
           type: NotificationType.REACTION_ON_COMMENT,
@@ -72,7 +72,7 @@ export const onReactionCreatedOnComment = onDocumentCreated(
           message: message,
           created_at: timestamp.toDate().toISOString(),
           is_read: false,
-        });
+        }, { onConflict: 'id' }));
       }
     );
   },
@@ -130,7 +130,7 @@ export const onReactionCreatedOnReply = onDocumentCreated(
       docRef.id,
       async () => {
         const supabase = getSupabaseAdmin();
-        await supabase.from('notifications').insert({
+        throwOnError(await supabase.from('notifications').upsert({
           id: docRef.id,
           user_id: replyAuthorId,
           type: NotificationType.REACTION_ON_REPLY,
@@ -144,7 +144,7 @@ export const onReactionCreatedOnReply = onDocumentCreated(
           message: message,
           created_at: timestamp.toDate().toISOString(),
           is_read: false,
-        });
+        }, { onConflict: 'id' }));
       }
     );
   },

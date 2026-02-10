@@ -405,9 +405,8 @@ async function insertMissingRecords(
   let inserted = 0;
   let errors = 0;
 
-  // Tables with composite unique constraints need row-by-row insert to skip duplicates
-  // Tables with composite unique constraints need row-by-row insert to skip duplicates
-  const needsRowByRow = ['reactions'];
+  // Tables that need row-by-row insert to gracefully skip FK violations and duplicates
+  const needsRowByRow = ['reactions', 'replies'];
 
   if (needsRowByRow.includes(tableName)) {
     for (const record of records) {

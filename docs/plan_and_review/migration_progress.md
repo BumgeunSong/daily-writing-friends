@@ -1,8 +1,11 @@
 # Firebase → Supabase Migration Progress
 
-**Last Updated**: 2026-01-25
-**Branch**: `main`
-**Status**: Phase 5 (Shadow Reads) implemented, ready for verification
+> **This is the single source of truth** for the Firestore → Supabase migration.
+> For the original architectural plan, see [plan_firebase_supabase_migration.md](./plan_firebase_supabase_migration.md).
+
+**Last Updated**: 2026-02-10
+**Branch**: `shadow-read-mismatch`
+**Status**: Phase 5.1 (Shadow Read Mismatch Fix) complete, backfill running
 
 ---
 
@@ -275,15 +278,50 @@ Shadow reads allow comparing Firestore and Supabase query results during migrati
 
 ---
 
+### Phase 5.1: Shadow Read Mismatch Fix ✅
+
+**Implemented**: 2026-02-10
+
+Shadow reads detected **60 unresolved Sentry issues** — data in Firestore fan-out collections missing from Supabase tables.
+
+**Root causes identified:**
+1. **Primary**: `VITE_DUAL_WRITE_ENABLED` was missing from CI until Feb 8 (commit `93437eb5`). Dual write never ran in production for ~3 weeks (Jan 16 → Feb 8).
+2. **Secondary**: All dual write lambdas silently swallowed Supabase errors. The Supabase JS v2 client returns `{ data, error }` without throwing, but no call site checked `error`. The `dualWrite()` try/catch never fired → 0 errors in Sentry → false confidence.
+
+**Fixes applied:**
+
+| Change | Files | Description |
+|--------|-------|-------------|
+| `SupabaseDualWriteError` class | `dualWrite.ts`, `supabaseAdmin.ts` | Custom error wrapping `PostgrestError` with full context |
+| `throwOnError()` helper | `dualWrite.ts`, `supabaseAdmin.ts` | Checks `{ error }` from every Supabase response and throws |
+| Client call sites wrapped | 10 files, 24 call sites | All `supabase.from().insert/update/delete/upsert()` wrapped |
+| Server call sites wrapped | 4 notification files, 5 call sites | Same pattern for Cloud Functions |
+| Dead-letter queue | `dualWrite.ts`, `supabaseAdmin.ts` | Failed writes persisted to `_supabase_write_failures` Firestore collection |
+| Idempotent server writes | 4 notification files | `.insert()` → `.upsert({ onConflict: 'id' })` to prevent duplicate notifications on Cloud Function retries |
+
+**Key commits:**
+- `95b94a9` - Supabase dual-write 에러 감지 및 실패 기록 인프라 추가
+- `5405b69` - 클라이언트 dual-write 24개 호출에 throwOnError 적용
+- `4937ce7` - 서버 측 dual-write 에러 감지 및 실패 기록 인프라 추가
+- `0a5eeec` - 알림 Cloud Functions에 throwOnError 적용 및 upsert로 변경
+
+**Backfill**: Running `scripts/migration/backfill-gap.ts` (covers Jan 16 → Feb 8 gap) to sync missing data. Uses `upsert` with `ignoreDuplicates: true` — safe against overwriting records already synced by dual write.
+
+**Dead-letter verification**: After deployment, query `_supabase_write_failures` collection. Should be empty if dual write is healthy.
+
+---
+
 ## Next Steps
 
 ### Phase 6: Switch Reads Gradually
 
-1. Run shadow mode (`VITE_READ_SOURCE=shadow`) for 24-48 hours
-2. Monitor Sentry for mismatch warnings
-3. Fix any data inconsistencies found
-4. Switch to Supabase reads (`VITE_READ_SOURCE=supabase`)
-5. Monitor for issues, keep rollback ready
+1. Verify backfill completed successfully (mismatch count should drop to near 0)
+2. Monitor `_supabase_write_failures` collection — should remain empty
+3. Run shadow mode (`VITE_READ_SOURCE=shadow`) for 24-48 hours
+4. Monitor Sentry for mismatch warnings
+5. Fix any remaining data inconsistencies
+6. Switch to Supabase reads (`VITE_READ_SOURCE=supabase`)
+7. Monitor for issues, keep rollback ready
 
 ### Phase 3: Remove Fan-out Functions (moved to last)
 
