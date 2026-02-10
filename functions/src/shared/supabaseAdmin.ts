@@ -5,7 +5,7 @@
  * Uses service role key for full database access.
  */
 
-import { createClient, SupabaseClient, PostgrestError } from "@supabase/supabase-js";
+import { createClient, SupabaseClient, type PostgrestError } from "@supabase/supabase-js";
 import admin from "./admin";
 
 let supabaseInstance: SupabaseClient | null = null;

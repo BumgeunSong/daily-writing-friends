@@ -27,8 +27,15 @@ export function getSupabaseClient(): SupabaseClient {
     );
   }
 
-  // Normalize URL: add https:// if protocol is missing
-  const supabaseUrl = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+  // Normalize URL: add protocol if missing (http for localhost, https otherwise)
+  let supabaseUrl: string;
+  if (/^https?:\/\//i.test(rawUrl)) {
+    supabaseUrl = rawUrl;
+  } else if (/^(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(rawUrl)) {
+    supabaseUrl = `http://${rawUrl}`;
+  } else {
+    supabaseUrl = `https://${rawUrl}`;
+  }
 
   const isLocal = supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1');
 

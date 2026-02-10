@@ -104,13 +104,13 @@ function logDualWriteError(error: unknown, options: DualWriteOptions): void {
 }
 
 async function persistFailedWrite(options: DualWriteOptions): Promise<void> {
-  const { addDoc, collection, Timestamp } = await import('firebase/firestore');
+  const { addDoc, collection, serverTimestamp } = await import('firebase/firestore');
   const { firestore } = await import('@/firebase');
   await addDoc(collection(firestore, '_supabase_write_failures'), {
     entityType: options.entityType,
     operationType: options.operationType,
     entityId: options.entityId,
-    failedAt: Timestamp.now(),
+    failedAt: serverTimestamp(),
     retried: false,
   });
 }

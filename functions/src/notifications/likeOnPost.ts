@@ -93,7 +93,6 @@ export const onLikeCreatedOnPost = onDocumentCreated(
       console.info(`Created like notification for user ${postAuthorId} on post ${boardId}/${postId}`);
     } catch (error) {
       console.error('Error creating like notification:', error);
-      throw error;
     }
   },
 );
