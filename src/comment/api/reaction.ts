@@ -10,7 +10,7 @@ import {
 import { Reaction } from '@/comment/model/Reaction';
 import { firestore } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
-import { dualWrite } from '@/shared/api/dualWrite';
+import { dualWrite, throwOnError } from '@/shared/api/dualWrite';
 import { getSupabaseClient, getReadSource } from '@/shared/api/supabaseClient';
 import { fetchReactionsFromSupabase } from '@/shared/api/supabaseReads';
 
@@ -84,7 +84,7 @@ export async function createReaction(params: CreateReactionParams): Promise<stri
     entityId: newReactionRef.id,
     supabaseWrite: async () => {
       const supabase = getSupabaseClient();
-      await supabase.from('reactions').insert({
+      throwOnError(await supabase.from('reactions').insert({
         id: newReactionRef.id,
         comment_id: replyId ? null : commentId,
         reply_id: replyId || null,
@@ -93,7 +93,7 @@ export async function createReaction(params: CreateReactionParams): Promise<stri
         user_profile_image: reactionUser.userProfileImage,
         reaction_type: content,
         created_at: createdAt.toDate().toISOString(),
-      });
+      }));
     },
   });
 
@@ -113,7 +113,7 @@ export async function deleteReaction(params: DeleteReactionParams): Promise<void
     entityId: reactionId,
     supabaseWrite: async () => {
       const supabase = getSupabaseClient();
-      await supabase.from('reactions').delete().eq('id', reactionId);
+      throwOnError(await supabase.from('reactions').delete().eq('id', reactionId));
     },
   });
 }
@@ -144,7 +144,7 @@ export async function deleteUserReaction(
     entityId: reactionDoc.id,
     supabaseWrite: async () => {
       const supabase = getSupabaseClient();
-      await supabase.from('reactions').delete().eq('id', reactionDoc.id);
+      throwOnError(await supabase.from('reactions').delete().eq('id', reactionDoc.id));
     },
   });
 }

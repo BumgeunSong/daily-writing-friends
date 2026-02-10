@@ -6,7 +6,7 @@ import { doc, serverTimestamp, collection, where, query, Timestamp, writeBatch, 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, storage } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
-import { dualWrite } from '@/shared/api/dualWrite';
+import { dualWrite, throwOnError } from '@/shared/api/dualWrite';
 import { getSupabaseClient, getReadSource } from '@/shared/api/supabaseClient';
 import { fetchUserFromSupabase, fetchAllUsersFromSupabase, fetchUsersWithBoardPermissionFromSupabase } from '@/shared/api/supabaseReads';
 import { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
@@ -39,7 +39,7 @@ export async function createUser(data: User): Promise<void> {
         entityId: data.uid,
         supabaseWrite: async () => {
             const supabase = getSupabaseClient();
-            await supabase.from('users').insert({
+            throwOnError(await supabase.from('users').insert({
                 id: data.uid,
                 real_name: data.realName || null,
                 nickname: data.nickname || null,
@@ -48,7 +48,7 @@ export async function createUser(data: User): Promise<void> {
                 bio: data.bio || null,
                 phone_number: data.phoneNumber || null,
                 referrer: data.referrer || null,
-            });
+            }));
         },
     });
 }
@@ -77,7 +77,7 @@ export async function updateUser(uid: string, data: Partial<User>): Promise<void
             if (data.phoneNumber !== undefined) updateData.phone_number = data.phoneNumber;
             if (data.referrer !== undefined) updateData.referrer = data.referrer;
             if (Object.keys(updateData).length > 0) {
-                await supabase.from('users').update(updateData).eq('id', uid);
+                throwOnError(await supabase.from('users').update(updateData).eq('id', uid));
             }
         },
     });
@@ -95,7 +95,7 @@ export async function deleteUser(uid: string): Promise<void> {
         entityId: uid,
         supabaseWrite: async () => {
             const supabase = getSupabaseClient();
-            await supabase.from('users').delete().eq('id', uid);
+            throwOnError(await supabase.from('users').delete().eq('id', uid));
         },
     });
 }
@@ -241,10 +241,10 @@ export async function blockUser(blockerId: string, blockedId: string) {
     entityId: `${blockerId}_${blockedId}`,
     supabaseWrite: async () => {
       const supabase = getSupabaseClient();
-      await supabase.from('blocks').insert({
+      throwOnError(await supabase.from('blocks').insert({
         blocker_id: blockerId,
         blocked_id: blockedId,
-      });
+      }));
     },
   });
 }
@@ -263,10 +263,10 @@ export async function unblockUser(blockerId: string, blockedId: string) {
     entityId: `${blockerId}_${blockedId}`,
     supabaseWrite: async () => {
       const supabase = getSupabaseClient();
-      await supabase.from('blocks').delete().match({
+      throwOnError(await supabase.from('blocks').delete().match({
         blocker_id: blockerId,
         blocked_id: blockedId,
-      });
+      }));
     },
   });
 }

@@ -9,7 +9,7 @@ import {
 import { Reply } from '@/comment/model/Reply';
 import { firestore } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
-import { dualWrite } from '@/shared/api/dualWrite';
+import { dualWrite, throwOnError } from '@/shared/api/dualWrite';
 import { getSupabaseClient, getReadSource } from '@/shared/api/supabaseClient';
 import { buildNotInQuery } from '@/user/api/user';
 import {
@@ -47,7 +47,7 @@ export async function createReply(
     entityId: docRef.id,
     supabaseWrite: async () => {
       const supabase = getSupabaseClient();
-      await supabase.from('replies').insert({
+      throwOnError(await supabase.from('replies').insert({
         id: docRef.id,
         comment_id: commentId,
         post_id: postId,
@@ -56,7 +56,7 @@ export async function createReply(
         user_profile_image: userProfileImage,
         content,
         created_at: createdAt.toDate().toISOString(),
-      });
+      }));
     },
   });
 }
@@ -81,7 +81,7 @@ export async function updateReplyToComment(
     entityId: replyId,
     supabaseWrite: async () => {
       const supabase = getSupabaseClient();
-      await supabase.from('replies').update({ content }).eq('id', replyId);
+      throwOnError(await supabase.from('replies').update({ content }).eq('id', replyId));
     },
   });
 }
@@ -105,7 +105,7 @@ export async function deleteReplyToComment(
     entityId: replyId,
     supabaseWrite: async () => {
       const supabase = getSupabaseClient();
-      await supabase.from('replies').delete().eq('id', replyId);
+      throwOnError(await supabase.from('replies').delete().eq('id', replyId));
     },
   });
 }

@@ -1,7 +1,7 @@
 import { doc } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
-import { dualWrite } from '@/shared/api/dualWrite';
+import { dualWrite, throwOnError } from '@/shared/api/dualWrite';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 
 export function usePostDelete() {
@@ -18,7 +18,7 @@ export function usePostDelete() {
         entityId: postId,
         supabaseWrite: async () => {
           const supabase = getSupabaseClient();
-          await supabase.from('posts').delete().eq('id', postId);
+          throwOnError(await supabase.from('posts').delete().eq('id', postId));
         },
       });
 

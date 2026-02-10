@@ -14,7 +14,7 @@ import {
 import { firestore } from '@/firebase';
 import { Post, PostVisibility, ProseMirrorDoc } from '@/post/model/Post';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
-import { dualWrite } from '@/shared/api/dualWrite';
+import { dualWrite, throwOnError } from '@/shared/api/dualWrite';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 
 /**
@@ -88,7 +88,7 @@ export async function createPost(
     entityId: post.id,
     supabaseWrite: async () => {
       const supabase = getSupabaseClient();
-      await supabase.from('posts').insert({
+      throwOnError(await supabase.from('posts').insert({
         id: post.id,
         board_id: boardId,
         author_id: authorId,
@@ -102,7 +102,7 @@ export async function createPost(
         count_of_replies: 0,
         count_of_likes: 0,
         created_at: createdAt.toDate().toISOString(),
-      });
+      }));
     },
   });
 
@@ -149,7 +149,7 @@ export const updatePost = async (
       if (contentJson !== undefined) {
         supabaseData.content_json = contentJson;
       }
-      await supabase.from('posts').update(supabaseData).eq('id', postId);
+      throwOnError(await supabase.from('posts').update(supabaseData).eq('id', postId));
     },
   });
 };

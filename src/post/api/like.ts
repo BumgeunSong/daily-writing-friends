@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore';
 import { firestore } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
-import { dualWrite } from '@/shared/api/dualWrite';
+import { dualWrite, throwOnError } from '@/shared/api/dualWrite';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 
 export interface CreateLikeParams {
@@ -61,14 +61,14 @@ export async function createLike(params: CreateLikeParams): Promise<string> {
     entityId: newLikeRef.id,
     supabaseWrite: async () => {
       const supabase = getSupabaseClient();
-      await supabase.from('likes').insert({
+      throwOnError(await supabase.from('likes').insert({
         id: newLikeRef.id,
         post_id: postId,
         user_id: likeUser.userId,
         user_name: likeUser.userName,
         user_profile_image: likeUser.userProfileImage,
         created_at: createdAt.toDate().toISOString(),
-      });
+      }));
     },
   });
 
@@ -96,7 +96,7 @@ export async function deleteUserLike(params: GetLikesParams, userId: string): Pr
     entityId: likeDoc.id,
     supabaseWrite: async () => {
       const supabase = getSupabaseClient();
-      await supabase.from('likes').delete().eq('id', likeDoc.id);
+      throwOnError(await supabase.from('likes').delete().eq('id', likeDoc.id));
     },
   });
 }

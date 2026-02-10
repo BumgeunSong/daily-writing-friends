@@ -8,7 +8,7 @@ import {
 import { Comment } from '@/comment/model/Comment';
 import { firestore } from '@/firebase';
 import { trackedFirebase } from '@/shared/api/trackedFirebase';
-import { dualWrite } from '@/shared/api/dualWrite';
+import { dualWrite, throwOnError } from '@/shared/api/dualWrite';
 import { getSupabaseClient, getReadSource } from '@/shared/api/supabaseClient';
 import { fetchCommentsFromSupabase, fetchCommentByIdFromSupabase } from '@/shared/api/supabaseReads';
 import { buildNotInQuery } from '@/user/api/user';
@@ -41,7 +41,7 @@ export async function createComment(
     entityId: docRef.id,
     supabaseWrite: async () => {
       const supabase = getSupabaseClient();
-      await supabase.from('comments').insert({
+      throwOnError(await supabase.from('comments').insert({
         id: docRef.id,
         post_id: postId,
         user_id: userId,
@@ -50,7 +50,7 @@ export async function createComment(
         content,
         count_of_replies: 0,
         created_at: createdAt.toDate().toISOString(),
-      });
+      }));
     },
   });
 }
@@ -74,7 +74,7 @@ export async function updateCommentToPost(
     entityId: commentId,
     supabaseWrite: async () => {
       const supabase = getSupabaseClient();
-      await supabase.from('comments').update({ content }).eq('id', commentId);
+      throwOnError(await supabase.from('comments').update({ content }).eq('id', commentId));
     },
   });
 }
@@ -93,7 +93,7 @@ export async function deleteCommentToPost(boardId: string, postId: string, comme
     entityId: commentId,
     supabaseWrite: async () => {
       const supabase = getSupabaseClient();
-      await supabase.from('comments').delete().eq('id', commentId);
+      throwOnError(await supabase.from('comments').delete().eq('id', commentId));
     },
   });
 }
