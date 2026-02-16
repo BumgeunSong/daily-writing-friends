@@ -55,6 +55,29 @@ interface PostRow {
   created_at: string;
 }
 
+/** Post row with embedded resources from PostgREST joins */
+interface PostRowWithEmbeds {
+  id: string;
+  board_id: string;
+  author_id: string;
+  author_name: string;
+  title: string;
+  content: string;
+  content_json: unknown;
+  thumbnail_image_url: string | null;
+  visibility: string | null;
+  count_of_comments: number;
+  count_of_replies: number;
+  count_of_likes: number;
+  engagement_score: number;
+  week_days_from_first_day: number | null;
+  created_at: string;
+  updated_at: string;
+  boards?: { first_day: string | null } | { first_day: string | null }[];
+  comments?: { count: number }[];
+  replies?: { count: number }[];
+}
+
 // Note: Supabase join selects return arrays at the type level,
 // but !inner guarantees exactly one row. We use type assertions in the mappers.
 
@@ -470,8 +493,7 @@ export async function fetchBestPostsFromSupabase(
 }
 
 /** Map a Supabase posts row (with embedded counts and board data) to Post model */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapRowToPost(row: any): Post {
+export function mapRowToPost(row: PostRowWithEmbeds): Post {
   // Extract live counts from embedded resources (PostgREST returns [{count: N}] for one-to-many)
   const commentCount = row.comments?.[0]?.count ?? row.count_of_comments ?? 0;
   const replyCount = row.replies?.[0]?.count ?? row.count_of_replies ?? 0;
