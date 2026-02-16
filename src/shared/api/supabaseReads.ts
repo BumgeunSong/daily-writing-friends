@@ -25,8 +25,12 @@ function formatInFilter(values: string[]): string {
 
 /**
  * Compute the number of working days (Mon-Fri) from a board's first day to a post's creation date.
- * Matches the logic in Cloud Function `updatePostDaysFromFirstDay`.
- * Both dates are interpreted in KST (Asia/Seoul) timezone.
+ *
+ * Mirrors the Cloud Function `updatePostDaysFromFirstDay` with two differences:
+ * - Uses postCreatedAt (fixed) instead of new Date() (current time).
+ * - Computes KST weekday via modular arithmetic to avoid DST issues in non-KST browsers.
+ *
+ * Both dates are projected to KST (Asia/Seoul) calendar dates before counting.
  */
 export function computeWeekDaysFromFirstDay(boardFirstDay: string, postCreatedAt: string): number {
   const kstStart = new Date(new Date(boardFirstDay).toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
@@ -37,9 +41,12 @@ export function computeWeekDaysFromFirstDay(boardFirstDay: string, postCreatedAt
   const msPerDay = 86400000;
   const daysDiff = Math.ceil((kstEnd.getTime() - kstStart.getTime()) / msPerDay);
 
+  // Use modular arithmetic from the known KST start day to avoid creating
+  // intermediate Date objects that could be affected by local DST transitions.
+  const startDay = kstStart.getDay();
   let workingDays = 0;
   for (let i = 0; i < daysDiff; i++) {
-    const day = new Date(kstStart.getTime() + i * msPerDay).getDay();
+    const day = (startDay + i) % 7;
     if (day !== 0 && day !== 6) workingDays++;
   }
 
