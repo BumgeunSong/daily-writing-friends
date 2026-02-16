@@ -3,9 +3,9 @@
 > **This is the single source of truth** for the Firestore → Supabase migration.
 > For the original architectural plan, see [plan_firebase_supabase_migration.md](./plan_firebase_supabase_migration.md).
 
-**Last Updated**: 2026-02-10
+**Last Updated**: 2026-02-16
 **Branch**: `shadow-read-mismatch`
-**Status**: Phase 6 (Switch Reads to Supabase) in progress
+**Status**: Phase 6 (Switch Reads to Supabase) — blocker fixed, ready to deploy
 
 ---
 
@@ -311,6 +311,62 @@ Shadow reads detected **60+ unresolved Sentry issues** (62 at final count) — d
 
 ---
 
+### Phase 5.2: boardPermissions Dual-Write Fix ✅
+
+**Implemented**: 2026-02-16
+
+Phase 6 was blocked because **all users got 403** when `VITE_READ_SOURCE=supabase`. Root cause: `boardPermissions` changes were never synced to Supabase's `user_board_permissions` table.
+
+**Root causes identified:**
+1. `createUser()` and `updateUser()` dual-write only synced scalar user fields to Supabase `users` table — never wrote to `user_board_permissions`
+2. Admin app (`admin-daily-writing-friends/`) writes directly to Firestore, bypassing main app code entirely
+
+**Verification** (`scripts/debug/verify-board-permissions.ts`):
+| Metric | Before Fix | After Fix |
+|--------|-----------|-----------|
+| Matching permissions | 492 | 516 |
+| Missing in Supabase | 24 | 0 |
+| Mismatched values | 0 | 0 |
+
+All 24 missing permissions were for board `MCyYUxiXsY5HBzcjbkBR` (cohort 22), granted after the initial backfill.
+
+**Fixes applied:**
+
+| Change | Files |
+|--------|-------|
+| Dual-write `boardPermissions` in `createUser()` | `src/user/api/user.ts` |
+| Dual-write `boardPermissions` in `updateUser()` | `src/user/api/user.ts` |
+| `useWritePermission` respects `getReadSource()` | `src/shared/hooks/useWritePermission.ts` |
+| Backfill 24 missing permissions | `scripts/migration/backfill-board-permissions.ts` |
+
+---
+
+### Phase 5.3: Admin App Dual-Write ✅
+
+**Implemented**: 2026-02-16
+
+The admin app (`~/coding/tutorial/admin-daily-writing-friends/`) is a separate Next.js app with zero Supabase integration. Added dual-write for 4 critical operations.
+
+**Files modified in admin app:**
+
+| File | Change |
+|------|--------|
+| `src/lib/supabase.ts` | New: Supabase client + `adminDualWrite()` helper |
+| `src/app/admin/user-approval/page.tsx` | Dual-write for approve (upsert `user_board_permissions`, delete `board_waiting_users`) and reject (delete `board_waiting_users`) |
+| `src/hooks/useCreateUpcomingBoard.ts` | Dual-write for board creation (insert `boards`) |
+
+**Remaining admin operations NOT dual-written** (holidays, narrations): These collections don't exist in Supabase schema and are admin-only data.
+
+**Env vars needed in admin app `.env.local`:**
+```
+NEXT_PUBLIC_SUPABASE_URL=https://mbnuuctaptbxytiiwxet.supabase.co
+NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=<key>
+```
+
+> For full analysis, see [plan_phase6_fix_and_admin_migration.md](./plan_phase6_fix_and_admin_migration.md).
+
+---
+
 ## Phase 6: Switch Reads to Supabase (In Progress)
 
 **Started**: 2026-02-10
@@ -324,8 +380,13 @@ Shadow reads detected **60+ unresolved Sentry issues** (62 at final count) — d
    - Comment/reply deletion removes from main collection + Supabase, but does NOT clean up fan-out subcollections
    - Supabase SQL queries produce more accurate results than stale fan-out data
 4. ✅ `VITE_READ_SOURCE` GitHub secret updated to `supabase` (2026-02-10)
-5. ⬜ Deploy to production (merge to main triggers CI)
-6. ⬜ Monitor for issues, keep rollback ready (`VITE_READ_SOURCE=firestore`)
+5. ✅ Fix boardPermissions dual-write gap (Phase 5.2, 2026-02-16)
+   - Main app: `createUser()`, `updateUser()` now sync to `user_board_permissions`
+   - Admin app: 4 dual-write operations added
+   - Backfill: 516/516 permissions match (0 missing, 0 mismatched)
+6. ⬜ Deploy admin app with Supabase env vars
+7. ⬜ Deploy main app to production (merge to main triggers CI)
+8. ⬜ Monitor for issues, keep rollback ready (`VITE_READ_SOURCE=firestore`)
 
 ---
 
