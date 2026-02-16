@@ -3,9 +3,9 @@
 > **This is the single source of truth** for the Firestore → Supabase migration.
 > For the original architectural plan, see [plan_firebase_supabase_migration.md](./plan_firebase_supabase_migration.md).
 
-**Last Updated**: 2026-02-10
+**Last Updated**: 2026-02-16
 **Branch**: `shadow-read-mismatch`
-**Status**: Phase 6 (Switch Reads to Supabase) in progress
+**Status**: Phase 6 (Switch Reads to Supabase) — blocker fixed, ready to deploy
 
 ---
 
@@ -311,6 +311,74 @@ Shadow reads detected **60+ unresolved Sentry issues** (62 at final count) — d
 
 ---
 
+### Phase 5.2: boardPermissions Dual-Write Fix ✅
+
+**Implemented**: 2026-02-16
+
+Phase 6 was blocked because **all users got 403** when `VITE_READ_SOURCE=supabase`.
+
+**Symptom**: Board loader calls `fetchUser(uid)` → Supabase returns user with empty `boardPermissions` → loader throws 403.
+
+**Root causes identified:**
+1. **Main app dual-write gap**: In Firestore, `boardPermissions` is a map field on `users/{uid}`. In Supabase, permissions are normalized into `user_board_permissions(user_id, board_id, permission)`. `createUser()` and `updateUser()` dual-write to `users` table but never wrote to `user_board_permissions`.
+2. **Admin app bypass**: The admin app (`admin-daily-writing-friends/`) writes directly to Firestore via client SDK (e.g., `updateDoc(userRef, { ['boardPermissions.${boardId}']: 'write' })`), bypassing main app code entirely. This was the primary source of the 24 missing permissions.
+
+**Verification** (`scripts/debug/verify-board-permissions.ts`):
+| Metric | Before Fix | After Fix |
+|--------|-----------|-----------|
+| Matching permissions | 492 | 516 |
+| Missing in Supabase | 24 | 0 |
+| Mismatched values | 0 | 0 |
+
+All 24 missing permissions were for board `MCyYUxiXsY5HBzcjbkBR` (cohort 22), granted after the initial backfill.
+
+**Fixes applied:**
+
+| Change | Files |
+|--------|-------|
+| Dual-write `boardPermissions` in `createUser()` | `src/user/api/user.ts` |
+| Dual-write `boardPermissions` in `updateUser()` | `src/user/api/user.ts` |
+| `useWritePermission` respects `getReadSource()` | `src/shared/hooks/useWritePermission.ts` |
+| Backfill 24 missing permissions | `scripts/migration/backfill-board-permissions.ts` |
+
+---
+
+### Phase 5.3: Admin App Dual-Write ✅
+
+**Implemented**: 2026-02-16
+
+The admin app (`~/coding/tutorial/admin-daily-writing-friends/`) is a separate Next.js 15 app (React 18, Firebase client SDK + Admin SDK, Tailwind/shadcn) with zero Supabase integration. Added dual-write for the 4 critical operations out of 11 total Firestore writes.
+
+**Admin app Firestore write operations (11 total):**
+
+| # | Operation | Collection | Migration Impact |
+|---|-----------|-----------|-----------------|
+| 1 | **Approve user** (grant boardPermissions) | `users/{uid}` | **CRITICAL** — dual-write to `user_board_permissions` |
+| 2 | **Approve user** (remove from waitingUsersIds) | `boards/{boardId}` | **HIGH** — dual-write to `board_waiting_users` |
+| 3 | **Reject user** (remove from waitingUsersIds) | `boards/{boardId}` | **HIGH** — dual-write to `board_waiting_users` |
+| 4 | **Create board** (new cohort) | `boards` | **HIGH** — dual-write to `boards` table |
+| 5-11 | Holidays, narrations (7 operations) | `holidays/`, `narrations/` | LOW — not in Supabase schema |
+
+**Files modified in admin app (separate repo):**
+
+| File | Change |
+|------|--------|
+| `src/lib/supabase.ts` | New: Supabase client + `adminDualWrite()` helper |
+| `src/app/admin/user-approval/page.tsx` | Dual-write for approve (upsert `user_board_permissions`, delete `board_waiting_users`) and reject (delete `board_waiting_users`) |
+| `src/hooks/useCreateUpcomingBoard.ts` | Dual-write for board creation (insert `boards`) |
+
+Operations 5-11 (holidays, narrations) are admin-only data not in Supabase schema — no dual-write needed.
+
+**Env vars needed in admin app `.env.local`:**
+```
+NEXT_PUBLIC_SUPABASE_URL=https://mbnuuctaptbxytiiwxet.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<key>
+```
+
+> Admin app changes are in the separate `admin-daily-writing-friends` repository (not this PR).
+
+---
+
 ## Phase 6: Switch Reads to Supabase (In Progress)
 
 **Started**: 2026-02-10
@@ -324,8 +392,22 @@ Shadow reads detected **60+ unresolved Sentry issues** (62 at final count) — d
    - Comment/reply deletion removes from main collection + Supabase, but does NOT clean up fan-out subcollections
    - Supabase SQL queries produce more accurate results than stale fan-out data
 4. ✅ `VITE_READ_SOURCE` GitHub secret updated to `supabase` (2026-02-10)
-5. ⬜ Deploy to production (merge to main triggers CI)
-6. ⬜ Monitor for issues, keep rollback ready (`VITE_READ_SOURCE=firestore`)
+5. ✅ Fix boardPermissions dual-write gap (Phase 5.2, 2026-02-16)
+   - Main app: `createUser()`, `updateUser()` now sync to `user_board_permissions`
+   - Admin app: 4 dual-write operations added
+   - Backfill: 516/516 permissions match (0 missing, 0 mismatched)
+6. ⬜ Deploy admin app with Supabase env vars
+7. ⬜ Deploy main app to production (merge to main triggers CI)
+8. ⬜ Monitor for issues, keep rollback ready (`VITE_READ_SOURCE=firestore`)
+
+### Risk Assessment
+
+| Risk | Likelihood | Mitigation |
+|------|-----------|------------|
+| Admin app dual-write fails silently | Medium | Log errors + Sentry; can re-backfill anytime |
+| New cohort created only in Firestore | Medium | Phase 5.3 adds dual-write for board creation |
+| RLS blocks reads in future | Low | Verified: anon key can read all tables |
+| Supabase project paused (free tier) | Low | Resume in dashboard; set up health check |
 
 ---
 
@@ -341,8 +423,15 @@ After Phase 6 confirms Supabase reads work:
 
 **Note:** Phase order changed from original plan. Reads must switch before fan-out removal, otherwise new data won't appear in "My Posts" etc.
 
-### Remaining Phases
-- Phase 7: Stop Dual-Write & Freeze Firestore
+### Phase 7: Stop Dual-Write & Freeze Firestore
+
+### Post-Migration: Admin App Switch
+
+Once Firestore is fully deprecated (after Phase 7):
+- Admin app switches from Firestore to Supabase as primary
+- Remove Firestore SDK dependency from admin app
+- Use Supabase service role key for all admin operations (server-side only)
+- holidays/narrations tables can be added to Supabase schema if needed
 
 ---
 

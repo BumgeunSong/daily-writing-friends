@@ -49,6 +49,18 @@ export async function createUser(data: User): Promise<void> {
                 phone_number: data.phoneNumber || null,
                 referrer: data.referrer || null,
             }));
+
+            // Sync boardPermissions to user_board_permissions table
+            if (data.boardPermissions) {
+                const permRows = Object.entries(data.boardPermissions).map(([boardId, permission]) => ({
+                    user_id: data.uid,
+                    board_id: boardId,
+                    permission,
+                }));
+                if (permRows.length > 0) {
+                    throwOnError(await supabase.from('user_board_permissions').upsert(permRows, { onConflict: 'user_id,board_id' }));
+                }
+            }
         },
     });
 }
@@ -78,6 +90,20 @@ export async function updateUser(uid: string, data: Partial<User>): Promise<void
             if (data.referrer !== undefined) updateData.referrer = data.referrer;
             if (Object.keys(updateData).length > 0) {
                 throwOnError(await supabase.from('users').update(updateData).eq('id', uid));
+            }
+
+            // Sync boardPermissions to user_board_permissions table
+            // Firestore replaces the entire map, so delete-then-insert to match semantics
+            if (data.boardPermissions !== undefined) {
+                throwOnError(await supabase.from('user_board_permissions').delete().eq('user_id', uid));
+                const permRows = Object.entries(data.boardPermissions).map(([boardId, permission]) => ({
+                    user_id: uid,
+                    board_id: boardId,
+                    permission,
+                }));
+                if (permRows.length > 0) {
+                    throwOnError(await supabase.from('user_board_permissions').insert(permRows));
+                }
             }
         },
     });
