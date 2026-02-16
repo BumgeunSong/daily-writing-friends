@@ -18,6 +18,7 @@ import { Posting } from '@/post/model/Posting';
 import { mapDocumentToPost } from '@/post/utils/postUtils';
 import { getReadSource, getSupabaseClient } from '@/shared/api/supabaseClient';
 import { compareShadowResults, logShadowMismatch } from '@/shared/api/shadowReads';
+import { computeWeekDaysFromFirstDay } from '@/shared/api/supabaseReads';
 
 const LIMIT_COUNT = 10;
 
@@ -99,7 +100,7 @@ async function fetchUserPostsFromSupabase(
 
   let queryBuilder = supabase
     .from('posts')
-    .select('*')
+    .select('*, boards(first_day), comments(count), replies(count)')
     .eq('author_id', userId)
     .order('created_at', { ascending: false })
     .limit(LIMIT_COUNT);
@@ -116,25 +117,38 @@ async function fetchUserPostsFromSupabase(
     return [];
   }
 
-  const posts: PostWithPaginationMetadata[] = (data || []).map((row) => ({
-    id: row.id,
-    boardId: row.board_id,
-    title: row.title,
-    content: row.content || '',
-    contentJson: row.content_json ?? undefined,
-    thumbnailImageURL: row.thumbnail_image_url ?? null,
-    authorId: row.author_id,
-    authorName: row.author_name,
-    createdAt: new Date(row.created_at),
-    countOfComments: row.count_of_comments ?? 0,
-    countOfReplies: row.count_of_replies ?? 0,
-    countOfLikes: row.count_of_likes ?? 0,
-    engagementScore: row.engagement_score ?? 0,
-    weekDaysFromFirstDay: row.week_days_from_first_day ?? 0,
-    visibility: row.visibility ?? undefined,
-    _paginationCursor: row.created_at,
-    _fetchedFullPage: data.length === LIMIT_COUNT,
-  }));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const posts: PostWithPaginationMetadata[] = (data || []).map((row: any) => {
+    // Extract live counts from embedded resources
+    const commentCount = row.comments?.[0]?.count ?? row.count_of_comments ?? 0;
+    const replyCount = row.replies?.[0]?.count ?? row.count_of_replies ?? 0;
+
+    // Compute weekDaysFromFirstDay from board's first_day if available
+    const board = Array.isArray(row.boards) ? row.boards[0] : row.boards;
+    const weekDays = board?.first_day
+      ? computeWeekDaysFromFirstDay(board.first_day, row.created_at)
+      : (row.week_days_from_first_day ?? 0);
+
+    return {
+      id: row.id,
+      boardId: row.board_id,
+      title: row.title,
+      content: row.content || '',
+      contentJson: row.content_json ?? undefined,
+      thumbnailImageURL: row.thumbnail_image_url ?? null,
+      authorId: row.author_id,
+      authorName: row.author_name,
+      createdAt: new Date(row.created_at),
+      countOfComments: commentCount,
+      countOfReplies: replyCount,
+      countOfLikes: row.count_of_likes ?? 0,
+      engagementScore: row.engagement_score ?? 0,
+      weekDaysFromFirstDay: weekDays,
+      visibility: row.visibility ?? undefined,
+      _paginationCursor: row.created_at,
+      _fetchedFullPage: data.length === LIMIT_COUNT,
+    };
+  });
 
   return posts;
 }

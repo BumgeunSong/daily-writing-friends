@@ -23,6 +23,29 @@ function formatInFilter(values: string[]): string {
   return `(${quoted.join(',')})`;
 }
 
+/**
+ * Compute the number of working days (Mon-Fri) from a board's first day to a post's creation date.
+ * Matches the logic in Cloud Function `updatePostDaysFromFirstDay`.
+ * Both dates are interpreted in KST (Asia/Seoul) timezone.
+ */
+export function computeWeekDaysFromFirstDay(boardFirstDay: string, postCreatedAt: string): number {
+  const kstStart = new Date(new Date(boardFirstDay).toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  const kstEnd = new Date(new Date(postCreatedAt).toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  kstStart.setHours(0, 0, 0, 0);
+  kstEnd.setHours(0, 0, 0, 0);
+
+  const msPerDay = 86400000;
+  const daysDiff = Math.ceil((kstEnd.getTime() - kstStart.getTime()) / msPerDay);
+
+  let workingDays = 0;
+  for (let i = 0; i < daysDiff; i++) {
+    const day = new Date(kstStart.getTime() + i * msPerDay).getDay();
+    if (day !== 0 && day !== 6) workingDays++;
+  }
+
+  return workingDays;
+}
+
 // Supabase row types for query results
 interface PostRow {
   id: string;
@@ -381,7 +404,7 @@ export async function fetchRecentPostsFromSupabase(
 
   let q = supabase
     .from('posts')
-    .select('*')
+    .select('*, boards(first_day), comments(count), replies(count)')
     .eq('board_id', boardId)
     .order('created_at', { ascending: false });
 
@@ -423,7 +446,7 @@ export async function fetchBestPostsFromSupabase(
 
   let q = supabase
     .from('posts')
-    .select('*')
+    .select('*, boards(first_day), comments(count), replies(count)')
     .eq('board_id', boardId)
     .order('engagement_score', { ascending: false })
     .limit(limitCount);
@@ -446,25 +469,19 @@ export async function fetchBestPostsFromSupabase(
   return (data || []).map(mapRowToPost);
 }
 
-/** Map a Supabase posts row to Post model */
-function mapRowToPost(row: {
-  id: string;
-  board_id: string;
-  author_id: string;
-  author_name: string;
-  title: string;
-  content: string;
-  content_json: unknown;
-  thumbnail_image_url: string | null;
-  visibility: string | null;
-  count_of_comments: number;
-  count_of_replies: number;
-  count_of_likes: number;
-  engagement_score: number;
-  week_days_from_first_day: number | null;
-  created_at: string;
-  updated_at: string;
-}): Post {
+/** Map a Supabase posts row (with embedded counts and board data) to Post model */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapRowToPost(row: any): Post {
+  // Extract live counts from embedded resources (PostgREST returns [{count: N}] for one-to-many)
+  const commentCount = row.comments?.[0]?.count ?? row.count_of_comments ?? 0;
+  const replyCount = row.replies?.[0]?.count ?? row.count_of_replies ?? 0;
+
+  // Compute weekDaysFromFirstDay from board's first_day if available via embedded join
+  const board = Array.isArray(row.boards) ? row.boards[0] : row.boards;
+  const weekDays = board?.first_day
+    ? computeWeekDaysFromFirstDay(board.first_day, row.created_at)
+    : (row.week_days_from_first_day ?? undefined);
+
   return {
     id: row.id,
     boardId: row.board_id,
@@ -476,11 +493,11 @@ function mapRowToPost(row: {
     authorName: row.author_name,
     createdAt: Timestamp.fromDate(new Date(row.created_at)),
     updatedAt: row.updated_at ? Timestamp.fromDate(new Date(row.updated_at)) : undefined,
-    countOfComments: row.count_of_comments,
-    countOfReplies: row.count_of_replies,
+    countOfComments: commentCount,
+    countOfReplies: replyCount,
     countOfLikes: row.count_of_likes,
     engagementScore: row.engagement_score,
-    weekDaysFromFirstDay: row.week_days_from_first_day ?? undefined,
+    weekDaysFromFirstDay: weekDays,
     visibility: (row.visibility as PostVisibility) || PostVisibility.PUBLIC,
   };
 }
