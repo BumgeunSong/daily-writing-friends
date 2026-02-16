@@ -40,7 +40,18 @@ async function main() {
 
     if (error) {
       console.error(`Batch ${i / BATCH_SIZE + 1} error:`, error.message);
-      errors += batch.length;
+      // Fall back to per-row upsert to get accurate error count
+      for (const row of batch) {
+        const { error: rowError } = await supabase
+          .from('user_board_permissions')
+          .upsert([row], { onConflict: 'user_id,board_id', ignoreDuplicates: false });
+        if (rowError) {
+          console.error(`  Row error user_id=${row.user_id}, board_id=${row.board_id}:`, rowError.message);
+          errors += 1;
+        } else {
+          upserted += 1;
+        }
+      }
     } else {
       upserted += batch.length;
     }

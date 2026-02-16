@@ -315,11 +315,13 @@ Shadow reads detected **60+ unresolved Sentry issues** (62 at final count) — d
 
 **Implemented**: 2026-02-16
 
-Phase 6 was blocked because **all users got 403** when `VITE_READ_SOURCE=supabase`. Root cause: `boardPermissions` changes were never synced to Supabase's `user_board_permissions` table.
+Phase 6 was blocked because **all users got 403** when `VITE_READ_SOURCE=supabase`.
+
+**Symptom**: Board loader calls `fetchUser(uid)` → Supabase returns user with empty `boardPermissions` → loader throws 403.
 
 **Root causes identified:**
-1. `createUser()` and `updateUser()` dual-write only synced scalar user fields to Supabase `users` table — never wrote to `user_board_permissions`
-2. Admin app (`admin-daily-writing-friends/`) writes directly to Firestore, bypassing main app code entirely
+1. **Main app dual-write gap**: In Firestore, `boardPermissions` is a map field on `users/{uid}`. In Supabase, permissions are normalized into `user_board_permissions(user_id, board_id, permission)`. `createUser()` and `updateUser()` dual-write to `users` table but never wrote to `user_board_permissions`.
+2. **Admin app bypass**: The admin app (`admin-daily-writing-friends/`) writes directly to Firestore via client SDK (e.g., `updateDoc(userRef, { ['boardPermissions.${boardId}']: 'write' })`), bypassing main app code entirely. This was the primary source of the 24 missing permissions.
 
 **Verification** (`scripts/debug/verify-board-permissions.ts`):
 | Metric | Before Fix | After Fix |
@@ -345,9 +347,19 @@ All 24 missing permissions were for board `MCyYUxiXsY5HBzcjbkBR` (cohort 22), gr
 
 **Implemented**: 2026-02-16
 
-The admin app (`~/coding/tutorial/admin-daily-writing-friends/`) is a separate Next.js app with zero Supabase integration. Added dual-write for 4 critical operations.
+The admin app (`~/coding/tutorial/admin-daily-writing-friends/`) is a separate Next.js 15 app (React 18, Firebase client SDK + Admin SDK, Tailwind/shadcn) with zero Supabase integration. Added dual-write for the 4 critical operations out of 11 total Firestore writes.
 
-**Files modified in admin app:**
+**Admin app Firestore write operations (11 total):**
+
+| # | Operation | Collection | Migration Impact |
+|---|-----------|-----------|-----------------|
+| 1 | **Approve user** (grant boardPermissions) | `users/{uid}` | **CRITICAL** — dual-write to `user_board_permissions` |
+| 2 | **Approve user** (remove from waitingUsersIds) | `boards/{boardId}` | **HIGH** — dual-write to `board_waiting_users` |
+| 3 | **Reject user** (remove from waitingUsersIds) | `boards/{boardId}` | **HIGH** — dual-write to `board_waiting_users` |
+| 4 | **Create board** (new cohort) | `boards` | **HIGH** — dual-write to `boards` table |
+| 5-11 | Holidays, narrations (7 operations) | `holidays/`, `narrations/` | LOW — not in Supabase schema |
+
+**Files modified in admin app (separate repo):**
 
 | File | Change |
 |------|--------|
@@ -355,15 +367,15 @@ The admin app (`~/coding/tutorial/admin-daily-writing-friends/`) is a separate N
 | `src/app/admin/user-approval/page.tsx` | Dual-write for approve (upsert `user_board_permissions`, delete `board_waiting_users`) and reject (delete `board_waiting_users`) |
 | `src/hooks/useCreateUpcomingBoard.ts` | Dual-write for board creation (insert `boards`) |
 
-**Remaining admin operations NOT dual-written** (holidays, narrations): These collections don't exist in Supabase schema and are admin-only data.
+Operations 5-11 (holidays, narrations) are admin-only data not in Supabase schema — no dual-write needed.
 
 **Env vars needed in admin app `.env.local`:**
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://mbnuuctaptbxytiiwxet.supabase.co
-NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=<key>
+SUPABASE_SERVICE_ROLE_KEY=<key>
 ```
 
-> For full analysis, see [plan_phase6_fix_and_admin_migration.md](./plan_phase6_fix_and_admin_migration.md).
+> Admin app changes are in the separate `admin-daily-writing-friends` repository (not this PR).
 
 ---
 
@@ -388,6 +400,15 @@ NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY=<key>
 7. ⬜ Deploy main app to production (merge to main triggers CI)
 8. ⬜ Monitor for issues, keep rollback ready (`VITE_READ_SOURCE=firestore`)
 
+### Risk Assessment
+
+| Risk | Likelihood | Mitigation |
+|------|-----------|------------|
+| Admin app dual-write fails silently | Medium | Log errors + Sentry; can re-backfill anytime |
+| New cohort created only in Firestore | Medium | Phase 5.3 adds dual-write for board creation |
+| RLS blocks reads in future | Low | Verified: anon key can read all tables |
+| Supabase project paused (free tier) | Low | Resume in dashboard; set up health check |
+
 ---
 
 ## Next Steps
@@ -402,8 +423,15 @@ After Phase 6 confirms Supabase reads work:
 
 **Note:** Phase order changed from original plan. Reads must switch before fan-out removal, otherwise new data won't appear in "My Posts" etc.
 
-### Remaining Phases
-- Phase 7: Stop Dual-Write & Freeze Firestore
+### Phase 7: Stop Dual-Write & Freeze Firestore
+
+### Post-Migration: Admin App Switch
+
+Once Firestore is fully deprecated (after Phase 7):
+- Admin app switches from Firestore to Supabase as primary
+- Remove Firestore SDK dependency from admin app
+- Use Supabase service role key for all admin operations (server-side only)
+- holidays/narrations tables can be added to Supabase schema if needed
 
 ---
 

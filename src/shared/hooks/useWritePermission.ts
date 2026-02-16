@@ -40,8 +40,11 @@ export default function useWritePermission(userId: string | null, boardId: strin
                 // get user document from Firestore
                 const userDocRef = doc(firestore, 'users', userId);
                 const userDoc = await getDoc(userDocRef);
+                if (!userDoc.exists()) {
+                    return false;
+                }
                 const user = userDoc.data() as User;
-                return user.boardPermissions[boardId] === 'write';
+                return user.boardPermissions?.[boardId] === 'write';
             }
         },
         {

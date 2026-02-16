@@ -93,14 +93,16 @@ export async function updateUser(uid: string, data: Partial<User>): Promise<void
             }
 
             // Sync boardPermissions to user_board_permissions table
-            if (data.boardPermissions) {
+            // Firestore replaces the entire map, so delete-then-insert to match semantics
+            if (data.boardPermissions !== undefined) {
+                throwOnError(await supabase.from('user_board_permissions').delete().eq('user_id', uid));
                 const permRows = Object.entries(data.boardPermissions).map(([boardId, permission]) => ({
                     user_id: uid,
                     board_id: boardId,
                     permission,
                 }));
                 if (permRows.length > 0) {
-                    throwOnError(await supabase.from('user_board_permissions').upsert(permRows, { onConflict: 'user_id,board_id' }));
+                    throwOnError(await supabase.from('user_board_permissions').insert(permRows));
                 }
             }
         },

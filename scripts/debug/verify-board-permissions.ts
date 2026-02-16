@@ -77,14 +77,35 @@ async function main() {
     }
   }
 
+  // Reverse check: find permissions in Supabase that don't exist in Firestore
+  let extraInSupabase = 0;
+  const extraExamples: string[] = [];
+  for (const [uid, boardMap] of supaPermMap.entries()) {
+    const firestoreUser = usersSnap.docs.find(d => d.id === uid);
+    const firestorePerms: Record<string, string> = firestoreUser?.data().boardPermissions || {};
+    for (const [boardId, permission] of boardMap.entries()) {
+      if (!firestorePerms[boardId]) {
+        extraInSupabase++;
+        if (extraExamples.length < 5) {
+          extraExamples.push(`  EXTRA: user=${uid}, board=${boardId}, supabase=${permission}, firestore=<none>`);
+        }
+      }
+    }
+  }
+
   console.log('--- Comparison Results ---');
   console.log(`Matching permissions: ${matchCount}`);
   console.log(`Missing in Supabase: ${missingInSupabase}`);
+  console.log(`Extra in Supabase (not in Firestore): ${extraInSupabase}`);
   console.log(`Mismatched values: ${mismatchCount}`);
 
   if (examples.length > 0) {
     console.log(`\nExamples (first ${examples.length}):`);
     examples.forEach(e => console.log(e));
+  }
+  if (extraExamples.length > 0) {
+    console.log(`\nExtra in Supabase examples:`);
+    extraExamples.forEach(e => console.log(e));
   }
 
   // 5. Count users in Supabase with zero permissions
