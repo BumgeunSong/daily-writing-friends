@@ -63,4 +63,4 @@ Each entry has: `timestamp`, `category`, `event`, `level` (info/warn/error), `co
 Grep patterns:
 - All errors: `grep '"level":"error"' .logs/dev-*.jsonl`
 - Dual-write issues: `grep '"category":"dual-write"' .logs/dev-*.jsonl`
-- Mismatches: `grep '"match":false' .logs/dev-*.jsonl`
+- Mismatches: `grep '"event":"compare-mismatch"' .logs/dev-*.jsonl`

@@ -53,8 +53,8 @@ export function logShadowMismatch(
 ): void {
   devLog({
     category: 'shadow-read',
-    event: result.match ? 'compare-match' : 'compare-mismatch',
-    level: result.match ? 'info' : 'warn',
+    event: 'compare-mismatch',
+    level: 'warn',
     data: {
       queryType,
       userId,
