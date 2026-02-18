@@ -36,6 +36,10 @@
     "supabase:stop": "supabase stop",
     "supabase:reset": "supabase db reset",
     "supabase:seed:extract": "npx tsx scripts/seed/extract-and-anonymize.ts",
+    "devlog": "tsx scripts/devlog.ts recent",
+    "devlog:errors": "tsx scripts/devlog.ts errors",
+    "devlog:check": "tsx scripts/devlog.ts check",
+    "devlog:trace": "tsx scripts/devlog.ts trace",
     "prepare": "husky"
   },
   "dependencies": {
