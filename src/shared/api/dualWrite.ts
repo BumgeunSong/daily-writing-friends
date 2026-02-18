@@ -11,6 +11,7 @@ import * as Sentry from '@sentry/react';
 import type { PostgrestError } from '@supabase/supabase-js';
 import { getSupabaseClient, isDualWriteEnabled } from './supabaseClient';
 import { addSentryBreadcrumb, setSentryContext } from '@/sentry';
+import { devLog } from '@/shared/utils/devLog';
 
 export class SupabaseDualWriteError extends Error {
   constructor(public readonly postgrestError: PostgrestError) {
@@ -136,6 +137,7 @@ async function persistFailedWrite(options: DualWriteOptions): Promise<void> {
 export async function dualWrite(options: DualWriteOptions): Promise<void> {
   // Skip if dual-write is disabled
   if (!isDualWriteEnabled()) {
+    devLog({ category: 'dual-write', event: 'write-skipped', data: { reason: 'disabled' } });
     return;
   }
 
@@ -146,6 +148,7 @@ export async function dualWrite(options: DualWriteOptions): Promise<void> {
 
     if (!shouldWrite) {
       // Already processed - skip
+      devLog({ category: 'dual-write', event: 'write-skipped', data: { reason: 'idempotent', entityId: options.entityId } });
       addSentryBreadcrumb(
         `Dual-write skipped (idempotent): ${options.entityType}/${options.entityId}`,
         'dual_write',
@@ -156,8 +159,10 @@ export async function dualWrite(options: DualWriteOptions): Promise<void> {
     }
 
     // Execute Supabase write
+    devLog({ category: 'dual-write', event: 'write-attempt', data: { entityType: options.entityType, operationType: options.operationType, entityId: options.entityId } });
     await options.supabaseWrite();
 
+    devLog({ category: 'dual-write', event: 'write-success', data: { entityType: options.entityType, operationType: options.operationType, entityId: options.entityId } });
     addSentryBreadcrumb(
       `Dual-write success: ${options.entityType}/${options.operationType}`,
       'dual_write',
@@ -170,6 +175,7 @@ export async function dualWrite(options: DualWriteOptions): Promise<void> {
     );
   } catch (error) {
     // Log error but don't throw - Firestore is source of truth
+    devLog({ category: 'dual-write', event: 'write-error', level: 'error', data: { entityType: options.entityType, operationType: options.operationType, entityId: options.entityId, error: error instanceof Error ? error.message : String(error) } });
     logDualWriteError(error, options);
     if (error instanceof SupabaseDualWriteError) {
       persistFailedWrite(options).catch(console.error);
