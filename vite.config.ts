@@ -3,6 +3,7 @@ import path from 'path';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
+import devLogPlugin from './vite-plugin-dev-log';
 
 /**
  * Vite 구성 파일
@@ -101,6 +102,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
+      devLogPlugin(),
       // Sentry 플러그인은 마지막에 추가
       sentryVitePlugin({
         authToken: sentryAuthToken,

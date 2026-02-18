@@ -6,6 +6,7 @@
  */
 
 import * as Sentry from '@sentry/react';
+import { devLog } from '@/shared/utils/devLog';
 
 export interface ShadowCompareResult {
   match: boolean;
@@ -50,6 +51,20 @@ export function logShadowMismatch(
   userId: string,
   result: ShadowCompareResult
 ): void {
+  devLog({
+    category: 'shadow-read',
+    event: 'compare-mismatch',
+    level: 'warn',
+    data: {
+      queryType,
+      userId,
+      firestoreCount: result.firestoreCount,
+      supabaseCount: result.supabaseCount,
+      missingInSupabase: result.missingInSupabase.slice(0, 5),
+      missingInFirestore: result.missingInFirestore.slice(0, 5),
+    },
+  });
+
   const message = `Shadow read mismatch: ${queryType} for user ${userId}`;
   console.warn(message, {
     firestoreCount: result.firestoreCount,
