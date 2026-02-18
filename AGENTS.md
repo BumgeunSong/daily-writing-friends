@@ -37,6 +37,21 @@ npm run test:run
 npm run build
 ```
 
+### Runtime Verification (Agent Observability)
+
+```bash
+# Check for runtime errors in dev logs (exit code 1 if errors found)
+npm run devlog:check
+
+# View recent log events
+npm run devlog
+
+# View only errors and warnings
+npm run devlog:errors
+```
+
+Log files: `.logs/dev-*.jsonl` — structured JSON, one event per line. Auto-generated during dev server runs.
+
 ### Firebase Functions (`/functions` directory)
 
 ```bash
