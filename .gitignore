@@ -86,3 +86,6 @@ scripts/seed/raw-*
 
 # SonarQube
 .scannerwork/
+
+# Agent observability logs
+.logs/
