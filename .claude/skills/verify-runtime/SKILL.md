@@ -13,6 +13,10 @@ After changing data-flow code, verify it works at runtime — not just that it c
 - Changed dual-write, shadow-read, or mutation logic
 - Fixed a data-flow bug and need evidence it's resolved
 
+## Prerequisites
+
+The Vite dev server must be running (`npm run dev`) for logs to be captured. `devLog()` POSTs to `/__dev/log` which the Vite plugin writes to `.logs/dev-*.jsonl`. Without the server, no entries are recorded.
+
 ## Verification Flow
 
 ```dot
@@ -21,11 +25,18 @@ digraph verify {
   "Type-check passes?" -> "Fix types" [label="no"];
   "Type-check passes?" -> "Tests pass?" [label="yes"];
   "Tests pass?" -> "Fix tests" [label="no"];
-  "Tests pass?" -> "Run devlog:check" [label="yes"];
+  "Tests pass?" -> "Dev server running?" [label="yes"];
+  "Dev server running?" -> "npm run dev" [label="no"];
+  "Dev server running?" -> "Trigger action in browser" [label="yes"];
+  "npm run dev" -> "Trigger action in browser";
+  "Trigger action in browser" -> "Run devlog:check";
   "Run devlog:check" -> "Errors found?";
   "Errors found?" -> "Diagnose from logs" [label="yes"];
   "Diagnose from logs" -> "Code change made";
-  "Errors found?" -> "Verified" [label="no"];
+  "Errors found?" -> "Warnings present?" [label="no"];
+  "Warnings present?" -> "Review mismatches" [label="yes"];
+  "Warnings present?" -> "Verified" [label="no"];
+  "Review mismatches" -> "Verified";
 }
 ```
 
@@ -34,10 +45,18 @@ digraph verify {
 ```bash
 npm run type-check      # Static types
 npm run test:run        # Unit tests
-npm run devlog:check    # Runtime verification (exit 1 if errors)
+npm run devlog:check    # Runtime verification (exit 1 on errors, exit 0 on warnings)
 npm run devlog:errors   # Show warnings + errors
 npm run devlog          # Show recent events
 npm run devlog:trace ID # Trace one action by correlationId
+```
+
+### Quick HTTP checks (dev server running)
+
+```bash
+curl localhost:PORT/__dev/logs          # JSON array of recent entries
+curl localhost:PORT/__dev/logs?limit=5  # Last 5 entries
+curl localhost:PORT/__dev/logs/path     # Current log file path
 ```
 
 ## What to Check
@@ -47,6 +66,8 @@ npm run devlog:trace ID # Trace one action by correlationId
 | `dual-write` | `write-success` for your entity | `write-error` or unexpected `write-skipped` |
 | `shadow-read` | `compare-match` | `compare-mismatch` with missing IDs |
 | Any | Events present for your change | Zero events (code path not hit) |
+
+> **Note:** `devlog:check` exits 0 on warnings (mismatches), exits 1 only on errors. Always review warnings — shadow-read mismatches may indicate backfill gaps.
 
 ## Red Flags
 
