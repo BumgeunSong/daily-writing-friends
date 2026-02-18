@@ -87,6 +87,15 @@ function commandCheck(entries: LogEntry[]) {
   console.log(`   Shadow-read mismatches: ${mismatches.length}`);
 
   if (errors.length > 0) {
+    console.log('\n--- Errors ---');
+    errors.forEach((e) => console.log(formatEntry(e)));
+  }
+  if (mismatches.length > 0) {
+    console.log('\n--- Shadow Read Mismatches ---');
+    mismatches.forEach((e) => console.log(formatEntry(e)));
+  }
+
+  if (errors.length > 0) {
     console.log('\n❌ DevLog check failed (errors found)\n');
     process.exit(1);
   }

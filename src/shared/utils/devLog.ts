@@ -25,8 +25,7 @@ export interface DevLogOptions {
 let _activeCorrelationId: string | null = null;
 
 /**
- * Builds a structured log entry from options.
- * Pure function - no side effects.
+ * Builds a structured log entry. Uses active correlation context if no explicit correlationId is provided.
  */
 export function buildLogEntry(options: DevLogOptions): DevLogEntry {
   const {

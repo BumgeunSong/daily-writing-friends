@@ -49,10 +49,13 @@ export default function devLogPlugin(): Plugin {
           try {
             // Validate JSON
             JSON.parse(body);
-            // Append to JSONL file
-            fs.appendFileSync(logFilePath, body + '\n', 'utf-8');
+            // Send response first (fire-and-forget pattern)
             res.statusCode = 204;
             res.end();
+            // Append to JSONL file asynchronously
+            fs.appendFile(logFilePath, body + '\n', 'utf-8', (err) => {
+              if (err) console.error('[dev-log] Write error:', err);
+            });
           } catch (error) {
             res.statusCode = 400;
             res.end('Invalid JSON');
