@@ -90,6 +90,7 @@ Pull requests trigger these checks automatically:
 - `npm run type-check` passes
 - `npm run test:run` passes
 - `npm run build` completes successfully
+- `npm run devlog:check` passes (after exercising changed data-flow code)
 - For functions changes: `cd functions && npm test` passes
 
 ## Project Architecture

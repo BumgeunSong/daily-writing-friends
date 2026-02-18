@@ -40,6 +40,8 @@
     "devlog:errors": "tsx scripts/devlog.ts errors",
     "devlog:check": "tsx scripts/devlog.ts check",
     "devlog:trace": "tsx scripts/devlog.ts trace",
+    "validate": "npm run type-check && npm run lint && npm run test:run",
+    "validate:full": "npm run type-check && npm run lint && npm run test:run && npm run devlog:check",
     "prepare": "husky"
   },
   "dependencies": {
