@@ -63,6 +63,20 @@ export default function devLogPlugin(): Plugin {
         });
       });
 
+      // GET /__dev/logs/path - return log file path
+      // NOTE: Must be registered BEFORE /__dev/logs (connect does prefix matching)
+      server.middlewares.use('/__dev/logs/path', (req: IncomingMessage, res: ServerResponse) => {
+        if (req.method !== 'GET') {
+          res.statusCode = 405;
+          res.end('Method Not Allowed');
+          return;
+        }
+
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'text/plain');
+        res.end(logFilePath);
+      });
+
       // GET /__dev/logs - retrieve log entries
       server.middlewares.use('/__dev/logs', (req: IncomingMessage, res: ServerResponse) => {
         if (req.method !== 'GET') {
@@ -96,19 +110,6 @@ export default function devLogPlugin(): Plugin {
           res.statusCode = 500;
           res.end('Error reading log file');
         }
-      });
-
-      // GET /__dev/logs/path - return log file path
-      server.middlewares.use('/__dev/logs/path', (req: IncomingMessage, res: ServerResponse) => {
-        if (req.method !== 'GET') {
-          res.statusCode = 405;
-          res.end('Method Not Allowed');
-          return;
-        }
-
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'text/plain');
-        res.end(logFilePath);
       });
     },
   };
