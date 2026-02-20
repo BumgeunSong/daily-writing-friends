@@ -18,6 +18,7 @@ import { Posting } from '@/post/model/Posting';
 import { mapDocumentToPost } from '@/post/utils/postUtils';
 import { getReadSource, getSupabaseClient } from '@/shared/api/supabaseClient';
 import { compareShadowResults, logShadowMismatch } from '@/shared/api/shadowReads';
+import { mapRowToPost } from '@/shared/api/supabaseReads';
 
 const LIMIT_COUNT = 10;
 
@@ -99,7 +100,7 @@ async function fetchUserPostsFromSupabase(
 
   let queryBuilder = supabase
     .from('posts')
-    .select('*')
+    .select('*, boards(first_day), comments(count), replies(count)')
     .eq('author_id', userId)
     .order('created_at', { ascending: false })
     .limit(LIMIT_COUNT);
@@ -117,21 +118,7 @@ async function fetchUserPostsFromSupabase(
   }
 
   const posts: PostWithPaginationMetadata[] = (data || []).map((row) => ({
-    id: row.id,
-    boardId: row.board_id,
-    title: row.title,
-    content: row.content || '',
-    contentJson: row.content_json ?? undefined,
-    thumbnailImageURL: row.thumbnail_image_url ?? null,
-    authorId: row.author_id,
-    authorName: row.author_name,
-    createdAt: new Date(row.created_at),
-    countOfComments: row.count_of_comments ?? 0,
-    countOfReplies: row.count_of_replies ?? 0,
-    countOfLikes: row.count_of_likes ?? 0,
-    engagementScore: row.engagement_score ?? 0,
-    weekDaysFromFirstDay: row.week_days_from_first_day ?? 0,
-    visibility: row.visibility ?? undefined,
+    ...mapRowToPost(row),
     _paginationCursor: row.created_at,
     _fetchedFullPage: data.length === LIMIT_COUNT,
   }));
