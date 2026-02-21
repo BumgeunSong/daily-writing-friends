@@ -7,6 +7,8 @@ import { sanitizeCommentContent } from '@/post/utils/contentUtils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import { getUserDisplayName } from '@/shared/utils/userUtils';
+import { WritingBadgeComponent } from '@/stats/components/WritingBadgeComponent';
+import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';
 import { useUser } from '@/user/hooks/useUser';
 import Replies from './Replies';
 import type { Comment } from '@/comment/model/Comment';
@@ -33,6 +35,7 @@ const CommentRow: React.FC<CommentRowProps> = ({
   const editComment = useEditComment(boardId, postId, comment.id);
 
   const { userData: userProfile } = useUser(comment.userId);
+  const { data: badges } = usePostProfileBadges(comment.userId);
 
   const handleEditToggle = async () => {
     setIsEditing((prev) => !prev);
@@ -66,10 +69,23 @@ const CommentRow: React.FC<CommentRowProps> = ({
               {getUserDisplayName(userProfile)?.[0] || '?'}
             </AvatarFallback>
           </Avatar>
-          <p className='text-base font-semibold leading-none'>{getUserDisplayName(userProfile)}</p>
-          <span className='text-sm text-muted-foreground'>
-            {comment.createdAt?.toDate().toLocaleString()}
-          </span>
+          <div className='flex flex-col gap-1'>
+            <div className='flex items-center gap-2'>
+              <p className='text-base font-semibold leading-none'>
+                {getUserDisplayName(userProfile)}
+              </p>
+              <span className='text-sm text-muted-foreground'>
+                {comment.createdAt?.toDate().toLocaleString()}
+              </span>
+            </div>
+            {badges && badges.length > 0 && (
+              <div className='flex flex-wrap items-center gap-1'>
+                {badges.map((badge) => (
+                  <WritingBadgeComponent key={badge.name} badge={badge} />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         {isAuthor && (
           <div className='flex items-center space-x-1'>
@@ -84,10 +100,7 @@ const CommentRow: React.FC<CommentRowProps> = ({
       </div>
       <div className='text-base'>
         {isEditing ? (
-          <CommentInput
-            onSubmit={handleEditSubmit}
-            initialValue={comment.content}
-          />
+          <CommentInput onSubmit={handleEditSubmit} initialValue={comment.content} />
         ) : (
           <div
             className='prose prose-slate whitespace-pre-wrap dark:prose-invert'
