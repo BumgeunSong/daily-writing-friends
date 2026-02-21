@@ -1,5 +1,4 @@
 import { Outlet } from 'react-router-dom';
-import { Toaster } from '@/shared/ui/sonner';
 import BottomTabsNavigator from './BottomTabsNavigator';
 
 export const BottomNavigatorLayout = () => (
@@ -7,7 +6,6 @@ export const BottomNavigatorLayout = () => (
         <div className='grow'>
             <Outlet />
         </div>
-        <Toaster />
         <BottomTabsNavigator />
     </div>
 );

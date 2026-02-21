@@ -5,6 +5,7 @@ interface PostEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  onUploadingChange?: (isUploading: boolean) => void;
 }
 
 export interface PostEditorHandle {
@@ -15,7 +16,7 @@ export interface PostEditorHandle {
  * Wrapper component for the Quill editor
  */
 export const PostEditor = forwardRef<PostEditorHandle, PostEditorProps>(
-  ({ value, onChange, placeholder }, ref) => {
+  ({ value, onChange, placeholder, onUploadingChange }, ref) => {
     useImperativeHandle(
       ref,
       () => ({
@@ -26,7 +27,7 @@ export const PostEditor = forwardRef<PostEditorHandle, PostEditorProps>(
       [],
     );
 
-    return <PostTextEditor value={value} onChange={onChange} placeholder={placeholder} />;
+    return <PostTextEditor value={value} onChange={onChange} placeholder={placeholder} onUploadingChange={onUploadingChange} />;
   },
 );
 
