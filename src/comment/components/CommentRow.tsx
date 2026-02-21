@@ -1,16 +1,11 @@
 import { Edit, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { CommentInput } from '@/comment/components/CommentInput';
+import { CommentHeader } from '@/comment/components/CommentHeader';
 import ReactionList from '@/comment/components/ReactionList';
 import { useDeleteComment, useEditComment } from '@/comment/hooks/useCreateComment';
 import { sanitizeCommentContent } from '@/post/utils/contentUtils';
-import { getRelativeTime } from '@/shared/utils/dateUtils';
-import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
-import { getUserDisplayName } from '@/shared/utils/userUtils';
-import { WritingBadgeComponent } from '@/stats/components/WritingBadgeComponent';
-import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';
-import { useUser } from '@/user/hooks/useUser';
 import Replies from './Replies';
 import type { Comment } from '@/comment/model/Comment';
 import type { PostVisibility } from '@/post/model/Post';
@@ -35,9 +30,6 @@ const CommentRow: React.FC<CommentRowProps> = ({
   const deleteComment = useDeleteComment(boardId, postId, comment.id);
   const editComment = useEditComment(boardId, postId, comment.id);
 
-  const { userData: userProfile } = useUser(comment.userId);
-  const { data: badges } = usePostProfileBadges(comment.userId);
-
   const handleEditToggle = async () => {
     setIsEditing((prev) => !prev);
   };
@@ -59,29 +51,7 @@ const CommentRow: React.FC<CommentRowProps> = ({
   return (
     <div className='flex flex-col space-y-3 pb-4'>
       <div className='flex items-center justify-between'>
-        <div className='flex items-center space-x-3'>
-          <Avatar className='size-6'>
-            <AvatarImage
-              src={userProfile?.profilePhotoURL || undefined}
-              alt={getUserDisplayName(userProfile) || 'User'}
-              className='object-cover'
-            />
-            <AvatarFallback className='text-sm'>
-              {getUserDisplayName(userProfile)?.[0] || '?'}
-            </AvatarFallback>
-          </Avatar>
-          <div className='flex items-baseline gap-1.5'>
-            <span className='text-sm font-bold leading-none'>
-              {getUserDisplayName(userProfile)}
-            </span>
-            {badges?.map((badge) => (
-              <WritingBadgeComponent key={badge.name} badge={badge} />
-            ))}
-            <span className='text-sm leading-none text-muted-foreground/70'>
-              {getRelativeTime(comment.createdAt?.toDate())}
-            </span>
-          </div>
-        </div>
+        <CommentHeader userId={comment.userId} createdAt={comment.createdAt} />
         {isAuthor && (
           <div className='flex items-center space-x-1'>
             <Button variant='ghost' size='sm' onClick={handleEditToggle} className='h-6 px-2'>
