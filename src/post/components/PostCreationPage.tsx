@@ -48,6 +48,7 @@ export default function PostCreationPage() {
   });
 
   const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [isImageUploading, setIsImageUploading] = useState(false);
   const isSubmitting = navigation.state === 'submitting';
 
   useEffect(() => {
@@ -81,7 +82,7 @@ export default function PostCreationPage() {
               variant='default'
               type='submit'
               form='post-creation-form'
-              disabled={isSubmitting || !title.trim() || !content.trim()}
+              disabled={isSubmitting || isImageUploading || !title.trim() || !content.trim()}
             >
               {isSubmitting ? '저장 중...' : '글 저장'}
             </Button>
@@ -106,6 +107,7 @@ export default function PostCreationPage() {
           <PostEditor
             value={content}
             onChange={setContent}
+            onUploadingChange={setIsImageUploading}
           />
         </Form>
       </div>

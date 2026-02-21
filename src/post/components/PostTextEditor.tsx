@@ -4,7 +4,6 @@ import 'react-quill-new/dist/quill.snow.css';
 
 import { useCopyHandler } from '@/post/hooks/useCopyHandler';
 import { useImageUpload } from '@/post/hooks/useImageUpload';
-import { Progress } from '@/shared/ui/progress';
 
 import { CopyErrorBoundary } from './CopyErrorBoundary';
 
@@ -12,6 +11,7 @@ interface PostTextEditorProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  onUploadingChange?: (isUploading: boolean) => void;
 }
 
 const quillStyles = `
@@ -187,6 +187,7 @@ export function PostTextEditor({
   value,
   onChange,
   placeholder = '내용을 입력하세요...',
+  onUploadingChange,
 }: PostTextEditorProps) {
   const quillRef = useRef<ReactQuill | null>(null);
   const editorElementRef = useRef<HTMLElement | null>(null);
@@ -199,7 +200,11 @@ export function PostTextEditor({
     }
   }, []);
 
-  const { imageHandler, isUploading, uploadProgress } = useImageUpload({ insertImage });  
+  const { imageHandler, isUploading } = useImageUpload({ insertImage });
+
+  useEffect(() => {
+    onUploadingChange?.(isUploading);
+  }, [isUploading, onUploadingChange]);
 
   const formats = [
     'bold', 'italic', 'underline', 'strike',
@@ -267,7 +272,10 @@ export function PostTextEditor({
   return (
     <CopyErrorBoundary>
       <div className='relative w-full space-y-2'>
-        <div className='w-full rounded-xl border-0 bg-background'>
+        <div
+          className={`w-full rounded-xl border-0 bg-background transition-opacity duration-300 ${isUploading ? 'pointer-events-none opacity-50' : ''}`}
+          aria-busy={isUploading}
+        >
           <ReactQuill
             ref={quillRef}
             value={value}
@@ -279,17 +287,6 @@ export function PostTextEditor({
             className="prose prose-lg prose-slate w-full max-w-none dark:prose-invert prose-h1:text-3xl prose-h1:font-semibold prose-h2:text-2xl prose-h2:font-semibold"
           />
         </div>
-        
-        {isUploading && (
-          <div className='absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm'>
-            <div className='w-4/5 max-w-md space-y-3 p-4'>
-              <Progress value={uploadProgress} className="h-2" />
-              <p className='text-center text-sm font-medium text-foreground'>
-                이미지 업로드 중... {uploadProgress}%
-              </p>
-            </div>
-          </div>
-        )}
       </div>
     </CopyErrorBoundary>
   );

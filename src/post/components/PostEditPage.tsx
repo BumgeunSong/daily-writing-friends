@@ -62,6 +62,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
     title: post?.title || '',
     content: post?.content || '',
   });
+  const [isImageUploading, setIsImageUploading] = useState(false);
 
   const setTitle = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditState((prev) => ({ ...prev, title: e.target.value }));
@@ -98,7 +99,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
             variant='default'
             type='submit'
             form='post-edit-form'
-            disabled={!editState.title.trim() || !editState.content.trim()}
+            disabled={isImageUploading || !editState.title.trim() || !editState.content.trim()}
           >
             <Save className='mr-2 size-4' /> 수정 완료
           </Button>
@@ -118,6 +119,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
             value={editState.content}
             onChange={setContent}
             placeholder='내용을 수정하세요...'
+            onUploadingChange={setIsImageUploading}
           />
 
           <div className='flex items-center justify-center pt-4 text-sm text-muted-foreground'>

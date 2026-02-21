@@ -1,5 +1,6 @@
 import { createBrowserRouter, redirect, ScrollRestoration } from 'react-router-dom';
 import './index.css';
+import { Toaster } from '@/shared/ui/sonner';
 
 // Providers that need router context
 
@@ -55,6 +56,7 @@ function RootLayout() {
       <BottomTabHandlerProvider>
         <ScrollRestoration />
         <AppWithTracking />
+        <Toaster position="bottom-center" offset="4.5rem" />
       </BottomTabHandlerProvider>
     </NavigationProvider>
   );
