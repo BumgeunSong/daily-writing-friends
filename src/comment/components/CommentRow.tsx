@@ -4,6 +4,7 @@ import { CommentInput } from '@/comment/components/CommentInput';
 import ReactionList from '@/comment/components/ReactionList';
 import { useDeleteComment, useEditComment } from '@/comment/hooks/useCreateComment';
 import { sanitizeCommentContent } from '@/post/utils/contentUtils';
+import { getRelativeTime } from '@/shared/utils/dateUtils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import { getUserDisplayName } from '@/shared/utils/userUtils';
@@ -69,22 +70,16 @@ const CommentRow: React.FC<CommentRowProps> = ({
               {getUserDisplayName(userProfile)?.[0] || '?'}
             </AvatarFallback>
           </Avatar>
-          <div className='flex flex-col gap-1'>
-            <div className='flex items-center gap-2'>
-              <p className='text-base font-semibold leading-none'>
-                {getUserDisplayName(userProfile)}
-              </p>
-              <span className='text-sm text-muted-foreground'>
-                {comment.createdAt?.toDate().toLocaleString()}
-              </span>
-            </div>
-            {badges && badges.length > 0 && (
-              <div className='flex flex-wrap items-center gap-1'>
-                {badges.map((badge) => (
-                  <WritingBadgeComponent key={badge.name} badge={badge} />
-                ))}
-              </div>
-            )}
+          <div className='flex flex-wrap items-center gap-1.5'>
+            <p className='text-sm font-semibold leading-none'>
+              {getUserDisplayName(userProfile)}
+            </p>
+            {badges?.map((badge) => (
+              <WritingBadgeComponent key={badge.name} badge={badge} />
+            ))}
+            <span className='text-xs text-muted-foreground/70'>
+              {getRelativeTime(comment.createdAt?.toDate())}
+            </span>
           </div>
         </div>
         {isAuthor && (

@@ -56,7 +56,7 @@ function createCommentingBadges(commentingData: {
 
   if (temperature > 0) {
     badges.push({
-      name: `댓글 ${temperature}℃`,
+      name: `${temperature}℃`,
       emoji: '🌡️',
     });
   }
