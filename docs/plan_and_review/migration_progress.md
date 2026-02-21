@@ -379,7 +379,35 @@ SUPABASE_SERVICE_ROLE_KEY=<key>
 
 ---
 
-## Phase 6: Switch Reads to Supabase ✅
+### Phase 5.4: engagement_score Dual-Write Fix ✅
+
+**Implemented**: 2026-02-20
+
+BestPostCardList showed same posts as RecentPostCardList when `VITE_READ_SOURCE=supabase`.
+
+**Root cause**: The `updateEngagementScore` Cloud Function recalculates `engagementScore = comments + replies + likes` on every post change, but only wrote to Firestore — never to Supabase. All `posts.engagement_score` values in Supabase were stuck at the default `0`, so `ORDER BY engagement_score DESC` returned arbitrary order.
+
+**Fixes applied:**
+
+| Change | Files |
+|--------|-------|
+| Add `dualWriteServer` to `updateEngagementScore` | `functions/src/engagementScore/updateEngagementScore.ts` |
+| Backfill script for existing scores | `scripts/migration/backfill-engagement-scores.ts` |
+
+**Backfill results:**
+| Metric | Count |
+|--------|-------|
+| Total posts | 4,155 |
+| Posts with engagement > 0 | 566 |
+| Updated in Supabase | 566 |
+| Errors | 0 |
+| Verified in Supabase (engagement_score > 0) | 564 |
+
+2 posts had non-zero Firestore scores but don't exist in Supabase (likely deleted after backfill window).
+
+---
+
+## Phase 6: Switch Reads to Supabase (In Progress)
 
 **Completed**: 2026-02-16
 
@@ -390,7 +418,25 @@ SUPABASE_SERVICE_ROLE_KEY=<key>
    - Supabase SQL queries produce more accurate results than stale fan-out data
 4. ✅ `VITE_READ_SOURCE` GitHub secret updated to `supabase` (2026-02-10)
 5. ✅ Fix boardPermissions dual-write gap (Phase 5.2, 2026-02-16)
-6. ✅ Deploy and monitor — no issues observed
+   - Main app: `createUser()`, `updateUser()` now sync to `user_board_permissions`
+   - Admin app: 4 dual-write operations added
+   - Backfill: 516/516 permissions match (0 missing, 0 mismatched)
+6. ✅ Fix engagement_score dual-write gap (Phase 5.4, 2026-02-20)
+   - `updateEngagementScore` Cloud Function now dual-writes to Supabase
+   - Backfill: 566 posts synced (0 errors), 564 confirmed in Supabase
+   - BestPostCardList verified working in production
+7. ⬜ Deploy admin app with Supabase env vars
+8. ⬜ Deploy main app to production (merge to main triggers CI)
+9. ⬜ Monitor for issues, keep rollback ready (`VITE_READ_SOURCE=firestore`)
+
+### Risk Assessment
+
+| Risk | Likelihood | Mitigation |
+|------|-----------|------------|
+| Admin app dual-write fails silently | Medium | Log errors + Sentry; can re-backfill anytime |
+| New cohort created only in Firestore | Medium | Phase 5.3 adds dual-write for board creation |
+| RLS blocks reads in future | Low | Verified: anon key can read all tables |
+| Supabase project paused (free tier) | Low | Resume in dashboard; set up health check |
 
 ---
 
