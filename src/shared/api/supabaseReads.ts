@@ -963,9 +963,9 @@ export async function fetchActivityCountsFromSupabase(
       .gte('created_at', cutoffIso),
   ]);
 
-  if (commentsOnPosts.error) console.error('Activity query 1 error:', commentsOnPosts.error);
-  if (repliesOnPosts.error) console.error('Activity query 2 error:', repliesOnPosts.error);
-  if (repliesOnComments.error) console.error('Activity query 3 error:', repliesOnComments.error);
+  if (commentsOnPosts.error) console.error('Activity comments query error:', { fromUserId, toUserId }, commentsOnPosts.error);
+  if (repliesOnPosts.error) console.error('Activity repliesOnPosts query error:', { fromUserId, toUserId }, repliesOnPosts.error);
+  if (repliesOnComments.error) console.error('Activity repliesOnComments query error:', { fromUserId, toUserId }, repliesOnComments.error);
 
   return {
     commentings: commentsOnPosts.count ?? 0,
