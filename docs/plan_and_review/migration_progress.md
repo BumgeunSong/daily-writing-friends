@@ -3,9 +3,9 @@
 > **This is the single source of truth** for the Firestore → Supabase migration.
 > For the original architectural plan, see [plan_firebase_supabase_migration.md](./plan_firebase_supabase_migration.md).
 
-**Last Updated**: 2026-02-16
-**Branch**: `shadow-read-mismatch`
-**Status**: Phase 6 (Switch Reads to Supabase) — blocker fixed, ready to deploy
+**Last Updated**: 2026-02-21
+**Branch**: `migration-remove-fan-out`
+**Status**: Phase 3 (Remove Fan-out) — complete, Phase 7 next
 
 ---
 
@@ -379,49 +379,53 @@ SUPABASE_SERVICE_ROLE_KEY=<key>
 
 ---
 
-## Phase 6: Switch Reads to Supabase (In Progress)
+## Phase 6: Switch Reads to Supabase ✅
 
-**Started**: 2026-02-10
-
-### Checklist
+**Completed**: 2026-02-16
 
 1. ✅ Verify backfill completed successfully
 2. ✅ Run shadow mode (`VITE_READ_SOURCE=shadow`) — ran Jan 25 → Feb 10
 3. ✅ Monitor Sentry for mismatch warnings — 62 issues analyzed, all false positives
-   - Root cause: orphaned fan-out entries (`users/{uid}/commentings`, `replyings`, `postings`) referencing deleted comments/replies
-   - Comment/reply deletion removes from main collection + Supabase, but does NOT clean up fan-out subcollections
+   - Root cause: orphaned fan-out entries referencing deleted comments/replies
    - Supabase SQL queries produce more accurate results than stale fan-out data
 4. ✅ `VITE_READ_SOURCE` GitHub secret updated to `supabase` (2026-02-10)
 5. ✅ Fix boardPermissions dual-write gap (Phase 5.2, 2026-02-16)
-   - Main app: `createUser()`, `updateUser()` now sync to `user_board_permissions`
-   - Admin app: 4 dual-write operations added
-   - Backfill: 516/516 permissions match (0 missing, 0 mismatched)
-6. ⬜ Deploy admin app with Supabase env vars
-7. ⬜ Deploy main app to production (merge to main triggers CI)
-8. ⬜ Monitor for issues, keep rollback ready (`VITE_READ_SOURCE=firestore`)
+6. ✅ Deploy and monitor — no issues observed
 
-### Risk Assessment
+---
 
-| Risk | Likelihood | Mitigation |
-|------|-----------|------------|
-| Admin app dual-write fails silently | Medium | Log errors + Sentry; can re-backfill anytime |
-| New cohort created only in Firestore | Medium | Phase 5.3 adds dual-write for board creation |
-| RLS blocks reads in future | Low | Verified: anon key can read all tables |
-| Supabase project paused (free tier) | Low | Resume in dashboard; set up health check |
+### Phase 3: Remove Fan-out Functions ✅
+
+**Completed**: 2026-02-21
+**Branch**: `migration-remove-fan-out` (PR #459)
+
+**What was done:**
+
+1. **Fixed N+1 user fetch on board page** — PostCard called `useUser()` per post to get profile photo. Added PostgREST join `users!author_id(profile_photo_url)` to posts query, embedded `authorProfileImageURL` in Post model. Eliminated per-card user queries.
+
+2. **Migrated `useActivity` to Supabase** — Last Firestore fan-out reader (`src/comment/hooks/useActivity.ts`) replaced with 3 Supabase count queries using `!inner` joins on `comments`/`replies` → `posts`/`comments` tables.
+
+3. **Deleted fan-out Cloud Functions:**
+   - `functions/src/postings/` (createPosting, updatePosting, onPostingCreated)
+   - `functions/src/commentings/` (createCommenting, updateCommenting)
+   - `functions/src/replyings/` (createReplying, updateReplying)
+   - Removed exports from `functions/src/index.ts`
+
+4. **Cleaned up dead Firestore/shadow read code:**
+   - `src/post/api/post.ts` — Supabase-only (removed Firestore + shadow paths)
+   - `src/stats/api/stats.ts` — Supabase-only
+   - `src/user/api/commenting.ts` — Supabase-only
+   - `src/user/hooks/useUserPosts.ts` — Supabase-only
+   - Deleted `src/shared/api/shadowReads.ts` (zero consumers)
+   - Deleted `src/shared/utils/postingUtils.ts` (zero consumers)
+
+**Note:** `functions/src/eventSourcing/backfill/backfillUserEventsDb.ts` still reads from `users/{uid}/postings` Firestore subcollection. This is a one-time backfill script reading existing data — the subcollection data stays in Firestore, only the Cloud Functions that WRITE to it were removed.
+
+**Known remaining N+1:** `usePostingStreak` / `usePostProfileBadges` make per-author queries (tracked in issue #460, low priority — React Query deduplicates per userId).
 
 ---
 
 ## Next Steps
-
-### Phase 3: Remove Fan-out Functions (moved to last)
-
-After Phase 6 confirms Supabase reads work:
-- Delete `functions/src/postings/`
-- Delete `functions/src/commentings/`
-- Delete `functions/src/replyings/`
-- Remove exports from `functions/src/index.ts`
-
-**Note:** Phase order changed from original plan. Reads must switch before fan-out removal, otherwise new data won't appear in "My Posts" etc.
 
 ### Phase 7: Stop Dual-Write & Freeze Firestore
 
@@ -458,6 +462,6 @@ SUPABASE_SERVICE_ROLE_KEY=<key>
 ## Notes
 
 - Firebase Auth remains unchanged (no auth migration)
-- Activity fan-out collections (`postings`, `commentings`, `replyings`) will be deleted and replaced with SQL queries
+- Activity fan-out Cloud Functions deleted (Phase 3). Subcollection data remains in Firestore (read-only by backfill scripts)
 - Notifications remain materialized (explicit table, not computed)
 - Client will use Supabase `anon` key (not service role)
