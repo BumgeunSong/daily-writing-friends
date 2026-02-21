@@ -2,11 +2,9 @@ import { useMemo } from 'react';
 import { PostAuthorData } from '@/post/components/PostUserProfile';
 import { type Post, PostVisibility } from '@/post/model/Post';
 import { getContentPreview } from '@/post/utils/contentUtils';
-import { getUserDisplayName } from '@/shared/utils/userUtils';
 import { usePostingStreak } from '@/stats/hooks/usePostingStreak';
 import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';
 import { WritingBadge } from '@/stats/model/WritingStats';
-import { useUser } from '@/user/hooks/useUser';
 
 export interface UsePostCardReturn {
   authorData: PostAuthorData;
@@ -19,7 +17,6 @@ export interface UsePostCardReturn {
 }
 
 export const usePostCard = (post: Post): UsePostCardReturn => {
-  const { userData: authorUser, isLoading: isAuthorLoading } = useUser(post.authorId);
   const { data: badges } = usePostProfileBadges(post.authorId);
   const { data: streakData, isLoading: isStreakLoading } = usePostingStreak(post.authorId);
 
@@ -32,15 +29,15 @@ export const usePostCard = (post: Post): UsePostCardReturn => {
   const authorData: PostAuthorData = useMemo(
     () => ({
       id: post.authorId,
-      displayName: getUserDisplayName(authorUser),
-      profileImageURL: authorUser?.profilePhotoURL || '',
+      displayName: post.authorName,
+      profileImageURL: post.authorProfileImageURL || '',
     }),
-    [post.authorId, authorUser],
+    [post.authorId, post.authorName, post.authorProfileImageURL],
   );
 
   return {
     authorData,
-    isAuthorLoading,
+    isAuthorLoading: false,
     badges,
     streak: streakData?.streak,
     isStreakLoading,

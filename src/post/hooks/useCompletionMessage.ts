@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext";
 import { useAuth } from '@/shared/hooks/useAuth';
-import { fetchPostingData } from "@/shared/utils/postingUtils";
+import { fetchPostingData } from "@/stats/api/stats";
 
 export interface CompletionHighlight {
   keywords: string[];
