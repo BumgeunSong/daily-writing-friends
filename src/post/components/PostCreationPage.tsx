@@ -74,7 +74,7 @@ export default function PostCreationPage() {
         rightActions={
           <>
             <DraftsDrawer userId={currentUser?.uid} boardId={boardId}>
-              <Button variant='outline'>
+              <Button variant='outline' disabled={isImageUploading}>
                 임시 저장 글
               </Button>
             </DraftsDrawer>
