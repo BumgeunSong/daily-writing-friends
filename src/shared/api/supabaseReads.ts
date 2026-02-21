@@ -513,7 +513,8 @@ export function mapRowToPost(row: PostRowWithEmbeds): Post {
     : (row.week_days_from_first_day ?? undefined);
 
   // Extract profile photo from joined users data (optional — not all callers include the join)
-  const user = row.users ? (Array.isArray(row.users) ? row.users[0] : row.users) : null;
+  const usersData = Array.isArray(row.users) ? row.users[0] : row.users;
+  const user = usersData ?? null;
 
   return {
     id: row.id,
