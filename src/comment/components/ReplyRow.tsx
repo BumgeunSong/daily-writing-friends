@@ -4,9 +4,12 @@ import ReactionList from '@/comment/components/ReactionList';
 import ReplyInput from '@/comment/components/ReplyInput';
 import { useDeleteReply, useEditReply } from '@/comment/hooks/useCreateReply';
 import { sanitizeCommentContent } from '@/post/utils/contentUtils';
+import { getRelativeTime } from '@/shared/utils/dateUtils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import { getUserDisplayName } from '@/shared/utils/userUtils';
+import { WritingBadgeComponent } from '@/stats/components/WritingBadgeComponent';
+import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';
 import { useUser } from '@/user/hooks/useUser';
 import type { Reply } from '@/comment/model/Reply';
 import type React from 'react';
@@ -25,6 +28,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
   const editReply = useEditReply(boardId, postId, commentId, reply.id);
 
   const { userData: userProfile } = useUser(reply.userId);
+  const { data: badges } = usePostProfileBadges(reply.userId);
 
   const handleEditToggle = () => {
     setIsEditing((prev) => !prev);
@@ -58,10 +62,17 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
               {getUserDisplayName(userProfile)?.[0] || '?'}
             </AvatarFallback>
           </Avatar>
-          <p className='text-base font-semibold leading-none'>{getUserDisplayName(userProfile)}</p>
-          <span className='text-sm text-muted-foreground'>
-            {reply.createdAt?.toDate().toLocaleString()}
-          </span>
+          <div className='flex items-baseline gap-1.5'>
+            <span className='text-sm font-bold leading-none'>
+              {getUserDisplayName(userProfile)}
+            </span>
+            {badges?.map((badge) => (
+              <WritingBadgeComponent key={badge.name} badge={badge} />
+            ))}
+            <span className='text-sm leading-none text-muted-foreground/70'>
+              {getRelativeTime(reply.createdAt?.toDate())}
+            </span>
+          </div>
         </div>
         {isAuthor && (
           <div className='flex items-center space-x-1'>

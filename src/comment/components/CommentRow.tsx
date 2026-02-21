@@ -70,14 +70,14 @@ const CommentRow: React.FC<CommentRowProps> = ({
               {getUserDisplayName(userProfile)?.[0] || '?'}
             </AvatarFallback>
           </Avatar>
-          <div className='flex flex-wrap items-center gap-1.5'>
-            <p className='text-sm font-semibold leading-none'>
+          <div className='flex items-baseline gap-1.5'>
+            <span className='text-sm font-bold leading-none'>
               {getUserDisplayName(userProfile)}
-            </p>
+            </span>
             {badges?.map((badge) => (
               <WritingBadgeComponent key={badge.name} badge={badge} />
             ))}
-            <span className='text-xs text-muted-foreground/70'>
+            <span className='text-sm leading-none text-muted-foreground/70'>
               {getRelativeTime(comment.createdAt?.toDate())}
             </span>
           </div>
