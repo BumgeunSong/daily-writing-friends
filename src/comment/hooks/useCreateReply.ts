@@ -25,6 +25,9 @@ export function useCreateReply(boardId: string, postId: string, commentId: strin
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['replies', boardId, postId, commentId] });
         queryClient.invalidateQueries({ queryKey: ['replyCount', boardId, postId, commentId] });
+        if (currentUser) {
+          queryClient.invalidateQueries({ queryKey: ['postProfileBadges', currentUser.uid] });
+        }
       },
     },
   );
