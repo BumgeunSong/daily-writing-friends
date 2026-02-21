@@ -1,30 +1,12 @@
-import { collection, getDocs, query, where } from 'firebase/firestore';
 import { Timestamp } from 'firebase/firestore';
-import { firestore } from '@/firebase';
 import { Commenting } from '@/user/model/Commenting';
 import { Replying } from '@/user/model/Replying';
-import { getReadSource } from '@/shared/api/supabaseClient';
 import {
   fetchCommentingsByDateRangeFromSupabase,
   fetchReplyingsByDateRangeFromSupabase,
   SupabaseCommenting,
   SupabaseReplying,
 } from '@/shared/api/supabaseReads';
-import { compareShadowResults, logShadowMismatch } from '@/shared/api/shadowReads';
-
-// 특정 유저의 commentings 서브컬렉션 전체 fetch
-export async function fetchUserCommentings(userId: string): Promise<Commenting[]> {
-  const ref = collection(firestore, 'users', userId, 'commentings');
-  const snap = await getDocs(ref);
-  return snap.docs.map((doc) => doc.data() as Commenting);
-}
-
-// 특정 유저의 replyings 서브컬렉션 전체 fetch
-export async function fetchUserReplyings(userId: string): Promise<Replying[]> {
-  const ref = collection(firestore, 'users', userId, 'replyings');
-  const snap = await getDocs(ref);
-  return snap.docs.map((doc) => doc.data() as Replying);
-}
 
 // Helper: Convert Supabase result to Commenting format (for type compatibility)
 function toCommenting(item: SupabaseCommenting): Commenting {
@@ -47,110 +29,22 @@ function toReplying(item: SupabaseReplying): Replying {
   };
 }
 
-// Firestore implementation
-async function fetchCommentingsFromFirestore(
-  userId: string,
-  start: Date,
-  end: Date
-): Promise<Commenting[]> {
-  const ref = collection(firestore, 'users', userId, 'commentings');
-  const q = query(
-    ref,
-    where('createdAt', '>=', Timestamp.fromDate(start)),
-    where('createdAt', '<', Timestamp.fromDate(end))
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((doc) => doc.data() as Commenting);
-}
-
-async function fetchReplyingsFromFirestore(
-  userId: string,
-  start: Date,
-  end: Date
-): Promise<Replying[]> {
-  const ref = collection(firestore, 'users', userId, 'replyings');
-  const q = query(
-    ref,
-    where('createdAt', '>=', Timestamp.fromDate(start)),
-    where('createdAt', '<', Timestamp.fromDate(end))
-  );
-  const snap = await getDocs(q);
-  return snap.docs.map((doc) => doc.data() as Replying);
-}
-
-// 날짜 범위로 commentings 조회 (with read source switching)
+// 날짜 범위로 commentings 조회
 export async function fetchUserCommentingsByDateRange(
   userId: string,
   start: Date,
   end: Date
 ): Promise<Commenting[]> {
-  const readSource = getReadSource();
-
-  if (readSource === 'supabase') {
-    const supabaseData = await fetchCommentingsByDateRangeFromSupabase(userId, start, end);
-    return supabaseData.map(toCommenting);
-  }
-
-  if (readSource === 'shadow') {
-    const firestoreData = await fetchCommentingsFromFirestore(userId, start, end);
-
-    // Shadow comparison in background - Supabase failure should not affect Firestore result
-    fetchCommentingsByDateRangeFromSupabase(userId, start, end)
-      .then((supabaseData) => {
-        const result = compareShadowResults(
-          firestoreData,
-          supabaseData,
-          (item) => item.comment.id
-        );
-        if (!result.match) {
-          logShadowMismatch('commentings', userId, result);
-        }
-      })
-      .catch((error) => {
-        console.error('Shadow read failed for commentings:', error);
-      });
-
-    return firestoreData;
-  }
-
-  // Default: Firestore
-  return fetchCommentingsFromFirestore(userId, start, end);
+  const supabaseData = await fetchCommentingsByDateRangeFromSupabase(userId, start, end);
+  return supabaseData.map(toCommenting);
 }
 
-// 날짜 범위로 replyings 조회 (with read source switching)
+// 날짜 범위로 replyings 조회
 export async function fetchUserReplyingsByDateRange(
   userId: string,
   start: Date,
   end: Date
 ): Promise<Replying[]> {
-  const readSource = getReadSource();
-
-  if (readSource === 'supabase') {
-    const supabaseData = await fetchReplyingsByDateRangeFromSupabase(userId, start, end);
-    return supabaseData.map(toReplying);
-  }
-
-  if (readSource === 'shadow') {
-    const firestoreData = await fetchReplyingsFromFirestore(userId, start, end);
-
-    // Shadow comparison in background - Supabase failure should not affect Firestore result
-    fetchReplyingsByDateRangeFromSupabase(userId, start, end)
-      .then((supabaseData) => {
-        const result = compareShadowResults(
-          firestoreData,
-          supabaseData,
-          (item) => item.reply.id
-        );
-        if (!result.match) {
-          logShadowMismatch('replyings', userId, result);
-        }
-      })
-      .catch((error) => {
-        console.error('Shadow read failed for replyings:', error);
-      });
-
-    return firestoreData;
-  }
-
-  return fetchReplyingsFromFirestore(userId, start, end);
+  const supabaseData = await fetchReplyingsByDateRangeFromSupabase(userId, start, end);
+  return supabaseData.map(toReplying);
 }

@@ -39,6 +39,7 @@ export interface Post {
   updatedAt?: Timestamp;
   weekDaysFromFirstDay?: number;
   visibility?: PostVisibility;
+  authorProfileImageURL?: string;
 }
 
 export enum PostVisibility {

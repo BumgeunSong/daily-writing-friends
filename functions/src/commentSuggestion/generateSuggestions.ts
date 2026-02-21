@@ -7,7 +7,13 @@ import {
 } from './types';
 import { geminiApiKey, COMMENT_HISTORY_LIMITS } from './config';
 import { GeminiService } from './geminiService';
-import { Commenting } from '../commentings/Commenting';
+/** Commenting document shape from users/{uid}/commentings subcollection */
+interface Commenting {
+  board: { id: string };
+  post: { id: string; title: string; authorId: string };
+  comment: { id: string; content: string };
+  createdAt: FirebaseFirestore.Timestamp;
+}
 import admin from '../shared/admin';
 
 /**

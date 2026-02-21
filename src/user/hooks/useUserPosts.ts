@@ -1,73 +1,24 @@
 import * as Sentry from '@sentry/react';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import {
-  limit,
-  query,
-  collection,
-  orderBy,
-  getDocs,
-  startAfter,
-  doc,
-  getDoc,
-  QueryDocumentSnapshot,
-  DocumentData,
-} from 'firebase/firestore';
-import { firestore } from '@/firebase';
 import { Post } from '@/post/model/Post';
-import { Posting } from '@/post/model/Posting';
-import { mapDocumentToPost } from '@/post/utils/postUtils';
-import { getReadSource, getSupabaseClient } from '@/shared/api/supabaseClient';
-import { compareShadowResults, logShadowMismatch } from '@/shared/api/shadowReads';
+import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { mapRowToPost } from '@/shared/api/supabaseReads';
 
 const LIMIT_COUNT = 10;
 
 type PostWithPaginationMetadata = Post & {
-  _paginationCursor?: QueryDocumentSnapshot<DocumentData> | string;
+  _paginationCursor?: string;
   _fetchedFullPage?: boolean;
 };
 
 /**
  * 특정 사용자가 작성한 포스트를 가져오는 커스텀 훅
- * Supports both Firestore and Supabase read sources
  */
 export const useUserPosts = (userId: string) => {
-  const readSource = getReadSource();
-
   return useInfiniteQuery<PostWithPaginationMetadata[]>(
-    ['userPosts', userId, readSource],
+    ['userPosts', userId],
     async ({ pageParam = null }) => {
-      if (readSource === 'supabase') {
-        return fetchUserPostsFromSupabase(userId, pageParam as string | null);
-      }
-
-      if (readSource === 'shadow') {
-        // Shadow mode: fetch from Firestore, compare with Supabase in background
-        const firestoreData = await fetchUserPostsFromFirestore(
-          userId,
-          pageParam as QueryDocumentSnapshot<DocumentData> | null
-        );
-
-        // Shadow comparison in background - Supabase failure should not affect Firestore result
-        fetchUserPostsFromSupabase(userId, null) // First page for comparison
-          .then((supabaseData) => {
-            const result = compareShadowResults(
-              firestoreData,
-              supabaseData,
-              (item) => item.id
-            );
-            if (!result.match) {
-              logShadowMismatch('userPosts', userId, result);
-            }
-          })
-          .catch((error) => {
-            console.error('Shadow read failed for userPosts:', error);
-          });
-
-        return firestoreData;
-      }
-
-      return fetchUserPostsFromFirestore(userId, pageParam as QueryDocumentSnapshot<DocumentData> | null);
+      return fetchUserPostsFromSupabase(userId, pageParam as string | null);
     },
     {
       enabled: !!userId,
@@ -124,60 +75,4 @@ async function fetchUserPostsFromSupabase(
   }));
 
   return posts;
-}
-
-/**
- * Original Firestore implementation
- */
-async function fetchUserPostsFromFirestore(
-  userId: string,
-  paginationCursor: QueryDocumentSnapshot<DocumentData> | null
-): Promise<PostWithPaginationMetadata[]> {
-  try {
-    const postingsRef = collection(firestore, 'users', userId, 'postings');
-
-    let postingsQuery = query(postingsRef, orderBy('createdAt', 'desc'), limit(LIMIT_COUNT));
-
-    if (paginationCursor) {
-      postingsQuery = query(postingsQuery, startAfter(paginationCursor));
-    }
-
-    const postingsSnapshot = await getDocs(postingsQuery);
-    const fetchedPostingCount = postingsSnapshot.docs.length;
-    const fetchedFullPage = fetchedPostingCount === LIMIT_COUNT;
-
-    const postsWithMetadata = await Promise.all(
-      postingsSnapshot.docs.map(async (postingDoc) => {
-        const posting = postingDoc.data() as Posting;
-        const { board, post: postInfo } = posting;
-
-        try {
-          const postRef = doc(firestore, 'boards', board.id, 'posts', postInfo.id);
-          const postDoc = await getDoc(postRef);
-
-          if (!postDoc.exists()) {
-            console.warn(`Post ${postInfo.id} not found in board ${board.id}`);
-            return null;
-          }
-
-          const post = mapDocumentToPost(postDoc);
-
-          return {
-            ...post,
-            _paginationCursor: postingDoc,
-            _fetchedFullPage: fetchedFullPage,
-          } as PostWithPaginationMetadata;
-        } catch (error) {
-          console.error(`Error fetching post ${postInfo.id}:`, error);
-          return null;
-        }
-      })
-    );
-
-    return postsWithMetadata.filter((post): post is PostWithPaginationMetadata => post !== null);
-  } catch (error) {
-    console.error('Error fetching user posts:', error);
-    Sentry.captureException(error);
-    return [];
-  }
 }

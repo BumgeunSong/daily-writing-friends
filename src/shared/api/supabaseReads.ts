@@ -83,6 +83,7 @@ interface PostRowWithEmbeds {
   boards?: { first_day: string | null } | { first_day: string | null }[];
   comments?: { count: number }[];
   replies?: { count: number }[];
+  users?: { profile_photo_url: string | null } | { profile_photo_url: string | null }[];
 }
 
 // Note: Supabase join selects return arrays at the type level,
@@ -434,7 +435,7 @@ export async function fetchRecentPostsFromSupabase(
 
   let q = supabase
     .from('posts')
-    .select('*, boards(first_day), comments(count), replies(count)')
+    .select('*, boards(first_day), comments(count), replies(count), users!author_id(profile_photo_url)')
     .eq('board_id', boardId)
     .order('created_at', { ascending: false });
 
@@ -476,7 +477,7 @@ export async function fetchBestPostsFromSupabase(
 
   let q = supabase
     .from('posts')
-    .select('*, boards(first_day), comments(count), replies(count)')
+    .select('*, boards(first_day), comments(count), replies(count), users!author_id(profile_photo_url)')
     .eq('board_id', boardId)
     .order('engagement_score', { ascending: false })
     .limit(limitCount);
@@ -511,6 +512,10 @@ export function mapRowToPost(row: PostRowWithEmbeds): Post {
     ? computeWeekDaysFromFirstDay(board.first_day, row.created_at)
     : (row.week_days_from_first_day ?? undefined);
 
+  // Extract profile photo from joined users data (optional — not all callers include the join)
+  const usersData = Array.isArray(row.users) ? row.users[0] : row.users;
+  const user = usersData ?? null;
+
   return {
     id: row.id,
     boardId: row.board_id,
@@ -528,6 +533,7 @@ export function mapRowToPost(row: PostRowWithEmbeds): Post {
     engagementScore: row.engagement_score,
     weekDaysFromFirstDay: weekDays,
     visibility: (row.visibility as PostVisibility) || PostVisibility.PUBLIC,
+    authorProfileImageURL: user?.profile_photo_url || undefined,
   };
 }
 
@@ -909,4 +915,61 @@ export async function fetchReactionsFromSupabase(params: {
       userProfileImage: row.user_profile_image || '',
     },
   }));
+}
+
+// --- Activity Counts ---
+
+export interface ActivityCounts {
+  commentings: number;
+  replyings: number;
+}
+
+/**
+ * Fetch activity counts: how many comments/replies fromUser made on toUser's posts/comments.
+ * Replaces: Firestore fan-out subcollection queries in useActivity.ts
+ */
+export async function fetchActivityCountsFromSupabase(
+  fromUserId: string,
+  toUserId: string,
+  daysAgo: number
+): Promise<ActivityCounts> {
+  const supabase = getSupabaseClient();
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
+  const cutoffIso = cutoffDate.toISOString();
+
+  const [commentsOnPosts, repliesOnPosts, repliesOnComments] = await Promise.all([
+    // Query 1: Comments fromUser made on toUser's posts
+    supabase
+      .from('comments')
+      .select('id, posts!inner(author_id)', { count: 'exact', head: true })
+      .eq('user_id', fromUserId)
+      .eq('posts.author_id', toUserId)
+      .gte('created_at', cutoffIso),
+
+    // Query 2: Replies fromUser made on toUser's posts
+    supabase
+      .from('replies')
+      .select('id, posts!inner(author_id)', { count: 'exact', head: true })
+      .eq('user_id', fromUserId)
+      .eq('posts.author_id', toUserId)
+      .gte('created_at', cutoffIso),
+
+    // Query 3: Replies fromUser made on toUser's comments
+    supabase
+      .from('replies')
+      .select('id, comments!inner(user_id)', { count: 'exact', head: true })
+      .eq('user_id', fromUserId)
+      .eq('comments.user_id', toUserId)
+      .gte('created_at', cutoffIso),
+  ]);
+
+  if (commentsOnPosts.error) console.error('Activity comments query error:', { fromUserId, toUserId }, commentsOnPosts.error);
+  if (repliesOnPosts.error) console.error('Activity repliesOnPosts query error:', { fromUserId, toUserId }, repliesOnPosts.error);
+  if (repliesOnComments.error) console.error('Activity repliesOnComments query error:', { fromUserId, toUserId }, repliesOnComments.error);
+
+  return {
+    commentings: commentsOnPosts.count ?? 0,
+    replyings: (repliesOnPosts.count ?? 0) + (repliesOnComments.count ?? 0),
+  };
 }

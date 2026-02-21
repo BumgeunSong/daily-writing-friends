@@ -2,8 +2,6 @@
 // Feature-based imports for better organization
 
 // Re-export all functions from each feature
-export { createCommenting, updateCommenting } from './commentings';
-
 export {
   onCommentCreated,
   onReplyCreatedOnComment,
@@ -22,17 +20,6 @@ export {
 } from './notifications';
 
 export {
-  createPosting,
-  onPostingCreated,
-  updatePosting
-} from './postings';
-
-export {
-  createReplying,
-  updateReplying
-} from './replyings';
-
-export { 
   allocateSecretBuddy
 } from './scripts';
 
