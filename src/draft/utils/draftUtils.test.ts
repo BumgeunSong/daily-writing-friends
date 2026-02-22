@@ -1,42 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
-
-// Mock Firebase modules before importing draftUtils
-vi.mock('@/firebase', () => ({
-  firestore: {},
-}));
-
-vi.mock('@/shared/api/trackedFirebase', () => ({
-  trackedFirebase: {
-    setDoc: vi.fn(),
-    deleteDoc: vi.fn(),
-  },
-}));
-
-vi.mock('firebase/firestore', () => ({
-  doc: vi.fn(),
-  collection: vi.fn(),
-  getDoc: vi.fn(),
-  getDocs: vi.fn(),
-  query: vi.fn(),
-  where: vi.fn(),
-  orderBy: vi.fn(),
-  Timestamp: {
-    now: vi.fn(() => ({ toDate: () => new Date() })),
-    fromDate: (date: Date) => ({
-      toDate: () => date,
-    }),
-  },
-}));
+import { describe, it, expect } from 'vitest';
 
 import { formatDraftDate, getDraftTitle, getDraftPreview } from './draftUtils';
 import type { Draft } from '@/draft/model/Draft';
-
-// Create a mock timestamp object
-function createMockTimestamp(date: Date) {
-  return {
-    toDate: () => date,
-  };
-}
 
 function createMockDraft(overrides: Partial<Draft> = {}): Draft {
   return {
@@ -44,17 +9,15 @@ function createMockDraft(overrides: Partial<Draft> = {}): Draft {
     boardId: 'board-1',
     title: 'Test Title',
     content: '<p>Test content</p>',
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Mock object for test
-    savedAt: createMockTimestamp(new Date('2025-01-15T12:00:00Z')) as any,
+    savedAt: '2025-01-15T12:00:00.000Z',
     ...overrides,
   };
 }
 
 describe('draftUtils', () => {
   describe('formatDraftDate', () => {
-    it('should format timestamp to readable date string', () => {
-      const timestamp = createMockTimestamp(new Date('2025-01-15T14:30:00'));
-      const result = formatDraftDate(timestamp);
+    it('should format ISO string to readable date string', () => {
+      const result = formatDraftDate('2025-01-15T14:30:00.000Z');
 
       // Should contain year, month, day, hour, minute
       expect(result).toMatch(/2025/);
@@ -63,8 +26,7 @@ describe('draftUtils', () => {
     });
 
     it('should use user locale formatting', () => {
-      const timestamp = createMockTimestamp(new Date('2025-12-25T09:30:00'));
-      const result = formatDraftDate(timestamp);
+      const result = formatDraftDate('2025-12-25T09:30:00.000Z');
 
       // The result should be a valid formatted string
       expect(typeof result).toBe('string');

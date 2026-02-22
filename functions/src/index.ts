@@ -31,10 +31,6 @@ export {
   backfillAllBoardUsersHttp
 } from './backfill/backfillAllBoardUsers';
 
-export {
-  generateCommentSuggestions
-} from './commentSuggestion';
-
 // Engagement Score
 export {
   updateEngagementScore

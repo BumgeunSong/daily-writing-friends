@@ -1,10 +1,5 @@
-import { collection, getDocs, query, where, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-
-import { firestore } from '@/firebase';
-import { User } from '@/user/model/User';
 import { Board } from '../model/Board';
-import { dualWrite, throwOnError } from '@/shared/api/dualWrite';
-import { getSupabaseClient, getReadSource } from '@/shared/api/supabaseClient';
+import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { fetchBoardsFromSupabase, fetchBoardByIdFromSupabase, fetchBoardTitleFromSupabase } from '@/shared/api/supabaseReads';
 
 export async function fetchBoardTitle(boardId: string): Promise<string> {
@@ -14,28 +9,11 @@ export async function fetchBoardTitle(boardId: string): Promise<string> {
       return cachedTitle;
     }
 
-    const readSource = getReadSource();
-    if (readSource === 'supabase') {
-      const title = await fetchBoardTitleFromSupabase(boardId);
-      if (title !== 'Board not found') {
-        localStorage.setItem(`boardTitle_${boardId}`, title);
-      }
-      return title;
-    }
-
-    const boardDocRef = doc(firestore, 'boards', boardId);
-    const boardDoc = await getDoc(boardDocRef);
-    if (boardDoc.exists()) {
-      const boardData = boardDoc.data();
-      const title = boardData?.title || 'Board';
-
+    const title = await fetchBoardTitleFromSupabase(boardId);
+    if (title !== 'Board not found') {
       localStorage.setItem(`boardTitle_${boardId}`, title);
-
-      return title;
-    } else {
-      console.error('Board not found');
-      return 'Board not found';
     }
+    return title;
   } catch (error) {
     console.error('Error fetching board title:', error);
     return 'Error loading title';
@@ -44,29 +22,7 @@ export async function fetchBoardTitle(boardId: string): Promise<string> {
 
 export async function fetchBoardsWithUserPermissions(userId: string): Promise<Board[]> {
   try {
-    const readSource = getReadSource();
-    if (readSource === 'supabase') {
-      return await fetchBoardsFromSupabase(userId);
-    }
-
-    const userDocRef = doc(firestore, 'users', userId);
-    const userDoc = await getDoc(userDocRef);
-    const user = userDoc.data() as User;
-    const userBoardPermissions = user?.boardPermissions || {};
-
-    const boardIds = Object.keys(userBoardPermissions);
-    if (boardIds.length > 0) {
-      const q = query(collection(firestore, 'boards'), where('__name__', 'in', boardIds));
-      const querySnapshot = await getDocs(q);
-      const boards = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Board[];
-
-      return boards;
-    } else {
-      return [];
-    }
+    return await fetchBoardsFromSupabase(userId);
   } catch (error) {
     console.error('Error fetching boards:', error);
     return [];
@@ -85,20 +41,7 @@ export async function fetchBoardById(boardId: string): Promise<Board | null> {
   }
 
   try {
-    const readSource = getReadSource();
-    if (readSource === 'supabase') {
-      return await fetchBoardByIdFromSupabase(boardId);
-    }
-
-    const boardDocRef = doc(firestore, 'boards', boardId);
-    const boardDoc = await getDoc(boardDocRef);
-
-    if (!boardDoc.exists()) {
-      console.warn(`Board with id ${boardId} does not exist`);
-      return null;
-    }
-
-    return { ...boardDoc.data(), id: boardDoc.id } as Board;
+    return await fetchBoardByIdFromSupabase(boardId);
   } catch (error) {
     console.error(`Error fetching board with id ${boardId}:`, error);
     return null;
@@ -118,23 +61,11 @@ export async function addUserToBoardWaitingList(boardId: string, userId: string)
   }
 
   try {
-    const boardDocRef = doc(firestore, 'boards', boardId);
-    await updateDoc(boardDocRef, { waitingUsersIds: arrayUnion(userId) });
-
-    // Dual-write to Supabase
-    await dualWrite({
-      entityType: 'board_waiting_user',
-      operationType: 'create',
-      entityId: `${boardId}_${userId}`,
-      supabaseWrite: async () => {
-        const supabase = getSupabaseClient();
-        throwOnError(await supabase.from('board_waiting_users').upsert({
-          board_id: boardId,
-          user_id: userId,
-        }));
-      },
-    });
-
+    const supabase = getSupabaseClient();
+    throwOnError(await supabase.from('board_waiting_users').upsert({
+      board_id: boardId,
+      user_id: userId,
+    }));
     return true;
   } catch (error) {
     console.error(`Error adding user ${userId} to board ${boardId} waiting list:`, error);
@@ -155,24 +86,12 @@ export async function removeUserFromBoardWaitingList(boardId: string, userId: st
   }
 
   try {
-    const boardDocRef = doc(firestore, 'boards', boardId);
-    await updateDoc(boardDocRef, { waitingUsersIds: arrayRemove(userId) });
-
-    // Dual-write to Supabase
-    await dualWrite({
-      entityType: 'board_waiting_user',
-      operationType: 'delete',
-      entityId: `${boardId}_${userId}`,
-      supabaseWrite: async () => {
-        const supabase = getSupabaseClient();
-        throwOnError(await supabase
-          .from('board_waiting_users')
-          .delete()
-          .eq('board_id', boardId)
-          .eq('user_id', userId));
-      },
-    });
-
+    const supabase = getSupabaseClient();
+    throwOnError(await supabase
+      .from('board_waiting_users')
+      .delete()
+      .eq('board_id', boardId)
+      .eq('user_id', userId));
     return true;
   } catch (error) {
     console.error(`Error removing user ${userId} from board ${boardId} waiting list:`, error);

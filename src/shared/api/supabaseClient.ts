@@ -1,11 +1,11 @@
 /**
  * Browser-side Supabase Client
  *
- * Singleton pattern with lazy initialization for use during dual-write migration.
- * Uses anon key for public writes during the migration period.
+ * Singleton pattern with lazy initialization.
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { PostgrestError } from '@supabase/supabase-js';
 
 let supabaseInstance: SupabaseClient | null = null;
 
@@ -47,7 +47,6 @@ export function getSupabaseClient(): SupabaseClient {
           persistSession: true,
         }
       : {
-          // Production: no auth during migration - using anon key for writes
           autoRefreshToken: false,
           persistSession: false,
         },
@@ -56,25 +55,16 @@ export function getSupabaseClient(): SupabaseClient {
   return supabaseInstance;
 }
 
-/**
- * Check if dual-write is enabled via feature flag.
- */
-export function isDualWriteEnabled(): boolean {
-  return import.meta.env.VITE_DUAL_WRITE_ENABLED === 'true';
+export class SupabaseWriteError extends Error {
+  constructor(public readonly postgrestError: PostgrestError) {
+    super(`Supabase write error: ${postgrestError.message} (code: ${postgrestError.code}, details: ${postgrestError.details})`);
+    this.name = 'SupabaseWriteError';
+  }
 }
 
-/**
- * Read source for gradual migration.
- * - 'firestore': Read from Firestore (current behavior)
- * - 'supabase': Read from Supabase
- * - 'shadow': Read from both, compare, return Firestore result
- */
-export type ReadSource = 'firestore' | 'supabase' | 'shadow';
-
-export function getReadSource(): ReadSource {
-  const source = import.meta.env.VITE_READ_SOURCE;
-  if (source === 'supabase' || source === 'shadow') {
-    return source;
+/** Execute a Supabase operation and throw on error */
+export function throwOnError(result: { error: PostgrestError | null }): void {
+  if (result.error) {
+    throw new SupabaseWriteError(result.error);
   }
-  return 'firestore'; // Default to Firestore during migration
 }

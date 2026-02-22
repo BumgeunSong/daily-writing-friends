@@ -13,9 +13,7 @@ import {
 
 import { firestore } from '@/firebase';
 import { Post, PostVisibility, ProseMirrorDoc } from '@/post/model/Post';
-import { trackedFirebase } from '@/shared/api/trackedFirebase';
-import { dualWrite, throwOnError } from '@/shared/api/dualWrite';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 
 /**
  * Firebase 문서를 Post 객체로 변환하는 유틸리티 함수
@@ -56,10 +54,34 @@ export async function createPost(
   visibility?: PostVisibility,
   contentJson?: ProseMirrorDoc,
 ): Promise<Post> {
-  const postRef = doc(collection(firestore, `boards/${boardId}/posts`));
-  const createdAt = Timestamp.now();
+  const supabase = getSupabaseClient();
+  const id = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
+
+  const insertData: Record<string, unknown> = {
+    id,
+    board_id: boardId,
+    author_id: authorId,
+    author_name: authorName,
+    title,
+    content,
+    thumbnail_image_url: extractFirstImageUrl(content) || null,
+    visibility: visibility || PostVisibility.PUBLIC,
+    count_of_comments: 0,
+    count_of_replies: 0,
+    count_of_likes: 0,
+    engagement_score: 0,
+    created_at: createdAt,
+  };
+
+  if (contentJson !== undefined) {
+    insertData.content_json = contentJson;
+  }
+
+  throwOnError(await supabase.from('posts').insert(insertData));
+
   const post: Post = {
-    id: postRef.id,
+    id,
     boardId,
     title,
     content,
@@ -69,42 +91,13 @@ export async function createPost(
     countOfComments: 0,
     countOfReplies: 0,
     countOfLikes: 0,
-    createdAt,
+    createdAt: Timestamp.fromDate(new Date(createdAt)),
     visibility: visibility || PostVisibility.PUBLIC,
   };
 
-  // Only include contentJson if it's defined
   if (contentJson !== undefined) {
     post.contentJson = contentJson;
   }
-
-  // Use trackedFirebase for online-only write with timeout protection
-  await trackedFirebase.setDoc(postRef, post);
-
-  // Dual-write to Supabase
-  await dualWrite({
-    entityType: 'post',
-    operationType: 'create',
-    entityId: post.id,
-    supabaseWrite: async () => {
-      const supabase = getSupabaseClient();
-      throwOnError(await supabase.from('posts').insert({
-        id: post.id,
-        board_id: boardId,
-        author_id: authorId,
-        author_name: authorName,
-        title,
-        content,
-        content_json: contentJson || null,
-        thumbnail_image_url: post.thumbnailImageURL || null,
-        visibility: post.visibility,
-        count_of_comments: 0,
-        count_of_replies: 0,
-        count_of_likes: 0,
-        created_at: createdAt.toDate().toISOString(),
-      }));
-    },
-  });
 
   return post;
 }
@@ -116,42 +109,21 @@ export const updatePost = async (
   content: string,
   contentJson?: ProseMirrorDoc,
 ): Promise<void> => {
-  const postRef = doc(firestore, `boards/${boardId}/posts`, postId);
-  const updatedAt = Timestamp.now();
-  const updateData: Partial<Post> = {
+  const supabase = getSupabaseClient();
+  const updatedAt = new Date().toISOString();
+
+  const supabaseData: Record<string, unknown> = {
     title,
     content,
-    thumbnailImageURL: extractFirstImageUrl(content),
-    updatedAt,
+    thumbnail_image_url: extractFirstImageUrl(content) || null,
+    updated_at: updatedAt,
   };
 
-  // Only update contentJson if provided
   if (contentJson !== undefined) {
-    updateData.contentJson = contentJson;
+    supabaseData.content_json = contentJson;
   }
 
-  // Use trackedFirebase for online-only write with timeout protection
-  await trackedFirebase.updateDoc(postRef, updateData);
-
-  // Dual-write to Supabase
-  await dualWrite({
-    entityType: 'post',
-    operationType: 'update',
-    entityId: postId,
-    supabaseWrite: async () => {
-      const supabase = getSupabaseClient();
-      const supabaseData: Record<string, unknown> = {
-        title,
-        content,
-        thumbnail_image_url: updateData.thumbnailImageURL || null,
-        updated_at: updatedAt.toDate().toISOString(),
-      };
-      if (contentJson !== undefined) {
-        supabaseData.content_json = contentJson;
-      }
-      throwOnError(await supabase.from('posts').update(supabaseData).eq('id', postId));
-    },
-  });
+  throwOnError(await supabase.from('posts').update(supabaseData).eq('id', postId));
 };
 
 export const fetchAdjacentPosts = async (boardId: string, currentPostId: string) => {

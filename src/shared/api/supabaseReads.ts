@@ -917,6 +917,65 @@ export async function fetchReactionsFromSupabase(params: {
   }));
 }
 
+// --- Notifications ---
+
+/**
+ * Fetch notifications for a user from Supabase.
+ * Replaces: fetchNotifications in notificationApi.ts
+ * Uses index: idx_notifications_recipient_created
+ */
+export async function fetchNotificationsFromSupabase(
+  userId: string,
+  limitCount: number,
+  after?: string
+): Promise<{
+  id: string;
+  type: string;
+  boardId: string;
+  postId: string;
+  commentId?: string;
+  replyId?: string;
+  fromUserId: string;
+  fromUserProfileImage?: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+}[]> {
+  const supabase = getSupabaseClient();
+
+  let query = supabase
+    .from('notifications')
+    .select('*')
+    .eq('recipient_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limitCount);
+
+  if (after) {
+    query = query.lt('created_at', after);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Supabase fetchNotifications error:', error);
+    throw error;
+  }
+
+  return (data || []).map(row => ({
+    id: row.id,
+    type: row.type,
+    boardId: row.board_id,
+    postId: row.post_id,
+    commentId: row.comment_id || undefined,
+    replyId: row.reply_id || undefined,
+    fromUserId: row.actor_id,
+    fromUserProfileImage: row.actor_profile_image || undefined,
+    message: row.message,
+    timestamp: row.created_at,
+    read: row.read,
+  }));
+}
+
 // --- Activity Counts ---
 
 export interface ActivityCounts {

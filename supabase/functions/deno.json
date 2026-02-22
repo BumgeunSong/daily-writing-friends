@@ -1,0 +1,9 @@
+{
+  "lock": false,
+  "test": {
+    "include": ["tests/"]
+  },
+  "imports": {
+    "@std/assert": "jsr:@std/assert@1"
+  }
+}

@@ -1,7 +1,6 @@
-import { collection, getDocs, query, where, doc, getDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, getDocs, query, where, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 
 import { firestore } from '@/firebase';
-import { trackedFirebase } from '@/shared/api/trackedFirebase';
 import { Board } from '@board/model/Board';
 import { User } from '@user/model/User';
 
@@ -99,7 +98,7 @@ export async function addUserToBoardWaitingList(boardId: string, userId: string)
 
   try {
     const boardDocRef = doc(firestore, 'boards', boardId);
-    await trackedFirebase.updateDoc(boardDocRef, { waitingUsersIds: arrayUnion(userId) });
+    await updateDoc(boardDocRef, { waitingUsersIds: arrayUnion(userId) });
     return true;
   } catch (error) {
     console.error(`Error adding user ${userId} to board ${boardId} waiting list:`, error);
@@ -121,7 +120,7 @@ export async function removeUserFromBoardWaitingList(boardId: string, userId: st
 
   try {
     const boardDocRef = doc(firestore, 'boards', boardId);
-    await trackedFirebase.updateDoc(boardDocRef, { waitingUsersIds: arrayRemove(userId) });
+    await updateDoc(boardDocRef, { waitingUsersIds: arrayRemove(userId) });
     return true;
   } catch (error) {
     console.error(`Error removing user ${userId} from board ${boardId} waiting list:`, error);

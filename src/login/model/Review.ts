@@ -1,5 +1,3 @@
-import { Timestamp } from "firebase/firestore";
-
 export interface Review {
     reviewer: {
         uid: string;
@@ -10,5 +8,4 @@ export interface Review {
     try?: string;
     nps: number;
     willContinue: "yes" | "no";
-    createdAt: Timestamp;
 }

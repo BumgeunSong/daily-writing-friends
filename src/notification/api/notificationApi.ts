@@ -1,9 +1,9 @@
-import { collection, query, orderBy, limit, startAfter, getDocs, Timestamp } from 'firebase/firestore';
-import { firestore } from '@/firebase';
+import { fetchNotificationsFromSupabase } from '@/shared/api/supabaseReads';
 import { Notification } from '@/notification/model/Notification';
+import { Timestamp } from 'firebase/firestore';
 
 /**
- * 알림 데이터를 가져오는 API 함수 (Firebase 접근)
+ * 알림 데이터를 가져오는 API 함수
  *
  * @param userId - 사용자 ID
  * @param limitCount - 한 번에 가져올 알림 수
@@ -15,23 +15,20 @@ export const fetchNotifications = async (
   limitCount: number,
   after?: Timestamp
 ): Promise<Notification[]> => {
-  // CALCULATION - Build query
-  let notificationsQuery = query(
-    collection(firestore, `users/${userId}/notifications`),
-    orderBy('timestamp', 'desc'),
-    limit(limitCount)
-  );
+  const afterStr = after ? after.toDate().toISOString() : undefined;
+  const rows = await fetchNotificationsFromSupabase(userId, limitCount, afterStr);
 
-  if (after) {
-    notificationsQuery = query(notificationsQuery, startAfter(after));
-  }
-
-  // ACTION - Fetch data from Firebase
-  const notificationsSnapshot = await getDocs(notificationsQuery);
-
-  // CALCULATION - Transform data
-  return notificationsSnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data()
-  } as Notification));
+  return rows.map(row => ({
+    id: row.id,
+    type: row.type as Notification['type'],
+    boardId: row.boardId,
+    postId: row.postId,
+    commentId: row.commentId,
+    replyId: row.replyId,
+    fromUserId: row.fromUserId,
+    fromUserProfileImage: row.fromUserProfileImage,
+    message: row.message,
+    timestamp: Timestamp.fromDate(new Date(row.timestamp)),
+    read: row.read,
+  }));
 };

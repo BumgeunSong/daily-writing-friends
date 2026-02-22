@@ -4,6 +4,8 @@ import {
   doc,
   getDoc,
   getDocs,
+  setDoc,
+  updateDoc,
   query,
   orderBy,
   Timestamp,
@@ -12,7 +14,6 @@ import {
 } from 'firebase/firestore';
 
 import { firestore } from '@/firebase';
-import { trackedFirebase } from '@/shared/api/trackedFirebase';
 import { Post, PostVisibility } from '@post/model/Post';
 
 /**
@@ -60,7 +61,7 @@ export async function createPost(boardId: string, title: string, content: string
     createdAt: Timestamp.now(),
     visibility: visibility || PostVisibility.PUBLIC,
   };
-  return trackedFirebase.setDoc(postRef, post);
+  return setDoc(postRef, post);
 }
 
 export const updatePost = async (
@@ -70,7 +71,7 @@ export const updatePost = async (
   content: string
 ): Promise<void> => {
   const postRef = doc(firestore, `boards/${boardId}/posts`, postId);
-  await trackedFirebase.updateDoc(postRef, {
+  await updateDoc(postRef, {
     title,
     content,
     thumbnailImageURL: extractFirstImageUrl(content),
