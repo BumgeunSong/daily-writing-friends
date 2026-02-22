@@ -66,7 +66,7 @@ export async function deleteUser(uid: string): Promise<void> {
 export async function fetchUsersWithBoardPermission(boardIds: string[]): Promise<User[]> {
     try {
         if (boardIds.length === 0) return [];
-        return fetchUsersWithBoardPermissionFromSupabase(boardIds);
+        return await fetchUsersWithBoardPermissionFromSupabase(boardIds);
     } catch (error) {
         console.error('Error fetching users with board permission:', error);
         return [];
@@ -123,7 +123,7 @@ export async function createUserIfNotExists(user: FirebaseUser): Promise<void> {
  */
 export async function fetchAllUsers(): Promise<User[]> {
     try {
-        return fetchAllUsersFromSupabase();
+        return await fetchAllUsersFromSupabase();
     } catch (error) {
         console.error('Error fetching all users:', error);
         return [];
