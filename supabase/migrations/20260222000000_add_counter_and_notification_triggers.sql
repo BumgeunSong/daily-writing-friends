@@ -100,6 +100,11 @@ CREATE OR REPLACE FUNCTION get_app_config(config_key TEXT) RETURNS TEXT AS $$
   SELECT value FROM app_config WHERE key = config_key;
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
+-- Revoke EXECUTE from public roles to prevent leaking service_role_key
+REVOKE EXECUTE ON FUNCTION get_app_config(TEXT) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION get_app_config(TEXT) FROM anon;
+REVOKE EXECUTE ON FUNCTION get_app_config(TEXT) FROM authenticated;
+
 -- Notification on comment insert
 CREATE OR REPLACE FUNCTION notify_on_comment() RETURNS TRIGGER AS $$
 BEGIN
