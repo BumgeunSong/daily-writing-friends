@@ -1,41 +1,27 @@
 import { useQuery } from '@tanstack/react-query';
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  orderBy,
-  Timestamp,
-  DocumentSnapshot,
-  QueryDocumentSnapshot,
-} from 'firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
 
-import { firestore } from '@/firebase';
 import { Post, PostVisibility, ProseMirrorDoc } from '@/post/model/Post';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
-
-/**
- * Firebase 문서를 Post 객체로 변환하는 유틸리티 함수
- * 문서 데이터에 ID가 없거나 스냅샷 ID와 다를 경우 스냅샷 ID로 덮어씀
- */
-export function mapDocumentToPost(snapshot: DocumentSnapshot | QueryDocumentSnapshot): Post {
-  const data = snapshot.data() as Omit<Post, 'id'>;
-  return {
-    ...data,
-    id: snapshot.id, // 스냅샷 ID를 항상 사용
-  };
-}
+import { mapRowToPost } from '@/shared/api/supabaseReads';
 
 export const fetchPost = async (boardId: string, postId: string): Promise<Post | null> => {
-  const docSnap = await getDoc(doc(firestore, `boards/${boardId}/posts/${postId}`));
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('posts')
+    .select('*, boards(first_day), comments(count), replies(count), users!author_id(profile_photo_url)')
+    .eq('id', postId)
+    .eq('board_id', boardId)
+    .single();
 
-  if (!docSnap.exists()) {
-    console.log('해당 문서가 없습니다!');
-    return null;
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null;
+    }
+    throw error;
   }
 
-  return mapDocumentToPost(docSnap);
+  return mapRowToPost(data);
 };
 
 export const usePostTitle = (boardId: string, postId: string) => {
@@ -58,6 +44,8 @@ export async function createPost(
   const id = crypto.randomUUID();
   const createdAt = new Date().toISOString();
 
+  const thumbnailImageURL = extractFirstImageUrl(content);
+
   const insertData: Record<string, unknown> = {
     id,
     board_id: boardId,
@@ -65,7 +53,7 @@ export async function createPost(
     author_name: authorName,
     title,
     content,
-    thumbnail_image_url: extractFirstImageUrl(content) || null,
+    thumbnail_image_url: thumbnailImageURL || null,
     visibility: visibility || PostVisibility.PUBLIC,
     count_of_comments: 0,
     count_of_replies: 0,
@@ -85,7 +73,7 @@ export async function createPost(
     boardId,
     title,
     content,
-    thumbnailImageURL: extractFirstImageUrl(content),
+    thumbnailImageURL,
     authorId,
     authorName,
     countOfComments: 0,
@@ -103,7 +91,7 @@ export async function createPost(
 }
 
 export const updatePost = async (
-  boardId: string,
+  _boardId: string,
   postId: string,
   title: string,
   content: string,
@@ -127,16 +115,41 @@ export const updatePost = async (
 };
 
 export const fetchAdjacentPosts = async (boardId: string, currentPostId: string) => {
-  const postsRef = collection(firestore, `boards/${boardId}/posts`);
-  const q = query(postsRef, orderBy('createdAt', 'desc'));
-  const snapshot = await getDocs(q);
+  const supabase = getSupabaseClient();
 
-  const posts = snapshot.docs.map((doc) => ({ id: doc.id }));
-  const currentIndex = posts.findIndex((post) => post.id === currentPostId);
+  const { data: currentPost, error: currentError } = await supabase
+    .from('posts')
+    .select('created_at')
+    .eq('id', currentPostId)
+    .single();
+
+  if (currentError || !currentPost) {
+    console.error('Error fetching current post for adjacent lookup:', currentError);
+    return { prevPost: null, nextPost: null };
+  }
+
+  const [prevResult, nextResult] = await Promise.all([
+    supabase
+      .from('posts')
+      .select('id')
+      .eq('board_id', boardId)
+      .lt('created_at', currentPost.created_at)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from('posts')
+      .select('id')
+      .eq('board_id', boardId)
+      .gt('created_at', currentPost.created_at)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
   return {
-    prevPost: currentIndex < posts.length - 1 ? posts[currentIndex + 1].id : null,
-    nextPost: currentIndex > 0 ? posts[currentIndex - 1].id : null,
+    prevPost: prevResult.data?.id ?? null,
+    nextPost: nextResult.data?.id ?? null,
   };
 };
 

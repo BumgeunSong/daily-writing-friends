@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/shared/ui/card'
 import { Label } from '@/shared/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/shared/ui/radio-group'
 import { Slider } from '@/shared/ui/slider'
-import { formatStartDate } from '@/shared/utils/boardUtils'
+import { formatStartDate } from '@/board/utils/boardUtils'
 import FormField from "./JoinFormField"
 
 interface JoinFormCardForActiveUserProps {

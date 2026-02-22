@@ -6,7 +6,7 @@ import { useIsUserInWaitingList } from "@/login/hooks/useIsUserInWaitingList"
 import { useUpcomingBoard } from "@/login/hooks/useUpcomingBoard"
 import { JoinFormDataForActiveUser } from "@/login/model/join"
 import { useAuth } from '@/shared/hooks/useAuth'
-import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"
+import { addUserToBoardWaitingList } from "@/board/utils/boardUtils"
 import { addReviewToBoard } from "@/shared/utils/reviewUtils"
 import { useUserNickname } from "@/user/hooks/useUserNickname"
 import JoinCompletePage from "./JoinCompletePage"
