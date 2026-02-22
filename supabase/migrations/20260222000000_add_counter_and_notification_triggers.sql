@@ -82,14 +82,32 @@ FOR EACH ROW EXECUTE FUNCTION update_engagement_score();
 
 CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
 
+-- Config table for Edge Function URL and service role key
+-- RLS enabled with no policies = only service role / postgres can access
+CREATE TABLE IF NOT EXISTS app_config (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+ALTER TABLE app_config ENABLE ROW LEVEL SECURITY;
+
+-- Populate after migration via SQL Editor:
+--   INSERT INTO app_config (key, value) VALUES
+--     ('edge_function_url', 'https://mbnuuctaptbxytiiwxet.supabase.co/functions/v1'),
+--     ('service_role_key', '<your-service-role-key>');
+
+-- SECURITY DEFINER so triggers can read config regardless of calling role
+CREATE OR REPLACE FUNCTION get_app_config(config_key TEXT) RETURNS TEXT AS $$
+  SELECT value FROM app_config WHERE key = config_key;
+$$ LANGUAGE sql SECURITY DEFINER STABLE;
+
 -- Notification on comment insert
 CREATE OR REPLACE FUNCTION notify_on_comment() RETURNS TRIGGER AS $$
 BEGIN
   PERFORM net.http_post(
-    url := current_setting('app.edge_function_url') || '/create-notification',
+    url := get_app_config('edge_function_url') || '/create-notification',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.service_role_key')
+      'Authorization', 'Bearer ' || get_app_config('service_role_key')
     ),
     body := jsonb_build_object(
       'type', 'comment_on_post',
@@ -111,10 +129,10 @@ BEGIN
   -- Notify post author
   IF NEW.post_id IS NOT NULL THEN
     PERFORM net.http_post(
-      url := current_setting('app.edge_function_url') || '/create-notification',
+      url := get_app_config('edge_function_url') || '/create-notification',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' || current_setting('app.service_role_key')
+        'Authorization', 'Bearer ' || get_app_config('service_role_key')
       ),
       body := jsonb_build_object(
         'type', 'reply_on_post',
@@ -128,10 +146,10 @@ BEGIN
   -- Notify comment author
   IF NEW.comment_id IS NOT NULL THEN
     PERFORM net.http_post(
-      url := current_setting('app.edge_function_url') || '/create-notification',
+      url := get_app_config('edge_function_url') || '/create-notification',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' || current_setting('app.service_role_key')
+        'Authorization', 'Bearer ' || get_app_config('service_role_key')
       ),
       body := jsonb_build_object(
         'type', 'reply_on_comment',
@@ -153,10 +171,10 @@ FOR EACH ROW EXECUTE FUNCTION notify_on_reply();
 CREATE OR REPLACE FUNCTION notify_on_like() RETURNS TRIGGER AS $$
 BEGIN
   PERFORM net.http_post(
-    url := current_setting('app.edge_function_url') || '/create-notification',
+    url := get_app_config('edge_function_url') || '/create-notification',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.service_role_key')
+      'Authorization', 'Bearer ' || get_app_config('service_role_key')
     ),
     body := jsonb_build_object(
       'type', 'like_on_post',
@@ -177,10 +195,10 @@ CREATE OR REPLACE FUNCTION notify_on_reaction() RETURNS TRIGGER AS $$
 BEGIN
   IF NEW.comment_id IS NOT NULL THEN
     PERFORM net.http_post(
-      url := current_setting('app.edge_function_url') || '/create-notification',
+      url := get_app_config('edge_function_url') || '/create-notification',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' || current_setting('app.service_role_key')
+        'Authorization', 'Bearer ' || get_app_config('service_role_key')
       ),
       body := jsonb_build_object(
         'type', 'reaction_on_comment',
@@ -191,10 +209,10 @@ BEGIN
     );
   ELSIF NEW.reply_id IS NOT NULL THEN
     PERFORM net.http_post(
-      url := current_setting('app.edge_function_url') || '/create-notification',
+      url := get_app_config('edge_function_url') || '/create-notification',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' || current_setting('app.service_role_key')
+        'Authorization', 'Bearer ' || get_app_config('service_role_key')
       ),
       body := jsonb_build_object(
         'type', 'reaction_on_reply',
