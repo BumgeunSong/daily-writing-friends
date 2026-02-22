@@ -1,4 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('@/firebase', () => ({
+  firestore: {},
+  storage: {},
+}));
+
 import { extractFirstImageUrl } from './postUtils';
 
 describe('extractFirstImageUrl', () => {
