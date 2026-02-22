@@ -3,9 +3,9 @@
 > **This is the single source of truth** for the Firestore → Supabase migration.
 > For the original architectural plan, see [plan_firebase_supabase_migration.md](./plan_firebase_supabase_migration.md).
 
-**Last Updated**: 2026-02-21
-**Branch**: `migration-remove-fan-out`
-**Status**: Phase 3 (Remove Fan-out) — complete, Phase 7 next
+**Last Updated**: 2026-02-22
+**Branch**: `migration/phase7-remove-firestore`
+**Status**: Phase 7B (잔여 Firestore 코드 제거) — in progress
 
 ---
 
@@ -407,7 +407,7 @@ BestPostCardList showed same posts as RecentPostCardList when `VITE_READ_SOURCE=
 
 ---
 
-## Phase 6: Switch Reads to Supabase (In Progress)
+## Phase 6: Switch Reads to Supabase ✅
 
 **Completed**: 2026-02-16
 
@@ -425,18 +425,48 @@ BestPostCardList showed same posts as RecentPostCardList when `VITE_READ_SOURCE=
    - `updateEngagementScore` Cloud Function now dual-writes to Supabase
    - Backfill: 566 posts synced (0 errors), 564 confirmed in Supabase
    - BestPostCardList verified working in production
-7. ⬜ Deploy admin app with Supabase env vars
-8. ⬜ Deploy main app to production (merge to main triggers CI)
-9. ⬜ Monitor for issues, keep rollback ready (`VITE_READ_SOURCE=firestore`)
 
-### Risk Assessment
+---
 
-| Risk | Likelihood | Mitigation |
-|------|-----------|------------|
-| Admin app dual-write fails silently | Medium | Log errors + Sentry; can re-backfill anytime |
-| New cohort created only in Firestore | Medium | Phase 5.3 adds dual-write for board creation |
-| RLS blocks reads in future | Low | Verified: anon key can read all tables |
-| Supabase project paused (free tier) | Low | Resume in dashboard; set up health check |
+### Phase 7A: Supabase 단독 쓰기 전환 ✅
+
+**Completed**: 2026-02-22
+**Branch**: `migration/phase7-remove-firestore` (PR #464, merged)
+
+**What was done:**
+
+1. **Dual-write 제거** — 모든 쓰기 함수에서 Firestore 쓰기 경로 제거, Supabase만 쓰기 대상
+2. **카운터 업데이트 DB 트리거 전환** — `updateEngagementScore` Cloud Function → Supabase SQL 트리거
+3. **알림 생성 Edge Function 추가** — `create-notification` Edge Function + `pg_net` 트리거로 알림 비동기 생성
+4. **`trackedFirebase.ts` 삭제** — Firestore 쓰기 추적 래퍼 제거 (Sentry breadcrumb, 타임아웃 등)
+5. **RLS 정책 추가** — posts, comments, replies, likes, reactions, drafts, notifications 테이블
+
+---
+
+### Phase 7B: 잔여 Firestore 코드 제거 (In Progress)
+
+**Started**: 2026-02-22
+**Branch**: `migration/phase7-remove-firestore` (PR #472)
+
+**Done:**
+
+1. ✅ **`src/shared/utils/boardUtils.ts` 삭제** — Firestore `arrayUnion`/`arrayRemove` 사용하던 구버전. `src/board/utils/boardUtils.ts`(Supabase 버전)으로 import 전환
+   - `JoinFormPageForActiveUser.tsx`, `JoinFormPageForNewUser.tsx`, `JoinFormCardForActiveUser.tsx` import 변경
+
+2. ✅ **`src/shared/utils/postUtils.ts` 삭제** — Firestore `setDoc`/`updateDoc` 사용하던 구버전. `src/post/utils/postUtils.ts`(Supabase 버전)으로 통합
+   - `PostAdjacentButtons.tsx` import 변경
+
+3. ✅ **`fetchPost`, `fetchAdjacentPosts` Supabase 전환** — Firestore `getDoc`/`getDocs` → Supabase `.select().eq().single()` 및 `.select('id').eq().order()`
+   - `mapDocumentToPost` (Firestore 전용 헬퍼) 삭제
+
+**Remaining (tracked as GitHub issues):**
+
+- ⬜ **#466**: 불필요한 Firebase SDK 의존성 제거 (`firebase/firestore` import 정리)
+- ⬜ **#467**: Admin 앱 Supabase 전환 (별도 레포)
+- ⬜ **#468**: Firestore 데이터 아카이브 및 정리 (rollback window 이후)
+- ⬜ **#469**: Posts RLS visibility 기반 SELECT 정책 추가
+- ⬜ **#470**: Edge Function 알림 생성 쿼리 최적화 (Low priority)
+- ⬜ **#471**: Supabase 쓰기 작업 Sentry 관측성 추가
 
 ---
 
@@ -473,15 +503,19 @@ BestPostCardList showed same posts as RecentPostCardList when `VITE_READ_SOURCE=
 
 ## Next Steps
 
-### Phase 7: Stop Dual-Write & Freeze Firestore
+### Phase 7B: 잔여 이슈 처리
+- **#466**: `firebase/firestore` import 정리 — Post 모델의 `Timestamp` 타입 의존성 해결 필요
+- **#471**: Sentry 관측성 — `throwOnError`에 Sentry breadcrumb 추가
 
-### Post-Migration: Admin App Switch
+### Post-Migration: Admin App Switch (#467)
+- Admin 앱 primary 데이터소스를 Firestore → Supabase로 전환
+- Firestore SDK 의존성 제거 (Auth 제외)
+- holidays/narrations 테이블 필요 시 Supabase 스키마에 추가
 
-Once Firestore is fully deprecated (after Phase 7):
-- Admin app switches from Firestore to Supabase as primary
-- Remove Firestore SDK dependency from admin app
-- Use Supabase service role key for all admin operations (server-side only)
-- holidays/narrations tables can be added to Supabase schema if needed
+### Post-Migration: Firestore 아카이브 (#468)
+- Rollback window (1-2주) 경과 후 Firestore 최종 백업
+- Security Rules를 read-only로 변경
+- `write_ops`, `migration_diffs`, `_supabase_write_failures` 테이블/컬렉션 정리
 
 ---
 
