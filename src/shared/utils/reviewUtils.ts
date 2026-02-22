@@ -1,10 +1,6 @@
-import { doc, getDoc, collection, getDocs, Timestamp } from "firebase/firestore";
-import { firestore } from "@/firebase";
 import { JoinFormDataForActiveUser } from "@/login/model/join";
 import { Review } from "@/login/model/Review";
-import { trackedFirebase } from "@/shared/api/trackedFirebase";
-import { dualWrite, throwOnError } from "@/shared/api/dualWrite";
-import { getSupabaseClient } from "@/shared/api/supabaseClient";
+import { getSupabaseClient, throwOnError } from "@/shared/api/supabaseClient";
 
 /**
  * 보드에 리뷰를 추가합니다.
@@ -15,9 +11,9 @@ import { getSupabaseClient } from "@/shared/api/supabaseClient";
  * @returns Promise<boolean> 성공 여부
  */
 export async function addReviewToBoard(
-  boardId: string, 
-  userId: string, 
-  nickname: string | undefined, 
+  boardId: string,
+  userId: string,
+  nickname: string | undefined,
   data: JoinFormDataForActiveUser
 ): Promise<boolean> {
   try {
@@ -25,7 +21,7 @@ export async function addReviewToBoard(
       console.warn('addReviewToBoard called with empty boardId or userId');
       return false;
     }
-    
+
     const review: Review = {
       reviewer: {
         uid: userId,
@@ -36,9 +32,8 @@ export async function addReviewToBoard(
       try: data.try,
       nps: data.nps,
       willContinue: data.willContinue,
-      createdAt: Timestamp.now()
     };
-    
+
     await createReview(boardId, review);
     return true;
   } catch (error) {
@@ -54,30 +49,19 @@ export async function addReviewToBoard(
  * @returns Promise<void>
  */
 export async function createReview(boardId: string, review: Review): Promise<void> {
-  const reviewRef = doc(firestore, "boards", boardId, "reviews", review.reviewer.uid);
-  await trackedFirebase.setDoc(reviewRef, review);
-
-  // Dual-write to Supabase
-  await dualWrite({
-    entityType: 'review',
-    operationType: 'create',
-    entityId: review.reviewer.uid,
-    supabaseWrite: async () => {
-      const supabase = getSupabaseClient();
-      throwOnError(await supabase.from('reviews').upsert({
-        id: review.reviewer.uid,
-        board_id: boardId,
-        reviewer_id: review.reviewer.uid,
-        reviewer_nickname: review.reviewer.nickname || null,
-        keep_text: review.keep || null,
-        problem_text: review.problem || null,
-        try_text: review.try || null,
-        nps: review.nps ?? null,
-        will_continue: review.willContinue ?? null,
-        created_at: review.createdAt.toDate().toISOString(),
-      }));
-    },
-  });
+  const supabase = getSupabaseClient();
+  throwOnError(await supabase.from('reviews').upsert({
+    id: review.reviewer.uid,
+    board_id: boardId,
+    reviewer_id: review.reviewer.uid,
+    reviewer_nickname: review.reviewer.nickname || null,
+    keep_text: review.keep || null,
+    problem_text: review.problem || null,
+    try_text: review.try || null,
+    nps: review.nps ?? null,
+    will_continue: review.willContinue ?? null,
+    created_at: new Date().toISOString(),
+  }));
 }
 
 /**
@@ -92,15 +76,25 @@ export async function getReview(boardId: string, userId: string): Promise<Review
       console.warn('getReview called with empty boardId or userId');
       return null;
     }
-    
-    const reviewRef = doc(firestore, "boards", boardId, "reviews", userId);
-    const reviewDoc = await getDoc(reviewRef);
 
-    if (!reviewDoc.exists()) {
-      return null;
-    }
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('board_id', boardId)
+      .eq('reviewer_id', userId)
+      .single();
 
-    return reviewDoc.data() as Review;
+    if (error || !data) return null;
+
+    return {
+      reviewer: { uid: data.reviewer_id, nickname: data.reviewer_nickname },
+      keep: data.keep_text,
+      problem: data.problem_text,
+      try: data.try_text,
+      nps: data.nps,
+      willContinue: data.will_continue,
+    };
   } catch (error) {
     console.error(`Error getting review from board ${boardId} for user ${userId}:`, error);
     return null;
@@ -118,11 +112,26 @@ export async function getReviewsByBoard(boardId: string): Promise<Review[]> {
       console.warn('getReviewsByBoard called with empty boardId');
       return [];
     }
-    
-    const reviewsRef = collection(firestore, "boards", boardId, "reviews");
-    const reviewsSnapshot = await getDocs(reviewsRef);
 
-    return reviewsSnapshot.docs.map((doc) => doc.data() as Review);
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('board_id', boardId);
+
+    if (error) {
+      console.error(`Error getting reviews for board ${boardId}:`, error);
+      return [];
+    }
+
+    return (data || []).map(row => ({
+      reviewer: { uid: row.reviewer_id, nickname: row.reviewer_nickname },
+      keep: row.keep_text,
+      problem: row.problem_text,
+      try: row.try_text,
+      nps: row.nps,
+      willContinue: row.will_continue,
+    }));
   } catch (error) {
     console.error(`Error getting reviews for board ${boardId}:`, error);
     return [];

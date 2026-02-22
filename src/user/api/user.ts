@@ -2,163 +2,85 @@
 // Use a consistent naming convention; fetchX() → read-only function, createX(), updateX() → write, cacheX() → caching helpers (if used outside)
 // Abstract repetitive Firebase logic into helpers
 
-import { doc, serverTimestamp, collection, where, query, Timestamp, writeBatch, orderBy, CollectionReference, Query, or, DocumentData } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { firestore, storage } from '@/firebase';
-import { trackedFirebase } from '@/shared/api/trackedFirebase';
-import { dualWrite, throwOnError } from '@/shared/api/dualWrite';
-import { getSupabaseClient, getReadSource } from '@/shared/api/supabaseClient';
+import { storage } from '@/firebase';
+import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { fetchUserFromSupabase, fetchAllUsersFromSupabase, fetchUsersWithBoardPermissionFromSupabase } from '@/shared/api/supabaseReads';
 import { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
 import { User as FirebaseUser } from 'firebase/auth';
 
-// Firestore에서 User 데이터 읽기
+// Supabase에서 User 데이터 읽기
 export async function fetchUser(uid: string): Promise<User | null> {
-    const readSource = getReadSource();
-    if (readSource === 'supabase') {
-        return fetchUserFromSupabase(uid);
-    }
-    const userDocRef = doc(firestore, 'users', uid);
-    const userDoc = await trackedFirebase.getDoc(userDocRef);
-    if (!userDoc.exists()) return null;
-    return userDoc.data() as User;
+    return fetchUserFromSupabase(uid);
 }
 
-// Firestore에 User 데이터 생성
+// Supabase에 User 데이터 생성
 export async function createUser(data: User): Promise<void> {
-    const userDocRef = doc(firestore, 'users', data.uid);
-    await trackedFirebase.setDoc(userDocRef, {
-        ...data,
-        updatedAt: serverTimestamp(),
-    });
+    const supabase = getSupabaseClient();
+    throwOnError(await supabase.from('users').insert({
+        id: data.uid,
+        real_name: data.realName || null,
+        nickname: data.nickname || null,
+        email: data.email || null,
+        profile_photo_url: data.profilePhotoURL || null,
+        bio: data.bio || null,
+        phone_number: data.phoneNumber || null,
+        referrer: data.referrer || null,
+    }));
 
-    // Dual-write to Supabase
-    await dualWrite({
-        entityType: 'user',
-        operationType: 'create',
-        entityId: data.uid,
-        supabaseWrite: async () => {
-            const supabase = getSupabaseClient();
-            throwOnError(await supabase.from('users').insert({
-                id: data.uid,
-                real_name: data.realName || null,
-                nickname: data.nickname || null,
-                email: data.email || null,
-                profile_photo_url: data.profilePhotoURL || null,
-                bio: data.bio || null,
-                phone_number: data.phoneNumber || null,
-                referrer: data.referrer || null,
-            }));
-
-            // Sync boardPermissions to user_board_permissions table
-            if (data.boardPermissions) {
-                const permRows = Object.entries(data.boardPermissions).map(([boardId, permission]) => ({
-                    user_id: data.uid,
-                    board_id: boardId,
-                    permission,
-                }));
-                if (permRows.length > 0) {
-                    throwOnError(await supabase.from('user_board_permissions').upsert(permRows, { onConflict: 'user_id,board_id' }));
-                }
-            }
-        },
-    });
+    // Sync boardPermissions to user_board_permissions table
+    if (data.boardPermissions) {
+        const permRows = Object.entries(data.boardPermissions).map(([boardId, permission]) => ({
+            user_id: data.uid,
+            board_id: boardId,
+            permission,
+        }));
+        if (permRows.length > 0) {
+            throwOnError(await supabase.from('user_board_permissions').upsert(permRows, { onConflict: 'user_id,board_id' }));
+        }
+    }
 }
 
-// Firestore의 User 데이터 수정
+// Supabase의 User 데이터 수정
 export async function updateUser(uid: string, data: Partial<User>): Promise<void> {
-    const userDocRef = doc(firestore, 'users', uid);
-    await trackedFirebase.updateDoc(userDocRef, {
-        ...data,
-        updatedAt: serverTimestamp(),
-    });
+    const supabase = getSupabaseClient();
+    const updateData: Record<string, unknown> = {};
+    if (data.realName !== undefined) updateData.real_name = data.realName;
+    if (data.nickname !== undefined) updateData.nickname = data.nickname;
+    if (data.email !== undefined) updateData.email = data.email;
+    if (data.profilePhotoURL !== undefined) updateData.profile_photo_url = data.profilePhotoURL;
+    if (data.bio !== undefined) updateData.bio = data.bio;
+    if (data.phoneNumber !== undefined) updateData.phone_number = data.phoneNumber;
+    if (data.referrer !== undefined) updateData.referrer = data.referrer;
+    if (Object.keys(updateData).length > 0) {
+        throwOnError(await supabase.from('users').update(updateData).eq('id', uid));
+    }
 
-    // Dual-write to Supabase
-    await dualWrite({
-        entityType: 'user',
-        operationType: 'update',
-        entityId: uid,
-        supabaseWrite: async () => {
-            const supabase = getSupabaseClient();
-            const updateData: Record<string, unknown> = {};
-            if (data.realName !== undefined) updateData.real_name = data.realName;
-            if (data.nickname !== undefined) updateData.nickname = data.nickname;
-            if (data.email !== undefined) updateData.email = data.email;
-            if (data.profilePhotoURL !== undefined) updateData.profile_photo_url = data.profilePhotoURL;
-            if (data.bio !== undefined) updateData.bio = data.bio;
-            if (data.phoneNumber !== undefined) updateData.phone_number = data.phoneNumber;
-            if (data.referrer !== undefined) updateData.referrer = data.referrer;
-            if (Object.keys(updateData).length > 0) {
-                throwOnError(await supabase.from('users').update(updateData).eq('id', uid));
-            }
-
-            // Sync boardPermissions to user_board_permissions table
-            // Firestore replaces the entire map, so delete-then-insert to match semantics
-            if (data.boardPermissions !== undefined) {
-                throwOnError(await supabase.from('user_board_permissions').delete().eq('user_id', uid));
-                const permRows = Object.entries(data.boardPermissions).map(([boardId, permission]) => ({
-                    user_id: uid,
-                    board_id: boardId,
-                    permission,
-                }));
-                if (permRows.length > 0) {
-                    throwOnError(await supabase.from('user_board_permissions').insert(permRows));
-                }
-            }
-        },
-    });
+    // Sync boardPermissions
+    if (data.boardPermissions !== undefined) {
+        throwOnError(await supabase.from('user_board_permissions').delete().eq('user_id', uid));
+        const permRows = Object.entries(data.boardPermissions).map(([boardId, permission]) => ({
+            user_id: uid,
+            board_id: boardId,
+            permission,
+        }));
+        if (permRows.length > 0) {
+            throwOnError(await supabase.from('user_board_permissions').insert(permRows));
+        }
+    }
 }
 
-// Firestore의 User 데이터 삭제
+// Supabase의 User 데이터 삭제
 export async function deleteUser(uid: string): Promise<void> {
-    const userDocRef = doc(firestore, 'users', uid);
-    await trackedFirebase.deleteDoc(userDocRef);
-
-    // Dual-write to Supabase
-    await dualWrite({
-        entityType: 'user',
-        operationType: 'delete',
-        entityId: uid,
-        supabaseWrite: async () => {
-            const supabase = getSupabaseClient();
-            throwOnError(await supabase.from('users').delete().eq('id', uid));
-        },
-    });
+    const supabase = getSupabaseClient();
+    throwOnError(await supabase.from('users').delete().eq('id', uid));
 }
 
 // 특정 boardIds에 write 권한이 있는 모든 사용자 데이터 가져오기
 export async function fetchUsersWithBoardPermission(boardIds: string[]): Promise<User[]> {
     try {
-        const readSource = getReadSource();
-        if (readSource === 'supabase') {
-            return fetchUsersWithBoardPermissionFromSupabase(boardIds);
-        }
-
         if (boardIds.length === 0) return [];
-
-        // Use OR query for multiple board permissions (Firestore v9+)
-        const conditions = boardIds.map(boardId =>
-            where(`boardPermissions.${boardId}`, '==', 'write')
-        );
-
-        const q = query(
-            collection(firestore, 'users'),
-            or(...conditions)
-        );
-
-        const snapshot = await trackedFirebase.getDocs(q);
-        const users: User[] = [];
-
-        snapshot.docs.forEach(doc => {
-            const userData = doc.data() as User;
-            // Ensure document ID is included
-            users.push({
-                ...userData,
-                uid: doc.id // Override with actual document ID
-            });
-        });
-
-        return users;
+        return fetchUsersWithBoardPermissionFromSupabase(boardIds);
     } catch (error) {
         console.error('Error fetching users with board permission:', error);
         return [];
@@ -174,9 +96,9 @@ export async function uploadUserProfilePhoto(userId: string, file: File): Promis
 
 
 /**
- * Firestore에 User가 없으면 생성하는 함수입니다. 
+ * Supabase에 User가 없으면 생성하는 함수입니다.
  * 이미 존재하는 경우 아무 작업도 수행하지 않습니다.
- * 이 함수는 Auth에서 로그인된 유저(FirebaseUser)가 Firestore의 Users 컬렉션에도 존재해야 할 때 사용됩니다.
+ * 이 함수는 Auth에서 로그인된 유저(FirebaseUser)가 Users 테이블에도 존재해야 할 때 사용됩니다.
  *
  * @param {FirebaseUser} user - Firebase 인증을 통해 로그인된 사용자 객체입니다.
  * @returns {Promise<void>} - 작업이 완료되면 반환되는 프로미스입니다.
@@ -200,7 +122,7 @@ export async function createUserIfNotExists(user: FirebaseUser): Promise<void> {
             boardPermissions: {
                 'rW3Y3E2aEbpB0KqGiigd': 'read', // 기본 보드 ID
             },
-            updatedAt: Timestamp.now(),
+            updatedAt: null,
         }
         await createUser({
             ...requiredFields,
@@ -241,12 +163,7 @@ export async function removeBlockedUser(myUid: string, blockedUid: string): Prom
  */
 export async function fetchAllUsers(): Promise<User[]> {
     try {
-        const readSource = getReadSource();
-        if (readSource === 'supabase') {
-            return fetchAllUsersFromSupabase();
-        }
-        const usersSnap = await trackedFirebase.getDocs(collection(firestore, 'users'));
-        return usersSnap.docs.map(doc => doc.data() as User);
+        return fetchAllUsersFromSupabase();
     } catch (error) {
         console.error('Error fetching all users:', error);
         return [];
@@ -255,79 +172,46 @@ export async function fetchAllUsers(): Promise<User[]> {
 
 /** 차단 */
 export async function blockUser(blockerId: string, blockedId: string) {
-  const batch = writeBatch(firestore);
-  batch.set(doc(firestore, `users/${blockerId}/blockedUsers/${blockedId}`), { blockedAt: serverTimestamp() });
-  batch.set(doc(firestore, `users/${blockedId}/blockedByUsers/${blockerId}`), { blockedAt: serverTimestamp() });
-  await batch.commit();
-
-  // Dual-write to Supabase
-  await dualWrite({
-    entityType: 'block',
-    operationType: 'create',
-    entityId: `${blockerId}_${blockedId}`,
-    supabaseWrite: async () => {
-      const supabase = getSupabaseClient();
-      throwOnError(await supabase.from('blocks').insert({
-        blocker_id: blockerId,
-        blocked_id: blockedId,
-      }));
-    },
-  });
+  const supabase = getSupabaseClient();
+  throwOnError(await supabase.from('blocks').insert({
+    blocker_id: blockerId,
+    blocked_id: blockedId,
+  }));
 }
 
 /** 차단 해제 */
 export async function unblockUser(blockerId: string, blockedId: string) {
-  const batch = writeBatch(firestore);
-  batch.delete(doc(firestore, `users/${blockerId}/blockedUsers/${blockedId}`));
-  batch.delete(doc(firestore, `users/${blockedId}/blockedByUsers/${blockerId}`));
-  await batch.commit();
-
-  // Dual-write to Supabase
-  await dualWrite({
-    entityType: 'block',
-    operationType: 'delete',
-    entityId: `${blockerId}_${blockedId}`,
-    supabaseWrite: async () => {
-      const supabase = getSupabaseClient();
-      throwOnError(await supabase.from('blocks').delete().match({
-        blocker_id: blockerId,
-        blocked_id: blockedId,
-      }));
-    },
-  });
+  const supabase = getSupabaseClient();
+  throwOnError(await supabase.from('blocks').delete().match({
+    blocker_id: blockerId,
+    blocked_id: blockedId,
+  }));
 }
 
 /** 내가 차단한 유저 목록 */
 export async function getBlockedUsers(userId: string): Promise<string[]> {
-  const snap = await trackedFirebase.getDocs(collection(firestore, `users/${userId}/blockedUsers`));
-  return snap.docs.map(doc => doc.id);
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('blocks')
+    .select('blocked_id')
+    .eq('blocker_id', userId);
+  if (error) {
+    console.error('Error fetching blocked users:', error);
+    return [];
+  }
+  return (data || []).map(row => row.blocked_id);
 }
 
 /** 나를 차단한 유저 목록 */
 export async function getBlockedByUsers(userId: string): Promise<string[]> {
-  const snap = await trackedFirebase.getDocs(collection(firestore, `users/${userId}/blockedByUsers`));
-  return snap.docs.map(doc => doc.id);
-}
-
-/**
- * Firestore not-in 쿼리 조건 유틸
- * @param ref Firestore 컬렉션 참조
- * @param field not-in 필드명
- * @param notInList 제외할 uid 배열
- * @param restOrderBy 추가 orderBy 조건
- * @returns Query
- */
-export function buildNotInQuery<T = DocumentData>(
-  ref: CollectionReference<T>,
-  field: string,
-  notInList: string[],
-  ...restOrderBy: [string, "asc" | "desc"][]
-): Query<T> {
-  let q: Query<T> = ref;
-  if (notInList.length > 0 && notInList.length <= 10) {
-    q = query(ref, where(field, 'not-in', notInList), ...restOrderBy.map(([f, dir]) => orderBy(f, dir)));
-  } else {
-    q = query(ref, ...restOrderBy.map(([f, dir]) => orderBy(f, dir)));
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('blocks')
+    .select('blocker_id')
+    .eq('blocked_id', userId);
+  if (error) {
+    console.error('Error fetching blocked-by users:', error);
+    return [];
   }
-  return q;
+  return (data || []).map(row => row.blocker_id);
 }

@@ -1,6 +1,5 @@
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { firestore } from '@/firebase';
-import { getDoc } from '@/shared/api/trackedFirebase';
 import { YearHolidaysSchema, type Holiday } from '@/shared/model/Holiday';
 
 /**

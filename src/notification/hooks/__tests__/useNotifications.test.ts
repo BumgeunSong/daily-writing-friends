@@ -7,22 +7,17 @@ import { fetchNotifications } from '@/notification/api/notificationApi';
 import { Notification, NotificationType } from '@/notification/model/Notification';
 import { useNotifications } from '../useNotifications';
 
-// Mock Firebase
-vi.mock('@/firebase', () => ({
-  firestore: {},
+// Mock supabaseReads
+const mockFetchNotificationsFromSupabase = vi.fn();
+vi.mock('@/shared/api/supabaseReads', () => ({
+  fetchNotificationsFromSupabase: (...args: unknown[]) => mockFetchNotificationsFromSupabase(...args),
 }));
 
-// Mock Firebase Firestore
-const mockGetDocs = vi.fn();
+// Mock Firebase Firestore (for Timestamp)
 vi.mock('firebase/firestore', () => ({
-  collection: vi.fn(),
-  query: vi.fn(),
-  orderBy: vi.fn(),
-  limit: vi.fn(),
-  startAfter: vi.fn(),
-  getDocs: () => mockGetDocs(),
   Timestamp: {
-    now: () => ({ seconds: Date.now() / 1000, nanoseconds: 0 }),
+    now: () => ({ seconds: Date.now() / 1000, nanoseconds: 0, toDate: () => new Date() }),
+    fromDate: (date: Date) => ({ seconds: date.getTime() / 1000, nanoseconds: 0, toDate: () => date }),
   },
 }));
 
@@ -72,30 +67,36 @@ describe('useNotifications', () => {
         { wrapper: createWrapper() }
       );
 
-      // Query is disabled when userId is null, so fetchStatus should be 'idle'
       await waitFor(() => {
         expect(result.current.fetchStatus).toBe('idle');
       });
 
       expect(result.current.data).toBeUndefined();
-      expect(mockGetDocs).not.toHaveBeenCalled();
+      expect(mockFetchNotificationsFromSupabase).not.toHaveBeenCalled();
     });
   });
 
   describe('when userId is provided', () => {
-    it('fetches notifications from Firestore', async () => {
-      const mockTimestamp = { seconds: Date.now() / 1000, nanoseconds: 0 } as Timestamp;
+    it('fetches notifications from Supabase', async () => {
+      const now = new Date();
+      const mockTimestamp = Timestamp.fromDate(now);
       const mockNotifications = [
         createMockNotification('notif-1', mockTimestamp),
         createMockNotification('notif-2', mockTimestamp),
       ];
 
-      mockGetDocs.mockResolvedValue({
-        docs: mockNotifications.map((n) => ({
+      mockFetchNotificationsFromSupabase.mockResolvedValue(
+        mockNotifications.map(n => ({
           id: n.id,
-          data: () => ({ ...n, id: undefined }),
-        })),
-      });
+          type: n.type,
+          boardId: n.boardId,
+          postId: n.postId,
+          fromUserId: n.fromUserId,
+          message: n.message,
+          timestamp: now.toISOString(),
+          read: n.read,
+        }))
+      );
 
       const { result } = renderHook(
         () => useNotifications('user-123', 10),
@@ -106,14 +107,12 @@ describe('useNotifications', () => {
         expect(result.current.isSuccess).toBe(true);
       });
 
-      expect(mockGetDocs).toHaveBeenCalled();
+      expect(mockFetchNotificationsFromSupabase).toHaveBeenCalled();
       expect(result.current.data?.pages[0]).toHaveLength(2);
     });
 
     it('handles empty notifications list', async () => {
-      mockGetDocs.mockResolvedValue({
-        docs: [],
-      });
+      mockFetchNotificationsFromSupabase.mockResolvedValue([]);
 
       const { result } = renderHook(
         () => useNotifications('user-123', 10),
@@ -130,8 +129,8 @@ describe('useNotifications', () => {
 
   describe('when fetch fails', () => {
     it('captures exception with Sentry on error', async () => {
-      const mockError = new Error('Firebase fetch failed');
-      mockGetDocs.mockRejectedValue(mockError);
+      const mockError = new Error('Supabase fetch failed');
+      mockFetchNotificationsFromSupabase.mockRejectedValue(mockError);
 
       const { result } = renderHook(
         () => useNotifications('user-123', 10),
@@ -152,25 +151,21 @@ describe('fetchNotifications', () => {
     vi.clearAllMocks();
   });
 
-  it('returns notifications with ids from document data', async () => {
-    const mockTimestamp = { seconds: Date.now() / 1000, nanoseconds: 0 } as Timestamp;
+  it('returns notifications with ids from Supabase data', async () => {
+    const now = new Date();
 
-    mockGetDocs.mockResolvedValue({
-      docs: [
-        {
-          id: 'notif-1',
-          data: () => ({
-            type: NotificationType.COMMENT_ON_POST,
-            boardId: 'board-1',
-            postId: 'post-1',
-            fromUserId: 'user-1',
-            message: 'Test',
-            timestamp: mockTimestamp,
-            read: false,
-          }),
-        },
-      ],
-    });
+    mockFetchNotificationsFromSupabase.mockResolvedValue([
+      {
+        id: 'notif-1',
+        type: NotificationType.COMMENT_ON_POST,
+        boardId: 'board-1',
+        postId: 'post-1',
+        fromUserId: 'user-1',
+        message: 'Test',
+        timestamp: now.toISOString(),
+        read: false,
+      },
+    ]);
 
     const result = await fetchNotifications('user-123', 10);
 
@@ -180,9 +175,7 @@ describe('fetchNotifications', () => {
   });
 
   it('returns empty array when no notifications exist', async () => {
-    mockGetDocs.mockResolvedValue({
-      docs: [],
-    });
+    mockFetchNotificationsFromSupabase.mockResolvedValue([]);
 
     const result = await fetchNotifications('user-123', 10);
 
@@ -190,30 +183,32 @@ describe('fetchNotifications', () => {
   });
 
   it('fetches paginated results when after timestamp is provided', async () => {
-    const mockTimestamp = { seconds: Date.now() / 1000, nanoseconds: 0 } as Timestamp;
-    const cursorTimestamp = { seconds: Date.now() / 1000 - 1000, nanoseconds: 0 } as Timestamp;
+    const now = new Date();
+    const cursorTimestamp = Timestamp.fromDate(new Date(Date.now() - 1000000));
 
-    mockGetDocs.mockResolvedValue({
-      docs: [
-        {
-          id: 'notif-page2-1',
-          data: () => ({
-            type: NotificationType.COMMENT_ON_POST,
-            boardId: 'board-1',
-            postId: 'post-1',
-            fromUserId: 'user-1',
-            message: 'Page 2 notification',
-            timestamp: mockTimestamp,
-            read: false,
-          }),
-        },
-      ],
-    });
+    mockFetchNotificationsFromSupabase.mockResolvedValue([
+      {
+        id: 'notif-page2-1',
+        type: NotificationType.COMMENT_ON_POST,
+        boardId: 'board-1',
+        postId: 'post-1',
+        fromUserId: 'user-1',
+        message: 'Page 2 notification',
+        timestamp: now.toISOString(),
+        read: false,
+      },
+    ]);
 
     const result = await fetchNotifications('user-123', 10, cursorTimestamp);
 
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('notif-page2-1');
     expect(result[0].message).toBe('Page 2 notification');
+    // Verify the cursor was passed through
+    expect(mockFetchNotificationsFromSupabase).toHaveBeenCalledWith(
+      'user-123',
+      10,
+      expect.any(String) // ISO string from cursorTimestamp.toDate().toISOString()
+    );
   });
 });

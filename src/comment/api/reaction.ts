@@ -1,17 +1,5 @@
-import {
-  collection,
-  doc,
-  query,
-  where,
-  getDocs,
-  Timestamp,
-  DocumentReference
-} from 'firebase/firestore';
 import { Reaction } from '@/comment/model/Reaction';
-import { firestore } from '@/firebase';
-import { trackedFirebase } from '@/shared/api/trackedFirebase';
-import { dualWrite, throwOnError } from '@/shared/api/dualWrite';
-import { getSupabaseClient, getReadSource } from '@/shared/api/supabaseClient';
+import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { fetchReactionsFromSupabase } from '@/shared/api/supabaseReads';
 
 export interface CreateReactionParams {
@@ -42,80 +30,49 @@ export interface GetReactionsParams {
   replyId?: string;
 }
 
-function getEntityRef(params: {
-  boardId: string;
-  postId: string;
-  commentId: string;
-  replyId?: string;
-}): DocumentReference {
-  const { boardId, postId, commentId, replyId } = params;
-  let entityPath = `boards/${boardId}/posts/${postId}/comments/${commentId}`;
-  if (replyId) {
-    entityPath += `/replies/${replyId}`;
-  }
-  return doc(firestore, entityPath);
-}
-
 export async function createReaction(params: CreateReactionParams): Promise<string> {
   const { content, reactionUser, commentId, replyId } = params;
-  const entityRef = getEntityRef(params);
-  const reactionsRef = collection(entityRef, 'reactions');
-  const existingQuery = query(
-    reactionsRef,
-    where('content', '==', content),
-    where('reactionUser.userId', '==', reactionUser.userId)
-  );
-  const existingSnapshot = await getDocs(existingQuery);
-  if (!existingSnapshot.empty) {
-    return existingSnapshot.docs[0].id;
+  const supabase = getSupabaseClient();
+
+  // Check for existing reaction (prevent duplicates)
+  let existingQuery = supabase
+    .from('reactions')
+    .select('id')
+    .eq('reaction_type', content)
+    .eq('user_id', reactionUser.userId);
+
+  if (replyId) {
+    existingQuery = existingQuery.eq('reply_id', replyId);
+  } else {
+    existingQuery = existingQuery.eq('comment_id', commentId);
   }
-  const createdAt = Timestamp.now();
-  const newReactionData = {
-    content,
-    createdAt,
-    reactionUser
-  };
-  const newReactionRef = await trackedFirebase.addDoc(reactionsRef, newReactionData);
 
-  // Dual-write to Supabase
-  await dualWrite({
-    entityType: 'reaction',
-    operationType: 'create',
-    entityId: newReactionRef.id,
-    supabaseWrite: async () => {
-      const supabase = getSupabaseClient();
-      throwOnError(await supabase.from('reactions').insert({
-        id: newReactionRef.id,
-        comment_id: replyId ? null : commentId,
-        reply_id: replyId || null,
-        user_id: reactionUser.userId,
-        user_name: reactionUser.userName,
-        user_profile_image: reactionUser.userProfileImage,
-        reaction_type: content,
-        created_at: createdAt.toDate().toISOString(),
-      }));
-    },
-  });
+  const { data: existing } = await existingQuery.limit(1);
+  if (existing && existing.length > 0) {
+    return existing[0].id;
+  }
 
-  return newReactionRef.id;
+  const id = crypto.randomUUID();
+  const createdAt = new Date().toISOString();
+
+  throwOnError(await supabase.from('reactions').insert({
+    id,
+    comment_id: replyId ? null : commentId,
+    reply_id: replyId || null,
+    user_id: reactionUser.userId,
+    user_name: reactionUser.userName,
+    user_profile_image: reactionUser.userProfileImage,
+    reaction_type: content,
+    created_at: createdAt,
+  }));
+
+  return id;
 }
 
 export async function deleteReaction(params: DeleteReactionParams): Promise<void> {
   const { reactionId } = params;
-  const entityRef = getEntityRef(params);
-  const reactionRef = doc(entityRef, 'reactions', reactionId);
-  await trackedFirebase.deleteDoc(reactionRef);
-
-  // Dual-write to Supabase
-  await dualWrite({
-    entityType: 'reaction',
-    operationType: 'delete',
-    entityId: reactionId,
-    supabaseWrite: async () => {
-      const supabase = getSupabaseClient();
-      throwOnError(await supabase.from('reactions').delete().eq('id', reactionId));
-    },
-  });
+  const supabase = getSupabaseClient();
+  throwOnError(await supabase.from('reactions').delete().eq('id', reactionId));
 }
 
 export async function deleteUserReaction(
@@ -123,48 +80,29 @@ export async function deleteUserReaction(
   userId: string,
   content: string
 ): Promise<void> {
-  const entityRef = getEntityRef(params);
-  const reactionsRef = collection(entityRef, 'reactions');
-  const userReactionQuery = query(
-    reactionsRef,
-    where('reactionUser.userId', '==', userId),
-    where('content', '==', content)
-  );
-  const snapshot = await getDocs(userReactionQuery);
-  if (snapshot.empty) {
-    return;
-  }
-  const reactionDoc = snapshot.docs[0];
-  await trackedFirebase.deleteDoc(reactionDoc.ref);
+  const supabase = getSupabaseClient();
 
-  // Dual-write to Supabase
-  await dualWrite({
-    entityType: 'reaction',
-    operationType: 'delete',
-    entityId: reactionDoc.id,
-    supabaseWrite: async () => {
-      const supabase = getSupabaseClient();
-      throwOnError(await supabase.from('reactions').delete().eq('id', reactionDoc.id));
-    },
-  });
+  let q = supabase
+    .from('reactions')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('reaction_type', content);
+
+  if (params.replyId) {
+    q = q.eq('reply_id', params.replyId);
+  } else {
+    q = q.eq('comment_id', params.commentId);
+  }
+
+  const { data } = await q.limit(1);
+  if (!data || data.length === 0) return;
+
+  throwOnError(await supabase.from('reactions').delete().eq('id', data[0].id));
 }
 
 export async function getReactions(params: GetReactionsParams): Promise<Reaction[]> {
-  const readSource = getReadSource();
-  if (readSource === 'supabase') {
-    return fetchReactionsFromSupabase({
-      commentId: params.commentId,
-      replyId: params.replyId,
-    });
-  }
-
-  const entityRef = getEntityRef(params);
-  const reactionsRef = collection(entityRef, 'reactions');
-  const snapshot = await getDocs(reactionsRef);
-  return snapshot.docs.map(doc => ({
-    id: doc.id,
-    content: doc.data().content,
-    createdAt: doc.data().createdAt?.toDate() || new Date(),
-    reactionUser: doc.data().reactionUser
-  }));
+  return fetchReactionsFromSupabase({
+    commentId: params.commentId,
+    replyId: params.replyId,
+  });
 }
