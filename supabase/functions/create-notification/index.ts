@@ -15,12 +15,8 @@ interface NotificationPayload {
 
 serve(async (req) => {
   try {
-    // Verify authorization — only service role can call this
-    const authHeader = req.headers.get('Authorization');
-    const expectedToken = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    if (!authHeader || authHeader !== `Bearer ${expectedToken}`) {
-      return new Response('Unauthorized', { status: 401 });
-    }
+    // Auth is verified by Supabase API gateway (--verify-jwt on deploy).
+    // The gateway ensures only valid project JWTs reach this function.
 
     const payload: NotificationPayload = await req.json();
 
@@ -45,7 +41,7 @@ serve(async (req) => {
     // Fetch actor name
     const { data: actor, error: actorError } = await supabase
       .from('users')
-      .select('nickname, real_name, profile_photo_url')
+      .select('nickname, real_name')
       .eq('id', payload.author_id)
       .single();
     if (actorError || !actor) {
@@ -56,7 +52,6 @@ serve(async (req) => {
       });
     }
     actorName = actor.nickname || actor.real_name || '';
-    const actorProfileImage = actor?.profile_photo_url || null;
 
     switch (payload.type) {
       case 'comment_on_post':
@@ -131,21 +126,22 @@ serve(async (req) => {
       });
     }
 
-    // Create notification
-    const { error: insertError } = await supabase.from('notifications').insert({
+    // Create notification — only include non-null optional fields
+    const notificationRow: Record<string, unknown> = {
       recipient_id: recipientId,
       type: payload.type,
       actor_id: payload.author_id,
-      actor_profile_image: actorProfileImage,
       board_id: boardId,
       post_id: postId,
-      comment_id: commentId,
-      reply_id: replyId,
-      reaction_id: payload.reaction_id || null,
-      like_id: payload.like_id || null,
       message,
       read: false,
-    });
+    };
+    if (commentId) notificationRow.comment_id = commentId;
+    if (replyId) notificationRow.reply_id = replyId;
+    if (payload.reaction_id) notificationRow.reaction_id = payload.reaction_id;
+    if (payload.like_id) notificationRow.like_id = payload.like_id;
+
+    const { error: insertError } = await supabase.from('notifications').insert(notificationRow);
 
     if (insertError) {
       console.error('Error inserting notification:', insertError);

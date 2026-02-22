@@ -18,21 +18,23 @@ export function buildNotificationMessage(
   actorName: string,
   contentPreview: string,
 ): string {
-  const preview = contentPreview.slice(0, 20);
+  const preview = contentPreview.length > 35
+    ? contentPreview.slice(0, 35) + '...'
+    : contentPreview;
 
   switch (type) {
     case 'comment_on_post':
-      return `${actorName}님이 "${preview}" 글에 댓글을 달았어요.`;
+      return `${actorName}님이 '${preview}' 글에 댓글을 달았어요.`;
     case 'like_on_post':
-      return `${actorName}님이 "${preview}" 글에 좋아요를 눌렀어요.`;
+      return `${actorName}님이 '${preview}' 글에 좋아요를 눌렀어요.`;
     case 'reply_on_post':
-      return `${actorName}님이 "${preview}" 글에 답글을 달았어요.`;
+      return `${actorName}님이 '${preview}' 글에 답글을 달았어요.`;
     case 'reply_on_comment':
-      return `${actorName}님이 "${preview}" 댓글에 답글을 달았어요.`;
+      return `${actorName}님이 '${preview}' 댓글에 답글을 달았어요.`;
     case 'reaction_on_comment':
-      return `${actorName}님이 "${preview}" 댓글에 반응했어요.`;
+      return `${actorName}님이 '${preview}' 댓글에 반응했어요.`;
     case 'reaction_on_reply':
-      return `${actorName}님이 "${preview}" 답글에 반응했어요.`;
+      return `${actorName}님이 '${preview}' 답글에 반응했어요.`;
   }
 }
 
