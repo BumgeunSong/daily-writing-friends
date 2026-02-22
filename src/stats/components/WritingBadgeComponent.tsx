@@ -7,13 +7,13 @@ export interface WritingBadgeComponentProps {
 
 export function WritingBadgeComponent({ badge }: WritingBadgeComponentProps) {
     return (
-        <Badge 
-            id={badge.name} 
+        <Badge
+            id={badge.name}
             variant="secondary"
-            className="flex items-center gap-1 rounded-full border-border/30 bg-secondary/80 px-2 py-0.5 text-muted-foreground"
+            className="inline-flex items-center gap-1 rounded-md bg-muted/20 px-1.5 py-0 border-0"
         >
-            <span className="text-xs leading-none">{badge.emoji}</span>
-            <span className="text-xs font-normal leading-none">
+            <span className="text-sm leading-none">{badge.emoji}</span>
+            <span className="text-xs font-medium leading-none text-foreground/70">
                 {badge.name}
             </span>
         </Badge>

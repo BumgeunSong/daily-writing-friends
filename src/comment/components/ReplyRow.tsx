@@ -1,13 +1,11 @@
 import { Edit, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
+import { CommentHeader } from '@/comment/components/CommentHeader';
 import ReactionList from '@/comment/components/ReactionList';
 import ReplyInput from '@/comment/components/ReplyInput';
 import { useDeleteReply, useEditReply } from '@/comment/hooks/useCreateReply';
 import { sanitizeCommentContent } from '@/post/utils/contentUtils';
-import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
-import { getUserDisplayName } from '@/shared/utils/userUtils';
-import { useUser } from '@/user/hooks/useUser';
 import type { Reply } from '@/comment/model/Reply';
 import type React from 'react';
 
@@ -23,8 +21,6 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
   const [isEditing, setIsEditing] = useState(false);
   const deleteReply = useDeleteReply(boardId, postId, commentId, reply.id);
   const editReply = useEditReply(boardId, postId, commentId, reply.id);
-
-  const { userData: userProfile } = useUser(reply.userId);
 
   const handleEditToggle = () => {
     setIsEditing((prev) => !prev);
@@ -47,22 +43,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
   return (
     <div className='group flex flex-col space-y-3 pb-4'>
       <div className='flex items-center justify-between'>
-        <div className='flex items-center space-x-3'>
-          <Avatar className='size-6'>
-            <AvatarImage
-              src={userProfile?.profilePhotoURL || undefined}
-              alt={getUserDisplayName(userProfile) || 'User'}
-              className='object-cover'
-            />
-            <AvatarFallback className='text-sm'>
-              {getUserDisplayName(userProfile)?.[0] || '?'}
-            </AvatarFallback>
-          </Avatar>
-          <p className='text-base font-semibold leading-none'>{getUserDisplayName(userProfile)}</p>
-          <span className='text-sm text-muted-foreground'>
-            {reply.createdAt?.toDate().toLocaleString()}
-          </span>
-        </div>
+        <CommentHeader userId={reply.userId} createdAt={reply.createdAt} />
         {isAuthor && (
           <div className='flex items-center space-x-1'>
             <Button variant='ghost' size='sm' onClick={handleEditToggle} className='h-6 px-2'>

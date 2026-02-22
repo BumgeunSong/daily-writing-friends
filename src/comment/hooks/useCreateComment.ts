@@ -23,6 +23,9 @@ export function useCreateComment(boardId: string, postId: string) {
     {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] });
+        if (currentUser) {
+          queryClient.invalidateQueries({ queryKey: ['postProfileBadges', currentUser.uid] });
+        }
       },
     },
   );
