@@ -32,7 +32,7 @@ export const usePostCard = (post: Post): UsePostCardReturn => {
   const authorData: PostAuthorData = useMemo(
     () => ({
       id: post.authorId,
-      displayName: getUserDisplayName(userData),
+      displayName: userData ? getUserDisplayName(userData) : post.authorName,
       profileImageURL: userData?.profilePhotoURL || post.authorProfileImageURL || '',
     }),
     [post.authorId, userData, post.authorProfileImageURL],
