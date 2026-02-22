@@ -2,6 +2,48 @@ import { JoinFormDataForActiveUser } from "@/login/model/join";
 import { Review } from "@/login/model/Review";
 import { getSupabaseClient, throwOnError } from "@/shared/api/supabaseClient";
 
+// --- Pure mappers (testable) ---
+
+export interface SupabaseReviewRow {
+  reviewer_id: string;
+  reviewer_nickname: string | null;
+  keep_text: string | null;
+  problem_text: string | null;
+  try_text: string | null;
+  nps: number | null;
+  will_continue: 'yes' | 'no' | null;
+}
+
+/** Supabase row → Review 도메인 모델 */
+export function mapRowToReview(row: SupabaseReviewRow): Review {
+  return {
+    reviewer: { uid: row.reviewer_id, nickname: row.reviewer_nickname ?? undefined },
+    keep: row.keep_text ?? undefined,
+    problem: row.problem_text ?? undefined,
+    try: row.try_text ?? undefined,
+    nps: row.nps ?? 0,
+    willContinue: row.will_continue ?? 'no',
+  };
+}
+
+/** Review 도메인 모델 → Supabase insert/upsert 행 (timestamp 제외) */
+export function mapReviewToSupabaseRow(
+  boardId: string,
+  review: Review,
+): Record<string, unknown> {
+  return {
+    id: review.reviewer.uid,
+    board_id: boardId,
+    reviewer_id: review.reviewer.uid,
+    reviewer_nickname: review.reviewer.nickname || null,
+    keep_text: review.keep || null,
+    problem_text: review.problem || null,
+    try_text: review.try || null,
+    nps: review.nps ?? null,
+    will_continue: review.willContinue ?? null,
+  };
+}
+
 /**
  * 보드에 리뷰를 추가합니다.
  * @param boardId 보드 ID
@@ -51,15 +93,7 @@ export async function addReviewToBoard(
 export async function createReview(boardId: string, review: Review): Promise<void> {
   const supabase = getSupabaseClient();
   throwOnError(await supabase.from('reviews').upsert({
-    id: review.reviewer.uid,
-    board_id: boardId,
-    reviewer_id: review.reviewer.uid,
-    reviewer_nickname: review.reviewer.nickname || null,
-    keep_text: review.keep || null,
-    problem_text: review.problem || null,
-    try_text: review.try || null,
-    nps: review.nps ?? null,
-    will_continue: review.willContinue ?? null,
+    ...mapReviewToSupabaseRow(boardId, review),
     created_at: new Date().toISOString(),
   }));
 }
@@ -87,14 +121,7 @@ export async function getReview(boardId: string, userId: string): Promise<Review
 
     if (error || !data) return null;
 
-    return {
-      reviewer: { uid: data.reviewer_id, nickname: data.reviewer_nickname },
-      keep: data.keep_text,
-      problem: data.problem_text,
-      try: data.try_text,
-      nps: data.nps,
-      willContinue: data.will_continue,
-    };
+    return mapRowToReview(data);
   } catch (error) {
     console.error(`Error getting review from board ${boardId} for user ${userId}:`, error);
     return null;
@@ -124,14 +151,7 @@ export async function getReviewsByBoard(boardId: string): Promise<Review[]> {
       return [];
     }
 
-    return (data || []).map(row => ({
-      reviewer: { uid: row.reviewer_id, nickname: row.reviewer_nickname },
-      keep: row.keep_text,
-      problem: row.problem_text,
-      try: row.try_text,
-      nps: row.nps,
-      willContinue: row.will_continue,
-    }));
+    return (data || []).map(mapRowToReview);
   } catch (error) {
     console.error(`Error getting reviews for board ${boardId}:`, error);
     return [];

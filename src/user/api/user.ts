@@ -8,6 +8,7 @@ import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { fetchUserFromSupabase, fetchAllUsersFromSupabase, fetchUsersWithBoardPermissionFromSupabase } from '@/shared/api/supabaseReads';
 import { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
 import { User as FirebaseUser } from 'firebase/auth';
+import { mapUserToSupabaseUpdate, mapBoardPermissionsToRows } from '@/user/utils/userMappers';
 
 // Supabase에서 User 데이터 읽기
 export async function fetchUser(uid: string): Promise<User | null> {
@@ -30,11 +31,7 @@ export async function createUser(data: User): Promise<void> {
 
     // Sync boardPermissions to user_board_permissions table
     if (data.boardPermissions) {
-        const permRows = Object.entries(data.boardPermissions).map(([boardId, permission]) => ({
-            user_id: data.uid,
-            board_id: boardId,
-            permission,
-        }));
+        const permRows = mapBoardPermissionsToRows(data.uid, data.boardPermissions);
         if (permRows.length > 0) {
             throwOnError(await supabase.from('user_board_permissions').upsert(permRows, { onConflict: 'user_id,board_id' }));
         }
@@ -44,14 +41,7 @@ export async function createUser(data: User): Promise<void> {
 // Supabase의 User 데이터 수정
 export async function updateUser(uid: string, data: Partial<User>): Promise<void> {
     const supabase = getSupabaseClient();
-    const updateData: Record<string, unknown> = {};
-    if (data.realName !== undefined) updateData.real_name = data.realName;
-    if (data.nickname !== undefined) updateData.nickname = data.nickname;
-    if (data.email !== undefined) updateData.email = data.email;
-    if (data.profilePhotoURL !== undefined) updateData.profile_photo_url = data.profilePhotoURL;
-    if (data.bio !== undefined) updateData.bio = data.bio;
-    if (data.phoneNumber !== undefined) updateData.phone_number = data.phoneNumber;
-    if (data.referrer !== undefined) updateData.referrer = data.referrer;
+    const updateData = mapUserToSupabaseUpdate(data);
     if (Object.keys(updateData).length > 0) {
         throwOnError(await supabase.from('users').update(updateData).eq('id', uid));
     }
@@ -59,11 +49,7 @@ export async function updateUser(uid: string, data: Partial<User>): Promise<void
     // Sync boardPermissions
     if (data.boardPermissions !== undefined) {
         throwOnError(await supabase.from('user_board_permissions').delete().eq('user_id', uid));
-        const permRows = Object.entries(data.boardPermissions).map(([boardId, permission]) => ({
-            user_id: uid,
-            board_id: boardId,
-            permission,
-        }));
+        const permRows = mapBoardPermissionsToRows(uid, data.boardPermissions);
         if (permRows.length > 0) {
             throwOnError(await supabase.from('user_board_permissions').insert(permRows));
         }
