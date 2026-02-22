@@ -6,7 +6,7 @@ import { useIsUserInWaitingList } from "@/login/hooks/useIsUserInWaitingList"
 import { useUpcomingBoard } from "@/login/hooks/useUpcomingBoard"
 import { JoinFormDataForNewUser } from "@/login/model/join"
 import { useAuth } from '@/shared/hooks/useAuth'
-import { addUserToBoardWaitingList } from "@/shared/utils/boardUtils"
+import { addUserToBoardWaitingList } from "@/board/utils/boardUtils"
 import { updateUser, createUserIfNotExists } from "@/user/api/user"
 import { useUserNickname } from "@/user/hooks/useUserNickname"
 import { User as FirebaseUser } from 'firebase/auth'
