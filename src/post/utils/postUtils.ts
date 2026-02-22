@@ -70,6 +70,7 @@ export async function createPost(
     count_of_comments: 0,
     count_of_replies: 0,
     count_of_likes: 0,
+    engagement_score: 0,
     created_at: createdAt,
   };
 

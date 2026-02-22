@@ -15,9 +15,10 @@ interface NotificationPayload {
 
 serve(async (req) => {
   try {
-    // Verify authorization
+    // Verify authorization — only service role can call this
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
+    const expectedToken = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!authHeader || authHeader !== `Bearer ${expectedToken}`) {
       return new Response('Unauthorized', { status: 401 });
     }
 
@@ -42,12 +43,19 @@ serve(async (req) => {
     let message = '';
 
     // Fetch actor name
-    const { data: actor } = await supabase
+    const { data: actor, error: actorError } = await supabase
       .from('users')
       .select('nickname, real_name, profile_photo_url')
       .eq('id', payload.author_id)
       .single();
-    actorName = actor?.nickname || actor?.real_name || '';
+    if (actorError || !actor) {
+      console.error('Actor not found:', payload.author_id, actorError);
+      return new Response(JSON.stringify({ status: 'skipped', reason: 'actor_not_found' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    actorName = actor.nickname || actor.real_name || '';
     const actorProfileImage = actor?.profile_photo_url || null;
 
     switch (payload.type) {

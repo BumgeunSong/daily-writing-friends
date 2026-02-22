@@ -223,6 +223,8 @@ CREATE TABLE failed_notifications (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+ALTER TABLE failed_notifications ENABLE ROW LEVEL SECURITY;
+
 -- =============================================
 -- 4. RLS Policies
 -- =============================================
@@ -302,8 +304,8 @@ CREATE POLICY "Users can view their own notifications"
 CREATE POLICY "Users can update their own notifications"
   ON notifications FOR UPDATE USING (auth.uid()::text = recipient_id);
 
-CREATE POLICY "Service role can insert notifications"
-  ON notifications FOR INSERT WITH CHECK (true);
+-- Service role bypasses RLS, so no INSERT policy needed.
+-- This blocks client-side notification spoofing.
 
 -- Drafts (users can only access their own)
 CREATE POLICY "Users can view their own drafts"
