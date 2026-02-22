@@ -1,8 +1,9 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { buildNotificationMessage, shouldSkipNotification, type NotificationType } from '../_shared/notificationMessages.ts';
 
 interface NotificationPayload {
-  type: 'comment_on_post' | 'reply_on_post' | 'reply_on_comment' | 'like_on_post' | 'reaction_on_comment' | 'reaction_on_reply';
+  type: NotificationType;
   comment_id?: string;
   reply_id?: string;
   like_id?: string;
@@ -50,28 +51,8 @@ serve(async (req) => {
     const actorProfileImage = actor?.profile_photo_url || null;
 
     switch (payload.type) {
-      case 'comment_on_post': {
-        const { data: post } = await supabase
-          .from('posts')
-          .select('author_id, board_id, title')
-          .eq('id', payload.post_id)
-          .single();
-        recipientId = post?.author_id;
-        boardId = post?.board_id;
-        message = `${actorName}님이 "${post?.title?.slice(0, 20) || ''}" 글에 댓글을 달았어요.`;
-        break;
-      }
-      case 'like_on_post': {
-        const { data: post } = await supabase
-          .from('posts')
-          .select('author_id, board_id, title')
-          .eq('id', payload.post_id)
-          .single();
-        recipientId = post?.author_id;
-        boardId = post?.board_id;
-        message = `${actorName}님이 "${post?.title?.slice(0, 20) || ''}" 글에 좋아요를 눌렀어요.`;
-        break;
-      }
+      case 'comment_on_post':
+      case 'like_on_post':
       case 'reply_on_post': {
         const { data: post } = await supabase
           .from('posts')
@@ -80,29 +61,10 @@ serve(async (req) => {
           .single();
         recipientId = post?.author_id;
         boardId = post?.board_id;
-        message = `${actorName}님이 "${post?.title?.slice(0, 20) || ''}" 글에 답글을 달았어요.`;
+        message = buildNotificationMessage(payload.type, actorName, post?.title || '');
         break;
       }
-      case 'reply_on_comment': {
-        const { data: comment } = await supabase
-          .from('comments')
-          .select('user_id, post_id, content')
-          .eq('id', payload.comment_id)
-          .single();
-        recipientId = comment?.user_id;
-        postId = comment?.post_id;
-        commentId = payload.comment_id || null;
-
-        const { data: post } = await supabase
-          .from('posts')
-          .select('board_id')
-          .eq('id', comment?.post_id)
-          .single();
-        boardId = post?.board_id;
-
-        message = `${actorName}님이 "${comment?.content?.slice(0, 20) || ''}" 댓글에 답글을 달았어요.`;
-        break;
-      }
+      case 'reply_on_comment':
       case 'reaction_on_comment': {
         const { data: comment } = await supabase
           .from('comments')
@@ -120,7 +82,7 @@ serve(async (req) => {
           .single();
         boardId = post?.board_id;
 
-        message = `${actorName}님이 "${comment?.content?.slice(0, 20) || ''}" 댓글에 반응했어요.`;
+        message = buildNotificationMessage(payload.type, actorName, comment?.content || '');
         break;
       }
       case 'reaction_on_reply': {
@@ -139,13 +101,13 @@ serve(async (req) => {
           .single();
         boardId = post?.board_id;
 
-        message = `${actorName}님이 "${reply?.content?.slice(0, 20) || ''}" 답글에 반응했어요.`;
+        message = buildNotificationMessage(payload.type, actorName, reply?.content || '');
         break;
       }
     }
 
     // Don't notify self
-    if (!recipientId || recipientId === payload.author_id) {
+    if (shouldSkipNotification(recipientId, payload.author_id)) {
       return new Response(JSON.stringify({ status: 'skipped', reason: 'self_or_no_recipient' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
