@@ -5,7 +5,7 @@
 
 **Last Updated**: 2026-02-22
 **Branch**: `migration/phase7-remove-firestore`
-**Status**: Phase 7B (잔여 Firestore 코드 제거) — in progress
+**Status**: Phase 8 (Firebase Auth → Supabase Auth) — ready to start
 
 ---
 
@@ -441,9 +441,11 @@ BestPostCardList showed same posts as RecentPostCardList when `VITE_READ_SOURCE=
 4. **`trackedFirebase.ts` 삭제** — Firestore 쓰기 추적 래퍼 제거 (Sentry breadcrumb, 타임아웃 등)
 5. **RLS 정책 추가** — posts, comments, replies, likes, reactions, drafts, notifications 테이블
 
+**⚠️ Hotfix (2026-02-22):** RLS 정책이 `auth.uid()::text`를 사용하지만 Supabase Auth 세션이 없어 모든 쓰기가 차단됨. RLS 비활성화 + 정책 삭제로 긴급 복구. Phase 8에서 Supabase Auth 도입 후 재활성화 예정.
+
 ---
 
-### Phase 7B: 잔여 Firestore 코드 제거 (In Progress)
+### Phase 7B: 잔여 Firestore 코드 제거 ✅ (핵심 작업 완료)
 
 **Started**: 2026-02-22
 **Branch**: `migration/phase7-remove-firestore` (PR #472)
@@ -459,14 +461,49 @@ BestPostCardList showed same posts as RecentPostCardList when `VITE_READ_SOURCE=
 3. ✅ **`fetchPost`, `fetchAdjacentPosts` Supabase 전환** — Firestore `getDoc`/`getDocs` → Supabase `.select().eq().single()` 및 `.select('id').eq().order()`
    - `mapDocumentToPost` (Firestore 전용 헬퍼) 삭제
 
-**Remaining (tracked as GitHub issues):**
+**Remaining (tracked as GitHub issues, Phase 8이 해결하는 항목 표시):**
 
-- ⬜ **#466**: 불필요한 Firebase SDK 의존성 제거 (`firebase/firestore` import 정리)
-- ⬜ **#467**: Admin 앱 Supabase 전환 (별도 레포)
+- ⬜ **#466**: Firebase SDK 의존성 제거 → **Phase 8 Task 8에서 해결** (`firebase/auth` 제거)
+- ⬜ **#467**: Admin 앱 Supabase 전환 → **Phase 8D에서 해결** (별도 레포)
 - ⬜ **#468**: Firestore 데이터 아카이브 및 정리 (rollback window 이후)
-- ⬜ **#469**: Posts RLS visibility 기반 SELECT 정책 추가
+- ⬜ **#469**: RLS 정책 추가 → **Phase 8 Task 7에서 해결** (Supabase Auth 도입 후 재활성화)
 - ⬜ **#470**: Edge Function 알림 생성 쿼리 최적화 (Low priority)
 - ⬜ **#471**: Supabase 쓰기 작업 Sentry 관측성 추가
+
+---
+
+### Phase 8: Firebase Auth → Supabase Auth (Ready to Start)
+
+**Branch**: TBD (branch off from `migration/phase7-remove-firestore`)
+**Urgency**: HIGH — RLS 비활성화 + 브라우저 노출 anon key = DB 무방비 상태
+**Design doc**: `docs/plans/2026-02-22-supabase-auth-migration-design.md`
+**Implementation plan**: `docs/plans/2026-02-22-supabase-auth-migration-plan.md`
+
+**Why now:**
+- Phase 7A RLS 정책이 `auth.uid()`를 사용하지만 Supabase Auth 세션이 없어 쓰기 차단
+- Hotfix로 RLS 비활성화 → anon key로 DB 전체 접근 가능 (보안 취약)
+- Supabase Auth 도입이 RLS 정상 작동의 전제조건
+
+**Scope:**
+
+| Task | 설명 | 위험도 | 시점 |
+|------|------|--------|------|
+| Task 1 | Supabase Auth 계정 생성 (103명) | Low | 사전 준비 |
+| Task 2 | FK 참조 무결성 검증 | Low | 사전 준비 |
+| Task 3 | SQL 마이그레이션: users.id TEXT → UUID 전환 | **High** | 점검 시간 |
+| Task 4 | Google OAuth Supabase Dashboard 설정 | Medium | 배포 전 |
+| Task 5 | Supabase 클라이언트 auth 세션 활성화 | Low | 배포 |
+| Task 6 | Firebase Auth → Supabase Auth 클라이언트 전환 (~10파일) | **High** | 배포 |
+| Task 7 | RLS 정책 재활성화 (UUID 네이티브) | Medium | 배포 후 |
+| Task 8 | Firebase Auth SDK import 제거 | Low | 배포 후 |
+| Task 9 | LLM 테스트 문서 업데이트 | Low | 배포 후 |
+
+**Key decisions:**
+- `users.id`를 Firebase UID (TEXT) → Supabase Auth UUID로 변경 (clean break)
+- 103명 전원 Supabase Auth 계정 사전 생성 → Google 로그인 시 이메일 매칭으로 자동 연결
+- 단일 SQL 트랜잭션으로 15개 FK 컬럼 + PK 일괄 전환
+- 모든 사용자 재로그인 필요 (1회)
+- `uid_mapping` 테이블 보존 (롤백용)
 
 ---
 
@@ -503,19 +540,25 @@ BestPostCardList showed same posts as RecentPostCardList when `VITE_READ_SOURCE=
 
 ## Next Steps
 
-### Phase 7B: 잔여 이슈 처리
-- **#466**: `firebase/firestore` import 정리 — Post 모델의 `Timestamp` 타입 의존성 해결 필요
+### ⚡ Phase 8: Firebase Auth → Supabase Auth (URGENT)
+- **Task 1-3**: Auth 계정 생성 + UID 전환 (사전 준비, 앱 중단 없음)
+- **Task 4-6**: Google OAuth 설정 + 클라이언트 전환 (점검 시간 ~5분)
+- **Task 7**: RLS 재활성화 (보안 복구)
+- **Task 8-9**: 정리 및 문서 업데이트
+
+### Post-Phase 8: 잔여 이슈
+- **#466**: `firebase/firestore` import 정리 — `Timestamp` 타입 의존성 해결 (Phase 8이 `firebase/auth` 제거, firestore는 별도)
 - **#471**: Sentry 관측성 — `throwOnError`에 Sentry breadcrumb 추가
+- **#470**: Edge Function 알림 쿼리 최적화
 
 ### Post-Migration: Admin App Switch (#467)
-- Admin 앱 primary 데이터소스를 Firestore → Supabase로 전환
-- Firestore SDK 의존성 제거 (Auth 제외)
+- Admin 앱을 Supabase에서 직접 읽기로 전환 (Phase 8D에서 함께 처리)
 - holidays/narrations 테이블 필요 시 Supabase 스키마에 추가
 
 ### Post-Migration: Firestore 아카이브 (#468)
-- Rollback window (1-2주) 경과 후 Firestore 최종 백업
-- Security Rules를 read-only로 변경
-- `write_ops`, `migration_diffs`, `_supabase_write_failures` 테이블/컬렉션 정리
+- Phase 8 완료 + Rollback window (2주) 경과 후
+- Firestore 최종 백업, Security Rules read-only 전환
+- Firebase 프로젝트 아카이브 (Storage 마이그레이션은 별도 계획)
 
 ---
 
@@ -541,7 +584,8 @@ SUPABASE_SERVICE_ROLE_KEY=<key>
 
 ## Notes
 
-- Firebase Auth remains unchanged (no auth migration)
+- ~~Firebase Auth remains unchanged (no auth migration)~~ → Phase 8에서 Supabase Auth로 전환
 - Activity fan-out Cloud Functions deleted (Phase 3). Subcollection data remains in Firestore (read-only by backfill scripts)
 - Notifications remain materialized (explicit table, not computed)
-- Client will use Supabase `anon` key (not service role)
+- Client uses Supabase `anon` key with auth session (RLS enforced via `auth.uid()`)
+- Firebase Storage는 아직 Firebase에 의존 (별도 마이그레이션 필요)
