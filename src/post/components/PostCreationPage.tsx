@@ -100,7 +100,7 @@ export default function PostCreationPage() {
           <input
             type='hidden'
             name='authorName'
-            value={userData ? getUserDisplayName(userData) : ''}
+            value={getUserDisplayName(userData)}
           />
           <input type='hidden' name='title' value={title} />
           <input type='hidden' name='content' value={content} />
