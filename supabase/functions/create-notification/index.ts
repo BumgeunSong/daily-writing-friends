@@ -15,8 +15,19 @@ interface NotificationPayload {
 
 serve(async (req) => {
   try {
-    // Auth is verified by Supabase API gateway (--verify-jwt on deploy).
-    // The gateway ensures only valid project JWTs reach this function.
+    // Only allow service_role calls (DB triggers via pg_net).
+    // --verify-jwt ensures a valid JWT, but we additionally check the role claim
+    // to reject end-user JWTs and prevent notification spoofing.
+    const authHeader = req.headers.get('Authorization') || '';
+    const token = authHeader.replace('Bearer ', '');
+    try {
+      const claims = JSON.parse(atob(token.split('.')[1]));
+      if (claims.role !== 'service_role') {
+        return new Response('Forbidden', { status: 403 });
+      }
+    } catch {
+      return new Response('Forbidden', { status: 403 });
+    }
 
     const payload: NotificationPayload = await req.json();
 

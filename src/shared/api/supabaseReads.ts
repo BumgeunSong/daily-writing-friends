@@ -965,10 +965,13 @@ export async function fetchNotificationsFromSupabase(
   const actorIds = [...new Set((data || []).map(row => row.actor_id))];
   const profileMap = new Map<string, string>();
   if (actorIds.length > 0) {
-    const { data: actors } = await supabase
+    const { data: actors, error: actorsError } = await supabase
       .from('users')
       .select('id, profile_photo_url')
       .in('id', actorIds);
+    if (actorsError) {
+      console.error('Supabase fetchNotifications users lookup error:', actorsError);
+    }
     for (const actor of actors || []) {
       if (actor.profile_photo_url) {
         profileMap.set(actor.id, actor.profile_photo_url);

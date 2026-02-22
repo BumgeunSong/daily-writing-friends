@@ -11,7 +11,7 @@ export type NotificationType =
  *
  * @param type - 알림 유형
  * @param actorName - 행위자 이름
- * @param contentPreview - 대상 콘텐츠 미리보기 (최대 20자로 잘린 상태)
+ * @param contentPreview - 대상 콘텐츠 미리보기 (35자 초과 시 말줄임표 추가)
  */
 export function buildNotificationMessage(
   type: NotificationType,
