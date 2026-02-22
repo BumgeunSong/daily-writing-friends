@@ -5,6 +5,8 @@ import { useAutoSaveDrafts } from '@/draft/hooks/useAutoSaveDrafts';
 import { useDraftLoader } from '@/draft/hooks/useDraftLoader';
 import { usePostEditor } from '@/post/hooks/usePostEditor';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { getUserDisplayName } from '@/shared/utils/userUtils';
+import { useUser } from '@/user/hooks/useUser';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +28,7 @@ interface ActionData {
 
 export default function PostCreationPage() {
   const { currentUser } = useAuth();
+  const { userData } = useUser(currentUser?.uid);
   const { boardId } = useParams<{ boardId: string }>();
   const [searchParams] = useSearchParams();
   const navigation = useNavigation();
@@ -82,7 +85,7 @@ export default function PostCreationPage() {
               variant='default'
               type='submit'
               form='post-creation-form'
-              disabled={isSubmitting || isImageUploading || !title.trim() || !content.trim()}
+              disabled={isSubmitting || isImageUploading || !userData || !title.trim() || !content.trim()}
             >
               {isSubmitting ? '저장 중...' : '글 저장'}
             </Button>
@@ -97,7 +100,7 @@ export default function PostCreationPage() {
           <input
             type='hidden'
             name='authorName'
-            value={currentUser?.displayName || currentUser?.email || 'Anonymous'}
+            value={getUserDisplayName(userData)}
           />
           <input type='hidden' name='title' value={title} />
           <input type='hidden' name='content' value={content} />
