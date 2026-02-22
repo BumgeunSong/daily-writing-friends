@@ -86,9 +86,9 @@ export async function getDraftById(userId: string, draftId: string): Promise<Dra
   };
 }
 
-export async function deleteDraft(_userId: string, draftId: string): Promise<void> {
+export async function deleteDraft(userId: string, draftId: string): Promise<void> {
   const supabase = getSupabaseClient();
-  throwOnError(await supabase.from('drafts').delete().eq('id', draftId));
+  throwOnError(await supabase.from('drafts').delete().eq('id', draftId).eq('user_id', userId));
 }
 
 

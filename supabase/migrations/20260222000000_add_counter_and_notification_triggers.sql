@@ -264,7 +264,7 @@ CREATE POLICY "Users can insert their own posts"
   ON posts FOR INSERT WITH CHECK (auth.uid()::text = author_id);
 
 CREATE POLICY "Users can update their own posts"
-  ON posts FOR UPDATE USING (auth.uid()::text = author_id);
+  ON posts FOR UPDATE USING (auth.uid()::text = author_id) WITH CHECK (auth.uid()::text = author_id);
 
 CREATE POLICY "Users can delete their own posts"
   ON posts FOR DELETE USING (auth.uid()::text = author_id);
@@ -277,7 +277,7 @@ CREATE POLICY "Users can insert their own comments"
   ON comments FOR INSERT WITH CHECK (auth.uid()::text = user_id);
 
 CREATE POLICY "Users can update their own comments"
-  ON comments FOR UPDATE USING (auth.uid()::text = user_id);
+  ON comments FOR UPDATE USING (auth.uid()::text = user_id) WITH CHECK (auth.uid()::text = user_id);
 
 CREATE POLICY "Users can delete their own comments"
   ON comments FOR DELETE USING (auth.uid()::text = user_id);
@@ -290,7 +290,7 @@ CREATE POLICY "Users can insert their own replies"
   ON replies FOR INSERT WITH CHECK (auth.uid()::text = user_id);
 
 CREATE POLICY "Users can update their own replies"
-  ON replies FOR UPDATE USING (auth.uid()::text = user_id);
+  ON replies FOR UPDATE USING (auth.uid()::text = user_id) WITH CHECK (auth.uid()::text = user_id);
 
 CREATE POLICY "Users can delete their own replies"
   ON replies FOR DELETE USING (auth.uid()::text = user_id);
@@ -320,7 +320,7 @@ CREATE POLICY "Users can view their own notifications"
   ON notifications FOR SELECT USING (auth.uid()::text = recipient_id);
 
 CREATE POLICY "Users can update their own notifications"
-  ON notifications FOR UPDATE USING (auth.uid()::text = recipient_id);
+  ON notifications FOR UPDATE USING (auth.uid()::text = recipient_id) WITH CHECK (auth.uid()::text = recipient_id);
 
 -- Service role bypasses RLS, so no INSERT policy needed.
 -- This blocks client-side notification spoofing.
@@ -333,7 +333,7 @@ CREATE POLICY "Users can insert their own drafts"
   ON drafts FOR INSERT WITH CHECK (auth.uid()::text = user_id);
 
 CREATE POLICY "Users can update their own drafts"
-  ON drafts FOR UPDATE USING (auth.uid()::text = user_id);
+  ON drafts FOR UPDATE USING (auth.uid()::text = user_id) WITH CHECK (auth.uid()::text = user_id);
 
 CREATE POLICY "Users can delete their own drafts"
   ON drafts FOR DELETE USING (auth.uid()::text = user_id);
