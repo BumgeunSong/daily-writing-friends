@@ -961,6 +961,24 @@ export async function fetchNotificationsFromSupabase(
     throw error;
   }
 
+  // Batch-fetch actor profile images
+  const actorIds = [...new Set((data || []).map(row => row.actor_id))];
+  const profileMap = new Map<string, string>();
+  if (actorIds.length > 0) {
+    const { data: actors, error: actorsError } = await supabase
+      .from('users')
+      .select('id, profile_photo_url')
+      .in('id', actorIds);
+    if (actorsError) {
+      console.error('Supabase fetchNotifications users lookup error:', actorsError);
+    }
+    for (const actor of actors || []) {
+      if (actor.profile_photo_url) {
+        profileMap.set(actor.id, actor.profile_photo_url);
+      }
+    }
+  }
+
   return (data || []).map(row => ({
     id: row.id,
     type: row.type,
@@ -969,7 +987,7 @@ export async function fetchNotificationsFromSupabase(
     commentId: row.comment_id || undefined,
     replyId: row.reply_id || undefined,
     fromUserId: row.actor_id,
-    fromUserProfileImage: row.actor_profile_image || undefined,
+    fromUserProfileImage: profileMap.get(row.actor_id) || undefined,
     message: row.message,
     timestamp: row.created_at,
     read: row.read,
