@@ -5,6 +5,8 @@ import { getContentPreview } from '@/post/utils/contentUtils';
 import { usePostingStreak } from '@/stats/hooks/usePostingStreak';
 import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';
 import { WritingBadge } from '@/stats/model/WritingStats';
+import { useUser } from '@/user/hooks/useUser';
+import { getUserDisplayName } from '@/shared/utils/userUtils';
 
 export interface UsePostCardReturn {
   authorData: PostAuthorData;
@@ -17,6 +19,7 @@ export interface UsePostCardReturn {
 }
 
 export const usePostCard = (post: Post): UsePostCardReturn => {
+  const { userData, isLoading: isAuthorLoading } = useUser(post.authorId);
   const { data: badges } = usePostProfileBadges(post.authorId);
   const { data: streakData, isLoading: isStreakLoading } = usePostingStreak(post.authorId);
 
@@ -29,15 +32,15 @@ export const usePostCard = (post: Post): UsePostCardReturn => {
   const authorData: PostAuthorData = useMemo(
     () => ({
       id: post.authorId,
-      displayName: post.authorName,
-      profileImageURL: post.authorProfileImageURL || '',
+      displayName: getUserDisplayName(userData),
+      profileImageURL: userData?.profilePhotoURL || post.authorProfileImageURL || '',
     }),
-    [post.authorId, post.authorName, post.authorProfileImageURL],
+    [post.authorId, userData, post.authorProfileImageURL],
   );
 
   return {
     authorData,
-    isAuthorLoading: false,
+    isAuthorLoading,
     badges,
     streak: streakData?.streak,
     isStreakLoading,
