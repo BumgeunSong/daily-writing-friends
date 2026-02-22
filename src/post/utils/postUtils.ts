@@ -5,12 +5,13 @@ import { Post, PostVisibility, ProseMirrorDoc } from '@/post/model/Post';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { mapRowToPost } from '@/shared/api/supabaseReads';
 
-export const fetchPost = async (_boardId: string, postId: string): Promise<Post | null> => {
+export const fetchPost = async (boardId: string, postId: string): Promise<Post | null> => {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('posts')
     .select('*, boards(first_day), comments(count), replies(count), users!author_id(profile_photo_url)')
     .eq('id', postId)
+    .eq('board_id', boardId)
     .single();
 
   if (error) {
@@ -43,6 +44,8 @@ export async function createPost(
   const id = crypto.randomUUID();
   const createdAt = new Date().toISOString();
 
+  const thumbnailImageURL = extractFirstImageUrl(content);
+
   const insertData: Record<string, unknown> = {
     id,
     board_id: boardId,
@@ -50,7 +53,7 @@ export async function createPost(
     author_name: authorName,
     title,
     content,
-    thumbnail_image_url: extractFirstImageUrl(content) || null,
+    thumbnail_image_url: thumbnailImageURL || null,
     visibility: visibility || PostVisibility.PUBLIC,
     count_of_comments: 0,
     count_of_replies: 0,
@@ -70,7 +73,7 @@ export async function createPost(
     boardId,
     title,
     content,
-    thumbnailImageURL: extractFirstImageUrl(content),
+    thumbnailImageURL,
     authorId,
     authorName,
     countOfComments: 0,
@@ -113,23 +116,40 @@ export const updatePost = async (
 
 export const fetchAdjacentPosts = async (boardId: string, currentPostId: string) => {
   const supabase = getSupabaseClient();
-  const { data, error } = await supabase
-    .from('posts')
-    .select('id')
-    .eq('board_id', boardId)
-    .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching adjacent posts:', error);
+  const { data: currentPost, error: currentError } = await supabase
+    .from('posts')
+    .select('created_at')
+    .eq('id', currentPostId)
+    .single();
+
+  if (currentError || !currentPost) {
+    console.error('Error fetching current post for adjacent lookup:', currentError);
     return { prevPost: null, nextPost: null };
   }
 
-  const posts = data || [];
-  const currentIndex = posts.findIndex((post) => post.id === currentPostId);
+  const [prevResult, nextResult] = await Promise.all([
+    supabase
+      .from('posts')
+      .select('id')
+      .eq('board_id', boardId)
+      .lt('created_at', currentPost.created_at)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from('posts')
+      .select('id')
+      .eq('board_id', boardId)
+      .gt('created_at', currentPost.created_at)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+  ]);
 
   return {
-    prevPost: currentIndex < posts.length - 1 ? posts[currentIndex + 1].id : null,
-    nextPost: currentIndex > 0 ? posts[currentIndex - 1].id : null,
+    prevPost: prevResult.data?.id ?? null,
+    nextPost: nextResult.data?.id ?? null,
   };
 };
 
