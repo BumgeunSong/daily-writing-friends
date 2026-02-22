@@ -57,7 +57,7 @@ export default defineConfig(({ mode }) => {
   // 개발 환경 여부 확인
   // 참고: mode === 'development'는 import.meta.env.MODE === 'development'와 동일하지만
   // import.meta.env.DEV는 NODE_ENV에 따라 결정됩니다
-  const isDevelopment = mode === 'development';
+  const isProduction = mode === 'production';
   
   // Firebase 에뮬레이터 사용 여부
   // 이 설정은 모드별로 다르게 구성할 수 있습니다 (예: .env.development에서는 true, .env.production에서는 false)
@@ -103,13 +103,14 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       devLogPlugin(),
-      // Sentry 플러그인은 마지막에 추가
-      sentryVitePlugin({
-        authToken: sentryAuthToken,
-        org: 'bumgeun-song',
-        project: 'daily-writing-friends',
-        disable: !sentryAuthToken || isDevelopment, // 개발 환경이나 토큰이 없으면 비활성화
-      })
+      // Sentry 플러그인: 토큰이 있고 프로덕션 빌드일 때만 활성화
+      ...(sentryAuthToken && isProduction
+        ? [sentryVitePlugin({
+            authToken: sentryAuthToken,
+            org: 'bumgeun-song',
+            project: 'daily-writing-friends',
+          })]
+        : []),
     ],
     define: {
       // 클라이언트 코드에서 사용할 환경 변수 정의
