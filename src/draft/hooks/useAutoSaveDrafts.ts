@@ -98,7 +98,7 @@ export function useAutoSaveDrafts({
     contentRef: currentContentRef,
     onSaved: (savedDraft) => {
       setDraftId(savedDraft.id);
-      setLastSavedAt(savedDraft.savedAt.toDate());
+      setLastSavedAt(new Date(savedDraft.savedAt));
       setLastSavedTitle(currentTitleRef.current);
       setLastSavedContent(currentContentRef.current);
     },
