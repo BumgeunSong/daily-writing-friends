@@ -14,8 +14,8 @@ export function PostingStreakBadge({ streak, isLoading }: PostingStreakBadgeProp
         variant="secondary"
         className="flex items-center gap-1 rounded-full border-border/30 bg-secondary/80 px-2 py-0.5"
       >
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="size-2 rounded-full" />
+        {Array.from({ length: 5 }, (_, i) => (
+          <Skeleton key={`streak-loading-${i}`} className="size-2 rounded-full" />
         ))}
       </Badge>
     );

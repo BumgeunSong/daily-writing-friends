@@ -27,6 +27,11 @@ interface ConfigRowProps {
   type?: 'boolean' | 'feature' | 'text';
 }
 
+const getConfigLabel = (value: boolean, type: ConfigRowProps['type']): string => {
+  if (value) return type === 'boolean' ? 'TRUE' : 'ENABLED';
+  return type === 'boolean' ? 'FALSE' : 'DISABLED';
+};
+
 const ConfigRow = ({ label, value, type = 'feature' }: ConfigRowProps) => {
   const isBoolean = typeof value === 'boolean';
 
@@ -34,8 +39,8 @@ const ConfigRow = ({ label, value, type = 'feature' }: ConfigRowProps) => {
     <div className='flex items-center justify-between rounded-lg bg-muted/50 p-3'>
       <span className='font-medium'>{label}</span>
       {isBoolean ? (
-        <span className={getStatusBadgeClass(value, type)}>
-          {value ? (type === 'boolean' ? 'TRUE' : 'ENABLED') : (type === 'boolean' ? 'FALSE' : 'DISABLED')}
+        <span className={getStatusBadgeClass(value, type as 'boolean' | 'feature')}>
+          {getConfigLabel(value, type)}
         </span>
       ) : (
         <code className='font-mono text-sm text-muted-foreground'>{value}</code>

@@ -133,14 +133,14 @@ export function SentryFeedbackDialog({ triggerButton }: SentryFeedbackDialogProp
         </AlertDialogHeader>
         <form onSubmit={handleSubmit} className='space-y-4 overflow-hidden'>
           <div className='space-y-2'>
-            <label className='text-sm font-medium text-foreground'>이름</label>
-            <div className='flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground'>
+            <label htmlFor='feedback-name' className='text-sm font-medium text-foreground'>이름</label>
+            <div id='feedback-name' className='flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground'>
               {userName || '로딩 중...'}
             </div>
           </div>
           <div className='space-y-2'>
-            <label className='text-sm font-medium text-foreground'>이메일</label>
-            <div className='flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground'>
+            <label htmlFor='feedback-email' className='text-sm font-medium text-foreground'>이메일</label>
+            <div id='feedback-email' className='flex h-10 w-full items-center rounded-md border border-input bg-muted px-3 py-2 text-sm text-muted-foreground'>
               {userEmail || '로딩 중...'}
             </div>
           </div>
@@ -160,7 +160,7 @@ export function SentryFeedbackDialog({ triggerButton }: SentryFeedbackDialogProp
             />
           </div>
           <div className='min-w-0 space-y-2'>
-            <label className='text-sm font-medium text-foreground'>스크린샷 (선택)</label>
+            <label htmlFor='screenshot' className='text-sm font-medium text-foreground'>스크린샷 (선택)</label>
             {screenshotFile ? (
               <div className='flex min-w-0 items-center gap-2 rounded-md border border-input bg-muted/50 p-2'>
                 {isUploading ? (

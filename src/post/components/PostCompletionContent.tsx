@@ -131,12 +131,12 @@ function highlightMessageParts(message: string, highlight: CompletionHighlight) 
     // 정규식 패턴 생성 (키워드 모두 OR)
     const pattern = new RegExp(`(${sortedKeywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "g")
     const parts = message.split(pattern)
-    return parts.map((part, i) =>
+    return parts.map((part) =>
         sortedKeywords.includes(part) ? (
             // eslint-disable-next-line tailwindcss/no-custom-classname -- dynamic color class
-            <span key={i} className={`text- font-bold${highlight.color}-500`}>{part}</span>
+            <span key={part} className={`text- font-bold${highlight.color}-500`}>{part}</span>
         ) : (
-            <span key={i}>{part}</span>
+            <span key={part}>{part}</span>
         )
     )
 }

@@ -71,7 +71,9 @@ export default function CountupWritingTimer({
               : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
         )}
       >
-        {reached ? "완료" : status === WritingStatus.Writing ? "쓰는 중" : "일시정지"}
+        {reached && "완료"}
+        {!reached && status === WritingStatus.Writing && "쓰는 중"}
+        {!reached && status !== WritingStatus.Writing && "일시정지"}
       </div>
     </div>
   )

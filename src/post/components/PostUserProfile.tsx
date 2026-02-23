@@ -34,34 +34,33 @@ export const PostUserProfile: React.FC<PostUserProfileProps> = ({
     {isLoading ? (
       <Skeleton className='size-7 rounded-full' />
     ) : (
-      <ComposedAvatar
-        src={authorData?.profilePhotoURL || authorData?.profileImageURL}
-        alt={authorData?.realName || authorData?.displayName || 'User'}
-        fallback={authorData?.realName?.[0] || authorData?.displayName?.[0] || 'U'}
-        size={36}
-        className='group/profile min-h-[44px] min-w-[44px] cursor-pointer transition-all duration-150 active:scale-95 active:bg-accent/20'
+      <button
+        type='button'
         onClick={onClickProfile}
-        role='button'
-        tabIndex={0}
         aria-label='작성자 프로필로 이동'
-        onKeyDown={(e) => handleKeyDown(e, onClickProfile)}
-      />
+        className='group/profile min-h-[44px] min-w-[44px] cursor-pointer rounded-full transition-all duration-150 active:scale-95 active:bg-accent/20'
+      >
+        <ComposedAvatar
+          src={authorData?.profilePhotoURL || authorData?.profileImageURL}
+          alt={authorData?.realName || authorData?.displayName || 'User'}
+          fallback={authorData?.realName?.[0] || authorData?.displayName?.[0] || 'U'}
+          size={36}
+        />
+      </button>
     )}
     <div className='ml-2'>
       {isLoading ? (
         <Skeleton className='h-4 w-20' />
       ) : (
         <div className='flex flex-col gap-1'>
-          <p
+          <button
+            type='button'
             className='flex cursor-pointer items-center text-sm font-medium text-foreground/90 transition-colors duration-150 active:text-primary group-hover/profile:text-primary group-hover/profile:underline'
             onClick={onClickProfile}
-            role='button'
-            tabIndex={0}
             aria-label='작성자 프로필로 이동'
-            onKeyDown={(e) => handleKeyDown(e, onClickProfile)}
           >
             {authorData?.displayName}
-          </p>
+          </button>
           {(streak || isStreakLoading || (badges && badges.length > 0)) && (
             <div className='flex flex-wrap items-center gap-1'>
               <PostingStreakBadge streak={streak} isLoading={isStreakLoading} />
@@ -75,11 +74,3 @@ export const PostUserProfile: React.FC<PostUserProfileProps> = ({
     </div>
   </div>
 );
-
-// 키보드 접근성: role="button"에서 Enter/Space로 클릭 지원
-function handleKeyDown(e: React.KeyboardEvent, onClick: (e: React.KeyboardEvent | React.MouseEvent) => void) {
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault();
-    onClick(e);
-  }
-}
