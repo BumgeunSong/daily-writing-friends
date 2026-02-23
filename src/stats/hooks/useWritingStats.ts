@@ -19,7 +19,7 @@ import type { User } from '@/user/model/User';
  */
 export function useWritingStats(users: User[], currentUserId?: string) {
   // Use sorted string of IDs for stable query key (avoids new array reference on every render)
-  const userIdsKey = users.map(u => u.uid).sort().join(',');
+  const userIdsKey = users.map(u => u.uid).sort((a, b) => a.localeCompare(b)).join(',');
 
   return useQuery({
     queryKey: ['writingStats-v2', userIdsKey, currentUserId],
