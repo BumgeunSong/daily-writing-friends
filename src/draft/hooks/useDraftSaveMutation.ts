@@ -3,6 +3,7 @@ import { MutableRefObject } from 'react';
 import { toast } from 'sonner';
 import { Draft } from '@/draft/model/Draft';
 import { saveDraft } from '@/draft/utils/draftUtils';
+import { SupabaseWriteError } from '@/shared/api/supabaseClient';
 
 interface UseDraftSaveMutationProps {
   draftIdRef: MutableRefObject<string | null>;
@@ -49,12 +50,9 @@ export function useDraftSaveMutation({
     },
     retry: (failureCount, error) => {
       if (failureCount >= 3) return false;
-      const isNetworkError =
-        error instanceof Error &&
-        (error.message?.includes('fetch') ||
-         error.message?.includes('network') ||
-         error.message?.includes('timed out'));
-      return isNetworkError;
+      if (error instanceof SupabaseWriteError) return false;
+      if (error instanceof TypeError) return false;
+      return true;
     },
     retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 8000),
     onError: (error: Error) => {
