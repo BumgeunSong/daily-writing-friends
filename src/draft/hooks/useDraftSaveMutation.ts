@@ -22,6 +22,7 @@ export function useDraftSaveMutation({
   onSaved,
 }: UseDraftSaveMutationProps) {
   return useMutation({
+    mutationKey: ['draft', 'save', boardId],
     mutationFn: async () => {
       if (!userId || !boardId) throw new Error('로그인 또는 게시판 정보가 없습니다.');
 
@@ -46,7 +47,15 @@ export function useDraftSaveMutation({
       onSaved?.(savedDraft);
       return savedDraft;
     },
-    retry: 3,
+    retry: (failureCount, error) => {
+      if (failureCount >= 3) return false;
+      const isNetworkError =
+        error instanceof Error &&
+        (error.message?.includes('fetch') ||
+         error.message?.includes('network') ||
+         error.message?.includes('timed out'));
+      return isNetworkError;
+    },
     retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 8000),
     onError: (error: Error) => {
       const isTimeout = error.message?.includes('timed out');
