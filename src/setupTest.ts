@@ -14,12 +14,12 @@ expect.extend({
         message: () => `expected ${received} not to be an empty element`,
         pass: true,
       };
-    } 
+    } else {
       return {
         message: () => `expected ${received} to be an empty element`,
         pass: false,
       };
-    
+    }
   },
 });
 
