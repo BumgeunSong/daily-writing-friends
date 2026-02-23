@@ -589,3 +589,4 @@ SUPABASE_SERVICE_ROLE_KEY=<key>
 - Notifications remain materialized (explicit table, not computed)
 - Client uses Supabase `anon` key with auth session (RLS enforced via `auth.uid()`)
 - Firebase Storage는 아직 Firebase에 의존 (별도 마이그레이션 필요)
+- **`Timestamp.fromDate()` 변환 누락 주의**: 대부분의 엔티티는 Supabase API 레이어(`supabaseReads.ts` 등)에서 ISO 문자열을 `Timestamp.fromDate()`로 변환하여 기존 `.toDate()` 호출이 동작함. 그러나 `Draft`는 이 변환 레이어 없이 직접 문자열을 반환하여 `.toDate()` 런타임 에러 발생 (fix/savedAt-toDate-error에서 수정). 새 Supabase 쓰기 함수 추가 시 `Timestamp` 변환 여부를 확인하거나, 소비 측에서 문자열로 처리할 것.
