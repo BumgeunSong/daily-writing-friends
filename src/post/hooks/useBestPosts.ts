@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useState, useEffect, useMemo } from 'react';
 import { fetchBestPosts, isWithinDays } from '@/post/api/post';
-import { Post } from '@/post/model/Post';
+import type { Post } from '@/post/model/Post';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { getBlockedByUsers } from '@/user/api/user';
 

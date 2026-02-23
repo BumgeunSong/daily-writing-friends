@@ -1,5 +1,5 @@
 import { Loader2, AlertCircle } from 'lucide-react';
-import React from 'react';
+import type React from 'react';
 
 interface StatusMessageProps {
   isLoading?: boolean;

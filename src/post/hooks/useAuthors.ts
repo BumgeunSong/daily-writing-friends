@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useCallback, useState, useEffect } from 'react';
 import { getHourBasedSeed, shuffleArray } from '@/shared/utils/shuffleUtils';
 import { fetchUsersWithBoardPermission } from '@/user/api/user';
-import { User } from '@/user/model/User';
+import type { User } from '@/user/model/User';
 
 /**
  * 매 시간마다 작성자 목록을 섞어서 반환하는 커스텀 훅

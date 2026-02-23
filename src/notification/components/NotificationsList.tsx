@@ -1,4 +1,4 @@
-import { Notification } from '@/notification/model/Notification';
+import type { Notification } from '@/notification/model/Notification';
 import { CardContent } from '@/shared/ui/card';
 import { NotificationItem } from './NotificationItem';
 

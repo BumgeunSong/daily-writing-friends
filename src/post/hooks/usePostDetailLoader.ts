@@ -1,4 +1,4 @@
-import { LoaderFunctionArgs } from 'react-router-dom';
+import type { LoaderFunctionArgs } from 'react-router-dom';
 import { fetchPost } from '@/post/utils/postUtils';
 import { getCurrentUser } from '@/shared/utils/authUtils';
 import { fetchUser } from '@/user/api/user';

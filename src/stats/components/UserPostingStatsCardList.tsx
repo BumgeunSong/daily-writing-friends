@@ -1,4 +1,4 @@
-import { WritingStats } from '@/stats/model/WritingStats'
+import type { WritingStats } from '@/stats/model/WritingStats'
 import { UserPostingStatsCard } from './UserPostingStatsCard'
 import { UserPostingStatsCardSkeleton } from './UserPostingStatsCardSkeleton'
 

@@ -1,5 +1,5 @@
 import { User as UserIcon } from 'lucide-react';
-import React from 'react';
+import type React from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from './avatar';
 
 interface ComposedAvatarProps extends React.HTMLAttributes<HTMLDivElement> {

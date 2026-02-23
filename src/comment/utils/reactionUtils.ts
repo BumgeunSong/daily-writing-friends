@@ -1,4 +1,4 @@
-import { Reaction } from "../model/Reaction";
+import type { Reaction } from "../model/Reaction";
 
 /**
  * 리액션을 이모지별로 그룹화하여 반환합니다.

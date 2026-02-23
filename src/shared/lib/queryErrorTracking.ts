@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/react';
-import { Query, Mutation } from '@tanstack/react-query';
+import type { Query, Mutation } from '@tanstack/react-query';
 import { FirebaseError } from 'firebase/app';
 import { addSentryBreadcrumb, setSentryContext, setSentryTags } from '@/sentry';
 import { trackFirebasePermissionError, getPermissionErrorHints } from '@/shared/utils/firebaseErrorTracking';

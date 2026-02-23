@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { useAuthors } from '@/post/hooks/useAuthors';
 import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
 import { ScrollArea, ScrollBar } from '@/shared/ui/scroll-area';

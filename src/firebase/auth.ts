@@ -1,13 +1,14 @@
 // src/firebase/auth.ts
 
-import {
+import type {
   Auth,
   GoogleAuthProvider,
+  UserCredential} from 'firebase/auth';
+import {
   signInWithPopup,
   signInWithEmailAndPassword,
   signInWithCustomToken,
   signOut,
-  UserCredential,
   setPersistence,
   browserLocalPersistence,
 } from 'firebase/auth';

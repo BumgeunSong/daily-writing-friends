@@ -1,13 +1,13 @@
 import { getDateKey } from '@/shared/utils/dateUtils';
-import { Commenting } from '@/user/model/Commenting';
-import { Replying } from '@/user/model/Replying';
+import type { Commenting } from '@/user/model/Commenting';
+import type { Replying } from '@/user/model/Replying';
 
-export type CommentingContribution = {
+export interface CommentingContribution {
   createdAt: string; // YYYY-MM-DD
   countOfCommentAndReplies: number | null;
   isHoliday?: boolean;
   holidayName?: string;
-};
+}
 
 export function aggregateCommentingContributions(
   commentings: Commenting[],

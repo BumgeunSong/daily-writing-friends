@@ -1,16 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
-import { Posting } from '@/post/model/Posting';
+import type { Posting } from '@/post/model/Posting';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import {
   fetchPostingDataForContributions,
   createUserInfo,
 } from '@/stats/api/stats';
-import { WritingStats } from '@/stats/model/WritingStats';
+import type { WritingStats } from '@/stats/model/WritingStats';
 import {
   sortWritingStats,
   createContributions,
 } from '@/stats/utils/writingStatsUtils';
-import { User } from '@/user/model/User';
+import type { User } from '@/user/model/User';
 
 /**
  * Fetches writing stats for multiple users

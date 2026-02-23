@@ -1,8 +1,11 @@
 // src/firebase/emulator.ts
 
-import { Firestore, connectFirestoreEmulator } from 'firebase/firestore';
-import { FirebaseStorage, connectStorageEmulator } from 'firebase/storage';
-import { Auth, connectAuthEmulator } from 'firebase/auth';
+import type { Firestore} from 'firebase/firestore';
+import { connectFirestoreEmulator } from 'firebase/firestore';
+import type { FirebaseStorage} from 'firebase/storage';
+import { connectStorageEmulator } from 'firebase/storage';
+import type { Auth} from 'firebase/auth';
+import { connectAuthEmulator } from 'firebase/auth';
 import { ERROR_MESSAGES } from './constants';
 import { createEmulatorConfig, shouldUseEmulators } from './utils';
 

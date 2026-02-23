@@ -1,8 +1,9 @@
+import type {
+  HasCreatedAt} from './types';
 import {
   WEEKS_TO_DISPLAY,
   DAYS_PER_WEEK,
-  SUNDAY,
-  HasCreatedAt,
+  SUNDAY
 } from './types';
 
 export function formatDateInKoreanTimezone(date: Date): string {

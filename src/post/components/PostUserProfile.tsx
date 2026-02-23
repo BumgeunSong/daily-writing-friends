@@ -2,7 +2,7 @@ import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { PostingStreakBadge } from '@/stats/components/PostingStreakBadge';
 import { WritingBadgeComponent } from '@/stats/components/WritingBadgeComponent';
-import { WritingBadge } from '@/stats/model/WritingStats';
+import type { WritingBadge } from '@/stats/model/WritingStats';
 
 export interface PostAuthorData {
   id: string;

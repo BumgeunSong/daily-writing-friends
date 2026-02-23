@@ -1,8 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { Board } from '@/board/model/Board'
+import type { Board } from '@/board/model/Board'
 import { activeUserFormSchema } from "@/login/model/formSchemas"
-import { JoinFormDataForActiveUser } from "@/login/model/join"
+import type { JoinFormDataForActiveUser } from "@/login/model/join"
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent } from '@/shared/ui/card'
 import { Label } from '@/shared/ui/label'

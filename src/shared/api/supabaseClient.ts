@@ -4,8 +4,8 @@
  * Singleton pattern with lazy initialization.
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import type { PostgrestError } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
+import type { PostgrestError , SupabaseClient } from '@supabase/supabase-js';
 
 let supabaseInstance: SupabaseClient | null = null;
 

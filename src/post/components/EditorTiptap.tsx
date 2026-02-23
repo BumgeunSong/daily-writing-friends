@@ -2,7 +2,7 @@ import { useImperativeHandle, forwardRef, useEffect } from 'react';
 import { useEditorCopy } from '@/post/hooks/useEditorCopy';
 import { useTiptapEditor } from '@/post/hooks/useTiptapEditor';
 import { useTiptapImageUpload } from '@/post/hooks/useTiptapImageUpload';
-import { ProseMirrorDoc } from '@/post/model/Post';
+import type { ProseMirrorDoc } from '@/post/model/Post';
 import { CopyErrorBoundary } from './CopyErrorBoundary';
 import { EditorContentArea } from './EditorContentArea';
 import { ResponsiveEditorToolbar } from './ResponsiveEditorToolbar';

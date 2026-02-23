@@ -1,5 +1,5 @@
 import { Bell } from 'lucide-react';
-import React from 'react';
+import type React from 'react';
 
 export const NotificationsHeader: React.FC = () => {
     return (

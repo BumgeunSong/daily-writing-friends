@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Draft } from '@/draft/model/Draft';
+import type { Draft } from '@/draft/model/Draft';
 
 interface UsePostEditorProps {
   initialDraft: Draft | null;

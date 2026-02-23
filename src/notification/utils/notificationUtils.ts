@@ -1,4 +1,4 @@
-import { Notification } from "@/notification/model/Notification";
+import type { Notification } from "@/notification/model/Notification";
 
 /**
  * React Query의 notifications 쿼리 키를 생성하는 순수 함수

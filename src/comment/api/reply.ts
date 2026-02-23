@@ -1,4 +1,4 @@
-import { Reply } from '@/comment/model/Reply';
+import type { Reply } from '@/comment/model/Reply';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import {
   fetchRepliesFromSupabase,

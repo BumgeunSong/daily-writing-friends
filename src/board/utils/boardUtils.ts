@@ -1,4 +1,4 @@
-import { Board } from '../model/Board';
+import type { Board } from '../model/Board';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { fetchBoardsFromSupabase, fetchBoardByIdFromSupabase, fetchBoardTitleFromSupabase } from '@/shared/api/supabaseReads';
 

@@ -1,6 +1,6 @@
-import { Posting } from '@/post/model/Posting';
+import type { Posting } from '@/post/model/Posting';
 import { getDateKey } from '@/shared/utils/dateUtils';
-import { WritingStats, Contribution } from '@/stats/model/WritingStats';
+import type { WritingStats, Contribution } from '@/stats/model/WritingStats';
 
 /**
  * Accumulates posting content lengths by date

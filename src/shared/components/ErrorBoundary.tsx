@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/react';
-import { Component, ErrorInfo, ReactNode } from 'react';
+import type { ErrorInfo, ReactNode } from 'react';
+import { Component } from 'react';
 import { setSentryContext, setSentryTags } from '@/sentry';
 
 interface ErrorBoundaryProps {

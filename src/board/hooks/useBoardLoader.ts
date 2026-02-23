@@ -1,5 +1,5 @@
 import { FirebaseError } from 'firebase/app';
-import { LoaderFunctionArgs } from 'react-router-dom';
+import type { LoaderFunctionArgs } from 'react-router-dom';
 import { getCurrentUser } from '@/shared/utils/authUtils';
 import { trackFirebasePermissionError, getPermissionErrorHints } from '@/shared/utils/firebaseErrorTracking';
 import { getCurrentUserIdFromStorage } from '@/shared/utils/getCurrentUserId';

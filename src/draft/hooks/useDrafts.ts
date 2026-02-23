@@ -1,5 +1,6 @@
-import { useQuery, QueryObserverResult } from '@tanstack/react-query';
-import { Draft } from '@/draft/model/Draft';
+import type { QueryObserverResult } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import type { Draft } from '@/draft/model/Draft';
 import { getDrafts } from '@/draft/utils/draftUtils';
 
 interface UseDraftsResult {

@@ -1,4 +1,4 @@
-import React from "react"
+import type React from "react"
 import { Avatar, AvatarFallback } from "@/shared/ui/avatar"
 import { Skeleton } from "@/shared/ui/skeleton"
 
@@ -8,7 +8,7 @@ const CommentSkeleton: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <Avatar className="size-6">
-            <AvatarFallback className="bg-muted"></AvatarFallback>
+            <AvatarFallback className="bg-muted" />
           </Avatar>
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-3 w-32" />

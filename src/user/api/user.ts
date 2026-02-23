@@ -6,8 +6,8 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/firebase';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { fetchUserFromSupabase, fetchAllUsersFromSupabase, fetchUsersWithBoardPermissionFromSupabase } from '@/shared/api/supabaseReads';
-import { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
-import { User as FirebaseUser } from 'firebase/auth';
+import type { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
+import type { User as FirebaseUser } from 'firebase/auth';
 import { mapUserToSupabaseUpdate, mapBoardPermissionsToRows } from '@/user/utils/userMappers';
 
 // Supabase에서 User 데이터 읽기

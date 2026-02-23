@@ -1,7 +1,7 @@
 import { Loader2 } from 'lucide-react';
-import { RefObject } from 'react';
+import type { RefObject } from 'react';
 import NotificationsList from '@/notification/components/NotificationsList';
-import { Notification } from '@/notification/model/Notification';
+import type { Notification } from '@/notification/model/Notification';
 import { ScrollArea } from '@/shared/ui/scroll-area';
 
 interface NotificationsContentProps {

@@ -1,6 +1,6 @@
 import { Loader2 } from 'lucide-react';
-import React from 'react';
-import { Draft } from '@/draft/model/Draft';
+import type React from 'react';
+import type { Draft } from '@/draft/model/Draft';
 import { ScrollArea } from '@/shared/ui/scroll-area';
 import { DraftItem } from './DraftItem';
 

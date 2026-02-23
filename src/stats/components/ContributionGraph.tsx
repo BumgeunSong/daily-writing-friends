@@ -2,8 +2,8 @@ import { useMemo, memo } from 'react';
 import { cn } from '@/shared/utils/cn';
 import { ContributionItem } from '@/stats/components/ContributionItem';
 import { useContributionGridData, type ContributionType } from '@/stats/hooks/useContributionGrid';
-import { Contribution } from '@/stats/model/WritingStats';
-import { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
+import type { Contribution } from '@/stats/model/WritingStats';
+import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 import { WEEKS_TO_DISPLAY } from '@/stats/utils/contributionGridUtils';
 
 export type ContributionGraphProps =

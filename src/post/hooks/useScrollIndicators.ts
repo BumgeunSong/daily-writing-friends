@@ -1,4 +1,5 @@
-import { useRef, useState, useEffect, RefObject } from 'react';
+import type { RefObject } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 interface ScrollIndicators {
   scrollContainerRef: RefObject<HTMLDivElement>;

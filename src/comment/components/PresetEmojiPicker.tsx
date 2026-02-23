@@ -1,4 +1,4 @@
-import React from "react"
+import type React from "react"
 
 interface PresetEmojiPickerProps {
   emojis: string[]
@@ -10,8 +10,8 @@ interface PresetEmojiPickerProps {
 
 // 한 줄에 최대 6개씩 배치
 const getGridCols = (count: number) => {
-  if (count <= 3) return "grid-cols-" + count
-  if (count < 6) return "grid-cols-" + count
+  if (count <= 3) return `grid-cols-${  count}`
+  if (count < 6) return `grid-cols-${  count}`
   return "grid-cols-6"
 }
 

@@ -108,7 +108,7 @@ export function DebugInfo() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className='h-10 animate-pulse rounded bg-muted'></div>
+            <div className='h-10 animate-pulse rounded bg-muted' />
           ) : (
             <div className='flex items-center gap-4'>
               <code className='flex-1 break-all rounded-md bg-muted p-3 font-mono text-sm'>

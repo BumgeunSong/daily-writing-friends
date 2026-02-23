@@ -1,4 +1,4 @@
-import { UserCommentingStats } from '@/stats/hooks/useCommentingStats'
+import type { UserCommentingStats } from '@/stats/hooks/useCommentingStats'
 import { UserCommentStatsCard } from './UserCommentStatsCard'
 import { UserPostingStatsCardSkeleton } from './UserPostingStatsCardSkeleton'
 

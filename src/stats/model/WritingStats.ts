@@ -11,12 +11,12 @@ export interface WritingStats {
   recentStreak: number;
 }
 
-export type Contribution = {
+export interface Contribution {
   createdAt: string;
   contentLength: number | null;
   isHoliday?: boolean;
   holidayName?: string;
-};
+}
 
 export interface WritingBadge {
   name: string;

@@ -1,14 +1,15 @@
 import { isConfigurableHoliday } from '@/shared/utils/dateUtils';
-import { Contribution } from '@/stats/model/WritingStats';
-import { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
+import type { Contribution } from '@/stats/model/WritingStats';
+import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 import { calculateGridPositionDate } from './gridPosition';
 import { formatDateInKoreanTimezone, isDateWithinTodayInclusive } from './timeRange';
-import {
-  WEEKS_TO_DISPLAY,
-  WEEKDAYS_COUNT,
+import type {
   ContributionMatrix,
   ContributionDataMatrix,
-  ContributionData,
+  ContributionData} from './types';
+import {
+  WEEKS_TO_DISPLAY,
+  WEEKDAYS_COUNT
 } from './types';
 
 function createPostingPlaceholderWithZeroContent(

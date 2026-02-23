@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { Timestamp } from 'firebase/firestore';
 
-import { Post, PostVisibility, ProseMirrorDoc } from '@/post/model/Post';
+import type { Post, ProseMirrorDoc } from '@/post/model/Post';
+import { PostVisibility } from '@/post/model/Post';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { mapRowToPost } from '@/shared/api/supabaseReads';
 

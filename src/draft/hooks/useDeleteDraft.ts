@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Draft } from '@/draft/model/Draft';
+import type { Draft } from '@/draft/model/Draft';
 import { deleteDraft } from '@/draft/utils/draftUtils';
 import { toast } from '@/shared/hooks/use-toast';
 

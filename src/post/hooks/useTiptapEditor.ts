@@ -5,7 +5,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useRef, useEffect } from 'react';
-import { ProseMirrorDoc } from '@/post/model/Post';
+import type { ProseMirrorDoc } from '@/post/model/Post';
 import { sanitize } from '@/post/utils/sanitizeHtml';
 
 // Editor configuration constants

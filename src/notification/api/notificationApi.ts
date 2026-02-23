@@ -1,5 +1,5 @@
 import { fetchNotificationsFromSupabase } from '@/shared/api/supabaseReads';
-import { Notification } from '@/notification/model/Notification';
+import type { Notification } from '@/notification/model/Notification';
 import { Timestamp } from 'firebase/firestore';
 
 /**

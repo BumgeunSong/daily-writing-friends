@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchCommentingData } from '@/stats/api/stats';
-import { WritingBadge } from '@/stats/model/WritingStats';
+import type { WritingBadge } from '@/stats/model/WritingStats';
 import { calculateCommentTemperature } from '@/stats/utils/commentTemperature';
 import type { Commenting } from '@/user/model/Commenting';
 import type { Replying } from '@/user/model/Replying';

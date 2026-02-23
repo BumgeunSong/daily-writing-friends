@@ -1,5 +1,5 @@
 import { Helmet } from "react-helmet-async";
-import { Post } from "@/post/model/Post";
+import type { Post } from "@/post/model/Post";
 
 interface PostHelmetProps {
     post: Post;

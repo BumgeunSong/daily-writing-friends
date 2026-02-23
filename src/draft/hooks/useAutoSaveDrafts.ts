@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef, MutableRefObject } from 'react';
+import type { MutableRefObject } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useInterval } from 'react-simplikit';
 import { useDraftSaveMutation } from './useDraftSaveMutation';
 

@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Save } from 'lucide-react';
-import React, { useState, Suspense } from 'react';
+import type React from 'react';
+import { useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchPost, updatePost } from '@/post/utils/postUtils';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
