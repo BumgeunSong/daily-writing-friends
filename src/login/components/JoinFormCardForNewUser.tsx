@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { newUserFormSchema } from "@/login/model/formSchemas"
-import { JoinFormDataForNewUser } from "@/login/model/join"
+import type { JoinFormDataForNewUser } from "@/login/model/join"
 import { Button } from '@/shared/ui/button'
 import { Card, CardContent } from '@/shared/ui/card'
 import FormField from "./JoinFormField"

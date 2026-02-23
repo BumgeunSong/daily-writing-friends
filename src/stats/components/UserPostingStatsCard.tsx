@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { Card, CardContent } from '@/shared/ui/card';
-import { WritingStats } from '@/stats/model/WritingStats';
+import type { WritingStats } from '@/stats/model/WritingStats';
 import { ContributionGraph } from './ContributionGraph';
 import { WritingBadgeComponent } from './WritingBadgeComponent';
 

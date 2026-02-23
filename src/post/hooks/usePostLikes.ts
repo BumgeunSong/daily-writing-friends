@@ -2,7 +2,8 @@ import * as Sentry from '@sentry/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { firestore } from '@/firebase';
-import { createLike, deleteUserLike, GetLikesParams } from '@/post/api/like';
+import type { GetLikesParams } from '@/post/api/like';
+import { createLike, deleteUserLike } from '@/post/api/like';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useUser } from '@/user/hooks/useUser';
 

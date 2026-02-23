@@ -1,8 +1,8 @@
 import { memo, useMemo } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/ui/tooltip';
 import { cn } from '@/shared/utils/cn';
-import { Contribution } from '@/stats/model/WritingStats';
-import { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
+import type { Contribution } from '@/stats/model/WritingStats';
+import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 
 interface ContributionItemProps {
   contribution?: Contribution | CommentingContribution;

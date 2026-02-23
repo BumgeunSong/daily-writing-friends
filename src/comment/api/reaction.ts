@@ -1,4 +1,4 @@
-import { Reaction } from '@/comment/model/Reaction';
+import type { Reaction } from '@/comment/model/Reaction';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { fetchReactionsFromSupabase } from '@/shared/api/supabaseReads';
 

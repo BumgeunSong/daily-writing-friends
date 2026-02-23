@@ -1,15 +1,15 @@
 import { useState } from "react"
 import { toast } from "sonner"
-import { Board } from "@/board/model/Board"
+import type { Board } from "@/board/model/Board"
 import { showErrorToast } from "@/login/components/showErrorToast"
 import { useIsUserInWaitingList } from "@/login/hooks/useIsUserInWaitingList"
 import { useUpcomingBoard } from "@/login/hooks/useUpcomingBoard"
-import { JoinFormDataForNewUser } from "@/login/model/join"
+import type { JoinFormDataForNewUser } from "@/login/model/join"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { addUserToBoardWaitingList } from "@/board/utils/boardUtils"
 import { updateUser, createUserIfNotExists } from "@/user/api/user"
 import { useUserNickname } from "@/user/hooks/useUserNickname"
-import { User as FirebaseUser } from 'firebase/auth'
+import type { User as FirebaseUser } from 'firebase/auth'
 import JoinCompletePage from "./JoinCompletePage"
 import JoinFormCardForNewUser from './JoinFormCardForNewUser'
 import FormHeader from "./JoinFormHeader"

@@ -1,14 +1,18 @@
 // src/firebase.ts
 
 // Core Firebase imports (alphabetically ordered)
-import { Analytics, getAnalytics } from 'firebase/analytics';
+import type { Analytics} from 'firebase/analytics';
+import { getAnalytics } from 'firebase/analytics';
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { getInstallations } from 'firebase/installations';
-import { FirebasePerformance, getPerformance } from 'firebase/performance';
+import type { FirebasePerformance} from 'firebase/performance';
+import { getPerformance } from 'firebase/performance';
 import { getStorage } from 'firebase/storage';
-import { getAuth, GoogleAuthProvider, UserCredential } from 'firebase/auth';
-import { getRemoteConfig, RemoteConfig } from 'firebase/remote-config';
+import type { UserCredential } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import type { RemoteConfig } from 'firebase/remote-config';
+import { getRemoteConfig } from 'firebase/remote-config';
 
 // Internal imports (alphabetically ordered)
 import {

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { mapRowToReview, mapReviewToSupabaseRow, SupabaseReviewRow } from './reviewUtils';
-import { Review } from '@/login/model/Review';
+import type { SupabaseReviewRow } from './reviewUtils';
+import { mapRowToReview, mapReviewToSupabaseRow } from './reviewUtils';
+import type { Review } from '@/login/model/Review';
 
 describe('mapRowToReview', () => {
   it('maps all fields from Supabase row to Review', () => {

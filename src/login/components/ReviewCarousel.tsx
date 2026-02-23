@@ -61,9 +61,9 @@ export default function ReviewCarousel() {
 
           {/* Dot indicators */}
           <div className='mt-6 flex justify-center gap-2'>
-            {testimonialReviews.map((_, index) => (
+            {testimonialReviews.map((review, index) => (
               <button
-                key={index}
+                key={review.id}
                 onClick={() => handleDotClick(index)}
                 className={`size-2 rounded-full transition-all ${
                   selectedIndex === index ? 'w-6 bg-primary' : 'bg-muted-foreground/30'

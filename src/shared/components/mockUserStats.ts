@@ -1,4 +1,4 @@
-import { WritingStats } from "@/stats/model/WritingStats"
+import type { WritingStats } from "@/stats/model/WritingStats"
 
 export const mockUserStats: WritingStats = {
   user: {

@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore';
+import type { Timestamp } from 'firebase/firestore';
 
 // 특정 유저의 댓글 작성 내역을 나타낸다
 export interface Commenting {

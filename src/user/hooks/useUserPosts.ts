@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { Post } from '@/post/model/Post';
+import type { Post } from '@/post/model/Post';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { mapRowToPost } from '@/shared/api/supabaseReads';
 

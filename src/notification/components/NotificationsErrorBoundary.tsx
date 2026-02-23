@@ -1,5 +1,5 @@
 import { ErrorBoundary } from '@sentry/react';
-import React from 'react';
+import type React from 'react';
 
 const NotificationsFallback = () => {
   return (

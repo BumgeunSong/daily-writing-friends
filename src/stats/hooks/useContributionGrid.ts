@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useHolidays } from '@/shared/hooks/useHolidays';
-import { Contribution } from '@/stats/model/WritingStats';
-import { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
+import type { Contribution } from '@/stats/model/WritingStats';
+import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 import {
   processPostingContributions,
   processCommentingContributions,

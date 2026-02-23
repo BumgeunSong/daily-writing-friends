@@ -1,5 +1,5 @@
-import { Contribution } from '@/stats/model/WritingStats';
-import { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
+import type { Contribution } from '@/stats/model/WritingStats';
+import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 import { createEmptyMatrices, updateMatricesAtPosition } from './gridMatrix';
 import {
   calculateGridPosition,
@@ -8,7 +8,7 @@ import {
 } from './gridPosition';
 import { initializeGridWithPlaceholders } from './placeholders';
 import { getTimeRange, filterContributionsInTimeRange } from './timeRange';
-import {
+import type {
   ContributionMatrix,
   ContributionDataMatrix,
   ContributionData,

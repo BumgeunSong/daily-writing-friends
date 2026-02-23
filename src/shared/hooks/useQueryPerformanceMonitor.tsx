@@ -93,8 +93,8 @@ export function QueryPerformanceMonitor() {
       {performanceData.slowQueries.length > 0 && (
         <div style={{ marginTop: '5px', color: '#ff6b6b' }}>
           <div>⚠️ Slow Queries:</div>
-          {performanceData.slowQueries.map((sq, i) => (
-            <div key={i} style={{ fontSize: '10px', marginLeft: '10px' }}>
+          {performanceData.slowQueries.map((sq) => (
+            <div key={sq.queryKey} style={{ fontSize: '10px', marginLeft: '10px' }}>
               {sq.queryKey} ({Math.round(sq.duration / 1000)}s)
             </div>
           ))}

@@ -1,10 +1,10 @@
 import { useState } from "react"
 import { toast } from "sonner"
-import { Board } from "@/board/model/Board"
+import type { Board } from "@/board/model/Board"
 import { showErrorToast } from "@/login/components/showErrorToast"
 import { useIsUserInWaitingList } from "@/login/hooks/useIsUserInWaitingList"
 import { useUpcomingBoard } from "@/login/hooks/useUpcomingBoard"
-import { JoinFormDataForActiveUser } from "@/login/model/join"
+import type { JoinFormDataForActiveUser } from "@/login/model/join"
 import { useAuth } from '@/shared/hooks/useAuth'
 import { addUserToBoardWaitingList } from "@/board/utils/boardUtils"
 import { addReviewToBoard } from "@/shared/utils/reviewUtils"

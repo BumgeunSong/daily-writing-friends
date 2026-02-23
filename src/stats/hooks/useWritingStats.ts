@@ -1,16 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
-import { Posting } from '@/post/model/Posting';
+import type { Posting } from '@/post/model/Posting';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import {
   fetchPostingDataForContributions,
   createUserInfo,
 } from '@/stats/api/stats';
-import { WritingStats } from '@/stats/model/WritingStats';
+import type { WritingStats } from '@/stats/model/WritingStats';
 import {
   sortWritingStats,
   createContributions,
 } from '@/stats/utils/writingStatsUtils';
-import { User } from '@/user/model/User';
+import type { User } from '@/user/model/User';
 
 /**
  * Fetches writing stats for multiple users
@@ -19,7 +19,7 @@ import { User } from '@/user/model/User';
  */
 export function useWritingStats(users: User[], currentUserId?: string) {
   // Use sorted string of IDs for stable query key (avoids new array reference on every render)
-  const userIdsKey = users.map(u => u.uid).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)).join(',');
+  const userIdsKey = users.map(u => u.uid).sort((a, b) => a.localeCompare(b)).join(',');
 
   return useQuery({
     queryKey: ['writingStats-v2', userIdsKey, currentUserId],

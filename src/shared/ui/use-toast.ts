@@ -1,7 +1,7 @@
 // Shadcn UI 토스트 훅 (https://ui.shadcn.com/docs/components/toast)
 import { useEffect, useState } from "react"
 
-import {
+import type {
   ToastActionElement,
   ToastProps,
 } from '@/shared/ui/toast'
@@ -31,12 +31,12 @@ function generateId() {
 
 export type ToastActionType = typeof actionTypes
 
-type ActionType = {
+interface ActionType {
   type: ToastActionType[keyof ToastActionType]
   toast: Partial<ToasterToast> & { id?: string }
 }
 
-type State = {
+interface State {
   toasts: ToasterToast[]
 }
 

@@ -13,8 +13,8 @@ export function StatsLoadingState() {
         <ScrollArea className='h-full' id={STATS_SCROLL_ID}>
           <StatsNoticeBanner />
           <div className='grid grid-cols-1 gap-4 pb-20 md:grid-cols-2'>
-            {[...Array(5)].map((_, index) => (
-              <UserPostingStatsCardSkeleton key={index} />
+            {Array.from({ length: 5 }, (_, i) => (
+              <UserPostingStatsCardSkeleton key={`loading-skeleton-${i}`} />
             ))}
           </div>
         </ScrollArea>

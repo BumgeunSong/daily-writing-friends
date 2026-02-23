@@ -15,8 +15,8 @@ export function UserPostingStatsCardSkeleton() {
         <div className='flex flex-col items-end gap-2'>
           {/* Contribution graph skeleton - matches the 20 squares in grid */}
           <div className='grid w-24 grid-flow-col grid-rows-4 gap-1'>
-            {[...Array(20)].map((_, i) => (
-              <div key={i} className='aspect-square w-full animate-pulse rounded-sm bg-muted' />
+            {Array.from({ length: 20 }, (_, i) => (
+              <div key={`grid-skeleton-${i}`} className='aspect-square w-full animate-pulse rounded-sm bg-muted' />
             ))}
           </div>
         </div>

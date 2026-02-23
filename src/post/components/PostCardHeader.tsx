@@ -1,7 +1,8 @@
 import { Lock } from 'lucide-react';
 import { CardHeader } from '@/shared/ui/card';
-import { WritingBadge } from '@/stats/model/WritingStats';
-import { PostAuthorData, PostUserProfile } from './PostUserProfile';
+import type { WritingBadge } from '@/stats/model/WritingStats';
+import type { PostAuthorData} from './PostUserProfile';
+import { PostUserProfile } from './PostUserProfile';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-function -- Fallback for optional click handler
 const noopClickHandler = () => {};

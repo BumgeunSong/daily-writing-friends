@@ -1,5 +1,5 @@
-import { JoinFormDataForActiveUser } from "@/login/model/join";
-import { Review } from "@/login/model/Review";
+import type { JoinFormDataForActiveUser } from "@/login/model/join";
+import type { Review } from "@/login/model/Review";
 import { getSupabaseClient, throwOnError } from "@/shared/api/supabaseClient";
 
 // --- Pure mappers (testable) ---

@@ -1,11 +1,12 @@
-import {
-  WEEKS_TO_DISPLAY,
-  WEEKDAYS_COUNT,
+import type {
   ContributionMatrix,
   ContributionDataMatrix,
   ContributionData,
   GridPosition,
-  GridResult,
+  GridResult} from './types';
+import {
+  WEEKS_TO_DISPLAY,
+  WEEKDAYS_COUNT
 } from './types';
 
 export function createEmptyMatrices(): {

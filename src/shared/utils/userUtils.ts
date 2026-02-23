@@ -1,4 +1,4 @@
-import { User } from '@/user/model/User';
+import type { User } from '@/user/model/User';
 
 /**
  * 사용자의 표시명을 가져옵니다.

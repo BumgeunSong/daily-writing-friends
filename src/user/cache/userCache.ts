@@ -1,5 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-import { User } from '@/user/model/User';
+import type { User } from '@/user/model/User';
 
 const CACHE_EXPIRE_MS = 1000 * 60 * 60 * 24; // 24시간
 

@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/react'
-import { toast as toastFn } from 'sonner'
+import type { toast as toastFn } from 'sonner'
 
 /**
  * 에러 발생 시 토스트 메시지를 표시하는 함수

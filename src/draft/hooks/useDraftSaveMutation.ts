@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
-import { MutableRefObject } from 'react';
+import type { MutableRefObject } from 'react';
 import { toast } from 'sonner';
-import { Draft } from '@/draft/model/Draft';
+import type { Draft } from '@/draft/model/Draft';
 import { saveDraft } from '@/draft/utils/draftUtils';
 import { SupabaseWriteError } from '@/shared/api/supabaseClient';
 

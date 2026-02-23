@@ -1,8 +1,9 @@
 import { render, screen } from '@testing-library/react';
-import { Timestamp } from 'firebase/firestore';
+import type { Timestamp } from 'firebase/firestore';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
-import { Notification, NotificationType } from '@/notification/model/Notification';
+import type { Notification} from '@/notification/model/Notification';
+import { NotificationType } from '@/notification/model/Notification';
 import { NotificationItem } from '../NotificationItem';
 
 // Mock Firebase Timestamp

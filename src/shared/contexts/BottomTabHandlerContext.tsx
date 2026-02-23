@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useCallback, useState, ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import React, { createContext, useContext, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export type TabName = 'Home' | 'Stats' | 'Notifications' | 'User';

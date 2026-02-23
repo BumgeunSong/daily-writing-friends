@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { getDateRange } from '@/stats/api/stats';
-import { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
+import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 import { createUserCommentingStats, sortCommentingStats } from '@/stats/utils/commentingStatsUtils';
 import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
-import { User } from '@/user/model/User';
+import type { User } from '@/user/model/User';
 
-export type UserCommentingStats = {
+export interface UserCommentingStats {
   user: {
     id: string;
     nickname: string | null;
@@ -15,7 +15,7 @@ export type UserCommentingStats = {
     bio: string | null;
   };
   contributions: CommentingContribution[];
-};
+}
 
 async function fetchMultipleUserCommentingStats(users: User[], currentUserId?: string): Promise<UserCommentingStats[]> {
   if (!users.length) return [];
@@ -54,7 +54,7 @@ async function fetchSingleUserCommentingStats(
  */
 export function useCommentingStats(users: User[], currentUserId?: string) {
   // Use sorted string of IDs for stable query key (avoids new array reference on every render)
-  const userIdsKey = users.map(u => u.uid).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)).join(',');
+  const userIdsKey = users.map(u => u.uid).sort((a, b) => a.localeCompare(b)).join(',');
 
   return useQuery({
     queryKey: ['commentingStats', userIdsKey, currentUserId],

@@ -1,14 +1,15 @@
 import { Timestamp } from 'firebase/firestore';
-import { Posting } from '@/post/model/Posting';
+import type { Posting } from '@/post/model/Posting';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { createUserInfo } from '@/stats/utils/userInfoUtils';
 import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
 import { fetchUser } from '@/user/api/user';
-import { User } from '@/user/model/User';
+import type { User } from '@/user/model/User';
+import type {
+  SupabasePosting} from '@/shared/api/supabaseReads';
 import {
   fetchPostingsFromSupabase,
-  fetchPostingsByDateRangeFromSupabase,
-  SupabasePosting,
+  fetchPostingsByDateRangeFromSupabase
 } from '@/shared/api/supabaseReads';
 
 // Re-export for backward compatibility

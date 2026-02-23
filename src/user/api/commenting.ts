@@ -1,11 +1,12 @@
 import { Timestamp } from 'firebase/firestore';
-import { Commenting } from '@/user/model/Commenting';
-import { Replying } from '@/user/model/Replying';
+import type { Commenting } from '@/user/model/Commenting';
+import type { Replying } from '@/user/model/Replying';
+import type {
+  SupabaseCommenting,
+  SupabaseReplying} from '@/shared/api/supabaseReads';
 import {
   fetchCommentingsByDateRangeFromSupabase,
-  fetchReplyingsByDateRangeFromSupabase,
-  SupabaseCommenting,
-  SupabaseReplying,
+  fetchReplyingsByDateRangeFromSupabase
 } from '@/shared/api/supabaseReads';
 
 // Helper: Convert Supabase result to Commenting format (for type compatibility)

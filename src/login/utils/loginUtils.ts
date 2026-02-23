@@ -1,4 +1,4 @@
-import { Board } from "@/board/model/Board";
+import type { Board } from "@/board/model/Board";
 import { ROUTES } from "@/login/constants";
 
 // ============================================================================

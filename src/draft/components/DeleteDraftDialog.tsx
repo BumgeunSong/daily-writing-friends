@@ -1,5 +1,5 @@
 import { Loader2 } from 'lucide-react';
-import { Draft } from '@/draft/model/Draft';
+import type { Draft } from '@/draft/model/Draft';
 import {
   AlertDialog,
   AlertDialogAction,

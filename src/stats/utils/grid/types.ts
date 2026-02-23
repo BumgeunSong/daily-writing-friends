@@ -1,5 +1,5 @@
-import { Contribution } from '@/stats/model/WritingStats';
-import { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
+import type { Contribution } from '@/stats/model/WritingStats';
+import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 
 export const WEEKS_TO_DISPLAY = 4;
 export const WEEKDAYS_COUNT = 5;

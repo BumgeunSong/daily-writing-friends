@@ -4,7 +4,8 @@ import { Timestamp } from 'firebase/firestore';
 import React from 'react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { fetchNotifications } from '@/notification/api/notificationApi';
-import { Notification, NotificationType } from '@/notification/model/Notification';
+import type { Notification} from '@/notification/model/Notification';
+import { NotificationType } from '@/notification/model/Notification';
 import { useNotifications } from '../useNotifications';
 
 // Mock supabaseReads

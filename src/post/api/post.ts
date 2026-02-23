@@ -1,4 +1,4 @@
-import { Post } from '@/post/model/Post';
+import type { Post } from '@/post/model/Post';
 import { fetchRecentPostsFromSupabase, fetchBestPostsFromSupabase } from '@/shared/api/supabaseReads';
 
 /**

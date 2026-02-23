@@ -1,5 +1,5 @@
 import { Badge } from "@/shared/ui/badge"
-import { WritingBadge } from "@/stats/model/WritingStats"
+import type { WritingBadge } from "@/stats/model/WritingStats"
 
 export interface WritingBadgeComponentProps {
     badge: WritingBadge

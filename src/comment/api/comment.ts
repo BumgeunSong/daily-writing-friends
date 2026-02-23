@@ -1,4 +1,4 @@
-import { Comment } from '@/comment/model/Comment';
+import type { Comment } from '@/comment/model/Comment';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { fetchCommentsFromSupabase, fetchCommentByIdFromSupabase } from '@/shared/api/supabaseReads';
 

@@ -1,5 +1,5 @@
 // src/types/User.ts
-import { Timestamp } from 'firebase/firestore';
+import type { Timestamp } from 'firebase/firestore';
 
 export interface User {
   uid: string; // Unique identifier for the user
@@ -29,15 +29,15 @@ export interface User {
   };
 }
 
-export type UserRequiredFields = {
+export interface UserRequiredFields {
   uid: string;
   realName: string | null;
   nickname: string | null;
   profilePhotoURL: string | null;
   email: string | null;
-};
+}
 
-export type UserOptionalFields = {
+export interface UserOptionalFields {
   bio: string | null;
   phoneNumber: string | null;
   referrer: string | null;
@@ -55,4 +55,4 @@ export type UserOptionalFields = {
   profile?: {
     timezone?: string;
   };
-};
+}

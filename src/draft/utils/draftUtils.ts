@@ -1,4 +1,4 @@
-import { Draft } from '@/draft/model/Draft';
+import type { Draft } from '@/draft/model/Draft';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 
 export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: string }, userId: string): Promise<Draft> {
@@ -113,6 +113,6 @@ export const getDraftTitle = (draft: Draft) => {
 export const getDraftPreview = (draft: Draft) => {
   const plainText = draft.content.replace(/<[^>]*>/g, ''); // HTML 태그 제거
   return plainText.length > 50
-    ? plainText.substring(0, 50) + '...'
+    ? `${plainText.substring(0, 50)  }...`
     : plainText || '(내용 없음)';
 };

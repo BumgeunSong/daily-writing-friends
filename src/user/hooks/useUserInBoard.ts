@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchUsersWithBoardPermission } from '@/user/api/user';
-import { User } from '@/user/model/User';
+import type { User } from '@/user/model/User';
 
 export function useUserInBoard(boardIds: string[]) {
   const { data, isLoading, error } = useQuery<User[]>(

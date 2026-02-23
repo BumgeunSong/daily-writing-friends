@@ -1,12 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
+import type {
+  GetReactionsParams
+} from '@/comment/api/reaction';
 import {
   getReactions,
   createReaction,
-  deleteUserReaction,
-  GetReactionsParams
+  deleteUserReaction
 } from '@/comment/api/reaction';
-import { GroupedReaction, ReactionUser } from '@/comment/model/Reaction';
+import type { GroupedReaction, ReactionUser } from '@/comment/model/Reaction';
 import { groupReactionsByEmoji } from '@/comment/utils/reactionUtils';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { fetchUser } from '@/user/api/user';

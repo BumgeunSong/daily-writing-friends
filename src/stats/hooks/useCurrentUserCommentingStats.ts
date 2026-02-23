@@ -3,8 +3,8 @@ import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { getDateRange } from '@/stats/api/stats';
 import { createUserCommentingStats } from '@/stats/utils/commentingStatsUtils';
 import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
-import { User } from '@/user/model/User';
-import { UserCommentingStats } from './useCommentingStats';
+import type { User } from '@/user/model/User';
+import type { UserCommentingStats } from './useCommentingStats';
 
 /**
  * Fetches commenting stats for current user only (prioritized loading)

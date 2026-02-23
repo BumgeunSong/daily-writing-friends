@@ -1,5 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { useRef, MutableRefObject } from 'react';
+import type { MutableRefObject } from 'react';
+import { useRef } from 'react';
 import { describe, it, expect, vi } from 'vitest';
 
 /**

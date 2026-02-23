@@ -5,7 +5,7 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { updateUser, uploadUserProfilePhoto } from '@/user/api/user';
 import { removeCachedUserData } from '@/user/cache/userCache';
 import { updateProfile } from 'firebase/auth';
-import { User } from '../model/User';
+import type { User } from '../model/User';
 
 interface UpdateUserDataParams {
   userId: string;

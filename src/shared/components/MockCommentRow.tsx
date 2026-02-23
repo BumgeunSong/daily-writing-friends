@@ -1,5 +1,5 @@
 import { Timestamp } from 'firebase/firestore';
-import { Comment } from '@/comment/model/Comment';
+import type { Comment } from '@/comment/model/Comment';
 import { sanitizeCommentContent } from '@/post/utils/contentUtils';
 import { AvatarFallback, AvatarImage, Avatar } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';

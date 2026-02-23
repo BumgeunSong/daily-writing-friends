@@ -1,6 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { Card, CardContent } from '@/shared/ui/card';
-import { UserCommentingStats } from '@/stats/hooks/useCommentingStats';
+import type { UserCommentingStats } from '@/stats/hooks/useCommentingStats';
 import { ContributionGraph } from './ContributionGraph';
 
 interface UserCommentStatsCardProps {

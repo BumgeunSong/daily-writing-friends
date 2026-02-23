@@ -1,12 +1,13 @@
+import type {
+  GridPosition,
+  HasCreatedAt} from './types';
 import {
   WEEKS_TO_DISPLAY,
   WEEKDAYS_COUNT,
   DAYS_PER_WEEK,
   SUNDAY,
   SATURDAY,
-  MILLISECONDS_PER_DAY,
-  GridPosition,
-  HasCreatedAt,
+  MILLISECONDS_PER_DAY
 } from './types';
 
 export function isWeekendDay(dayOfWeek: number): boolean {

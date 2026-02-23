@@ -1,4 +1,4 @@
-import { Contribution } from "@/stats/model/WritingStats";
+import type { Contribution } from "@/stats/model/WritingStats";
 
 interface ProcessedContributions {
     matrix: (number | null)[][]

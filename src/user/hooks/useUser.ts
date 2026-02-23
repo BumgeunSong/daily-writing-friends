@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchUser } from '@/user/api/user';
 import { getCachedUserData, cacheUserData } from '@/user/cache/userCache';
-import { User } from '@/user/model/User';
+import type { User } from '@/user/model/User';
 
 const USER_CACHE_VERSION = 'v2';
 

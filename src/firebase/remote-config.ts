@@ -1,6 +1,6 @@
 // src/firebase/remote-config.ts
 
-import { RemoteConfig } from 'firebase/remote-config';
+import type { RemoteConfig } from 'firebase/remote-config';
 import { REMOTE_CONFIG_FETCH_INTERVALS, TIME_CONSTANTS } from './constants';
 
 /**

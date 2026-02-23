@@ -1,8 +1,8 @@
 // src/components/Pages/BoardListPage.tsx
 import { useQuery } from '@tanstack/react-query';
-import React from 'react';
+import type React from 'react';
 import { Link } from 'react-router-dom';
-import { Board } from '@/board/model/Board';
+import type { Board } from '@/board/model/Board';
 import { fetchBoardsWithUserPermissions } from '@/board/utils/boardUtils';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
