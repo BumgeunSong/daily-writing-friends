@@ -1019,6 +1019,7 @@ export async function fetchBatchUsersBasic(userIds: string[]): Promise<BasicUser
 
 export interface UserIdRow {
   user_id: string;
+  created_at: string;
 }
 
 /**
@@ -1035,7 +1036,7 @@ async function fetchBatchUserIdRowsByDateRange(
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from(table)
-    .select('user_id')
+    .select('user_id, created_at')
     .in('user_id', userIds)
     .gte('created_at', start.toISOString())
     .lt('created_at', end.toISOString());
@@ -1050,9 +1051,13 @@ export const fetchBatchCommentUserIdsByDateRange = (
   userIds: string[], start: Date, end: Date,
 ) => fetchBatchUserIdRowsByDateRange('comments', userIds, start, end);
 
+export const fetchBatchCommentCountsByDateRange = fetchBatchCommentUserIdsByDateRange;
+
 export const fetchBatchReplyUserIdsByDateRange = (
   userIds: string[], start: Date, end: Date,
 ) => fetchBatchUserIdRowsByDateRange('replies', userIds, start, end);
+
+export const fetchBatchReplyCountsByDateRange = fetchBatchReplyUserIdsByDateRange;
 
 export interface PostDateRow {
   author_id: string;
