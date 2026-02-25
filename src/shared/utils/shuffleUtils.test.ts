@@ -123,7 +123,7 @@ describe('shuffleUtils', () => {
     it('should contain all original elements', () => {
       const input = [1, 2, 3, 4, 5];
       const result = shuffleArray(input, 12345);
-      expect(result.sort()).toEqual(input.sort());
+      expect(result.sort((a, b) => a - b)).toEqual(input.sort((a, b) => a - b));
     });
 
     it('should not modify original array', () => {
@@ -169,14 +169,14 @@ describe('shuffleUtils', () => {
       const input = ['a', 'b', 'c', 'd', 'e'];
       const result = shuffleArray(input, 12345);
       expect(result).toHaveLength(5);
-      expect(result.sort()).toEqual(['a', 'b', 'c', 'd', 'e']);
+      expect(result.sort((a, b) => a.localeCompare(b))).toEqual(['a', 'b', 'c', 'd', 'e']);
     });
 
     it('should work with object arrays', () => {
       const input = [{ id: 1 }, { id: 2 }, { id: 3 }];
       const result = shuffleArray(input, 12345);
       expect(result).toHaveLength(3);
-      expect(result.map((o) => o.id).sort()).toEqual([1, 2, 3]);
+      expect(result.map((o) => o.id).sort((a, b) => a - b)).toEqual([1, 2, 3]);
     });
 
     it('should actually shuffle elements (not return original order)', () => {

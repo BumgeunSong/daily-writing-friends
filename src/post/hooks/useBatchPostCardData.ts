@@ -25,7 +25,7 @@ export function useBatchPostCardData(posts: Post[]) {
     [posts],
   );
   const authorIdsKey = useMemo(
-    () => [...authorIds].sort().join(','),
+    () => [...authorIds].sort((a, b) => a.localeCompare(b)).join(','),
     [authorIds],
   );
 

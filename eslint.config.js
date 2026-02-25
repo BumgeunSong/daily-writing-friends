@@ -4,6 +4,7 @@ import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import prettier from 'eslint-config-prettier';
+import requireSortCompare from './eslint-local-rules/require-sort-compare.js';
 
 export default tseslint.config(
   // Global ignores
@@ -56,6 +57,17 @@ export default tseslint.config(
 
   // Prettier (must be last among extends — disables formatting rules)
   prettier,
+
+  // Local plugin
+  {
+    plugins: {
+      local: {
+        rules: {
+          'require-sort-compare': requireSortCompare,
+        },
+      },
+    },
+  },
 
   // Project rules
   {
@@ -113,6 +125,9 @@ export default tseslint.config(
       // Tier 2: Readability
       'no-else-return': 'warn',
       'prefer-template': 'warn',
+
+      // Tier 3: Sorting safety
+      'local/require-sort-compare': 'warn',
     },
   },
 );
