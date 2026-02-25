@@ -42,12 +42,14 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
       }
 
       const supabase = getSupabaseClient();
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('likes')
         .select('id')
         .eq('post_id', postId)
         .eq('user_id', currentUser.uid)
         .limit(1);
+
+      if (error) throw error;
 
       return { hasLiked: !!data && data.length > 0 };
     },
