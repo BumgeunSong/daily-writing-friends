@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { PostAuthorData } from '@/post/components/PostUserProfile';
+import type { PostCardPrefetchedData } from '@/post/hooks/useBatchPostCardData';
 import { type Post, PostVisibility } from '@/post/model/Post';
 import { getContentPreview } from '@/post/utils/contentUtils';
 import { usePostingStreak } from '@/stats/hooks/usePostingStreak';
@@ -18,10 +19,11 @@ export interface UsePostCardReturn {
   contentPreview: string | null;
 }
 
-export const usePostCard = (post: Post): UsePostCardReturn => {
-  const { userData, isLoading: isAuthorLoading } = useUser(post.authorId);
-  const { data: badges } = usePostProfileBadges(post.authorId);
-  const { data: streakData, isLoading: isStreakLoading } = usePostingStreak(post.authorId);
+export const usePostCard = (post: Post, prefetched?: PostCardPrefetchedData): UsePostCardReturn => {
+  // Skip individual fetches when prefetched data is available
+  const { userData, isLoading: isAuthorLoading } = useUser(prefetched ? null : post.authorId);
+  const { data: badges } = usePostProfileBadges(prefetched ? '' : post.authorId);
+  const { data: streakData, isLoading: isStreakLoading } = usePostingStreak(prefetched ? '' : post.authorId);
 
   const isPrivate = post.visibility === PostVisibility.PRIVATE;
   const contentPreview = useMemo(
@@ -29,21 +31,21 @@ export const usePostCard = (post: Post): UsePostCardReturn => {
     [post.content, isPrivate],
   );
 
-  const authorData: PostAuthorData = useMemo(
-    () => ({
+  const authorData: PostAuthorData = useMemo(() => {
+    if (prefetched) return prefetched.authorData;
+    return {
       id: post.authorId,
       displayName: userData ? getUserDisplayName(userData) : post.authorName,
       profileImageURL: userData?.profilePhotoURL || post.authorProfileImageURL || '',
-    }),
-    [post.authorId, userData, post.authorProfileImageURL],
-  );
+    };
+  }, [prefetched, post.authorId, userData, post.authorProfileImageURL]);
 
   return {
     authorData,
-    isAuthorLoading,
-    badges,
-    streak: streakData?.streak,
-    isStreakLoading,
+    isAuthorLoading: prefetched ? false : isAuthorLoading,
+    badges: prefetched ? prefetched.badges : badges,
+    streak: prefetched ? prefetched.streak : streakData?.streak,
+    isStreakLoading: prefetched ? false : isStreakLoading,
     isPrivate,
     contentPreview,
   };

@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { useNavigate } from 'react-router-dom';
 import PostCard from '@/post/components/PostCard';
+import { useBatchPostCardData } from '@/post/hooks/useBatchPostCardData';
 import { useRecentPosts } from '@/post/hooks/useRecentPosts';
 import { useScrollRestoration } from '@/post/hooks/useScrollRestoration';
 import StatusMessage from '@/shared/components/StatusMessage';
@@ -41,6 +42,7 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
   } = useRecentPosts(boardId, limitCount);
 
   const allPosts = postPages?.pages.flat() || [];
+  const { data: batchData } = useBatchPostCardData(allPosts);
 
   const { saveScrollPosition, restoreScrollPosition } = useScrollRestoration(`${boardId}-posts`);
 
@@ -117,6 +119,7 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
           post={post}
           onClick={() => handlePostClick(post.id)}
           onClickProfile={onClickProfile}
+          prefetchedData={batchData?.get(post.authorId)}
         />
       ))}
       <div ref={inViewRef} />
