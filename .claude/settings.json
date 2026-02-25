@@ -16,6 +16,25 @@
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/install-plugins.sh"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/sync-worktree-env.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/sync-worktree-env.sh"
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
