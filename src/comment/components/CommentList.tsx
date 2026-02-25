@@ -22,7 +22,10 @@ const CommentListContent: React.FC<CommentListProps> = ({
   const { comments } = useComments(boardId, postId);
 
   // Batch-prefetch reactions for all comments (seeds individual caches)
-  usePrefetchCommentReactions(boardId, postId, comments);
+  // Gate rendering until batch resolves to prevent N+1 race with useReactions()
+  const { isSuccess: isReactionsCacheReady } = usePrefetchCommentReactions(boardId, postId, comments);
+
+  if (!isReactionsCacheReady) return null;
 
   // 댓글 목록 렌더링
   return (
