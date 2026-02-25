@@ -1,6 +1,7 @@
 import type React from 'react';
 import CommentRow from '@/comment/components/CommentRow';
 import { useComments } from '@/comment/hooks/useComments';
+import { usePrefetchCommentReactions } from '@/comment/hooks/usePrefetchCommentReactions';
 import type { Comment } from '@/comment/model/Comment';
 import type { PostVisibility } from '@/post/model/Post';
 
@@ -19,6 +20,9 @@ const CommentListContent: React.FC<CommentListProps> = ({
   postVisibility,
 }) => {
   const { comments } = useComments(boardId, postId);
+
+  // Batch-prefetch reactions for all comments (seeds individual caches)
+  usePrefetchCommentReactions(boardId, postId, comments);
 
   // 댓글 목록 렌더링
   return (
