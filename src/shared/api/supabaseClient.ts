@@ -7,6 +7,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { PostgrestError , SupabaseClient } from '@supabase/supabase-js';
 import * as Sentry from '@sentry/react';
+import { addSentryBreadcrumb } from '@/sentry';
 
 const SLOW_WRITE_THRESHOLD_MS = 1000;
 
@@ -73,27 +74,27 @@ export function throwOnError(
   if (result.error) {
     const writeError = new SupabaseWriteError(result.error);
 
-    Sentry.addBreadcrumb({
-      message: operation ? `Supabase write failed: ${operation}` : 'Supabase write failed',
-      category: 'supabase.write',
-      level: 'error',
-      data: {
+    addSentryBreadcrumb(
+      operation ? `Supabase write failed: ${operation}` : 'Supabase write failed',
+      'supabase.write',
+      {
         code: result.error.code,
         message: result.error.message,
         details: result.error.details,
         operation,
       },
-    });
+      'error',
+    );
 
     Sentry.withScope((scope) => {
       scope.setContext('supabaseError', {
-        code: result.error!.code,
-        message: result.error!.message,
-        details: result.error!.details,
-        hint: result.error!.hint,
+        code: result.error.code,
+        message: result.error.message,
+        details: result.error.details,
+        hint: result.error.hint,
         operation,
       });
-      if (result.error!.code === '42501') {
+      if (result.error.code === '42501') {
         scope.setFingerprint(['supabase', 'permission-denied', operation ?? 'unknown']);
       }
       Sentry.captureException(writeError);
@@ -116,23 +117,18 @@ export async function executeTrackedWrite(
 ): Promise<void> {
   const startTime = Date.now();
 
-  Sentry.addBreadcrumb({
-    message: `Supabase write started: ${operation}`,
-    category: 'supabase.write',
-    level: 'info',
-    data: { operation },
-  });
+  addSentryBreadcrumb(`Supabase write started: ${operation}`, 'supabase.write', { operation });
 
   const result = await fn();
   const durationMs = Date.now() - startTime;
 
   if (durationMs >= SLOW_WRITE_THRESHOLD_MS) {
-    Sentry.addBreadcrumb({
-      message: `Slow Supabase write detected: ${operation}`,
-      category: 'supabase.write',
-      level: 'warning',
-      data: { operation, durationMs },
-    });
+    addSentryBreadcrumb(
+      `Slow Supabase write detected: ${operation}`,
+      'supabase.write',
+      { operation, durationMs },
+      'warning',
+    );
     console.warn(`[Supabase] Slow write detected: ${operation} took ${durationMs}ms`);
   }
 
