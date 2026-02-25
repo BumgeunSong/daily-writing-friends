@@ -1010,56 +1010,49 @@ export async function fetchBatchUsersBasic(userIds: string[]): Promise<BasicUser
     .from('users')
     .select('id, real_name, nickname, profile_photo_url')
     .in('id', userIds);
-  if (error) throw error;
+  if (error) {
+    console.error('Supabase batch users fetch error:', { userCount: userIds.length, error });
+    throw error;
+  }
   return (data || []) as BasicUserRow[];
 }
 
-export interface CommentCountRow {
+export interface UserIdRow {
   user_id: string;
-  created_at: string;
 }
 
 /**
- * Batch-fetch comment rows for multiple users within a date range.
- * Uses index: idx_comments_user_created
+ * Shared helper: batch-fetch user_id rows from comments or replies table.
+ * Uses indexes: idx_comments_user_created / idx_replies_user_created
  */
-export async function fetchBatchCommentCountsByDateRange(
+async function fetchBatchUserIdRowsByDateRange(
+  table: 'comments' | 'replies',
   userIds: string[],
   start: Date,
-  end: Date
-): Promise<CommentCountRow[]> {
+  end: Date,
+): Promise<UserIdRow[]> {
   if (userIds.length === 0) return [];
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
-    .from('comments')
-    .select('user_id, created_at')
+    .from(table)
+    .select('user_id')
     .in('user_id', userIds)
     .gte('created_at', start.toISOString())
     .lt('created_at', end.toISOString());
-  if (error) throw error;
-  return (data || []) as CommentCountRow[];
+  if (error) {
+    console.error(`Supabase batch ${table} fetch error:`, { userCount: userIds.length, start, end, error });
+    throw error;
+  }
+  return (data || []) as UserIdRow[];
 }
 
-/**
- * Batch-fetch reply rows for multiple users within a date range.
- * Uses index: idx_replies_user_created
- */
-export async function fetchBatchReplyCountsByDateRange(
-  userIds: string[],
-  start: Date,
-  end: Date
-): Promise<CommentCountRow[]> {
-  if (userIds.length === 0) return [];
-  const supabase = getSupabaseClient();
-  const { data, error } = await supabase
-    .from('replies')
-    .select('user_id, created_at')
-    .in('user_id', userIds)
-    .gte('created_at', start.toISOString())
-    .lt('created_at', end.toISOString());
-  if (error) throw error;
-  return (data || []) as CommentCountRow[];
-}
+export const fetchBatchCommentUserIdsByDateRange = (
+  userIds: string[], start: Date, end: Date,
+) => fetchBatchUserIdRowsByDateRange('comments', userIds, start, end);
+
+export const fetchBatchReplyUserIdsByDateRange = (
+  userIds: string[], start: Date, end: Date,
+) => fetchBatchUserIdRowsByDateRange('replies', userIds, start, end);
 
 export interface PostDateRow {
   author_id: string;
@@ -1079,7 +1072,10 @@ export async function fetchBatchPostDatesByDateRange(
     .in('author_id', userIds)
     .gte('created_at', start.toISOString())
     .lte('created_at', end.toISOString());
-  if (error) throw error;
+  if (error) {
+    console.error('Supabase batch posts fetch error:', { userCount: userIds.length, start, end, error });
+    throw error;
+  }
   return (data || []) as PostDateRow[];
 }
 

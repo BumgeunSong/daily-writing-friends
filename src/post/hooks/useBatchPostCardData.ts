@@ -4,8 +4,8 @@ import type { PostAuthorData } from '@/post/components/PostUserProfile';
 import type { Post } from '@/post/model/Post';
 import {
   fetchBatchUsersBasic,
-  fetchBatchCommentCountsByDateRange,
-  fetchBatchReplyCountsByDateRange,
+  fetchBatchCommentUserIdsByDateRange,
+  fetchBatchReplyUserIdsByDateRange,
   fetchBatchPostDatesByDateRange,
 } from '@/shared/api/supabaseReads';
 import { getRecentWorkingDays, getDateKey } from '@/shared/utils/dateUtils';
@@ -50,8 +50,8 @@ async function fetchBatchPostCardData(
   // 4 batch queries instead of 4N individual queries
   const [users, commentRows, replyRows, postRows] = await Promise.all([
     fetchBatchUsersBasic(authorIds),
-    fetchBatchCommentCountsByDateRange(authorIds, badgeDateRange.start, badgeDateRange.end),
-    fetchBatchReplyCountsByDateRange(authorIds, badgeDateRange.start, badgeDateRange.end),
+    fetchBatchCommentUserIdsByDateRange(authorIds, badgeDateRange.start, badgeDateRange.end),
+    fetchBatchReplyUserIdsByDateRange(authorIds, badgeDateRange.start, badgeDateRange.end),
     fetchBatchPostDatesByDateRange(authorIds, streakDateRange.start, streakDateRange.end),
   ]);
 
@@ -59,9 +59,9 @@ async function fetchBatchPostCardData(
   const usersMap = new Map(users.map(u => [u.id, u]));
 
   // Comment+reply total count per user (for badge temperature)
-  const commentCountMap = new Map<string, number>();
+  const activityCountMap = new Map<string, number>();
   for (const row of [...commentRows, ...replyRows]) {
-    commentCountMap.set(row.user_id, (commentCountMap.get(row.user_id) ?? 0) + 1);
+    activityCountMap.set(row.user_id, (activityCountMap.get(row.user_id) ?? 0) + 1);
   }
 
   // Post dates per user (for streak)
@@ -78,11 +78,11 @@ async function fetchBatchPostCardData(
 
     const authorData: PostAuthorData = {
       id: authorId,
-      displayName: user?.nickname?.trim() || user?.real_name || undefined,
+      displayName: user?.nickname?.trim() || user?.real_name?.trim() || '??',
       profileImageURL: user?.profile_photo_url ?? '',
     };
 
-    const totalComments = commentCountMap.get(authorId) ?? 0;
+    const totalComments = activityCountMap.get(authorId) ?? 0;
     const temperature = calculateCommentTemperature(totalComments);
     const badges: WritingBadge[] = temperature > 0
       ? [{ name: `${temperature}℃`, emoji: '🌡️' }]
