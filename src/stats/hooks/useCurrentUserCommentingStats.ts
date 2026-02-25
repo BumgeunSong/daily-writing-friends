@@ -1,9 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
+import { getDateKey, getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { getDateRange } from '@/stats/api/stats';
-import { createUserCommentingStats } from '@/stats/utils/commentingStatsUtils';
-import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
+import { createUserInfo } from '@/stats/utils/userInfoUtils';
+import {
+  fetchBatchCommentCountsByDateRange,
+  fetchBatchReplyCountsByDateRange,
+} from '@/shared/api/supabaseReads';
 import type { User } from '@/user/model/User';
+import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 import type { UserCommentingStats } from './useCommentingStats';
 
 /**
@@ -26,10 +30,27 @@ async function fetchCurrentUserCommentingStats(user: User): Promise<UserCommenti
   const workingDays = getRecentWorkingDays();
   const dateRange = getDateRange(workingDays);
 
-  const [commentings, replyings] = await Promise.all([
-    fetchUserCommentingsByDateRange(user.uid, dateRange.start, dateRange.end),
-    fetchUserReplyingsByDateRange(user.uid, dateRange.start, dateRange.end),
+  // 2 queries without JOINs (only need user_id + created_at for counting)
+  const [commentRows, replyRows] = await Promise.all([
+    fetchBatchCommentCountsByDateRange([user.uid], dateRange.start, dateRange.end),
+    fetchBatchReplyCountsByDateRange([user.uid], dateRange.start, dateRange.end),
   ]);
 
-  return createUserCommentingStats(user, commentings, replyings, workingDays);
+  // Count per day
+  const dayCounts = new Map<string, number>();
+  for (const row of [...commentRows, ...replyRows]) {
+    const dayKey = getDateKey(new Date(row.created_at));
+    dayCounts.set(dayKey, (dayCounts.get(dayKey) ?? 0) + 1);
+  }
+
+  const contributions: CommentingContribution[] = workingDays.map(day => {
+    const key = getDateKey(day);
+    const count = dayCounts.get(key);
+    return {
+      createdAt: key,
+      countOfCommentAndReplies: count != null && count > 0 ? count : null,
+    };
+  });
+
+  return { user: createUserInfo(user), contributions };
 }
