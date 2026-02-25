@@ -1,9 +1,8 @@
 import * as Sentry from '@sentry/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { firestore } from '@/firebase';
 import type { GetLikesParams } from '@/post/api/like';
 import { createLike, deleteUserLike } from '@/post/api/like';
+import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useUser } from '@/user/hooks/useUser';
 
@@ -42,15 +41,15 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
         return { hasLiked: false };
       }
 
-      const postRef = `boards/${boardId}/posts/${postId}`;
-      const likesRef = collection(firestore, postRef, 'likes');
+      const supabase = getSupabaseClient();
+      const { data } = await supabase
+        .from('likes')
+        .select('id')
+        .eq('post_id', postId)
+        .eq('user_id', currentUser.uid)
+        .limit(1);
 
-      // Only check if current user has liked
-      const userLikeQuery = query(likesRef, where('userId', '==', currentUser.uid));
-      const userLikeSnapshot = await getDocs(userLikeQuery);
-      const hasLiked = !userLikeSnapshot.empty;
-
-      return { hasLiked };
+      return { hasLiked: !!data && data.length > 0 };
     },
     enabled: !!boardId && !!postId,
     onError: (error) => {
