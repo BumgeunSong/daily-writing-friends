@@ -1,18 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { throwOnError, executeTrackedWrite, SupabaseWriteError } from './supabaseClient';
 
+const mockSetContext = vi.fn();
+const mockSetFingerprint = vi.fn();
+
 vi.mock('@sentry/react', () => ({
-  addBreadcrumb: vi.fn(),
   captureException: vi.fn(),
-  withScope: vi.fn((callback: (scope: unknown) => void) => {
-    callback({
-      setContext: vi.fn(),
-      setFingerprint: vi.fn(),
-    });
+  withScope: vi.fn((callback: (scope: { setContext: typeof mockSetContext; setFingerprint: typeof mockSetFingerprint }) => void) => {
+    callback({ setContext: mockSetContext, setFingerprint: mockSetFingerprint });
   }),
 }));
 
+vi.mock('@/sentry', () => ({
+  addSentryBreadcrumb: vi.fn(),
+}));
+
 import * as Sentry from '@sentry/react';
+import { addSentryBreadcrumb } from '@/sentry';
 
 describe('SupabaseWriteError', () => {
   it('stores the original PostgrestError', () => {
@@ -47,11 +51,13 @@ describe('SupabaseWriteError', () => {
 describe('throwOnError', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSetContext.mockClear();
+    mockSetFingerprint.mockClear();
   });
 
   it('does nothing when error is null', () => {
     expect(() => throwOnError({ error: null })).not.toThrow();
-    expect(Sentry.addBreadcrumb).not.toHaveBeenCalled();
+    expect(addSentryBreadcrumb).not.toHaveBeenCalled();
     expect(Sentry.captureException).not.toHaveBeenCalled();
   });
 
@@ -97,12 +103,11 @@ describe('throwOnError', () => {
 
     expect(() => throwOnError({ error: postgrestError }, 'createComment')).toThrow(SupabaseWriteError);
 
-    expect(Sentry.addBreadcrumb).toHaveBeenCalledWith(
-      expect.objectContaining({
-        category: 'supabase.write',
-        level: 'error',
-        message: 'Supabase write failed: createComment',
-      }),
+    expect(addSentryBreadcrumb).toHaveBeenCalledWith(
+      'Supabase write failed: createComment',
+      'supabase.write',
+      expect.objectContaining({ code: '23503' }),
+      'error',
     );
     expect(Sentry.captureException).toHaveBeenCalledWith(expect.any(SupabaseWriteError));
   });
@@ -112,15 +117,41 @@ describe('throwOnError', () => {
 
     expect(() => throwOnError({ error: postgrestError })).toThrow(SupabaseWriteError);
 
-    expect(Sentry.addBreadcrumb).toHaveBeenCalledWith(
-      expect.objectContaining({ message: 'Supabase write failed' }),
+    expect(addSentryBreadcrumb).toHaveBeenCalledWith(
+      'Supabase write failed',
+      'supabase.write',
+      expect.anything(),
+      'error',
     );
+  });
+
+  it('sets permission-denied fingerprint for error code 42501', () => {
+    const postgrestError = {
+      message: 'permission denied',
+      code: '42501',
+      details: 'RLS policy violation',
+      hint: '',
+    };
+
+    expect(() => throwOnError({ error: postgrestError }, 'createComment')).toThrow(SupabaseWriteError);
+
+    expect(mockSetFingerprint).toHaveBeenCalledWith(['supabase', 'permission-denied', 'createComment']);
+  });
+
+  it('does not set fingerprint for non-permission errors', () => {
+    const postgrestError = { message: 'conflict', code: '23505', details: '', hint: '' };
+
+    expect(() => throwOnError({ error: postgrestError }, 'insertPost')).toThrow(SupabaseWriteError);
+
+    expect(mockSetFingerprint).not.toHaveBeenCalled();
   });
 });
 
 describe('executeTrackedWrite', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSetContext.mockClear();
+    mockSetFingerprint.mockClear();
   });
 
   it('calls the operation and resolves when there is no error', async () => {
@@ -135,12 +166,10 @@ describe('executeTrackedWrite', () => {
 
     await executeTrackedWrite('insertPost', fn);
 
-    expect(Sentry.addBreadcrumb).toHaveBeenCalledWith(
-      expect.objectContaining({
-        category: 'supabase.write',
-        level: 'info',
-        message: 'Supabase write started: insertPost',
-      }),
+    expect(addSentryBreadcrumb).toHaveBeenCalledWith(
+      'Supabase write started: insertPost',
+      'supabase.write',
+      { operation: 'insertPost' },
     );
   });
 
@@ -162,12 +191,11 @@ describe('executeTrackedWrite', () => {
 
     await executeTrackedWrite('slowOp', fn);
 
-    expect(Sentry.addBreadcrumb).toHaveBeenCalledWith(
-      expect.objectContaining({
-        category: 'supabase.write',
-        level: 'warning',
-        message: 'Slow Supabase write detected: slowOp',
-      }),
+    expect(addSentryBreadcrumb).toHaveBeenCalledWith(
+      'Slow Supabase write detected: slowOp',
+      'supabase.write',
+      expect.objectContaining({ operation: 'slowOp' }),
+      'warning',
     );
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Slow write detected: slowOp'));
 
