@@ -45,17 +45,23 @@ sync_env_to() {
 # Read hook event from stdin (if piped)
 INPUT=""
 [ ! -t 0 ] && INPUT=$(cat)
-EVENT=$(echo "$INPUT" | jq -r '.hook_event_name // empty' 2>/dev/null || true)
+
+# Guard against missing jq — fall back to no-op
+if command -v jq >/dev/null 2>&1; then
+  EVENT=$(echo "$INPUT" | jq -r '.hook_event_name // empty' 2>/dev/null || true)
+else
+  EVENT=""
+fi
 
 case "$EVENT" in
   PostToolUse)
-    CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
+    CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null || true)
     echo "$CMD" | grep -q 'git worktree add' || exit 0
     # Sync all child worktrees (idempotent — skips already-linked files)
     git -C "$PROJECT_DIR" worktree list --porcelain \
       | grep '^worktree ' \
       | sed 's/^worktree //' \
-      | while read -r wt; do
+      | while IFS= read -r wt; do
           sync_env_to "$wt"
         done
     ;;
