@@ -6,6 +6,9 @@
 
 import { createClient } from '@supabase/supabase-js';
 import type { PostgrestError , SupabaseClient } from '@supabase/supabase-js';
+import * as Sentry from '@sentry/react';
+
+const SLOW_WRITE_THRESHOLD_MS = 1000;
 
 let supabaseInstance: SupabaseClient | null = null;
 
@@ -62,9 +65,76 @@ export class SupabaseWriteError extends Error {
   }
 }
 
-/** Execute a Supabase operation and throw on error */
-export function throwOnError(result: { error: PostgrestError | null }): void {
+/** Execute a Supabase operation and throw on error, reporting to Sentry if an error occurs */
+export function throwOnError(
+  result: { error: PostgrestError | null },
+  operation?: string,
+): void {
   if (result.error) {
-    throw new SupabaseWriteError(result.error);
+    const writeError = new SupabaseWriteError(result.error);
+
+    Sentry.addBreadcrumb({
+      message: operation ? `Supabase write failed: ${operation}` : 'Supabase write failed',
+      category: 'supabase.write',
+      level: 'error',
+      data: {
+        code: result.error.code,
+        message: result.error.message,
+        details: result.error.details,
+        operation,
+      },
+    });
+
+    Sentry.withScope((scope) => {
+      scope.setContext('supabaseError', {
+        code: result.error!.code,
+        message: result.error!.message,
+        details: result.error!.details,
+        hint: result.error!.hint,
+        operation,
+      });
+      if (result.error!.code === '42501') {
+        scope.setFingerprint(['supabase', 'permission-denied', operation ?? 'unknown']);
+      }
+      Sentry.captureException(writeError);
+    });
+
+    throw writeError;
   }
+}
+
+/**
+ * Execute a tracked Supabase write operation with timing, slow-query detection, and Sentry breadcrumbs.
+ *
+ * - Adds a breadcrumb when the write starts and when it completes.
+ * - Warns in console and adds a warning breadcrumb when the operation exceeds SLOW_WRITE_THRESHOLD_MS.
+ * - Delegates error reporting to throwOnError.
+ */
+export async function executeTrackedWrite(
+  operation: string,
+  fn: () => Promise<{ error: PostgrestError | null }>,
+): Promise<void> {
+  const startTime = Date.now();
+
+  Sentry.addBreadcrumb({
+    message: `Supabase write started: ${operation}`,
+    category: 'supabase.write',
+    level: 'info',
+    data: { operation },
+  });
+
+  const result = await fn();
+  const durationMs = Date.now() - startTime;
+
+  if (durationMs >= SLOW_WRITE_THRESHOLD_MS) {
+    Sentry.addBreadcrumb({
+      message: `Slow Supabase write detected: ${operation}`,
+      category: 'supabase.write',
+      level: 'warning',
+      data: { operation, durationMs },
+    });
+    console.warn(`[Supabase] Slow write detected: ${operation} took ${durationMs}ms`);
+  }
+
+  throwOnError(result, operation);
 }
