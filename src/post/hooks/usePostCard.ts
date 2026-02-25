@@ -19,11 +19,21 @@ export interface UsePostCardReturn {
   contentPreview: string | null;
 }
 
-export const usePostCard = (post: Post, prefetched?: PostCardPrefetchedData): UsePostCardReturn => {
-  // Skip individual fetches when prefetched data is available
-  const { userData, isLoading: isAuthorLoading } = useUser(prefetched ? null : post.authorId);
-  const { data: badges } = usePostProfileBadges(prefetched ? '' : post.authorId);
-  const { data: streakData, isLoading: isStreakLoading } = usePostingStreak(prefetched ? '' : post.authorId);
+/**
+ * @param post - Post data
+ * @param prefetched - Batch-fetched data (when available)
+ * @param isBatchMode - When true, individual hooks are disabled even while batch is loading
+ */
+export const usePostCard = (
+  post: Post,
+  prefetched?: PostCardPrefetchedData,
+  isBatchMode?: boolean,
+): UsePostCardReturn => {
+  // Disable individual fetches when batch mode is active (prevents race condition N+1)
+  const skipIndividual = !!isBatchMode;
+  const { userData, isLoading: isAuthorLoading } = useUser(skipIndividual ? null : post.authorId);
+  const { data: badges } = usePostProfileBadges(skipIndividual ? '' : post.authorId);
+  const { data: streakData, isLoading: isStreakLoading } = usePostingStreak(skipIndividual ? '' : post.authorId);
 
   const isPrivate = post.visibility === PostVisibility.PRIVATE;
   const contentPreview = useMemo(
@@ -32,13 +42,19 @@ export const usePostCard = (post: Post, prefetched?: PostCardPrefetchedData): Us
   );
 
   const authorData: PostAuthorData = useMemo(() => {
-    if (prefetched) return prefetched.authorData;
+    if (prefetched) {
+      return {
+        ...prefetched.authorData,
+        displayName: prefetched.authorData.displayName || post.authorName || '??',
+        profileImageURL: prefetched.authorData.profileImageURL || post.authorProfileImageURL || '',
+      };
+    }
     return {
       id: post.authorId,
       displayName: userData ? getUserDisplayName(userData) : post.authorName,
       profileImageURL: userData?.profilePhotoURL || post.authorProfileImageURL || '',
     };
-  }, [prefetched, post.authorId, userData, post.authorProfileImageURL]);
+  }, [prefetched, post.authorId, userData, post.authorName, post.authorProfileImageURL]);
 
   return {
     authorData,

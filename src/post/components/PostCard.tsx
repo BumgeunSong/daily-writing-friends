@@ -15,6 +15,7 @@ interface PostCardProps {
   onClick: (postId: string) => void;
   onClickProfile?: (userId: string) => void;
   prefetchedData?: PostCardPrefetchedData;
+  isBatchMode?: boolean;
 }
 
 function handleKeyDown(e: React.KeyboardEvent, onClick: (e: React.KeyboardEvent | React.MouseEvent) => void) {
@@ -24,7 +25,7 @@ function handleKeyDown(e: React.KeyboardEvent, onClick: (e: React.KeyboardEvent 
   }
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, prefetchedData }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, prefetchedData, isBatchMode }) => {
   const {
     authorData,
     isAuthorLoading,
@@ -33,7 +34,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, pref
     isStreakLoading,
     isPrivate,
     contentPreview,
-  } = usePostCard(post, prefetchedData);
+  } = usePostCard(post, prefetchedData, isBatchMode);
 
   const handleCardClick = () => {
     onClick(post.id);
