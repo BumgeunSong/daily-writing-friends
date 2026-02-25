@@ -1,9 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
+import { getDateKey, getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { getDateRange } from '@/stats/api/stats';
 import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
-import { createUserCommentingStats, sortCommentingStats } from '@/stats/utils/commentingStatsUtils';
-import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
+import { sortCommentingStats } from '@/stats/utils/commentingStatsUtils';
+import { createUserInfo } from '@/stats/utils/userInfoUtils';
+import {
+  fetchBatchCommentCountsByDateRange,
+  fetchBatchReplyCountsByDateRange,
+} from '@/shared/api/supabaseReads';
 import type { User } from '@/user/model/User';
 
 export interface UserCommentingStats {
@@ -22,29 +26,38 @@ async function fetchMultipleUserCommentingStats(users: User[], currentUserId?: s
 
   const workingDays = getRecentWorkingDays();
   const dateRange = getDateRange(workingDays);
+  const userIds = users.map(u => u.uid);
 
-  const statsPromises = users.map(user => fetchSingleUserCommentingStats(user, dateRange, workingDays));
-  const results = await Promise.all(statsPromises);
+  // 2 batch queries instead of 2N per-user queries
+  const [commentRows, replyRows] = await Promise.all([
+    fetchBatchCommentCountsByDateRange(userIds, dateRange.start, dateRange.end),
+    fetchBatchReplyCountsByDateRange(userIds, dateRange.start, dateRange.end),
+  ]);
 
-  return sortCommentingStats(results.filter((r): r is UserCommentingStats => r !== null), currentUserId);
-}
-
-async function fetchSingleUserCommentingStats(
-  user: User,
-  dateRange: { start: Date; end: Date },
-  workingDays: Date[]
-): Promise<UserCommentingStats | null> {
-  try {
-    const [commentings, replyings] = await Promise.all([
-      fetchUserCommentingsByDateRange(user.uid, dateRange.start, dateRange.end),
-      fetchUserReplyingsByDateRange(user.uid, dateRange.start, dateRange.end),
-    ]);
-
-    return createUserCommentingStats(user, commentings, replyings, workingDays);
-  } catch (error) {
-    console.error('Error fetching user commenting stats:', error);
-    return null;
+  // Build Map<userId, Map<dayKey, count>>
+  const countMap = new Map<string, Map<string, number>>();
+  for (const row of [...commentRows, ...replyRows]) {
+    if (!countMap.has(row.user_id)) countMap.set(row.user_id, new Map());
+    const userMap = countMap.get(row.user_id)!;
+    const dayKey = getDateKey(new Date(row.created_at));
+    userMap.set(dayKey, (userMap.get(dayKey) ?? 0) + 1);
   }
+
+  // Build UserCommentingStats[] preserving null semantics
+  const results: UserCommentingStats[] = users.map(user => {
+    const userDayCounts = countMap.get(user.uid);
+    const contributions: CommentingContribution[] = workingDays.map(day => {
+      const key = getDateKey(day);
+      const count = userDayCounts?.get(key);
+      return {
+        createdAt: key,
+        countOfCommentAndReplies: count != null && count > 0 ? count : null,
+      };
+    });
+    return { user: createUserInfo(user), contributions };
+  });
+
+  return sortCommentingStats(results, currentUserId);
 }
 
 /**

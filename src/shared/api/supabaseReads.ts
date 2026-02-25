@@ -994,6 +994,61 @@ export async function fetchNotificationsFromSupabase(
   }));
 }
 
+// --- Batch Comment/Reply Counts (for stats aggregation) ---
+
+export interface CommentCountRow {
+  user_id: string;
+  created_at: string;
+}
+
+/**
+ * Batch-fetch comment rows for multiple users within a date range.
+ * Returns only user_id + created_at — no JOINs needed since stats only count per day.
+ * Uses index: idx_comments_user_created
+ */
+export async function fetchBatchCommentCountsByDateRange(
+  userIds: string[],
+  start: Date,
+  end: Date
+): Promise<CommentCountRow[]> {
+  if (userIds.length === 0) return [];
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('comments')
+    .select('user_id, created_at')
+    .in('user_id', userIds)
+    .gte('created_at', start.toISOString())
+    .lt('created_at', end.toISOString());
+
+  if (error) throw error;
+  return (data || []) as CommentCountRow[];
+}
+
+/**
+ * Batch-fetch reply rows for multiple users within a date range.
+ * Returns only user_id + created_at — no JOINs needed since stats only count per day.
+ * Uses index: idx_replies_user_created
+ */
+export async function fetchBatchReplyCountsByDateRange(
+  userIds: string[],
+  start: Date,
+  end: Date
+): Promise<CommentCountRow[]> {
+  if (userIds.length === 0) return [];
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('replies')
+    .select('user_id, created_at')
+    .in('user_id', userIds)
+    .gte('created_at', start.toISOString())
+    .lt('created_at', end.toISOString());
+
+  if (error) throw error;
+  return (data || []) as CommentCountRow[];
+}
+
 // --- Activity Counts ---
 
 export interface ActivityCounts {
