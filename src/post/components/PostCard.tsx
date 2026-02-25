@@ -1,5 +1,6 @@
 'use client';
 
+import type { PostCardPrefetchedData } from '@/post/hooks/useBatchPostCardData';
 import { usePostCard } from '@/post/hooks/usePostCard';
 import { type Post } from '@/post/model/Post';
 import { Card } from '@/shared/ui/card';
@@ -13,6 +14,7 @@ interface PostCardProps {
   post: Post;
   onClick: (postId: string) => void;
   onClickProfile?: (userId: string) => void;
+  prefetchedData?: PostCardPrefetchedData;
 }
 
 function handleKeyDown(e: React.KeyboardEvent, onClick: (e: React.KeyboardEvent | React.MouseEvent) => void) {
@@ -22,7 +24,7 @@ function handleKeyDown(e: React.KeyboardEvent, onClick: (e: React.KeyboardEvent 
   }
 }
 
-const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) => {
+const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, prefetchedData }) => {
   const {
     authorData,
     isAuthorLoading,
@@ -31,7 +33,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile }) =>
     isStreakLoading,
     isPrivate,
     contentPreview,
-  } = usePostCard(post);
+  } = usePostCard(post, prefetchedData);
 
   const handleCardClick = () => {
     onClick(post.id);
