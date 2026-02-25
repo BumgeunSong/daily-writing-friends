@@ -917,6 +917,47 @@ export async function fetchReactionsFromSupabase(params: {
   }));
 }
 
+/**
+ * Batch-fetch reactions for multiple comments in one query.
+ * Returns Map<commentId, Reaction[]> for cache seeding.
+ */
+export async function fetchBatchReactionsForComments(
+  commentIds: string[],
+): Promise<Map<string, Reaction[]>> {
+  if (commentIds.length === 0) return new Map();
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('reactions')
+    .select('id, comment_id, reaction_type, user_id, user_name, user_profile_image, created_at')
+    .in('comment_id', commentIds);
+
+  if (error) {
+    console.error('Supabase batch reactions fetch error:', { commentCount: commentIds.length, error });
+    throw error;
+  }
+
+  const result = new Map<string, Reaction[]>();
+  for (const commentId of commentIds) {
+    result.set(commentId, []);
+  }
+  for (const row of data || []) {
+    const reactions = result.get(row.comment_id) ?? [];
+    reactions.push({
+      id: row.id,
+      content: row.reaction_type,
+      createdAt: new Date(row.created_at),
+      reactionUser: {
+        userId: row.user_id,
+        userName: row.user_name,
+        userProfileImage: row.user_profile_image || '',
+      },
+    });
+    result.set(row.comment_id, reactions);
+  }
+  return result;
+}
+
 // --- Notifications ---
 
 /**
