@@ -72,7 +72,7 @@ const RemoteConfigContext = createContext<RemoteConfigContextValue>({
 });
 
 export function RemoteConfigProvider({ children }: { children: React.ReactNode }) {
-  const [ready] = useState(true);
+  const [ready, setReady] = useState(false);
   const [values, setValues] = useState<RemoteConfigValueTypes>(REMOTE_CONFIG_DEFAULTS);
   const [error, setError] = useState<Error | null>(null);
 
@@ -112,6 +112,9 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
         const error = err instanceof Error ? err : new Error(String(err));
         setError(error);
         setValues(REMOTE_CONFIG_DEFAULTS);
+      })
+      .finally(() => {
+        setReady(true);
       });
   }, []);
 

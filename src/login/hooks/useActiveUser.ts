@@ -8,7 +8,7 @@ import { fetchUsersWithBoardPermission } from '@/user/api/user';
  * @returns { data, isLoading, error }
  */
 export function useActiveUser() {
-  const { value: activeBoardId } = useRemoteConfig(REMOTE_CONFIG_KEYS.ACTIVE_BOARD_ID);
+  const { value: activeBoardId, isLoading: isConfigLoading } = useRemoteConfig(REMOTE_CONFIG_KEYS.ACTIVE_BOARD_ID);
 
   const {
     data: users,
@@ -18,7 +18,7 @@ export function useActiveUser() {
     queryKey: ['activeUserCount', activeBoardId],
     queryFn: () =>
       activeBoardId ? fetchUsersWithBoardPermission([activeBoardId]) : Promise.resolve([]),
-    enabled: !!activeBoardId,
+    enabled: !!activeBoardId && !isConfigLoading,
   });
 
   return {
