@@ -41,7 +41,11 @@ export async function fetchBoardById(boardId: string): Promise<Board | null> {
   }
 
   try {
-    return await fetchBoardByIdFromSupabase(boardId);
+    const board = await fetchBoardByIdFromSupabase(boardId);
+    if (!board) {
+      console.warn(`fetchBoardById: board not found in Supabase for id "${boardId}". Check if the board was migrated.`);
+    }
+    return board;
   } catch (error) {
     console.error(`Error fetching board with id ${boardId}:`, error);
     return null;
