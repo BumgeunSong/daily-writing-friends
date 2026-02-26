@@ -72,6 +72,9 @@ case "$EVENT" in
     # Standalone mode: pass worktree path as argument
     if [ $# -ge 1 ] && [ -d "$1" ]; then
       sync_env_to "$1"
+    else
+      # Fallback: if event was empty/unknown but we're in a child worktree, sync anyway
+      sync_env_to "$PROJECT_DIR"
     fi
     ;;
 esac
