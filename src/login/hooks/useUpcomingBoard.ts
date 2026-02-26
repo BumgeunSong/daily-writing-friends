@@ -23,6 +23,9 @@ export function useUpcomingBoard(): UseQueryResult<Board | null> {
             }
             try {
                 const board = await boardUtils.fetchBoardById(upcomingBoardId);
+                if (!board) {
+                    console.warn(`useUpcomingBoard: No board found for upcoming_board_id="${upcomingBoardId}". This may indicate the board was not migrated to Supabase.`);
+                }
                 return transformBoardWithId(board, upcomingBoardId);
             } catch (error) {
                 console.error('Error fetching upcoming board:', error);

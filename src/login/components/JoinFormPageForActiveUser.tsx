@@ -18,7 +18,7 @@ import FormHeader from "./JoinFormHeader"
  */
 export default function JoinFormPageForActiveUser() {
     const { currentUser } = useAuth()
-    const { nickname: userNickname, isLoading: isNicknameLoading } = useUserNickname(currentUser?.uid)
+    const { nickname: userNickname, isLoading: isNicknameLoading } = useUserNickname(currentUser?.uid ?? null)
     const { data: upcomingBoard, isLoading: isBoardLoading } = useUpcomingBoard()
     const { isInWaitingList, isLoading: isCheckingWaitingList } = useIsUserInWaitingList()
     const [isComplete, setIsComplete] = useState(false)
@@ -56,6 +56,16 @@ export default function JoinFormPageForActiveUser() {
 
     if (isLoading) {
       return null;
+    }
+
+    if (!upcomingBoard) {
+      return (
+        <div className="flex min-h-screen flex-col bg-background">
+          <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 lg:max-w-4xl">
+            <FormHeader title="매일 글쓰기 프렌즈" subtitle="현재 신청 가능한 기수 정보를 불러올 수 없습니다. 잠시 후 다시 시도해주세요." />
+          </div>
+        </div>
+      );
     }
 
     const shouldShowCompletePage = (isComplete && completeInfo) || isInWaitingList;
