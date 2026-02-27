@@ -3,6 +3,7 @@ import { useContext, useState, useEffect, createContext } from 'react';
 
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { setSentryUser } from '@/sentry';
+import { mapToAuthUser } from '@/shared/auth/supabaseAuth';
 
 /**
  * AuthUser is a backward-compatible wrapper around Supabase User.
@@ -35,10 +36,25 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
+/** Parse stored AuthUser from localStorage with shape validation. */
+export function parseStoredAuthUser(raw: string | null): AuthUser | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (typeof parsed?.uid !== 'string' || parsed.uid.length === 0) {
+      return null;
+    }
+    return parsed as AuthUser;
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
-    const storedUser = localStorage.getItem('currentUser');
-    return storedUser ? JSON.parse(storedUser) : null;
+    const user = parseStoredAuthUser(localStorage.getItem('currentUser'));
+    if (!user) localStorage.removeItem('currentUser');
+    return user;
   });
   const [loading, setLoading] = useState(true);
   const [redirectPathAfterLogin, setRedirectPathAfterLogin] = useState<string | null>(null);
@@ -46,14 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const supabase = getSupabaseClient();
 
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const authUser = session?.user ? mapToAuthUser(session.user) : null;
-      syncUserState(authUser, setCurrentUser);
-      setLoading(false);
-    });
-
-    // Listen for auth state changes (login, logout, token refresh)
+    // onAuthStateChange fires INITIAL_SESSION on mount — no need for getSession()
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const authUser = session?.user ? mapToAuthUser(session.user) : null;
       syncUserState(authUser, setCurrentUser);
@@ -71,16 +80,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-/** Map a Supabase User to our backward-compatible AuthUser */
-function mapToAuthUser(user: { id: string; email?: string; user_metadata?: Record<string, unknown> }): AuthUser {
-  return {
-    uid: user.id,
-    email: user.email ?? null,
-    displayName: (user.user_metadata?.full_name as string) ?? null,
-    photoURL: (user.user_metadata?.avatar_url as string) ?? null,
-  };
 }
 
 /** Sync auth user to localStorage and Sentry */

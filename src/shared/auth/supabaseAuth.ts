@@ -1,4 +1,5 @@
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import type { AuthUser } from '@/shared/hooks/useAuth';
 
 /**
  * Sign in with Google OAuth via Supabase (redirect flow).
@@ -11,8 +12,7 @@ export async function signInWithGoogle(): Promise<void> {
   // Detect Kakao in-app browser and redirect to external browser
   const ua = navigator.userAgent.toLowerCase();
   if (ua.includes('kakaotalk')) {
-    const currentUrl = window.location.href;
-    window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(currentUrl)}`;
+    window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(window.location.origin)}`;
     throw new Error('카카오톡 인앱 브라우저에서는 로그인할 수 없습니다. 외부 브라우저로 이동합니다.');
   }
 
@@ -42,6 +42,7 @@ export async function signInWithTestCredentials(
   email: string,
   password: string,
 ): Promise<void> {
+  if (import.meta.env.PROD) { throw new Error('signInWithTestCredentials is not available in production.'); }
   const supabase = getSupabaseClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) throw error;
@@ -57,4 +58,17 @@ export async function updateAuthUserMetadata(metadata: {
   const supabase = getSupabaseClient();
   const { error } = await supabase.auth.updateUser({ data: metadata });
   if (error) throw error;
+}
+
+export function mapToAuthUser(user: {
+  id: string;
+  email?: string;
+  user_metadata?: Record<string, unknown>;
+}): AuthUser {
+  return {
+    uid: user.id,
+    email: user.email ?? null,
+    displayName: (user.user_metadata?.full_name as string) ?? null,
+    photoURL: (user.user_metadata?.avatar_url as string) ?? null,
+  };
 }

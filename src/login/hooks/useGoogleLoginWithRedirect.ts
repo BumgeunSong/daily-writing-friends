@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signInWithGoogle } from '@/shared/auth/supabaseAuth';
 import { getLoginRedirectPath } from '@/login/utils/loginUtils';
@@ -20,16 +20,25 @@ export function useGoogleLoginWithRedirect(): UseGoogleLoginWithRedirectReturn {
   const { currentUser } = useAuth();
   const { isCurrentUserActive, isLoading: isCheckingActiveStatus } = useIsCurrentUserActive();
 
+  // Track whether we've already handled the post-login flow
+  const hasHandledLoginRef = useRef(false);
+
   // After OAuth redirect returns, user will be set by onAuthStateChange.
   // Ensure user exists in users table, then navigate.
   useEffect(() => {
-    if (!currentUser || isCheckingActiveStatus) return;
+    if (!currentUser || isCheckingActiveStatus || hasHandledLoginRef.current) return;
+    hasHandledLoginRef.current = true;
 
-    // Ensure the user exists in the users table
-    createUserIfNotExists(currentUser).then(() => {
-      const redirectPath = getLoginRedirectPath(isCurrentUserActive ?? false);
-      navigate(redirectPath);
-    });
+    createUserIfNotExists(currentUser)
+      .then(() => {
+        const redirectPath = getLoginRedirectPath(isCurrentUserActive ?? false);
+        navigate(redirectPath);
+      })
+      .catch((err) => {
+        hasHandledLoginRef.current = false; // allow retry
+        setError(err instanceof Error ? err : new Error('로그인 후 사용자 등록에 실패했습니다.'));
+        setIsLoading(false);
+      });
   }, [currentUser, isCurrentUserActive, isCheckingActiveStatus, navigate]);
 
   const handleLogin = useCallback(async () => {
