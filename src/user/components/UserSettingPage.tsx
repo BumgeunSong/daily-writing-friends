@@ -1,7 +1,7 @@
 import { LogOut, Trash2, SquareArrowRight, Moon, Sun } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { auth } from '@/firebase';
+import { signOutUser } from '@/shared/auth/supabaseAuth';
 import { SentryFeedbackDialog } from '@/shared/components/SentryFeedbackDialog';
 import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { useClearCache } from '@/shared/hooks/useClearCache';
@@ -18,7 +18,6 @@ import {
 } from '@/shared/ui/alert-dialog';
 import { Button } from '@/shared/ui/button';
 import { Switch } from '@/shared/ui/switch';
-import { signOut } from 'firebase/auth';
 
 export default function UserSettingPage() {
   const navigate = useNavigate();
@@ -29,7 +28,7 @@ export default function UserSettingPage() {
   // 로그아웃
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
+      await signOutUser();
       navigate('/login');
     } catch (error) {
       toast.error('로그아웃에 실패했습니다. 다시 시도해주세요.', {position: 'bottom-center'});

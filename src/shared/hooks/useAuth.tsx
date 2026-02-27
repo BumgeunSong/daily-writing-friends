@@ -1,12 +1,23 @@
-// src/contexts/AuthContext.tsx
 import type React from 'react';
 import { useContext, useState, useEffect, createContext } from 'react';
 
-import { auth } from '@/firebase';
+import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { setSentryUser } from '@/sentry';
-import type { User as FirebaseUser } from 'firebase/auth';
+
+/**
+ * AuthUser is a backward-compatible wrapper around Supabase User.
+ * It maps Supabase fields to the same interface Firebase had,
+ * so 30+ consumer files can keep using `currentUser.uid` unchanged.
+ */
+export interface AuthUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+}
+
 interface AuthContextType {
-  currentUser: FirebaseUser | null;
+  currentUser: AuthUser | null;
   loading: boolean;
   redirectPathAfterLogin: string | null;
   setRedirectPathAfterLogin: (path: string | null) => void;
@@ -25,7 +36,7 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(() => {
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     const storedUser = localStorage.getItem('currentUser');
     return storedUser ? JSON.parse(storedUser) : null;
   });
@@ -33,25 +44,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [redirectPathAfterLogin, setRedirectPathAfterLogin] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        // Set user context in Sentry for error tracking
-        setSentryUser({
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-        });
-      } else {
-        localStorage.removeItem('currentUser');
-        // Clear user context when logged out
-        setSentryUser(null);
-      }
-      setCurrentUser(user);
+    const supabase = getSupabaseClient();
+
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const authUser = session?.user ? mapToAuthUser(session.user) : null;
+      syncUserState(authUser, setCurrentUser);
       setLoading(false);
     });
 
-    return unsubscribe;
+    // Listen for auth state changes (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const authUser = session?.user ? mapToAuthUser(session.user) : null;
+      syncUserState(authUser, setCurrentUser);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const value = {
@@ -62,4 +71,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+/** Map a Supabase User to our backward-compatible AuthUser */
+function mapToAuthUser(user: { id: string; email?: string; user_metadata?: Record<string, unknown> }): AuthUser {
+  return {
+    uid: user.id,
+    email: user.email ?? null,
+    displayName: (user.user_metadata?.full_name as string) ?? null,
+    photoURL: (user.user_metadata?.avatar_url as string) ?? null,
+  };
+}
+
+/** Sync auth user to localStorage and Sentry */
+function syncUserState(
+  user: AuthUser | null,
+  setCurrentUser: (user: AuthUser | null) => void,
+) {
+  if (user) {
+    localStorage.setItem('currentUser', JSON.stringify(user));
+    setSentryUser({
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+    });
+  } else {
+    localStorage.removeItem('currentUser');
+    setSentryUser(null);
+  }
+  setCurrentUser(user);
 }

@@ -1,29 +1,12 @@
 import { Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { signInWithGoogle } from '@/firebase';
-import { ROUTES } from '@/login/constants';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
-import { createUserIfNotExists } from '@/user/api/user';
+import { useGoogleLoginWithRedirect } from '@/login/hooks/useGoogleLoginWithRedirect';
 
 export default function LoginPage() {
-  const { loading, redirectPathAfterLogin, setRedirectPathAfterLogin } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogin = async () => {
-    try {
-      const userCredential = await signInWithGoogle();
-      await createUserIfNotExists(userCredential.user);
-
-      // Use redirect path from useAuth context (set by RouterAuthGuard)
-      const redirectTo = redirectPathAfterLogin || ROUTES.BOARDS;
-      setRedirectPathAfterLogin(null); // Clear the redirect path
-      navigate(redirectTo, { replace: true });
-    } catch (error) {
-      console.error('Error signing in with Google:', error);
-    }
-  };
+  const { loading } = useAuth();
+  const { handleLogin, isLoading, error } = useGoogleLoginWithRedirect();
 
   if (loading) {
     return (
@@ -45,14 +28,25 @@ export default function LoginPage() {
             <img src='/pencil_icon.svg' alt='Logo' className='size-16' />
           </div>
         </CardContent>
-        <CardFooter>
-          <Button 
+        <CardFooter className='flex-col gap-2'>
+          <Button
             variant="default"
-            onClick={handleLogin} 
+            onClick={handleLogin}
+            disabled={isLoading}
             className='min-h-[44px] w-full'
           >
-            구글로 로그인하기
+            {isLoading ? (
+              <>
+                <Loader2 className='mr-2 size-4 animate-spin' />
+                로그인 중...
+              </>
+            ) : (
+              '구글로 로그인하기'
+            )}
           </Button>
+          {error && (
+            <p className='text-sm text-destructive'>{error.message}</p>
+          )}
         </CardFooter>
       </Card>
     </div>
