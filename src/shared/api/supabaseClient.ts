@@ -41,19 +41,11 @@ export function getSupabaseClient(): SupabaseClient {
     supabaseUrl = `https://${rawUrl}`;
   }
 
-  const isLocal = supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1');
-
   supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
-    auth: isLocal
-      ? {
-          // Local dev: enable auth for LLM testing with email/password
-          autoRefreshToken: true,
-          persistSession: true,
-        }
-      : {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+    },
   });
 
   return supabaseInstance;
