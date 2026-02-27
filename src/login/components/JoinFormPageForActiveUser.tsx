@@ -30,7 +30,7 @@ export default function JoinFormPageForActiveUser() {
      */
     const handleSubmit = async (data: JoinFormDataForActiveUser) => {
       if (!currentUser?.uid) {
-        showErrorToast(toast, new Error("로그인 상태가 만료되었습니다. 다시 로그인해주세요."));
+        toast.error("로그인 상태가 만료되었습니다. 다시 로그인해주세요.");
         return;
       }
       if (!upcomingBoard?.id) {
