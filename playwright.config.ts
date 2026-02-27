@@ -8,7 +8,7 @@ import path from 'path';
  */
 // Load .env.e2e for E2E test configuration
 if (process.env.NODE_ENV === 'test') {
-  dotenv.config({ path: path.resolve(__dirname, 'config', '.env.e2e') });
+  dotenv.config({ path: path.resolve(import.meta.dirname, 'config', '.env.e2e') });
 } else {
   dotenv.config(); // Load default .env file
 }
@@ -28,10 +28,6 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
-  
-  /* Global setup and teardown for E2E testing */
-  globalSetup: require.resolve('./tests/global-setup.ts'),
-  globalTeardown: require.resolve('./tests/global-teardown.ts'),
   
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
@@ -137,10 +133,9 @@ export default defineConfig({
     
     // Tests that require no authentication
     {
-      name: 'chromium-logged-out',
+      name: 'chromium-no-auth',
       use: { ...devices['Desktop Chrome'] },
       testMatch: /.*\.logged-out\.spec\.ts/,
-      dependencies: ['setup'],
     },
   ],
 
