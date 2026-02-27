@@ -114,10 +114,20 @@ async function main() {
   }
 
   // 7. Generate SQL INSERT for uid_mapping table
+  // Validate UID formats to prevent SQL injection in generated SQL
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const FIREBASE_UID_RE = /^[A-Za-z0-9]{20,128}$/;
+
   const sqlPath = path.join(__dirname, '../../data/uid-mapping-inserts.sql');
-  const sqlLines = mappings.map(m =>
-    `('${m.firebase_uid}', '${m.supabase_uuid}')`
-  );
+  const sqlLines = mappings.map(m => {
+    if (!FIREBASE_UID_RE.test(m.firebase_uid)) {
+      throw new Error(`Unsafe firebase_uid rejected: ${m.firebase_uid}`);
+    }
+    if (!UUID_RE.test(m.supabase_uuid)) {
+      throw new Error(`Unsafe supabase_uuid rejected: ${m.supabase_uuid}`);
+    }
+    return `('${m.firebase_uid}', '${m.supabase_uuid}')`;
+  });
   const sql = `INSERT INTO uid_mapping (firebase_uid, supabase_uuid) VALUES\n${sqlLines.join(',\n')};\n`;
   fs.writeFileSync(sqlPath, sql);
   console.log(`Generated SQL insert at ${sqlPath}`);
