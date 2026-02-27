@@ -4,7 +4,7 @@ import { toast } from "sonner"
 import { useAuth } from '@/shared/hooks/useAuth';
 import { updateUser, uploadUserProfilePhoto } from '@/user/api/user';
 import { removeCachedUserData } from '@/user/cache/userCache';
-import { updateProfile } from 'firebase/auth';
+import { updateAuthUserMetadata } from '@/shared/auth/supabaseAuth';
 import type { User } from '../model/User';
 
 interface UpdateUserDataParams {
@@ -28,14 +28,14 @@ export function useUpdateUserData() {
         const photoURL = await uploadUserProfilePhoto(userId, profilePhotoFile);
         updates.profilePhotoURL = photoURL;
         if (currentUser && currentUser.uid === userId) {
-          await updateProfile(currentUser, { photoURL });
+          await updateAuthUserMetadata({ avatar_url: photoURL });
         }
       }
 
       await updateUser(userId, updates);
-      
+
       if (currentUser && currentUser.uid === userId) {
-        await updateProfile(currentUser, { displayName: nickname });
+        await updateAuthUserMetadata({ full_name: nickname });
       }
 
       // 캐시 무효화: localStorage에서 해당 유저 캐시 삭제

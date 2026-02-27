@@ -1,20 +1,20 @@
-import { auth } from '@/firebase';
-import type { User } from 'firebase/auth';
+import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import type { AuthUser } from '@/shared/hooks/useAuth';
 
 /**
- * Wait for Firebase Auth to initialize (for use in loaders)
- * Returns the current user or null if not authenticated
+ * Wait for Supabase Auth to initialize (for use in loaders).
+ * Returns the current user or null if not authenticated.
  */
-export function getCurrentUser(): Promise<User | null> {
-  return new Promise((resolve) => {
-    if (auth.currentUser) {
-      resolve(auth.currentUser);
-      return;
-    }
+export async function getCurrentUser(): Promise<AuthUser | null> {
+  const supabase = getSupabaseClient();
+  const { data: { session } } = await supabase.auth.getSession();
 
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      unsubscribe();
-      resolve(user);
-    });
-  });
+  if (!session?.user) return null;
+
+  return {
+    uid: session.user.id,
+    email: session.user.email ?? null,
+    displayName: (session.user.user_metadata?.full_name as string) ?? null,
+    photoURL: (session.user.user_metadata?.avatar_url as string) ?? null,
+  };
 }

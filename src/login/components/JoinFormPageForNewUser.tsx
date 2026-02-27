@@ -9,7 +9,7 @@ import { useAuth } from '@/shared/hooks/useAuth'
 import { addUserToBoardWaitingList } from "@/board/utils/boardUtils"
 import { updateUser, createUserIfNotExists } from "@/user/api/user"
 import { useUserNickname } from "@/user/hooks/useUserNickname"
-import type { User as FirebaseUser } from 'firebase/auth'
+import type { AuthUser } from '@/shared/hooks/useAuth'
 import JoinCompletePage from "./JoinCompletePage"
 import JoinFormCardForNewUser from './JoinFormCardForNewUser'
 import FormHeader from "./JoinFormHeader"
@@ -88,7 +88,7 @@ export default function JoinFormPageForNewUser() {
 export async function submitNewUserJoin(params: {
     data: JoinFormDataForNewUser;
     upcomingBoard: Board;
-    currentUser: FirebaseUser;
+    currentUser: AuthUser;
 }): Promise<{ success: true; name: string; cohort: number } | { success: false; error: Error }> {
     const { data, upcomingBoard, currentUser } = params;
 

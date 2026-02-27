@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/react';
 import { MessageCircle, Send, Paperclip, X, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { auth } from '@/firebase';
+import { useAuth } from '@/shared/hooks/useAuth';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -21,7 +21,7 @@ interface SentryFeedbackDialogProps {
 }
 
 export function SentryFeedbackDialog({ triggerButton }: SentryFeedbackDialogProps) {
-  const currentUser = auth.currentUser;
+  const { currentUser } = useAuth();
   const { userData } = useUser(currentUser?.uid);
 
   const [open, setOpen] = useState(false);

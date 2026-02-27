@@ -7,7 +7,7 @@ import { storage } from '@/firebase';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { fetchUserFromSupabase, fetchAllUsersFromSupabase, fetchUsersWithBoardPermissionFromSupabase } from '@/shared/api/supabaseReads';
 import type { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
-import type { User as FirebaseUser } from 'firebase/auth';
+import type { AuthUser } from '@/shared/hooks/useAuth';
 import { mapUserToSupabaseUpdate, mapBoardPermissionsToRows } from '@/user/utils/userMappers';
 
 // Supabase에서 User 데이터 읽기
@@ -84,12 +84,9 @@ export async function uploadUserProfilePhoto(userId: string, file: File): Promis
 /**
  * Supabase에 User가 없으면 생성하는 함수입니다.
  * 이미 존재하는 경우 아무 작업도 수행하지 않습니다.
- * 이 함수는 Auth에서 로그인된 유저(FirebaseUser)가 Users 테이블에도 존재해야 할 때 사용됩니다.
- *
- * @param {FirebaseUser} user - Firebase 인증을 통해 로그인된 사용자 객체입니다.
- * @returns {Promise<void>} - 작업이 완료되면 반환되는 프로미스입니다.
+ * 이 함수는 Auth에서 로그인된 유저가 Users 테이블에도 존재해야 할 때 사용됩니다.
  */
-export async function createUserIfNotExists(user: FirebaseUser): Promise<void> {
+export async function createUserIfNotExists(user: AuthUser): Promise<void> {
     const existing = await fetchUser(user.uid);
     if (!existing) {
 

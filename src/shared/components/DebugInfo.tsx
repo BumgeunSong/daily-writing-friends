@@ -2,11 +2,11 @@ import { getId } from 'firebase/installations';
 import { Copy, Check } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { installations, auth } from '@/firebase';
+import { installations } from '@/firebase';
+import { useAuth } from '@/shared/hooks/useAuth';
 import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
-import type { User as FirebaseUser } from 'firebase/auth';
 
 // Helper function to get status badge styles
 const getStatusBadgeClass = (isEnabled: boolean, type: 'boolean' | 'feature' = 'feature') => {
@@ -53,7 +53,7 @@ export function DebugInfo() {
   const [fid, setFid] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const { currentUser: user } = useAuth();
 
   // Get all remote config values
   const { value: activeBoardId } = useRemoteConfig('active_board_id');
@@ -74,13 +74,6 @@ export function DebugInfo() {
     };
 
     fetchFID();
-
-    // Get current user
-    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
-      setUser(currentUser);
-    });
-
-    return () => unsubscribe();
   }, []);
 
   const copyToClipboard = async () => {
@@ -142,7 +135,7 @@ export function DebugInfo() {
             <span className='break-all font-mono text-muted-foreground'>{user?.uid || 'N/A'}</span>
 
             <span className='font-medium'>Display Name:</span>
-            <span className='text-muted-foreground'>{user?.displayName || 'N/A'}</span>
+            <span className='text-muted-foreground'>{user?.displayName ?? 'N/A'}</span>
           </div>
         </CardContent>
       </Card>
