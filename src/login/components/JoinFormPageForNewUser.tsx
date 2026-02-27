@@ -30,8 +30,12 @@ export default function JoinFormPageForNewUser() {
      * 폼 제출 핸들러
      */
     const handleSubmit = async (data: JoinFormDataForNewUser) => {
-        if (!upcomingBoard?.id || !currentUser?.uid) {
-            showErrorToast(toast, new Error("필수 정보가 누락되었습니다."));
+        if (!currentUser?.uid) {
+            showErrorToast(toast, new Error("로그인 상태가 만료되었습니다. 다시 로그인해주세요."));
+            return;
+        }
+        if (!upcomingBoard?.id) {
+            showErrorToast(toast, new Error("신청 가능한 기수 정보를 불러올 수 없습니다. 페이지를 새로고침해주세요."));
             return;
         }
 
