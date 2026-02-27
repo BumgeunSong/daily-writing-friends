@@ -4,6 +4,7 @@
  * Checks every FK column that references users(id) for:
  * - Orphan values not present in the UID mapping
  * - Empty strings that would fail UUID cast
+ * - Every users.id has a mapping entry
  * - Row counts for post-migration comparison
  *
  * Usage: npx tsx scripts/migration/validate-uid-migration.ts
@@ -22,6 +23,34 @@ interface UidMapping {
   email: string;
 }
 
+const PAGE_SIZE = 1000;
+
+/** Fetch all non-null values for a column with pagination (Supabase default limit is 1000) */
+async function fetchAllValues(table: string, column: string): Promise<string[]> {
+  const allValues: string[] = [];
+  let offset = 0;
+
+  while (true) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase.from(table) as any)
+      .select(column)
+      .not(column, 'is', null)
+      .range(offset, offset + PAGE_SIZE - 1);
+
+    if (error) throw error;
+
+    const rows = data as Record<string, string>[];
+    for (const row of rows) {
+      allValues.push(row[column]);
+    }
+
+    if (rows.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
+
+  return allValues;
+}
+
 async function main() {
   const mappingsPath = path.join(__dirname, '../../data/uid-mappings.json');
   if (!fs.existsSync(mappingsPath)) {
@@ -33,7 +62,22 @@ async function main() {
 
   console.log(`Loaded ${mappings.length} mappings\n`);
 
-  // Check each table for orphan user_id values
+  let hasErrors = false;
+
+  // CRITICAL: Verify every users.id has a mapping entry
+  console.log('--- Checking users.id coverage ---');
+  const allUserIds = await fetchAllValues('users', 'id');
+  const unmappedUsers = allUserIds.filter(id => !firebaseUids.has(id));
+  if (unmappedUsers.length > 0) {
+    console.error(`  CRITICAL: ${unmappedUsers.length} users have no UID mapping:`);
+    unmappedUsers.slice(0, 10).forEach(id => console.error(`    "${id}"`));
+    hasErrors = true;
+  } else {
+    console.log(`  ✓ All ${allUserIds.length} users have mappings`);
+  }
+
+  // Check each FK column for orphan values
+  console.log('\n--- Checking FK columns for orphans ---');
   const tables = [
     { table: 'posts', column: 'author_id' },
     { table: 'comments', column: 'user_id' },
@@ -51,40 +95,32 @@ async function main() {
     { table: 'reviews', column: 'reviewer_id' },
   ];
 
-  let hasErrors = false;
-
   for (const { table, column } of tables) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.from(table) as any)
-      .select(column)
-      .not(column, 'is', null);
+    try {
+      const values = await fetchAllValues(table, column);
+      const orphans = values.filter(v => !firebaseUids.has(v));
+      const empties = values.filter(v => v === '');
 
-    if (error) {
-      console.error(`  ERROR querying ${table}.${column}: ${error.message}`);
-      hasErrors = true;
-      continue;
-    }
-
-    const rows = data as Record<string, string>[];
-    const values = rows.map(row => row[column]);
-    const orphans = values.filter(v => !firebaseUids.has(v));
-    const empties = values.filter(v => v === '');
-
-    if (orphans.length > 0) {
-      console.error(`  ORPHAN: ${table}.${column} has ${orphans.length} values not in mapping:`);
-      const uniqueOrphans = Array.from(new Set(orphans));
-      uniqueOrphans.slice(0, 10).forEach((v: string) => console.error(`    "${v}"`));
-      if (uniqueOrphans.length > 10) {
-        console.error(`    ... and ${uniqueOrphans.length - 10} more`);
+      if (orphans.length > 0) {
+        console.error(`  ORPHAN: ${table}.${column} has ${orphans.length} values not in mapping:`);
+        const uniqueOrphans = Array.from(new Set(orphans));
+        uniqueOrphans.slice(0, 10).forEach(v => console.error(`    "${v}"`));
+        if (uniqueOrphans.length > 10) {
+          console.error(`    ... and ${uniqueOrphans.length - 10} more`);
+        }
+        hasErrors = true;
       }
-      hasErrors = true;
-    }
-    if (empties.length > 0) {
-      console.error(`  EMPTY: ${table}.${column} has ${empties.length} empty strings`);
-      hasErrors = true;
-    }
+      if (empties.length > 0) {
+        console.error(`  EMPTY: ${table}.${column} has ${empties.length} empty strings`);
+        hasErrors = true;
+      }
 
-    console.log(`  ✓ ${table}.${column}: ${values.length} values, ${orphans.length} orphans, ${empties.length} empty`);
+      console.log(`  ✓ ${table}.${column}: ${values.length} values, ${orphans.length} orphans, ${empties.length} empty`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`  ERROR querying ${table}.${column}: ${msg}`);
+      hasErrors = true;
+    }
   }
 
   // Row counts (for post-migration comparison)

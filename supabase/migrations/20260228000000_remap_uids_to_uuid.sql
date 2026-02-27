@@ -1,13 +1,19 @@
 -- Phase 8A: Remap user IDs from Firebase UID (TEXT) to Supabase Auth UUID
 -- Run during maintenance window. Takes ~30 seconds for ~40k rows.
+-- WARNING: This migration is NOT idempotent. Do NOT run it twice.
 --
 -- INSTRUCTIONS:
 -- 1. Run create-supabase-auth-users.ts first to generate data/uid-mapping-inserts.sql
 -- 2. Paste the INSERT block from that file into Section 0 below
--- 3. Run this entire script in Supabase SQL Editor
--- 4. Verify row counts and column types before COMMIT
+-- 3. Run this entire script in Supabase SQL Editor as a single block
+-- 4. Verify row counts and column types in the output before confirming
+-- 5. Run the VACUUM statements separately after confirming success
 
 BEGIN;
+
+-- Safety: force clean failure rather than hanging with triggers disabled
+SET LOCAL lock_timeout = '30s';
+SET LOCAL statement_timeout = '300s';
 
 -- =============================================
 -- 0. Create mapping table
@@ -23,14 +29,36 @@ CREATE TABLE IF NOT EXISTS uid_mapping (
 -- ('firebase_uid_2', 'uuid-2');
 
 -- =============================================
--- 1. Disable triggers (prevent counter corruption during mass UPDATE)
+-- 0.5. Pre-flight check: abort if any user has no mapping
 -- =============================================
+DO $$
+DECLARE unmapped_count INTEGER;
+BEGIN
+  SELECT COUNT(*) INTO unmapped_count
+  FROM users u
+  LEFT JOIN uid_mapping m ON u.id = m.firebase_uid
+  WHERE m.firebase_uid IS NULL;
+
+  IF unmapped_count > 0 THEN
+    RAISE EXCEPTION 'ABORT: % users have no UID mapping. Fix before proceeding.', unmapped_count;
+  END IF;
+END $$;
+
+-- =============================================
+-- 1. Disable triggers on ALL touched tables
+-- =============================================
+ALTER TABLE users DISABLE TRIGGER ALL;
 ALTER TABLE posts DISABLE TRIGGER ALL;
 ALTER TABLE comments DISABLE TRIGGER ALL;
 ALTER TABLE replies DISABLE TRIGGER ALL;
 ALTER TABLE likes DISABLE TRIGGER ALL;
 ALTER TABLE reactions DISABLE TRIGGER ALL;
 ALTER TABLE notifications DISABLE TRIGGER ALL;
+ALTER TABLE drafts DISABLE TRIGGER ALL;
+ALTER TABLE user_board_permissions DISABLE TRIGGER ALL;
+ALTER TABLE board_waiting_users DISABLE TRIGGER ALL;
+ALTER TABLE blocks DISABLE TRIGGER ALL;
+ALTER TABLE reviews DISABLE TRIGGER ALL;
 
 -- =============================================
 -- 2. Drop FK constraints
@@ -57,6 +85,8 @@ DROP INDEX IF EXISTS idx_posts_author_created;
 DROP INDEX IF EXISTS idx_comments_user_created;
 DROP INDEX IF EXISTS idx_replies_user_created;
 DROP INDEX IF EXISTS idx_notifications_recipient_created;
+DROP INDEX IF EXISTS idx_notifications_recipient_unread;
+DROP INDEX IF EXISTS idx_notifications_idempotency;
 DROP INDEX IF EXISTS idx_likes_user;
 DROP INDEX IF EXISTS idx_permissions_user;
 DROP INDEX IF EXISTS idx_board_waiting_users_user;
@@ -151,6 +181,9 @@ CREATE INDEX idx_posts_author_created ON posts (author_id, created_at DESC);
 CREATE INDEX idx_comments_user_created ON comments (user_id, created_at DESC);
 CREATE INDEX idx_replies_user_created ON replies (user_id, created_at DESC);
 CREATE INDEX idx_notifications_recipient_created ON notifications (recipient_id, created_at DESC);
+CREATE INDEX idx_notifications_recipient_unread ON notifications (recipient_id, created_at DESC) WHERE read = FALSE;
+CREATE UNIQUE INDEX idx_notifications_idempotency
+  ON notifications(recipient_id, type, post_id, COALESCE(comment_id, ''), COALESCE(reply_id, ''), actor_id);
 CREATE INDEX idx_likes_user ON likes (user_id);
 CREATE INDEX idx_permissions_user ON user_board_permissions (user_id);
 CREATE INDEX idx_board_waiting_users_user ON board_waiting_users (user_id);
@@ -172,6 +205,9 @@ CREATE UNIQUE INDEX idx_reactions_reply_user ON reactions (reply_id, user_id) WH
 -- =============================================
 -- 7. Re-add FK constraints
 -- =============================================
+-- Link users.id to Supabase Auth (canonical pattern)
+ALTER TABLE users ADD CONSTRAINT users_id_auth_fkey
+  FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE;
 ALTER TABLE users ADD CONSTRAINT users_known_buddy_uid_fkey
   FOREIGN KEY (known_buddy_uid) REFERENCES users(id) ON DELETE SET NULL;
 ALTER TABLE posts ADD CONSTRAINT posts_author_id_fkey
@@ -202,14 +238,20 @@ ALTER TABLE reviews ADD CONSTRAINT reviews_reviewer_id_fkey
   FOREIGN KEY (reviewer_id) REFERENCES users(id) ON DELETE CASCADE;
 
 -- =============================================
--- 8. Re-enable triggers
+-- 8. Re-enable triggers on ALL touched tables
 -- =============================================
+ALTER TABLE users ENABLE TRIGGER ALL;
 ALTER TABLE posts ENABLE TRIGGER ALL;
 ALTER TABLE comments ENABLE TRIGGER ALL;
 ALTER TABLE replies ENABLE TRIGGER ALL;
 ALTER TABLE likes ENABLE TRIGGER ALL;
 ALTER TABLE reactions ENABLE TRIGGER ALL;
 ALTER TABLE notifications ENABLE TRIGGER ALL;
+ALTER TABLE drafts ENABLE TRIGGER ALL;
+ALTER TABLE user_board_permissions ENABLE TRIGGER ALL;
+ALTER TABLE board_waiting_users ENABLE TRIGGER ALL;
+ALTER TABLE blocks ENABLE TRIGGER ALL;
+ALTER TABLE reviews ENABLE TRIGGER ALL;
 
 -- =============================================
 -- 9. Verification queries (check before COMMIT)
@@ -224,7 +266,10 @@ UNION ALL SELECT 'likes', count(*) FROM likes
 UNION ALL SELECT 'reactions', count(*) FROM reactions
 UNION ALL SELECT 'notifications', count(*) FROM notifications
 UNION ALL SELECT 'drafts', count(*) FROM drafts
-UNION ALL SELECT 'blocks', count(*) FROM blocks;
+UNION ALL SELECT 'blocks', count(*) FROM blocks
+UNION ALL SELECT 'user_board_permissions', count(*) FROM user_board_permissions
+UNION ALL SELECT 'board_waiting_users', count(*) FROM board_waiting_users
+UNION ALL SELECT 'reviews', count(*) FROM reviews;
 
 -- Column types (should all be 'uuid')
 SELECT table_name, column_name, data_type
@@ -235,13 +280,15 @@ WHERE (column_name IN ('author_id', 'user_id', 'recipient_id', 'actor_id',
   AND table_schema = 'public'
 ORDER BY table_name, column_name;
 
--- FK constraints exist
+-- FK constraints exist (should include users_id_auth_fkey)
 SELECT conname FROM pg_constraint
-WHERE contype = 'f' AND confrelid = 'public.users'::regclass;
+WHERE contype = 'f' AND (confrelid = 'public.users'::regclass OR conrelid = 'public.users'::regclass)
+ORDER BY conname;
 
 COMMIT;
 
--- Post-commit: clean up dead tuples
+-- NOTE: Run the following VACUUM statements SEPARATELY after confirming the migration succeeded.
+-- VACUUM cannot run inside a transaction block.
 VACUUM ANALYZE users;
 VACUUM ANALYZE posts;
 VACUUM ANALYZE comments;
@@ -251,3 +298,6 @@ VACUUM ANALYZE reactions;
 VACUUM ANALYZE notifications;
 VACUUM ANALYZE drafts;
 VACUUM ANALYZE blocks;
+VACUUM ANALYZE user_board_permissions;
+VACUUM ANALYZE board_waiting_users;
+VACUUM ANALYZE reviews;
