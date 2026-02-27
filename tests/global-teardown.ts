@@ -45,7 +45,7 @@ async function cleanupTempFiles() {
   console.log('🗑️  Cleaning up temporary files...');
   
   const tempFiles = [
-    path.resolve(__dirname, 'setup-failure-screenshot.png'),
+    path.resolve(import.meta.dirname, 'setup-failure-screenshot.png'),
     // Add other temp files that might be created during tests
   ];
   
@@ -68,7 +68,7 @@ async function stopEmulators() {
   
   try {
     await execAsync('npm run emu:stop', {
-      cwd: path.resolve(__dirname, '..'),
+      cwd: path.resolve(import.meta.dirname, '..'),
       timeout: 10000 // 10 seconds timeout
     });
     

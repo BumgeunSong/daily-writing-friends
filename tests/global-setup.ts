@@ -68,7 +68,7 @@ async function checkEmulatorsRunning() {
       
       // Start emulators in the background
       const child = exec('npm run emu:start', {
-        cwd: path.resolve(__dirname, '..')
+        cwd: path.resolve(import.meta.dirname, '..')
       });
 
       // Wait a bit for emulators to start
@@ -102,7 +102,7 @@ async function seedAuthEmulator() {
   
   try {
     const { stdout, stderr } = await execAsync('npm run emu:seed', {
-      cwd: path.resolve(__dirname, '..'),
+      cwd: path.resolve(import.meta.dirname, '..'),
       timeout: 30000 // 30 seconds timeout
     });
     
