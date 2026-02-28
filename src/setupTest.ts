@@ -2,6 +2,15 @@ import '@testing-library/jest-dom';
 import * as matchers from '@testing-library/jest-dom/matchers';
 import { expect, vi } from 'vitest';
 
+// Sentry 글로벌 mock — AuthProvider가 setSentryUser를 호출하므로 모든 컴포넌트 테스트에서 필요
+vi.mock('@sentry/react', () => ({
+  init: vi.fn(),
+  setUser: vi.fn(),
+  captureException: vi.fn(),
+  withScope: vi.fn((cb: (scope: Record<string, unknown>) => void) => cb({ setContext: vi.fn(), setFingerprint: vi.fn() })),
+  addBreadcrumb: vi.fn(),
+}));
+
 // React Testing Library의 DOM 매처 확장
 expect.extend(matchers);
 
