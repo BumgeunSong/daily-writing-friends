@@ -33,6 +33,9 @@ jobs:
 
       - name: Run Vitest with Coverage
         run: npx vitest --coverage.enabled true
+        env:
+          VITE_SUPABASE_URL: http://localhost:54321
+          VITE_SUPABASE_ANON_KEY: test-anon-key
 
       - name: Vitest Coverage Report
         if: always()
