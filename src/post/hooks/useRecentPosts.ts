@@ -28,7 +28,7 @@ export const useRecentPosts = (
             enabled: !!boardId && !!currentUser?.uid,
             getNextPageParam: (lastPage) => {
                 const lastPost = lastPage[lastPage.length - 1];
-                return lastPost ? lastPost.createdAt?.toDate() : undefined;
+                return lastPost ? lastPost.createdAt.toDate() : undefined;
             },
             // Remove local error handling - now handled globally
             // Add metadata for better error context

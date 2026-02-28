@@ -47,12 +47,12 @@ export const PostSchema = z.object({
   thumbnailImageURL: z.string().nullable(),
   authorId: z.string(),
   authorName: z.string(),
-  createdAt: TimestampSchema.optional(),
+  createdAt: TimestampSchema,
   countOfComments: z.number().default(0),
   countOfReplies: z.number().default(0),
   updatedAt: TimestampSchema.optional(),
   weekDaysFromFirstDay: z.number().optional(),
-  visibility: z.nativeEnum(PostVisibility).optional(),
+  visibility: z.nativeEnum(PostVisibility),
 });
 
 export type PostSchemaType = z.infer<typeof PostSchema>;

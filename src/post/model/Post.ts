@@ -31,14 +31,14 @@ export interface Post {
   thumbnailImageURL: string | null;
   authorId: string;
   authorName: string;
-  createdAt?: Timestamp;
+  createdAt: Timestamp;
   countOfComments: number;
   countOfReplies: number;
   countOfLikes: number;
   engagementScore?: number;
   updatedAt?: Timestamp;
   weekDaysFromFirstDay?: number;
-  visibility?: PostVisibility;
+  visibility: PostVisibility;
   authorProfileImageURL?: string;
 }
 
