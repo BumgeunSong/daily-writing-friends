@@ -5,7 +5,8 @@
 -- No ::text cast needed — auth.uid() returns UUID, all user columns are UUID.
 --
 -- Design decisions:
---   - All content is publicly readable (community writing app)
+--   - Public posts and their child entities (comments, replies, likes, reactions) are publicly readable
+--   - Private posts and their child entities are visible only to the author
 --   - Users can only write/update/delete their own content
 --   - Notifications and drafts are private to the recipient/owner
 --   - boards, users, user_board_permissions, board_waiting_users: read-only via anon
@@ -35,8 +36,11 @@ CREATE POLICY "Users can delete their own posts"
 -- =============================================
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Comments are viewable by everyone"
-  ON comments FOR SELECT USING (true);
+CREATE POLICY "Comments are viewable if parent post is visible"
+  ON comments FOR SELECT USING (
+    EXISTS (SELECT 1 FROM posts WHERE posts.id = comments.post_id
+      AND (posts.visibility = 'public' OR posts.author_id = auth.uid()))
+  );
 CREATE POLICY "Users can insert their own comments"
   ON comments FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update their own comments"
@@ -49,8 +53,11 @@ CREATE POLICY "Users can delete their own comments"
 -- =============================================
 ALTER TABLE replies ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Replies are viewable by everyone"
-  ON replies FOR SELECT USING (true);
+CREATE POLICY "Replies are viewable if parent post is visible"
+  ON replies FOR SELECT USING (
+    EXISTS (SELECT 1 FROM posts WHERE posts.id = replies.post_id
+      AND (posts.visibility = 'public' OR posts.author_id = auth.uid()))
+  );
 CREATE POLICY "Users can insert their own replies"
   ON replies FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update their own replies"
@@ -63,8 +70,11 @@ CREATE POLICY "Users can delete their own replies"
 -- =============================================
 ALTER TABLE likes ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Likes are viewable by everyone"
-  ON likes FOR SELECT USING (true);
+CREATE POLICY "Likes are viewable if parent post is visible"
+  ON likes FOR SELECT USING (
+    EXISTS (SELECT 1 FROM posts WHERE posts.id = likes.post_id
+      AND (posts.visibility = 'public' OR posts.author_id = auth.uid()))
+  );
 CREATE POLICY "Users can insert their own likes"
   ON likes FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can delete their own likes"
@@ -75,8 +85,11 @@ CREATE POLICY "Users can delete their own likes"
 -- =============================================
 ALTER TABLE reactions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Reactions are viewable by everyone"
-  ON reactions FOR SELECT USING (true);
+CREATE POLICY "Reactions are viewable if parent post is visible"
+  ON reactions FOR SELECT USING (
+    EXISTS (SELECT 1 FROM posts WHERE posts.id = reactions.post_id
+      AND (posts.visibility = 'public' OR posts.author_id = auth.uid()))
+  );
 CREATE POLICY "Users can insert their own reactions"
   ON reactions FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can delete their own reactions"

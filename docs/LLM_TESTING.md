@@ -75,7 +75,7 @@ npm run supabase:stop
 ## Troubleshooting
 
 - **Blank page after login**: Check `.env.local` has correct `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
-- **Auth fails**: The seed script creates a test auth user. If missing, create one via Supabase Dashboard (Auth > Users > Add user) with the same `id` as a user in the `users` table
+- **Auth fails**: The seed script does **not** create any Supabase Auth users. Create a test user via Supabase Dashboard (Auth > Users > Add user) or CLI with the same `id` as a user in the `users` table, and credentials matching your tests (e.g. `test@test.local` / `test1234`)
 - **No data**: Ensure `supabase/seed.sql` exists and has INSERT statements
 
 ## Architecture Notes
