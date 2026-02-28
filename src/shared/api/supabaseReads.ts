@@ -207,9 +207,13 @@ interface ReplyWithJoins {
 }
 
 interface BoardJoinRow {
-  id: string; title: string; description: string | null;
-  first_day: string | null; last_day: string | null;
-  cohort: number | null; created_at: string;
+  id: string;
+  title: string;
+  description: string | null;
+  first_day: string | null;
+  last_day: string | null;
+  cohort: number | null;
+  created_at: string;
 }
 
 /** Row from: user_board_permissions + boards!inner join */
@@ -220,10 +224,15 @@ interface BoardPermissionWithJoins {
 }
 
 interface UserJoinRow {
-  id: string; real_name: string | null; nickname: string | null;
-  email: string | null; profile_photo_url: string | null;
-  bio: string | null; phone_number: string | null;
-  referrer: string | null; timezone: string | null;
+  id: string;
+  real_name: string | null;
+  nickname: string | null;
+  email: string | null;
+  profile_photo_url: string | null;
+  bio: string | null;
+  phone_number: string | null;
+  referrer: string | null;
+  timezone: string | null;
 }
 
 /** Row from: user_board_permissions + users!inner join */
