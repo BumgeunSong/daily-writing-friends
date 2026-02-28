@@ -54,6 +54,12 @@ describe('mapUserToSupabaseUpdate', () => {
 
     expect(result).toEqual({});
   });
+
+  it('does not allow arbitrary keys on the return type', () => {
+    const result = mapUserToSupabaseUpdate({ nickname: 'test' });
+    // @ts-expect-error - typo_column should not exist on SupabaseUserUpdate
+    result.typo_column;
+  });
 });
 
 describe('mapBoardPermissionsToRows', () => {
