@@ -5,6 +5,7 @@ import { trackFirebasePermissionError, getPermissionErrorHints } from '@/shared/
 import { getCurrentUserIdFromStorage } from '@/shared/utils/getCurrentUserId';
 import { fetchUser } from '@/user/api/user';
 
+
 export async function boardLoader({ params }: LoaderFunctionArgs) {
   const { boardId } = params;
   
@@ -17,19 +18,7 @@ export async function boardLoader({ params }: LoaderFunctionArgs) {
     const user = await getCurrentUser();
 
     if (!user) {
-      // Track permission error for unauthenticated access
-      const permissionError = new FirebaseError('permission-denied', 'User not authenticated');
-      trackFirebasePermissionError(permissionError, {
-        operation: 'read',
-        path: `boards/${boardId}`,
-        userId: undefined,
-        additionalInfo: {
-          reason: 'No authenticated user',
-          boardId,
-        },
-      });
-
-      // Return empty data instead of throwing, let route guard handle auth
+      // Route guard (PrivateRoutes) will redirect to /login
       return { boardId };
     }
 
@@ -91,7 +80,7 @@ export async function boardLoader({ params }: LoaderFunctionArgs) {
       trackFirebasePermissionError(error, {
         operation: 'read',
         path: `boards/${boardId}`,
-        userId: getCurrentUserIdFromStorage(),
+        userId: getCurrentUserIdFromStorage() ?? undefined,
         additionalInfo: {
           source: 'boardLoader',
           boardId,
