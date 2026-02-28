@@ -2,11 +2,27 @@ import type { Reaction } from '@/comment/model/Reaction';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { fetchReactionsFromSupabase } from '@/shared/api/supabaseReads';
 
-export interface CreateReactionParams {
+// Shared base for all reaction param types
+interface ReactionParamsBase {
   boardId: string;
   postId: string;
   commentId: string;
-  replyId?: string;
+}
+
+// --- GetReactionsParams (used by useReactions.getEntityParams) ---
+export interface CommentReactionsParams extends ReactionParamsBase {
+  replyId?: undefined;
+}
+
+export interface ReplyReactionsParams extends ReactionParamsBase {
+  replyId: string;
+}
+
+export type GetReactionsParams = CommentReactionsParams | ReplyReactionsParams;
+
+// --- CreateReactionParams ---
+export interface CreateCommentReactionParams extends ReactionParamsBase {
+  replyId?: undefined;
   content: string;
   reactionUser: {
     userId: string;
@@ -15,20 +31,30 @@ export interface CreateReactionParams {
   };
 }
 
-export interface DeleteReactionParams {
-  boardId: string;
-  postId: string;
-  commentId: string;
-  replyId?: string;
+export interface CreateReplyReactionParams extends ReactionParamsBase {
+  replyId: string;
+  content: string;
+  reactionUser: {
+    userId: string;
+    userName: string;
+    userProfileImage: string;
+  };
+}
+
+export type CreateReactionParams = CreateCommentReactionParams | CreateReplyReactionParams;
+
+// --- DeleteReactionParams ---
+export interface DeleteCommentReactionParams extends ReactionParamsBase {
+  replyId?: undefined;
   reactionId: string;
 }
 
-export interface GetReactionsParams {
-  boardId: string;
-  postId: string;
-  commentId: string;
-  replyId?: string;
+export interface DeleteReplyReactionParams extends ReactionParamsBase {
+  replyId: string;
+  reactionId: string;
 }
+
+export type DeleteReactionParams = DeleteCommentReactionParams | DeleteReplyReactionParams;
 
 export async function createReaction(params: CreateReactionParams): Promise<string> {
   const { content, reactionUser, commentId, replyId } = params;
