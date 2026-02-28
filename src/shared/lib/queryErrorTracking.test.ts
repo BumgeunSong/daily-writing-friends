@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest';
 import { getErrorMessage } from './queryErrorTracking';
 
 describe('getErrorMessage', () => {
@@ -43,5 +44,10 @@ describe('getErrorMessage', () => {
   it('uses JSON.stringify for plain objects without message', () => {
     const obj = { code: '42501' };
     expect(getErrorMessage(obj)).toBe(JSON.stringify(obj));
+  });
+
+  it('handles object with nested object as message property', () => {
+    const obj = { message: { nested: 'value' } };
+    expect(getErrorMessage(obj)).toBe(JSON.stringify({ nested: 'value' }));
   });
 });
