@@ -1,6 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Load environment variables for E2E testing
@@ -8,7 +11,7 @@ import path from 'path';
  */
 // Load .env.e2e for E2E test configuration
 if (process.env.NODE_ENV === 'test') {
-  dotenv.config({ path: path.resolve(import.meta.dirname, 'config', '.env.e2e') });
+  dotenv.config({ path: path.resolve(__dirname, 'config', '.env.e2e') });
 } else {
   dotenv.config(); // Load default .env file
 }

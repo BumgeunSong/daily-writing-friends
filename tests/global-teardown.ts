@@ -3,6 +3,9 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs/promises';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const execAsync = promisify(exec);
 
@@ -45,7 +48,7 @@ async function cleanupTempFiles() {
   console.log('🗑️  Cleaning up temporary files...');
   
   const tempFiles = [
-    path.resolve(import.meta.dirname, 'setup-failure-screenshot.png'),
+    path.resolve(__dirname, 'setup-failure-screenshot.png'),
     // Add other temp files that might be created during tests
   ];
   
@@ -68,7 +71,7 @@ async function stopEmulators() {
   
   try {
     await execAsync('npm run emu:stop', {
-      cwd: path.resolve(import.meta.dirname, '..'),
+      cwd: path.resolve(__dirname, '..'),
       timeout: 10000 // 10 seconds timeout
     });
     

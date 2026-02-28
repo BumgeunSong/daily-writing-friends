@@ -3,6 +3,9 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs/promises';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const execAsync = promisify(exec);
 
@@ -68,7 +71,7 @@ async function checkEmulatorsRunning() {
       
       // Start emulators in the background
       const child = exec('npm run emu:start', {
-        cwd: path.resolve(import.meta.dirname, '..')
+        cwd: path.resolve(__dirname, '..')
       });
 
       // Wait a bit for emulators to start
@@ -102,7 +105,7 @@ async function seedAuthEmulator() {
   
   try {
     const { stdout, stderr } = await execAsync('npm run emu:seed', {
-      cwd: path.resolve(import.meta.dirname, '..'),
+      cwd: path.resolve(__dirname, '..'),
       timeout: 30000 // 30 seconds timeout
     });
     

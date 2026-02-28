@@ -15,5 +15,5 @@ export function useIsCurrentUserActive() {
     const { currentUser } = useAuth();
     const isCurrentUserActive = isUserInActiveList(userData, currentUser?.uid);
 
-    return { isCurrentUserActive, isLoading };
+    return { isCurrentUserActive, isLoading: isLoading || isConfigLoading };
 }
