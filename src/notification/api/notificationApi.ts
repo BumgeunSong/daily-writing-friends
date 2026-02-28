@@ -20,7 +20,7 @@ export const fetchNotifications = async (
 
   return rows.map(row => ({
     id: row.id,
-    type: row.type as Notification['type'],
+    type: row.type,
     boardId: row.boardId,
     postId: row.postId,
     commentId: row.commentId,

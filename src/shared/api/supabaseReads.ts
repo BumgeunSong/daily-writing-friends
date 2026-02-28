@@ -16,6 +16,7 @@ import type { Reply } from '@/comment/model/Reply';
 import type { Reaction } from '@/comment/model/Reaction';
 import type { User } from '@/user/model/User';
 import { Timestamp } from 'firebase/firestore';
+import { NotificationType } from '@/notification/model/Notification';
 
 /** Format string array as PostgREST `in.(...)` value with proper quoting */
 function formatInFilter(values: string[]): string {
@@ -1017,6 +1018,20 @@ export async function fetchBatchReactionsForComments(
 
 // --- Notifications ---
 
+export interface NotificationDTO {
+  id: string;
+  type: NotificationType;
+  boardId: string;
+  postId: string;
+  commentId?: string;
+  replyId?: string;
+  fromUserId: string;
+  fromUserProfileImage?: string;
+  message: string;
+  timestamp: string; // ISO string from Supabase
+  read: boolean;
+}
+
 /**
  * Fetch notifications for a user from Supabase.
  * Replaces: fetchNotifications in notificationApi.ts
@@ -1026,19 +1041,7 @@ export async function fetchNotificationsFromSupabase(
   userId: string,
   limitCount: number,
   after?: string
-): Promise<{
-  id: string;
-  type: string;
-  boardId: string;
-  postId: string;
-  commentId?: string;
-  replyId?: string;
-  fromUserId: string;
-  fromUserProfileImage?: string;
-  message: string;
-  timestamp: string;
-  read: boolean;
-}[]> {
+): Promise<NotificationDTO[]> {
   const supabase = getSupabaseClient();
 
   let query = supabase
@@ -1079,7 +1082,7 @@ export async function fetchNotificationsFromSupabase(
 
   return (data || []).map(row => ({
     id: row.id,
-    type: row.type,
+    type: row.type as NotificationType,
     boardId: row.board_id,
     postId: row.post_id,
     commentId: row.comment_id || undefined,
