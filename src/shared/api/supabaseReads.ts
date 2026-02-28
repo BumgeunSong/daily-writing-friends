@@ -177,6 +177,67 @@ export async function fetchPostingsByDateRangeFromSupabase(
   }));
 }
 
+/** Shared join fields for posts table */
+interface PostJoinFields {
+  id: string;
+  title: string;
+  author_id: string;
+  board_id: string;
+}
+
+/** Row from: comments + posts!inner join */
+interface CommentWithPostJoin {
+  id: string;
+  content: string;
+  created_at: string;
+  post_id: string;
+  posts: PostJoinFields | PostJoinFields[];
+}
+
+/** Row from: replies + comments!inner + posts!inner join */
+interface ReplyWithJoins {
+  id: string;
+  created_at: string;
+  comment_id: string;
+  post_id: string;
+  user_id: string;
+  comments: { id: string } | { id: string }[];
+  posts: PostJoinFields | PostJoinFields[];
+}
+
+/** Row from: user_board_permissions + boards!inner join */
+interface BoardPermissionWithJoins {
+  board_id: string;
+  permission: string;
+  boards: {
+    id: string; title: string; description: string | null;
+    first_day: string | null; last_day: string | null;
+    cohort: number | null; created_at: string;
+  } | {
+    id: string; title: string; description: string | null;
+    first_day: string | null; last_day: string | null;
+    cohort: number | null; created_at: string;
+  }[];
+}
+
+/** Row from: user_board_permissions + users!inner join */
+interface UserPermissionWithJoins {
+  user_id: string;
+  board_id: string;
+  permission: string;
+  users: {
+    id: string; real_name: string | null; nickname: string | null;
+    email: string | null; profile_photo_url: string | null;
+    bio: string | null; phone_number: string | null;
+    referrer: string | null; timezone: string | null;
+  } | {
+    id: string; real_name: string | null; nickname: string | null;
+    email: string | null; profile_photo_url: string | null;
+    bio: string | null; phone_number: string | null;
+    referrer: string | null; timezone: string | null;
+  }[];
+}
+
 /**
  * Fetch user's comments within a date range from Supabase.
  * Replaces: users/{userId}/commentings subcollection
@@ -215,8 +276,7 @@ export async function fetchCommentingsByDateRangeFromSupabase(
     throw error;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data || []).map((row: any) => {
+  return ((data || []) as CommentWithPostJoin[]).map((row) => {
     const post = Array.isArray(row.posts) ? row.posts[0] : row.posts;
     return {
       board: { id: post.board_id },
@@ -273,8 +333,7 @@ export async function fetchReplyingsByDateRangeFromSupabase(
     throw error;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data || []).map((row: any) => {
+  return ((data || []) as ReplyWithJoins[]).map((row) => {
     const post = Array.isArray(row.posts) ? row.posts[0] : row.posts;
     const comment = Array.isArray(row.comments) ? row.comments[0] : row.comments;
     return {
@@ -336,8 +395,7 @@ export async function fetchBoardsFromSupabase(userId: string): Promise<Board[]> 
     waitingByBoard[w.board_id].push(w.user_id);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (data || []).map((row: any) => {
+  return ((data || []) as BoardPermissionWithJoins[]).map((row) => {
     const board = Array.isArray(row.boards) ? row.boards[0] : row.boards;
     return {
       id: board.id,
@@ -749,8 +807,7 @@ export async function fetchUsersWithBoardPermissionFromSupabase(
 
   // Deduplicate users (a user may have permissions on multiple boards)
   const userMap = new Map<string, User>();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  for (const row of (data || []) as any[]) {
+  for (const row of (data || []) as UserPermissionWithJoins[]) {
     const u = Array.isArray(row.users) ? row.users[0] : row.users;
     if (!userMap.has(u.id)) {
       userMap.set(u.id, {
