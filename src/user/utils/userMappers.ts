@@ -1,10 +1,20 @@
 import type { User } from '@/user/model/User';
 
+export interface SupabaseUserUpdate {
+  real_name?: string | null;
+  nickname?: string | null;
+  email?: string | null;
+  profile_photo_url?: string | null;
+  bio?: string | null;
+  phone_number?: string | null;
+  referrer?: string | null;
+}
+
 /**
  * Partial<User>의 camelCase 필드를 Supabase users 테이블의 snake_case 컬럼으로 변환
  */
-export function mapUserToSupabaseUpdate(data: Partial<User>): Record<string, unknown> {
-  const updateData: Record<string, unknown> = {};
+export function mapUserToSupabaseUpdate(data: Partial<User>): SupabaseUserUpdate {
+  const updateData: SupabaseUserUpdate = {};
   if (data.realName !== undefined) updateData.real_name = data.realName;
   if (data.nickname !== undefined) updateData.nickname = data.nickname;
   if (data.email !== undefined) updateData.email = data.email;
