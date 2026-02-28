@@ -1,4 +1,5 @@
 import type { Reaction } from '@/comment/model/Reaction';
+import type { UserSummary } from '@/shared/model/UserSummary';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { fetchReactionsFromSupabase } from '@/shared/api/supabaseReads';
 
@@ -24,21 +25,13 @@ export type GetReactionsParams = CommentReactionsParams | ReplyReactionsParams;
 export interface CreateCommentReactionParams extends ReactionParamsBase {
   replyId?: undefined;
   content: string;
-  reactionUser: {
-    userId: string;
-    userName: string;
-    userProfileImage: string;
-  };
+  reactionUser: UserSummary;
 }
 
 export interface CreateReplyReactionParams extends ReactionParamsBase {
   replyId: string;
   content: string;
-  reactionUser: {
-    userId: string;
-    userName: string;
-    userProfileImage: string;
-  };
+  reactionUser: UserSummary;
 }
 
 export type CreateReactionParams = CreateCommentReactionParams | CreateReplyReactionParams;
