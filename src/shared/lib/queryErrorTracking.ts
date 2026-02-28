@@ -10,6 +10,23 @@ const SLOW_QUERY_THRESHOLD = 3000; // 3 seconds
 const VERY_SLOW_QUERY_THRESHOLD = 5000; // 5 seconds
 
 /**
+ * Extract a meaningful message from any error-like value.
+ *
+ * Supabase PostgrestError is a plain object with a `message` property
+ * but is NOT an Error instance, so `String(error)` yields "[object Object]".
+ */
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return String((error as { message: unknown }).message);
+  }
+  if (typeof error === 'object' && error !== null) {
+    return JSON.stringify(error);
+  }
+  return String(error);
+}
+
+/**
  * Detect iOS IndexedDB connection errors
  *
  * iOS Safari/WebKit aggressively kills IndexedDB connections when:
@@ -229,7 +246,7 @@ function addErrorContext(params: {
       [`${type}Key`]: key,
       ...(retryCount !== undefined && { retryCount }),
       ...(variables !== undefined && { variables: variables ? '[Variables present]' : undefined }),
-      errorMessage: error instanceof Error ? error.message : String(error),
+      errorMessage: getErrorMessage(error),
     },
     'error'
   );
@@ -325,7 +342,7 @@ function handleFirebaseMutationError(error: FirebaseError, mutationKey: unknown[
  * Capture non-Firebase query errors
  */
 function captureQueryError(error: unknown, queryKey: unknown[], retryCount: number) {
-  const enhancedError = error instanceof Error ? error : new Error(String(error));
+  const enhancedError = error instanceof Error ? error : new Error(getErrorMessage(error));
 
   Sentry.withScope((scope) => {
     scope.setFingerprint(['query-error', getQueryKeyDescription(queryKey)]);
@@ -343,7 +360,7 @@ function captureQueryError(error: unknown, queryKey: unknown[], retryCount: numb
  * Capture non-Firebase mutation errors
  */
 function captureMutationError(error: unknown, mutationKey: unknown[] | undefined, variables: unknown) {
-  const enhancedError = error instanceof Error ? error : new Error(String(error));
+  const enhancedError = error instanceof Error ? error : new Error(getErrorMessage(error));
 
   Sentry.withScope((scope) => {
     scope.setFingerprint(['mutation-error', mutationKey ? getQueryKeyDescription(mutationKey) : 'unknown']);
