@@ -36,7 +36,7 @@ export function useAuth() {
   return useContext(AuthContext);
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Parse stored AuthUser from localStorage with shape validation. */
 export function parseStoredAuthUser(raw: string | null): AuthUser | null {
@@ -66,7 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // onAuthStateChange fires INITIAL_SESSION on mount — no need for getSession()
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const authUser = session?.user ? mapToAuthUser(session.user) : null;
+      const user = session?.user;
+      const authUser = user && UUID_RE.test(user.id) ? mapToAuthUser(user) : null;
       syncUserState(authUser, setCurrentUser);
       setLoading(false);
     });
