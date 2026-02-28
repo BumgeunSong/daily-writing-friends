@@ -8,13 +8,15 @@ import {
   getLastNotificationTimestamp,
 } from './notificationUtils';
 import type { Notification } from '@/notification/model/Notification';
+import type { CommentNotification } from '@/notification/model/Notification';
 
-function createMockNotification(overrides: Partial<Notification> = {}): Notification {
+function createMockNotification(overrides: Partial<CommentNotification> = {}): Notification {
   return {
     id: 'notification-1',
     type: NotificationType.COMMENT_ON_POST,
     boardId: 'board-1',
     postId: 'post-1',
+    commentId: 'comment-1',
     fromUserId: 'user-1',
     message: 'Test notification',
     timestamp: Timestamp.fromDate(new Date('2025-01-15T12:00:00Z')),
@@ -106,7 +108,6 @@ describe('notificationUtils', () => {
     it('should preserve notification properties', () => {
       const notification = createMockNotification({
         id: 'test-id',
-        type: NotificationType.REPLY_ON_COMMENT,
         message: 'Test message',
         read: true,
       });
