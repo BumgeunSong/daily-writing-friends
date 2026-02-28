@@ -4,13 +4,10 @@ import type { Firestore} from 'firebase/firestore';
 import { connectFirestoreEmulator } from 'firebase/firestore';
 import type { FirebaseStorage} from 'firebase/storage';
 import { connectStorageEmulator } from 'firebase/storage';
-import type { Auth} from 'firebase/auth';
-import { connectAuthEmulator } from 'firebase/auth';
 import { ERROR_MESSAGES } from './constants';
 import { createEmulatorConfig, shouldUseEmulators } from './utils';
 
 export interface EmulatorConfig {
-  auth: { host: string; port: number };
   firestore: { host: string; port: number };
   storage: { host: string; port: number };
   functions: { host: string; port: number };
@@ -21,21 +18,6 @@ export interface EmulatorConfig {
  */
 export const getEmulatorConfig = (): EmulatorConfig => {
   return createEmulatorConfig();
-};
-
-/**
- * Connects to Firebase Auth emulator
- */
-export const connectToAuthEmulator = (auth: Auth, config: EmulatorConfig): void => {
-  try {
-    connectAuthEmulator(auth, `http://${config.auth.host}:${config.auth.port}`, {
-      disableWarnings: true,
-    });
-    console.log(`🔐 Connected to Auth emulator at ${config.auth.host}:${config.auth.port}`);
-  } catch (error) {
-    console.error('Failed to connect to Auth emulator:', error);
-    throw error;
-  }
 };
 
 /**
@@ -75,7 +57,6 @@ export const connectToStorageEmulator = (
  * Connects all Firebase services to their respective emulators
  */
 export const connectToEmulators = (
-  auth: Auth,
   firestore: Firestore,
   storage: FirebaseStorage,
 ): void => {
@@ -89,7 +70,6 @@ export const connectToEmulators = (
   console.log('Emulator configuration:', config);
 
   try {
-    connectToAuthEmulator(auth, config);
     connectToFirestoreEmulator(firestore, config);
     connectToStorageEmulator(storage, config);
   } catch (error) {

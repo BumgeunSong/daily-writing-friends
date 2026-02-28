@@ -9,19 +9,10 @@ import { getInstallations } from 'firebase/installations';
 import type { FirebasePerformance} from 'firebase/performance';
 import { getPerformance } from 'firebase/performance';
 import { getStorage } from 'firebase/storage';
-import type { UserCredential } from 'firebase/auth';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import type { RemoteConfig } from 'firebase/remote-config';
 import { getRemoteConfig } from 'firebase/remote-config';
 
 // Internal imports (alphabetically ordered)
-import {
-  configureAuthPersistence,
-  signInWithGoogle as googleSignIn,
-  signOutUser as userSignOut,
-  signInWithTestCredentials as testCredentialsSignIn,
-  signInWithTestToken as testTokenSignIn,
-} from './firebase/auth';
 import { connectToEmulators } from './firebase/emulator';
 import { configureRemoteConfig } from './firebase/remote-config';
 import { createEmulatorConfig, createFirebaseConfig, shouldUseEmulators } from './firebase/utils';
@@ -31,7 +22,6 @@ const firebaseConfig = createFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 
 // Initialize core services
-const auth = getAuth(app);
 // Use memory-only cache (no offline persistence) to avoid:
 // - "FIRESTORE INTERNAL ASSERTION FAILED: Unexpected state" errors
 // - PersistentWriteStream sync queue corruption on Mobile Safari
@@ -42,7 +32,6 @@ const firestore = initializeFirestore(app, {
 });
 const storage = getStorage(app);
 const installations = getInstallations(app);
-const provider = new GoogleAuthProvider();
 
 // Non-critical services (initialized conditionally, wrapped in object to avoid mutable exports)
 const optionalServices: {
@@ -87,27 +76,12 @@ if (!useEmulators && typeof window !== 'undefined') {
   );
 }
 
-// Configure auth persistence
-configureAuthPersistence(auth).catch((error) => {
-  console.error('Failed to configure auth persistence:', error);
-});
-
 // Connect to emulators if enabled
-connectToEmulators(auth, firestore, storage);
+connectToEmulators(firestore, storage);
 
 // Export configuration flags for other modules
 export const isUsingEmulators = useEmulators;
 export const emulatorConfiguration = createEmulatorConfig();
-
-// Auth function wrappers that use our initialized services
-export const signInWithGoogle = (): Promise<UserCredential> => googleSignIn(auth, provider);
-export const signOutUser = (): Promise<void> => userSignOut(auth);
-export const signInWithTestCredentials = (
-  email: string,
-  password: string,
-): Promise<UserCredential> => testCredentialsSignIn(auth, email, password);
-export const signInWithTestToken = (customToken: string): Promise<UserCredential> =>
-  testTokenSignIn(auth, customToken);
 
 // Getter functions for lazily-initialized services
 export const getFirebaseRemoteConfig = () => optionalServices.remoteConfig;
@@ -117,4 +91,4 @@ export const getFirebaseAnalytics = () => optionalServices.analytics;
 // Backward-compatible named exports (remoteConfig is set synchronously at module init)
 const remoteConfig = optionalServices.remoteConfig;
 
-export { auth, firestore, storage, installations, app, remoteConfig };
+export { firestore, storage, installations, app, remoteConfig };

@@ -1,10 +1,6 @@
 // Always mock external dependencies before any imports!
 vi.mock('@/firebase', () => ({
   remoteConfig: { settings: {}, defaultConfig: {} },
-  auth: {
-    currentUser: { uid: '123' },
-    onAuthStateChanged: vi.fn(),
-  },  
 }));
 
 vi.mock('@/shared/hooks/useRemoteConfig', () => ({
@@ -121,7 +117,7 @@ describe('BoardListPage', () => {
     const { findByText } = renderWithProviders(<BoardListPage />);
     expect(fetchBoardsWithUserPermissions).toHaveBeenCalled();
     const boardLink = (await findByText(/Board 1/)).closest('a');
-    boardLink && boardLink.click();
+    if (boardLink) boardLink.click();
     expect(localStorage.getItem('boardId')).toBe('1');
   });
 });

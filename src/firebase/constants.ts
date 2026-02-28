@@ -27,7 +27,6 @@ export const REMOTE_CONFIG_FETCH_INTERVALS = {
 export const DEFAULT_EMULATOR_CONFIG = {
   HOST: 'localhost',
   PORTS: {
-    AUTH: '9099',
     FIRESTORE: '8080',
     STORAGE: '9199',
     FUNCTIONS: '5001',
@@ -49,8 +48,6 @@ export const FIREBASE_CONFIG_KEYS = {
 // Environment variable keys
 export const ENV_KEYS = {
   USE_EMULATORS: 'VITE_USE_EMULATORS',
-  EMULATOR_AUTH_HOST: 'VITE_EMULATOR_AUTH_HOST',
-  EMULATOR_AUTH_PORT: 'VITE_EMULATOR_AUTH_PORT',
   EMULATOR_FIRESTORE_HOST: 'VITE_EMULATOR_FIRESTORE_HOST',
   EMULATOR_FIRESTORE_PORT: 'VITE_EMULATOR_FIRESTORE_PORT',
   EMULATOR_STORAGE_HOST: 'VITE_EMULATOR_STORAGE_HOST',
@@ -61,8 +58,5 @@ export const ENV_KEYS = {
 
 // Error messages
 export const ERROR_MESSAGES = {
-  KAKAO_BROWSER_LOGIN: '카카오톡 인앱 브라우저에서는 구글 로그인을 할 수 없어요',
-  TEST_CREDENTIALS_EMULATOR_ONLY: 'Test credentials can only be used with Firebase emulators',
-  CUSTOM_TOKEN_EMULATOR_ONLY: 'Custom tokens can only be used with Firebase emulators',
   EMULATOR_START_COMMAND: 'Make sure Firebase emulators are running: firebase emulators:start',
 } as const;
