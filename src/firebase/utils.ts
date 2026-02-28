@@ -27,13 +27,6 @@ export const createFirebaseConfig = () => ({
  * Creates emulator configuration object from environment variables
  */
 export const createEmulatorConfig = () => ({
-  auth: {
-    host: import.meta.env[ENV_KEYS.EMULATOR_AUTH_HOST] || DEFAULT_EMULATOR_CONFIG.HOST,
-    port: parseInt(
-      import.meta.env[ENV_KEYS.EMULATOR_AUTH_PORT] || DEFAULT_EMULATOR_CONFIG.PORTS.AUTH,
-      DEFAULT_EMULATOR_CONFIG.RADIX,
-    ),
-  },
   firestore: {
     host: import.meta.env[ENV_KEYS.EMULATOR_FIRESTORE_HOST] || DEFAULT_EMULATOR_CONFIG.HOST,
     port: parseInt(
@@ -64,11 +57,3 @@ export const shouldUseEmulators = (): boolean => {
   return parseBoolean(import.meta.env[ENV_KEYS.USE_EMULATORS]);
 };
 
-/**
- * Checks if code is running in Kakao in-app browser
- */
-export const isInKakaoInAppBrowser = (): boolean => {
-  if (typeof navigator === 'undefined') return false;
-  const userAgent = navigator.userAgent;
-  return /KAKAOTALK/i.test(userAgent);
-};

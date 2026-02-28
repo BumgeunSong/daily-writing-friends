@@ -2,9 +2,7 @@
 
 ## Overview
 
-The app normally uses Google OAuth, which blocks automated browser testing. To enable LLM-driven testing via Playwright MCP, we use local Supabase with email/password authentication.
-
-This setup uses `VITE_READ_SOURCE=supabase` to read from local Supabase instead of Firestore, allowing Claude to interact with the app through automated browser testing.
+The app uses Google OAuth in production, which blocks automated browser testing. To enable LLM-driven testing via Playwright MCP, we use local Supabase with email/password authentication.
 
 ## Prerequisites
 
@@ -76,13 +74,12 @@ npm run supabase:stop
 
 ## Troubleshooting
 
-- **Blank page after login**: Check `.env.local` has `VITE_READ_SOURCE=supabase`
-- **Auth fails**: The seed script does not create auth users. Create one via Supabase Dashboard (Auth > Users > Add user) or Admin API, then link `users.id` to the auth UUID
+- **Blank page after login**: Check `.env.local` has correct `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`
+- **Auth fails**: The seed script creates a test auth user. If missing, create one via Supabase Dashboard (Auth > Users > Add user) with the same `id` as a user in the `users` table
 - **No data**: Ensure `supabase/seed.sql` exists and has INSERT statements
 
 ## Architecture Notes
 
-- Read source switching: `VITE_READ_SOURCE` env var controls whether reads go to Firestore or Supabase
+- All reads and writes go directly to Supabase (Firestore migration complete)
+- Authentication uses Supabase Auth (Google OAuth in production, email/password locally)
 - Local Supabase client auto-detects localhost and enables session persistence
-- Production is unaffected: `VITE_READ_SOURCE` defaults to `firestore` when unset
-- Write paths still use dual-write to Firestore (primary) + Supabase
