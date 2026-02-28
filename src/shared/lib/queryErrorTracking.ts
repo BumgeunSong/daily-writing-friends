@@ -18,7 +18,10 @@ const VERY_SLOW_QUERY_THRESHOLD = 5000; // 5 seconds
 export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   if (typeof error === 'object' && error !== null && 'message' in error) {
-    return String((error as { message: unknown }).message);
+    const message = (error as { message: unknown }).message;
+    if (typeof message === 'string') return message;
+    if (typeof message === 'object' && message !== null) return JSON.stringify(message);
+    return String(message);
   }
   if (typeof error === 'object' && error !== null) {
     return JSON.stringify(error);
