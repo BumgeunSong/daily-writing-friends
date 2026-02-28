@@ -206,19 +206,24 @@ interface ReplyWithJoins {
   posts: PostJoinFields | PostJoinFields[];
 }
 
+interface BoardJoinRow {
+  id: string; title: string; description: string | null;
+  first_day: string | null; last_day: string | null;
+  cohort: number | null; created_at: string;
+}
+
 /** Row from: user_board_permissions + boards!inner join */
 interface BoardPermissionWithJoins {
   board_id: string;
   permission: string;
-  boards: {
-    id: string; title: string; description: string | null;
-    first_day: string | null; last_day: string | null;
-    cohort: number | null; created_at: string;
-  } | {
-    id: string; title: string; description: string | null;
-    first_day: string | null; last_day: string | null;
-    cohort: number | null; created_at: string;
-  }[];
+  boards: BoardJoinRow | BoardJoinRow[];
+}
+
+interface UserJoinRow {
+  id: string; real_name: string | null; nickname: string | null;
+  email: string | null; profile_photo_url: string | null;
+  bio: string | null; phone_number: string | null;
+  referrer: string | null; timezone: string | null;
 }
 
 /** Row from: user_board_permissions + users!inner join */
@@ -226,17 +231,7 @@ interface UserPermissionWithJoins {
   user_id: string;
   board_id: string;
   permission: string;
-  users: {
-    id: string; real_name: string | null; nickname: string | null;
-    email: string | null; profile_photo_url: string | null;
-    bio: string | null; phone_number: string | null;
-    referrer: string | null; timezone: string | null;
-  } | {
-    id: string; real_name: string | null; nickname: string | null;
-    email: string | null; profile_photo_url: string | null;
-    bio: string | null; phone_number: string | null;
-    referrer: string | null; timezone: string | null;
-  }[];
+  users: UserJoinRow | UserJoinRow[];
 }
 
 /**
@@ -1082,6 +1077,7 @@ export async function fetchNotificationsFromSupabase(
 
   return (data || []).map(row => ({
     id: row.id,
+    // type is validated downstream by mapDTOToNotification's exhaustive switch
     type: row.type as NotificationType,
     boardId: row.board_id,
     postId: row.post_id,

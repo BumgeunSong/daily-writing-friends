@@ -4,7 +4,7 @@ import type { Notification } from '@/notification/model/Notification';
 import { NotificationType } from '@/notification/model/Notification';
 import { Timestamp } from 'firebase/firestore';
 
-function mapDTOToNotification(row: NotificationDTO): Notification {
+export function mapDTOToNotification(row: NotificationDTO): Notification {
   const base = {
     id: row.id,
     boardId: row.boardId,
@@ -34,6 +34,10 @@ function mapDTOToNotification(row: NotificationDTO): Notification {
       return { ...base, type: row.type, commentId: row.commentId, replyId: row.replyId };
     case NotificationType.LIKE_ON_POST:
       return { ...base, type: row.type };
+    default: {
+      const _exhaustive: never = row.type;
+      throw new Error(`Unknown notification type: ${_exhaustive}`);
+    }
   }
 }
 

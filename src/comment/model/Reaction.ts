@@ -7,13 +7,13 @@ export type ReactionUser = UserSummary;
  * 댓글이나 답글에 대한 이모지 반응을 나타냅니다.
  */
 export interface Reaction {
-    id: string;
-    content: string; // 이모지
-    createdAt: Date; // 생성 시간
-    reactionUser: UserSummary;
+  id: string;
+  content: string;
+  createdAt: Date;
+  reactionUser: UserSummary;
 }
 
 export interface GroupedReaction {
-    content: string; // 이모지
-    by: UserSummary[];
+  content: string;
+  by: UserSummary[];
 }
