@@ -2,8 +2,9 @@ import { render, screen } from '@testing-library/react';
 import type { Timestamp } from 'firebase/firestore';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
-import type { Notification} from '@/notification/model/Notification';
+import type { Notification } from '@/notification/model/Notification';
 import { NotificationType } from '@/notification/model/Notification';
+import type { CommentNotification } from '@/notification/model/Notification';
 import { NotificationItem } from '../NotificationItem';
 
 // Mock Firebase Timestamp
@@ -17,13 +18,14 @@ vi.mock('firebase/firestore', () => ({
   },
 }));
 
-const createMockNotification = (overrides: Partial<Notification> = {}): Notification => {
+const createMockNotification = (overrides: Partial<CommentNotification> = {}): Notification => {
   const mockDate = new Date('2026-01-04T10:00:00Z');
   return {
     id: 'notif-1',
     type: NotificationType.COMMENT_ON_POST,
     boardId: 'board-123',
     postId: 'post-456',
+    commentId: 'comment-789',
     fromUserId: 'user-789',
     fromUserProfileImage: 'https://example.com/avatar.jpg',
     message: 'John님이 댓글을 남겼습니다.',
