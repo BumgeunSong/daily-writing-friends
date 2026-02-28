@@ -51,15 +51,6 @@ function applyCustomFingerprinting(event: Sentry.Event, error: Error): void {
     return;
   }
 
-  // Group Firebase auth errors by specific auth error type
-  if (error.message?.includes('Firebase: Error')) {
-    const authErrorType = error.message.match(/\(auth\/([^)]+)\)/)?.[1];
-    if (authErrorType) {
-      event.fingerprint = ['firebase-auth', authErrorType];
-      return;
-    }
-  }
-
   // Group network timeout errors
   const isNetworkTimeout =
     error.message?.includes('timeout') ||
