@@ -26,7 +26,7 @@ CREATE POLICY "Public posts are viewable by everyone, private posts by author on
 CREATE POLICY "Users can insert their own posts"
   ON posts FOR INSERT WITH CHECK (auth.uid() = author_id);
 CREATE POLICY "Users can update their own posts"
-  ON posts FOR UPDATE USING (auth.uid() = author_id);
+  ON posts FOR UPDATE USING (auth.uid() = author_id) WITH CHECK (auth.uid() = author_id);
 CREATE POLICY "Users can delete their own posts"
   ON posts FOR DELETE USING (auth.uid() = author_id);
 
@@ -40,7 +40,7 @@ CREATE POLICY "Comments are viewable by everyone"
 CREATE POLICY "Users can insert their own comments"
   ON comments FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update their own comments"
-  ON comments FOR UPDATE USING (auth.uid() = user_id);
+  ON comments FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can delete their own comments"
   ON comments FOR DELETE USING (auth.uid() = user_id);
 
@@ -54,7 +54,7 @@ CREATE POLICY "Replies are viewable by everyone"
 CREATE POLICY "Users can insert their own replies"
   ON replies FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update their own replies"
-  ON replies FOR UPDATE USING (auth.uid() = user_id);
+  ON replies FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can delete their own replies"
   ON replies FOR DELETE USING (auth.uid() = user_id);
 
@@ -91,7 +91,9 @@ ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view their own notifications"
   ON notifications FOR SELECT USING (auth.uid() = recipient_id);
 CREATE POLICY "Users can update their own notifications"
-  ON notifications FOR UPDATE USING (auth.uid() = recipient_id);
+  ON notifications FOR UPDATE USING (auth.uid() = recipient_id) WITH CHECK (auth.uid() = recipient_id);
+CREATE POLICY "Users can delete their own notifications"
+  ON notifications FOR DELETE USING (auth.uid() = recipient_id);
 
 -- =============================================
 -- Drafts (private to owner)
@@ -103,7 +105,7 @@ CREATE POLICY "Users can view their own drafts"
 CREATE POLICY "Users can insert their own drafts"
   ON drafts FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update their own drafts"
-  ON drafts FOR UPDATE USING (auth.uid() = user_id);
+  ON drafts FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can delete their own drafts"
   ON drafts FOR DELETE USING (auth.uid() = user_id);
 
@@ -126,8 +128,10 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "User profiles are viewable by everyone"
   ON users FOR SELECT USING (true);
+CREATE POLICY "Users can insert their own profile"
+  ON users FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Users can update their own profile"
-  ON users FOR UPDATE USING (auth.uid() = id);
+  ON users FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
 
 -- =============================================
 -- Reviews (public read, own-row writes)
@@ -139,7 +143,7 @@ CREATE POLICY "Reviews are viewable by everyone"
 CREATE POLICY "Users can insert their own reviews"
   ON reviews FOR INSERT WITH CHECK (auth.uid() = reviewer_id);
 CREATE POLICY "Users can update their own reviews"
-  ON reviews FOR UPDATE USING (auth.uid() = reviewer_id);
+  ON reviews FOR UPDATE USING (auth.uid() = reviewer_id) WITH CHECK (auth.uid() = reviewer_id);
 
 -- =============================================
 -- Boards (public read, admin writes via service_role)
