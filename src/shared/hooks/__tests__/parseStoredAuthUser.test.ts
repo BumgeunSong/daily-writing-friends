@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { parseStoredAuthUser } from '../useAuth';
 
+const VALID_UUID = '550e8400-e29b-41d4-a716-446655440000';
+
 describe('parseStoredAuthUser', () => {
   it('returns null for null input', () => {
     expect(parseStoredAuthUser(null)).toBeNull();
@@ -26,15 +28,23 @@ describe('parseStoredAuthUser', () => {
     expect(parseStoredAuthUser('{"uid":123}')).toBeNull();
   });
 
-  it('parses valid AuthUser', () => {
+  it('returns null for Firebase UID (not a UUID)', () => {
+    expect(parseStoredAuthUser('{"uid":"1y06BmkauwhIEwZm9LQmEmgl6Al1"}')).toBeNull();
+  });
+
+  it('returns null for short non-UUID string', () => {
+    expect(parseStoredAuthUser('{"uid":"abc-123"}')).toBeNull();
+  });
+
+  it('parses valid AuthUser with UUID uid', () => {
     const stored = JSON.stringify({
-      uid: 'abc-123',
+      uid: VALID_UUID,
       email: 'test@example.com',
       displayName: 'Test',
       photoURL: 'https://photo.jpg',
     });
     expect(parseStoredAuthUser(stored)).toEqual({
-      uid: 'abc-123',
+      uid: VALID_UUID,
       email: 'test@example.com',
       displayName: 'Test',
       photoURL: 'https://photo.jpg',
@@ -42,9 +52,9 @@ describe('parseStoredAuthUser', () => {
   });
 
   it('parses AuthUser with only uid', () => {
-    const stored = JSON.stringify({ uid: 'abc-123' });
+    const stored = JSON.stringify({ uid: VALID_UUID });
     const result = parseStoredAuthUser(stored);
     expect(result).not.toBeNull();
-    expect(result!.uid).toBe('abc-123');
+    expect(result!.uid).toBe(VALID_UUID);
   });
 });
