@@ -112,7 +112,7 @@ describe('resolvePrivateRoute', () => {
       .toEqual({ type: 'redirect', returnToPath: null });
   });
 
-  it('allows authenticated user through even while loading', () => {
+  it('returns loading for authenticated user while auth is in progress', () => {
     expect(resolvePrivateRoute({ currentUser: activeUser, loading: true, pathname: '/boards' }))
       .toEqual({ type: 'loading' });
   });
