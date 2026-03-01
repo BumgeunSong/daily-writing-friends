@@ -3,6 +3,12 @@
  * Components call these and render the result — no side effects here.
  */
 
+/** Reject absolute URLs, protocol-relative URLs, and non-path strings. */
+export function isSafeReturnTo(value: string | null): boolean {
+  if (!value) return false;
+  return value.startsWith('/') && !value.startsWith('//');
+}
+
 export type RootRedirectResult =
   | { type: 'loading' }
   | { type: 'navigate'; to: string }
@@ -24,7 +30,7 @@ export function resolveRootRedirect(input: RootRedirectInput): RootRedirectResul
 
   if (!input.currentUser) return { type: 'navigate', to: '/join' };
 
-  if (input.returnTo) return { type: 'navigate', to: input.returnTo };
+  if (isSafeReturnTo(input.returnTo)) return { type: 'navigate', to: input.returnTo! };
 
   if (input.isCurrentUserActive) return { type: 'navigate', to: '/boards' };
 
@@ -43,18 +49,18 @@ export type PrivateRouteResult =
   | { type: 'allow' };
 
 interface PrivateRouteInput {
-  currentUser: unknown | null;
+  currentUser: { uid: string } | null;
   loading: boolean;
   pathname: string;
 }
 
 export function resolvePrivateRoute(input: PrivateRouteInput): PrivateRouteResult {
-  if (!input.loading && !input.currentUser) {
+  if (input.loading) return { type: 'loading' };
+
+  if (!input.currentUser) {
     const returnToPath = input.pathname !== '/login' ? input.pathname : null;
     return { type: 'redirect', returnToPath };
   }
-
-  if (input.loading) return { type: 'loading' };
 
   return { type: 'allow' };
 }

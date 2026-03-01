@@ -31,7 +31,7 @@ export default function LoginPage() {
         <CardFooter className='flex-col gap-2'>
           <Button
             variant="default"
-            onClick={handleLogin}
+            onClick={() => handleLogin()}
             disabled={isLoading}
             className='min-h-[44px] w-full'
           >

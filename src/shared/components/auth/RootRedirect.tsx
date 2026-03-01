@@ -33,8 +33,10 @@ export function RootRedirect() {
 
   if (result.type === 'loading') return null;
 
+  // Clear returnTo unconditionally once routing decision is made
+  if (returnTo) sessionStorage.removeItem('returnTo');
+
   if (result.type === 'navigate') {
-    if (returnTo) sessionStorage.removeItem('returnTo');
     return <Navigate to={result.to} replace />;
   }
 

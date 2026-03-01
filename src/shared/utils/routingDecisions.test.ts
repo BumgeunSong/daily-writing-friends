@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { resolveRootRedirect, resolvePrivateRoute } from './routingDecisions';
+import { isSafeReturnTo, resolveRootRedirect, resolvePrivateRoute } from './routingDecisions';
 
-const activeUser = { displayName: '홍길동' };
+const activeUser = { uid: 'user-1', displayName: '홍길동' };
 
 describe('resolveRootRedirect', () => {
   const defaults = {
@@ -69,6 +69,26 @@ describe('resolveRootRedirect', () => {
     expect(resolveRootRedirect({ ...defaults }))
       .toEqual({ type: 'navigate', to: '/join' });
   });
+
+  it('rejects absolute URL as returnTo (open redirect prevention)', () => {
+    expect(resolveRootRedirect({ ...defaults, isCurrentUserActive: true, returnTo: 'https://evil.com' }))
+      .toEqual({ type: 'navigate', to: '/boards' });
+  });
+
+  it('rejects protocol-relative URL as returnTo', () => {
+    expect(resolveRootRedirect({ ...defaults, isCurrentUserActive: true, returnTo: '//evil.com' }))
+      .toEqual({ type: 'navigate', to: '/boards' });
+  });
+
+  it('ignores stale returnTo for unauthenticated user', () => {
+    expect(resolveRootRedirect({ ...defaults, currentUser: null, returnTo: '/boards' }))
+      .toEqual({ type: 'navigate', to: '/join' });
+  });
+
+  it('falls back to empty string when both displayName and nickname are null', () => {
+    expect(resolveRootRedirect({ ...defaults, currentUser: { displayName: null }, isInWaitingList: true, cohort: 11 }))
+      .toEqual({ type: 'joinComplete', userName: '', cohort: 11 });
+  });
 });
 
 describe('resolvePrivateRoute', () => {
@@ -90,5 +110,36 @@ describe('resolvePrivateRoute', () => {
   it('redirects unauthenticated user without saving /login as returnTo', () => {
     expect(resolvePrivateRoute({ currentUser: null, loading: false, pathname: '/login' }))
       .toEqual({ type: 'redirect', returnToPath: null });
+  });
+
+  it('allows authenticated user through even while loading', () => {
+    expect(resolvePrivateRoute({ currentUser: activeUser, loading: true, pathname: '/boards' }))
+      .toEqual({ type: 'loading' });
+  });
+});
+
+describe('isSafeReturnTo', () => {
+  it('accepts relative paths', () => {
+    expect(isSafeReturnTo('/boards')).toBe(true);
+    expect(isSafeReturnTo('/board/abc-123')).toBe(true);
+    expect(isSafeReturnTo('/join/form')).toBe(true);
+  });
+
+  it('rejects null', () => {
+    expect(isSafeReturnTo(null)).toBe(false);
+  });
+
+  it('rejects absolute URLs', () => {
+    expect(isSafeReturnTo('https://evil.com')).toBe(false);
+    expect(isSafeReturnTo('http://evil.com/boards')).toBe(false);
+  });
+
+  it('rejects protocol-relative URLs', () => {
+    expect(isSafeReturnTo('//evil.com')).toBe(false);
+  });
+
+  it('rejects non-path strings', () => {
+    expect(isSafeReturnTo('javascript:alert(1)')).toBe(false);
+    expect(isSafeReturnTo('')).toBe(false);
   });
 });

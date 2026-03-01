@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useContext, useState, useEffect, createContext } from 'react';
+import { useContext, useState, useEffect, useRef, createContext } from 'react';
 
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { setSentryUser } from '@/sentry';
@@ -55,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return user;
   });
   const [loading, setLoading] = useState(true);
+  const userCreationAttempted = useRef(false);
 
   useEffect(() => {
     const supabase = getSupabaseClient();
@@ -63,7 +64,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const user = session?.user;
       const authUser = user && UUID_RE.test(user.id) ? mapToAuthUser(user) : null;
-      if (event === 'SIGNED_IN' && authUser) {
+      // Only create user on actual new logins, not on token refresh or tab re-focus
+      if (event === 'SIGNED_IN' && authUser && !userCreationAttempted.current) {
+        userCreationAttempted.current = true;
         createUserIfNotExists(authUser).catch(console.error);
       }
       syncUserState(authUser, setCurrentUser);
