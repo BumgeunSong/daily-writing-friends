@@ -9,8 +9,11 @@
 --   - Private posts and their child entities are visible only to the author
 --   - Users can only write/update/delete their own content
 --   - Notifications and drafts are private to the recipient/owner
---   - boards, users, user_board_permissions, board_waiting_users: read-only via anon
---     (writes go through service_role from admin app or edge functions)
+--   - boards: read-only via anon (writes go through service_role)
+--   - user_board_permissions: public SELECT; users can INSERT/UPDATE/DELETE their own
+--     (client upserts during signup/profile update)
+--   - board_waiting_users: public SELECT; users can INSERT themselves into waiting list
+--     (approval/rejection via service_role from admin app)
 --   - reviews: users can insert/update their own
 --   - uid_mapping: read-only reference table
 
@@ -87,8 +90,19 @@ ALTER TABLE reactions ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Reactions are viewable if parent post is visible"
   ON reactions FOR SELECT USING (
-    EXISTS (SELECT 1 FROM posts WHERE posts.id = reactions.post_id
-      AND (posts.visibility = 'public' OR posts.author_id = auth.uid()))
+    EXISTS (
+      SELECT 1 FROM comments
+      JOIN posts ON posts.id = comments.post_id
+      WHERE comments.id = reactions.comment_id
+        AND (posts.visibility = 'public' OR posts.author_id = auth.uid())
+    )
+    OR
+    EXISTS (
+      SELECT 1 FROM replies
+      JOIN posts ON posts.id = replies.post_id
+      WHERE replies.id = reactions.reply_id
+        AND (posts.visibility = 'public' OR posts.author_id = auth.uid())
+    )
   );
 CREATE POLICY "Users can insert their own reactions"
   ON reactions FOR INSERT WITH CHECK (auth.uid() = user_id);
@@ -167,15 +181,21 @@ CREATE POLICY "Boards are viewable by everyone"
   ON boards FOR SELECT USING (true);
 
 -- =============================================
--- User board permissions (public read, admin writes via service_role)
+-- User board permissions (public read, user-scoped writes)
 -- =============================================
 ALTER TABLE user_board_permissions ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Permissions are viewable by everyone"
   ON user_board_permissions FOR SELECT USING (true);
+CREATE POLICY "Users can insert their own board permissions"
+  ON user_board_permissions FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update their own board permissions"
+  ON user_board_permissions FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete their own board permissions"
+  ON user_board_permissions FOR DELETE USING (auth.uid() = user_id);
 
 -- =============================================
--- Board waiting users (public read, admin writes via service_role)
+-- Board waiting users (public read, self-INSERT for waiting list)
 -- =============================================
 ALTER TABLE board_waiting_users ENABLE ROW LEVEL SECURITY;
 
