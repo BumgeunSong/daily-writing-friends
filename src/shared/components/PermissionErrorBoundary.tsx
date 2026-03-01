@@ -27,7 +27,11 @@ export function PermissionErrorBoundary() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => { setOpen(false); navigate(-1); }}>확인</AlertDialogAction>
+            <AlertDialogAction onClick={() => {
+              setOpen(false);
+              localStorage.removeItem('boardId');
+              navigate('/boards', { replace: true });
+            }}>확인</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

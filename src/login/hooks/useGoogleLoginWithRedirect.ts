@@ -25,9 +25,13 @@ export function useGoogleLoginWithRedirect(): UseGoogleLoginWithRedirectReturn {
 
   // After OAuth redirect returns, user will be set by onAuthStateChange.
   // Ensure user exists in users table, then navigate.
+  // Only runs when login was initiated from this page (tracked via sessionStorage
+  // to survive the OAuth page unload/reload cycle).
   useEffect(() => {
     if (!currentUser || isCheckingActiveStatus || hasHandledLoginRef.current) return;
+    if (!sessionStorage.getItem('login_initiated')) return;
     hasHandledLoginRef.current = true;
+    sessionStorage.removeItem('login_initiated');
 
     createUserIfNotExists(currentUser)
       .then(() => {
@@ -45,6 +49,7 @@ export function useGoogleLoginWithRedirect(): UseGoogleLoginWithRedirectReturn {
     try {
       setIsLoading(true);
       setError(null);
+      sessionStorage.setItem('login_initiated', 'true');
       await signInWithGoogle();
       // User is redirected to Google — page unloads here.
       // On return, useAuth picks up the session automatically via onAuthStateChange.
