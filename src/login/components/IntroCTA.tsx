@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/login/constants';
 import { Button } from '@/shared/ui/button';
 
-
 interface IntroCTAProps {
   cohort?: number;
   onLogin: (returnTo?: string) => void;
