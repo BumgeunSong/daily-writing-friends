@@ -225,15 +225,16 @@ Operations 5-11 (holidays, narrations) are admin-only data not in Supabase schem
 | Table | SELECT | INSERT | UPDATE | DELETE |
 |-------|--------|--------|--------|--------|
 | posts | public (private=author only) | own | own + WITH CHECK | own |
-| comments/replies | public | own | own + WITH CHECK | own |
-| likes/reactions | public | own | - | own |
+| comments/replies | visible if parent post visible | own | own + WITH CHECK | own |
+| likes | visible if parent post visible | own | - | own |
+| reactions | visible if parent post visible (JOIN via comments/replies) | own | - | own |
 | notifications | own (recipient) | service_role only | own + WITH CHECK | own |
 | drafts | own | own | own + WITH CHECK | own |
 | blocks | own (blocker) | own | - | own |
 | users | public | own (id=auth.uid) | own + WITH CHECK | - |
 | reviews | public | own | own + WITH CHECK | - |
 | boards | public | service_role | - | - |
-| user_board_permissions | public | service_role | - | - |
+| user_board_permissions | public | own | own + WITH CHECK | own |
 | board_waiting_users | public | own | - | - |
 | uid_mapping/write_ops/migration_diffs | no anon access | - | - | - |
 
