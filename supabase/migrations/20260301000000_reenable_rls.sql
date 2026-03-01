@@ -45,7 +45,14 @@ CREATE POLICY "Comments are viewable if parent post is visible"
       AND (posts.visibility = 'public' OR posts.author_id = auth.uid()))
   );
 CREATE POLICY "Users can insert their own comments"
-  ON comments FOR INSERT WITH CHECK (auth.uid() = user_id);
+  ON comments FOR INSERT WITH CHECK (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1 FROM posts
+      WHERE posts.id = comments.post_id
+        AND (posts.visibility = 'public' OR posts.author_id = auth.uid())
+    )
+  );
 CREATE POLICY "Users can update their own comments"
   ON comments FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can delete their own comments"
@@ -62,7 +69,14 @@ CREATE POLICY "Replies are viewable if parent post is visible"
       AND (posts.visibility = 'public' OR posts.author_id = auth.uid()))
   );
 CREATE POLICY "Users can insert their own replies"
-  ON replies FOR INSERT WITH CHECK (auth.uid() = user_id);
+  ON replies FOR INSERT WITH CHECK (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1 FROM posts
+      WHERE posts.id = replies.post_id
+        AND (posts.visibility = 'public' OR posts.author_id = auth.uid())
+    )
+  );
 CREATE POLICY "Users can update their own replies"
   ON replies FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can delete their own replies"
@@ -79,7 +93,14 @@ CREATE POLICY "Likes are viewable if parent post is visible"
       AND (posts.visibility = 'public' OR posts.author_id = auth.uid()))
   );
 CREATE POLICY "Users can insert their own likes"
-  ON likes FOR INSERT WITH CHECK (auth.uid() = user_id);
+  ON likes FOR INSERT WITH CHECK (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1 FROM posts
+      WHERE posts.id = likes.post_id
+        AND (posts.visibility = 'public' OR posts.author_id = auth.uid())
+    )
+  );
 CREATE POLICY "Users can delete their own likes"
   ON likes FOR DELETE USING (auth.uid() = user_id);
 
@@ -105,7 +126,24 @@ CREATE POLICY "Reactions are viewable if parent post is visible"
     )
   );
 CREATE POLICY "Users can insert their own reactions"
-  ON reactions FOR INSERT WITH CHECK (auth.uid() = user_id);
+  ON reactions FOR INSERT WITH CHECK (
+    auth.uid() = user_id
+    AND (
+      EXISTS (
+        SELECT 1 FROM comments
+        JOIN posts ON posts.id = comments.post_id
+        WHERE comments.id = reactions.comment_id
+          AND (posts.visibility = 'public' OR posts.author_id = auth.uid())
+      )
+      OR
+      EXISTS (
+        SELECT 1 FROM replies
+        JOIN posts ON posts.id = replies.post_id
+        WHERE replies.id = reactions.reply_id
+          AND (posts.visibility = 'public' OR posts.author_id = auth.uid())
+      )
+    )
+  );
 CREATE POLICY "Users can delete their own reactions"
   ON reactions FOR DELETE USING (auth.uid() = user_id);
 
