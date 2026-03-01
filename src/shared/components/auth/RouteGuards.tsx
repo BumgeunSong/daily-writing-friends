@@ -1,35 +1,25 @@
-import { useEffect } from 'react';
 import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { resolvePrivateRoute } from '@/shared/utils/routingDecisions';
 
 /**
- * Private route guard component
- * Redirects immediately if loading or not authenticated
- * No loading spinner as per requirements
+ * Private route guard — thin shell over resolvePrivateRoute.
  */
 export function PrivateRoutes() {
-  const { currentUser, loading, setRedirectPathAfterLogin } = useAuth();
+  const { currentUser, loading } = useAuth();
   const location = useLocation();
 
+  const result = resolvePrivateRoute({ currentUser, loading, pathname: location.pathname });
 
-  useEffect(() => {
-    // Store current path when user is not authenticated (only when not loading and user is null)
-    if (!loading && !currentUser && location.pathname !== '/login') {
-      setRedirectPathAfterLogin(location.pathname);
+  if (result.type === 'loading') return null;
+
+  if (result.type === 'redirect') {
+    if (result.returnToPath) {
+      sessionStorage.setItem('returnTo', result.returnToPath);
     }
-  }, [loading, currentUser, location.pathname, setRedirectPathAfterLogin]);
-
-  // Only redirect if auth has finished loading and user is not authenticated
-  if (!loading && !currentUser) {
     return <Navigate to="/login" replace />;
   }
 
-  // If still loading, don't render anything (prevent flash of redirect)
-  if (loading) {
-    return null;
-  }
-
-  // User is authenticated, render the protected route
   return <Outlet />;
 }
 
