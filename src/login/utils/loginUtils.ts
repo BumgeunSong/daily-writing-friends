@@ -1,5 +1,4 @@
 import type { Board } from "@/board/model/Board";
-import { ROUTES } from "@/login/constants";
 
 // ============================================================================
 // 날짜 및 캐시 유틸리티
@@ -51,15 +50,6 @@ export function isUserInActiveList(
         return false;
     }
     return users.some((user) => user.uid === userId);
-}
-
-/**
- * 사용자 활성 상태에 따른 리다이렉트 경로를 결정합니다.
- * @param isActiveUser 사용자가 활성 상태인지 여부
- * @returns 리다이렉트할 경로
- */
-export function getLoginRedirectPath(isActiveUser: boolean): string {
-    return isActiveUser ? ROUTES.BOARDS : ROUTES.JOIN_FORM;
 }
 
 // ============================================================================

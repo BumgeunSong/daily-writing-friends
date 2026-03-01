@@ -2,9 +2,10 @@ import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/login/constants';
 import { Button } from '@/shared/ui/button';
 
+
 interface IntroCTAProps {
   cohort?: number;
-  onLogin: () => void;
+  onLogin: (returnTo?: string) => void;
   isLoading?: boolean;
   isInWaitingList?: boolean;
   isLoggedIn?: boolean;
@@ -34,14 +35,18 @@ export default function IntroCTA({
   };
 
   const handlePrimaryClick = () => {
-    onLogin();
+    if (isLoggedIn) {
+      navigate(ROUTES.JOIN_FORM);
+    } else {
+      onLogin(ROUTES.JOIN);
+    }
   };
 
   const handleSecondaryClick = () => {
     if (isLoggedIn) {
       navigate(ROUTES.BOARDS);
     } else {
-      onLogin();
+      onLogin(ROUTES.BOARDS);
     }
   };
 

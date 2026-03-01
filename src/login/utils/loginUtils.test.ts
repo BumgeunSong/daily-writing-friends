@@ -1,11 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { ROUTES } from '@/login/constants';
 import {
   formatYearMonth,
   createBoardCacheKey,
   transformBoardWithId,
   isUserInActiveList,
-  getLoginRedirectPath,
   validateSubmitParams,
   createSuccessResult,
   wrapError,
@@ -112,16 +110,6 @@ describe('loginUtils', () => {
 
     it('returns false when users array is empty', () => {
       expect(isUserInActiveList([], 'user-1')).toBe(false);
-    });
-  });
-
-  describe('getLoginRedirectPath', () => {
-    it('returns /boards for active users', () => {
-      expect(getLoginRedirectPath(true)).toBe(ROUTES.BOARDS);
-    });
-
-    it('returns /join/form for new users', () => {
-      expect(getLoginRedirectPath(false)).toBe(ROUTES.JOIN_FORM);
     });
   });
 

@@ -18,6 +18,8 @@ export const REMOTE_CONFIG_KEYS = {
 export const ROUTES = {
   /** 보드 목록 페이지 */
   BOARDS: '/boards',
+  /** 인트로(가입 안내) 페이지 */
+  JOIN: '/join',
   /** 가입 폼 페이지 */
   JOIN_FORM: '/join/form',
 } as const;
