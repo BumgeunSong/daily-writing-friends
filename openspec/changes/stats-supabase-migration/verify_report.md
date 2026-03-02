@@ -114,7 +114,7 @@ Per design.md: Group 3 (holidays migration) is conditional on confirming the Sup
 
 ## Spec Requirements Coverage
 
-No `specs/` directory exists for this change. Coverage assessed from design.md and tasks.md.
+Specs are located under `openspec/changes/stats-supabase-migration/specs/`. Coverage assessed against those specs plus design.md and tasks.md.
 
 | Requirement | Test | Status |
 |-------------|------|--------|
