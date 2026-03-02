@@ -1,0 +1,10 @@
+# Implementation Config — daily-writing-friends
+#
+# Maps abstract execution roles to concrete agents for implementation phases.
+# Change this file when switching harness — schema stays stable.
+# Model selection is delegated to each agent's harness, not configured here.
+
+roles:
+  # Apply ↔ Verify loop orchestrator
+  looper:
+    agent: oh-my-claudecode:ultrawork    # alternatives: oh-my-claudecode:team

@@ -40,29 +40,31 @@ artifacts:
     description: Multi-perspective review of the proposal with iterative refinement
     template: proposal-review.md
     instruction: >
-      Review the proposal using multiple parallel background subagents.
+      Review the proposal using parallel background agents.
+      Read openspec/REVIEW_CONFIG.yaml for role-to-agent mapping.
       The goal is to ensure we are "doing the right thing" before investing in design.
 
 
-      Dispatch 3+ parallel reviewers. Choose reviewers dynamically based on the
-      type of change — not every review needs the same perspectives. Examples:
+      PARALLEL DISPATCH:
 
-      - **Objectives Challenger**: Is this solving the right problem? What are we
+      For each role listed below, spawn the mapped agent from REVIEW_CONFIG.yaml
+      in parallel (run_in_background: true) with the role's focus prompt as context:
+
+      - **objectives-challenger**: Is this solving the right problem? What are we
         really trying to achieve? Are there simpler ways to get the same outcome?
 
-      - **Alternatives Explorer**: What other approaches exist? What would happen
+      - **alternatives-explorer**: What other approaches exist? What would happen
         if we did nothing? What's the simplest version that still delivers value?
 
-      - **User Advocate**: How does this affect the user experience? What's the
+      - **user-advocate**: How does this affect the user experience? What's the
         user journey? Are there edge cases users will hit?
 
-      - **Scope Analyst**: Is the scope right-sized? What are hidden dependencies
-        or risks? What could go wrong?
+      Additional roles dispatched based on the change type (not always needed):
 
-      - **Domain Expert**: For the specific domain (data, security, API, etc.),
-        are there concerns unique to this area?
+      - **scope-analyst**: (for large changes) Is the scope right-sized?
+        Hidden dependencies or risks? What could go wrong?
 
-
+      Wait for all agents to complete.
       Consolidate all reviewer findings into a single review document using the
       template structure. Rate severity of each finding (Critical / Important / Minor).
 
@@ -148,29 +150,33 @@ artifacts:
     description: Comprehensive design review using full review lane with iterative refinement
     template: design-review.md
     instruction: >
-      Comprehensive design review using the FULL review lane as parallel
-      background subagents. This is the last gate before implementation — be thorough.
+      Comprehensive design review using the full review lane as parallel agents.
+      Read openspec/REVIEW_CONFIG.yaml for role-to-agent mapping.
+      This is the last gate before implementation — be thorough.
 
 
-      Dispatch ALL of these reviewers in parallel:
+      PARALLEL DISPATCH (all roles required):
 
-      - **Architect**: Does the design fit existing codebase patterns and
-        conventions? Are boundaries and interfaces well-defined? Are there
+      For each role below, spawn the mapped agent from REVIEW_CONFIG.yaml
+      in parallel (run_in_background: true) with the role's focus prompt:
+
+      - **architecture-reviewer**: Does the design fit existing codebase patterns
+        and conventions? Are boundaries and interfaces well-defined? Are there
         better architectural approaches? Long-horizon tradeoffs?
 
-      - **Security Reviewer**: Vulnerabilities, trust boundaries, authn/authz
+      - **security-reviewer**: Vulnerabilities, trust boundaries, authn/authz
         gaps, injection risks, data exposure. OWASP top 10 concerns.
 
-      - **Quality Reviewer**: Logic defects, maintainability concerns,
+      - **quality-reviewer**: Logic defects, maintainability concerns,
         anti-patterns, SOLID violations, performance hotspots, complexity.
 
-      - **Test Engineer**: Is this design testable? What's the test strategy?
-        Are there hard-to-test areas that need design changes?
+      - **testability-reviewer**: Is this design testable? What's the test
+        strategy? Are there hard-to-test areas that need design changes?
 
-      - **Code Reviewer**: API contracts, backward compatibility, naming
+      - **integration-reviewer**: API contracts, backward compatibility, naming
         consistency, integration concerns across the codebase.
 
-
+      Wait for all agents to complete.
       Consolidate all findings into a single review document using the template.
       Rate severity of each finding (Critical / Important / Minor).
 
@@ -357,6 +363,10 @@ artifacts:
 
 
       APPLY ↔ VERIFY LOOP:
+
+      Read openspec/IMPLEMENTATION_CONFIG.yaml for the looper role configuration.
+      Use the mapped looper agent (e.g., ultrawork or team) to drive the
+      fix-and-retest cycle.
 
       If failures exist, add fix tasks to tasks.md, go back to apply to fix them,
       then re-run verify. Iterate until ALL layers pass.
