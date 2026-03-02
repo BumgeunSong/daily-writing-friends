@@ -77,6 +77,9 @@ echo "[$TIMESTAMP] SESSION START: $PHASE (model=$MODEL)" >> "$LOG_DIR/harness.lo
 # --- Run Claude Code CLI ---
 cd "$PROJECT_DIR"
 
+# Unset CLAUDECODE to allow nested sessions (harness runs from within Claude Code)
+unset CLAUDECODE
+
 # Use set +e to capture exit code despite pipefail
 set +e
 timeout "$SESSION_TIMEOUT" claude -p "$USER_PROMPT" \
