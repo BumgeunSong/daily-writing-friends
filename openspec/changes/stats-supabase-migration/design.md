@@ -139,16 +139,26 @@ filtering by date range instead of year shards.
 
 ```ts
 // Replaces: doc(firestore, 'holidays', year) + getDoc per year
-const { data } = await supabase
+// Use year boundaries to match current behavior (fetch all holidays for covered years,
+// not just those within the exact date range).
+const { data, error } = await supabase
   .from('holidays')
   .select('date, name')
-  .gte('date', startDate.toISOString().slice(0, 10))
-  .lte('date', endDate.toISOString().slice(0, 10));
+  .gte('date', `${startDate.getFullYear()}-01-01`)
+  .lte('date', `${endDate.getFullYear()}-12-31`);
+
+if (error) {
+  console.error('Supabase fetchHolidaysForRange error:', error);
+  return [];
+}
 ```
 
-**Why range query over year-shard queries**: The Firestore approach fetches full year
-documents and filters client-side. A single range query on the Supabase table is more
-efficient and eliminates the `getYearsInRange` helper.
+**Why year-boundary query over exact date range**: The current Firestore implementation
+fetches all holidays for each covered year without date filtering (confirmed in code).
+Using year boundaries (`YYYY-01-01` / `YYYY-12-31`) preserves that behavior, preventing
+silent regression where early-year holidays (e.g., Jan 1 holidays when `startDate` is
+March) would be dropped by an exact date filter. This also eliminates the
+`getYearsInRange` helper.
 
 **Validation**: The returned rows still pass through `HolidaySchema` (date + name) —
 the schema stays unchanged.
@@ -238,7 +248,9 @@ Run `npm run test:run`. All tests expected to pass.
 
 ### Step 5 — Holidays migration (conditional)
 
-**Gate**: only proceed if `holidays` table confirmed ready.
+**Gate**: only proceed if ALL of the following are confirmed:
+- `holidays` table exists in Supabase with complete data
+- RLS policy permits unauthenticated SELECT (e.g., `FOR SELECT USING (true)` for the `anon` role) — the current Firestore reads require no auth context, so the Supabase equivalent must be publicly readable
 
 In `src/shared/api/holidays.ts`:
 - Remove `import { doc, getDoc } from 'firebase/firestore'`
@@ -265,10 +277,8 @@ Each step compiles and tests independently. If a step introduces failures:
 2. **Are there holiday records for multiple years?** The Firestore structure is year-sharded.
    The Supabase migration must include all years present in Firestore, not just the current year.
 
-3. **RLS on `holidays` table?** Should the table be publicly readable (no auth required)
-   for holiday lookups), or does it require an authenticated user? The current Firestore
-   reads work without Firebase Auth context, so Supabase RLS should permit unauthenticated
-   SELECT.
+3. ~~**RLS on `holidays` table?**~~ Resolved — moved to Step 5 prerequisites. The table
+   must allow unauthenticated SELECT before Step 5 can ship.
 
 ---
 
@@ -288,7 +298,10 @@ data layer contracts are preserved after removing the conversion layer.
 | `aggregateCommentingContributions` | `commentingContributionUtils.test.ts` | `Commenting`/`Replying` with native `Date` bucket correctly |
 
 **Key edge cases**:
-- Same-day grouping (KST vs UTC boundary)
+- Same-day grouping (KST vs UTC boundary): construct fixtures using UTC dates that land
+  on a KST-day boundary, e.g. `new Date('2024-01-01T15:00:00Z')` (midnight KST Jan 2)
+  vs `new Date('2024-01-01T14:59:59Z')` (23:59 KST Jan 1). Verify `getDateKey` groups
+  them into different days if it uses KST projection (like `computeWeekDaysFromFirstDay`).
 - Empty input arrays
 - Activity on days not in `workingDays`
 
@@ -303,21 +316,18 @@ No logic changes in the tests themselves — only fixture construction changes.
 
 ### Layer 2 — Integration (Vitest)
 
-**Target**: Contracts between `supabaseReads.ts` and its callers (`stats.ts`, `commenting.ts`).
+**No new integration tests needed for the wrapper removal.**
 
-Since the wrappers are removed, the integration test verifies that `fetchPostingData`,
-`fetchPostingDataForContributions`, `fetchUserCommentingsByDateRange`, and
-`fetchUserReplyingsByDateRange` return the correct types when `supabaseReads.ts` is mocked
-at the module boundary.
+After the wrappers are removed, `fetchPostingData`, `fetchPostingDataForContributions`,
+`fetchUserCommentingsByDateRange`, and `fetchUserReplyingsByDateRange` become direct
+pass-throughs (e.g., `return fetchPostingsFromSupabase(userId)`). A Vitest integration
+test that mocks `supabaseReads.ts` and asserts the pass-through returns the mock value
+is tautological — it tests the test harness, not application logic.
 
-| Test | Boundary | What to verify |
-|------|----------|----------------|
-| `fetchPostingData` mock | `stats.ts` ↔ `supabaseReads.ts` | Returns `Posting[]` with `createdAt: Date` (no wrapper conversion) |
-| `fetchUserCommentingsByDateRange` mock | `commenting.ts` ↔ `supabaseReads.ts` | Returns `Commenting[]` with `createdAt: Date` |
-
-**Note**: The existing unit tests for `writingStatsUtils` and `commentingContributionUtils`
-already cover the pure logic path. Integration tests here focus on the removed wrapper
-layer — confirming that the direct pass-through is type-correct.
+The type-correctness of the pass-through is verified by `npm run type-check` at Step 2.
+Logic correctness is covered by Layer 1 unit tests on the utility functions.
+If structural compatibility between `SupabasePosting` and `Posting` drifts in the future,
+TypeScript will catch it at compile time before tests are needed.
 
 ### Layer 3 — E2E Network Passthrough (agent-browser + dev3000)
 
