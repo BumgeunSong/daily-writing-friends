@@ -1,12 +1,9 @@
-import { Timestamp } from 'firebase/firestore';
 import type { Posting } from '@/post/model/Posting';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { createUserInfo } from '@/stats/utils/userInfoUtils';
 import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
 import { fetchUser } from '@/user/api/user';
 import type { User } from '@/user/model/User';
-import type {
-  SupabasePosting} from '@/shared/api/supabaseReads';
 import {
   fetchPostingsFromSupabase,
   fetchPostingsByDateRangeFromSupabase
@@ -15,22 +12,11 @@ import {
 // Re-export for backward compatibility
 export { createUserInfo };
 
-// Helper: Convert Supabase result to Posting format
-function toPosting(item: SupabasePosting): Posting {
-  return {
-    board: item.board,
-    post: item.post,
-    createdAt: Timestamp.fromDate(item.createdAt),
-    isRecovered: item.isRecovered,
-  };
-}
-
 /**
  * Fetches posting data for a specific user
  */
 export async function fetchPostingData(userId: string): Promise<Posting[]> {
-  const supabaseData = await fetchPostingsFromSupabase(userId);
-  return supabaseData.map(toPosting);
+  return fetchPostingsFromSupabase(userId);
 }
 
 /**
@@ -69,12 +55,7 @@ export async function fetchPostingDataForContributions(
   const workingDays = getRecentWorkingDays(numberOfDays);
   const dateRange = getDateRange(workingDays);
 
-  const supabaseData = await fetchPostingsByDateRangeFromSupabase(
-    userId,
-    dateRange.start,
-    dateRange.end
-  );
-  return supabaseData.map(toPosting);
+  return fetchPostingsByDateRangeFromSupabase(userId, dateRange.start, dateRange.end);
 }
 
 /**

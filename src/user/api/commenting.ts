@@ -1,34 +1,9 @@
-import { Timestamp } from 'firebase/firestore';
 import type { Commenting } from '@/user/model/Commenting';
 import type { Replying } from '@/user/model/Replying';
-import type {
-  SupabaseCommenting,
-  SupabaseReplying} from '@/shared/api/supabaseReads';
 import {
   fetchCommentingsByDateRangeFromSupabase,
   fetchReplyingsByDateRangeFromSupabase
 } from '@/shared/api/supabaseReads';
-
-// Helper: Convert Supabase result to Commenting format (for type compatibility)
-function toCommenting(item: SupabaseCommenting): Commenting {
-  return {
-    board: item.board,
-    post: item.post,
-    comment: item.comment,
-    createdAt: Timestamp.fromDate(item.createdAt),
-  };
-}
-
-// Helper: Convert Supabase result to Replying format
-function toReplying(item: SupabaseReplying): Replying {
-  return {
-    board: item.board,
-    post: item.post,
-    comment: item.comment,
-    reply: item.reply,
-    createdAt: Timestamp.fromDate(item.createdAt),
-  };
-}
 
 // 날짜 범위로 commentings 조회
 export async function fetchUserCommentingsByDateRange(
@@ -36,8 +11,7 @@ export async function fetchUserCommentingsByDateRange(
   start: Date,
   end: Date
 ): Promise<Commenting[]> {
-  const supabaseData = await fetchCommentingsByDateRangeFromSupabase(userId, start, end);
-  return supabaseData.map(toCommenting);
+  return fetchCommentingsByDateRangeFromSupabase(userId, start, end);
 }
 
 // 날짜 범위로 replyings 조회
@@ -46,6 +20,5 @@ export async function fetchUserReplyingsByDateRange(
   start: Date,
   end: Date
 ): Promise<Replying[]> {
-  const supabaseData = await fetchReplyingsByDateRangeFromSupabase(userId, start, end);
-  return supabaseData.map(toReplying);
+  return fetchReplyingsByDateRangeFromSupabase(userId, start, end);
 }
