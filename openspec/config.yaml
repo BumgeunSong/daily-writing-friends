@@ -20,3 +20,13 @@ rules:
     - "Unit + Integration: run with Vitest"
     - "E2E: run with agent-browser, start dev3000 for timeline capture"
     - "E2E Local DB: use Supabase local Docker (never staging/production)"
+  spec-alignment:
+    - "Compare each spec requirement against the actual implementation code"
+    - "Update specs to match reality — specs must be trustworthy for PR reviewers"
+  pull-request:
+    - "Use gh CLI for all GitHub operations (gh pr create, gh pr checks, gh api)"
+    - "PR body should reference the OpenSpec change folder for full context"
+    - "Address all review comments before requesting re-review"
+  final-spec-alignment:
+    - "Compare each spec requirement against the implementation including review-driven changes"
+    - "If specs were updated, commit and push to the PR branch before merge"

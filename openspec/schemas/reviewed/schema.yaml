@@ -356,10 +356,160 @@ artifacts:
       - verify/scenarios/ (scenario-specific mock sets)
 
 
-      If failures exist, add fix tasks back to tasks.md before closing.
+      APPLY ↔ VERIFY LOOP:
+
+      If failures exist, add fix tasks to tasks.md, go back to apply to fix them,
+      then re-run verify. Iterate until ALL layers pass.
+      Max 5 iterations to prevent infinite loops. If still failing after 5,
+      stop and report remaining failures with root cause analysis.
+
+
       List any spec requirements not covered by the test suite.
     requires:
       - tasks
+
+  - id: spec-alignment
+    generates: spec-alignment.md
+    description: Check that implementation matches specs after apply/verify iterations
+    template: spec-alignment.md
+    instruction: >
+      After the apply ↔ verify loop is complete and all tests pass,
+      check that the implementation still aligns with the spec artifacts.
+
+
+      During the apply/verify iterations, fixes and changes may have caused
+      the implementation to drift from the original specs. This phase catches that.
+
+
+      For each spec requirement in the change's specs/ folder:
+
+      1. Read the requirement and its scenarios
+
+      2. Trace the implementation to verify it matches
+
+      3. Mark as: Aligned / Drifted / Missing
+
+
+      If drift is found:
+
+      - **Implementation drifted from spec**: Update the spec to match what was
+        actually built, with a note explaining why the change was necessary.
+
+      - **Implementation is missing a spec requirement**: Add a fix task and
+        go back to apply/verify.
+
+      - **Spec has requirements no longer needed**: Mark as REMOVED with reason.
+
+
+      The goal is that specs/ are the accurate source of truth BEFORE creating
+      a PR. Reviewers should be able to read specs and trust them.
+
+
+      Output a summary table of all requirements and their alignment status.
+    requires:
+      - verify
+
+  - id: pull-request
+    generates: pull-request.md
+    description: Create PR, run CI, handle review feedback with iterative fixes
+    template: pull-request.md
+    instruction: >
+      Create a Pull Request and shepherd it through CI and code review.
+
+
+      STEP 1 — CREATE PR:
+
+      Use `gh pr create` to open a PR against the main branch.
+
+      - Title: concise summary of the change (from proposal.md)
+
+      - Body: start with **Why** (from proposal.md's Why section — the motivation
+        for this change), then Key Changes (from design), Test Results
+        (from verify_report), and Spec Alignment status.
+
+      - Link to the change folder artifacts for reviewers who want full context.
+
+
+      STEP 2 — CI CHECK:
+
+      Wait for CI checks to complete using `gh pr checks`.
+
+      If CI fails, diagnose the failure, fix it, push, and wait again.
+
+
+      STEP 3 — CODE REVIEW LOOP (max 3 iterations):
+
+      1. Wait for review comments using `gh pr view` and `gh api` to fetch comments.
+
+      2. For each review comment:
+         - Categorize: must-fix / suggestion / question
+         - For must-fix: apply the fix, push, respond to the comment
+         - For suggestion: evaluate, apply if it improves the code, explain if not
+         - For question: respond with explanation
+
+      3. After addressing all comments, request re-review.
+
+      4. If new comments arrive, repeat (max 3 rounds total).
+
+
+      STEP 4 — FINAL CHECK:
+
+      Before marking as ready to merge:
+
+      - All CI checks pass
+
+      - All review comments addressed
+
+      - No unresolved conversations
+
+      - Spec alignment is still valid after review fixes
+
+
+      Record the PR URL and final status in pull-request.md.
+    requires:
+      - spec-alignment
+
+  - id: final-spec-alignment
+    generates: final-spec-alignment.md
+    description: Final check that specs match implementation after PR review fixes
+    template: spec-alignment.md
+    instruction: >
+      After the pull-request review loop is complete, re-check spec alignment.
+
+
+      CI fixes and code review feedback may have triggered implementation changes
+      that cause specs to drift again. This final alignment check ensures specs
+      remain the accurate source of truth before the PR is merged.
+
+
+      For each spec requirement in the change's specs/ folder:
+
+      1. Read the requirement and its scenarios
+
+      2. Trace the implementation (including any review-driven changes) to verify
+         it still matches
+
+      3. Mark as: Aligned / Drifted / Missing
+
+
+      If drift is found:
+
+      - **Implementation drifted from spec**: Update the spec to match what was
+        actually built, with a note explaining the review-driven change.
+
+      - **Implementation is missing a spec requirement**: Flag it — this may
+        need a follow-up PR if the review cycle is already complete.
+
+      - **Spec has requirements no longer needed**: Mark as REMOVED with reason.
+
+
+      If spec updates were made, commit and push them to the PR branch.
+
+
+      Output a summary table of all requirements and their final alignment status.
+      This is the last gate — specs must be trustworthy when the PR merges.
+    requires:
+      - pull-request
 
 apply:
   requires:
