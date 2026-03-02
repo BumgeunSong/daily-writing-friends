@@ -1,6 +1,9 @@
 import { test, expect } from './fixtures/auth';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import fs from 'fs';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * E2E tests for Quill editor image upload features.

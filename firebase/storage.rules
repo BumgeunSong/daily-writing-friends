@@ -43,7 +43,8 @@ service firebase.storage {
     // Post images uploaded via editor (postImages/{dateFolder}/{fileName})
     match /postImages/{allPaths=**} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && isValidImageType() && isValidImageSize();
+      allow create: if isAuthenticated() && isValidImageType() && isValidImageSize();
+      allow delete: if isAuthenticated();
     }
 
     // Public assets - readable by all authenticated users

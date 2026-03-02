@@ -15,11 +15,13 @@ import {
 interface UseImageUploadProps {
   insertImage: (url: string, index?: number) => void;
   editorRoot: HTMLElement | null;
+  getCursorIndex?: () => number | undefined;
 }
 
-export function useImageUpload({ insertImage, editorRoot }: UseImageUploadProps) {
+export function useImageUpload({ insertImage, editorRoot, getCursorIndex }: UseImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const isUploadingRef = useRef(false);
   const dragCounterRef = useRef(0);
 
   const uploadAndInsertFile = useCallback(
@@ -56,8 +58,10 @@ export function useImageUpload({ insertImage, editorRoot }: UseImageUploadProps)
       const fileName = `${timePrefix}_${processedFile.name}`;
       const storageRef = ref(storage, `postImages/${dateFolder}/${fileName}`);
 
-      // Upload file
-      const snapshot = await uploadBytes(storageRef, processedFile);
+      // Upload file with explicit contentType metadata
+      const snapshot = await uploadBytes(storageRef, processedFile, {
+        contentType: processedFile.type || 'image/jpeg',
+      });
       const downloadURL = await getDownloadURL(snapshot.ref);
 
       // Insert image into editor
@@ -70,7 +74,9 @@ export function useImageUpload({ insertImage, editorRoot }: UseImageUploadProps)
   const processFiles = useCallback(
     async (files: File[], cursorIndex?: number) => {
       if (files.length === 0) return;
+      if (isUploadingRef.current) return;
 
+      isUploadingRef.current = true;
       setIsUploading(true);
 
       // Blur keyboard on mobile
@@ -134,6 +140,7 @@ export function useImageUpload({ insertImage, editorRoot }: UseImageUploadProps)
         });
       }
 
+      isUploadingRef.current = false;
       setIsUploading(false);
     },
     [uploadAndInsertFile],
@@ -173,7 +180,7 @@ export function useImageUpload({ insertImage, editorRoot }: UseImageUploadProps)
 
     const handleDragLeave = (e: DragEvent) => {
       e.preventDefault();
-      dragCounterRef.current--;
+      dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
       if (dragCounterRef.current === 0) {
         setIsDragOver(false);
       }
@@ -199,7 +206,8 @@ export function useImageUpload({ insertImage, editorRoot }: UseImageUploadProps)
       }
 
       if (imageFiles.length > 0) {
-        await processFiles(imageFiles);
+        const cursorIndex = getCursorIndex?.();
+        await processFiles(imageFiles, cursorIndex);
       }
     };
 
@@ -215,7 +223,7 @@ export function useImageUpload({ insertImage, editorRoot }: UseImageUploadProps)
       editorRoot.removeEventListener('drop', handleDrop);
       dragCounterRef.current = 0;
     };
-  }, [editorRoot, processFiles]);
+  }, [editorRoot, processFiles, getCursorIndex]);
 
   // Paste handler
   useEffect(() => {
@@ -235,7 +243,8 @@ export function useImageUpload({ insertImage, editorRoot }: UseImageUploadProps)
 
       if (imageFiles.length > 0) {
         e.preventDefault();
-        await processFiles(imageFiles);
+        const cursorIndex = getCursorIndex?.();
+        await processFiles(imageFiles, cursorIndex);
       }
     };
 
@@ -243,7 +252,7 @@ export function useImageUpload({ insertImage, editorRoot }: UseImageUploadProps)
     return () => {
       editorRoot.removeEventListener('paste', handlePaste);
     };
-  }, [editorRoot, processFiles]);
+  }, [editorRoot, processFiles, getCursorIndex]);
 
   return { imageHandler, isUploading, isDragOver };
 }

@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useImageUpload } from '../useImageUpload';
 
 // Mock all external dependencies
@@ -57,6 +57,10 @@ function mockFileInput(files: File[]) {
 
 describe('useImageUpload', () => {
   const insertImage = vi.fn();
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();

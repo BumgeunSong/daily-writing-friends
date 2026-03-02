@@ -201,7 +201,11 @@ export function PostTextEditor({
     editor.insertEmbed(insertIndex, 'image', url);
   }, []);
 
-  const { imageHandler, isUploading, isDragOver } = useImageUpload({ insertImage, editorRoot });
+  const getCursorIndex = useCallback(() => {
+    return quillRef.current?.getEditor()?.getSelection(true)?.index;
+  }, []);
+
+  const { imageHandler, isUploading, isDragOver } = useImageUpload({ insertImage, editorRoot, getCursorIndex });
 
   useEffect(() => {
     onUploadingChange?.(isUploading);
