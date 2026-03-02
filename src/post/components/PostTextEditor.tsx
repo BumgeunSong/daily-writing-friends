@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo, useCallback } from 'react';
+import { useEffect, useRef, useMemo, useCallback, useState } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
@@ -191,20 +191,28 @@ export function PostTextEditor({
 }: PostTextEditorProps) {
   const quillRef = useRef<ReactQuill | null>(null);
   const editorElementRef = useRef<HTMLElement | null>(null);
+  const [editorRoot, setEditorRoot] = useState<HTMLElement | null>(null);
 
-  const insertImage = useCallback((url: string) => {
+  const insertImage = useCallback((url: string, index?: number) => {
     const editor = quillRef.current?.getEditor();
-    const range = editor?.getSelection(true);
-    if (range) {
-      editor?.insertEmbed(range.index, 'image', url);
-    }
+    if (!editor) return;
+
+    const insertIndex = index ?? editor.getSelection(true)?.index ?? editor.getLength() - 1;
+    editor.insertEmbed(insertIndex, 'image', url);
   }, []);
 
-  const { imageHandler, isUploading } = useImageUpload({ insertImage });
+  const { imageHandler, isUploading, isDragOver } = useImageUpload({ insertImage, editorRoot });
 
   useEffect(() => {
     onUploadingChange?.(isUploading);
   }, [isUploading, onUploadingChange]);
+
+  // Toolbar image handler: capture cursor position at click time
+  const toolbarImageHandler = useCallback(() => {
+    const editor = quillRef.current?.getEditor();
+    const range = editor?.getSelection(true);
+    imageHandler(range?.index);
+  }, [imageHandler]);
 
   const formats = [
     'bold', 'italic', 'underline', 'strike',
@@ -223,11 +231,11 @@ export function PostTextEditor({
           ['link', 'image'],
         ],
         handlers: {
-          image: imageHandler,
+          image: toolbarImageHandler,
         },
       },
     }),
-    [imageHandler]
+    [toolbarImageHandler]
   );
 
   useEffect(() => {
@@ -240,15 +248,14 @@ export function PostTextEditor({
     };
   }, []);
 
-
   // 선택된 HTML을 가져오는 함수
   const getSelectedHtml = useCallback(() => {
     const editor = quillRef.current?.getEditor();
     if (!editor) return '';
-    
+
     const selection = editor.getSelection();
     if (!selection || selection.length === 0) return '';
-    
+
     return editor.getSemanticHTML(selection.index, selection.length);
   }, []);
 
@@ -258,6 +265,7 @@ export function PostTextEditor({
       const editorElement = quillRef.current?.getEditor()?.root;
       if (editorElement) {
         editorElementRef.current = editorElement;
+        setEditorRoot(editorElement);
       }
     }, 100);
 
@@ -273,8 +281,7 @@ export function PostTextEditor({
     <CopyErrorBoundary>
       <div className='relative w-full space-y-2'>
         <div
-          className={`w-full rounded-xl border-0 bg-background transition-opacity duration-300 ${isUploading ? 'pointer-events-none opacity-50' : ''}`}
-          aria-busy={isUploading}
+          className={`w-full rounded-xl border-0 bg-background transition-all duration-300 ${isDragOver ? 'ring-2 ring-primary/50' : ''}`}
         >
           <ReactQuill
             ref={quillRef}
