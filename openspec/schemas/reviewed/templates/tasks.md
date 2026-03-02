@@ -7,3 +7,17 @@
 
 - [ ] 2.1 <!-- Task description -->
 - [ ] 2.2 <!-- Task description -->
+
+## Tests
+
+<!-- Every implementation task with business logic or a layer boundary
+     must have a corresponding test task. Tests are completion criteria. -->
+
+### Unit
+- [ ] T.1 <!-- Unit test description -->
+
+### Integration
+- [ ] T.2 <!-- Integration test description -->
+
+### E2E
+- [ ] T.3 <!-- E2E test description -->
