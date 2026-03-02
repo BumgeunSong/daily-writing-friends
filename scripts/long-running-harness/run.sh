@@ -178,7 +178,7 @@ log ""
 CHANGE_DIR="$PROJECT_DIR/openspec/changes/$CHANGE_NAME"
 if [ ! -d "$CHANGE_DIR" ]; then
   log "Creating openspec change folder..."
-  (cd "$PROJECT_DIR" && openspec new "$CHANGE_NAME" --schema eddys-flow) 2>&1 | tee -a "$LOG_DIR/harness.log"
+  (cd "$PROJECT_DIR" && openspec new change "$CHANGE_NAME" --schema eddys-flow) 2>&1 | tee -a "$LOG_DIR/harness.log"
 fi
 
 # ============================================================
