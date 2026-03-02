@@ -58,6 +58,48 @@ checkpoint_save() {
   echo "$phase" >> "$CHECKPOINT_FILE"
 }
 
+# --- Git Safety: use git as backup between sessions ---
+# Based on: https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents
+# "Use git as a recovery mechanism"
+
+git_snapshot() {
+  # Create a lightweight tag before a session so we can rollback on failure
+  local label="$1"
+  local tag="harness/${CHANGE_NAME}/${label}"
+  (cd "$PROJECT_DIR" && git tag -f "$tag" HEAD 2>/dev/null) || true
+  log "GIT SNAPSHOT: $tag"
+}
+
+git_rollback() {
+  # Rollback to pre-session snapshot: discard uncommitted changes
+  local label="$1"
+  local tag="harness/${CHANGE_NAME}/${label}"
+  if (cd "$PROJECT_DIR" && git tag -l "$tag" | grep -q .); then
+    log "GIT ROLLBACK: reverting to $tag"
+    (cd "$PROJECT_DIR" && git checkout -- . && git clean -fd) 2>&1 | tee -a "$LOG_DIR/harness.log"
+  else
+    log "GIT ROLLBACK: tag $tag not found, skipping"
+  fi
+}
+
+git_ensure_committed() {
+  # After a session, check if the agent left uncommitted changes.
+  # If so, create a safety commit so progress is not lost.
+  local phase="$1"
+  local status
+  status=$(cd "$PROJECT_DIR" && git status --porcelain)
+  if [ -n "$status" ]; then
+    log "GIT SAFETY: Agent left uncommitted changes after '$phase' — creating safety commit"
+    (cd "$PROJECT_DIR" && git add -A -- openspec/ src/ tests/ functions/ && git commit -m "harness($CHANGE_NAME): safety commit after $phase [uncommitted work]") 2>&1 | tee -a "$LOG_DIR/harness.log" || true
+  fi
+}
+
+git_cleanup_tags() {
+  # Remove harness snapshot tags at the end of a successful run
+  log "GIT CLEANUP: removing harness snapshot tags"
+  (cd "$PROJECT_DIR" && git tag -l "harness/${CHANGE_NAME}/*" | xargs -r git tag -d) 2>/dev/null || true
+}
+
 # --- Session Runner ---
 run_session() {
   local phase="$1"
@@ -70,6 +112,9 @@ run_session() {
     log "SKIP (checkpoint): $phase already completed"
     return 0
   fi
+
+  # Snapshot before session for rollback safety
+  git_snapshot "$phase-$log_suffix"
 
   log "--- Starting session: $phase (model=$model) ---"
   local start_time exit_code=0
@@ -91,8 +136,13 @@ run_session() {
 
   if [ "$exit_code" -ne 0 ]; then
     log "ERROR: Session '$phase' failed (exit $exit_code)"
+    # On failure: rollback uncommitted changes from the failed session
+    git_rollback "$phase-$log_suffix"
     return "$exit_code"
   fi
+
+  # On success: ensure any uncommitted work is committed
+  git_ensure_committed "$phase"
 
   checkpoint_save "$phase"
   return 0
@@ -297,6 +347,9 @@ run_session "retro"                "$MODEL_PLANNING"
 # ============================================================
 closing_sessions=4  # spec-alignment + pull-request + final-spec-alignment + retro
 total_sessions=$((6 + actual_sessions_run + closing_sessions))
+
+# Clean up snapshot tags on successful completion
+git_cleanup_tags
 
 log ""
 log "=========================================="
