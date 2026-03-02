@@ -90,10 +90,10 @@ test.describe('Image Upload - Editor', () => {
     const editorImage = page.locator(`${EDITOR_SELECTOR} img`);
     await expect(editorImage).toBeVisible({ timeout: 15000 });
 
-    // Verify image has a Firebase Storage URL
+    // Verify image has a valid URL (works with both production and emulator)
     const src = await editorImage.getAttribute('src');
     expect(src).toBeTruthy();
-    expect(src).toContain('firebase');
+    expect(src).toMatch(/^https?:\/\//);
   });
 
   test('T.8 Multi-file: select 3 images → sequential upload → 3 images displayed', async ({
