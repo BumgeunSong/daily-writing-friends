@@ -9,7 +9,7 @@ import type { WritingStats, Contribution } from '@/stats/model/WritingStats';
 export function accumulatePostingLengths(postings: Posting[]): Map<string, number> {
   const map = new Map<string, number>();
   for (const posting of postings) {
-    const key = getDateKey(posting.createdAt.toDate());
+    const key = getDateKey(posting.createdAt);
     const currentSum = map.get(key) || 0;
     map.set(key, currentSum + posting.post.contentLength);
   }
