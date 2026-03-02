@@ -106,9 +106,10 @@ run_session() {
   local model="${2:-$MODEL_PLANNING}"
   local extra_context="${3:-}"
   local log_suffix="${4:-$(date +%H%M%S)}"
+  local skip_checkpoint="${5:-false}"  # "true" when caller manages checkpoints (e.g., apply loop)
 
   # Skip if already completed (resume support)
-  if checkpoint_done "$phase"; then
+  if [ "$skip_checkpoint" != "true" ] && checkpoint_done "$phase"; then
     log "SKIP (checkpoint): $phase already completed"
     return 0
   fi
@@ -144,7 +145,9 @@ run_session() {
   # On success: ensure any uncommitted work is committed
   git_ensure_committed "$phase"
 
-  checkpoint_save "$phase"
+  if [ "$skip_checkpoint" != "true" ]; then
+    checkpoint_save "$phase"
+  fi
   return 0
 }
 
@@ -283,7 +286,7 @@ while IFS= read -r group_header; do
   while [ "$retry" -le "$MAX_APPLY_RETRIES" ]; do
     log "Apply session $apply_session_num: '$group_name' ($unchecked unchecked, attempt $((retry + 1)))"
 
-    run_session "apply-group" "$MODEL_APPLY" "Task group: $group_name" "$log_suffix-attempt$((retry + 1))" || true
+    run_session "apply-group" "$MODEL_APPLY" "Task group: $group_name" "$log_suffix-attempt$((retry + 1))" "true" || true
     actual_sessions_run=$((actual_sessions_run + 1))
 
     # Re-check unchecked tasks
