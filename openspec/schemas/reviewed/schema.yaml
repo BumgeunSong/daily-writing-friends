@@ -521,6 +521,52 @@ artifacts:
     requires:
       - pull-request
 
+  - id: retro
+    generates: retro.md
+    description: Change retrospective - document wins, misses, and brainstorm improvements
+    template: retro.md
+    instruction: >
+      Retrospective on the entire change lifecycle, from proposal through PR merge.
+      This is a reflection step — document honestly, then think freely about improvements.
+
+
+      STEP 1 — TIMELINE:
+
+      Walk through each phase of this change and log what happened:
+      proposal, proposal-review, design, design-review, specs, tasks,
+      apply/verify loop, spec-alignment, pull-request, final-spec-alignment.
+      Note key decisions, turning points, and surprises.
+
+
+      STEP 2 — WINS:
+
+      What worked well? Which phases, agents, tools, or configs contributed
+      to good outcomes? Be specific about why it worked.
+
+
+      STEP 3 — MISSES:
+
+      What went wrong or was harder than expected? For each miss, identify
+      the root cause category:
+
+      - Process Gap: schema phase too light or heavy
+      - Review Gap: reviewer missed something important
+      - Tool Gap: test tool failed or was insufficient
+      - Agent Gap: agent underperformed for the role
+      - Loop Inefficiency: too many apply/verify iterations needed
+      - Knowledge Gap: missing context led to wrong decisions
+
+
+      STEP 4 — IMPROVEMENT IDEAS:
+
+      Brainstorm freely about what could prevent these misses in the future.
+      Think broadly — workflow changes, config adjustments, new tools,
+      different agent selection, review focus areas, testing strategies,
+      documentation improvements, or anything else. No constraints on format
+      or scope. The goal is creative thinking, not a fixed action plan.
+    requires:
+      - final-spec-alignment
+
 apply:
   requires:
     - tasks
