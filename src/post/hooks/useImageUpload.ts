@@ -227,7 +227,8 @@ export function useImageUpload({ insertImage, editorRoot, getCursorIndex }: UseI
     };
   }, [editorRoot, processFiles, getCursorIndex]);
 
-  // Paste handler
+  // Paste handler — capture phase so it runs BEFORE Quill's handler
+  // prevents Quill from inserting a base64 image before our upload starts
   useEffect(() => {
     if (!editorRoot) return;
 
@@ -245,14 +246,15 @@ export function useImageUpload({ insertImage, editorRoot, getCursorIndex }: UseI
 
       if (imageFiles.length > 0) {
         e.preventDefault();
+        e.stopPropagation();
         const cursorIndex = getCursorIndex?.();
         await processFiles(imageFiles, cursorIndex);
       }
     };
 
-    editorRoot.addEventListener('paste', handlePaste);
+    editorRoot.addEventListener('paste', handlePaste, true);
     return () => {
-      editorRoot.removeEventListener('paste', handlePaste);
+      editorRoot.removeEventListener('paste', handlePaste, true);
     };
   }, [editorRoot, processFiles, getCursorIndex]);
 
