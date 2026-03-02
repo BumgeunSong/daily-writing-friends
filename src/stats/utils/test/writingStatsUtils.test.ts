@@ -1,4 +1,3 @@
-import { Timestamp } from 'firebase/firestore';
 import { describe, it, expect } from 'vitest';
 import {
   accumulatePostingLengths,
@@ -36,7 +35,7 @@ function createMockPosting(dateStr: string, contentLength: number): Posting {
   return {
     board: { id: 'board1' },
     post: { id: `post-${dateStr}`, title: 'Test Post', contentLength },
-    createdAt: Timestamp.fromDate(date),
+    createdAt: date,
   };
 }
 
@@ -72,6 +71,29 @@ describe('writingStatsUtils', () => {
       const result = accumulatePostingLengths([]);
 
       expect(result.size).toBe(0);
+    });
+
+    it('should group KST-boundary dates into different day buckets', () => {
+      // 2024-01-01T14:59:59Z = 2024-01-01 23:59:59 KST (Jan 1)
+      // 2024-01-01T15:00:00Z = 2024-01-02 00:00:00 KST (Jan 2)
+      const postings: Posting[] = [
+        {
+          board: { id: 'board1' },
+          post: { id: 'p1', title: 'T1', contentLength: 100 },
+          createdAt: new Date('2024-01-01T14:59:59Z'),
+        },
+        {
+          board: { id: 'board1' },
+          post: { id: 'p2', title: 'T2', contentLength: 200 },
+          createdAt: new Date('2024-01-01T15:00:00Z'),
+        },
+      ];
+
+      const result = accumulatePostingLengths(postings);
+
+      expect(result.get('2024-01-01')).toBe(100);
+      expect(result.get('2024-01-02')).toBe(200);
+      expect(result.size).toBe(2);
     });
 
     it('should handle mixed dates with some duplicates', () => {

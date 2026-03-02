@@ -254,7 +254,7 @@ describe('commentingStatsUtils', () => {
         id: 'c1',
         postId: 'p1',
         userId: 'u1',
-        createdAt: MockTimestamp.fromDate(date),
+        createdAt: date,
       } as unknown as Commenting;
     }
 
@@ -264,7 +264,7 @@ describe('commentingStatsUtils', () => {
         id: 'r1',
         commentId: 'c1',
         userId: 'u1',
-        createdAt: MockTimestamp.fromDate(date),
+        createdAt: date,
       } as unknown as Replying;
     }
 

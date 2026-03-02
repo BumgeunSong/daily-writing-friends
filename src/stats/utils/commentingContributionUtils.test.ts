@@ -1,4 +1,3 @@
-import { Timestamp } from 'firebase/firestore';
 import { describe, it, expect } from 'vitest';
 import { aggregateCommentingContributions } from './commentingContributionUtils';
 import type { Commenting } from '@/user/model/Commenting';
@@ -12,7 +11,7 @@ function createMockCommenting(dateStr: string): Commenting {
     board: { id: 'board1' },
     post: { id: 'post1', title: 'Test Post', authorId: 'author1' },
     comment: { id: `comment-${dateStr}`, content: 'Test comment' },
-    createdAt: Timestamp.fromDate(date),
+    createdAt: date,
   };
 }
 
@@ -25,7 +24,7 @@ function createMockReplying(dateStr: string): Replying {
     post: { id: 'post1', title: 'Test Post', authorId: 'author1' },
     comment: { id: 'comment1', authorId: 'commentAuthor1' },
     reply: { id: `reply-${dateStr}` },
-    createdAt: Timestamp.fromDate(date),
+    createdAt: date,
   };
 }
 

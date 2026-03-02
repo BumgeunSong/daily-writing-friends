@@ -1,5 +1,3 @@
-import type { Timestamp } from "firebase/firestore";
-
 export interface Posting {
     board: {
       id: string;
@@ -9,7 +7,7 @@ export interface Posting {
       title: string;
       contentLength: number;
     };
-    createdAt: Timestamp;
+    createdAt: Date;
     isRecovered?: boolean;
   }
   
