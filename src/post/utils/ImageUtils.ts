@@ -22,14 +22,22 @@ const processImageForUpload = async (file: File): Promise<File> => {
 
     let processedFile = file;
 
-    // Convert HEIC/HEIF to JPEG
+    // Convert HEIC/HEIF to JPEG (fallback to original on failure)
     if (isHeicFile(file)) {
-        processedFile = await convertHeicToJpeg(file);
+        try {
+            processedFile = await convertHeicToJpeg(file);
+        } catch (error) {
+            console.warn('HEIC conversion failed, using original file:', error);
+        }
         await yieldToBrowser();
     }
 
-    // Resize if image is too large
-    processedFile = await resizeImageForUpload(processedFile);
+    // Resize if image is too large (fallback to original on OOM)
+    try {
+        processedFile = await resizeImageForUpload(processedFile);
+    } catch (error) {
+        console.warn('Image resize failed, using file as-is:', error);
+    }
 
     return processedFile;
 };

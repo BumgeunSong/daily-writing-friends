@@ -16,7 +16,7 @@ service firebase.storage {
     }
     
     function isValidImageSize() {
-      return request.resource.size <= 10 * 1024 * 1024; // 10MB limit
+      return request.resource.size <= 20 * 1024 * 1024; // 20MB limit (aligned with client-side)
     }
 
     // User profile images - users can upload/read/delete their own profile images
@@ -38,6 +38,12 @@ service firebase.storage {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && isValidImageType() && isValidImageSize();
       allow delete: if isAuthenticated();
+    }
+
+    // Post images uploaded via editor (postImages/{dateFolder}/{fileName})
+    match /postImages/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidImageType() && isValidImageSize();
     }
 
     // Public assets - readable by all authenticated users
