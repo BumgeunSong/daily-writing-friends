@@ -9,6 +9,12 @@ context: |
   See AGENTS.md for full coding conventions
 
 rules:
+  proposal-review:
+    - "Read openspec/REVIEW_CONFIG.yaml to map reviewer roles to concrete agents"
+    - "Dispatch all listed roles in parallel using the configured dispatch method"
+  design-review:
+    - "Read openspec/REVIEW_CONFIG.yaml to map reviewer roles to concrete agents"
+    - "All 5 design review roles are required — dispatch all in parallel"
   design:
     - "Read openspec/VERIFICATION_CONFIG.md for the project's test toolchain"
     - "Testability Notes must reference specific tools: Vitest for Unit/Integration, agent-browser for E2E, dev3000 for timeline capture, Supabase local Docker for DB tests"
@@ -16,6 +22,7 @@ rules:
     - "Read openspec/VERIFICATION_CONFIG.md for the project's test toolchain"
     - "Test tasks must specify which tool runs each test: Vitest, agent-browser, or Supabase local"
   verify:
+    - "Read openspec/IMPLEMENTATION_CONFIG.yaml for the looper role to drive fix-and-retest cycles"
     - "Read openspec/VERIFICATION_CONFIG.md for the project's test toolchain"
     - "Unit + Integration: run with Vitest"
     - "E2E: run with agent-browser, start dev3000 for timeline capture"

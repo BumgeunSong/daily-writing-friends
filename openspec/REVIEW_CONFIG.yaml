@@ -1,0 +1,32 @@
+# Review Config — daily-writing-friends
+#
+# Maps abstract reviewer roles to concrete agents.
+# Change this file when switching harness — schema stays stable.
+# Model selection is delegated to each agent's harness, not configured here.
+
+dispatch:
+  method: task-tool          # how to parallelize (task-tool | team | custom)
+  run_in_background: true    # parallel by default
+
+roles:
+  # Proposal review roles
+  objectives-challenger:
+    agent: oh-my-claudecode:analyst
+  alternatives-explorer:
+    agent: oh-my-claudecode:critic
+  user-advocate:
+    agent: oh-my-claudecode:designer
+  scope-analyst:
+    agent: oh-my-claudecode:analyst
+
+  # Design review roles
+  architecture-reviewer:
+    agent: oh-my-claudecode:architect
+  security-reviewer:
+    agent: oh-my-claudecode:security-reviewer
+  quality-reviewer:
+    agent: oh-my-claudecode:quality-reviewer
+  testability-reviewer:
+    agent: oh-my-claudecode:test-engineer
+  integration-reviewer:
+    agent: oh-my-claudecode:code-reviewer
