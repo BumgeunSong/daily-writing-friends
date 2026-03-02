@@ -122,10 +122,24 @@ artifacts:
       - **Open Questions**: Outstanding decisions or unknowns to resolve
 
 
+      **Testability Notes** (REQUIRED section):
+
+      Identify what needs testing BEFORE any code is written.
+      For each piece of logic, decide which test layer and why:
+
+      - Layer 1 (Unit): Pure logic with branching, edge cases, boundary values
+      - Layer 2 (Integration): Boundary contracts between two layers (API↔DB, Component↔API)
+      - Layer 3 (E2E Network Passthrough): Full UI flows, internal APIs use real dev server
+      - Layer 4 (E2E Local DB): Only DB-dependent scenarios (RLS, triggers, data integrity)
+
+      This ensures the implementation is designed to be testable from the start.
+
+
       Focus on architecture and approach, not line-by-line implementation.
       Reference the proposal for motivation and specs for requirements.
 
       Good design docs explain the "why" behind technical decisions.
+      See openspec/VERIFICATION_WORKFLOW.md for the full testing philosophy.
     requires:
       - proposal-review
 
@@ -287,11 +301,65 @@ artifacts:
       ```
 
 
+      **Tests section** (REQUIRED):
+
+      Every implementation task that involves business logic or a layer boundary
+      MUST have a corresponding test task. Tests are completion criteria, not
+      optional extras. Group test tasks by layer (Unit, Integration, E2E).
+      Reference the Testability Notes from design.md to decide which tests to write.
+
+
       Reference specs for what needs to be built, design for how to build it.
       Each task should be verifiable - you know when it's done.
     requires:
       - specs
       - design
+
+  - id: verify
+    generates: verify_report.md
+    description: Verification report - run tests layer by layer, stop at first failure
+    template: verify.md
+    instruction: >
+      Execute the 4-layer test pyramid after implementation is complete.
+      See openspec/VERIFICATION_WORKFLOW.md for the full testing philosophy.
+
+
+      Execution order (stop and report at first layer with failures):
+
+      1. **Unit (Layer 1)** → fastest feedback, run first
+
+      2. **Integration (Layer 2)** → run only if Unit passes
+
+      3. **E2E Network Passthrough (Layer 3)** → run only if Integration passes.
+         Use Model-Based GUI Testing: extract state model from specs/,
+         generate test paths for Transition Coverage, execute with browser automation.
+         Start dev3000 before E2E tests for unified timeline capture.
+         Internal APIs use real dev server (passthrough). Only external services
+         (OAuth, push, email, payment) are mocked at the network level.
+
+      4. **E2E Local DB (Layer 4)** → run only if Layer 3 passes.
+         Only for DB-dependent scenarios: RLS validation, triggers, data integrity.
+
+
+      For each failure, include: test name, layer, expected vs actual,
+      and relevant dev3000 timeline excerpt.
+
+
+      Generate artifacts:
+
+      - verify/state_model.json (extracted from specs/)
+
+      - verify/test_paths.json (generated from state model)
+
+      - verify/fixtures/ (reusable mock responses)
+
+      - verify/scenarios/ (scenario-specific mock sets)
+
+
+      If failures exist, add fix tasks back to tasks.md before closing.
+      List any spec requirements not covered by the test suite.
+    requires:
+      - tasks
 
 apply:
   requires:
@@ -299,4 +367,8 @@ apply:
   tracks: tasks.md
   instruction: |
     Read context files, work through pending tasks, mark complete as you go.
+    Write tests alongside code, not after:
+    - Unit and Integration tests: written with each function or API handler
+    - E2E Network Passthrough: written after the UI component is complete
+    - E2E Local DB: written after the full flow is connected end-to-end
     Pause if you hit blockers or need clarification.

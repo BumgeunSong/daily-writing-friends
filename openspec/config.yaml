@@ -7,3 +7,16 @@ context: |
   API style: Supabase client SDK (direct DB access with RLS)
   Project: DailyWritingFriends - a social writing accountability app
   See AGENTS.md for full coding conventions
+
+rules:
+  design:
+    - "Read openspec/VERIFICATION_CONFIG.md for the project's test toolchain"
+    - "Testability Notes must reference specific tools: Vitest for Unit/Integration, agent-browser for E2E, dev3000 for timeline capture, Supabase local Docker for DB tests"
+  tasks:
+    - "Read openspec/VERIFICATION_CONFIG.md for the project's test toolchain"
+    - "Test tasks must specify which tool runs each test: Vitest, agent-browser, or Supabase local"
+  verify:
+    - "Read openspec/VERIFICATION_CONFIG.md for the project's test toolchain"
+    - "Unit + Integration: run with Vitest"
+    - "E2E: run with agent-browser, start dev3000 for timeline capture"
+    - "E2E Local DB: use Supabase local Docker (never staging/production)"
