@@ -46,9 +46,9 @@
 - [x] T.4 `ImageUtils.test.ts`: processImageForUpload — HEIC 변환 실패 시 원본 반환 fallback 동작
 - [x] T.5 `useImageUpload.test.ts`: mock Firebase Storage로 업로드 → insertImage 호출 흐름 검증
 
-### E2E (agent-browser)
+### E2E (Playwright — requires Firebase emulators + dev server)
 
-- [ ] T.6 Drag & drop: 이미지 파일 에디터 드롭 → 업로드 → 에디터에 이미지 표시 확인
-- [ ] T.7 Paste: 클립보드 이미지 붙여넣기 → 업로드 → 에디터에 이미지 표시 확인
-- [ ] T.8 Multi-file: 3개 이미지 선택 → 순차 업로드 → 3개 이미지 에디터에 표시 확인
-- [ ] T.9 Regression: 툴바 이미지 버튼 → 파일 선택 → 업로드 → 기존 동작 유지 확인
+- [x] T.6 Drag & drop: 이미지 파일 에디터 드롭 → 업로드 → 에디터에 이미지 표시 확인
+- [x] T.7 Paste: 클립보드 이미지 붙여넣기 → 업로드 → 에디터에 이미지 표시 확인
+- [x] T.8 Multi-file: 3개 이미지 선택 → 순차 업로드 → 3개 이미지 에디터에 표시 확인
+- [x] T.9 Regression: 툴바 이미지 버튼 → 파일 선택 → 업로드 → 기존 동작 유지 확인
