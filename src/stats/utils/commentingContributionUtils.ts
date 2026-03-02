@@ -17,11 +17,11 @@ export function aggregateCommentingContributions(
   const countMap = new Map<string, number>();
 
   for (const c of commentings) {
-    const key = getDateKey(c.createdAt.toDate());
+    const key = getDateKey(c.createdAt);
     countMap.set(key, (countMap.get(key) ?? 0) + 1);
   }
   for (const r of replyings) {
-    const key = getDateKey(r.createdAt.toDate());
+    const key = getDateKey(r.createdAt);
     countMap.set(key, (countMap.get(key) ?? 0) + 1);
   }
 

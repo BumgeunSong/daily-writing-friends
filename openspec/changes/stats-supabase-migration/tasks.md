@@ -1,9 +1,9 @@
 ## 1. Fix Consumer Call Sites
 
-- [ ] 1.1 In `src/stats/utils/writingStatsUtils.ts` replace `posting.createdAt.toDate()` with `posting.createdAt` (line 12)
-- [ ] 1.2 In `src/stats/utils/commentingContributionUtils.ts` replace `c.createdAt.toDate()` with `c.createdAt` and `r.createdAt.toDate()` with `r.createdAt` (lines 20, 24)
-- [ ] 1.3 In `src/stats/hooks/usePostingStreak.ts` replace `p.createdAt.toDate()` with `p.createdAt` (line 23)
-- [ ] 1.4 Run `npm run type-check` — expect zero errors (models still type as `Timestamp`, which is a superset of `Date` for these usages)
+- [x] 1.1 In `src/stats/utils/writingStatsUtils.ts` replace `posting.createdAt.toDate()` with `posting.createdAt` (line 12)
+- [x] 1.2 In `src/stats/utils/commentingContributionUtils.ts` replace `c.createdAt.toDate()` with `c.createdAt` and `r.createdAt.toDate()` with `r.createdAt` (lines 20, 24)
+- [x] 1.3 In `src/stats/hooks/usePostingStreak.ts` replace `p.createdAt.toDate()` with `p.createdAt` (line 23)
+- [x] 1.4 Run `npm run type-check` — expect zero errors (models still type as `Timestamp`, which is a superset of `Date` for these usages)
 
 ## 2. Migrate Models and Remove Wrappers
 

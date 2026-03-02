@@ -20,7 +20,7 @@ async function fetchPostingStreak(userId: string): Promise<PostingStreakData> {
   const workingDays = getRecentWorkingDays(5);
   const postings = await fetchPostingDataForContributions(userId, 5);
 
-  const postingDates = new Set(postings.map((p) => getDateKey(p.createdAt.toDate())));
+  const postingDates = new Set(postings.map((p) => getDateKey(p.createdAt)));
   const streak = workingDays.map((day) => postingDates.has(getDateKey(day)));
 
   return { streak };
