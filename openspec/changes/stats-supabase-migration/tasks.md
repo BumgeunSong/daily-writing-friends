@@ -7,16 +7,16 @@
 
 ## 2. Migrate Models and Remove Wrappers
 
-- [ ] 2.1 In `src/post/model/Posting.ts` remove `import type { Timestamp } from 'firebase/firestore'` and change `createdAt: Timestamp` to `createdAt: Date`
-- [ ] 2.2 In `src/user/model/Commenting.ts` remove `import type { Timestamp } from 'firebase/firestore'` and change `createdAt: Timestamp` to `createdAt: Date`
-- [ ] 2.3 In `src/user/model/Replying.ts` remove `import type { Timestamp } from 'firebase/firestore'` and change `createdAt: Timestamp` to `createdAt: Date`
-- [ ] 2.4 Run `npm run type-check` — TypeScript will surface any remaining `.toDate()` call sites missed in Group 1; fix any that appear
-- [ ] 2.5 In `src/stats/api/stats.ts` delete the `toPosting` function, remove `import { Timestamp } from 'firebase/firestore'`, update `fetchPostingData` to return `fetchPostingsFromSupabase(userId)` directly, update `fetchPostingDataForContributions` to return `fetchPostingsByDateRangeFromSupabase(...)` directly
-- [ ] 2.6 In `src/user/api/commenting.ts` delete `toCommenting` and `toReplying` functions, remove `import { Timestamp } from 'firebase/firestore'`, update `fetchUserCommentingsByDateRange` and `fetchUserReplyingsByDateRange` to return Supabase functions directly
-- [ ] 2.7 In `src/stats/utils/test/writingStatsUtils.test.ts` remove `import { Timestamp } from 'firebase/firestore'` and update `createMockPosting` to use `createdAt: date` instead of `createdAt: Timestamp.fromDate(date)`
-- [ ] 2.8 In `src/stats/utils/commentingContributionUtils.test.ts` remove `import { Timestamp } from 'firebase/firestore'` and update `createMockCommenting` and `createMockReplying` to use `createdAt: date` instead of `createdAt: Timestamp.fromDate(date)`
-- [ ] 2.9 Run `npm run type-check` — expect zero errors
-- [ ] 2.10 Run `npm run test:run` — expect all tests to pass
+- [x] 2.1 In `src/post/model/Posting.ts` remove `import type { Timestamp } from 'firebase/firestore'` and change `createdAt: Timestamp` to `createdAt: Date`
+- [x] 2.2 In `src/user/model/Commenting.ts` remove `import type { Timestamp } from 'firebase/firestore'` and change `createdAt: Timestamp` to `createdAt: Date`
+- [x] 2.3 In `src/user/model/Replying.ts` remove `import type { Timestamp } from 'firebase/firestore'` and change `createdAt: Timestamp` to `createdAt: Date`
+- [x] 2.4 Run `npm run type-check` — TypeScript will surface any remaining `.toDate()` call sites missed in Group 1; fix any that appear
+- [x] 2.5 In `src/stats/api/stats.ts` delete the `toPosting` function, remove `import { Timestamp } from 'firebase/firestore'`, update `fetchPostingData` to return `fetchPostingsFromSupabase(userId)` directly, update `fetchPostingDataForContributions` to return `fetchPostingsByDateRangeFromSupabase(...)` directly
+- [x] 2.6 In `src/user/api/commenting.ts` delete `toCommenting` and `toReplying` functions, remove `import { Timestamp } from 'firebase/firestore'`, update `fetchUserCommentingsByDateRange` and `fetchUserReplyingsByDateRange` to return Supabase functions directly
+- [x] 2.7 In `src/stats/utils/test/writingStatsUtils.test.ts` remove `import { Timestamp } from 'firebase/firestore'` and update `createMockPosting` to use `createdAt: date` instead of `createdAt: Timestamp.fromDate(date)`
+- [x] 2.8 In `src/stats/utils/commentingContributionUtils.test.ts` remove `import { Timestamp } from 'firebase/firestore'` and update `createMockCommenting` and `createMockReplying` to use `createdAt: date` instead of `createdAt: Timestamp.fromDate(date)`
+- [x] 2.9 Run `npm run type-check` — expect zero errors
+- [x] 2.10 Run `npm run test:run` — expect all tests to pass
 
 ## 3. Holidays Migration (Conditional)
 
@@ -32,14 +32,14 @@
 
 ### Unit
 
-- [ ] T.1 (Vitest) Verify `writingStatsUtils.test.ts` passes with `createdAt: Date` fixtures — run `npm run test:run -- src/stats/utils/test/writingStatsUtils.test.ts`
-- [ ] T.2 (Vitest) Verify `commentingContributionUtils.test.ts` passes with `createdAt: Date` fixtures — run `npm run test:run -- src/stats/utils/commentingContributionUtils.test.ts`
-- [ ] T.3 (Vitest) Add KST-boundary same-day grouping test: two `Posting` records where `2024-01-01T14:59:59Z` (Jan 1 KST) and `2024-01-01T15:00:00Z` (Jan 2 KST) land in different date buckets
+- [x] T.1 (Vitest) Verify `writingStatsUtils.test.ts` passes with `createdAt: Date` fixtures — run `npm run test:run -- src/stats/utils/test/writingStatsUtils.test.ts`
+- [x] T.2 (Vitest) Verify `commentingContributionUtils.test.ts` passes with `createdAt: Date` fixtures — run `npm run test:run -- src/stats/utils/commentingContributionUtils.test.ts`
+- [x] T.3 (Vitest) Add KST-boundary cross-day bucketing test: two `Posting` records where `2024-01-01T14:59:59Z` (Jan 1 KST) and `2024-01-01T15:00:00Z` (Jan 2 KST) land in different KST date buckets
 - [ ] T.4 (Vitest) Add empty-input test: `accumulatePostingLengths([])`, `createContributions([], ...)`, `aggregateCommentingContributions([], [], ...)` each return empty result structures without error
 
 ### Integration
 
-- [ ] T.5 (Vitest) No new integration tests required for the wrapper removal — pass-throughs are verified by type-check at task 2.9; confirm existing integration test suite passes with `npm run test:run`
+- [x] T.5 (Vitest) No new integration tests required for the wrapper removal — pass-throughs are verified by type-check at task 2.9; confirm existing integration test suite passes with `npm run test:run`
 
 ### E2E
 

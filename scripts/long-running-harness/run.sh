@@ -71,12 +71,12 @@ git_snapshot() {
 }
 
 git_rollback() {
-  # Rollback to pre-session snapshot: discard uncommitted changes
+  # Rollback to pre-session snapshot: reset HEAD and discard changes
   local label="$1"
   local tag="harness/${CHANGE_NAME}/${label}"
   if (cd "$PROJECT_DIR" && git tag -l "$tag" | grep -q .); then
     log "GIT ROLLBACK: reverting to $tag"
-    (cd "$PROJECT_DIR" && git checkout -- . && git clean -fd) 2>&1 | tee -a "$LOG_DIR/harness.log"
+    (cd "$PROJECT_DIR" && git reset --hard "$tag" && git clean -fd) 2>&1 | tee -a "$LOG_DIR/harness.log"
   else
     log "GIT ROLLBACK: tag $tag not found, skipping"
   fi
