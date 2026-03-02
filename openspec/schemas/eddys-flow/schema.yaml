@@ -1,6 +1,6 @@
-name: reviewed
+name: eddys-flow
 version: 1
-description: Iterative review workflow - proposal and design get reviewed before implementation
+description: Full lifecycle workflow with iterative reviews, verification, PR, and retro
 
 artifacts:
   - id: proposal

@@ -1,4 +1,4 @@
-schema: reviewed
+schema: eddys-flow
 
 context: |
   Tech stack: TypeScript, React (Vite), Supabase (PostgreSQL + Auth), Firebase Cloud Functions
