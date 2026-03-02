@@ -86,6 +86,10 @@ Tests T.6 and T.7 (stats page contribution grid, writing streak display) were no
 
 The verify session's report said "No `specs/` directory exists for this change" — incorrect, since `specs/` was committed at commit `0f7ebdd4` before the verify session ran. The spec-alignment report caught this and noted it. The underlying coverage assessment was still accurate, but the factual error in a verification report is a trust signal problem.
 
+### Pipeline Gap — No phase for addressing PR review comments
+
+The harness pipeline ends at the `pull-request` session followed by `final-spec-alignment` and `retro`. After the PR was created, GitHub Copilot left 6 review comments (including a real bug in `git_rollback`, stale task checkboxes, and a factual error in the verify report). The harness has no session to read and address PR review feedback. These comments had to be resolved manually outside the pipeline, breaking the autonomous end-to-end workflow.
+
 ---
 
 ## Improvement Ideas
@@ -103,6 +107,8 @@ The verify session's report said "No `specs/` directory exists for this change" 
 **Verify session should be read-only for source files.** Allowing the verify session to modify source files (as it did with tasks 2.1–2.10) makes the verify record ambiguous: did it verify, or did it implement and then verify itself? A verify session should run tests and report; it should not modify source files.
 
 **Add a short "did the apply session complete all tasks?" check.** Before moving from Phase 2 to Phase 3, the harness should count unchecked tasks across all non-conditional groups. If any remain unchecked, continue the apply loop rather than hand off to verify.
+
+**Add a review-response phase after PR creation.** After `pull-request`, the harness should poll for GitHub review comments (via `gh api`), then run a `review-response` session that reads the comments, applies fixes, and pushes follow-up commits. This closes the loop between PR creation and review feedback without manual intervention. The session should re-run `type-check` and `test:run` after applying fixes.
 
 ---
 
