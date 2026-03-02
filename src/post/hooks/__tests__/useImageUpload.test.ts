@@ -199,5 +199,61 @@ describe('useImageUpload', () => {
 
       expect(firstHandler).toBe(secondHandler);
     });
+
+    it('imageHandler stays stable after upload completes (isUploading toggle)', async () => {
+      const stableInsertImage = vi.fn();
+
+      const { result } = renderHook(() =>
+        useImageUpload({ insertImage: stableInsertImage, editorRoot: null }),
+      );
+
+      const handlerBefore = result.current.imageHandler;
+
+      const file = createImageFile('photo.jpg', 1024);
+      mockFileInput([file]);
+
+      await act(async () => {
+        await result.current.imageHandler(0);
+        await new Promise((r) => setTimeout(r, 10));
+      });
+
+      // After upload completes, isUploading goes true→false.
+      // imageHandler must remain the same reference to avoid Quill reinit.
+      expect(result.current.imageHandler).toBe(handlerBefore);
+    });
+  });
+
+  describe('paste handler', () => {
+    it('calls preventDefault and stopPropagation to block Quill default paste', async () => {
+      const editorRoot = document.createElement('div');
+
+      const { unmount } = renderHook(() =>
+        useImageUpload({ insertImage, editorRoot }),
+      );
+
+      const file = new File([new ArrayBuffer(1024)], 'paste.jpg', { type: 'image/jpeg' });
+
+      // jsdom lacks DataTransfer, so build a minimal clipboardData mock
+      const clipboardData = {
+        items: [{ type: 'image/jpeg', getAsFile: () => file }],
+      } as unknown as DataTransfer;
+
+      const pasteEvent = new Event('paste', { bubbles: true, cancelable: true }) as unknown as ClipboardEvent;
+      Object.defineProperty(pasteEvent, 'clipboardData', { value: clipboardData });
+
+      const preventDefaultSpy = vi.spyOn(pasteEvent, 'preventDefault');
+      const stopPropagationSpy = vi.spyOn(pasteEvent, 'stopPropagation');
+
+      await act(async () => {
+        editorRoot.dispatchEvent(pasteEvent);
+        await new Promise((r) => setTimeout(r, 50));
+      });
+
+      expect(preventDefaultSpy).toHaveBeenCalled();
+      expect(stopPropagationSpy).toHaveBeenCalled();
+      expect(uploadBytes).toHaveBeenCalled();
+
+      unmount();
+    });
   });
 });
