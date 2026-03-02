@@ -68,7 +68,7 @@ Tests are **completion criteria**, not optional extras.
 Every implementation task that involves business logic or a layer boundary
 must have a corresponding test task.
 
-### During `implement`
+### During `apply`
 Write tests alongside code, not after.
 - Unit and Integration tests: written with each function or API handler
 - E2E Network Passthrough: written after the UI component is complete
@@ -146,7 +146,7 @@ verify/
   test_paths.json       ← generated paths from state model (Transition Coverage)
   fixtures/             ← reusable mock responses (external services)
   scenarios/            ← scenario-specific mock sets
-  verify_report.md      ← execution results and failure evidence
+verify_report.md        ← execution results and failure evidence (root of change)
 ```
 
 ### verify_report.md structure
@@ -154,10 +154,10 @@ verify/
 ```
 ## Summary
 | Layer | Total | Passed | Failed |
-| Unit        | ... | ... | ... |
-| Integration | ... | ... | ... |
-| E2E Mock    | ... | ... | ... |
-| E2E LocalDB | ... | ... | ... |
+| Unit                    | ... | ... | ... |
+| Integration             | ... | ... | ... |
+| E2E Network Passthrough | ... | ... | ... |
+| E2E Local DB            | ... | ... | ... |
 
 ## Failures
 For each failure:
@@ -175,7 +175,7 @@ If failures exist, add fix tasks back to `tasks.md` before closing verify phase.
 
 ## Key Principles
 
-1. Tests are written during implement, not after
+1. Tests are written during apply, not after
 2. Design.md must identify test targets before coding starts
 3. Each layer has a distinct purpose — do not duplicate coverage across layers
 4. Passthrough by default — never mock internal APIs in E2E
