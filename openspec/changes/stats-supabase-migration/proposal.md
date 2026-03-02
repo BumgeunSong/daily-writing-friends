@@ -4,11 +4,12 @@ The codebase has already migrated Firestore data reads to Supabase, but `firebas
 
 ## What Changes
 
-- Remove `Timestamp` conversion wrappers (`toPosting`, `toCommenting`, `toReplying`) from `src/stats/api/stats.ts` and `src/user/api/commenting.ts`; call `supabaseReads` functions directly
+- Audit all call sites that access `createdAt` on `Posting`, `Commenting`, and `Replying` instances; replace any Timestamp-specific method calls (`.toDate()`, `.toMillis()`, `.seconds`, `.nanoseconds`) with native `Date` equivalents before changing model types
 - Replace `createdAt: Timestamp` with `createdAt: Date` in the `Posting`, `Commenting`, and `Replying` models (`src/post/model/Posting.ts`, `src/user/model/Commenting.ts`, `src/user/model/Replying.ts`)
+- Remove `Timestamp` conversion wrappers (`toPosting`, `toCommenting`, `toReplying`) from `src/stats/api/stats.ts` and `src/user/api/commenting.ts`; call `supabaseReads` functions directly
 - Remove `Timestamp` imports from `src/stats/api/stats.ts` and `src/user/api/commenting.ts` after wrappers are gone
-- Migrate `src/shared/api/holidays.ts` from Firestore (`doc`/`getDoc`) to Supabase (`holidays` table), following the `supabaseReads.ts` pattern
-- Remove `Timestamp` conversions from `src/shared/api/supabaseReads.ts` for stats-related return types once callers no longer need them
+- Remove `Timestamp` conversions from `src/shared/api/supabaseReads.ts` for stats-related return types; confirm no non-stats callers depend on `Timestamp` output from these functions before removing
+- Migrate `src/shared/api/holidays.ts` from Firestore (`doc`/`getDoc`) to Supabase (`holidays` table), following the `supabaseReads.ts` pattern — **precondition**: `holidays` table must exist in Supabase with equivalent data to Firestore before this step ships; treat as a separate deliverable if the schema migration is not yet complete
 - Delete any Firestore read helper code that is no longer called after the above changes
 
 ## Capabilities
@@ -40,6 +41,7 @@ _(No existing specs to update — specs directory is empty.)_
 
 **Dependencies:**
 - `firebase/firestore` package import surface shrinks; still needed for models not yet migrated (`Post`, `Comment`, `Reply`, `Notification`, `Like`) — full elimination is out of scope for this change
-- Supabase `holidays` table must exist before `holidays-supabase-read` can ship (schema migration required)
+- Supabase `holidays` table must exist with equivalent data before `holidays-supabase-read` can ship; this includes both a schema migration (table definition) and a data migration (holiday records). If neither is complete, the holidays.ts step should be deferred to a follow-up change rather than blocking the stats cleanup.
+- All callers of `Posting.createdAt`, `Commenting.createdAt`, `Replying.createdAt` must be audited and updated before the model type change ships; any `.toDate()` / `.toMillis()` calls on these fields will throw at runtime after the migration
 
 **No breaking changes to external APIs or UI behavior** — the migration is internal to the data layer.
