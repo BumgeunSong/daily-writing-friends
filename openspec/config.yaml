@@ -1,0 +1,9 @@
+schema: reviewed
+
+context: |
+  Tech stack: TypeScript, React (Vite), Supabase (PostgreSQL + Auth), Firebase Cloud Functions
+  Styling: Tailwind CSS
+  Testing: Vitest + React Testing Library
+  API style: Supabase client SDK (direct DB access with RLS)
+  Project: DailyWritingFriends - a social writing accountability app
+  See AGENTS.md for full coding conventions
