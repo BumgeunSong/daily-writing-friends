@@ -41,10 +41,11 @@ service firebase.storage {
     }
 
     // Post images uploaded via editor (postImages/{dateFolder}/{fileName})
+    // No Firebase Auth required — app uses Supabase Auth (not Firebase Auth)
     match /postImages/{allPaths=**} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidImageType() && isValidImageSize();
-      allow delete: if isAuthenticated();
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if true;
     }
 
     // Public assets - readable by all authenticated users

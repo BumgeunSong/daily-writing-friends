@@ -147,9 +147,11 @@ export function useImageUpload({ insertImage, editorRoot, getCursorIndex }: UseI
   );
 
   // Toolbar image button handler (multi-file capable)
+  // Use isUploadingRef (not isUploading state) to keep callback reference stable.
+  // Changing imageHandler ref cascades: toolbarImageHandler → modules → Quill reinit.
   const imageHandler = useCallback(
     async (cursorIndex?: number) => {
-      if (isUploading) return;
+      if (isUploadingRef.current) return;
 
       const input = document.createElement('input');
       input.setAttribute('type', 'file');
@@ -163,7 +165,7 @@ export function useImageUpload({ insertImage, editorRoot, getCursorIndex }: UseI
         await processFiles(files, cursorIndex);
       };
     },
-    [isUploading, processFiles],
+    [processFiles],
   );
 
   // Drop handler
