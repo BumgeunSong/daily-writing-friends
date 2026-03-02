@@ -102,11 +102,12 @@ serve(async (req) => {
       case 'reaction_on_reply': {
         const { data: reply } = await supabase
           .from('replies')
-          .select('user_id, post_id, content')
+          .select('user_id, post_id, comment_id, content')
           .eq('id', payload.reply_id)
           .single();
         recipientId = reply?.user_id;
         postId = reply?.post_id;
+        commentId = reply?.comment_id || null;
 
         const { data: post } = await supabase
           .from('posts')
