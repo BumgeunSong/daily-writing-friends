@@ -14,10 +14,10 @@
      must have a corresponding test task. Tests are completion criteria. -->
 
 ### Unit
-- [ ] T.1 <!-- Unit test description -->
+- [ ] 3.1 <!-- Unit test description -->
 
 ### Integration
-- [ ] T.2 <!-- Integration test description -->
+- [ ] 3.2 <!-- Integration test description -->
 
 ### E2E
-- [ ] T.3 <!-- E2E test description -->
+- [ ] 3.3 <!-- E2E test description -->
