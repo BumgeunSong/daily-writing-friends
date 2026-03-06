@@ -1,7 +1,7 @@
 ## 1. Text Truncation Utility
 
-- [ ] 1.1 Create `src/utils/textHelpers.ts` with `truncateText(text: string, maxLength: number): string` function that returns original text if within limit, or truncated text with "..." suffix if over limit. Handle edge cases: empty string, maxLength < 4.
-- [ ] 1.2 Ensure the file compiles cleanly with `npx tsc --noEmit`.
+- [x] 1.1 Create `src/utils/textHelpers.ts` with `truncateText(text: string, maxLength: number): string` function that returns original text if within limit, or truncated text with "..." suffix if over limit. Handle edge cases: empty string, maxLength < 4.
+- [x] 1.2 Ensure the file compiles cleanly with `npx tsc --noEmit`.
 
 ## 2. Unit Tests
 
