@@ -102,6 +102,10 @@ extract_functions() {
   # Source run_tsc_gate
   export TSC_TIMEOUT=2
   eval "$(sed -n '/^run_tsc_gate()/,/^}/p' "$HARNESS_DIR/run.sh")"
+
+  # Source detect_skills and its dependencies
+  eval "$(sed -n '/^SKILL_KEYWORDS=/p' "$HARNESS_DIR/run.sh")"
+  eval "$(sed -n '/^detect_skills()/,/^}/p' "$HARNESS_DIR/run.sh")"
 }
 
 extract_functions
@@ -383,6 +387,39 @@ else
   echo "  FAIL: apply_gaps.md should not be written when all tasks checked"
   FAIL=$((FAIL + 1))
 fi
+
+# ============================================================
+# T.5b: Test detect_skills()
+# ============================================================
+echo ""
+echo "=== T.5b: detect_skills() ==="
+
+# Set MATCH_SKILLS to the real script for integration
+MATCH_SKILLS="$HARNESS_DIR/match-skills.sh"
+
+# Phase defaults — apply-group
+result=$(detect_skills "apply-group" "")
+assert_contains "apply-group default → code-style" "code-style" "$result"
+
+# Phase defaults — verify
+result=$(detect_skills "verify" "")
+assert_contains "verify default → testing" "testing" "$result"
+assert_contains "verify default → type-system" "type-system" "$result"
+assert_contains "verify default → code-style" "code-style" "$result"
+assert_contains "verify default → agent-browser" "agent-browser" "$result"
+
+# Phase defaults — design
+result=$(detect_skills "design" "")
+assert_contains "design default → daily-writing-friends-design" "daily-writing-friends-design" "$result"
+
+# Empty content, unknown phase → no skills
+result=$(detect_skills "unknown-phase" "")
+assert_empty "unknown phase, empty content → empty" "$result"
+
+# Deduplication — verify phase already has "testing", content with "test" also resolves to "testing"
+result=$(detect_skills "verify" "write a test for this")
+count=$(echo "$result" | tr ' ' '\n' | grep -c '^testing$' || true)
+assert_eq "dedup: testing appears once" "1" "$count"
 
 # ============================================================
 # T.6-T.8: Integration tests (placeholders)

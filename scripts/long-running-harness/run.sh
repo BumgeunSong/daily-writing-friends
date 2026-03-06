@@ -19,8 +19,18 @@ if ! command -v timeout &>/dev/null; then
   if command -v gtimeout &>/dev/null; then
     timeout() { gtimeout "$@"; }
   else
-    echo "WARNING: 'timeout' not found. tsc gate will run without timeout." >&2
-    timeout() { shift; "$@"; }
+    # Fallback: perl alarm enforces real timeout on macOS (exit 124 matches GNU timeout)
+    timeout() {
+      local duration="$1"; shift
+      duration="${duration%s}"  # strip optional trailing 's'
+      perl -e '
+        use strict; use warnings;
+        my $t = shift @ARGV;
+        $SIG{ALRM} = sub { exit 124 };
+        alarm $t;
+        exec @ARGV or exit 127;
+      ' "$duration" "$@"
+    }
   fi
 fi
 
@@ -211,7 +221,7 @@ get_section_unchecked() {
 MATCH_SKILLS="$HARNESS_DIR/match-skills.sh"
 
 # Search keywords to scan for in task content
-SKILL_KEYWORDS="component tsx jsx hook useEffect useState useCallback test spec coverage firebase api/ fetch endpoint type interface"
+SKILL_KEYWORDS="component tsx jsx hook useEffect useState useCallback test spec coverage firebase functions/ api/ fetch endpoint type interface"
 
 detect_skills() {
   # Usage: detect_skills <phase> <content>
@@ -372,6 +382,7 @@ while IFS= read -r group_header; do
   # Apply with retry (max retries for incomplete groups)
   log_suffix="${apply_session_num}-${group_name// /_}"
   retry=0
+  tsc_extra=""
   while [ "$retry" -le "$MAX_APPLY_RETRIES" ]; do
     log "Apply session $apply_session_num: '$group_name' ($unchecked unchecked, attempt $((retry + 1)))"
 
@@ -381,30 +392,23 @@ while IFS= read -r group_header; do
     HARNESS_SKILLS=$(detect_skills "apply-group" "$group_content")
     log "Skills for '$group_name': ${HARNESS_SKILLS:-none}"
 
-    run_session "apply-group" "$MODEL_APPLY" "Task group: $group_name" "$log_suffix-attempt$((retry + 1))" "true" || true
+    run_session "apply-group" "$MODEL_APPLY" "Task group: $group_name${tsc_extra}" "$log_suffix-attempt$((retry + 1))" "true" || true
     actual_sessions_run=$((actual_sessions_run + 1))
 
     # tsc gate: catch type-breaking changes between groups
     if run_tsc_gate; then
       log "TSC gate passed after group '$group_name'"
+      tsc_extra=""
     else
       log "TSC gate FAILED after group '$group_name' — will retry with tsc errors"
-      retry=$((retry + 1))
-      if [ "$retry" -le "$MAX_APPLY_RETRIES" ]; then
-        # Retry same group with tsc errors as extra context
-        log_suffix="${apply_session_num}-${group_name// /_}"
-        run_session "apply-group" "$MODEL_APPLY" "Task group: $group_name
+      tsc_extra="
 PREVIOUS ATTEMPT FAILED — tsc errors:
-$TSC_ERRORS" "$log_suffix-attempt$((retry + 1))" "true" || true
-        actual_sessions_run=$((actual_sessions_run + 1))
-      fi
-      # Skip bottom-of-loop increment — already incremented above
-      continue
+$TSC_ERRORS"
     fi
 
     # Re-check unchecked tasks
     unchecked=$(get_section_unchecked "$group_name" "$TASKS_FILE")
-    if [ "$unchecked" -eq 0 ]; then
+    if [ "$unchecked" -eq 0 ] && [ -z "$tsc_extra" ]; then
       log "Group '$group_name' complete"
       checkpoint_save "$checkpoint_key"
       break

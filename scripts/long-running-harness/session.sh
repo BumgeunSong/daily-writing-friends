@@ -68,8 +68,9 @@ if [ -n "${HARNESS_SKILLS:-}" ]; then
       candidate="$skills_root/${skill}/SKILL.md"
       if [ -f "$candidate" ]; then
         # Verify resolved path stays within skills root (prevent symlink escapes)
-        real_file=$(realpath "$candidate" 2>/dev/null || true)
-        real_root=$(realpath "$skills_root" 2>/dev/null || true)
+        # Portable: realpath may be missing on some macOS setups — fall back to cd+pwd
+        real_file=$(realpath "$candidate" 2>/dev/null || (cd "$(dirname "$candidate")" && echo "$(pwd)/$(basename "$candidate")") 2>/dev/null || true)
+        real_root=$(realpath "$skills_root" 2>/dev/null || (cd "$skills_root" && pwd) 2>/dev/null || true)
         if [ -n "$real_file" ] && [ -n "$real_root" ] && [[ "$real_file" == "$real_root"/* ]]; then
           skill_file="$candidate"
           break
