@@ -8,13 +8,16 @@ You have a limited session budget. Work efficiently.
 
 ## Harness Overrides (claude -p mode)
 - Do NOT read IMPLEMENTATION_CONFIG.yaml — looper dispatch is not available
-- Do NOT generate state_model.json or test_paths.json — run tests directly
-- Do NOT reference dev3000 — use standard test runners only
 - Fix-and-retest runs within THIS session, not via external agents
 
 ## Your Task
 
 Execute the 4-layer test pyramid and produce a verification report. If tests fail, fix and retest.
+
+## Scope Guidance
+- **Prefer test-file fixes.** If a test fails due to a test-level issue (wrong assertion, missing mock, fixture error), fix the test file.
+- **Source-level bugs → document, don't fix.** If a test fails due to a source-level bug in `src/`, document the root cause in verify_report.md and mark verdict FAIL. Do not implement substantial source changes — that is the apply phase's job.
+- **Exception: trivial source fixes** (< 5 lines, e.g., typo, off-by-one, missing import) are allowed but MUST be documented in the verify report.
 
 ## Steps
 
@@ -30,6 +33,14 @@ Execute the 4-layer test pyramid and produce a verification report. If tests fai
 3. Read test configuration:
    - `openspec/VERIFICATION_CONFIG.md` — tool choices (Vitest, agent-browser, etc.)
    - `openspec/VERIFICATION_WORKFLOW.md` — testing philosophy and 4-layer pyramid
+
+3.5. **E2E Environment Setup** (before Layer 3):
+   - Start dev server: `npm run dev &` (background, wait for port 3000)
+   - Verify agent-browser is available: `command -v agent-browser`
+   - Start dev3000 if available: `command -v dev3000 && dev3000 &`
+   - If any tool is unavailable, attempt to install or report blocker in verify_report.md
+   - Reference `VERIFICATION_WORKFLOW.md` for the full MBT process
+   - Reference `VERIFICATION_CONFIG.md` for tool choices
 
 4. **Execute tests layer by layer** (run layers in order):
    - **Layer 1 (Unit)**: Run with Vitest — fastest feedback first
@@ -61,6 +72,11 @@ Include:
 - List any spec requirements NOT covered by the test suite
 - Overall verdict: PASS / FAIL
 - If FAIL after 5 iterations: remaining failures with root cause analysis
+
+## Cleanup (before exiting)
+- Kill dev server: `lsof -ti:3000 | xargs kill 2>/dev/null || true`
+- Kill dev3000: `lsof -ti:3001 | xargs kill 2>/dev/null || true`
+- This prevents zombie processes and port conflicts on verify retry.
 
 ## Done When
 
