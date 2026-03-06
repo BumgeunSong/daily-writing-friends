@@ -398,6 +398,8 @@ PREVIOUS ATTEMPT FAILED — tsc errors:
 $TSC_ERRORS" "$log_suffix-attempt$((retry + 1))" "true" || true
         actual_sessions_run=$((actual_sessions_run + 1))
       fi
+      # Skip bottom-of-loop increment — already incremented above
+      continue
     fi
 
     # Re-check unchecked tasks
