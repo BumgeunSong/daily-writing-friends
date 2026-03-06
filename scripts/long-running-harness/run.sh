@@ -14,6 +14,16 @@ set -euo pipefail
 HARNESS_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$HARNESS_DIR/../.." && pwd)"
 
+# --- Portability: macOS timeout shim (H8) ---
+if ! command -v timeout &>/dev/null; then
+  if command -v gtimeout &>/dev/null; then
+    timeout() { gtimeout "$@"; }
+  else
+    echo "WARNING: 'timeout' not found. tsc gate will run without timeout." >&2
+    timeout() { shift; "$@"; }
+  fi
+fi
+
 # --- Arguments ---
 CHANGE_NAME="${1:?Usage: run.sh <change-name> '<brief-description>'}"
 BRIEF="${2:?Usage: run.sh <change-name> '<brief-description>'}"
@@ -151,19 +161,93 @@ run_session() {
   return 0
 }
 
+# --- tsc Gate ---
+TSC_TIMEOUT="${TSC_TIMEOUT:-120}"
+
+run_tsc_gate() {
+  # Run tsc --noEmit and capture result safely (set -e safe)
+  # Returns 0 on pass, 1 on fail. Sets TSC_ERRORS on failure.
+  local output
+  local exit_code
+  TSC_ERRORS=""
+
+  set +e
+  output=$(cd "$PROJECT_DIR" && timeout "$TSC_TIMEOUT" npx tsc --noEmit 2>&1)
+  exit_code=$?
+  set -e
+
+  if [ "$exit_code" -ne 0 ]; then
+    # Truncate to last 100 lines
+    TSC_ERRORS=$(echo "$output" | tail -100)
+    log "TSC GATE: FAIL (exit $exit_code)"
+    return 1
+  fi
+
+  log "TSC GATE: PASS"
+  return 0
+}
+
 # --- Extract section content using awk (robust to special chars) ---
-get_section_unchecked() {
+
+get_section_content() {
+  # Extracts full section text under a ## header (primitive for get_section_unchecked)
   local group_name="$1"
   local tasks_file="$2"
-  local section_content
-  # Use ENVIRON to avoid awk -v backslash interpretation (H7)
-  section_content=$(AWKS_GROUP="## $group_name" awk '
+  AWKS_GROUP="## $group_name" awk '
     BEGIN { group = ENVIRON["AWKS_GROUP"] }
     $0 == group      { in_section=1; next }
     /^## /           { in_section=0 }
     in_section       { print }
-  ' "$tasks_file")
-  echo "$section_content" | grep -c '^- \[ \]' || true
+  ' "$tasks_file"
+}
+
+get_section_unchecked() {
+  local group_name="$1"
+  local tasks_file="$2"
+  get_section_content "$group_name" "$tasks_file" | grep -c '^- \[ \]' || true
+}
+
+# --- Skill Detection ---
+MATCH_SKILLS="$HARNESS_DIR/match-skills.sh"
+
+# Search keywords to scan for in task content
+SKILL_KEYWORDS="component tsx jsx hook useEffect useState useCallback test spec coverage firebase api/ fetch endpoint type interface"
+
+detect_skills() {
+  # Usage: detect_skills <phase> <content>
+  # Returns: space-separated deduplicated skill names
+  local phase="$1"
+  local content="$2"
+  local skills=""
+
+  # Phase-level defaults
+  case "$phase" in
+    apply-group) skills="code-style" ;;
+    verify)      skills="testing type-system code-style agent-browser" ;;
+    design)      skills="daily-writing-friends-design" ;;
+  esac
+
+  # Scan content for keywords and resolve via match-skills.sh
+  if [ -n "$content" ]; then
+    for keyword in $SKILL_KEYWORDS; do
+      if echo "$content" | grep -iqF "$keyword"; then
+        local matched
+        matched=$("$MATCH_SKILLS" "$keyword" 2>/dev/null || true)
+        if [ -n "$matched" ]; then
+          skills="$skills $matched"
+        fi
+      fi
+    done
+    # Also try multi-word keywords
+    if echo "$content" | grep -iqF "cloud function"; then
+      local matched
+      matched=$("$MATCH_SKILLS" "cloud function" 2>/dev/null || true)
+      [ -n "$matched" ] && skills="$skills $matched"
+    fi
+  fi
+
+  # Deduplicate
+  echo "$skills" | tr ' ' '\n' | sort -u | tr '\n' ' ' | sed 's/^ *//;s/ *$//'
 }
 
 # ============================================================
@@ -213,6 +297,11 @@ run_session_if_needed() {
 
 run_session_if_needed "proposal"         "$MODEL_PLANNING" "proposal.md"
 run_session_if_needed "proposal-review"  "$MODEL_REVIEW"   "proposal-review.md"
+# Set skills for design phase
+export HARNESS_SKILLS
+HARNESS_SKILLS=$(detect_skills "design" "")
+log "Skills for design: ${HARNESS_SKILLS:-none}"
+
 run_session_if_needed "design"           "$MODEL_PLANNING" "design.md"
 run_session_if_needed "design-review"    "$MODEL_REVIEW"   "design-review.md"
 
@@ -286,8 +375,30 @@ while IFS= read -r group_header; do
   while [ "$retry" -le "$MAX_APPLY_RETRIES" ]; do
     log "Apply session $apply_session_num: '$group_name' ($unchecked unchecked, attempt $((retry + 1)))"
 
+    # Detect and inject relevant skills for this group
+    group_content=$(get_section_content "$group_name" "$TASKS_FILE")
+    export HARNESS_SKILLS
+    HARNESS_SKILLS=$(detect_skills "apply-group" "$group_content")
+    log "Skills for '$group_name': ${HARNESS_SKILLS:-none}"
+
     run_session "apply-group" "$MODEL_APPLY" "Task group: $group_name" "$log_suffix-attempt$((retry + 1))" "true" || true
     actual_sessions_run=$((actual_sessions_run + 1))
+
+    # tsc gate: catch type-breaking changes between groups
+    if run_tsc_gate; then
+      log "TSC gate passed after group '$group_name'"
+    else
+      log "TSC gate FAILED after group '$group_name' — will retry with tsc errors"
+      retry=$((retry + 1))
+      if [ "$retry" -le "$MAX_APPLY_RETRIES" ]; then
+        # Retry same group with tsc errors as extra context
+        log_suffix="${apply_session_num}-${group_name// /_}"
+        run_session "apply-group" "$MODEL_APPLY" "Task group: $group_name
+PREVIOUS ATTEMPT FAILED — tsc errors:
+$TSC_ERRORS" "$log_suffix-attempt$((retry + 1))" "true" || true
+        actual_sessions_run=$((actual_sessions_run + 1))
+      fi
+    fi
 
     # Re-check unchecked tasks
     unchecked=$(get_section_unchecked "$group_name" "$TASKS_FILE")
@@ -305,6 +416,14 @@ while IFS= read -r group_header; do
 
 done < <(grep '^## ' "$TASKS_FILE")
 
+# --- Gap Report ---
+total_unchecked=$(grep -c '^- \[ \]' "$TASKS_FILE" || true)
+if [ "$total_unchecked" -gt 0 ]; then
+  log "WARNING: $total_unchecked unchecked tasks remain after apply loop"
+  grep '^- \[ \]' "$TASKS_FILE" > "$CHANGE_DIR/apply_gaps.md"
+  log "Gap report written to $CHANGE_DIR/apply_gaps.md"
+fi
+
 # ============================================================
 # Phase 3: Verification & Closing (5 sessions)
 # ============================================================
@@ -312,6 +431,11 @@ log ""
 log "=========================================="
 log "  PHASE 3: VERIFICATION & CLOSING"
 log "=========================================="
+
+# Set skills for verify phase
+export HARNESS_SKILLS
+HARNESS_SKILLS=$(detect_skills "verify" "")
+log "Skills for verify: ${HARNESS_SKILLS:-none}"
 
 # Fix H1: verify with feedback loop — abort if verify fails after retries
 MAX_VERIFY_RETRIES="${MAX_VERIFY_RETRIES:-2}"
@@ -342,6 +466,42 @@ fi
 
 run_session "spec-alignment"       "$MODEL_PLANNING"
 run_session "pull-request"         "$MODEL_PLANNING"
+
+# --- Review-Response Phase ---
+if command -v gh &>/dev/null; then
+  PR_FILE="$CHANGE_DIR/pull-request.md"
+  PR_NUMBER=""
+  if [ -f "$PR_FILE" ]; then
+    PR_NUMBER=$(grep -oE 'pull/[0-9]+' "$PR_FILE" | grep -oE '[0-9]+' | head -1 || true)
+  fi
+
+  if [ -z "$PR_NUMBER" ]; then
+    log "WARNING: Could not extract PR number from pull-request.md — skipping review-response"
+  else
+    # Get repo info for API calls
+    REPO_OWNER=$(cd "$PROJECT_DIR" && gh repo view --json owner -q '.owner.login' 2>/dev/null || true)
+    REPO_NAME=$(cd "$PROJECT_DIR" && gh repo view --json name -q '.name' 2>/dev/null || true)
+
+    if [ -n "$REPO_OWNER" ] && [ -n "$REPO_NAME" ]; then
+      # Check for comments + non-approved reviews
+      COMMENT_COUNT=$(gh api "repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER/comments" --jq 'length' 2>/dev/null || echo "0")
+      REVIEW_COUNT=$(gh api "repos/$REPO_OWNER/$REPO_NAME/pulls/$PR_NUMBER/reviews" --jq '[.[] | select(.state != "APPROVED")] | length' 2>/dev/null || echo "0")
+
+      TOTAL_FEEDBACK=$((COMMENT_COUNT + REVIEW_COUNT))
+      if [ "$TOTAL_FEEDBACK" -gt 0 ]; then
+        log "PR #$PR_NUMBER has $COMMENT_COUNT comments + $REVIEW_COUNT non-approved reviews — running review-response"
+        run_session "review-response" "$MODEL_APPLY"
+      else
+        log "SKIP: PR #$PR_NUMBER has no review comments"
+      fi
+    else
+      log "WARNING: Could not determine repo owner/name — skipping review-response"
+    fi
+  fi
+else
+  log "WARNING: gh CLI not available — skipping review-response"
+fi
+
 run_session "final-spec-alignment" "$MODEL_PLANNING"
 run_session "retro"                "$MODEL_PLANNING"
 

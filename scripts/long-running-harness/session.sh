@@ -47,6 +47,65 @@ if [ -z "$SYSTEM_PROMPT" ]; then
   exit 1
 fi
 
+# --- Skill Injection (D6) ---
+# Read HARNESS_SKILLS env var and inject matching SKILL.md content
+SAFE_NAME_RE='^[a-z0-9][a-z0-9_-]{0,63}$'
+SKILL_CONTENT=""
+INJECTED_SKILLS=""
+
+if [ -n "${HARNESS_SKILLS:-}" ]; then
+  IFS=' ' read -ra SKILLS <<< "$HARNESS_SKILLS"
+  for skill in "${SKILLS[@]}"; do
+    # Validate skill name (prevent path traversal)
+    if [[ ! "$skill" =~ $SAFE_NAME_RE ]]; then
+      echo "WARNING: Skipping unsafe skill name: $skill" >> "$LOG_DIR/harness.log"
+      continue
+    fi
+
+    # Resolve path: project-level first, then user-level
+    skill_file=""
+    for skills_root in "$PROJECT_DIR/.claude/skills" "$HOME/.claude/skills"; do
+      candidate="$skills_root/${skill}/SKILL.md"
+      if [ -f "$candidate" ]; then
+        # Verify resolved path stays within skills root (prevent symlink escapes)
+        real_file=$(realpath "$candidate" 2>/dev/null || true)
+        real_root=$(realpath "$skills_root" 2>/dev/null || true)
+        if [ -n "$real_file" ] && [ -n "$real_root" ] && [[ "$real_file" == "$real_root"/* ]]; then
+          skill_file="$candidate"
+          break
+        fi
+      fi
+    done
+
+    if [ -n "$skill_file" ]; then
+      SKILL_CONTENT="${SKILL_CONTENT}
+$(cat "$skill_file")
+"
+      INJECTED_SKILLS="${INJECTED_SKILLS} ${skill}"
+    fi
+  done
+fi
+
+# Append skill content to system prompt (before handoff footer)
+if [ -n "$SKILL_CONTENT" ]; then
+  SYSTEM_PROMPT="${SYSTEM_PROMPT}
+
+## Project Conventions (from skills)
+${SKILL_CONTENT}"
+  echo "[$(date +%H:%M:%S)] SKILLS INJECTED:${INJECTED_SKILLS}" >> "$LOG_DIR/harness.log"
+fi
+
+# --- Handoff Footer (D5) ---
+# Assembly order: phase prompt → skill content → handoff footer (last)
+SYSTEM_PROMPT="${SYSTEM_PROMPT}
+
+## Session Handoff (required before finishing)
+Before finishing this session, write \`openspec/changes/${CHANGE_NAME}/handoff.md\` with:
+- **What was done**: Summary of changes made in this session
+- **Files changed**: List of files created, modified, or deleted
+- **Key decisions**: Any design or implementation decisions made
+- **Notes for next session**: Context the next agent session should know about"
+
 # Fix H4: wrap BRIEF in delimiters to prevent prompt injection
 USER_PROMPT="## Session Context
 
