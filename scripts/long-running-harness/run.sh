@@ -138,7 +138,7 @@ run_session() {
     "$BRIEF" \
     "$LOG_DIR" \
     "$extra_context" \
-    "$log_suffix" || exit_code=$?
+    "$log_suffix" < /dev/null || exit_code=$?
 
   local end_time
   end_time=$(date +%s)
@@ -444,12 +444,12 @@ MAX_VERIFY_RETRIES="${MAX_VERIFY_RETRIES:-2}"
 verify_passed=false
 for verify_iter in $(seq 1 "$MAX_VERIFY_RETRIES"); do
   log "Verify iteration $verify_iter of $MAX_VERIFY_RETRIES"
-  run_session "verify" "$MODEL_VERIFY" "" "verify-iter${verify_iter}"
+  run_session "verify" "$MODEL_VERIFY" "" "verify-iter${verify_iter}" "true"
   actual_sessions_run=$((actual_sessions_run + 1))
 
-  # Check if verify passed
+  # Check if verify passed (verdict heading and PASS may be on separate lines)
   VERIFY_REPORT="$CHANGE_DIR/verify_report.md"
-  if [ -f "$VERIFY_REPORT" ] && grep -qi "overall verdict.*pass" "$VERIFY_REPORT"; then
+  if [ -f "$VERIFY_REPORT" ] && grep -qi "overall verdict" "$VERIFY_REPORT" && grep -qi '\*\*pass\*\*' "$VERIFY_REPORT"; then
     verify_passed=true
     log "Verify PASSED"
     break
