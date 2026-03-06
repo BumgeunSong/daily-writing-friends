@@ -1,0 +1,3 @@
+- [ ] 2.1 Create `src/utils/__tests__/textHelpers.test.ts` with Vitest tests covering: empty string, short text (no truncation), exact length, over length with "...", very short maxLength (< 4).
+- [ ] 2.2 Run `npx vitest run src/utils/__tests__/textHelpers.test.ts` and verify all tests pass.
+- [ ] T.1 truncateText unit tests covering S1-S5 scenarios (Vitest)
