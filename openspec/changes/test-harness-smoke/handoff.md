@@ -1,20 +1,28 @@
-# Session Handoff: test-harness-smoke (Group 1)
+# Session Handoff — test-harness-smoke (Verify)
 
-## What Was Done
-- Implemented `truncateText(text, maxLength)` utility in `src/utils/textHelpers.ts`
-- Created unit tests in `src/utils/__tests__/textHelpers.test.ts` covering all 5 scenarios (S1–S5)
-- Verified `tsc --noEmit` passes with zero errors
-- All 5 Vitest tests pass
+## What was done
 
-## Files Changed
-- **Created**: `src/utils/textHelpers.ts`
-- **Created**: `src/utils/__tests__/textHelpers.test.ts`
-- **Modified**: `openspec/changes/test-harness-smoke/tasks.md` (tasks 1.1, 1.2 marked done)
+Executed the 4-layer test pyramid for the `test-harness-smoke` change and produced the verification report.
 
-## Key Decisions
-- `maxLength < 4` uses plain slice (no ellipsis) — per spec S5, which says "no room for '...', just slice"
-- Named constant `MIN_LENGTH_FOR_ELLIPSIS = 4` makes the threshold explicit
+- Ran all 5 unit tests for `truncateText` via Vitest — all passed
+- Layers 2, 3, 4 are N/A (pure utility function with no integration points, UI, or DB)
+- Marked tasks 2.1, 2.2, and T.1 as complete in tasks.md
+- Wrote verify_report.md with full results
 
-## Notes for Next Session
-- Group 2 tasks (2.1 and 2.2) are already complete in substance (test file exists, tests pass), but were not marked `[x]` because they belong to a different task group
-- Next session should mark 2.1, 2.2, and T.1 as done and commit
+## Files changed
+
+- `openspec/changes/test-harness-smoke/verify_report.md` — created (verification results)
+- `openspec/changes/test-harness-smoke/tasks.md` — updated (tasks 2.1, 2.2, T.1 marked done)
+- `openspec/changes/test-harness-smoke/handoff.md` — created (this file)
+
+Note: test file `src/utils/__tests__/textHelpers.test.ts` already existed from the apply session.
+
+## Key decisions
+
+- Layers 2–4 skipped per design.md guidance: "No integration or E2E tests needed for a pure function"
+- All 5 spec scenarios (S1–S5) mapped 1:1 to test cases — full coverage confirmed
+
+## Notes for next session
+
+- This change is complete. All tasks done, all tests pass, verify report written.
+- Ready to archive via `openspec-archive-change` if desired.
