@@ -22,7 +22,9 @@
 
 9. **PR**: Created #503.
 
-10. **Smoke Test**: Ran the harness end-to-end on a trivial change (`test-harness-smoke` — text truncation utility). Pre-populated planning artifacts, exercised apply loop + tsc gate + skill injection + verify + closing phases. 13 sessions total, ~17 minutes. Found 3 bugs:
+10. **PR Review**: Copilot reviewed 23/23 files, left 6 comments. All addressed: timeout perl fallback, realpath portable fallback, tsc retry restructure, functions/ keyword, detect_skills unit tests (29/29 pass).
+
+11. **Smoke Test**: Ran the harness end-to-end on a trivial change (`test-harness-smoke` — text truncation utility). Pre-populated planning artifacts, exercised apply loop + tsc gate + skill injection + verify + closing phases. 13 sessions total, ~17 minutes. Found 3 bugs:
     - Apply loop stdin consumption — `while read < <(grep ...)` shared stdin with child `claude -p` process, causing only 1 of 3 groups to be processed
     - Verify verdict grep mismatch — `grep "overall verdict.*pass"` expected same line but agent writes heading and verdict on separate lines
     - Verify checkpoint prevents retry — `run_session` saved checkpoint after iteration 1, causing iteration 2 to be skipped via `checkpoint_done`
