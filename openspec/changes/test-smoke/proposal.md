@@ -8,8 +8,9 @@ The `harden-long-running-harness` retro found 3 bugs (stdin consumption, verify 
 - **Use a pre-populated stub change** — the smoke test creates a temporary change directory with pre-written `tasks.md` (multiple groups, mix of checked/unchecked tasks) and all planning artifacts, bypassing the proposal/design/review phases
 - **Stub the `claude -p` invocations** — inject a mock `claude` binary via `PATH` that simulates agent behavior deterministically (checks off tasks, writes expected verify output), so the smoke test runs in seconds without API calls
 - **Cover the outer loop behaviors** — specifically: group iteration (all groups processed, not just the first), stdin isolation (`< /dev/null` on session calls), tsc gate integration, checkpoint skip on apply groups, verify verdict parsing (heading and verdict on separate lines), and skill injection
-- **Implement T.6, T.7, T.8** — replace the three placeholder integration tests in `test-harness.sh` with the smoke test, or run `smoke-test.sh` as a separate suite alongside the unit tests
+- **Replace T.6 and T.8 placeholders** — the smoke test covers T.6 (dry-run apply loop) and T.8 (skill injection); T.7 (review-response) remains out of scope as it requires external GitHub PR state. Remove the T.6/T.8 SKIP stubs from `test-harness.sh` and add a cross-reference to `smoke-test.sh`
 - **Add npm script entry point** — add `"test:smoke": "bash scripts/long-running-harness/tests/smoke-test.sh"` to `package.json` for easy invocation
+- **CI-ready** — the smoke test should be runnable in CI (no API keys, no network, no interactive input); CI integration itself is a follow-up concern
 
 ## Capabilities
 
@@ -24,6 +25,7 @@ _(none — no existing spec requirements are changing)_
 ## Impact
 
 - **Files created**: `scripts/long-running-harness/tests/smoke-test.sh`
-- **Files modified**: `package.json` (add `test:smoke` script), `scripts/long-running-harness/tests/test-harness.sh` (optionally remove T.6–T.8 placeholder stubs now covered by smoke-test)
+- **Files modified**: `package.json` (add `test:smoke` script), `scripts/long-running-harness/tests/test-harness.sh` (replace T.6/T.8 SKIP stubs with cross-reference to smoke-test.sh; T.7 remains as a placeholder)
 - **Dependencies**: bash 3.2+ (macOS compatible), existing `run.sh` / `session.sh` harness scripts, no new external tools
 - **No production code affected** — purely test infrastructure
+- **Mock fidelity risk**: The stub `claude` binary must simulate realistic behavior (checking tasks, writing verify reports). If the harness protocol changes, the stub needs updating. Keep the stub minimal — simulate outputs only, not internal logic

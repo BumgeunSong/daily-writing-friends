@@ -1,21 +1,24 @@
-## What was done
+# Handoff: test-smoke proposal-review
 
-Generated the `proposal.md` artifact for the `test-smoke` OpenSpec change.
+## What was done
+- Reviewed `proposal.md` from 4 perspectives (Objectives Challenger, Alternatives Explorer, User Advocate, Scope Analyst)
+- Found 4 Important issues in the original proposal and updated `proposal.md` to address them
+- Re-reviewed the updated proposal (Round 2) — all Important issues resolved, only Minor findings remain
+- Wrote `proposal-review.md` with full review and findings table
 
 ## Files changed
-
-- **Created**: `openspec/changes/test-smoke/proposal.md`
-- **Created**: `openspec/changes/test-smoke/handoff.md` (this file)
+- **Modified**: `openspec/changes/test-smoke/proposal.md` — fixed T.7 scope claim, resolved replace-vs-separate ambiguity, added CI-readiness note, added mock fidelity risk acknowledgment, fixed Impact section consistency
+- **Created**: `openspec/changes/test-smoke/proposal-review.md` — full 4-perspective review with findings summary
+- **Modified**: `openspec/changes/test-smoke/handoff.md` — this file (updated from proposal session)
 
 ## Key decisions
-
-- **Interpreted "smoke test" as automated harness integration test**: The brief was minimal ("smoke test"), but the `harden-long-running-harness` retro explicitly identified that the manual smoke test found 3 real bugs that unit tests missed, and called integration testing "essential." T.6–T.8 in `test-harness.sh` are placeholder stubs for exactly this purpose. The proposal formalizes this into a reproducible script.
-- **Stub agent approach**: Rather than proposing a test that requires real Claude API calls, the proposal specifies a mock `claude` binary injected via PATH. This keeps the smoke test deterministic, fast (<30s), and free.
-- **Single new capability `harness-smoke-test`**: No existing specs were found in `openspec/specs/` (directory is empty), so no modified capabilities section was needed.
+- T.7 (review-response) is explicitly out of scope — requires external GitHub PR state that can't be stubbed
+- Smoke test runs as a separate suite (`smoke-test.sh`) rather than replacing placeholders inline in `test-harness.sh`
+- CI integration deferred to follow-up; smoke test is designed to be CI-ready (no API keys, no network, no interactive input)
 
 ## Notes for next session
-
-- **Next artifact**: `proposal-review` — requires dispatching reviewer agents in parallel per `openspec/REVIEW_CONFIG.yaml`
-- **openspec status**: Run `openspec status --change "test-smoke"` to confirm `proposal` is now `done` and `proposal-review` is `ready`
-- The change sits on branch `long-running-harness-extract`; all commits should go to that branch
-- The `openspec/specs/` directory is empty — no pre-existing capability specs to reference
+- Proposal is approved with 4 Minor accepted trade-offs (see review summary table)
+- Next step is the design phase — key implementation decisions: stub `claude` binary protocol, which `assert_*` helpers to use, temp directory cleanup strategy
+- Consider reusing `assert_eq`/`assert_contains` from `test-harness.sh` to keep test infra DRY
+- The 30-second runtime target should be enforced with a timeout wrapper
+- The change sits on branch `long-running-harness-extract`
