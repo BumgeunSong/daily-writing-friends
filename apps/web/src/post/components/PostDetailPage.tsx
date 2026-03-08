@@ -1,0 +1,113 @@
+import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import Comments from '@/comment/components/Comments';
+import { usePostDelete } from '@/post/hooks/usePostDelete';
+import { fetchPost } from '@/post/utils/postUtils';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { Skeleton } from '@/shared/ui/skeleton';
+import { getUserDisplayName } from '@/shared/utils/userUtils';
+import { useUser } from '@/user/hooks/useUser';
+import { PostAdjacentButtons } from './PostAdjacentButtons';
+import { PostBackButton } from './PostBackButton';
+import { PostContent } from './PostContent';
+import { PostDetailHeader } from './PostDetailHeader';
+import { PostLikeButton } from './PostLikeButton';
+import { PostMetaHelmet } from './PostMetaHelmet';
+
+export default function PostDetailPage() {
+  const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  const handleDelete = usePostDelete();
+
+  const {
+    data: post,
+    isLoading,
+    error,
+  } = useQuery(['post', boardId, postId], () => fetchPost(boardId!, postId!), {
+    enabled: !!boardId && !!postId,
+  });
+
+  // PostCard에서 이미 캐시된 author 데이터 활용
+  const { userData: authorData } = useUser(post?.authorId ?? null);
+  const authorNickname = getUserDisplayName(authorData);
+
+  // 게시글 상세 페이지는 항상 맨 위부터 시작
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [postId]);
+
+  if (isLoading) return <PostDetailSkeleton />;
+  if (error || !post) return <PostDetailError boardId={boardId} />;
+
+  const isAuthor = currentUser?.uid === post.authorId;
+
+  return (
+    <div className='min-h-screen bg-background'>
+      <PostMetaHelmet post={post} boardId={boardId} postId={postId} />
+      <main className='container mx-auto max-w-4xl overflow-x-hidden px-6 py-2'>
+        <PostBackButton className='mb-4' />
+        <article className='space-y-4'>
+          <PostDetailHeader
+            post={post}
+            authorNickname={authorNickname ?? undefined}
+            isAuthor={isAuthor}
+            boardId={boardId}
+            postId={postId}
+            onDelete={handleDelete}
+            navigate={navigate}
+          />
+          <PostContent post={post} isAuthor={isAuthor} />
+        </article>
+
+        <div className='mt-6 flex items-center justify-between border-t border-border py-4'>
+          {boardId && postId && (
+            <PostLikeButton boardId={boardId} postId={postId} authorId={post.authorId} />
+          )}
+          {boardId && postId && <PostAdjacentButtons boardId={boardId} postId={postId} />}
+        </div>
+        <div className='my-4 border-t border-border' />
+        <div>
+          {boardId && postId && (
+            <Comments
+              boardId={boardId}
+              postId={postId}
+              postAuthorId={post.authorId}
+              postAuthorNickname={typeof authorNickname === 'string' ? authorNickname : null}
+              postVisibility={post.visibility}
+            />
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// 로딩 UI
+function PostDetailSkeleton() {
+  return (
+    <div className='min-h-screen bg-background'>
+      <main className='container mx-auto max-w-4xl px-6 py-2'>
+        <Skeleton className='mb-4 h-12 w-3/4' />
+        <Skeleton className='mb-2 h-4 w-full' />
+        <Skeleton className='mb-2 h-4 w-full' />
+        <Skeleton className='h-4 w-2/3' />
+      </main>
+    </div>
+  );
+}
+
+// 에러 UI
+function PostDetailError({ boardId }: { boardId?: string }) {
+  return (
+    <div className='min-h-screen bg-background'>
+      <main className='container mx-auto max-w-4xl px-6 py-2 text-center'>
+        <h1 className='mb-4 text-xl font-semibold text-foreground md:text-2xl'>
+          게시물을 찾을 수 없습니다.
+        </h1>
+        {boardId && <PostBackButton />}
+      </main>
+    </div>
+  );
+}

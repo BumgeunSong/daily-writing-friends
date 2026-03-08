@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E2E Login Helper</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        .loading {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .info {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        .params {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1565c0;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>E2E Login Helper</h1>
+    <p>This page helps Playwright authenticate users in the Firebase Auth emulator.</p>
+    
+    <div id="status" class="status loading">Initializing...</div>
+    <div id="params" class="params"></div>
+    
+    <div id="actions" style="display: none;">
+        <button id="emailLogin">Login with Email</button>
+        <button id="tokenLogin">Login with Token</button>
+        <button id="logout">Logout</button>
+    </div>
+
+    <script type="module">
+        // Firebase configuration (uses emulator values)
+        const firebaseConfig = {
+            apiKey: "demo-key",
+            authDomain: "demo-project.firebaseapp.com", 
+            projectId: "demo-project",
+            storageBucket: "demo-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:demo"
+        };
+
+        // Import Firebase modules
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+        import { 
+            getAuth, 
+            connectAuthEmulator,
+            signInWithEmailAndPassword,
+            signInWithCustomToken,
+            signOut,
+            onAuthStateChanged,
+            setPersistence,
+            browserLocalPersistence
+        } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Elements
+        const statusDiv = document.getElementById('status');
+        const paramsDiv = document.getElementById('params');
+        const actionsDiv = document.getElementById('actions');
+
+        // Helper functions
+        function setStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            
+            // For Playwright to detect success/failure
+            if (type === 'success') {
+                document.body.setAttribute('data-auth-status', 'success');
+                document.body.setAttribute('data-auth-message', message);
+            } else if (type === 'error') {
+                document.body.setAttribute('data-auth-status', 'error');
+                document.body.setAttribute('data-auth-message', message);
+            }
+        }
+
+        function displayParams() {
+            const params = new URLSearchParams(window.location.search);
+            const paramsList = Array.from(params.entries())
+                .map(([key, value]) => `${key}: ${value}`)
+                .join('\n');
+            paramsDiv.textContent = paramsList || 'No parameters';
+        }
+
+        function getRequiredParam(params, name) {
+            const value = params.get(name);
+            if (!value) {
+                throw new Error(`Missing required parameter: ${name}`);
+            }
+            return value;
+        }
+
+        // Initialize the page
+        async function initialize() {
+            try {
+                setStatus('Connecting to Auth emulator...', 'loading');
+                displayParams();
+
+                // Connect to Auth emulator
+                connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+                
+                // Set persistence for Playwright state saving
+                await setPersistence(auth, browserLocalPersistence);
+
+                setStatus('Connected to emulator, checking parameters...', 'loading');
+
+                const params = new URLSearchParams(window.location.search);
+                const mode = params.get('mode');
+
+                if (mode === 'email') {
+                    await handleEmailLogin(params);
+                } else if (mode === 'token') {
+                    await handleTokenLogin(params);
+                } else if (mode === 'logout') {
+                    await handleLogout();
+                } else if (mode === 'check') {
+                    await handleAuthCheck();
+                } else {
+                    setStatus('Ready for manual testing', 'info');
+                    actionsDiv.style.display = 'block';
+                    setupManualButtons();
+                }
+
+            } catch (error) {
+                console.error('Initialization error:', error);
+                setStatus(`Initialization failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Handle email/password login
+        async function handleEmailLogin(params) {
+            try {
+                const email = getRequiredParam(params, 'email');
+                const password = getRequiredParam(params, 'password');
+
+                setStatus(`Signing in with email: ${email}...`, 'loading');
+
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                setStatus(`✅ Successfully signed in: ${user.email} (${user.uid})`, 'success');
+                
+                // Add success marker for Playwright
+                document.body.textContent = 'OK';
+
+            } catch (error) {
+                console.error('Email login error:', error);
+                setStatus(`❌ Email login failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Handle custom token login
+        async function handleTokenLogin(params) {
+            try {
+                const token = getRequiredParam(params, 'token');
+
+                setStatus('Signing in with custom token...', 'loading');
+
+                const userCredential = await signInWithCustomToken(auth, token);
+                const user = userCredential.user;
+
+                setStatus(`✅ Successfully signed in: ${user.uid}`, 'success');
+                
+                // Add success marker for Playwright
+                document.body.textContent = 'OK';
+
+            } catch (error) {
+                console.error('Token login error:', error);
+                setStatus(`❌ Token login failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Handle logout
+        async function handleLogout() {
+            try {
+                setStatus('Signing out...', 'loading');
+                await signOut(auth);
+                setStatus('✅ Successfully signed out', 'success');
+                document.body.textContent = 'OK';
+            } catch (error) {
+                console.error('Logout error:', error);
+                setStatus(`❌ Logout failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Check current authentication state
+        async function handleAuthCheck() {
+            return new Promise((resolve) => {
+                const unsubscribe = onAuthStateChanged(auth, (user) => {
+                    unsubscribe();
+                    if (user) {
+                        setStatus(`✅ User is signed in: ${user.email || user.uid}`, 'success');
+                        document.body.textContent = `SIGNED_IN:${user.uid}`;
+                    } else {
+                        setStatus('ℹ️ No user signed in', 'info');
+                        document.body.textContent = 'NOT_SIGNED_IN';
+                    }
+                    resolve();
+                });
+            });
+        }
+
+        // Setup manual testing buttons
+        function setupManualButtons() {
+            document.getElementById('emailLogin').onclick = () => {
+                window.location.search = '?mode=email&email=e2e@example.com&password=test1234';
+            };
+
+            document.getElementById('tokenLogin').onclick = async () => {
+                // This would need a token - usually generated by the seed script
+                const token = prompt('Enter custom token:');
+                if (token) {
+                    window.location.search = `?mode=token&token=${encodeURIComponent(token)}`;
+                }
+            };
+
+            document.getElementById('logout').onclick = () => {
+                window.location.search = '?mode=logout';
+            };
+        }
+
+        // Monitor auth state changes
+        onAuthStateChanged(auth, (user) => {
+            if (user && !new URLSearchParams(window.location.search).get('mode')) {
+                setStatus(`Current user: ${user.email || user.uid}`, 'info');
+            }
+        });
+
+        // Start initialization
+        initialize();
+
+        // Expose auth for debugging
+        window.firebaseAuth = auth;
+        
+        // Add console logging for debugging
+        console.log('E2E Login Helper initialized');
+        console.log('Available URL parameters:');
+        console.log('  ?mode=email&email=e2e@example.com&password=test1234');
+        console.log('  ?mode=token&token=CUSTOM_TOKEN');
+        console.log('  ?mode=logout');
+        console.log('  ?mode=check');
+    </script>
+</body>
+</html>

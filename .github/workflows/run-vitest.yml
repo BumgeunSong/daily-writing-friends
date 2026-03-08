@@ -30,9 +30,11 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        working-directory: apps/web
 
       - name: Run Vitest with Coverage
         run: npx vitest --coverage.enabled true
+        working-directory: apps/web
         env:
           VITE_SUPABASE_URL: http://localhost:54321
           VITE_SUPABASE_ANON_KEY: test-anon-key

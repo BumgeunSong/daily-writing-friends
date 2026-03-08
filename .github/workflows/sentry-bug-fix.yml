@@ -99,6 +99,7 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        working-directory: apps/web
 
       - name: Get today's date for cache key
         id: date
