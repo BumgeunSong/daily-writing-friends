@@ -167,13 +167,13 @@ export default function UserApprovalPage() {
     onSuccess: (userId) => {
       // 캐시 데이터 업데이트
       queryClient.invalidateQueries({ queryKey: ['board', selectedBoardId] })
-      
+
       // 대기 중인 사용자 목록에서 해당 사용자 제거
-      queryClient.setQueryData(['waitingUsers', selectedBoardId], (oldData: WaitingUser[] | undefined) => {
+      queryClient.setQueryData(['waitingUsers', selectedBoardId, selectedBoard?.cohort], (oldData: WaitingUser[] | undefined) => {
         if (!oldData) return []
         return oldData.filter(user => user.id !== userId)
       })
-      
+
       toast.success("사용자에게 게시판 접근 권한이 부여되었습니다.")
     },
     onError: (error) => {
@@ -201,13 +201,13 @@ export default function UserApprovalPage() {
     onSuccess: (userId) => {
       // 캐시 데이터 업데이트
       queryClient.invalidateQueries({ queryKey: ['board', selectedBoardId] })
-      
+
       // 대기 중인 사용자 목록에서 해당 사용자 제거
-      queryClient.setQueryData(['waitingUsers', selectedBoardId], (oldData: WaitingUser[] | undefined) => {
+      queryClient.setQueryData(['waitingUsers', selectedBoardId, selectedBoard?.cohort], (oldData: WaitingUser[] | undefined) => {
         if (!oldData) return []
         return oldData.filter(user => user.id !== userId)
       })
-      
+
       toast.success("사용자의 게시판 가입 요청이 거부되었습니다.")
     },
     onError: (error) => {
