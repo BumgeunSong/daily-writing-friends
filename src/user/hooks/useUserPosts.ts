@@ -51,7 +51,7 @@ async function fetchUserPostsFromSupabase(
 
   let queryBuilder = supabase
     .from('posts')
-    .select('id, board_id, author_id, author_name, title, content, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at, boards(first_day), comments(count), replies(count)')
+    .select('id, board_id, author_id, author_name, title, content:content_preview, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at, boards(first_day), comments(count), replies(count)')
     .eq('author_id', userId)
     .order('created_at', { ascending: false })
     .limit(LIMIT_COUNT);
