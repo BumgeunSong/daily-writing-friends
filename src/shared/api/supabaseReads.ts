@@ -71,7 +71,7 @@ interface PostRowWithEmbeds {
   author_name: string;
   title: string;
   content: string;
-  content_json: unknown;
+  content_json?: unknown;
   thumbnail_image_url: string | null;
   visibility: string | null;
   count_of_comments: number;
@@ -498,7 +498,7 @@ export async function fetchRecentPostsFromSupabase(
 
   let q = supabase
     .from('posts')
-    .select('*, boards(first_day), comments(count), replies(count), users!author_id(profile_photo_url)')
+    .select('id, board_id, author_id, author_name, title, content, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at, boards(first_day), comments(count), replies(count), users!author_id(profile_photo_url)')
     .eq('board_id', boardId)
     .order('created_at', { ascending: false });
 
@@ -540,7 +540,7 @@ export async function fetchBestPostsFromSupabase(
 
   let q = supabase
     .from('posts')
-    .select('*, boards(first_day), comments(count), replies(count), users!author_id(profile_photo_url)')
+    .select('id, board_id, author_id, author_name, title, content, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at, boards(first_day), comments(count), replies(count), users!author_id(profile_photo_url)')
     .eq('board_id', boardId)
     .order('engagement_score', { ascending: false })
     .limit(limitCount);
