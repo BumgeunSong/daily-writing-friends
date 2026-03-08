@@ -22,18 +22,3 @@ export function getSupabaseClient(): SupabaseClient {
 
   return supabaseInstance
 }
-
-/**
- * Dual-write helper for admin operations.
- * Logs errors but does NOT block the Firestore operation.
- */
-export async function adminDualWrite(
-  label: string,
-  supabaseWrite: () => Promise<void>
-): Promise<void> {
-  try {
-    await supabaseWrite()
-  } catch (err) {
-    console.error(`[Admin Dual-Write] ${label} failed:`, err)
-  }
-}

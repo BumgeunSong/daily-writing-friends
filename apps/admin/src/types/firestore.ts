@@ -216,37 +216,4 @@ export interface WaitingUser extends User {
   previousPostsCount?: number | null
 }
 
-/**
- * firebaseMessagingTokens 서브컬렉션의 문서 타입
- */
-export interface FirebaseMessagingToken {
-  id: string // 문서 ID
-  token: string
-  timestamp: string | Timestamp
-  userAgent?: string | null
-}
 
-/**
- * 유저 정보가 포함된 FCM 토큰 타입 (관리자 패널용)
- */
-export interface FirebaseMessagingTokenWithUser extends FirebaseMessagingToken {
-  user: User
-}
-
-/**
- * Holiday 타입 (공휴일 항목)
- */
-export interface Holiday {
-  date: string // YYYY-MM-DD format
-  name: string
-}
-
-/**
- * HolidayYear 컬렉션의 문서 타입
- */
-export interface HolidayYear {
-  year: string // Document ID (e.g., "2025")
-  items: Holiday[]
-}
-
- 
