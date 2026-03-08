@@ -63,6 +63,7 @@ export function useCreateUpcomingBoard() {
         cohort: data.cohort,
       }).select('id').single()
       if (error) throw error
+      if (!inserted) throw new Error('Failed to create board: no data returned from Supabase.')
 
       return { id: inserted.id, ...data }
     },
