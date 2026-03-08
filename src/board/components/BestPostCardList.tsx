@@ -3,6 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useCallback } from 'react';
 import PostCard from '@/post/components/PostCard';
+import { useBatchPostCardData } from '@/post/hooks/useBatchPostCardData';
 import { useBestPosts } from '@/post/hooks/useBestPosts';
 import { useScrollRestoration } from '@/post/hooks/useScrollRestoration';
 import StatusMessage from '@/shared/components/StatusMessage';
@@ -32,6 +33,8 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
     isError,
     isFetchingNextPage,
   } = useBestPosts(boardId, BEST_POSTS_TARGET);
+
+  const { data: batchData } = useBatchPostCardData(recentPosts);
 
   const { saveScrollPosition, restoreScrollPosition } = useScrollRestoration(`${boardId}-best-posts`);
 
@@ -91,6 +94,8 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
           post={post}
           onClick={() => handlePostClick(post.id)}
           onClickProfile={onClickProfile}
+          prefetchedData={batchData?.get(post.authorId)}
+          isBatchMode={true}
         />
       ))}
       {isFetchingNextPage && (

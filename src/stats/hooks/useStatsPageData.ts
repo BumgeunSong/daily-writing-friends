@@ -1,5 +1,4 @@
 import { useQueryClient } from "@tanstack/react-query"
-import { useQuery } from '@tanstack/react-query';
 import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
 import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext"
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -8,7 +7,7 @@ import { useCurrentUserCommentingStats } from "@/stats/hooks/useCurrentUserComme
 import { useCurrentUserWritingStats } from "@/stats/hooks/useCurrentUserWritingStats"
 import { useWritingStats } from "@/stats/hooks/useWritingStats"
 import { mergeCurrentUserFirst } from "@/stats/utils/mergeStatsUtils"
-import { getBlockedByUsers } from '@/user/api/user';
+import { useBlockedByUsers } from '@/user/hooks/useBlockedByUsers';
 import { useUserInBoard } from "@/user/hooks/useUserInBoard"
 
 type TabType = 'posting' | 'commenting';
@@ -20,14 +19,7 @@ export function useStatsPageData(_tab: TabType) {
       activeBoardId ? [activeBoardId] : []
     );
     const { currentUser } = useAuth();
-    const { data: blockedByUsers = [] } = useQuery(
-      ['blockedByUsers', currentUser?.uid],
-      () => getBlockedByUsers(currentUser!.uid),
-      {
-        enabled: !!currentUser?.uid,
-        initialData: [],
-      }
-    );
+    const blockedByUsers = useBlockedByUsers();
 
     const filteredActiveUsers = activeUsers.filter(u => !blockedByUsers.includes(u.uid));
     const currentUserData = filteredActiveUsers.find(u => u.uid === currentUser?.uid);

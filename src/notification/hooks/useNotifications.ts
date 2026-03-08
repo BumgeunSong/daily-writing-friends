@@ -5,9 +5,9 @@ import { createNotificationQueryKey, getLastNotificationTimestamp } from '@/noti
 
 // DATA - Query configuration
 const NOTIFICATIONS_CONFIG = {
-  STALE_TIME: 1000 * 30, // 30초
-  CACHE_TIME: 1000 * 60 * 5, // 5분
-  REFETCH_INTERVAL: 1000 * 60, // 1분
+  staleTime: 1000 * 30, // 30초
+  cacheTime: 1000 * 60 * 5, // 5분
+  refetchInterval: () => (document.hidden ? false : 1000 * 60), // 탭이 보일 때만 1분마다 폴링
 } as const;
 
 /**
@@ -37,7 +37,6 @@ export const useNotifications = (userId: string | null, limitCount: number) => {
         Sentry.captureException(error);
       },
       ...NOTIFICATIONS_CONFIG,
-      refetchOnWindowFocus: true,
     }
   );
 };

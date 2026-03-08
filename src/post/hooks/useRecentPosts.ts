@@ -1,9 +1,8 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useState, useEffect } from 'react';
 import { fetchRecentPosts } from '@/post/api/post';
 import type { Post } from '@/post/model/Post';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { getBlockedByUsers } from '@/user/api/user';
+import { useBlockedByUsers } from '@/user/hooks/useBlockedByUsers';
 
 /**
  * 최근 게시글 목록을 불러오는 커스텀 훅 (createdAt 내림차순, blockedBy 기반 서버사이드 필터링)
@@ -15,14 +14,9 @@ export const useRecentPosts = (
     limitCount: number
 ) => {
     const { currentUser } = useAuth();
-    const [blockedByUsers, setBlockedByUsers] = useState<string[]>([]);
-    useEffect(() => {
-      if (currentUser?.uid) {
-        getBlockedByUsers(currentUser.uid).then(setBlockedByUsers);
-      }
-    }, [currentUser?.uid]);
+    const blockedByUsers = useBlockedByUsers();
     const queryResult = useInfiniteQuery<Post[]>(
-        ['posts', boardId, blockedByUsers],
+        ['posts', boardId, blockedByUsers.join(',')],
         ({ pageParam = null }) => fetchRecentPosts(boardId, limitCount, blockedByUsers, pageParam),
         {
             enabled: !!boardId && !!currentUser?.uid,

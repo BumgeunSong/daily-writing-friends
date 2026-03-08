@@ -1,18 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchCommentsOnce } from '@/comment/api/comment';
 import type { Comment } from '@/comment/model/Comment';
-import { useAuth } from '@/shared/hooks/useAuth';
-import { getBlockedByUsers } from '@/user/api/user';
+import { useBlockedByUsers } from '@/user/hooks/useBlockedByUsers';
 
 export function useComments(boardId: string, postId: string) {
-  const { currentUser } = useAuth();
-  const userId = currentUser?.uid;
+  const blockedByUsers = useBlockedByUsers();
   const { data: comments = [] } = useQuery<Comment[]>({
-    queryKey: ['comments', boardId, postId, userId],
-    queryFn: async () => {
-      const blockedByUsers = userId ? await getBlockedByUsers(userId) : [];
-      return fetchCommentsOnce(boardId, postId, blockedByUsers);
-    },
+    queryKey: ['comments', boardId, postId, blockedByUsers.join(',')],
+    queryFn: () => fetchCommentsOnce(boardId, postId, blockedByUsers),
     suspense: true,
   });
   return { comments };
