@@ -6,7 +6,7 @@ import { useBlockedByUsers } from '@/user/hooks/useBlockedByUsers';
 export function useComments(boardId: string, postId: string) {
   const blockedByUsers = useBlockedByUsers();
   const { data: comments = [] } = useQuery<Comment[]>({
-    queryKey: ['comments', boardId, postId, blockedByUsers.join(',')],
+    queryKey: ['comments', boardId, postId, blockedByUsers],
     queryFn: () => fetchCommentsOnce(boardId, postId, blockedByUsers),
     suspense: true,
   });
