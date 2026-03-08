@@ -94,3 +94,5 @@ scripts/seed/raw-*
 apps/*/node_modules/
 packages/*/node_modules/
 .next/
+.vercel
+.env*.local
