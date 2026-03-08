@@ -95,7 +95,7 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
           onClick={() => handlePostClick(post.id)}
           onClickProfile={onClickProfile}
           prefetchedData={batchData?.get(post.authorId)}
-          isBatchMode={true}
+          isBatchMode={!!batchData}
         />
       ))}
       {isFetchingNextPage && (
