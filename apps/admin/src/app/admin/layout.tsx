@@ -14,8 +14,7 @@ import {
   Menu,
   LogOut,
   XCircle,
-  UserCheck,
-  Calendar
+  UserCheck
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -47,19 +46,9 @@ const navItems: NavItem[] = [
     icon: <Newspaper className="h-5 w-5" />
   },
   {
-    title: '메시징',
-    href: '/admin/messaging',
-    icon: <MessageSquare className="h-5 w-5" />
-  },
-  {
     title: '게시물 관리',
     href: '/admin/posts',
     icon: <MessageSquare className="h-5 w-5" />
-  },
-  {
-    title: '공휴일 관리',
-    href: '/admin/holidays',
-    icon: <Calendar className="h-5 w-5" />
   },
   {
     title: '설정',
