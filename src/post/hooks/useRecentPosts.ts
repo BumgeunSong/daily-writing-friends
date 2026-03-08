@@ -16,7 +16,7 @@ export const useRecentPosts = (
     const { currentUser } = useAuth();
     const blockedByUsers = useBlockedByUsers();
     const queryResult = useInfiniteQuery<Post[]>(
-        ['posts', boardId, blockedByUsers.join(',')],
+        ['posts', boardId, blockedByUsers],
         ({ pageParam = null }) => fetchRecentPosts(boardId, limitCount, blockedByUsers, pageParam),
         {
             enabled: !!boardId && !!currentUser?.uid,

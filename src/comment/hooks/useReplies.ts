@@ -6,7 +6,7 @@ import { useBlockedByUsers } from '@/user/hooks/useBlockedByUsers';
 export function useReplies(boardId: string, postId: string, commentId: string) {
   const blockedByUsers = useBlockedByUsers();
   const { data: replies = [] } = useQuery<Reply[]>({
-    queryKey: ['replies', boardId, postId, commentId, blockedByUsers.join(',')],
+    queryKey: ['replies', boardId, postId, commentId, blockedByUsers],
     queryFn: () => fetchRepliesOnce(boardId, postId, commentId, blockedByUsers),
     suspense: true,
   });

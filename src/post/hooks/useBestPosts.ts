@@ -19,7 +19,7 @@ export const useBestPosts = (boardId: string, targetCount: number) => {
   const blockedByUsers = useBlockedByUsers();
 
   const queryResult = useInfiniteQuery<Post[]>(
-    ['bestPosts', boardId, blockedByUsers.join(',')],
+    ['bestPosts', boardId, blockedByUsers],
     ({ pageParam = undefined }) => fetchBestPosts(boardId, PAGE_SIZE, blockedByUsers, pageParam),
     {
       enabled: !!boardId && !!currentUser?.uid,
