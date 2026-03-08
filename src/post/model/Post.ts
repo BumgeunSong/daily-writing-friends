@@ -27,6 +27,7 @@ export interface Post {
   boardId: string;
   title: string;
   content: string;
+  contentPreview?: string; // Truncated content (first 500 chars) for card previews
   contentJson?: ProseMirrorDoc; // ProseMirror JSON document for TipTap editor
   thumbnailImageURL: string | null;
   authorId: string;

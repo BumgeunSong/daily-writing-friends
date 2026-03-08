@@ -12,7 +12,7 @@ interface PostItemProps {
 
 export const PostItem: React.FC<PostItemProps> = ({ post }) => {
     const isPrivate = post.visibility === 'private';
-    const contentPreview = getContentPreview(post.content)
+    const contentPreview = getContentPreview(post.contentPreview ?? post.content)
     return (
         <Card className="reading-shadow reading-hover border-border/50 transition-all duration-200 active:scale-[0.99]">
             <Link to={`/board/${post.boardId}/post/${post.id}`}

@@ -63,6 +63,9 @@ interface PostRow {
   created_at: string;
 }
 
+/** Explicit columns for post list queries (excludes content, content_json) */
+export const POST_LIST_SELECT = 'id, board_id, author_id, author_name, title, content_preview, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at, boards(first_day), comments(count), replies(count), users!author_id(profile_photo_url)';
+
 /** Post row with embedded resources from PostgREST joins */
 interface PostRowWithEmbeds {
   id: string;
@@ -70,7 +73,8 @@ interface PostRowWithEmbeds {
   author_id: string;
   author_name: string;
   title: string;
-  content: string;
+  content?: string;
+  content_preview?: string;
   content_json?: unknown;
   thumbnail_image_url: string | null;
   visibility: string | null;
@@ -498,7 +502,7 @@ export async function fetchRecentPostsFromSupabase(
 
   let q = supabase
     .from('posts')
-    .select('id, board_id, author_id, author_name, title, content:content_preview, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at, boards(first_day), comments(count), replies(count), users!author_id(profile_photo_url)')
+    .select(POST_LIST_SELECT)
     .eq('board_id', boardId)
     .order('created_at', { ascending: false });
 
@@ -540,7 +544,7 @@ export async function fetchBestPostsFromSupabase(
 
   let q = supabase
     .from('posts')
-    .select('id, board_id, author_id, author_name, title, content:content_preview, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at, boards(first_day), comments(count), replies(count), users!author_id(profile_photo_url)')
+    .select(POST_LIST_SELECT)
     .eq('board_id', boardId)
     .order('engagement_score', { ascending: false })
     .limit(limitCount);
@@ -583,7 +587,8 @@ export function mapRowToPost(row: PostRowWithEmbeds): Post {
     id: row.id,
     boardId: row.board_id,
     title: row.title,
-    content: row.content,
+    content: row.content ?? '',
+    contentPreview: row.content_preview ?? row.content,
     contentJson: row.content_json as Post['contentJson'],
     thumbnailImageURL: row.thumbnail_image_url,
     authorId: row.author_id,
