@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { doc, updateDoc, getFirestore, getDoc, arrayRemove } from 'firebase/firestore'
 import { Check, UserCheck, X, Loader2, HelpCircle, AlertCircle, RefreshCw } from 'lucide-react'
-import { getSupabaseClient, adminDualWrite } from '@/lib/supabase'
+import { getSupabaseClient } from '@/lib/supabase'
 import { fetchBoardsMapped, fetchBoardMapped, fetchWaitingUserIds, fetchPreviousCohortPostCount } from '@/apis/supabase-reads'
 import { 
   Card, 
@@ -144,47 +143,25 @@ export default function UserApprovalPage() {
   const approveUserMutation = useMutation({
     mutationFn: async (userId: string) => {
       if (!selectedBoardId) throw new Error('선택된 게시판이 없습니다.')
-      
-      const db = getFirestore()
-      
+
+      const supabase = getSupabaseClient()
+
       // 1. 사용자의 boardPermissions 업데이트 - 쓰기 권한 부여
-      const userRef = doc(db, 'users', userId)
-      const userDoc = await getDoc(userRef)
-      
-      if (userDoc.exists()) {
-        await updateDoc(userRef, {
-          [`boardPermissions.${selectedBoardId}`]: 'write'
-        })
+      const { error: permError } = await supabase
+        .from('user_board_permissions')
+        .upsert(
+          { user_id: userId, board_id: selectedBoardId, permission: 'write' },
+          { onConflict: 'user_id,board_id' }
+        )
+      if (permError) throw permError
 
-        // Dual-write: upsert permission to Supabase
-        await adminDualWrite('approve-user-permission', async () => {
-          const supabase = getSupabaseClient()
-          const { error } = await supabase
-            .from('user_board_permissions')
-            .upsert(
-              { user_id: userId, board_id: selectedBoardId, permission: 'write' },
-              { onConflict: 'user_id,board_id' }
-            )
-          if (error) throw error
-        })
-      }
+      // 2. 게시판의 waitingUsersIds에서 사용자 제거
+      const { error: waitError } = await supabase
+        .from('board_waiting_users')
+        .delete()
+        .match({ board_id: selectedBoardId, user_id: userId })
+      if (waitError) throw waitError
 
-      // 2. 게시판의 waitingUsersIds 배열에서 사용자 ID 제거
-      const boardRef = doc(db, 'boards', selectedBoardId)
-      await updateDoc(boardRef, {
-        waitingUsersIds: arrayRemove(userId)
-      })
-
-      // Dual-write: remove from board_waiting_users in Supabase
-      await adminDualWrite('approve-user-waiting', async () => {
-        const supabase = getSupabaseClient()
-        const { error } = await supabase
-          .from('board_waiting_users')
-          .delete()
-          .match({ board_id: selectedBoardId, user_id: userId })
-        if (error) throw error
-      })
-      
       return userId
     },
     onSuccess: (userId) => {
@@ -209,24 +186,15 @@ export default function UserApprovalPage() {
   const rejectUserMutation = useMutation({
     mutationFn: async (userId: string) => {
       if (!selectedBoardId) throw new Error('선택된 게시판이 없습니다.')
-      
-      const db = getFirestore()
-      
-      // 게시판의 waitingUsersIds 배열에서 사용자 ID 제거
-      const boardRef = doc(db, 'boards', selectedBoardId)
-      await updateDoc(boardRef, {
-        waitingUsersIds: arrayRemove(userId)
-      })
 
-      // Dual-write: remove from board_waiting_users in Supabase
-      await adminDualWrite('reject-user-waiting', async () => {
-        const supabase = getSupabaseClient()
-        const { error } = await supabase
-          .from('board_waiting_users')
-          .delete()
-          .match({ board_id: selectedBoardId, user_id: userId })
-        if (error) throw error
-      })
+      const supabase = getSupabaseClient()
+
+      // 게시판의 waitingUsersIds에서 사용자 제거
+      const { error } = await supabase
+        .from('board_waiting_users')
+        .delete()
+        .match({ board_id: selectedBoardId, user_id: userId })
+      if (error) throw error
 
       return userId
     },
