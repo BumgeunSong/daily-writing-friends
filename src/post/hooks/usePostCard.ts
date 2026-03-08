@@ -37,8 +37,8 @@ export const usePostCard = (
 
   const isPrivate = post.visibility === PostVisibility.PRIVATE;
   const contentPreview = useMemo(
-    () => (!isPrivate ? getContentPreview(post.content) : null),
-    [post.content, isPrivate],
+    () => (!isPrivate ? getContentPreview(post.contentPreview ?? post.content) : null),
+    [post.contentPreview, post.content, isPrivate],
   );
 
   const authorData: PostAuthorData = useMemo(() => {
