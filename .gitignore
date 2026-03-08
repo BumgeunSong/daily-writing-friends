@@ -45,7 +45,7 @@ node_modules/
 # OS specific
 # Task files
 tasks.json
-tasks/ 
+tasks/
 
 .cursor/
 .roo/
@@ -60,16 +60,16 @@ tasks/
 functions/src/commentSuggestion/test-suggestions.sh
 
 # Playwright
-/test-results/
-/playwright-report/
-/blob-report/
+test-results/
+playwright-report/
+blob-report/
 /playwright/.cache/
-/tests/storageState.auth.json
-/tests/setup-failure-screenshot.png
+**/storageState.auth.json
+**/setup-failure-screenshot.png
 scripts/agents/cache/
 
 # Test Coverage
-/coverage/
+coverage/
 data/*
 
 # Git worktrees
@@ -89,3 +89,8 @@ scripts/seed/raw-*
 
 # Agent observability logs
 .logs/
+
+# Monorepo
+apps/*/node_modules/
+packages/*/node_modules/
+.next/

@@ -1,0 +1,48 @@
+// Firebase Storage Rules for Narration Guide Recording Feature
+// Place these rules in your Firebase Storage security rules
+
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // 프로필 사진 접근 규칙
+    match /profilePhotos/{userId}/{allPaths=**} {
+      // 누구나 프로필 사진 읽기 가능
+      allow read: if true;
+      
+      // 인증된 사용자만 자신의 프로필 사진 업로드 가능
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // 게시글 이미지 접근 규칙
+    match /postImages/{postId}/{allPaths=**} {
+      // 누구나 게시글 이미지 읽기 가능
+      allow read: if true;
+      
+      // 인증된 사용자만 게시글 이미지 업로드 가능
+      allow write: if request.auth != null && 
+        // 파일 크기 제한 (5MB)
+        request.resource.size <= 5 * 1024 * 1024 &&
+        // 이미지 파일 타입만 허용
+        request.resource.contentType.matches('image/.*');
+    }
+    
+    // 나레이션 오디오 파일 접근 규칙
+    match /narrations/{narrationId}/{allPaths=**} {
+      // 인증된 사용자만 나레이션 파일 읽기 가능
+      allow read: if request.auth != null;
+      
+      // 인증된 사용자만 나레이션 파일 업로드 가능 (관리자 대시보드용)
+      allow write: if request.auth != null &&
+        // 파일 크기 제한 (10MB)
+        request.resource.size <= 10 * 1024 * 1024 &&
+        // 오디오 파일 타입만 허용
+        request.resource.contentType.matches('audio/.*');
+    }
+    
+    // 기타 모든 경로에 대한 접근 거부
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

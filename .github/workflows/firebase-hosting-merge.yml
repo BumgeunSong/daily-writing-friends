@@ -14,8 +14,10 @@ jobs:
           node-version: '20'
       - name: Install Dependencies
         run: npm ci
+        working-directory: apps/web
       - name: Build
         run: npm run build
+        working-directory: apps/web
         env:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
