@@ -72,19 +72,17 @@ function extractContentLengthValue(contribution: Contribution): number {
 /**
  * 글쓰기 기여도를 그리드 데이터로 처리합니다.
  * @param contributions 기여도 데이터 배열
- * @param configurableHolidays 설정 가능한 휴일 맵
  * @param timeRange 시간 범위 (테스트용, 기본값: getTimeRange())
  * @returns 그리드 결과 (matrix, weeklyContributions, maxValue)
  */
 export function processPostingContributions(
   contributions: Contribution[],
-  configurableHolidays?: Map<string, string>,
   timeRange?: { weeksAgo: Date; today: Date },
 ): GridResult {
   const matrices = createEmptyMatrices();
   const { weeksAgo, today } = timeRange ?? getTimeRange();
 
-  initializeGridWithPlaceholders(matrices, weeksAgo, today, 'posting', configurableHolidays);
+  initializeGridWithPlaceholders(matrices, weeksAgo, today, 'posting');
   const { maxValue } = processContributionsInGrid(
     contributions,
     matrices,
@@ -107,19 +105,17 @@ function extractCommentAndRepliesCount(contribution: CommentingContribution): nu
 /**
  * 댓글/답글 기여도를 그리드 데이터로 처리합니다.
  * @param contributions 기여도 데이터 배열
- * @param configurableHolidays 설정 가능한 휴일 맵
  * @param timeRange 시간 범위 (테스트용, 기본값: getTimeRange())
  * @returns 그리드 결과 (matrix, weeklyContributions, maxValue)
  */
 export function processCommentingContributions(
   contributions: CommentingContribution[],
-  configurableHolidays?: Map<string, string>,
   timeRange?: { weeksAgo: Date; today: Date },
 ): GridResult {
   const matrices = createEmptyMatrices();
   const { weeksAgo, today } = timeRange ?? getTimeRange();
 
-  initializeGridWithPlaceholders(matrices, weeksAgo, today, 'commenting', configurableHolidays);
+  initializeGridWithPlaceholders(matrices, weeksAgo, today, 'commenting');
   const { maxValue } = processContributionsInGrid(
     contributions,
     matrices,

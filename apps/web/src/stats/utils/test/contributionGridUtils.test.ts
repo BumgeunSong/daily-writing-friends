@@ -171,7 +171,7 @@ describe('contributionGridUtils', () => {
         { createdAt: '2025-07-16', contentLength: 200 },
       ]
 
-      const result = processPostingContributions(contributions, undefined, timeRange)
+      const result = processPostingContributions(contributions, timeRange)
 
       expect(result).toHaveProperty('matrix')
       expect(result).toHaveProperty('weeklyContributions')
@@ -186,7 +186,7 @@ describe('contributionGridUtils', () => {
         { createdAt: '2025-07-17', contentLength: 200 },
       ]
 
-      const result = processPostingContributions(contributions, undefined, timeRange)
+      const result = processPostingContributions(contributions, timeRange)
 
       expect(result.maxValue).toBe(500)
     })
@@ -197,7 +197,7 @@ describe('contributionGridUtils', () => {
         { createdAt: '2025-07-16', contentLength: 100 },
       ]
 
-      const result = processPostingContributions(contributions, undefined, timeRange)
+      const result = processPostingContributions(contributions, timeRange)
 
       expect(result.maxValue).toBe(100)
       expect(result).toBeDefined()
@@ -211,7 +211,7 @@ describe('contributionGridUtils', () => {
         { createdAt: '2025-07-21', contentLength: 200 }, // Monday
       ]
 
-      const result = processPostingContributions(contributions, undefined, timeRange)
+      const result = processPostingContributions(contributions, timeRange)
 
       expect(result.maxValue).toBe(200) // Should not include 999 from weekends
     })
@@ -219,7 +219,7 @@ describe('contributionGridUtils', () => {
     it('should create placeholders for days without contributions', () => {
       const contributions: Contribution[] = []
 
-      const result = processPostingContributions(contributions, undefined, timeRange)
+      const result = processPostingContributions(contributions, timeRange)
 
       // Should have a grid structure even with no contributions
       expect(result.matrix).toHaveLength(WEEKS_TO_DISPLAY)
@@ -237,7 +237,7 @@ describe('contributionGridUtils', () => {
         { createdAt: '2025-07-16', countOfCommentAndReplies: 10 },
       ]
 
-      const result = processCommentingContributions(contributions, undefined, timeRange)
+      const result = processCommentingContributions(contributions, timeRange)
 
       expect(result).toHaveProperty('matrix')
       expect(result).toHaveProperty('weeklyContributions')
@@ -252,7 +252,7 @@ describe('contributionGridUtils', () => {
         { createdAt: '2025-07-17', countOfCommentAndReplies: 7 },
       ]
 
-      const result = processCommentingContributions(contributions, undefined, timeRange)
+      const result = processCommentingContributions(contributions, timeRange)
 
       expect(result.maxValue).toBe(15)
     })
@@ -263,7 +263,7 @@ describe('contributionGridUtils', () => {
         { createdAt: '2025-07-16', countOfCommentAndReplies: 8 },
       ]
 
-      const result = processCommentingContributions(contributions, undefined, timeRange)
+      const result = processCommentingContributions(contributions, timeRange)
 
       expect(result.maxValue).toBe(8)
       expect(result).toBeDefined()
@@ -274,8 +274,8 @@ describe('contributionGridUtils', () => {
     const timeRange = getTimeRange(MOCK_TODAY)
 
     it('should maintain consistent grid dimensions across all functions', () => {
-      const postingResult = processPostingContributions([], undefined, timeRange)
-      const commentingResult = processCommentingContributions([], undefined, timeRange)
+      const postingResult = processPostingContributions([], timeRange)
+      const commentingResult = processCommentingContributions([], timeRange)
 
       // Both should have same structure
       expect(postingResult.matrix).toHaveLength(WEEKS_TO_DISPLAY)
@@ -293,7 +293,7 @@ describe('contributionGridUtils', () => {
         { createdAt: today.toISOString(), contentLength: 200 },
       ]
 
-      const result = processPostingContributions(contributions, undefined, timeRange)
+      const result = processPostingContributions(contributions, timeRange)
 
       // Should process contributions at boundaries correctly
       expect(result).toBeDefined()

@@ -15,7 +15,7 @@ export interface FirebaseTimestamp {
 export function createTimestamp(date: Date): FirebaseTimestamp {
   const ms = date.getTime();
   const seconds = Math.floor(ms / 1000);
-  const nanoseconds = (ms % 1000) * 1_000_000;
+  const nanoseconds = (ms - seconds * 1000) * 1_000_000;
   return {
     seconds,
     nanoseconds,
@@ -30,12 +30,11 @@ export function createTimestamp(date: Date): FirebaseTimestamp {
  * Replacement for instanceof Timestamp.
  */
 export function isTimestamp(val: unknown): val is FirebaseTimestamp {
+  if (val == null || typeof val !== 'object') return false;
+  const t = val as Record<string, unknown>;
   return (
-    val != null &&
-    typeof val === 'object' &&
-    'seconds' in val &&
-    'nanoseconds' in val &&
-    'toDate' in val &&
-    typeof (val as Record<string, unknown>).toDate === 'function'
+    typeof t.seconds === 'number' &&
+    typeof t.nanoseconds === 'number' &&
+    typeof t.toDate === 'function'
   );
 }

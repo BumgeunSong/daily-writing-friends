@@ -27,13 +27,6 @@ export const createFirebaseConfig = () => ({
  * Creates emulator configuration object from environment variables
  */
 export const createEmulatorConfig = () => ({
-  firestore: {
-    host: import.meta.env[ENV_KEYS.EMULATOR_FIRESTORE_HOST] || DEFAULT_EMULATOR_CONFIG.HOST,
-    port: parseInt(
-      import.meta.env[ENV_KEYS.EMULATOR_FIRESTORE_PORT] || DEFAULT_EMULATOR_CONFIG.PORTS.FIRESTORE,
-      DEFAULT_EMULATOR_CONFIG.RADIX,
-    ),
-  },
   storage: {
     host: import.meta.env[ENV_KEYS.EMULATOR_STORAGE_HOST] || DEFAULT_EMULATOR_CONFIG.HOST,
     port: parseInt(
