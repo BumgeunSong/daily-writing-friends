@@ -11,7 +11,7 @@ export function useIntervalAutoSave(
   saveFn: () => void,
   interval: number
 ) {
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!shouldSave) return;
