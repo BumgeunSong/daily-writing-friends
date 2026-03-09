@@ -1,9 +1,14 @@
 import type { CompletionHighlight } from '@/post/hooks/useCompletionMessage';
+import type { Posting } from '@/post/model/Posting';
 
 const LONG_CONTENT_THRESHOLD = 250;
 
-export function getTitleMessage(boardPostCountToBe: number): string {
-  return `${boardPostCountToBe}번째 글 작성 완료`;
+export function countBoardPosts(postings: Posting[], boardId: string): number {
+  return postings.filter((p) => p.board?.id === boardId).length;
+}
+
+export function getTitleMessage(boardPostCount: number): string {
+  return `${boardPostCount}번째 글 작성 완료`;
 }
 
 export function getContentMessage(contentLength: number): string {

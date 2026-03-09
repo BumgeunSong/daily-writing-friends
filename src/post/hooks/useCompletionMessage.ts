@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext";
 import { useAuth } from '@/shared/hooks/useAuth';
 import { fetchPostingData } from "@/stats/api/stats";
-import { getTitleMessage, getContentMessage, getHighlight } from "@/post/utils/completionMessageUtils";
+import { countBoardPosts, getTitleMessage, getContentMessage, getHighlight } from "@/post/utils/completionMessageUtils";
 
 export interface CompletionHighlight {
   keywords: string[];
@@ -36,16 +36,12 @@ export function useCompletionMessage(contentLength: number): CompletionMessageRe
 
   const boardPostCount = useMemo(() => {
     if (!postings || !activeBoardId) return 0;
-
-    return postings.filter(
-      (p) => p.board?.id === activeBoardId
-    ).length;
+    return countBoardPosts(postings, activeBoardId);
   }, [postings, activeBoardId]);
 
-  const boardPostCountToBe = boardPostCount + 1;
-  const titleMessage = getTitleMessage(boardPostCountToBe);
+  const titleMessage = getTitleMessage(boardPostCount);
   const contentMessage = getContentMessage(contentLength);
-  const highlight = getHighlight(boardPostCountToBe);
+  const highlight = getHighlight(boardPostCount);
   const iconType: "trophy" | "sparkles" = "sparkles";
 
   return {
