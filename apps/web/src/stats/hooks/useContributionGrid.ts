@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { useHolidays } from '@/shared/hooks/useHolidays';
 import type { Contribution } from '@/stats/model/WritingStats';
 import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 import {
@@ -49,15 +48,14 @@ export function useContributionsHash(
 function processGridData(
   contributions: (Contribution | CommentingContribution)[],
   type: ContributionType,
-  holidayMap: Map<string, string>,
 ): GridResult {
   if (!contributions.length) {
     return createEmptyGridResult();
   }
 
   return type === 'posting'
-    ? processPostingContributions(contributions as Contribution[], holidayMap)
-    : processCommentingContributions(contributions as CommentingContribution[], holidayMap);
+    ? processPostingContributions(contributions as Contribution[])
+    : processCommentingContributions(contributions as CommentingContribution[]);
 }
 
 /**
@@ -68,12 +66,11 @@ export function useContributionGridData(
   type: ContributionType,
 ): GridResult {
   const contributionsHash = useContributionsHash(contributions, type);
-  const { holidayMap } = useHolidays();
 
   return useMemo(
-    () => processGridData(contributions, type, holidayMap),
+    () => processGridData(contributions, type),
     // contributionsHash is used instead of contributions to avoid recalculations when reference changes but content is same
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [type, contributionsHash, holidayMap],
+    [type, contributionsHash],
   );
 }
