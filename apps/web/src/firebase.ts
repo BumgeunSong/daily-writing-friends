@@ -4,7 +4,6 @@
 import type { Analytics} from 'firebase/analytics';
 import { getAnalytics } from 'firebase/analytics';
 import { initializeApp } from 'firebase/app';
-import { initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { getInstallations } from 'firebase/installations';
 import type { FirebasePerformance} from 'firebase/performance';
 import { getPerformance } from 'firebase/performance';
@@ -22,14 +21,6 @@ const firebaseConfig = createFirebaseConfig();
 const app = initializeApp(firebaseConfig);
 
 // Initialize core services
-// Use memory-only cache (no offline persistence) to avoid:
-// - "FIRESTORE INTERNAL ASSERTION FAILED: Unexpected state" errors
-// - PersistentWriteStream sync queue corruption on Mobile Safari
-// - IndexedDB issues during network transitions
-// Trade-off: App requires network connection, no offline support
-const firestore = initializeFirestore(app, {
-  localCache: memoryLocalCache(),
-});
 const storage = getStorage(app);
 const installations = getInstallations(app);
 
@@ -77,7 +68,7 @@ if (!useEmulators && typeof window !== 'undefined') {
 }
 
 // Connect to emulators if enabled
-connectToEmulators(firestore, storage);
+connectToEmulators(storage);
 
 // Export configuration flags for other modules
 export const isUsingEmulators = useEmulators;
@@ -91,4 +82,4 @@ export const getFirebaseAnalytics = () => optionalServices.analytics;
 // Backward-compatible named exports (remoteConfig is set synchronously at module init)
 const remoteConfig = optionalServices.remoteConfig;
 
-export { firestore, storage, installations, app, remoteConfig };
+export { storage, installations, app, remoteConfig };

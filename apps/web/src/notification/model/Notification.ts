@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import type { FirebaseTimestamp } from '@/shared/model/Timestamp';
 
 export enum NotificationType {
   COMMENT_ON_POST = 'comment_on_post',
@@ -16,7 +16,7 @@ interface NotificationBase {
   fromUserId: string;
   fromUserProfileImage?: string;
   message: string;
-  timestamp: Timestamp;
+  timestamp: FirebaseTimestamp;
   read: boolean;
 }
 

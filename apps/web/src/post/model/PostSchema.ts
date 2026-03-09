@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore';
+import { type FirebaseTimestamp, isTimestamp } from '@/shared/model/Timestamp';
 import { z } from 'zod';
 import { PostVisibility } from './Post';
 
@@ -35,7 +35,7 @@ const ContentJsonSchema = z.object({
 });
 
 // Timestamp schema
-const TimestampSchema = z.custom<Timestamp>((val) => val instanceof Timestamp);
+const TimestampSchema = z.custom<FirebaseTimestamp>((val) => isTimestamp(val));
 
 // Post schema for validation
 export const PostSchema = z.object({

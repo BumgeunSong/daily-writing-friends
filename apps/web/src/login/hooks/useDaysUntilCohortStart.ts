@@ -1,9 +1,9 @@
-import type { Timestamp } from 'firebase/firestore';
+import type { FirebaseTimestamp } from '@/shared/model/Timestamp';
 import { useMemo } from 'react';
 
 const MILLISECONDS_PER_DAY = 1000 * 3600 * 24;
 
-function calculateDaysRemaining(firstDay: Timestamp | undefined): number {
+function calculateDaysRemaining(firstDay: FirebaseTimestamp | undefined): number {
   if (!firstDay) return 0;
   
   const cohortStartDate = firstDay.toDate();
@@ -13,6 +13,6 @@ function calculateDaysRemaining(firstDay: Timestamp | undefined): number {
   return Math.ceil(timeDiff / MILLISECONDS_PER_DAY);
 }
 
-export function useDaysUntilCohortStart(firstDay: Timestamp | undefined): number {
+export function useDaysUntilCohortStart(firstDay: FirebaseTimestamp | undefined): number {
   return useMemo(() => calculateDaysRemaining(firstDay), [firstDay]);
 }

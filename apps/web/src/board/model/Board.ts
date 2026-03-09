@@ -1,4 +1,4 @@
-import type { Timestamp } from "firebase/firestore";
+import type { FirebaseTimestamp } from '@/shared/model/Timestamp';
 
 // src/types/Board.ts
 export interface Board {
@@ -6,8 +6,8 @@ export interface Board {
   title: string;
   description: string;
   createdAt: Date;
-  firstDay?: Timestamp;
-  lastDay?: Timestamp;
+  firstDay?: FirebaseTimestamp;
+  lastDay?: FirebaseTimestamp;
   cohort?: number;
   waitingUsersIds: string[];
 }

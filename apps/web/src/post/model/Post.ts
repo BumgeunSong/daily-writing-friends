@@ -1,4 +1,4 @@
-import type { Timestamp } from 'firebase/firestore';
+import type { FirebaseTimestamp } from '@/shared/model/Timestamp';
 
 /**
  * ProseMirror document structure for TipTap editor
@@ -31,12 +31,12 @@ export interface Post {
   thumbnailImageURL: string | null;
   authorId: string;
   authorName: string;
-  createdAt: Timestamp;
+  createdAt: FirebaseTimestamp;
   countOfComments: number;
   countOfReplies: number;
   countOfLikes: number;
   engagementScore?: number;
-  updatedAt?: Timestamp;
+  updatedAt?: FirebaseTimestamp;
   weekDaysFromFirstDay?: number;
   visibility: PostVisibility;
   authorProfileImageURL?: string;

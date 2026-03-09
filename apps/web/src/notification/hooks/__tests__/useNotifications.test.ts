@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
-import { Timestamp } from 'firebase/firestore';
+import { createTimestamp, type FirebaseTimestamp } from '@/shared/model/Timestamp';
 import React from 'react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { fetchNotifications } from '@/notification/api/notificationApi';
@@ -14,21 +14,13 @@ vi.mock('@/shared/api/supabaseReads', () => ({
   fetchNotificationsFromSupabase: (...args: unknown[]) => mockFetchNotificationsFromSupabase(...args),
 }));
 
-// Mock Firebase Firestore (for Timestamp)
-vi.mock('firebase/firestore', () => ({
-  Timestamp: {
-    now: () => ({ seconds: Date.now() / 1000, nanoseconds: 0, toDate: () => new Date() }),
-    fromDate: (date: Date) => ({ seconds: date.getTime() / 1000, nanoseconds: 0, toDate: () => date }),
-  },
-}));
-
 // Mock Sentry
 const mockCaptureException = vi.fn();
 vi.mock('@sentry/react', () => ({
   captureException: (...args: unknown[]) => mockCaptureException(...args),
 }));
 
-const createMockNotification = (id: string, timestamp: Timestamp): Notification => ({
+const createMockNotification = (id: string, timestamp: FirebaseTimestamp): Notification => ({
   id,
   type: NotificationType.COMMENT_ON_POST,
   boardId: 'board-1',
@@ -81,7 +73,7 @@ describe('useNotifications', () => {
   describe('when userId is provided', () => {
     it('fetches notifications from Supabase', async () => {
       const now = new Date();
-      const mockTimestamp = Timestamp.fromDate(now);
+      const mockTimestamp = createTimestamp(now);
       const mockNotifications = [
         createMockNotification('notif-1', mockTimestamp),
         createMockNotification('notif-2', mockTimestamp),
@@ -188,7 +180,7 @@ describe('fetchNotifications', () => {
 
   it('fetches paginated results when after timestamp is provided', async () => {
     const now = new Date();
-    const cursorTimestamp = Timestamp.fromDate(new Date(Date.now() - 1000000));
+    const cursorTimestamp = createTimestamp(new Date(Date.now() - 1000000));
 
     mockFetchNotificationsFromSupabase.mockResolvedValue([
       {
