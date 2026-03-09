@@ -2,7 +2,7 @@ import { fetchNotificationsFromSupabase } from '@/shared/api/supabaseReads';
 import type { NotificationDTO } from '@/shared/api/supabaseReads';
 import type { Notification } from '@/notification/model/Notification';
 import { NotificationType } from '@/notification/model/Notification';
-import { Timestamp } from 'firebase/firestore';
+import { type FirebaseTimestamp, createTimestamp } from '@/shared/model/Timestamp';
 
 export function mapDTOToNotification(row: NotificationDTO): Notification {
   const base = {
@@ -12,7 +12,7 @@ export function mapDTOToNotification(row: NotificationDTO): Notification {
     fromUserId: row.fromUserId,
     fromUserProfileImage: row.fromUserProfileImage,
     message: row.message,
-    timestamp: Timestamp.fromDate(new Date(row.timestamp)),
+    timestamp: createTimestamp(new Date(row.timestamp)),
     read: row.read,
   };
 
@@ -52,7 +52,7 @@ export function mapDTOToNotification(row: NotificationDTO): Notification {
 export const fetchNotifications = async (
   userId: string,
   limitCount: number,
-  after?: Timestamp
+  after?: FirebaseTimestamp
 ): Promise<Notification[]> => {
   const afterStr = after ? after.toDate().toISOString() : undefined;
   const rows = await fetchNotificationsFromSupabase(userId, limitCount, afterStr);

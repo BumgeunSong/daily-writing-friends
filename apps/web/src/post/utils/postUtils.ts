@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Timestamp } from 'firebase/firestore';
+import { createTimestamp } from '@/shared/model/Timestamp';
 
 import type { Post, ProseMirrorDoc } from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
@@ -80,7 +80,7 @@ export async function createPost(
     countOfComments: 0,
     countOfReplies: 0,
     countOfLikes: 0,
-    createdAt: Timestamp.fromDate(new Date(createdAt)),
+    createdAt: createTimestamp(new Date(createdAt)),
     visibility: visibility || PostVisibility.PUBLIC,
   };
 

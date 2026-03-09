@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore';
+import { createTimestamp } from '@/shared/model/Timestamp';
 import type { Comment } from '@/comment/model/Comment';
 import { sanitizeCommentContent } from '@/post/utils/contentUtils';
 import { AvatarFallback, AvatarImage, Avatar } from '@/shared/ui/avatar';
@@ -8,7 +8,7 @@ export const mockComment: Comment = {
   id: 'mock-comment-1',
   userId: 'mock-user-1',
   content: '그냥 지나칠 수도 있는 일을 보고 이런 질문까지 떠올리시다니, 멋진데요?',
-  createdAt: Timestamp.fromDate(new Date('2024-03-14T10:21:00')),
+  createdAt: createTimestamp(new Date('2024-03-14T10:21:00')),
   userName: '김프렌즈',
   userProfileImage: 'https://github.com/shadcn.png',
 };

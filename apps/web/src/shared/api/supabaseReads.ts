@@ -15,7 +15,7 @@ import type { Comment } from '@/comment/model/Comment';
 import type { Reply } from '@/comment/model/Reply';
 import type { Reaction } from '@/comment/model/Reaction';
 import type { User } from '@/user/model/User';
-import { Timestamp } from 'firebase/firestore';
+import { createTimestamp } from '@/shared/model/Timestamp';
 import { NotificationType } from '@/notification/model/Notification';
 
 /** Format string array as PostgREST `in.(...)` value with proper quoting */
@@ -407,8 +407,8 @@ export async function fetchBoardsFromSupabase(userId: string): Promise<Board[]> 
       title: board.title,
       description: board.description || '',
       createdAt: new Date(board.created_at),
-      firstDay: board.first_day ? Timestamp.fromDate(new Date(board.first_day)) : undefined,
-      lastDay: board.last_day ? Timestamp.fromDate(new Date(board.last_day)) : undefined,
+      firstDay: board.first_day ? createTimestamp(new Date(board.first_day)) : undefined,
+      lastDay: board.last_day ? createTimestamp(new Date(board.last_day)) : undefined,
       cohort: board.cohort ?? undefined,
       waitingUsersIds: waitingByBoard[board.id] || [],
     };
@@ -446,8 +446,8 @@ export async function fetchBoardByIdFromSupabase(boardId: string): Promise<Board
     title: data.title,
     description: data.description || '',
     createdAt: new Date(data.created_at),
-    firstDay: data.first_day ? Timestamp.fromDate(new Date(data.first_day)) : undefined,
-    lastDay: data.last_day ? Timestamp.fromDate(new Date(data.last_day)) : undefined,
+    firstDay: data.first_day ? createTimestamp(new Date(data.first_day)) : undefined,
+    lastDay: data.last_day ? createTimestamp(new Date(data.last_day)) : undefined,
     cohort: data.cohort ?? undefined,
     waitingUsersIds: (waitingData || []).map((w: { user_id: string }) => w.user_id),
   };
@@ -588,8 +588,8 @@ export function mapRowToPost(row: PostRowWithEmbeds): Post {
     thumbnailImageURL: row.thumbnail_image_url,
     authorId: row.author_id,
     authorName: row.author_name,
-    createdAt: Timestamp.fromDate(new Date(row.created_at)),
-    updatedAt: row.updated_at ? Timestamp.fromDate(new Date(row.updated_at)) : undefined,
+    createdAt: createTimestamp(new Date(row.created_at)),
+    updatedAt: row.updated_at ? createTimestamp(new Date(row.updated_at)) : undefined,
     countOfComments: commentCount,
     countOfReplies: replyCount,
     countOfLikes: row.count_of_likes,
@@ -672,7 +672,7 @@ function mapRowToComment(row: {
     userId: row.user_id,
     userName: row.user_name,
     userProfileImage: row.user_profile_image || '',
-    createdAt: Timestamp.fromDate(new Date(row.created_at)),
+    createdAt: createTimestamp(new Date(row.created_at)),
   };
 }
 
@@ -872,7 +872,7 @@ export async function fetchRepliesFromSupabase(
     userId: row.user_id,
     userName: row.user_name,
     userProfileImage: row.user_profile_image || '',
-    createdAt: Timestamp.fromDate(new Date(row.created_at)),
+    createdAt: createTimestamp(new Date(row.created_at)),
   }));
 }
 
@@ -933,7 +933,7 @@ export async function fetchReplyByIdFromSupabase(
     userId: data.user_id,
     userName: data.user_name,
     userProfileImage: data.user_profile_image || '',
-    createdAt: Timestamp.fromDate(new Date(data.created_at)),
+    createdAt: createTimestamp(new Date(data.created_at)),
   };
 }
 

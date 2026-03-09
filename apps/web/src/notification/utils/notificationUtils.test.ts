@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore';
+import { createTimestamp } from '@/shared/model/Timestamp';
 import { describe, it, expect } from 'vitest';
 import { NotificationType } from '@/notification/model/Notification';
 import {
@@ -19,7 +19,7 @@ function createMockNotification(overrides: Partial<CommentNotification> = {}): N
     commentId: 'comment-1',
     fromUserId: 'user-1',
     message: 'Test notification',
-    timestamp: Timestamp.fromDate(new Date('2025-01-15T12:00:00Z')),
+    timestamp: createTimestamp(new Date('2025-01-15T12:00:00Z')),
     read: false,
     ...overrides,
   };
@@ -147,9 +147,9 @@ describe('notificationUtils', () => {
 
   describe('getLastNotificationTimestamp', () => {
     it('should return timestamp of last notification', () => {
-      const timestamp = Timestamp.fromDate(new Date('2025-01-15T12:00:00Z'));
+      const timestamp = createTimestamp(new Date('2025-01-15T12:00:00Z'));
       const notifications = [
-        createMockNotification({ id: '1', timestamp: Timestamp.fromDate(new Date('2025-01-14')) }),
+        createMockNotification({ id: '1', timestamp: createTimestamp(new Date('2025-01-14')) }),
         createMockNotification({ id: '2', timestamp }),
       ];
 
@@ -164,7 +164,7 @@ describe('notificationUtils', () => {
     });
 
     it('should return timestamp of single notification', () => {
-      const timestamp = Timestamp.fromDate(new Date('2025-01-15T12:00:00Z'));
+      const timestamp = createTimestamp(new Date('2025-01-15T12:00:00Z'));
       const notifications = [createMockNotification({ timestamp })];
 
       const result = getLastNotificationTimestamp(notifications);
@@ -174,8 +174,8 @@ describe('notificationUtils', () => {
 
     it('should return last notification timestamp regardless of date order', () => {
       // The function returns the timestamp of the last item in array, not the oldest/newest
-      const olderTimestamp = Timestamp.fromDate(new Date('2025-01-10'));
-      const newerTimestamp = Timestamp.fromDate(new Date('2025-01-15'));
+      const olderTimestamp = createTimestamp(new Date('2025-01-10'));
+      const newerTimestamp = createTimestamp(new Date('2025-01-15'));
 
       const notifications = [
         createMockNotification({ id: '1', timestamp: newerTimestamp }),

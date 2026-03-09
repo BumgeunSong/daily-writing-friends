@@ -1,5 +1,5 @@
 // src/types/User.ts
-import type { Timestamp } from 'firebase/firestore';
+import type { FirebaseTimestamp } from '@/shared/model/Timestamp';
 
 export interface User {
   uid: string; // Unique identifier for the user
@@ -13,7 +13,7 @@ export interface User {
   boardPermissions: {
     [boardId: string]: 'read' | 'write'; // Permissions for each board
   };
-  updatedAt: Timestamp | null; // 마지막 업데이트 시각 (Firestore Timestamp)
+  updatedAt: FirebaseTimestamp | null; // 마지막 업데이트 시각 (Firestore Timestamp)
   knownBuddy?: {
     uid: string;
     nickname: string | null;
@@ -44,7 +44,7 @@ export interface UserOptionalFields {
   boardPermissions: {
     [boardId: string]: 'read' | 'write'; // Permissions for each board
   };
-  updatedAt: Timestamp | null; // 마지막 업데이트 시각 (Firestore Timestamp)
+  updatedAt: FirebaseTimestamp | null; // 마지막 업데이트 시각 (Firestore Timestamp)
   knownBuddy?: {
     uid: string;
     nickname: string | null;

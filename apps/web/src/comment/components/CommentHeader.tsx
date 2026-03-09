@@ -4,11 +4,11 @@ import { getUserDisplayName } from '@/shared/utils/userUtils';
 import { WritingBadgeComponent } from '@/stats/components/WritingBadgeComponent';
 import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';
 import { useUser } from '@/user/hooks/useUser';
-import type { Timestamp } from 'firebase/firestore';
+import type { FirebaseTimestamp } from '@/shared/model/Timestamp';
 
 interface CommentHeaderProps {
   userId: string;
-  createdAt?: Timestamp;
+  createdAt?: FirebaseTimestamp;
 }
 
 export function CommentHeader({ userId, createdAt }: CommentHeaderProps) {

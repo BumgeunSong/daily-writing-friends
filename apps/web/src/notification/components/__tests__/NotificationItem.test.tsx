@@ -1,22 +1,11 @@
 import { render, screen } from '@testing-library/react';
-import type { Timestamp } from 'firebase/firestore';
+import { type FirebaseTimestamp } from '@/shared/model/Timestamp';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import type { Notification } from '@/notification/model/Notification';
 import { NotificationType } from '@/notification/model/Notification';
 import type { CommentNotification } from '@/notification/model/Notification';
 import { NotificationItem } from '../NotificationItem';
-
-// Mock Firebase Timestamp
-vi.mock('firebase/firestore', () => ({
-  Timestamp: {
-    now: () => ({
-      seconds: Date.now() / 1000,
-      nanoseconds: 0,
-      toDate: () => new Date(),
-    }),
-  },
-}));
 
 const createMockNotification = (overrides: Partial<CommentNotification> = {}): Notification => {
   const mockDate = new Date('2026-01-04T10:00:00Z');
@@ -33,7 +22,7 @@ const createMockNotification = (overrides: Partial<CommentNotification> = {}): N
       seconds: mockDate.getTime() / 1000,
       nanoseconds: 0,
       toDate: () => mockDate,
-    } as Timestamp,
+    } as FirebaseTimestamp,
     read: false,
     ...overrides,
   };
@@ -66,7 +55,7 @@ describe('NotificationItem', () => {
           seconds: mockDate.getTime() / 1000,
           nanoseconds: 0,
           toDate: () => mockDate,
-        } as Timestamp,
+        } as FirebaseTimestamp,
       });
 
       renderWithRouter(<NotificationItem notification={notification} />);

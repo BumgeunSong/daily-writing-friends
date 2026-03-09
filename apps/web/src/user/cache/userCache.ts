@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore';
+import { createTimestamp } from '@/shared/model/Timestamp';
 import type { User } from '@/user/model/User';
 
 const CACHE_EXPIRE_MS = 1000 * 60 * 60 * 24; // 24시간
@@ -33,7 +33,7 @@ export function getCachedUserData(uid: string, cacheVersion: string): User | nul
     }
     return {
       ...parsed.data,
-      updatedAt: parsed.updatedAt ? Timestamp.fromDate(new Date(parsed.updatedAt)) : null,
+      updatedAt: parsed.updatedAt ? createTimestamp(new Date(parsed.updatedAt)) : null,
     };
   } catch {
     removeCachedUserData(uid, cacheVersion);

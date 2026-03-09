@@ -1,4 +1,4 @@
-import { Timestamp } from 'firebase/firestore';
+import { createTimestamp } from '@/shared/model/Timestamp';
 import { describe, it, expect } from 'vitest';
 import { NotificationType } from '@/notification/model/Notification';
 import type { NotificationDTO } from '@/shared/api/supabaseReads';
@@ -23,42 +23,42 @@ describe('mapDTOToNotification', () => {
       const result = mapDTOToNotification(dto);
       expect(result.type).toBe(NotificationType.COMMENT_ON_POST);
       expect(result.id).toBe('n1');
-      expect(result.timestamp).toBeInstanceOf(Timestamp);
+      expect(result.timestamp.toDate()).toBeInstanceOf(Date);
     });
 
     it('maps REPLY_ON_COMMENT', () => {
       const dto = { ...baseDTO, type: NotificationType.REPLY_ON_COMMENT, commentId: 'c1', replyId: 'r1' };
       const result = mapDTOToNotification(dto);
       expect(result.type).toBe(NotificationType.REPLY_ON_COMMENT);
-      expect(result.timestamp).toBeInstanceOf(Timestamp);
+      expect(result.timestamp.toDate()).toBeInstanceOf(Date);
     });
 
     it('maps REPLY_ON_POST', () => {
       const dto = { ...baseDTO, type: NotificationType.REPLY_ON_POST, replyId: 'r1' };
       const result = mapDTOToNotification(dto);
       expect(result.type).toBe(NotificationType.REPLY_ON_POST);
-      expect(result.timestamp).toBeInstanceOf(Timestamp);
+      expect(result.timestamp.toDate()).toBeInstanceOf(Date);
     });
 
     it('maps REACTION_ON_COMMENT', () => {
       const dto = { ...baseDTO, type: NotificationType.REACTION_ON_COMMENT, commentId: 'c1' };
       const result = mapDTOToNotification(dto);
       expect(result.type).toBe(NotificationType.REACTION_ON_COMMENT);
-      expect(result.timestamp).toBeInstanceOf(Timestamp);
+      expect(result.timestamp.toDate()).toBeInstanceOf(Date);
     });
 
     it('maps REACTION_ON_REPLY', () => {
       const dto = { ...baseDTO, type: NotificationType.REACTION_ON_REPLY, commentId: 'c1', replyId: 'r1' };
       const result = mapDTOToNotification(dto);
       expect(result.type).toBe(NotificationType.REACTION_ON_REPLY);
-      expect(result.timestamp).toBeInstanceOf(Timestamp);
+      expect(result.timestamp.toDate()).toBeInstanceOf(Date);
     });
 
     it('maps LIKE_ON_POST', () => {
       const dto = { ...baseDTO, type: NotificationType.LIKE_ON_POST };
       const result = mapDTOToNotification(dto);
       expect(result.type).toBe(NotificationType.LIKE_ON_POST);
-      expect(result.timestamp).toBeInstanceOf(Timestamp);
+      expect(result.timestamp.toDate()).toBeInstanceOf(Date);
     });
   });
 
