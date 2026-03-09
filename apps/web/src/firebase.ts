@@ -14,7 +14,7 @@ import { getRemoteConfig } from 'firebase/remote-config';
 // Internal imports (alphabetically ordered)
 import { connectToEmulators } from './firebase/emulator';
 import { configureRemoteConfig } from './firebase/remote-config';
-import { createEmulatorConfig, createFirebaseConfig, shouldUseEmulators } from './firebase/utils';
+import { createFirebaseConfig, shouldUseEmulators } from './firebase/utils';
 
 // Initialize Firebase app
 const firebaseConfig = createFirebaseConfig();
@@ -72,7 +72,6 @@ connectToEmulators(storage);
 
 // Export configuration flags for other modules
 export const isUsingEmulators = useEmulators;
-export const emulatorConfiguration = createEmulatorConfig();
 
 // Getter functions for lazily-initialized services
 export const getFirebaseRemoteConfig = () => optionalServices.remoteConfig;
