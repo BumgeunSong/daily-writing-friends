@@ -3,8 +3,8 @@
 > **This is the single source of truth** for the Firestore → Supabase migration.
 > For the original architectural plan, see [plan_firebase_supabase_migration.md](./plan_firebase_supabase_migration.md).
 
-**Last Updated**: 2026-03-01
-**Status**: Phase 8 complete — RLS 재활성화 + Firebase Auth 코드 제거 대기 (PR #497)
+**Last Updated**: 2026-03-09
+**Status**: Phase 9 (인프라 정리) 진행 중 — `firebase/firestore` 제거 완료, 코드 품질 개선 완료
 
 ---
 
@@ -249,14 +249,23 @@ Operations 5-11 (holidays, narrations) are admin-only data not in Supabase schem
 - [ ] Verify post creation/editing (tests INSERT/UPDATE policies)
 - [ ] Verify private posts hidden from other users
 - [ ] Verify notifications visible only to recipient
-- [ ] Run `VACUUM ANALYZE` on production (#493)
 
-### Post-Migration
-- **#466**: `firebase/firestore` import 정리 — `Timestamp` 타입 의존성 해결 (Phase 8이 `firebase/auth` 제거, firestore는 별도)
-- **#471**: Sentry 관측성 — `throwOnError`에 Sentry breadcrumb 추가
-- **#470**: Edge Function 알림 쿼리 최적화
+### Post-Migration Cleanup (Phase 9) — In Progress
+
+**Branch**: `chore/migration-cleanup`
+
+**Completed (2026-03-09):**
+- ✅ **#508**: 코드 품질 개선 7건 — env var 보안 수정, null 가드, Rules of Hooks, no-op 제거, 타입 개선, 중복 패키지 제거
+- ✅ **#466**: `firebase/firestore` 의존성 제거 — `FirebaseTimestamp` 인터페이스 + `createTimestamp()` / `isTimestamp()` 유틸로 대체 (~22개 파일). `firebase/auth`, `firebase/storage`는 유지.
+- ✅ **#471**: Sentry 관측성 — 이미 구현됨 (`throwOnError()` + `executeTrackedWrite()` + Sentry config)
+- ✅ **#465**: Firestore 쓰기 잔여 코드 — 이미 모두 Supabase로 전환됨
+- ✅ **#470**: Edge Function 쿼리 최적화 — 쿼리 간 의존성 확인 (comment→post_id 필요), 병렬화 불가
+- ✅ Holidays Firestore 의존 제거 — `holidays.ts`, `useHolidays.ts` 삭제, `useContributionGrid`에서 holiday 로직 제거
+
+**Remaining (수동 작업):**
+- ✅ **#493**: `VACUUM (VERBOSE, ANALYZE)` — Supabase 대시보드에서 실행 완료 (2026-03-09)
+- **#468**: Firestore 데이터 아카이브 — 백업 export → 보안 규칙 변경 → 컬렉션 삭제
 - **#467**: Admin 앱 Supabase 전환 (별도 레포)
-- **#468**: Firestore 데이터 아카이브 — Phase 8 완료 + Rollback window (2주) 경과 후
 
 ---
 
@@ -286,4 +295,4 @@ SUPABASE_SERVICE_ROLE_KEY=<key>
 - Activity fan-out Cloud Functions deleted (Phase 3). Subcollection data remains in Firestore (read-only by backfill scripts).
 - Notifications remain materialized (explicit table, not computed).
 - Firebase Storage는 아직 Firebase에 의존 (별도 마이그레이션 필요).
-- **`Timestamp.fromDate()` 변환 누락 주의**: 대부분의 엔티티는 Supabase API 레이어에서 ISO 문자열을 `Timestamp.fromDate()`로 변환하여 기존 `.toDate()` 호출이 동작함. 그러나 `Draft`는 이 변환 레이어 없이 직접 문자열을 반환하여 `.toDate()` 런타임 에러 발생 (`fix/savedAt-toDate-error`에서 수정). 새 Supabase 쓰기 함수 추가 시 `Timestamp` 변환 여부를 확인할 것.
+- **`Timestamp` 의존성 정리 완료**: `firebase/firestore`의 `Timestamp` 클래스를 자체 `FirebaseTimestamp` 인터페이스 + `createTimestamp()` + `isTimestamp()`로 대체 (`src/shared/model/Timestamp.ts`). Supabase API 레이어에서 ISO 문자열을 `createTimestamp()`로 변환하여 기존 `.toDate()` 호출이 동작함. 새 Supabase 쓰기 함수 추가 시 `Timestamp` 변환 여부를 확인할 것.
