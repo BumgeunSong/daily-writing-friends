@@ -11,7 +11,7 @@ export function useDebouncedAutoSave(
   saveFn: () => void,
   delay: number
 ) {
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!shouldSave) return;

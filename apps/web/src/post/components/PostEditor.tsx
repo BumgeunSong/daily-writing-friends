@@ -1,5 +1,4 @@
-import { forwardRef, useImperativeHandle } from 'react';
-import { PostTextEditor } from './PostTextEditor'; // Quill editor
+import { PostTextEditor } from './PostTextEditor';
 
 interface PostEditorProps {
   value: string;
@@ -8,27 +7,6 @@ interface PostEditorProps {
   onUploadingChange?: (isUploading: boolean) => void;
 }
 
-export interface PostEditorHandle {
-  focus: () => void;
+export function PostEditor({ value, onChange, placeholder, onUploadingChange }: PostEditorProps) {
+  return <PostTextEditor value={value} onChange={onChange} placeholder={placeholder} onUploadingChange={onUploadingChange} />;
 }
-
-/**
- * Wrapper component for the Quill editor
- */
-export const PostEditor = forwardRef<PostEditorHandle, PostEditorProps>(
-  ({ value, onChange, placeholder, onUploadingChange }, ref) => {
-    useImperativeHandle(
-      ref,
-      () => ({
-        focus: () => {
-          // Quill editor doesn't have a focus method in current implementation
-        },
-      }),
-      [],
-    );
-
-    return <PostTextEditor value={value} onChange={onChange} placeholder={placeholder} onUploadingChange={onUploadingChange} />;
-  },
-);
-
-PostEditor.displayName = 'PostEditor';

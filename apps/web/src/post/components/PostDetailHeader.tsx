@@ -56,23 +56,21 @@ export function PostDetailHeader({
               </Button>
             )}
             {/* 수정/삭제 버튼: 작성자만 노출, 비공개글은 제외 */}
-            {isAuthor && post.visibility !== PostVisibility.PRIVATE && (
+            {isAuthor && post.visibility !== PostVisibility.PRIVATE && boardId && postId && (
               <>
                 <Link to={`/board/${boardId}/edit/${postId}`}>
                   <Button variant='ghost' size='sm' aria-label='수정'>
                     <Edit className='size-4' />
                   </Button>
                 </Link>
-                {boardId && postId && (
-                  <Button
-                    variant='destructive'
-                    size='sm'
-                    onClick={() => onDelete(boardId, postId, navigate)}
-                    aria-label='삭제'
-                  >
-                    <Trash2 className='size-4' />
-                  </Button>
-                )}
+                <Button
+                  variant='destructive'
+                  size='sm'
+                  onClick={() => onDelete(boardId, postId, navigate)}
+                  aria-label='삭제'
+                >
+                  <Trash2 className='size-4' />
+                </Button>
               </>
             )}
           </div>
