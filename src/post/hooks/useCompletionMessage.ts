@@ -35,8 +35,8 @@ export function useCompletionMessage(contentLength: number): CompletionMessageRe
   });
 
   const boardPostCount = useMemo(() => {
-    if (!postings || !activeBoardId) return 0;
-    return countBoardPosts(postings, activeBoardId);
+    if (!postings || !activeBoardId) return 1;
+    return Math.max(countBoardPosts(postings, activeBoardId), 1);
   }, [postings, activeBoardId]);
 
   const titleMessage = getTitleMessage(boardPostCount);
