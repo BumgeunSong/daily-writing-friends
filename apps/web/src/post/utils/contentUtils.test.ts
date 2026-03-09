@@ -238,6 +238,40 @@ describe('contentUtils', () => {
       expect(result).not.toContain('alert');
       expect(result).toContain('Safe');
     });
+
+    it('should convert newlines to <br> tags for plain text content', () => {
+      const content = '첫 번째 줄\n두 번째 줄';
+      const result = sanitizePostContent(content);
+
+      expect(result).toContain('<br>');
+      expect(result).toContain('첫 번째 줄');
+      expect(result).toContain('두 번째 줄');
+    });
+
+    it('should convert multiple newlines to multiple <br> tags for plain text', () => {
+      const content = 'Line 1\nLine 2\nLine 3';
+      const result = sanitizePostContent(content);
+
+      expect(result).toContain('Line 1<br>Line 2<br>Line 3');
+    });
+
+    it('should NOT convert newlines for HTML content (already has HTML tags)', () => {
+      const content = '<p>Line 1</p>\n<p>Line 2</p>';
+      const result = sanitizePostContent(content);
+
+      expect(result).toContain('<p>Line 1</p>');
+      expect(result).toContain('<p>Line 2</p>');
+      expect(result).not.toContain('<br>');
+    });
+
+    it('should handle plain text with consecutive newlines', () => {
+      const content = 'Line 1\n\nLine 2';
+      const result = sanitizePostContent(content);
+
+      expect(result).toContain('<br>');
+      expect(result).toContain('Line 1');
+      expect(result).toContain('Line 2');
+    });
   });
 
   describe('sanitizeCommentContent', () => {
