@@ -1,9 +1,30 @@
 import DOMPurify from 'dompurify';
 
+/**
+ * HTML 태그가 포함되어 있는지 확인
+ */
+const isHtmlContent = (content: string): boolean => {
+  return /<[a-zA-Z][^>]*>/i.test(content);
+};
+
+/**
+ * 일반 텍스트의 줄바꿈 문자를 <br> 태그로 변환
+ * HTML 태그가 없는 일반 텍스트에만 적용하여 줄바꿈이 화면에 표시되도록 함
+ */
+const convertNewlinesToBr = (content: string): string => {
+  if (isHtmlContent(content)) {
+    return content;
+  }
+  return content.replace(/\n/g, '<br>');
+};
+
 // 게시글 본문용 DOMPurify 설정
 const sanitizePostContent = (content: string): string => {
+  // 일반 텍스트인 경우 줄바꿈을 <br> 태그로 변환 (이전 형식 호환성)
+  const contentWithBreaks = convertNewlinesToBr(content);
+
   // 가장 기본적인 설정만 유지
-  const sanitizedContent = DOMPurify.sanitize(content, {
+  const sanitizedContent = DOMPurify.sanitize(contentWithBreaks, {
     USE_PROFILES: { html: true }
   });
 
