@@ -1,14 +1,41 @@
 import { describe, it, expect } from 'vitest';
-import { getTitleMessage, getContentMessage, getHighlight } from './completionMessageUtils';
+import type { Posting } from '@/post/model/Posting';
+import { countBoardPosts, getTitleMessage, getContentMessage, getHighlight } from './completionMessageUtils';
+
+const createPosting = (boardId: string): Posting => ({
+  board: { id: boardId },
+  post: { id: 'post-1', title: 'Test', contentLength: 100 },
+  createdAt: new Date(),
+});
+
+describe('countBoardPosts', () => {
+  it('returns 0 for empty postings', () => {
+    expect(countBoardPosts([], 'board-1')).toBe(0);
+  });
+
+  it('counts only postings matching the board id', () => {
+    const postings = [
+      createPosting('board-1'),
+      createPosting('other-board'),
+      createPosting('board-1'),
+    ];
+    expect(countBoardPosts(postings, 'board-1')).toBe(2);
+  });
+
+  it('returns 0 when no postings match the board id', () => {
+    const postings = [createPosting('other-board')];
+    expect(countBoardPosts(postings, 'board-1')).toBe(0);
+  });
+});
 
 describe('getTitleMessage', () => {
-  describe('when boardPostCountToBe is 1', () => {
+  describe('when boardPostCount is 1', () => {
     it('returns "1번째 글 작성 완료"', () => {
       expect(getTitleMessage(1)).toBe('1번째 글 작성 완료');
     });
   });
 
-  describe('when boardPostCountToBe is 10', () => {
+  describe('when boardPostCount is 10', () => {
     it('returns "10번째 글 작성 완료"', () => {
       expect(getTitleMessage(10)).toBe('10번째 글 작성 완료');
     });
@@ -41,9 +68,18 @@ describe('getContentMessage', () => {
 });
 
 describe('getHighlight', () => {
-  describe('when boardPostCountToBe is 3', () => {
+  describe('when boardPostCount is 3', () => {
     it('returns highlight with "3번째" keyword and purple color', () => {
       expect(getHighlight(3)).toEqual({ keywords: ['3번째'], color: 'purple' });
     });
+  });
+});
+
+describe('completion message regression', () => {
+  it('첫 번째 글 작성 시 countBoardPosts 결과를 그대로 사용한다 (off-by-one 방지)', () => {
+    const postings = [createPosting('board-1')];
+    const count = countBoardPosts(postings, 'board-1');
+    expect(getTitleMessage(count)).toBe('1번째 글 작성 완료');
+    expect(getHighlight(count)).toEqual({ keywords: ['1번째'], color: 'purple' });
   });
 });
