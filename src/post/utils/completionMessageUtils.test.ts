@@ -74,3 +74,12 @@ describe('getHighlight', () => {
     });
   });
 });
+
+describe('completion message regression', () => {
+  it('첫 번째 글 작성 시 countBoardPosts 결과를 그대로 사용한다 (off-by-one 방지)', () => {
+    const postings = [createPosting('board-1')];
+    const count = countBoardPosts(postings, 'board-1');
+    expect(getTitleMessage(count)).toBe('1번째 글 작성 완료');
+    expect(getHighlight(count)).toEqual({ keywords: ['1번째'], color: 'purple' });
+  });
+});

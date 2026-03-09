@@ -17,6 +17,6 @@ export function getContentMessage(contentLength: number): string {
     : '짧아도 괜찮아요! 매일 리듬을 만들어나가다보면 좋은 글은 알아서 나와요.';
 }
 
-export function getHighlight(boardPostCountToBe: number): CompletionHighlight {
-  return { keywords: [`${boardPostCountToBe}번째`], color: 'purple' };
+export function getHighlight(boardPostCount: number): CompletionHighlight {
+  return { keywords: [`${boardPostCount}번째`], color: 'purple' };
 }
