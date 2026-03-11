@@ -1,3 +1,15 @@
+echo "Checking lockfile sync..."
+pnpm install --frozen-lockfile > /dev/null 2>&1
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "pnpm-lock.yaml is out of sync with package.json."
+  echo "Run 'pnpm install' to update the lockfile, then commit it."
+  exit 1
+fi
+
+echo "Lockfile in sync"
+
 echo "Running TypeScript type check..."
 pnpm --filter web type-check
 
