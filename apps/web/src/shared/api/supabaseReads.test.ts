@@ -50,6 +50,20 @@ describe('computeWeekDaysFromFirstDay', () => {
     // Sat Jan 10 → Mon Jan 12 = 0 working days (Sat, Sun are skipped)
     expect(computeWeekDaysFromFirstDay('2026-01-10T00:00:00Z', '2026-01-12T00:00:00Z')).toBe(0);
   });
+
+  it('handles cross-year boundary', () => {
+    // Wed Dec 31 → Fri Jan 2 = 2 working days (Wed→Thu, Thu→Fri)
+    expect(computeWeekDaysFromFirstDay('2025-12-31T00:00:00Z', '2026-01-02T00:00:00Z')).toBe(2);
+  });
+
+  it('is safe across KST/UTC boundary (KST projection)', () => {
+    // First day: 2026-01-01T00:00:00+09:00 (KST) = 2025-12-31T15:00:00Z
+    // Created at: 2026-01-02T00:00:01+09:00 (KST) = 2026-01-01T15:00:01Z
+    // Exactly one KST weekday has elapsed between these instants.
+    expect(
+      computeWeekDaysFromFirstDay('2025-12-31T15:00:00Z', '2026-01-01T15:00:01Z'),
+    ).toBe(1);
+  });
 });
 
 describe('mapRowToPost', () => {
