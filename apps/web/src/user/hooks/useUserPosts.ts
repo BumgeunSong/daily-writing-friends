@@ -49,9 +49,12 @@ async function fetchUserPostsFromSupabase(
 ): Promise<PostWithPaginationMetadata[]> {
   const supabase = getSupabaseClient();
 
+  // Explicit column list: use content_preview instead of full content/content_json to reduce transfer
+  const FEED_COLUMNS = 'id, board_id, author_id, author_name, title, content_preview, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at';
+
   let queryBuilder = supabase
     .from('posts')
-    .select('*, boards(first_day), comments(count), replies(count)')
+    .select(`${FEED_COLUMNS}, boards(first_day)`)
     .eq('author_id', userId)
     .order('created_at', { ascending: false })
     .limit(LIMIT_COUNT);

@@ -10,7 +10,7 @@ export const fetchPost = async (boardId: string, postId: string): Promise<Post |
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('posts')
-    .select('*, boards(first_day), comments(count), replies(count), users!author_id(profile_photo_url)')
+    .select('*, boards(first_day), users!author_id(profile_photo_url)')
     .eq('id', postId)
     .eq('board_id', boardId)
     .single();

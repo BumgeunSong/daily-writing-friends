@@ -59,19 +59,22 @@ interface PostRow {
   id: string;
   board_id: string;
   title: string;
-  content: string | null;
+  content_length: number;
   created_at: string;
 }
 
-/** Post row with embedded resources from PostgREST joins */
+/** Post row with embedded resources from PostgREST joins.
+ *  Feed queries select content_preview (500 chars) instead of full content/content_json.
+ *  Detail queries select * which includes both content and content_preview. */
 interface PostRowWithEmbeds {
   id: string;
   board_id: string;
   author_id: string;
   author_name: string;
   title: string;
-  content: string;
-  content_json: unknown;
+  content?: string;
+  content_preview?: string;
+  content_json?: unknown;
   thumbnail_image_url: string | null;
   visibility: string | null;
   count_of_comments: number;
@@ -82,13 +85,14 @@ interface PostRowWithEmbeds {
   created_at: string;
   updated_at: string;
   boards?: { first_day: string | null } | { first_day: string | null }[];
-  comments?: { count: number }[];
-  replies?: { count: number }[];
   users?: { profile_photo_url: string | null } | { profile_photo_url: string | null }[];
 }
 
 // Note: Supabase join selects return arrays at the type level,
 // but !inner guarantees exactly one row. We use type assertions in the mappers.
+
+/** Explicit column list for feed queries — excludes content and content_json to reduce transfer. */
+const FEED_POST_SELECT = 'id, board_id, author_id, author_name, title, content_preview, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at';
 
 // Types matching the Firestore fan-out models for compatibility
 export interface SupabasePosting {
@@ -123,7 +127,7 @@ export async function fetchPostingsFromSupabase(userId: string): Promise<Supabas
 
   const { data, error } = await supabase
     .from('posts')
-    .select('id, board_id, title, content, created_at')
+    .select('id, board_id, title, content_length, created_at')
     .eq('author_id', userId)
     .order('created_at', { ascending: false });
 
@@ -137,7 +141,7 @@ export async function fetchPostingsFromSupabase(userId: string): Promise<Supabas
     post: {
       id: row.id,
       title: row.title,
-      contentLength: (row.content || '').length,
+      contentLength: row.content_length ?? 0,
     },
     createdAt: new Date(row.created_at),
   }));
@@ -156,7 +160,7 @@ export async function fetchPostingsByDateRangeFromSupabase(
 
   const { data, error } = await supabase
     .from('posts')
-    .select('id, board_id, title, content, created_at')
+    .select('id, board_id, title, content_length, created_at')
     .eq('author_id', userId)
     .gte('created_at', start.toISOString())
     .lte('created_at', end.toISOString())
@@ -172,7 +176,7 @@ export async function fetchPostingsByDateRangeFromSupabase(
     post: {
       id: row.id,
       title: row.title,
-      contentLength: (row.content || '').length,
+      contentLength: row.content_length ?? 0,
     },
     createdAt: new Date(row.created_at),
   }));
@@ -498,7 +502,7 @@ export async function fetchRecentPostsFromSupabase(
 
   let q = supabase
     .from('posts')
-    .select('*, boards(first_day), comments(count), replies(count), users!author_id(profile_photo_url)')
+    .select(`${FEED_POST_SELECT}, boards(first_day), users!author_id(profile_photo_url)`)
     .eq('board_id', boardId)
     .order('created_at', { ascending: false });
 
@@ -540,7 +544,7 @@ export async function fetchBestPostsFromSupabase(
 
   let q = supabase
     .from('posts')
-    .select('*, boards(first_day), comments(count), replies(count), users!author_id(profile_photo_url)')
+    .select(`${FEED_POST_SELECT}, boards(first_day), users!author_id(profile_photo_url)`)
     .eq('board_id', boardId)
     .order('engagement_score', { ascending: false })
     .limit(limitCount);
@@ -563,11 +567,11 @@ export async function fetchBestPostsFromSupabase(
   return (data || []).map(mapRowToPost);
 }
 
-/** Map a Supabase posts row (with embedded counts and board data) to Post model */
+/** Map a Supabase posts row (with board and user embeds) to Post model */
 export function mapRowToPost(row: PostRowWithEmbeds): Post {
-  // Extract live counts from embedded resources (PostgREST returns [{count: N}] for one-to-many)
-  const commentCount = row.comments?.[0]?.count ?? row.count_of_comments ?? 0;
-  const replyCount = row.replies?.[0]?.count ?? row.count_of_replies ?? 0;
+  // Use denormalized counts maintained by triggers (counter triggers in 20260222 migration)
+  const commentCount = row.count_of_comments ?? 0;
+  const replyCount = row.count_of_replies ?? 0;
 
   // Compute weekDaysFromFirstDay from board's first_day if available via embedded join
   const board = Array.isArray(row.boards) ? row.boards[0] : row.boards;
@@ -583,7 +587,7 @@ export function mapRowToPost(row: PostRowWithEmbeds): Post {
     id: row.id,
     boardId: row.board_id,
     title: row.title,
-    content: row.content,
+    content: row.content ?? row.content_preview ?? '',
     contentJson: row.content_json as Post['contentJson'],
     thumbnailImageURL: row.thumbnail_image_url,
     authorId: row.author_id,
