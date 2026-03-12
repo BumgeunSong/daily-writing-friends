@@ -119,10 +119,14 @@ export default function BlockedUsersPage() {
         return;
       }
       // 차단 유저 정보 fetch
-      const users = await Promise.all(
+      const results = await Promise.allSettled(
         blockedUids.map(uid => fetchUser(uid))
       );
-      setBlockedUsers(users.filter(Boolean));
+      const users = results
+        .filter((r): r is PromiseFulfilledResult<User | null> => r.status === 'fulfilled')
+        .map(r => r.value)
+        .filter((u): u is User => u !== null);
+      setBlockedUsers(users);
     })();
   }, [currentUser]);
 

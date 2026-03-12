@@ -60,7 +60,7 @@ export class SupabaseWriteError extends Error {
 
 export class SupabaseNetworkError extends Error {
   constructor(public readonly postgrestError: PostgrestError) {
-    super(`Network error during Supabase write: ${postgrestError.message}`);
+    super(`Supabase network error: ${postgrestError.message}`);
     this.name = 'SupabaseNetworkError';
   }
 }
@@ -74,7 +74,7 @@ const NETWORK_ERROR_PATTERNS = [
   'AbortError',
 ];
 
-function isNetworkError(error: PostgrestError): boolean {
+export function isNetworkError(error: PostgrestError): boolean {
   return !error.code && NETWORK_ERROR_PATTERNS.some((p) => error.message.includes(p));
 }
 

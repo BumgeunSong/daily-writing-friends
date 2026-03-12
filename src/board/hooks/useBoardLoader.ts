@@ -1,5 +1,6 @@
 import { FirebaseError } from 'firebase/app';
 import type { LoaderFunctionArgs } from 'react-router-dom';
+import { SupabaseNetworkError } from '@/shared/api/supabaseClient';
 import { getCurrentUser } from '@/shared/utils/authUtils';
 import { trackFirebasePermissionError, getPermissionErrorHints } from '@/shared/utils/firebaseErrorTracking';
 import { getCurrentUserIdFromStorage } from '@/shared/utils/getCurrentUserId';
@@ -23,7 +24,16 @@ export async function boardLoader({ params }: LoaderFunctionArgs) {
     }
 
     // Check board permissions before allowing access
-    const userData = await fetchUser(user.uid);
+    let userData;
+    try {
+      userData = await fetchUser(user.uid);
+    } catch (fetchError) {
+      if (fetchError instanceof SupabaseNetworkError) {
+        throw new Response('네트워크 연결을 확인하고 다시 시도해주세요.', { status: 503 });
+      }
+      throw fetchError;
+    }
+
     if (!userData) {
       // Track permission error for missing user data
       const permissionError = new FirebaseError('permission-denied', 'User data not found');
@@ -32,7 +42,7 @@ export async function boardLoader({ params }: LoaderFunctionArgs) {
         path: `users/${user.uid}`,
         userId: user.uid,
         additionalInfo: {
-          reason: 'User document not found in Firestore',
+          reason: 'User document not found in Supabase',
           boardId,
         },
       });
@@ -90,6 +100,9 @@ export async function boardLoader({ params }: LoaderFunctionArgs) {
 
     if (error instanceof Response) {
       throw error; // Re-throw Response errors (permission/auth errors)
+    }
+    if (error instanceof SupabaseNetworkError) {
+      throw new Response('네트워크 연결을 확인하고 다시 시도해주세요.', { status: 503 });
     }
     throw new Response('Board access validation failed', { status: 500 });
   }
