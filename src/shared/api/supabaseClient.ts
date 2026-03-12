@@ -58,12 +58,42 @@ export class SupabaseWriteError extends Error {
   }
 }
 
+export class SupabaseNetworkError extends Error {
+  constructor(public readonly postgrestError: PostgrestError) {
+    super(`Network error during Supabase write: ${postgrestError.message}`);
+    this.name = 'SupabaseNetworkError';
+  }
+}
+
+const NETWORK_ERROR_PATTERNS = [
+  'Load failed',
+  'Failed to fetch',
+  'NetworkError',
+  'network error',
+  'cancelled',
+  'AbortError',
+];
+
+function isNetworkError(error: PostgrestError): boolean {
+  return !error.code && NETWORK_ERROR_PATTERNS.some((p) => error.message.includes(p));
+}
+
 /** Execute a Supabase operation and throw on error, reporting to Sentry if an error occurs */
 export function throwOnError(
   result: { error: PostgrestError | null },
   operation?: string,
 ): void {
   if (result.error) {
+    if (isNetworkError(result.error)) {
+      addSentryBreadcrumb(
+        operation ? `Supabase network error: ${operation}` : 'Supabase network error',
+        'supabase.write',
+        { message: result.error.message, operation },
+        'warning',
+      );
+      throw new SupabaseNetworkError(result.error);
+    }
+
     const writeError = new SupabaseWriteError(result.error);
 
     addSentryBreadcrumb(
@@ -78,15 +108,16 @@ export function throwOnError(
       'error',
     );
 
+    const { code, message, details, hint } = result.error;
     Sentry.withScope((scope) => {
       scope.setContext('supabaseError', {
-        code: result.error.code,
-        message: result.error.message,
-        details: result.error.details,
-        hint: result.error.hint,
+        code,
+        message,
+        details,
+        hint,
         operation,
       });
-      if (result.error.code === '42501') {
+      if (code === '42501') {
         scope.setFingerprint(['supabase', 'permission-denied', operation ?? 'unknown']);
       }
       Sentry.captureException(writeError);

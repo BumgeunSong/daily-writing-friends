@@ -3,7 +3,7 @@ import type { MutableRefObject } from 'react';
 import { toast } from 'sonner';
 import type { Draft } from '@/draft/model/Draft';
 import { saveDraft } from '@/draft/utils/draftUtils';
-import { SupabaseWriteError } from '@/shared/api/supabaseClient';
+import { SupabaseWriteError, SupabaseNetworkError } from '@/shared/api/supabaseClient';
 
 interface UseDraftSaveMutationProps {
   draftIdRef: MutableRefObject<string | null>;
@@ -50,15 +50,16 @@ export function useDraftSaveMutation({
     },
     retry: (failureCount, error) => {
       if (failureCount >= 3) return false;
+      if (error instanceof SupabaseNetworkError) return true;
       if (error instanceof SupabaseWriteError) return false;
       if (error instanceof TypeError) return false;
       return true;
     },
     retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 8000),
     onError: (error: Error) => {
-      const isTimeout = error.message?.includes('timed out');
+      const isNetwork = error instanceof SupabaseNetworkError || error.message?.includes('timed out');
       toast.warning(
-        isTimeout
+        isNetwork
           ? '네트워크 연결이 불안정해서 임시 저장하지 못했어요'
           : '임시 저장에 문제가 생겼어요',
         {

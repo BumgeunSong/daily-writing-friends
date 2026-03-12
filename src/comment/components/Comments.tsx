@@ -1,6 +1,8 @@
 import { Loader2 } from 'lucide-react';
 import { Suspense } from 'react';
+import { toast } from 'sonner';
 import { CommentInput } from '@/comment/components/CommentInput';
+import { SupabaseNetworkError } from '@/shared/api/supabaseClient';
 import CommentList from '@/comment/components/CommentList';
 import { useActivity } from '@/comment/hooks/useActivity';
 import { useCreateComment } from '@/comment/hooks/useCreateComment';
@@ -62,8 +64,13 @@ const Comments: React.FC<CommentsProps> = ({
           userName: currentUser.displayName,
         });
       }
-    } catch (e) {
-      // 에러 핸들링 필요시 추가
+    } catch (error) {
+      toast.warning(
+        error instanceof SupabaseNetworkError
+          ? '네트워크 연결이 불안정해서 댓글을 등록하지 못했어요'
+          : '댓글 등록에 문제가 생겼어요',
+        { position: 'bottom-center', duration: 5000 },
+      );
     }
   };
 
