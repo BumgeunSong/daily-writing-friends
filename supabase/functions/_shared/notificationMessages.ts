@@ -26,7 +26,7 @@ export function buildNotificationMessage(
     case 'comment_on_post':
       return `${actorName}님이 '${preview}' 글에 댓글을 달았어요.`;
     case 'like_on_post':
-      return `${actorName}님이 '${preview}' 글에 좋아요를 눌렀어요.`;
+      return `${actorName}님이 '${preview}' 글에 공감했어요.`;
     case 'reply_on_post':
       return `${actorName}님이 '${preview}' 글에 답글을 달았어요.`;
     case 'reply_on_comment':
