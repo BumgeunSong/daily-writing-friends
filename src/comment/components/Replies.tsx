@@ -1,6 +1,8 @@
 import { Loader2, MessageCircle } from "lucide-react"
 import { useState, Suspense } from "react"
+import { toast } from 'sonner'
 import { useCreateReply } from '@/comment/hooks/useCreateReply'
+import { SupabaseNetworkError } from '@/shared/api/supabaseClient'
 import { useReplyCount } from '@/comment/hooks/useReplyCount'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { Button } from "@/shared/ui/button"
@@ -37,8 +39,13 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
           userName: currentUser.displayName,
         })
       }
-    } catch (e) {
-      // 에러 핸들링 필요시 추가
+    } catch (error) {
+      toast.warning(
+        error instanceof SupabaseNetworkError
+          ? '네트워크 연결이 불안정해서 답글을 등록하지 못했어요'
+          : '답글 등록에 문제가 생겼어요',
+        { position: 'bottom-center', duration: 5000 },
+      );
     }
   }
 
