@@ -92,7 +92,7 @@ interface PostRowWithEmbeds {
 // but !inner guarantees exactly one row. We use type assertions in the mappers.
 
 /** Explicit column list for feed queries — excludes content and content_json to reduce transfer. */
-const FEED_POST_SELECT = 'id, board_id, author_id, author_name, title, content_preview, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at';
+export const FEED_POST_SELECT = 'id, board_id, author_id, author_name, title, content_preview, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at';
 
 // Types matching the Firestore fan-out models for compatibility
 export interface SupabasePosting {
@@ -588,7 +588,7 @@ export function mapRowToPost(row: PostRowWithEmbeds): Post {
     boardId: row.board_id,
     title: row.title,
     content: row.content ?? row.content_preview ?? '',
-    contentJson: row.content_json as Post['contentJson'],
+    contentJson: row.content_json ? (row.content_json as Post['contentJson']) : undefined,
     thumbnailImageURL: row.thumbnail_image_url,
     authorId: row.author_id,
     authorName: row.author_name,
