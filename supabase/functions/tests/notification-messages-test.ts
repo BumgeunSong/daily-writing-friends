@@ -13,7 +13,7 @@ Deno.test('buildNotificationMessage', async (t) => {
 
   await t.step('like_on_post: 글에 좋아요 메시지 생성', () => {
     const result = buildNotificationMessage('like_on_post', '김철수', '멋진 하루');
-    assertEquals(result, "김철수님이 '멋진 하루' 글에 좋아요를 눌렀어요.");
+    assertEquals(result, "김철수님이 '멋진 하루' 글에 공감했어요.");
   });
 
   await t.step('reply_on_post: 글에 답글 메시지 생성', () => {
@@ -50,7 +50,7 @@ Deno.test('buildNotificationMessage', async (t) => {
 
   await t.step('빈 콘텐츠 처리', () => {
     const result = buildNotificationMessage('like_on_post', '유저', '');
-    assertEquals(result, "유저님이 '' 글에 좋아요를 눌렀어요.");
+    assertEquals(result, "유저님이 '' 글에 공감했어요.");
   });
 
   await t.step('빈 actorName 처리', () => {
