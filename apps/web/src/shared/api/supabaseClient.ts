@@ -58,12 +58,42 @@ export class SupabaseWriteError extends Error {
   }
 }
 
+export class SupabaseNetworkError extends Error {
+  constructor(public readonly postgrestError: PostgrestError) {
+    super(`Supabase network error: ${postgrestError.message}`);
+    this.name = 'SupabaseNetworkError';
+  }
+}
+
+const NETWORK_ERROR_PATTERNS = [
+  'Load failed',
+  'Failed to fetch',
+  'NetworkError',
+  'network error',
+  'cancelled',
+  'AbortError',
+];
+
+export function isNetworkError(error: PostgrestError): boolean {
+  return !error.code && NETWORK_ERROR_PATTERNS.some((p) => error.message.includes(p));
+}
+
 /** Execute a Supabase operation and throw on error, reporting to Sentry if an error occurs */
 export function throwOnError(
   result: { error: PostgrestError | null },
   operation?: string,
 ): void {
   if (result.error) {
+    if (isNetworkError(result.error)) {
+      addSentryBreadcrumb(
+        operation ? `Supabase network error: ${operation}` : 'Supabase network error',
+        'supabase.write',
+        { message: result.error.message, operation },
+        'warning',
+      );
+      throw new SupabaseNetworkError(result.error);
+    }
+
     const writeError = new SupabaseWriteError(result.error);
 
     addSentryBreadcrumb(
