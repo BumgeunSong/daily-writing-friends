@@ -1,5 +1,6 @@
+import type { PostgrestError } from '@supabase/supabase-js';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { throwOnError, executeTrackedWrite, SupabaseWriteError, SupabaseNetworkError } from './supabaseClient';
+import { throwOnError, executeTrackedWrite, SupabaseWriteError, SupabaseNetworkError, isNetworkError } from './supabaseClient';
 
 const mockSetContext = vi.fn();
 const mockSetFingerprint = vi.fn();
@@ -253,4 +254,39 @@ describe('executeTrackedWrite', () => {
 
     consoleSpy.mockRestore();
   }, 5000);
+});
+
+describe('isNetworkError', () => {
+  it('returns true for "Load failed" with empty code', () => {
+    expect(isNetworkError({ message: 'TypeError: Load failed', code: '', details: '', hint: '' } as PostgrestError)).toBe(true);
+  });
+
+  it('returns true for "Failed to fetch" with empty code', () => {
+    expect(isNetworkError({ message: 'TypeError: Failed to fetch', code: '', details: '', hint: '' } as PostgrestError)).toBe(true);
+  });
+
+  it('returns true for "NetworkError" with empty code', () => {
+    expect(isNetworkError({ message: 'NetworkError when attempting to fetch resource', code: '', details: '', hint: '' } as PostgrestError)).toBe(true);
+  });
+
+  it('returns false when error has a code', () => {
+    expect(isNetworkError({ message: 'Load failed', code: '23505', details: '', hint: '' } as PostgrestError)).toBe(false);
+  });
+
+  it('returns false for non-network error messages', () => {
+    expect(isNetworkError({ message: 'duplicate key violation', code: '', details: '', hint: '' } as PostgrestError)).toBe(false);
+  });
+});
+
+describe('SupabaseNetworkError', () => {
+  it('message does not contain "write"', () => {
+    const error = new SupabaseNetworkError({ message: 'Load failed', code: '', details: '', hint: '' } as PostgrestError);
+    expect(error.message).not.toContain('write');
+  });
+
+  it('message contains the original error message', () => {
+    const error = new SupabaseNetworkError({ message: 'Load failed', code: '', details: '', hint: '' } as PostgrestError);
+    expect(error.message).toContain('Load failed');
+    expect(error.message).toContain('Supabase network error');
+  });
 });

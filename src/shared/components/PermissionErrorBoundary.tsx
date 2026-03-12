@@ -8,12 +8,39 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogAction,
+  AlertDialogCancel,
 } from '@/shared/ui/alert-dialog';
 
 export function PermissionErrorBoundary() {
   const error = useRouteError();
   const navigate = useNavigate();
   const [open, setOpen] = React.useState(true);
+
+  // Check if it's a 503 network error
+  if (isRouteErrorResponse(error) && error.status === 503) {
+    return (
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>네트워크 오류</AlertDialogTitle>
+            <AlertDialogDescription>
+              {typeof error.data === 'string' ? error.data : '네트워크 연결에 문제가 있어요.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setOpen(false);
+              navigate('/boards', { replace: true });
+            }}>홈으로</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setOpen(false);
+              window.location.reload();
+            }}>다시 시도</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    );
+  }
 
   // Check if it's a 403 permission error
   if (isRouteErrorResponse(error) && error.status === 403) {
