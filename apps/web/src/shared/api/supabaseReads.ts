@@ -7,7 +7,7 @@
  *   idx_replies_comment_created, idx_permissions_user
  */
 
-import { getSupabaseClient } from './supabaseClient';
+import { getSupabaseClient, isNetworkError, SupabaseNetworkError } from './supabaseClient';
 import type { Board } from '@/board/model/Board';
 import type { Post } from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
@@ -691,33 +691,51 @@ export async function fetchUserFromSupabase(uid: string): Promise<User | null> {
     .eq('id', uid)
     .single();
 
-  if (error || !data) {
-    if (error?.code !== 'PGRST116') {
-      console.error('Supabase fetchUser error:', error);
+  if (error) {
+    if (isNetworkError(error)) {
+      throw new SupabaseNetworkError(error);
     }
+    if (error.code === 'PGRST116') {
+      return null;
+    }
+    console.error('Supabase fetchUser error:', error);
+    throw error;
+  }
+
+  if (!data) {
     return null;
   }
 
   // Fetch board permissions
-  const { data: permData } = await supabase
+  const { data: permData, error: permError } = await supabase
     .from('user_board_permissions')
     .select('board_id, permission')
     .eq('user_id', uid);
+
+  if (permError) {
+    if (isNetworkError(permError)) {
+      throw new SupabaseNetworkError(permError);
+    }
+    console.error('Supabase fetchUser board permissions error:', permError);
+    throw permError;
+  }
 
   const boardPermissions: Record<string, 'read' | 'write'> = {};
   for (const p of permData || []) {
     boardPermissions[p.board_id] = p.permission as 'read' | 'write';
   }
 
-  // Fetch known buddy info if exists
+  // Fetch known buddy info if exists (optional — log and continue on failure)
   let knownBuddy: User['knownBuddy'] = undefined;
   if (data.known_buddy_uid) {
-    const { data: buddyData } = await supabase
+    const { data: buddyData, error: buddyError } = await supabase
       .from('users')
       .select('id, nickname, profile_photo_url')
       .eq('id', data.known_buddy_uid)
       .single();
-    if (buddyData) {
+    if (buddyError) {
+      console.error('Supabase fetchUser knownBuddy error:', buddyError);
+    } else if (buddyData) {
       knownBuddy = {
         uid: buddyData.id,
         nickname: buddyData.nickname,

@@ -1,5 +1,6 @@
+import type { PostgrestError } from '@supabase/supabase-js';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { throwOnError, executeTrackedWrite, SupabaseWriteError } from './supabaseClient';
+import { throwOnError, executeTrackedWrite, SupabaseWriteError, SupabaseNetworkError, isNetworkError } from './supabaseClient';
 
 const mockSetContext = vi.fn();
 const mockSetFingerprint = vi.fn();
@@ -145,6 +146,58 @@ describe('throwOnError', () => {
 
     expect(mockSetFingerprint).not.toHaveBeenCalled();
   });
+
+  it('throws SupabaseNetworkError for "Load failed" with empty code', () => {
+    const networkError = {
+      message: 'TypeError: Load failed',
+      code: '',
+      details: '@https://example.com/assets/index.js:1270:7060',
+      hint: '',
+    };
+
+    expect(() => throwOnError({ error: networkError }, 'createComment')).toThrow(SupabaseNetworkError);
+  });
+
+  it('does not captureException for network errors', () => {
+    const networkError = {
+      message: 'TypeError: Load failed',
+      code: '',
+      details: '',
+      hint: '',
+    };
+
+    expect(() => throwOnError({ error: networkError })).toThrow(SupabaseNetworkError);
+
+    expect(Sentry.captureException).not.toHaveBeenCalled();
+    expect(addSentryBreadcrumb).toHaveBeenCalledWith(
+      'Supabase network error',
+      'supabase.write',
+      expect.objectContaining({ message: 'TypeError: Load failed' }),
+      'warning',
+    );
+  });
+
+  it('throws SupabaseNetworkError for "Failed to fetch" with empty code', () => {
+    const networkError = {
+      message: 'TypeError: Failed to fetch',
+      code: '',
+      details: '',
+      hint: '',
+    };
+
+    expect(() => throwOnError({ error: networkError })).toThrow(SupabaseNetworkError);
+  });
+
+  it('throws SupabaseWriteError (not network error) when code is present', () => {
+    const dbError = {
+      message: 'Load failed',
+      code: '23505',
+      details: '',
+      hint: '',
+    };
+
+    expect(() => throwOnError({ error: dbError })).toThrow(SupabaseWriteError);
+  });
 });
 
 describe('executeTrackedWrite', () => {
@@ -201,4 +254,39 @@ describe('executeTrackedWrite', () => {
 
     consoleSpy.mockRestore();
   }, 5000);
+});
+
+describe('isNetworkError', () => {
+  it('returns true for "Load failed" with empty code', () => {
+    expect(isNetworkError({ message: 'TypeError: Load failed', code: '', details: '', hint: '' } as PostgrestError)).toBe(true);
+  });
+
+  it('returns true for "Failed to fetch" with empty code', () => {
+    expect(isNetworkError({ message: 'TypeError: Failed to fetch', code: '', details: '', hint: '' } as PostgrestError)).toBe(true);
+  });
+
+  it('returns true for "NetworkError" with empty code', () => {
+    expect(isNetworkError({ message: 'NetworkError when attempting to fetch resource', code: '', details: '', hint: '' } as PostgrestError)).toBe(true);
+  });
+
+  it('returns false when error has a code', () => {
+    expect(isNetworkError({ message: 'Load failed', code: '23505', details: '', hint: '' } as PostgrestError)).toBe(false);
+  });
+
+  it('returns false for non-network error messages', () => {
+    expect(isNetworkError({ message: 'duplicate key violation', code: '', details: '', hint: '' } as PostgrestError)).toBe(false);
+  });
+});
+
+describe('SupabaseNetworkError', () => {
+  it('message does not contain "write"', () => {
+    const error = new SupabaseNetworkError({ message: 'Load failed', code: '', details: '', hint: '' } as PostgrestError);
+    expect(error.message).not.toContain('write');
+  });
+
+  it('message contains the original error message', () => {
+    const error = new SupabaseNetworkError({ message: 'Load failed', code: '', details: '', hint: '' } as PostgrestError);
+    expect(error.message).toContain('Load failed');
+    expect(error.message).toContain('Supabase network error');
+  });
 });

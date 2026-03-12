@@ -119,10 +119,22 @@ export default function BlockedUsersPage() {
         return;
       }
       // 차단 유저 정보 fetch
-      const users = await Promise.all(
+      const results = await Promise.allSettled(
         blockedUids.map(uid => fetchUser(uid))
       );
-      setBlockedUsers(users.filter(Boolean));
+      const rejectedCount = results.filter(r => r.status === 'rejected').length;
+      const users = results
+        .filter((r): r is PromiseFulfilledResult<User | null> => r.status === 'fulfilled')
+        .map(r => r.value)
+        .filter((u): u is User => u !== null);
+      if (rejectedCount > 0 && users.length > 0) {
+        toast.warning(`차단된 사용자 ${rejectedCount}명의 정보를 불러오지 못했습니다.`);
+      }
+      if (users.length === 0 && rejectedCount === results.length) {
+        toast.error('차단된 사용자 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
+      setBlockedUsers(users);
     })();
   }, [currentUser]);
 

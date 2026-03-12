@@ -1,5 +1,6 @@
 import type { LoaderFunctionArgs } from 'react-router-dom';
 import { fetchPost } from '@/post/utils/postUtils';
+import { SupabaseNetworkError } from '@/shared/api/supabaseClient';
 import { getCurrentUser } from '@/shared/utils/authUtils';
 import { fetchUser } from '@/user/api/user';
 
@@ -39,6 +40,9 @@ export async function postDetailLoader({ params }: LoaderFunctionArgs) {
     console.error('Failed to fetch post:', error);
     if (error instanceof Response) {
       throw error; // Re-throw Response errors (permission/auth errors)
+    }
+    if (error instanceof SupabaseNetworkError) {
+      throw new Response('네트워크 연결을 확인하고 다시 시도해주세요.', { status: 503 });
     }
     throw new Response('Post not found', { status: 404 });
   }
