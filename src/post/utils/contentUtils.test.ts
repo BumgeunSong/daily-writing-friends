@@ -239,6 +239,15 @@ describe('contentUtils', () => {
       expect(result).toContain('Safe');
     });
 
+    it('should preserve empty paragraphs as visible line breaks', () => {
+      const content = '<p>하이아이</p><p></p><p>호이오이</p>';
+      const result = sanitizePostContent(content);
+
+      expect(result).toContain('<p><br></p>');
+      expect(result).toContain('하이아이');
+      expect(result).toContain('호이오이');
+    });
+
     it('should convert newlines to <br> tags for plain text content', () => {
       const content = '첫 번째 줄\n두 번째 줄';
       const result = sanitizePostContent(content);

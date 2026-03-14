@@ -18,6 +18,14 @@ const convertNewlinesToBr = (content: string): string => {
   return content.replace(/\n/g, '<br>');
 };
 
+/**
+ * 빈 <p></p> 태그에 <br>을 삽입하여 빈 줄이 화면에 표시되도록 함
+ * 에디터에서는 빈 단락이 높이를 가지지만, 브라우저에서는 빈 <p>가 높이 0으로 축소됨
+ */
+const preserveEmptyParagraphs = (html: string): string => {
+  return html.replace(/<p><\/p>/g, '<p><br></p>');
+};
+
 // 게시글 본문용 DOMPurify 설정
 const sanitizePostContent = (content: string): string => {
   // 일반 텍스트인 경우 줄바꿈을 <br> 태그로 변환 (이전 형식 호환성)
@@ -28,8 +36,8 @@ const sanitizePostContent = (content: string): string => {
     USE_PROFILES: { html: true }
   });
 
-  // HTML 문자열을 DOM 요소로 변환하고 글머리 기호 목록 변환 적용
-  return convertQuillBulletListsInHtml(sanitizedContent);
+  // 빈 단락 보존 후 글머리 기호 목록 변환 적용
+  return convertQuillBulletListsInHtml(preserveEmptyParagraphs(sanitizedContent));
 };
 
 /**
