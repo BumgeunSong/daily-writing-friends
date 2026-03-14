@@ -69,7 +69,8 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
                         className="prose prose-lg prose-slate mt-6 max-w-none dark:prose-invert
                             prose-h1:text-3xl prose-h1:font-semibold
                             prose-h2:text-2xl prose-h2:font-semibold
-                            prose-p:my-2 prose-p:break-words
+                            prose-p:mb-2 prose-p:mt-0 prose-p:break-words
+                            prose-p:leading-normal prose-li:leading-normal
                             prose-ol:my-4
                             prose-ul:my-4
                         "

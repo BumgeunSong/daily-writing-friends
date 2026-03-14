@@ -221,13 +221,25 @@ describe('contentUtils', () => {
       expect(result).toContain('<ol');
     });
 
-    it('should handle mixed list types', () => {
+    it('should handle mixed list types in separate ol elements', () => {
       const content =
         '<ol><li data-list="bullet">Bullet</li></ol><ol><li>Numbered</li></ol>';
       const result = sanitizePostContent(content);
 
       expect(result).toContain('<ul');
       expect(result).toContain('<ol');
+    });
+
+    it('should split mixed bullet and ordered items within a single ol', () => {
+      const content =
+        '<ol><li data-list="bullet">Bullet 1</li><li>Ordered 1</li><li data-list="bullet">Bullet 2</li></ol>';
+      const result = sanitizePostContent(content);
+
+      expect(result).toContain('<ul');
+      expect(result).toContain('<ol');
+      expect(result).toContain('Bullet 1');
+      expect(result).toContain('Ordered 1');
+      expect(result).toContain('Bullet 2');
     });
 
     it('should remove malicious script tags', () => {
