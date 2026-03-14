@@ -68,13 +68,13 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
                         ref={contentRef}
                         dangerouslySetInnerHTML={{ __html: sanitizedContent }}
                         className="prose prose-lg prose-slate mt-6 max-w-none dark:prose-invert
-                            prose-h1:text-3xl prose-h1:font-semibold
-                            prose-h2:text-2xl prose-h2:font-semibold
+                            prose-h1:text-3xl prose-h1:font-semibold prose-h1:leading-tight
+                            prose-h2:text-2xl prose-h2:font-semibold prose-h2:leading-snug
                             prose-p:mb-2 prose-p:mt-0 prose-p:break-words
                             prose-ol:my-4
                             prose-ul:my-4
                         "
-                        style={{ overflowWrap: 'break-word', wordBreak: 'keep-all', lineHeight: KOREAN_OPTIMAL_LINE_HEIGHT }}
+                        style={{ overflowWrap: 'anywhere', wordBreak: 'keep-all', lineHeight: KOREAN_OPTIMAL_LINE_HEIGHT }}
                     />
                 </div>
             </CopyErrorBoundary>
