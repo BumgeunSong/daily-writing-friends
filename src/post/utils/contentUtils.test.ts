@@ -260,6 +260,55 @@ describe('contentUtils', () => {
       expect(result).toContain('호이오이');
     });
 
+    it('should preserve multiple consecutive empty paragraphs each as a separate line break', () => {
+      const content = '<p>Before</p><p></p><p></p><p>After</p>';
+      const result = sanitizePostContent(content);
+
+      // Both empty paragraphs must be individually preserved
+      const matches = result.match(/<p><br><\/p>/g);
+      expect(matches).not.toBeNull();
+      expect(matches!.length).toBe(2);
+      expect(result).toContain('Before');
+      expect(result).toContain('After');
+    });
+
+    it('should preserve an empty paragraph at the start of content', () => {
+      const content = '<p></p><p>텍스트</p>';
+      const result = sanitizePostContent(content);
+
+      expect(result).toContain('<p><br></p>');
+      expect(result).toContain('텍스트');
+    });
+
+    it('should preserve an empty paragraph at the end of content', () => {
+      const content = '<p>텍스트</p><p></p>';
+      const result = sanitizePostContent(content);
+
+      expect(result).toContain('<p><br></p>');
+      expect(result).toContain('텍스트');
+    });
+
+    it('should split a mixed list where ordered items come before a bullet item', () => {
+      const content =
+        '<ol><li>Ordered 1</li><li>Ordered 2</li><li data-list="bullet">Bullet</li></ol>';
+      const result = sanitizePostContent(content);
+
+      expect(result).toContain('<ol');
+      expect(result).toContain('<ul');
+      expect(result).toContain('Ordered 1');
+      expect(result).toContain('Ordered 2');
+      expect(result).toContain('Bullet');
+    });
+
+    it('should preserve data-list attribute on li elements after splitting a mixed list', () => {
+      const content =
+        '<ol><li data-list="bullet">Bullet</li><li>Ordered</li></ol>';
+      const result = sanitizePostContent(content);
+
+      // The bullet li must retain its data-list attribute inside the new ul
+      expect(result).toContain('data-list="bullet"');
+    });
+
     it('should convert newlines to <br> tags for plain text content', () => {
       const content = '첫 번째 줄\n두 번째 줄';
       const result = sanitizePostContent(content);
