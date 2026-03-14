@@ -2,11 +2,11 @@ import { useEffect, useRef, useMemo, useCallback, useState } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
+import { KOREAN_OPTIMAL_LINE_HEIGHT } from '@/post/constants/typography';
 import { useCopyHandler } from '@/post/hooks/useCopyHandler';
 import { useImageUpload } from '@/post/hooks/useImageUpload';
 
 import { CopyErrorBoundary } from './CopyErrorBoundary';
-import { KOREAN_OPTIMAL_LINE_HEIGHT } from '@/post/constants/typography';
 
 interface PostTextEditorProps {
   value: string;

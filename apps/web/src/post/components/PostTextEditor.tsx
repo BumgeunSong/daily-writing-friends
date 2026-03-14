@@ -2,6 +2,7 @@ import { useEffect, useRef, useMemo, useCallback, useState } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 
+import { KOREAN_OPTIMAL_LINE_HEIGHT } from '@/post/constants/typography';
 import { useCopyHandler } from '@/post/hooks/useCopyHandler';
 import { useImageUpload } from '@/post/hooks/useImageUpload';
 
@@ -23,7 +24,7 @@ const quillStyles = `
 .ql-container {
   font-family: var(--font-sans);
   font-size: 1.125rem;
-  line-height: 1.5;
+  line-height: ${KOREAN_OPTIMAL_LINE_HEIGHT};
   min-height: 300px;
   width: 100%;
   max-width: none;
@@ -154,12 +155,12 @@ const quillStyles = `
 .ql-editor {
   max-width: none;
   font-size: 1.125rem !important;
-  line-height: 1.5 !important;
+  line-height: ${KOREAN_OPTIMAL_LINE_HEIGHT} !important;
 }
 
 /* Override Tailwind prose-lg line-height */
 .prose-lg .ql-editor {
-  line-height: 1.5 !important;
+  line-height: ${KOREAN_OPTIMAL_LINE_HEIGHT} !important;
 }
 
 /* List styling */
