@@ -340,6 +340,17 @@ describe('contentUtils', () => {
 
       expect(result).toContain('data-list="bullet"');
     });
+
+    it('should preserve ordered list numbering continuity when splitting mixed lists', () => {
+      const content =
+        '<ol><li>First</li><li>Second</li><li data-list="bullet">Bullet</li><li>Third</li></ol>';
+      const result = sanitizePostContent(content);
+
+      // 두 번째 ol은 start="3"이어야 번호가 연속됨
+      expect(result).toMatch(/<ol[^>]*start="3"[^>]*>/);
+      expect(result).toContain('First');
+      expect(result).toContain('Third');
+    });
   });
 
   describe('sanitizeCommentContent', () => {
