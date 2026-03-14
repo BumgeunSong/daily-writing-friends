@@ -29,16 +29,16 @@ const sanitizePostContent = (content: string): string => {
   });
 
   // DOM 변환 (빈 단락 보존 + 글머리 기호 목록 변환)
-  return convertQuillBulletListsInHtml(sanitizedContent);
+  return normalizeSanitizedHtml(sanitizedContent);
 };
 
 /**
- * HTML 문자열에서 Quill 에디터의 글머리 기호 목록을 의미적으로 올바른 HTML로 변환
- * 
+ * DOMPurify 정제 후 HTML을 정규화: 빈 단락 보존 및 Quill 목록 변환
+ *
  * @param html - 변환할 HTML 문자열
- * @returns 변환된 HTML 문자열
+ * @returns 정규화된 HTML 문자열
  */
-const convertQuillBulletListsInHtml = (html: string): string => {
+const normalizeSanitizedHtml = (html: string): string => {
   const div = document.createElement('div');
   div.innerHTML = html;
 
@@ -121,13 +121,23 @@ const splitMixedList = (ol: Element): void => {
   });
 
   const fragment = document.createDocumentFragment();
+  const originalStart = parseInt(ol.getAttribute('start') || '1', 10);
+  let orderedItemCount = 0;
+
   groups.forEach(group => {
     const list = document.createElement(group.type === 'bullet' ? 'ul' : 'ol');
     // 원본 ol의 속성을 새 리스트에 복사
     Array.from(ol.attributes).forEach(attr => {
       list.setAttribute(attr.name, attr.value);
     });
+    // 분리된 ordered 그룹의 번호 매기기 연속성 유지
+    if (group.type === 'ordered' && orderedItemCount > 0) {
+      list.setAttribute('start', String(originalStart + orderedItemCount));
+    }
     group.items.forEach(item => list.appendChild(item.cloneNode(true)));
+    if (group.type === 'ordered') {
+      orderedItemCount += group.items.length;
+    }
     fragment.appendChild(list);
   });
 
@@ -220,7 +230,7 @@ const sanitizeCommentContent = (content: string): string => {
   });
   
   // 3. 댓글에도 글머리 기호 목록 변환 적용
-  return convertQuillBulletListsInHtml(sanitized);
+  return normalizeSanitizedHtml(sanitized);
 };
 
 function convertUrlsToLinks(content: string): string {
