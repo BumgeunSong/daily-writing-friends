@@ -67,30 +67,57 @@ const convertQuillBulletListsInHtml = (html: string): string => {
 const convertQuillBulletLists = (element: HTMLElement): void => {
   // 모든 data-list="bullet" 속성을 가진 li 요소 찾기
   const bulletLists = element.querySelectorAll('li[data-list="bullet"]');
-  
+
   // 이미 처리된 ol 요소를 추적하기 위한 Set
   const processedOls = new Set<Element>();
 
   bulletLists.forEach(li => {
     const parentOl = li.closest('ol');
-    
+
     // 부모 ol이 존재하고 아직 처리되지 않았는지 확인
     if (parentOl && !processedOls.has(parentOl)) {
-      // 해당 ol의 모든 자식이 bullet 타입인지 확인
-      const allBullets = isAllChildrenBulletType(parentOl);
-      
-      if (allBullets) {
-        // ol을 ul로 변환
-        const ul = createUlFromOl(parentOl);
-        
-        // ol을 ul로 교체
-        parentOl.replaceWith(ul);
-        
-        // 처리된 ol 추적
-        processedOls.add(parentOl);
+      processedOls.add(parentOl);
+
+      if (isAllChildrenBulletType(parentOl)) {
+        // 모든 자식이 bullet 타입: ol을 ul로 변환
+        parentOl.replaceWith(createUlFromOl(parentOl));
+      } else {
+        // 혼합 타입: 연속된 같은 타입끼리 그룹으로 분리
+        splitMixedList(parentOl);
       }
     }
   });
+};
+
+/**
+ * 혼합된 bullet/ordered 리스트를 연속된 같은 타입끼리 분리
+ * 예: <ol><li data-list="bullet">A</li><li>B</li></ol>
+ * → <ul><li data-list="bullet">A</li></ul><ol><li>B</li></ol>
+ */
+const splitMixedList = (ol: Element): void => {
+  const children = Array.from(ol.children);
+  const groups: { type: 'bullet' | 'ordered'; items: Element[] }[] = [];
+
+  children.forEach(child => {
+    const isBullet = child.getAttribute('data-list') === 'bullet';
+    const type = isBullet ? 'bullet' : 'ordered';
+    const lastGroup = groups[groups.length - 1];
+
+    if (lastGroup && lastGroup.type === type) {
+      lastGroup.items.push(child);
+    } else {
+      groups.push({ type, items: [child] });
+    }
+  });
+
+  const fragment = document.createDocumentFragment();
+  groups.forEach(group => {
+    const list = document.createElement(group.type === 'bullet' ? 'ul' : 'ol');
+    group.items.forEach(item => list.appendChild(item.cloneNode(true)));
+    fragment.appendChild(list);
+  });
+
+  ol.replaceWith(fragment);
 };
 
 /**
