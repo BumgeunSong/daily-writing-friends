@@ -221,13 +221,25 @@ describe('contentUtils', () => {
       expect(result).toContain('<ol');
     });
 
-    it('should handle mixed list types', () => {
+    it('should handle mixed list types in separate ol elements', () => {
       const content =
         '<ol><li data-list="bullet">Bullet</li></ol><ol><li>Numbered</li></ol>';
       const result = sanitizePostContent(content);
 
       expect(result).toContain('<ul');
       expect(result).toContain('<ol');
+    });
+
+    it('should split mixed bullet and ordered items within a single ol', () => {
+      const content =
+        '<ol><li data-list="bullet">Bullet 1</li><li>Ordered 1</li><li data-list="bullet">Bullet 2</li></ol>';
+      const result = sanitizePostContent(content);
+
+      expect(result).toContain('<ul');
+      expect(result).toContain('<ol');
+      expect(result).toContain('Bullet 1');
+      expect(result).toContain('Ordered 1');
+      expect(result).toContain('Bullet 2');
     });
 
     it('should remove malicious script tags', () => {
@@ -271,6 +283,62 @@ describe('contentUtils', () => {
       expect(result).toContain('<br>');
       expect(result).toContain('Line 1');
       expect(result).toContain('Line 2');
+    });
+
+    it('should preserve empty paragraphs as visible line breaks', () => {
+      const content = '<p>하이아이</p><p></p><p>호이오이</p>';
+      const result = sanitizePostContent(content);
+
+      expect(result).toContain('<p><br></p>');
+      expect(result).toContain('하이아이');
+      expect(result).toContain('호이오이');
+    });
+
+    it('should preserve multiple consecutive empty paragraphs each as a separate line break', () => {
+      const content = '<p>Before</p><p></p><p></p><p>After</p>';
+      const result = sanitizePostContent(content);
+
+      const matches = result.match(/<p><br><\/p>/g);
+      expect(matches).not.toBeNull();
+      expect(matches!.length).toBe(2);
+      expect(result).toContain('Before');
+      expect(result).toContain('After');
+    });
+
+    it('should preserve an empty paragraph at the start of content', () => {
+      const content = '<p></p><p>텍스트</p>';
+      const result = sanitizePostContent(content);
+
+      expect(result).toContain('<p><br></p>');
+      expect(result).toContain('텍스트');
+    });
+
+    it('should preserve an empty paragraph at the end of content', () => {
+      const content = '<p>텍스트</p><p></p>';
+      const result = sanitizePostContent(content);
+
+      expect(result).toContain('<p><br></p>');
+      expect(result).toContain('텍스트');
+    });
+
+    it('should split a mixed list where ordered items come before a bullet item', () => {
+      const content =
+        '<ol><li>Ordered 1</li><li>Ordered 2</li><li data-list="bullet">Bullet</li></ol>';
+      const result = sanitizePostContent(content);
+
+      expect(result).toContain('<ol');
+      expect(result).toContain('<ul');
+      expect(result).toContain('Ordered 1');
+      expect(result).toContain('Ordered 2');
+      expect(result).toContain('Bullet');
+    });
+
+    it('should preserve data-list attribute on li elements after splitting a mixed list', () => {
+      const content =
+        '<ol><li data-list="bullet">Bullet</li><li>Ordered</li></ol>';
+      const result = sanitizePostContent(content);
+
+      expect(result).toContain('data-list="bullet"');
     });
   });
 

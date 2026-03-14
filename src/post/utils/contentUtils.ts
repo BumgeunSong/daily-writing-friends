@@ -102,12 +102,13 @@ const convertQuillBulletLists = (element: HTMLElement): void => {
  */
 const splitMixedList = (ol: Element): void => {
   const children = Array.from(ol.children);
+
+  // li가 아닌 자식이 있으면 콘텐츠 손실 방지를 위해 변환하지 않음
+  if (children.some(child => child.tagName !== 'LI')) return;
+
   const groups: { type: 'bullet' | 'ordered'; items: Element[] }[] = [];
 
   children.forEach(child => {
-    // li가 아닌 요소는 무시
-    if (child.tagName !== 'LI') return;
-
     const isBullet = child.getAttribute('data-list') === 'bullet';
     const type = isBullet ? 'bullet' : 'ordered';
     const lastGroup = groups[groups.length - 1];
@@ -122,6 +123,10 @@ const splitMixedList = (ol: Element): void => {
   const fragment = document.createDocumentFragment();
   groups.forEach(group => {
     const list = document.createElement(group.type === 'bullet' ? 'ul' : 'ol');
+    // 원본 ol의 속성을 새 리스트에 복사
+    Array.from(ol.attributes).forEach(attr => {
+      list.setAttribute(attr.name, attr.value);
+    });
     group.items.forEach(item => list.appendChild(item.cloneNode(true)));
     fragment.appendChild(list);
   });
