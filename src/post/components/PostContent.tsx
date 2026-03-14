@@ -4,6 +4,7 @@ import { useRef, useCallback } from 'react';
 import { useCopyHandler } from '@/post/hooks/useCopyHandler';
 import type { Post} from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
+import { KOREAN_OPTIMAL_LINE_HEIGHT } from '@/post/constants/typography';
 import { sanitizePostContent } from '@/post/utils/contentUtils';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { CopyErrorBoundary } from './CopyErrorBoundary';
@@ -70,11 +71,10 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
                             prose-h1:text-3xl prose-h1:font-semibold
                             prose-h2:text-2xl prose-h2:font-semibold
                             prose-p:mb-2 prose-p:mt-0 prose-p:break-words
-                            prose-p:leading-normal prose-li:leading-normal
                             prose-ol:my-4
                             prose-ul:my-4
                         "
-                        style={{ overflowWrap: 'break-word', wordWrap: 'break-word' }}
+                        style={{ overflowWrap: 'break-word', wordBreak: 'keep-all', lineHeight: KOREAN_OPTIMAL_LINE_HEIGHT }}
                     />
                 </div>
             </CopyErrorBoundary>
