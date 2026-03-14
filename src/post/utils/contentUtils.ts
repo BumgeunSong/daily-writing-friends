@@ -18,14 +18,6 @@ const convertNewlinesToBr = (content: string): string => {
   return content.replace(/\n/g, '<br>');
 };
 
-/**
- * 빈 <p></p> 태그에 <br>을 삽입하여 빈 줄이 화면에 표시되도록 함
- * 에디터에서는 빈 단락이 높이를 가지지만, 브라우저에서는 빈 <p>가 높이 0으로 축소됨
- */
-const preserveEmptyParagraphs = (html: string): string => {
-  return html.replace(/<p><\/p>/g, '<p><br></p>');
-};
-
 // 게시글 본문용 DOMPurify 설정
 const sanitizePostContent = (content: string): string => {
   // 일반 텍스트인 경우 줄바꿈을 <br> 태그로 변환 (이전 형식 호환성)
@@ -36,8 +28,8 @@ const sanitizePostContent = (content: string): string => {
     USE_PROFILES: { html: true }
   });
 
-  // 빈 단락 보존 후 글머리 기호 목록 변환 적용
-  return convertQuillBulletListsInHtml(preserveEmptyParagraphs(sanitizedContent));
+  // DOM 변환 (빈 단락 보존 + 글머리 기호 목록 변환)
+  return convertQuillBulletListsInHtml(sanitizedContent);
 };
 
 /**
@@ -49,10 +41,24 @@ const sanitizePostContent = (content: string): string => {
 const convertQuillBulletListsInHtml = (html: string): string => {
   const div = document.createElement('div');
   div.innerHTML = html;
-  
+
+  preserveEmptyParagraphs(div);
   convertQuillBulletLists(div);
-  
+
   return div.innerHTML;
+};
+
+/**
+ * 빈 <p> 태그에 <br>을 삽입하여 빈 줄이 화면에 표시되도록 함
+ * 에디터에서는 빈 단락이 높이를 가지지만, 브라우저에서는 빈 <p>가 높이 0으로 축소됨
+ * DOM 레벨에서 처리하여 속성이 있는 빈 단락이나 공백만 있는 단락도 포함
+ */
+const preserveEmptyParagraphs = (element: HTMLElement): void => {
+  element.querySelectorAll('p').forEach(p => {
+    if (p.innerHTML.trim() === '') {
+      p.appendChild(document.createElement('br'));
+    }
+  });
 };
 
 /**
@@ -99,6 +105,9 @@ const splitMixedList = (ol: Element): void => {
   const groups: { type: 'bullet' | 'ordered'; items: Element[] }[] = [];
 
   children.forEach(child => {
+    // li가 아닌 요소는 무시
+    if (child.tagName !== 'LI') return;
+
     const isBullet = child.getAttribute('data-list') === 'bullet';
     const type = isBullet ? 'bullet' : 'ordered';
     const lastGroup = groups[groups.length - 1];
