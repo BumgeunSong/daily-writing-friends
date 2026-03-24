@@ -43,6 +43,8 @@ export const test = base.extend<AuthFixtures>({
     });
 
     const page = await context.newPage();
+    // Ensure no Supabase session exists by explicitly signing out
+    await AuthUtils.signOut(page);
     await use(page);
     await context.close();
   },
