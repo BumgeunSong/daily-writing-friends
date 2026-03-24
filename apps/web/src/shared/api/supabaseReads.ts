@@ -86,13 +86,15 @@ interface PostRowWithEmbeds {
   updated_at: string;
   boards?: { first_day: string | null } | { first_day: string | null }[];
   users?: { profile_photo_url: string | null } | { profile_photo_url: string | null }[];
+  comments?: { count: number }[];
+  replies?: { count: number }[];
 }
 
 // Note: Supabase join selects return arrays at the type level,
 // but !inner guarantees exactly one row. We use type assertions in the mappers.
 
 /** Explicit column list for feed queries — excludes content and content_json to reduce transfer. */
-export const FEED_POST_SELECT = 'id, board_id, author_id, author_name, title, content_preview, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at';
+export const FEED_POST_SELECT = 'id, board_id, author_id, author_name, title, content_preview, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at, comments(count), replies(count)';
 
 // Types matching the Firestore fan-out models for compatibility
 export interface SupabasePosting {
@@ -569,9 +571,9 @@ export async function fetchBestPostsFromSupabase(
 
 /** Map a Supabase posts row (with board and user embeds) to Post model */
 export function mapRowToPost(row: PostRowWithEmbeds): Post {
-  // Use denormalized counts maintained by triggers (counter triggers in 20260222 migration)
-  const commentCount = row.count_of_comments ?? 0;
-  const replyCount = row.count_of_replies ?? 0;
+  // Prefer live embedded counts (PostgREST aggregates) over cached counter columns
+  const commentCount = row.comments?.[0]?.count ?? row.count_of_comments ?? 0;
+  const replyCount = row.replies?.[0]?.count ?? row.count_of_replies ?? 0;
 
   // Compute weekDaysFromFirstDay from board's first_day if available via embedded join
   const board = Array.isArray(row.boards) ? row.boards[0] : row.boards;

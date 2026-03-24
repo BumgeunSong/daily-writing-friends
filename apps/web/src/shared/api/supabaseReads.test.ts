@@ -101,6 +101,18 @@ describe('mapRowToPost', () => {
       expect(post.countOfComments).toBe(0);
       expect(post.countOfReplies).toBe(0);
     });
+
+    it('prefers live embedded comment/reply counts over cached columns', () => {
+      const row = makeRow({
+        count_of_comments: 0,
+        count_of_replies: 0,
+        comments: [{ count: 5 }],
+        replies: [{ count: 3 }],
+      });
+      const post = mapRowToPost(row);
+      expect(post.countOfComments).toBe(5);
+      expect(post.countOfReplies).toBe(3);
+    });
   });
 
   describe('board embed handling', () => {
