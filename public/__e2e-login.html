@@ -18,22 +18,10 @@
             margin: 20px 0;
             font-weight: 500;
         }
-        .loading {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-        .success {
-            background: #e8f5e8;
-            color: #2e7d32;
-        }
-        .error {
-            background: #ffebee;
-            color: #c62828;
-        }
-        .info {
-            background: #f3e5f5;
-            color: #7b1fa2;
-        }
+        .loading { background: #e3f2fd; color: #1976d2; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+        .error { background: #ffebee; color: #c62828; }
+        .info { background: #f3e5f5; color: #7b1fa2; }
         .params {
             background: #f5f5f5;
             padding: 10px;
@@ -51,67 +39,45 @@
             cursor: pointer;
             margin: 5px;
         }
-        button:hover {
-            background: #1565c0;
-        }
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
+        button:hover { background: #1565c0; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
     </style>
 </head>
 <body>
     <h1>E2E Login Helper</h1>
-    <p>This page helps Playwright authenticate users in the Firebase Auth emulator.</p>
-    
+    <p>This page helps Playwright authenticate users via Supabase local auth.</p>
+
     <div id="status" class="status loading">Initializing...</div>
     <div id="params" class="params"></div>
-    
+
     <div id="actions" style="display: none;">
         <button id="emailLogin">Login with Email</button>
-        <button id="tokenLogin">Login with Token</button>
         <button id="logout">Logout</button>
     </div>
 
     <script type="module">
-        // Firebase configuration (uses emulator values)
-        const firebaseConfig = {
-            apiKey: "demo-key",
-            authDomain: "demo-project.firebaseapp.com", 
-            projectId: "demo-project",
-            storageBucket: "demo-project.appspot.com",
-            messagingSenderId: "123456789",
-            appId: "1:123456789:web:demo"
-        };
+        import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-        // Import Firebase modules
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-        import { 
-            getAuth, 
-            connectAuthEmulator,
-            signInWithEmailAndPassword,
-            signInWithCustomToken,
-            signOut,
-            onAuthStateChanged,
-            setPersistence,
-            browserLocalPersistence
-        } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js';
+        // Local Supabase configuration
+        // These are the default local dev values from `supabase start`
+        const SUPABASE_URL = 'http://127.0.0.1:54321';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+            },
+        });
 
         // Elements
         const statusDiv = document.getElementById('status');
         const paramsDiv = document.getElementById('params');
         const actionsDiv = document.getElementById('actions');
 
-        // Helper functions
         function setStatus(message, type = 'info') {
             statusDiv.textContent = message;
             statusDiv.className = `status ${type}`;
-            
-            // For Playwright to detect success/failure
             if (type === 'success') {
                 document.body.setAttribute('data-auth-status', 'success');
                 document.body.setAttribute('data-auth-message', message);
@@ -131,33 +97,20 @@
 
         function getRequiredParam(params, name) {
             const value = params.get(name);
-            if (!value) {
-                throw new Error(`Missing required parameter: ${name}`);
-            }
+            if (!value) throw new Error(`Missing required parameter: ${name}`);
             return value;
         }
 
-        // Initialize the page
         async function initialize() {
             try {
-                setStatus('Connecting to Auth emulator...', 'loading');
+                setStatus('Connecting to Supabase local...', 'loading');
                 displayParams();
-
-                // Connect to Auth emulator
-                connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
-                
-                // Set persistence for Playwright state saving
-                await setPersistence(auth, browserLocalPersistence);
-
-                setStatus('Connected to emulator, checking parameters...', 'loading');
 
                 const params = new URLSearchParams(window.location.search);
                 const mode = params.get('mode');
 
                 if (mode === 'email') {
                     await handleEmailLogin(params);
-                } else if (mode === 'token') {
-                    await handleTokenLogin(params);
                 } else if (mode === 'logout') {
                     await handleLogout();
                 } else if (mode === 'check') {
@@ -167,14 +120,12 @@
                     actionsDiv.style.display = 'block';
                     setupManualButtons();
                 }
-
             } catch (error) {
                 console.error('Initialization error:', error);
                 setStatus(`Initialization failed: ${error.message}`, 'error');
             }
         }
 
-        // Handle email/password login
         async function handleEmailLogin(params) {
             try {
                 const email = getRequiredParam(params, 'email');
@@ -182,108 +133,60 @@
 
                 setStatus(`Signing in with email: ${email}...`, 'loading');
 
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                });
 
-                setStatus(`✅ Successfully signed in: ${user.email} (${user.uid})`, 'success');
-                
-                // Add success marker for Playwright
+                if (error) throw error;
+
+                setStatus(`Successfully signed in: ${data.user.email} (${data.user.id})`, 'success');
                 document.body.textContent = 'OK';
-
             } catch (error) {
                 console.error('Email login error:', error);
-                setStatus(`❌ Email login failed: ${error.message}`, 'error');
+                setStatus(`Email login failed: ${error.message}`, 'error');
             }
         }
 
-        // Handle custom token login
-        async function handleTokenLogin(params) {
-            try {
-                const token = getRequiredParam(params, 'token');
-
-                setStatus('Signing in with custom token...', 'loading');
-
-                const userCredential = await signInWithCustomToken(auth, token);
-                const user = userCredential.user;
-
-                setStatus(`✅ Successfully signed in: ${user.uid}`, 'success');
-                
-                // Add success marker for Playwright
-                document.body.textContent = 'OK';
-
-            } catch (error) {
-                console.error('Token login error:', error);
-                setStatus(`❌ Token login failed: ${error.message}`, 'error');
-            }
-        }
-
-        // Handle logout
         async function handleLogout() {
             try {
                 setStatus('Signing out...', 'loading');
-                await signOut(auth);
-                setStatus('✅ Successfully signed out', 'success');
+                const { error } = await supabase.auth.signOut();
+                if (error) throw error;
+                setStatus('Successfully signed out', 'success');
                 document.body.textContent = 'OK';
             } catch (error) {
                 console.error('Logout error:', error);
-                setStatus(`❌ Logout failed: ${error.message}`, 'error');
+                setStatus(`Logout failed: ${error.message}`, 'error');
             }
         }
 
-        // Check current authentication state
         async function handleAuthCheck() {
-            return new Promise((resolve) => {
-                const unsubscribe = onAuthStateChanged(auth, (user) => {
-                    unsubscribe();
-                    if (user) {
-                        setStatus(`✅ User is signed in: ${user.email || user.uid}`, 'success');
-                        document.body.textContent = `SIGNED_IN:${user.uid}`;
-                    } else {
-                        setStatus('ℹ️ No user signed in', 'info');
-                        document.body.textContent = 'NOT_SIGNED_IN';
-                    }
-                    resolve();
-                });
-            });
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                setStatus(`User is signed in: ${session.user.email || session.user.id}`, 'success');
+                document.body.textContent = `SIGNED_IN:${session.user.id}`;
+            } else {
+                setStatus('No user signed in', 'info');
+                document.body.textContent = 'NOT_SIGNED_IN';
+            }
         }
 
-        // Setup manual testing buttons
         function setupManualButtons() {
             document.getElementById('emailLogin').onclick = () => {
                 window.location.search = '?mode=email&email=e2e@example.com&password=test1234';
             };
-
-            document.getElementById('tokenLogin').onclick = async () => {
-                // This would need a token - usually generated by the seed script
-                const token = prompt('Enter custom token:');
-                if (token) {
-                    window.location.search = `?mode=token&token=${encodeURIComponent(token)}`;
-                }
-            };
-
             document.getElementById('logout').onclick = () => {
                 window.location.search = '?mode=logout';
             };
         }
 
-        // Monitor auth state changes
-        onAuthStateChanged(auth, (user) => {
-            if (user && !new URLSearchParams(window.location.search).get('mode')) {
-                setStatus(`Current user: ${user.email || user.uid}`, 'info');
-            }
-        });
-
-        // Start initialization
         initialize();
 
-        // Expose auth for debugging
-        window.firebaseAuth = auth;
-        
-        // Add console logging for debugging
-        console.log('E2E Login Helper initialized');
+        window.supabaseAuth = supabase;
+        console.log('E2E Login Helper initialized (Supabase)');
         console.log('Available URL parameters:');
         console.log('  ?mode=email&email=e2e@example.com&password=test1234');
-        console.log('  ?mode=token&token=CUSTOM_TOKEN');
         console.log('  ?mode=logout');
         console.log('  ?mode=check');
     </script>
