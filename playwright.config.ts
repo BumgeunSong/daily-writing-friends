@@ -63,14 +63,15 @@ export default defineConfig({
   
   /* Web Server Configuration */
   webServer: {
-    command: process.env.CI 
-      ? 'npm run dev:emu' 
-      : 'cross-env VITE_USE_EMULATORS=true vite --mode e2e --port 5173',
+    command: process.env.CI
+      ? 'vite --port 5173'
+      : 'vite --port 5173',
     url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000, // 2 minutes to start the server
     env: {
-      VITE_USE_EMULATORS: 'true',
+      VITE_SUPABASE_URL: 'http://127.0.0.1:54321',
+      VITE_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0',
       NODE_ENV: 'test'
     }
   },
