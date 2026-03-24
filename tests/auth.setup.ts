@@ -38,10 +38,10 @@ setup('authenticate', async ({ page, baseURL }) => {
   expect(bodyText).toBe('OK');
   console.log('✅ Authentication successful');
 
-  // Navigate to the main app to initialize Firebase client state
+  // Navigate to the main app to initialize Supabase client state
   await page.goto('/');
-  
-  // Wait for Firebase to initialize and user to be loaded
+
+  // Wait for Supabase to initialize and user to be loaded
   // This ensures localStorage and cookies are properly set
   await page.waitForTimeout(2000);
   

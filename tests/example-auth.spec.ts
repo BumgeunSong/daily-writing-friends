@@ -1,8 +1,8 @@
 import { test, expect, AuthUtils, TEST_USERS } from './fixtures/auth';
 
 /**
- * Example E2E tests demonstrating Firebase emulator authentication
- * 
+ * Example E2E tests demonstrating Supabase authentication
+ *
  * These tests show how to use the authentication fixtures and utilities
  * to test your app with different user scenarios.
  */
@@ -94,11 +94,11 @@ test.describe('App functionality with authentication', () => {
     // await expect(page.locator('h1')).toContainText('Profile');
   });
 
-  test('should handle Firebase operations', async ({ page }) => {
+  test('should handle Supabase operations', async ({ page }) => {
     await page.goto('/');
-    
-    // Test Firebase operations like creating posts, reading data, etc.
-    // These will work with the emulator and test data
+
+    // Test Supabase operations like creating posts, reading data, etc.
+    // These will work with the test environment and test data
     
     // Example: Test creating a post
     // await page.click('[data-testid=\"create-post-button\"]');
