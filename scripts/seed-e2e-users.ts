@@ -177,7 +177,8 @@ async function waitForSupabase(maxRetries = 30) {
   for (let i = 0; i < maxRetries; i++) {
     try {
       const res = await fetch(`${SUPABASE_URL}/auth/v1/health`);
-      if (res.ok) return;
+      // 200 = local, 401 = hosted (requires auth but is reachable)
+      if (res.ok || res.status === 401) return;
     } catch {
       // not ready yet
     }
