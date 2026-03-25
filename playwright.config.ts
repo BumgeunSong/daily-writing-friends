@@ -4,6 +4,7 @@ import { defineConfig, devices } from '@playwright/test';
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
+  globalSetup: './tests/global-setup.ts',
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -46,7 +47,7 @@ export default defineConfig({
     },
     {
       name: 'cleanup',
-      testMatch: /.*\.teardown\.ts/,
+      testMatch: /auth\.teardown\.ts/,
     },
     {
       name: 'chromium',
