@@ -87,8 +87,7 @@ teardown('cleanup production test data', async () => {
     console.log('No test user IDs resolved — nothing to delete.');
   } else {
     // Build an IN filter string compatible with PostgREST
-    const inFilter = (ids: string[]) =>
-      `in.(${ids.map((id) => `"${id}"`).join(',')})`;
+    const inFilter = (ids: string[]) => `in.(${ids.join(',')})`;
 
     // 1. Reactions (user_id)
     const reactionsDeleted = await deleteWhere('reactions', `user_id=${inFilter(userIds)}`);
