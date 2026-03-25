@@ -12,8 +12,12 @@ import { authenticateAndSaveState } from './utils/supabase-auth';
 const authFile = path.join(__dirname, 'storageState.auth.json');
 
 setup('authenticate', async () => {
-  const email = process.env.E2E_REGULAR_EMAIL ?? 'e2e@example.com';
-  const password = process.env.E2E_REGULAR_PASSWORD ?? 'test1234';
+  const isProduction = process.env.E2E_ENV === 'production';
+  const email = process.env.E2E_REGULAR_EMAIL ?? (isProduction ? undefined : 'e2e@example.com');
+  const password = process.env.E2E_REGULAR_PASSWORD ?? (isProduction ? undefined : 'test1234');
+  if (!email || !password) {
+    throw new Error('E2E_REGULAR_EMAIL and E2E_REGULAR_PASSWORD must be set when E2E_ENV=production');
+  }
 
   await authenticateAndSaveState(email, password, authFile);
 });
