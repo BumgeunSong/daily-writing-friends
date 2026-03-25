@@ -44,8 +44,9 @@ export const test = base.extend<AuthFixtures>({
    * Useful for testing login flows and public pages
    */
   loggedOutPage: async ({ browser }, use) => {
-    // Clean context with no storageState — no session from the start
-    const context = await browser.newContext();
+    // Explicitly pass empty storageState to override the project-level default
+    // (the chromium project sets storageState: './tests/storageState.auth.json')
+    const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
     const page = await context.newPage();
     await use(page);
     await context.close();
@@ -81,6 +82,23 @@ export { expect } from '@playwright/test';
  */
 export class AuthUtils {
   /**
+   * Ensure the page is on the app's origin so localStorage is accessible.
+   */
+  private static async ensureOnOrigin(page: Page) {
+    const url = page.url();
+    if (url === 'about:blank' || url === '') {
+      const { baseURL } = getSupabaseEnv();
+      // Intercept the request to serve a blank page instead of the SPA.
+      // This gives us access to localStorage on the right origin
+      // without triggering Supabase SDK initialization.
+      await page.route('**/__e2e-noop', (route) =>
+        route.fulfill({ contentType: 'text/html', body: '<html><body></body></html>' })
+      );
+      await page.goto(`${baseURL}/__e2e-noop`, { waitUntil: 'load' });
+    }
+  }
+
+  /**
    * Sign in a user with email/password via the GoTrue REST API,
    * then inject the session into the page's localStorage.
    */
@@ -89,7 +107,8 @@ export class AuthUtils {
     const session = await authenticateViaRest(supabaseUrl, anonKey, email, password);
     const storageState = buildStorageState(supabaseUrl, baseURL, session);
 
-    // Inject auth token into the page's localStorage
+    await AuthUtils.ensureOnOrigin(page);
+
     const origin = storageState.origins[0];
     const { name, value } = origin.localStorage[0];
 
@@ -99,12 +118,16 @@ export class AuthUtils {
       },
       { key: name, val: value }
     );
+
+    // Reload to pick up the new session
+    await page.reload();
   }
 
   /**
    * Sign out the current user by clearing the Supabase auth token from localStorage
    */
   static async signOut(page: Page) {
+    await AuthUtils.ensureOnOrigin(page);
     const { supabaseUrl } = getSupabaseEnv();
     const projectRef = extractProjectRef(supabaseUrl);
     const storageKey = `sb-${projectRef}-auth-token`;
@@ -118,6 +141,7 @@ export class AuthUtils {
    * Check if a user is currently signed in by inspecting localStorage
    */
   static async isSignedIn(page: Page): Promise<boolean> {
+    await AuthUtils.ensureOnOrigin(page);
     const { supabaseUrl } = getSupabaseEnv();
     const projectRef = extractProjectRef(supabaseUrl);
     const storageKey = `sb-${projectRef}-auth-token`;
@@ -131,6 +155,7 @@ export class AuthUtils {
    * Get the current user's ID from the Supabase auth token in localStorage
    */
   static async getCurrentUserId(page: Page): Promise<string | null> {
+    await AuthUtils.ensureOnOrigin(page);
     const { supabaseUrl } = getSupabaseEnv();
     const projectRef = extractProjectRef(supabaseUrl);
     const storageKey = `sb-${projectRef}-auth-token`;
