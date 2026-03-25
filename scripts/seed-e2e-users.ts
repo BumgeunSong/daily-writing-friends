@@ -1,4 +1,4 @@
-#!/usr/bin/env npx tsx
+#!/usr/bin/env -S npx tsx
 
 /**
  * Seed Supabase auth with test users for E2E testing.
@@ -123,8 +123,8 @@ async function createOrGetUser(user: TestUser): Promise<string> {
 
   const createError = await createRes.text();
 
-  // User likely exists — look them up
-  const listRes = await adminFetch('/auth/v1/admin/users');
+  // User likely exists — look them up by email
+  const listRes = await adminFetch(`/auth/v1/admin/users?email=${encodeURIComponent(user.email)}`);
   if (!listRes.ok) {
     throw new Error(`Failed to list users: ${listRes.status} ${await listRes.text()}`);
   }

@@ -32,24 +32,25 @@ teardown('cleanup production test data', async () => {
     apikey: serviceRoleKey,
     Authorization: `Bearer ${serviceRoleKey}`,
     'Content-Type': 'application/json',
-    Prefer: 'return=representation',
+    Prefer: 'return=minimal, count=exact',
   };
 
-  // Helper: DELETE rows matching a filter, returns count of deleted rows
-  async function deleteWhere(table: string, filter: string): Promise<number> {
+  // Helper: DELETE rows matching a filter, logs "deleted" without count
+  async function deleteWhere(table: string, filter: string): Promise<void> {
     const url = `${supabaseUrl}/rest/v1/${table}?${filter}`;
     const res = await fetch(url, { method: 'DELETE', headers });
     if (!res.ok) {
       const body = await res.text();
       throw new Error(`DELETE ${table} (${filter}) failed ${res.status}: ${body}`);
     }
-    const rows: unknown[] = await res.json();
-    return Array.isArray(rows) ? rows.length : 0;
+    const contentRange = res.headers.get('Content-Range');
+    const count = contentRange ? contentRange.split('/')[1] : 'unknown';
+    console.log(`  Deleted from ${table}: ${count}`);
   }
 
   // Helper: look up a user's UID by email via the Supabase Admin API
   async function getUserId(email: string): Promise<string | null> {
-    const url = `${supabaseUrl}/auth/v1/admin/users`;
+    const url = `${supabaseUrl}/auth/v1/admin/users?email=${encodeURIComponent(email)}`;
     const res = await fetch(url, { method: 'GET', headers });
     if (!res.ok) {
       const body = await res.text();
@@ -90,32 +91,25 @@ teardown('cleanup production test data', async () => {
     const inFilter = (ids: string[]) => `in.(${ids.join(',')})`;
 
     // 1. Reactions (user_id)
-    const reactionsDeleted = await deleteWhere('reactions', `user_id=${inFilter(userIds)}`);
-    console.log(`  Deleted ${reactionsDeleted} reactions`);
+    await deleteWhere('reactions', `user_id=${inFilter(userIds)}`);
 
     // 2. Replies (user_id)
-    const repliesDeleted = await deleteWhere('replies', `user_id=${inFilter(userIds)}`);
-    console.log(`  Deleted ${repliesDeleted} replies`);
+    await deleteWhere('replies', `user_id=${inFilter(userIds)}`);
 
     // 3. Likes (user_id)
-    const likesDeleted = await deleteWhere('likes', `user_id=${inFilter(userIds)}`);
-    console.log(`  Deleted ${likesDeleted} likes`);
+    await deleteWhere('likes', `user_id=${inFilter(userIds)}`);
 
     // 4. Notifications — actor_id (actions taken by test users)
-    const notificationsActorDeleted = await deleteWhere('notifications', `actor_id=${inFilter(userIds)}`);
-    console.log(`  Deleted ${notificationsActorDeleted} notifications (actor)`);
+    await deleteWhere('notifications', `actor_id=${inFilter(userIds)}`);
 
     // 5. Notifications — recipient_id (notifications received by test users)
-    const notificationsRecipientDeleted = await deleteWhere('notifications', `recipient_id=${inFilter(userIds)}`);
-    console.log(`  Deleted ${notificationsRecipientDeleted} notifications (recipient)`);
+    await deleteWhere('notifications', `recipient_id=${inFilter(userIds)}`);
 
     // 6. Comments (user_id)
-    const commentsDeleted = await deleteWhere('comments', `user_id=${inFilter(userIds)}`);
-    console.log(`  Deleted ${commentsDeleted} comments`);
+    await deleteWhere('comments', `user_id=${inFilter(userIds)}`);
 
     // 7. Posts (author_id)
-    const postsDeleted = await deleteWhere('posts', `author_id=${inFilter(userIds)}`);
-    console.log(`  Deleted ${postsDeleted} posts`);
+    await deleteWhere('posts', `author_id=${inFilter(userIds)}`);
   }
 
   // Clean up local auth state file
