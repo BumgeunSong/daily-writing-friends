@@ -105,6 +105,17 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       devLogPlugin(),
+      // 프로덕션 빌드에서 __e2e-login.html 제외
+      ...(isProduction
+        ? [{
+            name: 'exclude-e2e-login',
+            generateBundle(_options: unknown, bundle: Record<string, unknown>) {
+              if ('__e2e-login.html' in bundle) {
+                delete bundle['__e2e-login.html'];
+              }
+            },
+          }]
+        : []),
       // Sentry 플러그인: 토큰이 있고 프로덕션 빌드일 때만 활성화
       ...(sentryAuthToken && isProduction
         ? [sentryVitePlugin({

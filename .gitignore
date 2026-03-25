@@ -96,3 +96,6 @@ packages/*/node_modules/
 .next/
 .vercel
 .env*.local
+
+# Production E2E credentials
+config/.env.prod.e2e
