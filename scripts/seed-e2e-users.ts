@@ -1,20 +1,41 @@
 #!/usr/bin/env npx tsx
 
 /**
- * Seed Supabase local auth with test users for E2E testing.
+ * Seed Supabase auth with test users for E2E testing.
  *
  * Creates users via the Supabase Admin API (service_role key)
- * and upserts matching rows in public.users.
+ * and upserts matching rows in public.users (local only).
  *
  * Usage:
- *   npx tsx scripts/seed-e2e-users.ts
+ *   npx tsx scripts/seed-e2e-users.ts           # local (default)
+ *   npx tsx scripts/seed-e2e-users.ts --prod    # production
  */
 
-const SUPABASE_URL = process.env.SUPABASE_URL || 'http://127.0.0.1:54321';
-const SERVICE_ROLE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  // Default local dev service_role key (not a secret — deterministic for local dev)
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
+const isProd = process.argv.includes('--prod');
+
+let SUPABASE_URL: string;
+let SERVICE_ROLE_KEY: string;
+
+if (isProd) {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url) {
+    console.error('ERROR: SUPABASE_URL env var is required for --prod mode');
+    process.exit(1);
+  }
+  if (!key) {
+    console.error('ERROR: SUPABASE_SERVICE_ROLE_KEY env var is required for --prod mode');
+    process.exit(1);
+  }
+  SUPABASE_URL = url;
+  SERVICE_ROLE_KEY = key;
+} else {
+  SUPABASE_URL = process.env.SUPABASE_URL || 'http://127.0.0.1:54321';
+  SERVICE_ROLE_KEY =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    // Default local dev service_role key (not a secret — deterministic for local dev)
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
+}
 
 interface TestUser {
   email: string;
@@ -23,7 +44,7 @@ interface TestUser {
   role: string;
 }
 
-const TEST_USERS: TestUser[] = [
+const LOCAL_TEST_USERS: TestUser[] = [
   {
     email: 'e2e@example.com',
     password: 'test1234',
@@ -43,6 +64,29 @@ const TEST_USERS: TestUser[] = [
     role: 'admin',
   },
 ];
+
+const PROD_TEST_USERS: TestUser[] = [
+  {
+    email: 'e2e@dailywritingfriends.com',
+    password: 'test1234',
+    displayName: 'E2E Test User',
+    role: 'user',
+  },
+  {
+    email: 'e2e2@dailywritingfriends.com',
+    password: 'test1234',
+    displayName: 'E2E Test User 2',
+    role: 'user',
+  },
+  {
+    email: 'e2e-admin@dailywritingfriends.com',
+    password: 'admin1234',
+    displayName: 'E2E Admin User',
+    role: 'admin',
+  },
+];
+
+const TEST_USERS = isProd ? PROD_TEST_USERS : LOCAL_TEST_USERS;
 
 async function adminFetch(path: string, options: RequestInit = {}) {
   const res = await fetch(`${SUPABASE_URL}${path}`, {
@@ -142,8 +186,31 @@ async function waitForSupabase(maxRetries = 30) {
   throw new Error(`Supabase not ready at ${SUPABASE_URL} after ${maxRetries}s`);
 }
 
+async function prodWarningCountdown() {
+  console.log('');
+  console.log('WARNING: --prod flag detected!');
+  console.log(`Target: ${SUPABASE_URL}`);
+  console.log(`Users:  ${TEST_USERS.map((u) => u.email).join(', ')}`);
+  console.log('');
+  console.log('This will create/modify auth users in the PRODUCTION Supabase project.');
+  console.log('Proceeding in 5 seconds... Press Ctrl+C to cancel.');
+  console.log('');
+
+  for (let i = 5; i >= 1; i--) {
+    process.stdout.write(`  ${i}...\r`);
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  console.log('  Proceeding.   ');
+  console.log('');
+}
+
 async function main() {
-  console.log('Seeding E2E test users into Supabase local...\n');
+  if (isProd) {
+    await prodWarningCountdown();
+    console.log('Seeding E2E test users into Supabase production...\n');
+  } else {
+    console.log('Seeding E2E test users into Supabase local...\n');
+  }
 
   await waitForSupabase();
   console.log('Supabase is ready.\n');
@@ -153,7 +220,9 @@ async function main() {
   for (const user of TEST_USERS) {
     const uid = await createOrGetUser(user);
     userIds[user.email] = uid;
-    await upsertPublicUser(uid, user);
+    if (!isProd) {
+      await upsertPublicUser(uid, user);
+    }
   }
 
   console.log('\nSeeding complete. User IDs:');
