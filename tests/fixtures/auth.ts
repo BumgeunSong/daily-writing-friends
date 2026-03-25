@@ -1,13 +1,19 @@
 import { test as base, Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import {
+  getSupabaseEnv,
+  extractProjectRef,
+  authenticateViaRest,
+  buildStorageState,
+} from '../utils/supabase-auth';
 
 /**
  * Custom test fixtures for authentication
  *
  * These fixtures provide additional authentication utilities
  * for tests that need special authentication scenarios.
- * Uses Supabase email/password authentication via the E2E helper page.
+ * Uses Supabase email/password authentication via the GoTrue REST API.
  */
 
 type AuthFixtures = {
@@ -38,29 +44,29 @@ export const test = base.extend<AuthFixtures>({
    * Useful for testing login flows and public pages
    */
   loggedOutPage: async ({ browser }, use) => {
-    const context = await browser.newContext({
-      // No storageState - starts fresh
-    });
-
+    // Clean context with no storageState — no session from the start
+    const context = await browser.newContext();
     const page = await context.newPage();
-    // Ensure no Supabase session exists by explicitly signing out
-    await AuthUtils.signOut(page);
     await use(page);
     await context.close();
   },
 
   /**
    * Page fixture with admin user authentication
-   * Signs in via email/password using the Supabase E2E helper page
+   * Authenticates via GoTrue REST API and injects session into browser context
    */
   adminPage: async ({ browser }, use) => {
-    const context = await browser.newContext();
+    const { supabaseUrl, anonKey, baseURL } = getSupabaseEnv();
+    const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'admin@example.com';
+    const adminPassword = process.env.E2E_ADMIN_PASSWORD ?? 'admin1234';
+
+    const session = await authenticateViaRest(supabaseUrl, anonKey, adminEmail, adminPassword);
+    const storageState = buildStorageState(supabaseUrl, baseURL, session);
+
+    const context = await browser.newContext({ storageState });
     const page = await context.newPage();
 
     try {
-      // Authenticate as admin using email/password via Supabase
-      await AuthUtils.signInWithEmail(page, TEST_USERS.ADMIN.email, TEST_USERS.ADMIN.password);
-
       await use(page);
     } finally {
       await context.close();
@@ -75,78 +81,70 @@ export { expect } from '@playwright/test';
  */
 export class AuthUtils {
   /**
-   * Sign in a user with email/password via the E2E helper
+   * Sign in a user with email/password via the GoTrue REST API,
+   * then inject the session into the page's localStorage.
    */
   static async signInWithEmail(page: Page, email: string, password: string) {
-    await page.goto(`/__e2e-login.html?mode=email&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`);
+    const { supabaseUrl, anonKey, baseURL } = getSupabaseEnv();
+    const session = await authenticateViaRest(supabaseUrl, anonKey, email, password);
+    const storageState = buildStorageState(supabaseUrl, baseURL, session);
 
-    await page.waitForFunction(
-      () => {
-        const status = document.body.getAttribute('data-auth-status');
-        return status === 'success' || status === 'error' || document.body.textContent === 'OK';
+    // Inject auth token into the page's localStorage
+    const origin = storageState.origins[0];
+    const { name, value } = origin.localStorage[0];
+
+    await page.evaluate(
+      ({ key, val }) => {
+        localStorage.setItem(key, val);
       },
-      { timeout: 15000 }
+      { key: name, val: value }
     );
-
-    const authStatus = await page.getAttribute('body', 'data-auth-status');
-    if (authStatus === 'error') {
-      const errorMessage = await page.getAttribute('body', 'data-auth-message');
-      throw new Error(`Authentication failed: ${errorMessage}`);
-    }
-
-    // Navigate back to main app
-    await page.goto('/');
   }
 
   /**
-   * Sign out the current user
+   * Sign out the current user by clearing the Supabase auth token from localStorage
    */
   static async signOut(page: Page) {
-    await page.goto('/__e2e-login.html?mode=logout');
+    const { supabaseUrl } = getSupabaseEnv();
+    const projectRef = extractProjectRef(supabaseUrl);
+    const storageKey = `sb-${projectRef}-auth-token`;
 
-    await page.waitForFunction(
-      () => document.body.textContent === 'OK',
-      { timeout: 10000 }
-    );
+    await page.evaluate((key) => {
+      localStorage.removeItem(key);
+    }, storageKey);
   }
 
   /**
-   * Check if a user is currently signed in
+   * Check if a user is currently signed in by inspecting localStorage
    */
   static async isSignedIn(page: Page): Promise<boolean> {
-    await page.goto('/__e2e-login.html?mode=check');
+    const { supabaseUrl } = getSupabaseEnv();
+    const projectRef = extractProjectRef(supabaseUrl);
+    const storageKey = `sb-${projectRef}-auth-token`;
 
-    await page.waitForFunction(
-      () => {
-        const text = document.body.textContent;
-        return text?.startsWith('SIGNED_IN:') || text === 'NOT_SIGNED_IN';
-      },
-      { timeout: 10000 }
-    );
-
-    const bodyText = await page.textContent('body');
-    return bodyText?.startsWith('SIGNED_IN:') || false;
+    return page.evaluate((key) => {
+      return localStorage.getItem(key) !== null;
+    }, storageKey);
   }
 
   /**
-   * Get current user ID if signed in
+   * Get the current user's ID from the Supabase auth token in localStorage
    */
   static async getCurrentUserId(page: Page): Promise<string | null> {
-    await page.goto('/__e2e-login.html?mode=check');
+    const { supabaseUrl } = getSupabaseEnv();
+    const projectRef = extractProjectRef(supabaseUrl);
+    const storageKey = `sb-${projectRef}-auth-token`;
 
-    await page.waitForFunction(
-      () => {
-        const text = document.body.textContent;
-        return text?.startsWith('SIGNED_IN:') || text === 'NOT_SIGNED_IN';
-      },
-      { timeout: 10000 }
-    );
-
-    const bodyText = await page.textContent('body');
-    if (bodyText?.startsWith('SIGNED_IN:')) {
-      return bodyText.split(':')[1];
-    }
-    return null;
+    return page.evaluate((key) => {
+      const raw = localStorage.getItem(key);
+      if (!raw) return null;
+      try {
+        const parsed = JSON.parse(raw) as { user?: { id?: string } };
+        return parsed?.user?.id ?? null;
+      } catch {
+        return null;
+      }
+    }, storageKey);
   }
 }
 
@@ -170,21 +168,22 @@ const _userIds = loadE2EUserIds();
  * Test user credentials for convenience.
  * UIDs are loaded dynamically from tests/fixtures/e2e-users.json
  * which is generated by the seed script.
+ * Emails and passwords support env var overrides.
  */
 export const TEST_USERS = {
   REGULAR: {
-    email: 'e2e@example.com',
-    password: 'test1234',
-    uid: _userIds['e2e@example.com'] ?? ''
+    email: process.env.E2E_REGULAR_EMAIL ?? 'e2e@example.com',
+    password: process.env.E2E_REGULAR_PASSWORD ?? 'test1234',
+    uid: _userIds[process.env.E2E_REGULAR_EMAIL ?? 'e2e@example.com'] ?? ''
   },
   SECOND: {
-    email: 'e2e2@example.com',
-    password: 'test1234',
-    uid: _userIds['e2e2@example.com'] ?? ''
+    email: process.env.E2E_SECOND_EMAIL ?? 'e2e2@example.com',
+    password: process.env.E2E_SECOND_PASSWORD ?? 'test1234',
+    uid: _userIds[process.env.E2E_SECOND_EMAIL ?? 'e2e2@example.com'] ?? ''
   },
   ADMIN: {
-    email: 'admin@example.com',
-    password: 'admin1234',
-    uid: _userIds['admin@example.com'] ?? ''
+    email: process.env.E2E_ADMIN_EMAIL ?? 'admin@example.com',
+    password: process.env.E2E_ADMIN_PASSWORD ?? 'admin1234',
+    uid: _userIds[process.env.E2E_ADMIN_EMAIL ?? 'admin@example.com'] ?? ''
   }
 };
