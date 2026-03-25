@@ -121,6 +121,8 @@ async function createOrGetUser(user: TestUser): Promise<string> {
     return data.id;
   }
 
+  const createError = await createRes.text();
+
   // User likely exists — look them up
   const listRes = await adminFetch('/auth/v1/admin/users');
   if (!listRes.ok) {
@@ -148,7 +150,7 @@ async function createOrGetUser(user: TestUser): Promise<string> {
     return existing.id;
   }
 
-  throw new Error(`Failed to create or find user ${user.email}: ${await createRes.text()}`);
+  throw new Error(`Failed to create or find user ${user.email}: ${createError}`);
 }
 
 async function upsertPublicUser(uid: string, user: TestUser) {
@@ -231,13 +233,21 @@ async function main() {
     console.log(`  ${email} -> ${uid}`);
   }
 
-  // Write user IDs to a JSON file for Playwright fixtures to reference
+  // Merge user IDs into e2e-users.json (preserves existing entries from other environments)
   const fs = await import('fs/promises');
   const path = await import('path');
   const { fileURLToPath } = await import('url');
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const outPath = path.join(__dirname, '..', 'tests', 'fixtures', 'e2e-users.json');
-  await fs.writeFile(outPath, JSON.stringify(userIds, null, 2));
+
+  let existing: Record<string, string> = {};
+  try {
+    existing = JSON.parse(await fs.readFile(outPath, 'utf8'));
+  } catch {
+    // File doesn't exist yet
+  }
+  const merged = { ...existing, ...userIds };
+  await fs.writeFile(outPath, JSON.stringify(merged, null, 2));
   console.log(`\nUser IDs saved to ${outPath}`);
 }
 
