@@ -1,15 +1,12 @@
 import { test, expect } from './fixtures/auth';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import fs from 'fs';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * E2E tests for Quill editor image upload features.
  *
  * Prerequisites:
- * - Firebase emulators running (auth + storage)
+ * - Supabase local running (npx supabase start)
  * - Test user seeded with access to a board
  * - Dev server running on localhost:5173
  *
