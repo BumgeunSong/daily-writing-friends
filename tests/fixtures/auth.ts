@@ -3,9 +3,9 @@ import fs from 'fs';
 import path from 'path';
 import {
   getSupabaseEnv,
-  extractProjectRef,
   authenticateViaRest,
   buildStorageState,
+  getStorageKey,
 } from '../utils/supabase-auth';
 
 /**
@@ -129,8 +129,7 @@ export class AuthUtils {
   static async signOut(page: Page) {
     await AuthUtils.ensureOnOrigin(page);
     const { supabaseUrl } = getSupabaseEnv();
-    const projectRef = extractProjectRef(supabaseUrl);
-    const storageKey = `sb-${projectRef}-auth-token`;
+    const storageKey = getStorageKey(supabaseUrl);
 
     await page.evaluate((key) => {
       localStorage.removeItem(key);
@@ -143,8 +142,7 @@ export class AuthUtils {
   static async isSignedIn(page: Page): Promise<boolean> {
     await AuthUtils.ensureOnOrigin(page);
     const { supabaseUrl } = getSupabaseEnv();
-    const projectRef = extractProjectRef(supabaseUrl);
-    const storageKey = `sb-${projectRef}-auth-token`;
+    const storageKey = getStorageKey(supabaseUrl);
 
     return page.evaluate((key) => {
       return localStorage.getItem(key) !== null;
@@ -157,8 +155,7 @@ export class AuthUtils {
   static async getCurrentUserId(page: Page): Promise<string | null> {
     await AuthUtils.ensureOnOrigin(page);
     const { supabaseUrl } = getSupabaseEnv();
-    const projectRef = extractProjectRef(supabaseUrl);
-    const storageKey = `sb-${projectRef}-auth-token`;
+    const storageKey = getStorageKey(supabaseUrl);
 
     return page.evaluate((key) => {
       const raw = localStorage.getItem(key);

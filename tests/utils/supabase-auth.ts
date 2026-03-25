@@ -23,19 +23,27 @@ export function extractProjectRef(url: string): string {
  * Read environment variables for Supabase auth, with fallbacks for local dev.
  */
 export function getSupabaseEnv() {
+  const isProduction = process.env.E2E_ENV === 'production';
+
   const supabaseUrl =
     process.env.SUPABASE_URL ||
     process.env.VITE_SUPABASE_URL ||
-    'http://127.0.0.1:54321';
+    (isProduction ? '' : 'http://127.0.0.1:54321');
+
+  if (!supabaseUrl) {
+    throw new Error('Missing SUPABASE_URL or VITE_SUPABASE_URL');
+  }
+
   const anonKey =
     process.env.SUPABASE_ANON_KEY ||
     process.env.VITE_SUPABASE_ANON_KEY ||
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
-  const baseURL = process.env.BASE_URL || 'http://localhost:5173';
+    (isProduction ? '' : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0');
 
   if (!anonKey) {
     throw new Error('Missing SUPABASE_ANON_KEY or VITE_SUPABASE_ANON_KEY');
   }
+
+  const baseURL = process.env.BASE_URL || 'http://localhost:5173';
 
   return { supabaseUrl, anonKey, baseURL };
 }
@@ -77,6 +85,14 @@ export async function authenticateViaRest(
 }
 
 /**
+ * Derive the Supabase localStorage key for a given Supabase URL.
+ * Mirrors the pattern used by the Supabase JS SDK.
+ */
+export function getStorageKey(supabaseUrl: string): string {
+  return `sb-${extractProjectRef(supabaseUrl)}-auth-token`;
+}
+
+/**
  * Build a Playwright-compatible storageState object with Supabase session tokens.
  */
 export function buildStorageState(
@@ -90,8 +106,7 @@ export function buildStorageState(
     user: { id: string; email: string; [key: string]: unknown };
   },
 ) {
-  const projectRef = extractProjectRef(supabaseUrl);
-  const storageKey = `sb-${projectRef}-auth-token`;
+  const storageKey = getStorageKey(supabaseUrl);
 
   const storageValue = JSON.stringify({
     access_token: session.access_token,

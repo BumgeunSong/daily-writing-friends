@@ -12,8 +12,8 @@ import { authenticateAndSaveState } from './utils/supabase-auth';
 const authFile = path.join(__dirname, 'storageState.auth.json');
 
 setup('authenticate', async () => {
-  const email = process.env.E2E_USER_EMAIL ?? 'e2e@example.com';
-  const password = process.env.E2E_USER_PASSWORD ?? 'test1234';
+  const email = process.env.E2E_REGULAR_EMAIL ?? 'e2e@example.com';
+  const password = process.env.E2E_REGULAR_PASSWORD ?? 'test1234';
 
   await authenticateAndSaveState(email, password, authFile);
 });

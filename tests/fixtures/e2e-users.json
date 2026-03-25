@@ -1,5 +1,8 @@
 {
   "e2e@example.com": "3c84753e-6c80-489b-85d1-7fd99f31c0d7",
   "e2e2@example.com": "261a154a-fe06-4e2a-8579-c673e588651e",
-  "admin@example.com": "6d65754a-34a5-4d34-b949-580dbb0520cd"
+  "admin@example.com": "6d65754a-34a5-4d34-b949-580dbb0520cd",
+  "e2e@dailywritingfriends.com": "34124284-a1c8-4143-bde3-6bf8c2103be9",
+  "e2e2@dailywritingfriends.com": "51ebb398-81dd-430c-86cc-1c0f510e136c",
+  "e2e-admin@dailywritingfriends.com": "90007e25-b1ff-4d94-9688-661b5dc3a1eb"
 }

@@ -21,7 +21,7 @@ teardown('cleanup production test data', async () => {
 
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const userEmail = process.env.E2E_USER_EMAIL;
+  const userEmail = process.env.E2E_REGULAR_EMAIL;
   const adminEmail = process.env.E2E_ADMIN_EMAIL;
 
   if (!supabaseUrl || !serviceRoleKey) {
@@ -47,16 +47,17 @@ teardown('cleanup production test data', async () => {
     return Array.isArray(rows) ? rows.length : 0;
   }
 
-  // Helper: look up a user's internal id by email via REST API filter
+  // Helper: look up a user's UID by email via the Supabase Admin API
   async function getUserId(email: string): Promise<string | null> {
-    const url = `${supabaseUrl}/rest/v1/users?email=eq.${encodeURIComponent(email)}&select=id&limit=1`;
+    const url = `${supabaseUrl}/auth/v1/admin/users`;
     const res = await fetch(url, { method: 'GET', headers });
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(`GET users for ${email} failed ${res.status}: ${body}`);
+      throw new Error(`GET admin/users failed ${res.status}: ${body}`);
     }
-    const rows: Array<{ id: string }> = await res.json();
-    return rows.length > 0 ? rows[0].id : null;
+    const data: { users?: Array<{ id: string; email: string }> } = await res.json();
+    const match = data.users?.find((u) => u.email === email);
+    return match?.id ?? null;
   }
 
   console.log('Starting production test data cleanup...');
