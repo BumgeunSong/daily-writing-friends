@@ -3,6 +3,10 @@ import { defineConfig, devices } from '@playwright/test';
 // Env vars are loaded by the caller (e.g. `source config/.env.prod.e2e`) or CI secrets.
 // Do NOT use dotenv here — ESM compatibility requires plain process.env references.
 
+if (!process.env.BASE_URL) {
+  throw new Error('BASE_URL must be set for production E2E. Source config/.env.prod.e2e first.');
+}
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: false,          // sequential for production safety

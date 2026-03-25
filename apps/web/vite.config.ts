@@ -1,4 +1,5 @@
 /// <reference types="vitest/config" />
+import fs from 'fs';
 import path from 'path';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
@@ -106,12 +107,15 @@ export default defineConfig(({ mode }) => {
       react(),
       devLogPlugin(),
       // 프로덕션 빌드에서 __e2e-login.html 제외
+      // generateBundle은 public/ 파일을 보지 못하므로 closeBundle에서 직접 삭제
       ...(isProduction
         ? [{
             name: 'exclude-e2e-login',
-            generateBundle(_options: unknown, bundle: Record<string, unknown>) {
-              if ('__e2e-login.html' in bundle) {
-                delete bundle['__e2e-login.html'];
+            closeBundle() {
+              const filePath = path.resolve(__dirname, 'dist', '__e2e-login.html');
+              if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+                console.log('Excluded __e2e-login.html from production build');
               }
             },
           }]
