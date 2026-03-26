@@ -7,8 +7,8 @@
 --   vault.secrets encrypts at rest and provides audit-friendly access.
 --
 -- If app_config already contains service_role_key, the migration moves it
--- to vault automatically. If not, the migration will fail — you must populate
--- app_config first or create the vault secret manually:
+-- to vault automatically. If not, it skips vault creation and prints a
+-- NOTICE — the operator must create the vault secret manually afterward:
 --   SELECT vault.create_secret('<your-service-role-key>', 'service_role_key');
 
 -- =============================================
@@ -39,10 +39,9 @@ BEGIN
     WHERE key = 'service_role_key';
 
     IF _existing_key IS NULL THEN
-      RAISE EXCEPTION
-        'service_role_key is not set in app_config and no existing vault secret was found. '
-        'Set app_config.key = ''service_role_key'' to a valid value, or manually create the '
-        'vault secret with vault.create_secret before re-running this migration.';
+      RAISE NOTICE
+        'service_role_key is not set in app_config — skipping vault secret creation. '
+        'Create it manually: SELECT vault.create_secret(''<your-key>'', ''service_role_key'');';
     ELSE
       -- vault.create_secret signature: (secret, name, description)
       PERFORM vault.create_secret(
