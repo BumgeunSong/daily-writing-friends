@@ -89,7 +89,7 @@ export default defineConfig(({ mode }) => {
         provider: 'v8',
         reporter: ['text', 'json-summary', 'json', 'lcov'],
         reportOnFailure: true,
-        exclude: ['node_modules/', 'src/setupTest.ts']
+        exclude: ['node_modules/']
       },
       deps: {
         inline: ['chai', '@testing-library/jest-dom']
