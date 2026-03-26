@@ -6,11 +6,10 @@
 --   means it appears in backups, logs, and is accessible to the postgres role.
 --   vault.secrets encrypts at rest and provides audit-friendly access.
 --
--- After applying this migration you must set the actual secret value:
+-- If app_config already contains service_role_key, the migration moves it
+-- to vault automatically. If not, the migration will fail — you must populate
+-- app_config first or create the vault secret manually:
 --   SELECT vault.create_secret('<your-service-role-key>', 'service_role_key');
--- OR, if the secret already exists from this migration's DO block, update it:
---   UPDATE vault.secrets SET secret = '<your-service-role-key>'
---   WHERE name = 'service_role_key';
 
 -- =============================================
 -- 1. Ensure vault extension is available
@@ -21,7 +20,7 @@ CREATE EXTENSION IF NOT EXISTS supabase_vault WITH SCHEMA vault;
 -- 2. Migrate existing value to vault
 -- =============================================
 -- If app_config already has a service_role_key row, move it to vault.
--- If not, create a placeholder so the vault secret row exists.
+-- If not, fail fast so the operator knows to provide the key first.
 DO $$
 DECLARE
   _existing_key TEXT;
@@ -34,17 +33,31 @@ BEGIN
   LIMIT 1;
 
   IF _existing_secret_id IS NULL THEN
-    -- Read current value from app_config (may be NULL if not yet populated)
+    -- Read current value from app_config
     SELECT value INTO _existing_key
-    FROM app_config
+    FROM public.app_config
     WHERE key = 'service_role_key';
 
-    -- Create vault secret; use placeholder if no value present yet
-    PERFORM vault.create_secret(
-      COALESCE(_existing_key, 'REPLACE_WITH_ACTUAL_SERVICE_ROLE_KEY'),
-      'service_role_key',
-      'Supabase service role key used by notification trigger functions'
-    );
+    IF _existing_key IS NULL THEN
+      RAISE EXCEPTION
+        'service_role_key is not set in app_config and no existing vault secret was found. '
+        'Set app_config.key = ''service_role_key'' to a valid value, or manually create the '
+        'vault secret with vault.create_secret before re-running this migration.';
+    ELSE
+      -- vault.create_secret signature: (secret, name, description)
+      PERFORM vault.create_secret(
+        _existing_key,
+        'service_role_key',
+        'Supabase service role key used by notification trigger functions'
+      );
+
+      -- Verify the vault write succeeded before we delete the source row
+      IF (SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'service_role_key') IS NULL THEN
+        RAISE EXCEPTION
+          'vault.create_secret completed but decrypted_secrets returned NULL. '
+          'Aborting migration — app_config row is preserved.';
+      END IF;
+    END IF;
   END IF;
 END;
 $$;
@@ -53,7 +66,9 @@ $$;
 -- 3. Remove service_role_key from app_config
 -- =============================================
 -- edge_function_url is not a secret and stays in app_config.
-DELETE FROM app_config WHERE key = 'service_role_key';
+-- NOTE: The earlier migration (20260222) documents populating service_role_key
+-- in app_config. That instruction is now obsolete — the key lives in vault.
+DELETE FROM public.app_config WHERE key = 'service_role_key';
 
 -- =============================================
 -- 4. Replace get_app_config to read service_role_key from vault
@@ -72,9 +87,9 @@ CREATE OR REPLACE FUNCTION get_app_config(config_key TEXT) RETURNS TEXT AS $$
        WHERE name = 'service_role_key'
        LIMIT 1)
     ELSE
-      (SELECT value FROM app_config WHERE key = config_key)
+      (SELECT value FROM public.app_config WHERE key = config_key)
   END;
-$$ LANGUAGE sql SECURITY DEFINER STABLE;
+$$ LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public, vault;
 
 -- Re-apply the execute restrictions (CREATE OR REPLACE resets grants to default)
 REVOKE EXECUTE ON FUNCTION get_app_config(TEXT) FROM PUBLIC;
