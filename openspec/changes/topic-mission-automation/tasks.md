@@ -2,14 +2,14 @@
 
 ## 1. Database Migration
 
-- [ ] 1.1 Create migration file `supabase/migrations/YYYYMMDD_add_topic_missions.sql`
-- [ ] 1.2 Add `topic_missions` table with all columns, constraints (`UNIQUE(board_id, user_id)`, status CHECK, topic length CHECK), and foreign keys
-- [ ] 1.3 Add indexes on `(board_id, order_index)` and `(board_id, status)`
-- [ ] 1.4 Add `next_topic_order_index(p_board_id)` function and `BEFORE INSERT` trigger to assign `order_index` server-side
-- [ ] 1.5 Add `BEFORE UPDATE` trigger to auto-update `updated_at` on status changes
-- [ ] 1.6 Add `advance_topic_presenter(p_board_id)` Postgres RPC function implementing wrap-around logic atomically
-- [ ] 1.7 Add RLS policies: SELECT for board members, INSERT for self-only, UPDATE/DELETE for service_role only
-- [ ] 1.8 Alter `notifications.post_id` to allow NULL; update `notifications` type CHECK constraint to include `'topic_presenter_assigned'`
+- [x] 1.1 Create migration file `supabase/migrations/YYYYMMDD_add_topic_missions.sql`
+- [x] 1.2 Add `topic_missions` table with all columns, constraints (`UNIQUE(board_id, user_id)`, status CHECK, topic length CHECK), and foreign keys
+- [x] 1.3 Add indexes on `(board_id, order_index)` and `(board_id, status)`
+- [x] 1.4 Add `next_topic_order_index(p_board_id)` function and `BEFORE INSERT` trigger to assign `order_index` server-side
+- [x] 1.5 Add `BEFORE UPDATE` trigger to auto-update `updated_at` on status changes
+- [x] 1.6 Add `advance_topic_presenter(p_board_id)` Postgres RPC function implementing wrap-around logic atomically
+- [x] 1.7 Add RLS policies: SELECT for board members, INSERT for self-only, UPDATE/DELETE for service_role only
+- [x] 1.8 Alter `notifications.post_id` to allow NULL; update `notifications` type CHECK constraint to include `'topic_presenter_assigned'`
 
 ## 2. Notification Model Extension
 
