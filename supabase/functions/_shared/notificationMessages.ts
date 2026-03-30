@@ -1,10 +1,12 @@
+// Keep in sync with apps/web/src/notification/model/Notification.ts NotificationType enum
 export type NotificationType =
   | 'comment_on_post'
   | 'reply_on_post'
   | 'reply_on_comment'
   | 'like_on_post'
   | 'reaction_on_comment'
-  | 'reaction_on_reply';
+  | 'reaction_on_reply'
+  | 'topic_presenter_assigned';
 
 /**
  * 알림 메시지를 생성하는 순수 함수
@@ -35,6 +37,9 @@ export function buildNotificationMessage(
       return `${actorName}님이 '${preview}' 댓글에 반응했어요.`;
     case 'reaction_on_reply':
       return `${actorName}님이 '${preview}' 답글에 반응했어요.`;
+    // topic_presenter_assigned: actorName = boardTitle, contentPreview = topic
+    case 'topic_presenter_assigned':
+      return `${actorName}에서 이번 주 발표자로 선정되었어요! 발표 주제: '${preview}'`;
   }
 }
 

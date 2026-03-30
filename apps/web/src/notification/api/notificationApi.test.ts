@@ -1,5 +1,5 @@
 import { createTimestamp } from '@/shared/model/Timestamp';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { NotificationType } from '@/notification/model/Notification';
 import type { NotificationDTO } from '@/shared/api/supabaseReads';
 import { mapDTOToNotification } from './notificationApi';
@@ -99,10 +99,37 @@ describe('mapDTOToNotification', () => {
     });
   });
 
-  describe('unknown type: default exhaustiveness case', () => {
-    it('throws on unknown notification type', () => {
-      const dto = { ...baseDTO, type: 'invalid_type' as NotificationType };
-      expect(() => mapDTOToNotification(dto)).toThrow('Unknown notification type: invalid_type');
+  // T.9: topic_presenter_assigned with postId = undefined returns TopicPresenterNotification
+  describe('topic_presenter_assigned type', () => {
+    it('maps TOPIC_PRESENTER_ASSIGNED with postId undefined (no throw)', () => {
+      const dto: NotificationDTO = { ...baseDTO, type: NotificationType.TOPIC_PRESENTER_ASSIGNED, postId: undefined };
+      const result = mapDTOToNotification(dto);
+      expect(result.type).toBe(NotificationType.TOPIC_PRESENTER_ASSIGNED);
+      expect(result.id).toBe('n1');
+      expect((result as { postId?: string }).postId).toBeUndefined();
+    });
+  });
+
+  // T.10: unknown type logs warning and returns generic notification (no throw)
+  describe('unknown type: graceful fallback', () => {
+    it('logs warning and returns generic notification for unknown type (no throw)', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const dto = { ...baseDTO, type: 'brand_new_type' as NotificationType };
+      const result = mapDTOToNotification(dto);
+      expect(() => mapDTOToNotification(dto)).not.toThrow();
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Unknown notification type'));
+      expect(result.type).toBe(NotificationType.LIKE_ON_POST);
+      warnSpy.mockRestore();
+    });
+  });
+
+  // T.11: comment_on_post postId still accessed safely (existing behavior unchanged)
+  describe('postId backward compatibility', () => {
+    it('comment_on_post still maps postId when provided', () => {
+      const dto = { ...baseDTO, type: NotificationType.COMMENT_ON_POST, postId: 'p1', commentId: 'c1' };
+      const result = mapDTOToNotification(dto);
+      expect(result.type).toBe(NotificationType.COMMENT_ON_POST);
+      expect((result as { postId?: string }).postId).toBe('p1');
     });
   });
 });

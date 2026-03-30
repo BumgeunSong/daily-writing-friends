@@ -7,12 +7,14 @@ export enum NotificationType {
   REACTION_ON_COMMENT = 'reaction_on_comment',
   REACTION_ON_REPLY = 'reaction_on_reply',
   LIKE_ON_POST = 'like_on_post',
+  // Keep in sync with supabase/functions/_shared/notificationMessages.ts NotificationType union
+  TOPIC_PRESENTER_ASSIGNED = 'topic_presenter_assigned',
 }
 
 interface NotificationBase {
   id: string;
   boardId: string;
-  postId: string;
+  postId?: string;
   fromUserId: string;
   fromUserProfileImage?: string;
   message: string;
@@ -51,10 +53,15 @@ export interface LikeNotification extends NotificationBase {
   type: NotificationType.LIKE_ON_POST;
 }
 
+export interface TopicPresenterNotification extends NotificationBase {
+  type: NotificationType.TOPIC_PRESENTER_ASSIGNED;
+}
+
 export type Notification =
   | CommentNotification
   | ReplyOnCommentNotification
   | ReplyOnPostNotification
   | ReactionOnCommentNotification
   | ReactionOnReplyNotification
-  | LikeNotification;
+  | LikeNotification
+  | TopicPresenterNotification;

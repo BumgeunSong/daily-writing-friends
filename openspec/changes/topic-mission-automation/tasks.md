@@ -13,14 +13,14 @@
 
 ## 2. Notification Model Extension
 
-- [ ] 2.1 Add `TOPIC_PRESENTER_ASSIGNED = 'topic_presenter_assigned'` to `NotificationType` enum in `apps/web/src/notification/model/Notification.ts`
-- [ ] 2.2 Make `NotificationBase.postId` optional (`postId?: string`) in `Notification.ts`
-- [ ] 2.3 Add `TopicPresenterNotification` interface extending `NotificationBase`; add it to the `Notification` union type
-- [ ] 2.4 Make `NotificationDTO.postId` optional in `apps/web/src/shared/api/supabaseReads.ts`
-- [ ] 2.5 Add `'topic_presenter_assigned'` to `NotificationType` string union in `supabase/functions/_shared/notificationMessages.ts`; add cross-reference comments in both files
-- [ ] 2.6 Add `buildNotificationMessage` case for `topic_presenter_assigned` with Korean message format and parameter-mapping comment
-- [ ] 2.7 Add `TOPIC_PRESENTER_ASSIGNED` case in `mapDTOToNotification` switch in `apps/web/src/notification/api/notificationApi.ts`; replace `throw` in `default` with logged warning + generic notification fallback
-- [ ] 2.8 Update notification click/routing handler to navigate to `/board/${boardId}` for `topic_presenter_assigned` type
+- [x] 2.1 Add `TOPIC_PRESENTER_ASSIGNED = 'topic_presenter_assigned'` to `NotificationType` enum in `apps/web/src/notification/model/Notification.ts`
+- [x] 2.2 Make `NotificationBase.postId` optional (`postId?: string`) in `Notification.ts`
+- [x] 2.3 Add `TopicPresenterNotification` interface extending `NotificationBase`; add it to the `Notification` union type
+- [x] 2.4 Make `NotificationDTO.postId` optional in `apps/web/src/shared/api/supabaseReads.ts`
+- [x] 2.5 Add `'topic_presenter_assigned'` to `NotificationType` string union in `supabase/functions/_shared/notificationMessages.ts`; add cross-reference comments in both files
+- [x] 2.6 Add `buildNotificationMessage` case for `topic_presenter_assigned` with Korean message format and parameter-mapping comment
+- [x] 2.7 Add `TOPIC_PRESENTER_ASSIGNED` case in `mapDTOToNotification` switch in `apps/web/src/notification/api/notificationApi.ts`; replace `throw` in `default` with logged warning + generic notification fallback
+- [x] 2.8 Update notification click/routing handler to navigate to `/board/${boardId}` for `topic_presenter_assigned` type
 
 ## 3. Edge Function: assign-topic-presenter
 
@@ -58,8 +58,8 @@
 
 ### Unit
 
-- [ ] T.1 (Vitest) `buildNotificationMessage('topic_presenter_assigned', boardTitle, topic)` returns correct Korean string
-- [ ] T.2 (Vitest) `buildNotificationMessage` with topic > 35 chars truncates with ellipsis
+- [x] T.1 (Vitest) `buildNotificationMessage('topic_presenter_assigned', boardTitle, topic)` returns correct Korean string
+- [x] T.2 (Vitest) `buildNotificationMessage` with topic > 35 chars truncates with ellipsis
 - [ ] T.3 (Vitest) `computeNextAssignment` with one `assigned` + multiple `pending` → correct `completeId`, `assignId`, `wrapped: false`
 - [ ] T.4 (Vitest) `computeNextAssignment` with one `assigned` + no `pending` → `wrapped: true`, all completed/skipped reset to pending
 - [ ] T.5 (Vitest) `computeNextAssignment` with only `skipped` entries → `wrapped: true`
@@ -69,11 +69,11 @@
 
 - [ ] T.7 (Vitest) `registerTopic` calls correct Supabase table and columns; omits `order_index` from payload
 - [ ] T.8 (Vitest) `fetchAssignedPresenter` queries `status = 'assigned'` filter for given `boardId`
-- [ ] T.9 (Vitest) `mapDTOToNotification` with `type = 'topic_presenter_assigned'`, `postId = undefined` → returns `TopicPresenterNotification` without throwing
-- [ ] T.10 (Vitest) `mapDTOToNotification` with unknown type → logs warning, returns generic notification (no throw)
-- [ ] T.11 (Vitest) `mapDTOToNotification` with `comment_on_post` → `postId` still accessed safely (existing behavior unchanged)
-- [ ] T.12 (Vitest) Notification click handler: `topic_presenter_assigned` with `boardId = 'board-123'` → navigates to `/board/board-123`
-- [ ] T.13 (Vitest) Notification click handler: `comment_on_post` → navigates to post URL (unchanged)
+- [x] T.9 (Vitest) `mapDTOToNotification` with `type = 'topic_presenter_assigned'`, `postId = undefined` → returns `TopicPresenterNotification` without throwing
+- [x] T.10 (Vitest) `mapDTOToNotification` with unknown type → logs warning, returns generic notification (no throw)
+- [x] T.11 (Vitest) `mapDTOToNotification` with `comment_on_post` → `postId` still accessed safely (existing behavior unchanged)
+- [x] T.12 (Vitest) Notification click handler: `topic_presenter_assigned` with `boardId = 'board-123'` → navigates to `/board/board-123`
+- [x] T.13 (Vitest) Notification click handler: `comment_on_post` → navigates to post URL (unchanged)
 - [ ] T.14 (Vitest) `assign-topic-presenter` edge function (mocked Supabase): updates previous assigned entry + inserts notification with `post_id = null`
 
 ### E2E

@@ -34,9 +34,16 @@ export function mapDTOToNotification(row: NotificationDTO): Notification {
       return { ...base, type: row.type, commentId: row.commentId, replyId: row.replyId };
     case NotificationType.LIKE_ON_POST:
       return { ...base, type: row.type };
+    case NotificationType.TOPIC_PRESENTER_ASSIGNED:
+      return { ...base, type: row.type };
     default: {
+      // Compile-time exhaustiveness check — errors if a new enum value is unhandled above
       const _exhaustive: never = row.type;
-      throw new Error(`Unknown notification type: ${_exhaustive}`);
+      void _exhaustive;
+      // Graceful runtime fallback: log warning instead of throwing to prevent crashes
+      // when the DB has a type not yet known to this client version.
+      console.warn(`Unknown notification type: ${String(row.type)}. Returning generic notification.`);
+      return { ...base, type: NotificationType.LIKE_ON_POST };
     }
   }
 }

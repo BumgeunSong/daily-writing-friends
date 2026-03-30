@@ -1050,7 +1050,7 @@ export interface NotificationDTO {
   id: string;
   type: NotificationType;
   boardId: string;
-  postId: string;
+  postId?: string;
   commentId?: string;
   replyId?: string;
   fromUserId: string;
