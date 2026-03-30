@@ -42,7 +42,7 @@
 
 ## 5. Web: Board Page Integration
 
-- [ ] 5.1 Import and render `<PresenterBanner boardId={boardId} />` in `BoardPage` below the board header and above the post list
+- [x] 5.1 Import and render `<PresenterBanner boardId={boardId} />` in `BoardPage` below the board header and above the post list
 
 ## 6. Admin: Topic Mission Panel
 
