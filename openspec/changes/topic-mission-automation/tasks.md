@@ -24,11 +24,11 @@
 
 ## 3. Edge Function: assign-topic-presenter
 
-- [ ] 3.1 Create `supabase/functions/assign-topic-presenter/index.ts` with service_role JWT verification
-- [ ] 3.2 Implement advancement logic: call `advance_topic_presenter(board_id)` RPC, receive `{ userId, topic, userName, wrapped }`
-- [ ] 3.3 Return `{ status: 'assigned', userId, topic, wrapped }` response to caller
-- [ ] 3.4 Extract `computeNextAssignment` as a pure TypeScript function (input: entry array, output: `{ completeId, assignId, wrapped }`) for unit testing
-- [ ] 3.5 Add edge function to `supabase/config.toml` deploy configuration with `--verify-jwt` enabled
+- [x] 3.1 Create `supabase/functions/assign-topic-presenter/index.ts` with service_role JWT verification
+- [x] 3.2 Implement advancement logic: call `advance_topic_presenter(board_id)` RPC, receive `{ userId, topic, userName, wrapped }`
+- [x] 3.3 Return `{ status: 'assigned', userId, topic, wrapped }` response to caller
+- [x] 3.4 Extract `computeNextAssignment` as a pure TypeScript function (input: entry array, output: `{ completeId, assignId, wrapped }`) for unit testing
+- [x] 3.5 Add edge function to `supabase/config.toml` deploy configuration with `--verify-jwt` enabled
 
 ## 4. Web: Topic Feature
 
@@ -60,10 +60,10 @@
 
 - [x] T.1 (Vitest) `buildNotificationMessage('topic_presenter_assigned', boardTitle, topic)` returns correct Korean string
 - [x] T.2 (Vitest) `buildNotificationMessage` with topic > 35 chars truncates with ellipsis
-- [ ] T.3 (Vitest) `computeNextAssignment` with one `assigned` + multiple `pending` → correct `completeId`, `assignId`, `wrapped: false`
-- [ ] T.4 (Vitest) `computeNextAssignment` with one `assigned` + no `pending` → `wrapped: true`, all completed/skipped reset to pending
-- [ ] T.5 (Vitest) `computeNextAssignment` with only `skipped` entries → `wrapped: true`
-- [ ] T.6 (Vitest) Status transition validator: `pending → assigned` valid; `pending → completed` invalid
+- [x] T.3 (Vitest) `computeNextAssignment` with one `assigned` + multiple `pending` → correct `completeId`, `assignId`, `wrapped: false`
+- [x] T.4 (Vitest) `computeNextAssignment` with one `assigned` + no `pending` → `wrapped: true`, all completed/skipped reset to pending
+- [x] T.5 (Vitest) `computeNextAssignment` with only `skipped` entries → `wrapped: true`
+- [x] T.6 (Vitest) Status transition validator: `pending → assigned` valid; `pending → completed` invalid
 
 ### Integration
 
@@ -74,7 +74,7 @@
 - [x] T.11 (Vitest) `mapDTOToNotification` with `comment_on_post` → `postId` still accessed safely (existing behavior unchanged)
 - [x] T.12 (Vitest) Notification click handler: `topic_presenter_assigned` with `boardId = 'board-123'` → navigates to `/board/board-123`
 - [x] T.13 (Vitest) Notification click handler: `comment_on_post` → navigates to post URL (unchanged)
-- [ ] T.14 (Vitest) `assign-topic-presenter` edge function (mocked Supabase): updates previous assigned entry + inserts notification with `post_id = null`
+- [x] T.14 (Vitest) `assign-topic-presenter` edge function (mocked Supabase): updates previous assigned entry + inserts notification with `post_id = null`
 
 ### E2E
 
