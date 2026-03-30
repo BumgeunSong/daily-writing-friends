@@ -1,36 +1,43 @@
-# Handoff: topic-mission-automation — Design Review Session
+# Handoff: topic-mission-automation — Database Migration Session
 
 ## What was done
 
-- Comprehensive design review from 5 perspectives (Architecture, Security, Quality, Testability, Integration)
-- Found 1 Critical + 11 Important + 13 Minor issues in Round 1
-- Updated `design.md` to address all Critical and Important findings
-- Re-reviewed updated design (Round 2) — all Critical/Important resolved
-- Wrote final `design-review.md` with both rounds documented
+Implemented **Task Group 1: Database Migration** (tasks 1.1–1.8).
+
+All 603 pre-existing Vitest tests passed before and after the change.
 
 ## Files changed
 
-- **Modified**: `openspec/changes/topic-mission-automation/design.md` — addressed 12 review findings
-- **Created**: `openspec/changes/topic-mission-automation/design-review.md` — full 5-perspective review with Round 1 + Round 2
-- **Modified**: `openspec/changes/topic-mission-automation/handoff.md` — this file
+- **Created**: `supabase/migrations/20260331000000_add_topic_missions.sql`
+- **Modified**: `openspec/changes/topic-mission-automation/tasks.md` (tasks 1.1–1.8 marked `[x]`)
+
+Git commit: `openspec(topic-mission-automation): complete task group 1 - Database Migration` (commit `c4f86586`)
 
 ## Key decisions
 
-1. `NotificationBase.postId` and `NotificationDTO.postId` must become optional (`string | undefined`) to support board-level notifications
-2. `mapDTOToNotification` default case changed from `throw` to graceful fallback (logged warning + generic notification) for deployment safety
-3. `buildNotificationMessage` reuses existing `(type, actorName, contentPreview)` signature with `actorName=boardTitle`, `contentPreview=topic`
-4. `order_index` assigned by DB trigger (not client) to prevent race conditions and queue-jumping
-5. RLS policies specified with exact SQL using `user_board_permissions` join
-6. All DB mutations in `assign-topic-presenter` wrapped in a single Postgres RPC for atomicity
-7. `computeNextAssignment` extracted as pure function for unit testing
-8. Deployment order: DB migration first, then edge function + web + admin together
-9. Admin E2E test flows added (advance, skip, reset)
+### actor_id for system-generated notifications
+The `notifications` table requires `actor_id NOT NULL REFERENCES users(id)`. For `topic_presenter_assigned`, there is no social actor. The migration sets `actor_id = recipient_id` (the assigned presenter). This avoids a schema change and is acceptable for a system-generated notification.
+
+### Notification message truncation in SQL
+`advance_topic_presenter()` truncates topic > 35 chars with ellipsis directly in SQL (matching the `buildNotificationMessage` TypeScript behaviour). This keeps the RPC self-contained and atomic.
+
+### Idempotency index updated for NULL post_id
+The original `idx_notifications_idempotency` index included `post_id` as a bare column. Since `topic_presenter_assigned` has `post_id = NULL`, two NULLs would be treated as distinct (defeating deduplication). The migration drops and recreates the index using `COALESCE(post_id, '')`.
+
+### users columns used
+- `users.nickname` (preferred) / `users.real_name` (fallback) / `users.email` (last resort) → `out_user_name`
+- `users.profile_photo_url` → `notifications.actor_profile_image`
+
+### reorder_topic_missions RPC deferred
+Task 6.4 (admin Up/Down reorder buttons) needs a `reorder_topic_missions` Postgres RPC. That belongs in task group 6 — not included in this migration.
 
 ## Notes for next session
 
-- Design is ready for task breakdown (next OpenSpec phase)
-- 5 minor accepted trade-offs documented in design-review.md — implementation-level concerns
-- The `updated_at` trigger should be included in the migration (currently noted with conditional language)
-- `next_topic_order_index` SQL function may need `FOR UPDATE` locking if concurrency becomes a concern
-- Admin app CLAUDE.md describes Firebase-primary but Supabase integration already exists — no blockers
-- Open questions remaining: skipped entries inclusion/exclusion in wrap-around; admin reorder UX (up/down vs. drag-and-drop); personalized banner copy for assigned presenter vs. other members
+- Tasks 1.1–1.8: **complete** (committed `c4f86586`)
+- Next group to implement: **2. Notification Model Extension** (tasks 2.1–2.8)
+  - Start with `apps/web/src/notification/model/Notification.ts` (add enum value, optional postId, TopicPresenterNotification interface)
+  - Then `apps/web/src/shared/api/supabaseReads.ts` (optional postId in DTO)
+  - Then `supabase/functions/_shared/notificationMessages.ts` (add type + message builder)
+  - Then `apps/web/src/notification/api/notificationApi.ts` (switch case, graceful fallback)
+  - Vitest tests T.1–T.2, T.9–T.13 go alongside group 2 tasks
+- The E2E Supabase local tests T.23–T.27 (migration verification) require a running local Docker Supabase — they cannot be run in a standard CI Vitest run.
