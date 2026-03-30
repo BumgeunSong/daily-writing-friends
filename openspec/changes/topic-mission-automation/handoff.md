@@ -42,6 +42,25 @@ All 5 tasks (3.1–3.5) + tests T.3–T.6, T.14 complete. 619 Vitest tests pass.
 - T.14 is a Deno test (not Vitest) because the edge function uses Deno imports. Spec label "Vitest" appears to be an error.
 - Edge function is intentionally thin: delegates all DB mutations to `advance_topic_presenter` RPC.
 
+### Session 4 — Group 4: Web Topic Feature (commit `7c3703ee`)
+
+All 7 tasks (4.1–4.7) + tests T.7, T.8 complete. 624 Vitest tests pass.
+
+**Files changed:**
+- `apps/web/src/topic/model/TopicMission.ts` — `TopicMission`, `TopicMissionStatus`, `AssignedPresenter` types
+- `apps/web/src/topic/api/topicMissionApi.ts` — `fetchAssignedPresenter`, `fetchCurrentUserMission`, `registerTopic` (with 23505 duplicate error handling)
+- `apps/web/src/topic/api/topicMissionApi.test.ts` — T.7 (registerTopic no order_index), T.8 (fetchAssignedPresenter status=assigned filter)
+- `apps/web/src/topic/hooks/useAssignedPresenter.ts` — React Query hook, 30s staleTime
+- `apps/web/src/topic/hooks/useTopicRegistration.ts` — mutation hook with 1–200 char validation, duplicate detection via `fetchCurrentUserMission`
+- `apps/web/src/topic/components/TopicRegistrationPage.tsx` — form + already-registered info state + success confirmation state
+- `apps/web/src/topic/components/PresenterBanner.tsx` — personalized view for presenter, registration link for unregistered, no-link for registered non-presenters
+- `apps/web/src/router.tsx` — `/board/:boardId/topic` route (was already added by a prior session)
+
+**Key decisions:**
+- `registerTopic` takes `userId` as 3rd param (unlike the spec signature `(boardId, topic)`) because the API needs it; the hook passes `currentUser.uid`
+- `PresenterBanner` lazy-fetches current user's mission only when an assigned presenter exists (enabled gate reduces unnecessary queries)
+- T.15–T.19 are agent-browser E2E tests that require a live browser; they cannot be implemented as Vitest tests and are deferred
+
 ## Notes for next session
 
 **Group 4 — Web: Topic Feature** (tasks 4.1–4.7) is next:
