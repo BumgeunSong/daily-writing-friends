@@ -1,28 +1,28 @@
-# Handoff: topic-mission-automation — Proposal Session
+# Handoff: topic-mission-automation — Proposal Review Session
 
 ## What was done
 
-Generated the proposal artifact for the `topic-mission-automation` OpenSpec change based on the user brief (issue #532).
+Reviewed the proposal from 4 perspectives (Objectives Challenger, Alternatives Explorer, User Advocate, Scope Analyst). Found 1 Critical and 5 Important issues in Round 1, updated `proposal.md` to address all of them, and confirmed resolution in Round 2.
 
 ## Files changed
 
-- **Created**: `openspec/changes/topic-mission-automation/proposal.md`
-- **Created**: `openspec/changes/topic-mission-automation/handoff.md` (this file)
+- **Modified**: `openspec/changes/topic-mission-automation/proposal.md` — addressed Critical/Important findings
+- **Created**: `openspec/changes/topic-mission-automation/proposal-review.md` — full review with all 4 perspectives
+- **Modified**: `openspec/changes/topic-mission-automation/handoff.md` (this file)
 
 ## Key decisions
 
-- **5 new capabilities identified** (all additive, no modifications to existing): `topic-mission-pool`, `topic-registration`, `topic-friday-banner`, `topic-presenter-notification`, `topic-mission-admin`
-- No existing topic/mission feature was found in the codebase — the only related code is `topicInputUtils.ts` (character-limit utils for freewriting topic input, unrelated to this feature)
-- The `NotificationType` enum will need a new `TOPIC_PRESENTER_ASSIGNED` value — noted in Impact section
-- Admin app (`apps/admin/`) exists as a Next.js app; topic mission admin panel belongs there
-- Edge function `create-notification` already exists in `supabase/functions/` — the new presenter notification can extend or follow its pattern
-- No breaking changes to any existing tables, routes, or APIs
+1. **Admin-triggered only** — removed automatic scheduling (pg_cron doesn't exist in the stack). Advancement is manual via admin panel.
+2. **Queue, not round-robin** — terminology changed to reflect that admins can reorder. Wrap-around on exhaustion.
+3. **Registration required before assignment** — members must register a topic before entering the queue. Prevents assigning unprepared presenters.
+4. **Status lifecycle defined** — `pending → assigned → completed → skipped`
+5. **NotificationType is a string union**, not an enum — proposal updated to match actual codebase pattern (`notificationMessages.ts`)
+6. **Banner timing and registration UX** deferred as open questions to design phase
 
 ## Notes for next session
 
-- **No `openspec/specs/` directory exists yet** — this change will create the first specs
-- Each capability in the proposal becomes `openspec/specs/<capability-name>/spec.md`
-- The `Board` model currently has no topic-related fields; the `topic_missions` table is a standalone table linked by `boardId`
-- The `Notification` model is in `apps/web/src/notification/model/Notification.ts` — needs `TOPIC_PRESENTER_ASSIGNED` added
-- Board page entry point is `apps/web/src/board/components/BoardPage.tsx` — Friday banner injection point
-- Round-robin selection trigger strategy (scheduled vs. admin-triggered) was left open for the design phase
+- Two open questions need design-phase decisions: (1) banner timing — event-driven vs. day-based, (2) registration UX — separate page vs. modal
+- No scheduling infrastructure exists — if automatic advancement is needed later, pg_cron or an external scheduler must be added
+- The `create-notification` edge function pattern in `supabase/functions/` is the template for the new notification
+- The `NotificationType` string union in `supabase/functions/_shared/notificationMessages.ts` needs a new `topic_presenter_assigned` value
+- `BoardPage.tsx` is the banner injection point — simple component structure, easy to add a conditional banner above the filter tabs
