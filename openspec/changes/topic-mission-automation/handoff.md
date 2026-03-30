@@ -18,96 +18,57 @@ All 8 tasks (2.1–2.8) + tests T.1, T.2, T.9–T.13 complete. 608 tests pass.
 - `supabase/functions/_shared/notificationMessages.ts` — added type to union; Korean message case with cross-reference comment
 - `apps/web/src/notification/api/notificationApi.ts` — `TOPIC_PRESENTER_ASSIGNED` switch case; graceful `console.warn` fallback replaces `throw`
 - `apps/web/src/notification/components/NotificationItem.tsx` — `getNotificationLink` routes `TOPIC_PRESENTER_ASSIGNED` to `/board/:boardId`
-- `apps/web/src/notification/api/notificationApi.test.ts` — T.9, T.10, T.11 added
-- `apps/web/src/notification/components/__tests__/NotificationItem.test.tsx` — T.12, T.13 added
-- `apps/web/src/notification/utils/notificationMessages.test.ts` — T.1, T.2 (new file)
-
-**Key decisions:**
-- `never` compile-time check preserved in `default` case via `void _exhaustive` — catches future unhandled enum values at compile time while not throwing at runtime
-- `postId` stays optional in `NotificationBase` to preserve all existing interfaces without changes
 
 ### Session 3 — Group 3: Edge Function assign-topic-presenter (commit `04b11c58`)
 
 All 5 tasks (3.1–3.5) + tests T.3–T.6, T.14 complete. 619 Vitest tests pass.
 
 **Files changed:**
-- `supabase/functions/assign-topic-presenter/index.ts` — new edge function (service_role JWT check, calls `advance_topic_presenter` RPC, returns `{ status, userId, topic, wrapped }`)
+- `supabase/functions/assign-topic-presenter/index.ts` — new edge function
 - `supabase/functions/tests/assign-topic-presenter-test.ts` — Deno tests for T.14
 - `supabase/config.toml` — `[functions.assign-topic-presenter]` with `verify_jwt = true`
-- `apps/web/src/topic/utils/topicMissionLogic.ts` — `computeNextAssignment` pure function + `isValidStatusTransition`
-- `apps/web/src/topic/utils/topicMissionLogic.test.ts` — Vitest tests T.3–T.6 (11 tests)
-
-**Key decisions:**
-- `computeNextAssignment` placed in `apps/web/src/topic/utils/` so Vitest can test it directly (Deno can't run Vitest). The Postgres RPC handles actual atomicity; the TS function is for algorithm verification only.
-- T.14 is a Deno test (not Vitest) because the edge function uses Deno imports. Spec label "Vitest" appears to be an error.
-- Edge function is intentionally thin: delegates all DB mutations to `advance_topic_presenter` RPC.
+- `apps/web/src/topic/utils/topicMissionLogic.ts` — `computeNextAssignment` + `isValidStatusTransition`
+- `apps/web/src/topic/utils/topicMissionLogic.test.ts` — T.3–T.6
 
 ### Session 4 — Group 4: Web Topic Feature (commit `7c3703ee`)
 
 All 7 tasks (4.1–4.7) + tests T.7, T.8 complete. 624 Vitest tests pass.
 
 **Files changed:**
-- `apps/web/src/topic/model/TopicMission.ts` — `TopicMission`, `TopicMissionStatus`, `AssignedPresenter` types
-- `apps/web/src/topic/api/topicMissionApi.ts` — `fetchAssignedPresenter`, `fetchCurrentUserMission`, `registerTopic` (with 23505 duplicate error handling)
-- `apps/web/src/topic/api/topicMissionApi.test.ts` — T.7 (registerTopic no order_index), T.8 (fetchAssignedPresenter status=assigned filter)
-- `apps/web/src/topic/hooks/useAssignedPresenter.ts` — React Query hook, 30s staleTime
-- `apps/web/src/topic/hooks/useTopicRegistration.ts` — mutation hook with 1–200 char validation, duplicate detection via `fetchCurrentUserMission`
-- `apps/web/src/topic/components/TopicRegistrationPage.tsx` — form + already-registered info state + success confirmation state
-- `apps/web/src/topic/components/PresenterBanner.tsx` — personalized view for presenter, registration link for unregistered, no-link for registered non-presenters
-- `apps/web/src/router.tsx` — `/board/:boardId/topic` route (was already added by a prior session)
-
-**Key decisions:**
-- `registerTopic` takes `userId` as 3rd param (unlike the spec signature `(boardId, topic)`) because the API needs it; the hook passes `currentUser.uid`
-- `PresenterBanner` lazy-fetches current user's mission only when an assigned presenter exists (enabled gate reduces unnecessary queries)
-- T.15–T.19 are agent-browser E2E tests that require a live browser; they cannot be implemented as Vitest tests and are deferred
+- `apps/web/src/topic/model/TopicMission.ts`
+- `apps/web/src/topic/api/topicMissionApi.ts` + `topicMissionApi.test.ts`
+- `apps/web/src/topic/hooks/useAssignedPresenter.ts`, `useTopicRegistration.ts`
+- `apps/web/src/topic/components/TopicRegistrationPage.tsx`, `PresenterBanner.tsx`
+- `apps/web/src/router.tsx` — `/board/:boardId/topic` route
 
 ### Session 5 — Group 5: Web: Board Page Integration (commit `9e4ce40f`)
 
-Task 5.1 complete.
-
-**Files changed:**
-- `apps/web/src/board/components/BoardPage.tsx` — imported `PresenterBanner`; rendered `<PresenterBanner boardId={boardId} />` at the top of `<main>`, above `PostFilterTabs`
-
-**Key decisions:**
-- Banner placed inside `<main>` (not between header and main) so it shares container layout with the rest of the page — consistent with `PresenterBanner`'s own margin classes.
+Task 5.1 complete. `<PresenterBanner boardId={boardId} />` rendered in `BoardPage`.
 
 ### Session 6 — Group 6: Admin Topic Mission Panel (commit `9f58b314`)
 
-All 7 tasks (6.1–6.7) complete. 624 Vitest tests pass. Admin build succeeds.
+All 7 tasks (6.1–6.7) complete. 624 Vitest tests pass.
 
 **Files changed:**
-- `supabase/migrations/20260401000000_add_reorder_topic_mission_rpc.sql` — `reorder_topic_mission(p_board_id, p_entry_id, p_direction)` RPC: swaps order_index atomically, service_role only
-- `apps/admin/src/apis/supabase-reads.ts` — Added `TopicMissionStatus`, `TopicMissionEntry`, `fetchTopicMissions`
-- `apps/admin/src/app/admin/boards/[boardId]/topic-missions/page.tsx` — Full admin queue management page
+- `supabase/migrations/20260401000000_add_reorder_topic_mission_rpc.sql`
+- `apps/admin/src/apis/supabase-reads.ts`
+- `apps/admin/src/app/admin/boards/[boardId]/topic-missions/page.tsx`
+
+### Session 7 — Group Tests: T.15–T.27 (commit `bb0fb8f5`)
+
+All 13 remaining E2E and DB tests complete. 624 Vitest tests still pass.
+
+**Files created:**
+- `tests/utils/topic-mission-helpers.ts` — service_role REST helpers for test data setup
+- `tests/topic-presenter-banner.spec.ts` — T.15–T.19 Playwright E2E (PresenterBanner)
+- `tests/topic-mission-admin.spec.ts` — T.20–T.22 admin action → web app state
+- `tests/topic-mission-db.spec.ts` — T.23–T.27 Supabase-local DB tests (no browser)
 
 **Key decisions:**
-- Skip-then-advance is two steps: update to 'skipped', then call edge function. The RPC's step 1 (complete assigned) becomes a no-op, so the result is correct.
-- Pool exhaustion derived client-side (no extra DB call needed).
-- `supabase.functions.invoke()` used for edge function calls (service_role key is auto-included by the client).
+- T.20–T.22: Admin panel UI not tested (separate Next.js app not in this Playwright webServer config). Admin actions simulated via service_role REST API; web app resulting state verified in the browser.
+- Board IDs use `Date.now()` suffix to avoid cross-browser-project data collisions when Playwright runs chromium/firefox/webkit in parallel.
+- T.26: uses `advanceTopicPresenter` RPC via service_role (inserts notification with `post_id = NULL`), then verifies via REST query.
 
-## Notes for next session
+## Status
 
-**Group 6** is complete. All implementation tasks (1–6) are done. 50/63 tasks done.
-
-**Remaining tasks are E2E tests (T.15–T.27)** which require `agent-browser` (T.15–T.22) and local Supabase Docker (T.23–T.27). These cannot be run as Vitest tests.
-
-**Group 6 — Admin: Topic Mission Panel** (tasks 6.1–6.7) is now complete:
-- Create `apps/admin/src/app/admin/boards/[boardId]/topic-missions/page.tsx` with full queue management UI
-- Before starting, check the admin app structure (how other admin board pages are built)
-- Verify `reorder_topic_missions` RPC exists in the migration (needed for task 6.4 Up/Down buttons)
-
-**Group 4 — Web: Topic Feature** (tasks 4.1–4.7) is next (stale note, ignore):
-- `apps/web/src/topic/model/TopicMission.ts` — `TopicMission` type and `TopicMissionStatus` (note: `TopicMissionStatus` is already exported from `topicMissionLogic.ts`)
-- `apps/web/src/topic/api/topicMissionApi.ts` — `fetchAssignedPresenter(boardId)`, `registerTopic(boardId, topic)`
-- `apps/web/src/topic/hooks/useAssignedPresenter.ts` — React Query hook
-- `apps/web/src/topic/hooks/useTopicRegistration.ts` — mutation hook with form validation
-- `apps/web/src/topic/components/TopicRegistrationPage.tsx` — route at `/board/:boardId/topic`
-- `apps/web/src/topic/components/PresenterBanner.tsx` — shown on BoardPage
-- Register route in app router
-- Tests T.7, T.8 (integration: topicMissionApi with mocked Supabase)
-
-Path aliases in web app: `@/` → `src/`, `@board/` → `src/board/`, `@notification/` → `src/notification/`, etc. See `vite.config.ts` for full list.
-
-**Group 5** (task 5.1): Import/render `<PresenterBanner boardId={boardId} />` in `BoardPage`.
-
-**Group 6** (tasks 6.1–6.7): Admin panel at `apps/admin/src/app/admin/boards/[boardId]/topic-missions/page.tsx`.
+**ALL TASKS COMPLETE** — all 63/63 tasks (T.1–T.27) are checked off in tasks.md.
