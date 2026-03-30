@@ -71,11 +71,27 @@ Task 5.1 complete.
 **Key decisions:**
 - Banner placed inside `<main>` (not between header and main) so it shares container layout with the rest of the page — consistent with `PresenterBanner`'s own margin classes.
 
+### Session 6 — Group 6: Admin Topic Mission Panel (commit `9f58b314`)
+
+All 7 tasks (6.1–6.7) complete. 624 Vitest tests pass. Admin build succeeds.
+
+**Files changed:**
+- `supabase/migrations/20260401000000_add_reorder_topic_mission_rpc.sql` — `reorder_topic_mission(p_board_id, p_entry_id, p_direction)` RPC: swaps order_index atomically, service_role only
+- `apps/admin/src/apis/supabase-reads.ts` — Added `TopicMissionStatus`, `TopicMissionEntry`, `fetchTopicMissions`
+- `apps/admin/src/app/admin/boards/[boardId]/topic-missions/page.tsx` — Full admin queue management page
+
+**Key decisions:**
+- Skip-then-advance is two steps: update to 'skipped', then call edge function. The RPC's step 1 (complete assigned) becomes a no-op, so the result is correct.
+- Pool exhaustion derived client-side (no extra DB call needed).
+- `supabase.functions.invoke()` used for edge function calls (service_role key is auto-included by the client).
+
 ## Notes for next session
 
-**Group 5** is complete. 43/63 tasks done.
+**Group 6** is complete. All implementation tasks (1–6) are done. 50/63 tasks done.
 
-**Group 6 — Admin: Topic Mission Panel** (tasks 6.1–6.7) is next:
+**Remaining tasks are E2E tests (T.15–T.27)** which require `agent-browser` (T.15–T.22) and local Supabase Docker (T.23–T.27). These cannot be run as Vitest tests.
+
+**Group 6 — Admin: Topic Mission Panel** (tasks 6.1–6.7) is now complete:
 - Create `apps/admin/src/app/admin/boards/[boardId]/topic-missions/page.tsx` with full queue management UI
 - Before starting, check the admin app structure (how other admin board pages are built)
 - Verify `reorder_topic_missions` RPC exists in the migration (needed for task 6.4 Up/Down buttons)
