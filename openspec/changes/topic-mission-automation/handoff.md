@@ -1,43 +1,36 @@
-# Handoff: topic-mission-automation — Database Migration Session
+# Handoff: topic-mission-automation
 
-## What was done
+## Sessions completed
 
-Implemented **Task Group 1: Database Migration** (tasks 1.1–1.8).
+### Session 1 — Group 1: Database Migration (commit `c4f86586`)
+- Created `supabase/migrations/20260331000000_add_topic_missions.sql`
+- `topic_missions` table, indexes, RLS, triggers, `advance_topic_presenter` RPC
+- `notifications.post_id` made nullable; type CHECK updated
+- Key: `actor_id = recipient_id` for system notifications; idempotency index uses `COALESCE(post_id, '')`
 
-All 603 pre-existing Vitest tests passed before and after the change.
+### Session 2 — Group 2: Notification Model Extension (commit `4bccc5dc`)
 
-## Files changed
+All 8 tasks (2.1–2.8) + tests T.1, T.2, T.9–T.13 complete. 608 tests pass.
 
-- **Created**: `supabase/migrations/20260331000000_add_topic_missions.sql`
-- **Modified**: `openspec/changes/topic-mission-automation/tasks.md` (tasks 1.1–1.8 marked `[x]`)
+**Files changed:**
+- `apps/web/src/notification/model/Notification.ts` — `TOPIC_PRESENTER_ASSIGNED` enum; `postId?: string` optional; `TopicPresenterNotification` interface + union
+- `apps/web/src/shared/api/supabaseReads.ts` — `NotificationDTO.postId?: string`
+- `supabase/functions/_shared/notificationMessages.ts` — added type to union; Korean message case with cross-reference comment
+- `apps/web/src/notification/api/notificationApi.ts` — `TOPIC_PRESENTER_ASSIGNED` switch case; graceful `console.warn` fallback replaces `throw`
+- `apps/web/src/notification/components/NotificationItem.tsx` — `getNotificationLink` routes `TOPIC_PRESENTER_ASSIGNED` to `/board/:boardId`
+- `apps/web/src/notification/api/notificationApi.test.ts` — T.9, T.10, T.11 added
+- `apps/web/src/notification/components/__tests__/NotificationItem.test.tsx` — T.12, T.13 added
+- `apps/web/src/notification/utils/notificationMessages.test.ts` — T.1, T.2 (new file; imports from `../../../../../supabase/functions/_shared/notificationMessages`)
 
-Git commit: `openspec(topic-mission-automation): complete task group 1 - Database Migration` (commit `c4f86586`)
-
-## Key decisions
-
-### actor_id for system-generated notifications
-The `notifications` table requires `actor_id NOT NULL REFERENCES users(id)`. For `topic_presenter_assigned`, there is no social actor. The migration sets `actor_id = recipient_id` (the assigned presenter). This avoids a schema change and is acceptable for a system-generated notification.
-
-### Notification message truncation in SQL
-`advance_topic_presenter()` truncates topic > 35 chars with ellipsis directly in SQL (matching the `buildNotificationMessage` TypeScript behaviour). This keeps the RPC self-contained and atomic.
-
-### Idempotency index updated for NULL post_id
-The original `idx_notifications_idempotency` index included `post_id` as a bare column. Since `topic_presenter_assigned` has `post_id = NULL`, two NULLs would be treated as distinct (defeating deduplication). The migration drops and recreates the index using `COALESCE(post_id, '')`.
-
-### users columns used
-- `users.nickname` (preferred) / `users.real_name` (fallback) / `users.email` (last resort) → `out_user_name`
-- `users.profile_photo_url` → `notifications.actor_profile_image`
-
-### reorder_topic_missions RPC deferred
-Task 6.4 (admin Up/Down reorder buttons) needs a `reorder_topic_missions` Postgres RPC. That belongs in task group 6 — not included in this migration.
+**Key decisions:**
+- `never` compile-time check preserved in `default` case via `void _exhaustive` — catches future unhandled enum values at compile time while not throwing at runtime
+- `postId` stays optional in `NotificationBase` (not removed) to preserve all existing interfaces without changes
 
 ## Notes for next session
 
-- Tasks 1.1–1.8: **complete** (committed `c4f86586`)
-- Next group to implement: **2. Notification Model Extension** (tasks 2.1–2.8)
-  - Start with `apps/web/src/notification/model/Notification.ts` (add enum value, optional postId, TopicPresenterNotification interface)
-  - Then `apps/web/src/shared/api/supabaseReads.ts` (optional postId in DTO)
-  - Then `supabase/functions/_shared/notificationMessages.ts` (add type + message builder)
-  - Then `apps/web/src/notification/api/notificationApi.ts` (switch case, graceful fallback)
-  - Vitest tests T.1–T.2, T.9–T.13 go alongside group 2 tasks
-- The E2E Supabase local tests T.23–T.27 (migration verification) require a running local Docker Supabase — they cannot be run in a standard CI Vitest run.
+**Group 3 — Edge Function: assign-topic-presenter** is next. Key files:
+- `supabase/functions/assign-topic-presenter/index.ts` — service_role JWT verification, calls `advance_topic_presenter(board_id)` RPC
+- Pure function `computeNextAssignment` (extracted for unit tests T.3–T.5)
+- `supabase/config.toml` — add deploy config with `--verify-jwt` enabled
+
+The `advance_topic_presenter(p_board_id)` Postgres RPC was already created in the group 1 migration. The edge function calls it and handles the response.
