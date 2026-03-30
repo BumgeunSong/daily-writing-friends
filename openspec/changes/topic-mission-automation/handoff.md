@@ -61,9 +61,26 @@ All 7 tasks (4.1–4.7) + tests T.7, T.8 complete. 624 Vitest tests pass.
 - `PresenterBanner` lazy-fetches current user's mission only when an assigned presenter exists (enabled gate reduces unnecessary queries)
 - T.15–T.19 are agent-browser E2E tests that require a live browser; they cannot be implemented as Vitest tests and are deferred
 
+### Session 5 — Group 5: Web: Board Page Integration (commit `9e4ce40f`)
+
+Task 5.1 complete.
+
+**Files changed:**
+- `apps/web/src/board/components/BoardPage.tsx` — imported `PresenterBanner`; rendered `<PresenterBanner boardId={boardId} />` at the top of `<main>`, above `PostFilterTabs`
+
+**Key decisions:**
+- Banner placed inside `<main>` (not between header and main) so it shares container layout with the rest of the page — consistent with `PresenterBanner`'s own margin classes.
+
 ## Notes for next session
 
-**Group 4 — Web: Topic Feature** (tasks 4.1–4.7) is next:
+**Group 5** is complete. 43/63 tasks done.
+
+**Group 6 — Admin: Topic Mission Panel** (tasks 6.1–6.7) is next:
+- Create `apps/admin/src/app/admin/boards/[boardId]/topic-missions/page.tsx` with full queue management UI
+- Before starting, check the admin app structure (how other admin board pages are built)
+- Verify `reorder_topic_missions` RPC exists in the migration (needed for task 6.4 Up/Down buttons)
+
+**Group 4 — Web: Topic Feature** (tasks 4.1–4.7) is next (stale note, ignore):
 - `apps/web/src/topic/model/TopicMission.ts` — `TopicMission` type and `TopicMissionStatus` (note: `TopicMissionStatus` is already exported from `topicMissionLogic.ts`)
 - `apps/web/src/topic/api/topicMissionApi.ts` — `fetchAssignedPresenter(boardId)`, `registerTopic(boardId, topic)`
 - `apps/web/src/topic/hooks/useAssignedPresenter.ts` — React Query hook
