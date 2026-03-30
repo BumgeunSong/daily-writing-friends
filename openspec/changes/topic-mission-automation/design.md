@@ -11,6 +11,9 @@
 - Fully additive — no changes to existing tables or APIs
 - `notifications.post_id` is currently `NOT NULL`; topic notifications are board-level, not post-level → requires a targeted schema migration
 - Two files maintain `NotificationType` independently: `apps/web/src/notification/model/Notification.ts` (enum) and `supabase/functions/_shared/notificationMessages.ts` (string union) — both must be updated in sync
+- `NotificationBase.postId` and `NotificationDTO.postId` are currently non-optional `string` — must become `string | undefined` to support board-level notifications
+- `mapDTOToNotification` exhaustive `default: never` check will throw at runtime on unknown types — deployment must be coordinated or a graceful fallback added
+- `create-notification` edge function hard-requires `boardId && postId` (line 133) — NOT reused for topic notifications; a separate edge function is required
 
 **Stakeholders**: Board members (register topics, receive presenter assignments), admins (manage queue, advance/skip, reset).
 
@@ -110,9 +113,41 @@ CREATE TABLE topic_missions (
 - `(board_id, status)` — find assigned presenter, find next pending
 
 **RLS policies**:
-- `SELECT`: board members can read their own board's entries (`user_id = auth.uid()` OR user has permission on `board_id`)
-- `INSERT`: board members can insert for themselves (`user_id = auth.uid()` AND user has permission on `board_id`)
+- `SELECT`: board members can read their own board's entries:
+  ```sql
+  CREATE POLICY topic_missions_select ON topic_missions FOR SELECT
+    USING (EXISTS (
+      SELECT 1 FROM user_board_permissions
+      WHERE user_board_permissions.user_id = auth.uid()
+        AND user_board_permissions.board_id = topic_missions.board_id
+    ));
+  ```
+- `INSERT`: board members can insert for themselves (enforces `user_id = auth.uid()`):
+  ```sql
+  CREATE POLICY topic_missions_insert ON topic_missions FOR INSERT
+    WITH CHECK (
+      user_id = auth.uid()
+      AND EXISTS (
+        SELECT 1 FROM user_board_permissions
+        WHERE user_board_permissions.user_id = auth.uid()
+          AND user_board_permissions.board_id = topic_missions.board_id
+      )
+    );
+  ```
 - `UPDATE`/`DELETE`: service_role only (advancement and admin operations)
+
+**`order_index` assignment** (prevents race conditions):
+- Client does NOT set `order_index`. Instead, the INSERT uses a DB-level default:
+  ```sql
+  -- In migration: create a function for atomic order_index assignment
+  CREATE OR REPLACE FUNCTION next_topic_order_index(p_board_id TEXT)
+  RETURNS INTEGER AS $$
+    SELECT COALESCE(MAX(order_index), 0) + 1
+    FROM topic_missions WHERE board_id = p_board_id;
+  $$ LANGUAGE sql;
+  ```
+- The `INSERT` from the client omits `order_index`; a `BEFORE INSERT` trigger calls `next_topic_order_index(NEW.board_id)` to set it atomically.
+- **Topic text validation**: `CHECK (char_length(topic) BETWEEN 1 AND 200)` prevents empty or excessively long topic strings.
 
 **Migration to `notifications` table**:
 ```sql
@@ -140,29 +175,43 @@ interface AssignPayload {
 ```
 
 **Logic** (in order):
-1. Verify service_role JWT (same pattern as `create-notification`)
-2. Find current `assigned` entry for `board_id` → set to `completed`
-3. Find next `pending` entry ordered by `order_index ASC`
-4. If none found → wrap-around: reset all `completed`/`skipped` → `pending`, re-query for first `pending`
-5. Set found entry to `assigned`, set `updated_at = NOW()`
-6. Fetch assignee's name from `users` table
-7. Insert notification row: `type = 'topic_presenter_assigned'`, `recipient_id = user_id`, `board_id`, `post_id = NULL`, `message = buildNotificationMessage(...)`
-8. Return `{ status: 'assigned', userId, topic, wrapped: boolean }`
+1. Verify service_role JWT (same pattern as `create-notification`, requires `--verify-jwt` enabled in deploy config)
+2. **All DB mutations (steps 3-7) execute inside a single Postgres RPC (`advance_topic_presenter(p_board_id)`)** for atomicity:
+3. Find current `assigned` entry for `board_id` → set to `completed`, set `updated_at = NOW()`
+4. Find next `pending` entry ordered by `order_index ASC`
+5. If none found → wrap-around: reset all `completed`/`skipped` → `pending`, re-query for first `pending` by `order_index ASC`
+6. Set found entry to `assigned`, set `updated_at = NOW()`
+7. Insert notification row: `type = 'topic_presenter_assigned'`, `recipient_id = user_id`, `board_id`, `post_id = NULL`, `message = buildNotificationMessage(boardTitle, topic)`
+8. RPC returns `{ userId, topic, userName, wrapped: boolean }`
+9. Edge function returns `{ status: 'assigned', userId, topic, wrapped }` to caller
+
+**Extractable pure function** (`computeNextAssignment`):
+- The queue state transition logic (steps 3-6) is extracted into a pure TypeScript function for unit testing: given an array of `{ id, status, order_index }` entries, returns `{ completeId: string | null, assignId: string, wrapped: boolean }`. This function is tested in Vitest (Layer 1). The Postgres RPC implements the same logic in SQL for atomicity.
 
 ### Notification Extension
 
 **`supabase/functions/_shared/notificationMessages.ts`**:
 - Add `'topic_presenter_assigned'` to `NotificationType` union
 - Add case in `buildNotificationMessage`: `"[board_title]에서 이번 주 발표자로 선정되었어요! 발표 주제: '${topic}'"`
-- This function requires a new optional `topic` parameter for this type (or accept `contentPreview` as the topic string)
+- **Parameter mapping for this type**: `actorName = boardTitle`, `contentPreview = topic`. The existing `(type, actorName, contentPreview)` signature is reused without extension. The semantic mismatch (board title in the "actor" slot) is acceptable because `buildNotificationMessage` is a message-formatting function, not a domain model — the parameter names are positional placeholders. A comment in the function documents this mapping for the `topic_presenter_assigned` case.
 
 **`apps/web/src/notification/model/Notification.ts`**:
 - Add `TOPIC_PRESENTER_ASSIGNED = 'topic_presenter_assigned'` to `NotificationType` enum
-- Add `TopicPresenterNotification` interface extending `NotificationBase` (no extra fields needed beyond `boardId`)
+- **Make `NotificationBase.postId` optional** (`postId?: string`) — required because `topic_presenter_assigned` is a board-level notification with no associated post
+- Add `TopicPresenterNotification` interface extending `NotificationBase` with `type: NotificationType.TOPIC_PRESENTER_ASSIGNED` (no `postId`, no `commentId`)
 - Add to `Notification` union type
+- **All existing notification interfaces are unaffected** — they already provide `postId` via `NotificationBase`, and their rendering code already accesses `postId` from the specific typed notification, not the base
+
+**`apps/web/src/shared/api/supabaseReads.ts`**:
+- **Make `NotificationDTO.postId` optional** (`postId?: string`) — the DB column is now nullable
 
 **`apps/web/src/notification/api/notificationApi.ts`**:
-- Add case for `TOPIC_PRESENTER_ASSIGNED` in `mapDTOToNotification` switch
+- Add case for `TOPIC_PRESENTER_ASSIGNED` in `mapDTOToNotification` switch — returns `{ ...base, type: row.type }` (no postId, no commentId)
+- **Update `base` object**: handle optional `postId` — use `postId: row.postId ?? ''` or conditional inclusion
+- **Graceful fallback in `default` case**: Replace the `throw` on unknown type with a logged warning + return of a generic notification object. This prevents runtime crashes if the edge function is deployed before the web app (or if old cached clients encounter the new type). The `never` exhaustive check moves to a separate compile-time-only assertion.
+
+**Notification click/routing**:
+- The notification list component must route `topic_presenter_assigned` to `/board/${boardId}` (not `/board/${boardId}/post/${postId}`). Add a type check before building the navigation URL.
 
 ### Web App: `topic` Feature
 
@@ -211,6 +260,12 @@ apps/web/src/topic/
 | Registration UNIQUE constraint violation if user tries to register twice | Client validates pre-submission; DB constraint returns 409 which the API layer maps to a user-facing error |
 
 ---
+
+## Deployment Order
+
+1. **DB migration** — safe to deploy independently (additive table, nullable column change is backward-compatible)
+2. **Edge function + Web app + Admin app** — deploy together in a single release. The web app's `mapDTOToNotification` graceful fallback (logs warning instead of throwing on unknown types) provides a safety net, but simultaneous deployment is preferred to avoid displaying raw/unformatted notifications.
+3. **Rollback**: Edge function removal + drop `topic_missions` table. The `notifications.post_id` nullable change is permanent (backward-compatible, no rollback needed).
 
 ## Migration Plan
 
@@ -272,6 +327,9 @@ apps/web/src/topic/
 - `mapDTOToNotification` handles `topic_presenter_assigned` row (no `post_id`, no `comment_id`) → produces correct `TopicPresenterNotification` without throwing
 - RLS boundary: board member can SELECT own board's queue (mock Supabase client verifies query includes `board_id` filter)
 - `assign-topic-presenter` edge function unit: mock Supabase client, verify it calls update on previous assigned entry + insert on notifications with `post_id = null`
+- `mapDTOToNotification` with `topic_presenter_assigned` row where `postId` is undefined → produces `TopicPresenterNotification` without throwing, `postId` is absent
+- `mapDTOToNotification` with unknown type → logs warning and returns generic notification (graceful fallback, no throw)
+- Notification click routing: `topic_presenter_assigned` notification navigates to `/board/${boardId}` (not `/board/${boardId}/post/undefined`)
 
 **Files**: `apps/web/src/topic/api/topicMissionApi.ts`, `apps/web/src/notification/api/notificationApi.ts`, `supabase/functions/assign-topic-presenter/index.ts` (with mocked Supabase client)
 
@@ -288,6 +346,11 @@ Key transitions to cover (MBT Transition Coverage):
 - `board-without-banner` → admin assigns presenter → `board-with-banner`
 - `board-with-banner` → assigned presenter views board → sees personalized banner
 - `assigned-presenter` → receives notification → taps deep link → board page
+
+Admin flow transitions to cover:
+- Admin clicks "다음 발표자 지정" → member's board shows banner + member receives notification
+- Admin clicks "건너뛰기" on assigned presenter → next pending member becomes assigned
+- Admin clicks "대기열 초기화" → all entries reset to `pending`, no presenter assigned
 
 **Mocking**: Only notification delivery (push) mocked at network level. Dev server (Supabase anon key) used for all DB reads.
 
