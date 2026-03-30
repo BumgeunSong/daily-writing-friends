@@ -32,13 +32,13 @@
 
 ## 4. Web: Topic Feature
 
-- [ ] 4.1 Create `apps/web/src/topic/model/TopicMission.ts` with `TopicMission` type and `TopicMissionStatus` type
-- [ ] 4.2 Create `apps/web/src/topic/api/topicMissionApi.ts` with `fetchAssignedPresenter(boardId)` and `registerTopic(boardId, topic)` functions
-- [ ] 4.3 Create `apps/web/src/topic/hooks/useAssignedPresenter.ts` React Query hook
-- [ ] 4.4 Create `apps/web/src/topic/hooks/useTopicRegistration.ts` mutation hook with form validation (1–200 chars) and duplicate error handling
-- [ ] 4.5 Create `apps/web/src/topic/components/TopicRegistrationPage.tsx` with form, validation, duplicate-registration info state, and post-submission confirmation state
-- [ ] 4.6 Create `apps/web/src/topic/components/PresenterBanner.tsx` with personalized view for assigned presenter, registration link for unregistered non-presenters, and no-link view for already-registered non-presenters
-- [ ] 4.7 Register `/board/:boardId/topic` route in the web app router pointing to `TopicRegistrationPage`
+- [x] 4.1 Create `apps/web/src/topic/model/TopicMission.ts` with `TopicMission` type and `TopicMissionStatus` type
+- [x] 4.2 Create `apps/web/src/topic/api/topicMissionApi.ts` with `fetchAssignedPresenter(boardId)` and `registerTopic(boardId, topic)` functions
+- [x] 4.3 Create `apps/web/src/topic/hooks/useAssignedPresenter.ts` React Query hook
+- [x] 4.4 Create `apps/web/src/topic/hooks/useTopicRegistration.ts` mutation hook with form validation (1–200 chars) and duplicate error handling
+- [x] 4.5 Create `apps/web/src/topic/components/TopicRegistrationPage.tsx` with form, validation, duplicate-registration info state, and post-submission confirmation state
+- [x] 4.6 Create `apps/web/src/topic/components/PresenterBanner.tsx` with personalized view for assigned presenter, registration link for unregistered non-presenters, and no-link view for already-registered non-presenters
+- [x] 4.7 Register `/board/:boardId/topic` route in the web app router pointing to `TopicRegistrationPage`
 
 ## 5. Web: Board Page Integration
 
@@ -67,8 +67,8 @@
 
 ### Integration
 
-- [ ] T.7 (Vitest) `registerTopic` calls correct Supabase table and columns; omits `order_index` from payload
-- [ ] T.8 (Vitest) `fetchAssignedPresenter` queries `status = 'assigned'` filter for given `boardId`
+- [x] T.7 (Vitest) `registerTopic` calls correct Supabase table and columns; omits `order_index` from payload
+- [x] T.8 (Vitest) `fetchAssignedPresenter` queries `status = 'assigned'` filter for given `boardId`
 - [x] T.9 (Vitest) `mapDTOToNotification` with `type = 'topic_presenter_assigned'`, `postId = undefined` → returns `TopicPresenterNotification` without throwing
 - [x] T.10 (Vitest) `mapDTOToNotification` with unknown type → logs warning, returns generic notification (no throw)
 - [x] T.11 (Vitest) `mapDTOToNotification` with `comment_on_post` → `postId` still accessed safely (existing behavior unchanged)
