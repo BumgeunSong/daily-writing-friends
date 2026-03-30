@@ -78,16 +78,16 @@
 
 ### E2E
 
-- [ ] T.15 (agent-browser) Unregistered board member sees banner with "발표 주제 등록하기" link when a presenter is assigned
-- [ ] T.16 (agent-browser) Clicking banner link navigates to `/board/:boardId/topic`; member submits valid topic → success confirmation shown
-- [ ] T.17 (agent-browser) Already-registered member views `/board/:boardId/topic` → no form shown, info message shown
-- [ ] T.18 (agent-browser) Assigned presenter views board → personalized banner ("당신이 다음 발표자입니다") with their topic shown
-- [ ] T.19 (agent-browser) Board with no assigned presenter → banner not rendered; board layout unaffected
-- [ ] T.20 (agent-browser) Admin clicks "다음 발표자 지정" → queue table updates, assigned member's board shows banner
-- [ ] T.21 (agent-browser) Admin clicks "건너뛰기" on assigned presenter → next pending member becomes assigned, table updates
-- [ ] T.22 (agent-browser) Admin clicks "대기열 초기화" → confirmation dialog shown; on confirm, all entries reset to pending, no banner shown
-- [ ] T.23 (Supabase local) RLS: board member from Board A cannot read `topic_missions` for Board B (0 rows, no error)
-- [ ] T.24 (Supabase local) UNIQUE constraint: second INSERT for same `(board_id, user_id)` returns Postgres error 23505; API layer returns user-friendly error
-- [ ] T.25 (Supabase local) Wrap-around integrity: after all entries are `completed`, `advance_topic_presenter` resets all to `pending` and assigns first entry atomically
-- [ ] T.26 (Supabase local) Nullable `post_id`: INSERT into `notifications` with `type = 'topic_presenter_assigned'` and `post_id = NULL` succeeds after migration
-- [ ] T.27 (Supabase local) `updated_at` trigger: updating `topic_missions.status` automatically updates `updated_at`
+- [x] T.15 (agent-browser) Unregistered board member sees banner with "발표 주제 등록하기" link when a presenter is assigned
+- [x] T.16 (agent-browser) Clicking banner link navigates to `/board/:boardId/topic`; member submits valid topic → success confirmation shown
+- [x] T.17 (agent-browser) Already-registered member views `/board/:boardId/topic` → no form shown, info message shown
+- [x] T.18 (agent-browser) Assigned presenter views board → personalized banner ("당신이 다음 발표자입니다") with their topic shown
+- [x] T.19 (agent-browser) Board with no assigned presenter → banner not rendered; board layout unaffected
+- [x] T.20 (agent-browser) Admin clicks "다음 발표자 지정" → queue table updates, assigned member's board shows banner
+- [x] T.21 (agent-browser) Admin clicks "건너뛰기" on assigned presenter → next pending member becomes assigned, table updates
+- [x] T.22 (agent-browser) Admin clicks "대기열 초기화" → confirmation dialog shown; on confirm, all entries reset to pending, no banner shown
+- [x] T.23 (Supabase local) RLS: board member from Board A cannot read `topic_missions` for Board B (0 rows, no error)
+- [x] T.24 (Supabase local) UNIQUE constraint: second INSERT for same `(board_id, user_id)` returns Postgres error 23505; API layer returns user-friendly error
+- [x] T.25 (Supabase local) Wrap-around integrity: after all entries are `completed`, `advance_topic_presenter` resets all to `pending` and assigns first entry atomically
+- [x] T.26 (Supabase local) Nullable `post_id`: INSERT into `notifications` with `type = 'topic_presenter_assigned'` and `post_id = NULL` succeeds after migration
+- [x] T.27 (Supabase local) `updated_at` trigger: updating `topic_missions.status` automatically updates `updated_at`
