@@ -46,13 +46,13 @@
 
 ## 6. Admin: Topic Mission Panel
 
-- [ ] 6.1 Create `apps/admin/src/app/admin/boards/[boardId]/topic-missions/page.tsx` with queue table (nickname, topic, order, status badge, action buttons)
-- [ ] 6.2 Implement "다음 발표자 지정" button: call `assign-topic-presenter` edge function via service_role, refresh table on success, disable button while in-flight
-- [ ] 6.3 Implement "건너뛰기" (Skip) action per row: service_role update to `skipped`; if skipped entry was `assigned`, trigger advancement to next pending
-- [ ] 6.4 Implement Up/Down reorder buttons: call a Postgres RPC that renumbers entries atomically; disable Up on first entry, Down on last
-- [ ] 6.5 Implement "대기열 초기화" (Reset) button with confirmation dialog: bulk update all entries to `pending` via service_role on confirmation
-- [ ] 6.6 Show pool exhaustion indicator "이번 사이클 완료 — 다음 지정 시 초기화됩니다" when zero `pending` entries remain; hide when any `pending` entry exists
-- [ ] 6.7 Show empty state message when no `topic_missions` entries exist for the board
+- [x] 6.1 Create `apps/admin/src/app/admin/boards/[boardId]/topic-missions/page.tsx` with queue table (nickname, topic, order, status badge, action buttons)
+- [x] 6.2 Implement "다음 발표자 지정" button: call `assign-topic-presenter` edge function via service_role, refresh table on success, disable button while in-flight
+- [x] 6.3 Implement "건너뛰기" (Skip) action per row: service_role update to `skipped`; if skipped entry was `assigned`, trigger advancement to next pending
+- [x] 6.4 Implement Up/Down reorder buttons: call a Postgres RPC that renumbers entries atomically; disable Up on first entry, Down on last
+- [x] 6.5 Implement "대기열 초기화" (Reset) button with confirmation dialog: bulk update all entries to `pending` via service_role on confirmation
+- [x] 6.6 Show pool exhaustion indicator "이번 사이클 완료 — 다음 지정 시 초기화됩니다" when zero `pending` entries remain; hide when any `pending` entry exists
+- [x] 6.7 Show empty state message when no `topic_missions` entries exist for the board
 
 ## Tests
 

@@ -319,6 +319,37 @@ export async function fetchBoardMapped(boardId: string): Promise<Board | null> {
 }
 
 // ---------------------------------------------------------------------------
+// Topic missions
+// ---------------------------------------------------------------------------
+
+export type TopicMissionStatus = 'pending' | 'assigned' | 'completed' | 'skipped'
+
+export interface TopicMissionEntry {
+  id: string
+  board_id: string
+  user_id: string
+  topic: string
+  order_index: number
+  status: TopicMissionStatus
+  created_at: string
+  updated_at: string
+  users: { nickname: string | null; real_name: string | null } | null
+}
+
+/** Select all topic missions for a board, ordered by order_index ASC. */
+export async function fetchTopicMissions(boardId: string): Promise<TopicMissionEntry[]> {
+  const supabase = getSupabaseClient()
+  const { data, error } = await supabase
+    .from('topic_missions')
+    .select('*, users(nickname, real_name)')
+    .eq('board_id', boardId)
+    .order('order_index', { ascending: true })
+
+  if (error) throw error
+  return (data ?? []) as TopicMissionEntry[]
+}
+
+// ---------------------------------------------------------------------------
 // App config
 // ---------------------------------------------------------------------------
 
