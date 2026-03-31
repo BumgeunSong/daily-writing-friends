@@ -36,7 +36,6 @@ install_plugin "feature-dev@claude-plugins-official"
 install_plugin "supabase@claude-plugins-official"
 install_plugin "pr-review-toolkit@claude-plugins-official"
 install_plugin "greptile@claude-plugins-official"
-install_plugin "sentry@claude-plugins-official"
 install_plugin "code-simplifier@claude-plugins-official"
 
 # Install plugins from third-party marketplaces
