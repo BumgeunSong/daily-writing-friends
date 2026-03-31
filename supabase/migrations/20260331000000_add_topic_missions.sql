@@ -31,6 +31,10 @@ CREATE INDEX idx_topic_missions_board_order ON topic_missions(board_id, order_in
 CREATE INDEX idx_topic_missions_board_status ON topic_missions(board_id, status);
 CREATE INDEX idx_topic_missions_user_id ON topic_missions(user_id);
 
+CREATE UNIQUE INDEX idx_topic_missions_single_assigned
+  ON topic_missions(board_id)
+  WHERE status = 'assigned';
+
 -- =============================================
 -- 3. order_index auto-assignment (BEFORE INSERT trigger)
 --
@@ -131,6 +135,8 @@ DECLARE
   v_wrapped     BOOLEAN := FALSE;
   v_topic_display TEXT;
 BEGIN
+  PERFORM pg_advisory_xact_lock(hashtext('advance_topic:' || p_board_id));
+
   -- Step 1: Complete current assigned entry (may not exist on first call)
   UPDATE topic_missions
     SET status = 'completed', updated_at = NOW()

@@ -15,14 +15,14 @@ interface TopicMissionRow {
 interface AssignedPresenterRow {
   user_id: string;
   topic: string;
-  users: { nickname: string | null } | null;
+  users: { nickname: string | null; real_name: string | null } | null;
 }
 
 export async function fetchAssignedPresenter(boardId: string): Promise<AssignedPresenter | null> {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('topic_missions')
-    .select('user_id, topic, users(nickname)')
+    .select('user_id, topic, users(nickname, real_name)')
     .eq('board_id', boardId)
     .eq('status', 'assigned')
     .maybeSingle();
@@ -37,7 +37,7 @@ export async function fetchAssignedPresenter(boardId: string): Promise<AssignedP
   const row = data as unknown as AssignedPresenterRow;
   return {
     userId: row.user_id,
-    userName: row.users?.nickname ?? null,
+    userName: row.users?.nickname ?? row.users?.real_name ?? '알 수 없음',
     topic: row.topic,
   };
 }

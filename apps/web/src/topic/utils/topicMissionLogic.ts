@@ -1,4 +1,6 @@
-export type TopicMissionStatus = 'pending' | 'assigned' | 'completed' | 'skipped';
+import type { TopicMissionStatus } from '@/topic/model/TopicMission';
+
+export type { TopicMissionStatus };
 
 export type TopicMissionEntry = {
   id: string;
