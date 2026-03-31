@@ -105,3 +105,22 @@ All 27 spec requirements traced against implementation. 2 drifted, 25 aligned.
 2. `topic-registration` Non-Member Access — enforcement is at API/RLS layer, not page-load redirect
 
 **Branch is now ready for PR creation.** Specs are accurate source of truth for reviewers.
+
+---
+
+### Session 10 — PR Creation (this session)
+
+PR created and CI monitored.
+
+**Files changed:**
+- `openspec/changes/topic-mission-automation/pull-request.md` — **Created**: PR URL, CI results, SonarCloud pre-existing failure note
+- `openspec/changes/topic-mission-automation/handoff.md` — Updated (this file)
+
+**PR**: https://github.com/BumgeunSong/daily-writing-friends/pull/539
+
+**CI Results:**
+- `test (20.x)` — ✅ PASS (624 Vitest tests)
+- `Vercel (admin + mcp)` — ✅ PASS
+- `SonarCloud` — ❌ pre-existing failure (stale `sonar.sources=src` config; failing on every PR since monorepo migration, unrelated to this change)
+
+**Next step:** Await code review and merge. See Deployment Checklist above.
