@@ -29,6 +29,7 @@ CREATE TABLE topic_missions (
 
 CREATE INDEX idx_topic_missions_board_order ON topic_missions(board_id, order_index);
 CREATE INDEX idx_topic_missions_board_status ON topic_missions(board_id, status);
+CREATE INDEX idx_topic_missions_user_id ON topic_missions(user_id);
 
 -- =============================================
 -- 3. order_index auto-assignment (BEFORE INSERT trigger)
@@ -225,7 +226,7 @@ CREATE POLICY topic_missions_select ON topic_missions
   USING (
     EXISTS (
       SELECT 1 FROM user_board_permissions
-      WHERE user_board_permissions.user_id = auth.uid()
+      WHERE user_board_permissions.user_id = (SELECT auth.uid())
         AND user_board_permissions.board_id = topic_missions.board_id
     )
   );
@@ -234,10 +235,10 @@ CREATE POLICY topic_missions_select ON topic_missions
 CREATE POLICY topic_missions_insert ON topic_missions
   FOR INSERT
   WITH CHECK (
-    user_id = auth.uid()
+    user_id = (SELECT auth.uid())
     AND EXISTS (
       SELECT 1 FROM user_board_permissions
-      WHERE user_board_permissions.user_id = auth.uid()
+      WHERE user_board_permissions.user_id = (SELECT auth.uid())
         AND user_board_permissions.board_id = topic_missions.board_id
     )
   );

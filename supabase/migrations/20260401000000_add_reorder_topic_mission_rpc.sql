@@ -18,6 +18,10 @@ DECLARE
   v_adjacent_id    TEXT;
   v_adjacent_index INTEGER;
 BEGIN
+  -- Serialize reorder operations per board to prevent concurrent swaps
+  -- from reading stale order_index values.
+  PERFORM pg_advisory_xact_lock(hashtext('topic_missions_reorder:' || p_board_id));
+
   -- Resolve current entry's order_index
   SELECT order_index INTO v_current_index
     FROM topic_missions
