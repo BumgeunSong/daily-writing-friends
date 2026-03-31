@@ -46,9 +46,10 @@ AS $$
 DECLARE
   v_next INTEGER;
 BEGIN
-  -- Lock all existing rows for this board to prevent concurrent inserts
-  -- from computing the same MAX(order_index) and producing duplicate values.
-  PERFORM id FROM topic_missions WHERE board_id = p_board_id FOR UPDATE;
+  -- Advisory lock scoped to this board prevents concurrent inserts from
+  -- computing the same MAX(order_index). Works even when zero rows exist
+  -- (unlike FOR UPDATE which locks nothing on an empty table).
+  PERFORM pg_advisory_xact_lock(hashtext('topic_missions:' || p_board_id));
 
   SELECT COALESCE(MAX(order_index), 0) + 1
     INTO v_next
@@ -264,7 +265,10 @@ ALTER TABLE notifications ADD CONSTRAINT notifications_type_check
     'topic_presenter_assigned'
   ));
 
--- Drop and recreate idempotency index to handle NULL post_id
+-- Drop and recreate idempotency index to handle NULL post_id.
+-- Exclude topic_presenter_assigned: the same user can be assigned across
+-- multiple cycles (wrap-around), so duplicate (recipient, type, NULL fields)
+-- must be allowed for that type.
 DROP INDEX idx_notifications_idempotency;
 CREATE UNIQUE INDEX idx_notifications_idempotency
   ON notifications(
@@ -274,6 +278,7 @@ CREATE UNIQUE INDEX idx_notifications_idempotency
     COALESCE(comment_id, ''),
     COALESCE(reply_id, ''),
     actor_id
-  );
+  )
+  WHERE type <> 'topic_presenter_assigned';
 
 COMMIT;

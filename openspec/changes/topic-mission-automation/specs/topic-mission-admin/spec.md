@@ -57,7 +57,7 @@ THEN that entry becomes `skipped` and the next `pending` entry (by `order_index`
 
 ### Requirement: Reorder Queue Entries
 
-The admin panel SHALL provide Up and Down action buttons for each queue entry to adjust `order_index`. Reordering SHALL execute via a Postgres RPC that renumbers all entries for the board in a single transaction to prevent gaps or collisions.
+The admin panel SHALL provide Up and Down action buttons for each queue entry to adjust `order_index`. Reordering SHALL execute via a Postgres RPC that, in a single transaction, swaps the selected entry's `order_index` with that of the adjacent entry above or below it to prevent gaps or collisions.
 
 #### Scenario: Moving an entry up decreases its order_index
 
