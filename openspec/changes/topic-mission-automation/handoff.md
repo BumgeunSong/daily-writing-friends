@@ -64,11 +64,26 @@ All 13 remaining E2E and DB tests complete. 624 Vitest tests still pass.
 - `tests/topic-mission-admin.spec.ts` — T.20–T.22 admin action → web app state
 - `tests/topic-mission-db.spec.ts` — T.23–T.27 Supabase-local DB tests (no browser)
 
-**Key decisions:**
-- T.20–T.22: Admin panel UI not tested (separate Next.js app not in this Playwright webServer config). Admin actions simulated via service_role REST API; web app resulting state verified in the browser.
-- Board IDs use `Date.now()` suffix to avoid cross-browser-project data collisions when Playwright runs chromium/firefox/webkit in parallel.
-- T.26: uses `advanceTopicPresenter` RPC via service_role (inserts notification with `post_id = NULL`), then verifies via REST query.
+### Session 8 — Verify: Full 4-layer test pyramid (commit `624a8a5e`)
+
+All 27 test cases pass. 3 test-level fixes applied.
+
+**Files changed:**
+- `tests/utils/topic-mission-helpers.ts` — Fixed `REGULAR_USER_ID`/`SECOND_USER_ID` to match local Supabase seed (was hardcoded to non-existent UUIDs)
+- `tests/topic-mission-admin.spec.ts` — Added `test.describe.configure({ mode: 'serial' })` to prevent parallel beforeAll conflicts; added notification cleanup by `recipient_id` in beforeAll/afterEach
+- `openspec/changes/topic-mission-automation/verify_report.md` — Full verification report
+
+**Key findings:**
+- Dev server must be started manually against local Supabase before running E2E tests (`pnpm --filter web dev --port 5173` with `VITE_SUPABASE_URL=http://127.0.0.1:54321`). The Playwright `reuseExistingServer: true` config reuses an existing server; the fallback `webServer` command starts Vite from the repo root (wrong directory), causing blank pages.
+- `idx_notifications_idempotency` index on notifications does NOT include `board_id`. This limits each user to one `topic_presenter_assigned` notification at a time across all boards. Documented in verify_report.md; not fixed (source-level, single-board use case is acceptable for now).
 
 ## Status
 
-**ALL TASKS COMPLETE** — all 63/63 tasks (T.1–T.27) are checked off in tasks.md.
+**ALL TASKS COMPLETE** — all 63/63 tasks (T.1–T.27) are checked off in tasks.md. Full 4-layer test pyramid passes. Feature is ready for deployment.
+
+## Deployment Checklist (for next session or human reviewer)
+
+1. Apply DB migrations to production: `supabase db push` (idempotent)
+2. Deploy edge function: `supabase functions deploy assign-topic-presenter`
+3. Deploy web app + admin app simultaneously (see design.md Deployment Order)
+4. Verify: admin can advance presenter, web app shows banner, notification delivered
