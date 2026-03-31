@@ -21,6 +21,8 @@ THEN the user is redirected to the login page
 WHEN an authenticated user who is NOT a member of the board navigates to `/board/:boardId/topic`
 THEN the user is shown an access-denied state or redirected
 
+> **Implementation note**: Board membership is enforced at the RLS layer. Non-members see the registration form but receive an RLS error on submit attempt, which is surfaced as an inline form error. There is no page-load redirect; the "shown an access-denied state" branch applies.
+
 ---
 
 ### Requirement: Topic Submission Form

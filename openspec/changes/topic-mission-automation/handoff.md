@@ -87,3 +87,21 @@ All 27 test cases pass. 3 test-level fixes applied.
 2. Deploy edge function: `supabase functions deploy assign-topic-presenter`
 3. Deploy web app + admin app simultaneously (see design.md Deployment Order)
 4. Verify: admin can advance presenter, web app shows banner, notification delivered
+
+---
+
+### Session 9 — Spec Alignment Check (this session)
+
+All 27 spec requirements traced against implementation. 2 drifted, 25 aligned.
+
+**Files changed:**
+- `openspec/changes/topic-mission-automation/spec-alignment.md` — **Created**: full alignment report
+- `openspec/changes/topic-mission-automation/specs/topic-mission-pool/spec.md` — Added `assigned → pending` to valid Status Lifecycle transitions (Reset Queue path)
+- `openspec/changes/topic-mission-automation/specs/topic-registration/spec.md` — Added implementation note: non-member access enforced at RLS layer on submit, not on page load
+- `openspec/changes/topic-mission-automation/handoff.md` — Updated (this file)
+
+**Drifted specs updated:**
+1. `topic-mission-pool` Status Lifecycle — `assigned → pending` was missing (Reset Queue requires it)
+2. `topic-registration` Non-Member Access — enforcement is at API/RLS layer, not page-load redirect
+
+**Branch is now ready for PR creation.** Specs are accurate source of truth for reviewers.
