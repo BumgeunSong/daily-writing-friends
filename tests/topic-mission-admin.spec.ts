@@ -29,12 +29,19 @@ import {
 
 let boardId: string;
 
+test.describe.configure({ mode: 'serial' });
+
 test.describe('Admin Topic Mission Actions → Web App State', () => {
   test.beforeAll(async () => {
     boardId = `topic-e2e-admin-${Date.now()}`;
     await setupTestBoard(boardId, 'Admin Action E2E Test Board');
     await grantBoardMembership(REGULAR_USER_ID, boardId);
     await grantBoardMembership(SECOND_USER_ID, boardId);
+    // Pre-clean any leftover topic_presenter_assigned notifications from prior runs
+    await serviceRoleFetch(
+      `/rest/v1/notifications?type=eq.topic_presenter_assigned&recipient_id=in.(${REGULAR_USER_ID},${SECOND_USER_ID})`,
+      { method: 'DELETE' },
+    );
   });
 
   test.afterAll(async () => {
@@ -43,6 +50,11 @@ test.describe('Admin Topic Mission Actions → Web App State', () => {
 
   test.afterEach(async () => {
     await deleteTopicMissions(boardId);
+    // Clean up notifications by recipient to avoid idempotency conflicts across tests
+    await serviceRoleFetch(
+      `/rest/v1/notifications?type=eq.topic_presenter_assigned&recipient_id=in.(${REGULAR_USER_ID},${SECOND_USER_ID})`,
+      { method: 'DELETE' },
+    );
   });
 
   test('T.20 Admin advances presenter → board page shows personalised banner for assigned member', async ({

@@ -19,8 +19,8 @@ export const TOPIC_TEST_BOARD_ID = 'topic-mission-e2e-board';
 export const TOPIC_TEST_BOARD_B_ID = 'topic-mission-e2e-board-b';
 
 /** Test user IDs (from tests/fixtures/e2e-users.json, seeded by seed-e2e-users.ts) */
-export const REGULAR_USER_ID = '3c84753e-6c80-489b-85d1-7fd99f31c0d7';
-export const SECOND_USER_ID = '261a154a-fe06-4e2a-8579-c673e588651e';
+export const REGULAR_USER_ID = '11445913-6c79-4b52-99ec-39da7d0337ed'; // e2e@example.com
+export const SECOND_USER_ID = 'bedcc0a7-b9ee-4070-bf8b-19c7bb4f1dd6'; // e2e2@example.com
 
 // ---------------------------------------------------------------------------
 // Low-level fetch with service_role credentials
