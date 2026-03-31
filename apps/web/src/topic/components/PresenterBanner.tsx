@@ -12,7 +12,7 @@ export function PresenterBanner({ boardId }: PresenterBannerProps) {
   const { currentUser } = useAuth();
   const { assignedPresenter, isLoading: isLoadingPresenter } = useAssignedPresenter(boardId);
 
-  const { data: currentUserMission } = useQuery({
+  const { data: currentUserMission, isLoading: isLoadingMission } = useQuery({
     queryKey: ['topic_missions', 'current_user', boardId, currentUser?.uid],
     queryFn: () => fetchCurrentUserMission(boardId, currentUser!.uid),
     enabled: Boolean(currentUser?.uid) && Boolean(assignedPresenter),
@@ -40,7 +40,7 @@ export function PresenterBanner({ boardId }: PresenterBannerProps) {
       <p className="mt-1 text-sm text-muted-foreground">
         발표 주제: {assignedPresenter.topic}
       </p>
-      {!currentUserMission && (
+      {!isLoadingMission && !currentUserMission && (
         <Link
           to={`/board/${boardId}/topic`}
           className="mt-2 inline-block text-sm text-ring hover:underline"

@@ -39,13 +39,24 @@ CREATE INDEX idx_topic_missions_board_status ON topic_missions(board_id, status)
 
 CREATE OR REPLACE FUNCTION next_topic_order_index(p_board_id TEXT)
 RETURNS INTEGER
-LANGUAGE sql
+LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  v_next INTEGER;
+BEGIN
+  -- Lock all existing rows for this board to prevent concurrent inserts
+  -- from computing the same MAX(order_index) and producing duplicate values.
+  PERFORM id FROM topic_missions WHERE board_id = p_board_id FOR UPDATE;
+
   SELECT COALESCE(MAX(order_index), 0) + 1
-  FROM topic_missions
-  WHERE board_id = p_board_id;
+    INTO v_next
+    FROM topic_missions
+    WHERE board_id = p_board_id;
+
+  RETURN v_next;
+END;
 $$;
 
 CREATE OR REPLACE FUNCTION assign_topic_order_index()

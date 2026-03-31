@@ -4,7 +4,7 @@ import type { Notification } from '@/notification/model/Notification';
 import { NotificationType } from '@/notification/model/Notification';
 import { type FirebaseTimestamp, createTimestamp } from '@/shared/model/Timestamp';
 
-export function mapDTOToNotification(row: NotificationDTO): Notification {
+export function mapDTOToNotification(row: NotificationDTO): Notification | null {
   const base = {
     id: row.id,
     boardId: row.boardId,
@@ -40,10 +40,10 @@ export function mapDTOToNotification(row: NotificationDTO): Notification {
       // Compile-time exhaustiveness check — errors if a new enum value is unhandled above
       const _exhaustive: never = row.type;
       void _exhaustive;
-      // Graceful runtime fallback: log warning instead of throwing to prevent crashes
-      // when the DB has a type not yet known to this client version.
-      console.warn(`Unknown notification type: ${String(row.type)}. Returning generic notification.`);
-      return { ...base, type: NotificationType.LIKE_ON_POST };
+      // Graceful runtime fallback: log warning and return null so the caller
+      // can filter out notifications with types unknown to this client version.
+      console.warn(`Unknown notification type: ${String(row.type)}. Skipping notification.`);
+      return null;
     }
   }
 }
@@ -63,5 +63,5 @@ export const fetchNotifications = async (
 ): Promise<Notification[]> => {
   const afterStr = after ? after.toDate().toISOString() : undefined;
   const rows = await fetchNotificationsFromSupabase(userId, limitCount, afterStr);
-  return rows.map(mapDTOToNotification);
+  return rows.map(mapDTOToNotification).filter((n): n is Notification => n !== null);
 };

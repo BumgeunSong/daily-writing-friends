@@ -65,8 +65,8 @@ describe('isValidStatusTransition', () => {
     expect(isValidStatusTransition('pending', 'completed')).toBe(false);
   });
 
-  it('pending → skipped is invalid', () => {
-    expect(isValidStatusTransition('pending', 'skipped')).toBe(false);
+  it('pending → skipped is valid', () => {
+    expect(isValidStatusTransition('pending', 'skipped')).toBe(true);
   });
 
   it('assigned → completed is valid', () => {
@@ -77,11 +77,15 @@ describe('isValidStatusTransition', () => {
     expect(isValidStatusTransition('assigned', 'skipped')).toBe(true);
   });
 
-  it('assigned → pending is invalid', () => {
-    expect(isValidStatusTransition('assigned', 'pending')).toBe(false);
+  it('assigned → pending is valid', () => {
+    expect(isValidStatusTransition('assigned', 'pending')).toBe(true);
   });
 
-  it('completed → pending is invalid', () => {
-    expect(isValidStatusTransition('completed', 'pending')).toBe(false);
+  it('completed → pending is valid', () => {
+    expect(isValidStatusTransition('completed', 'pending')).toBe(true);
+  });
+
+  it('skipped → pending is valid', () => {
+    expect(isValidStatusTransition('skipped', 'pending')).toBe(true);
   });
 });

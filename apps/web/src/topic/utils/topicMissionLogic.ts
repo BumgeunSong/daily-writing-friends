@@ -12,10 +12,14 @@ export type NextAssignmentResult = {
   wrapped: boolean;
 };
 
-// Valid status transitions for topic_missions lifecycle
+// Valid status transitions for topic_missions lifecycle.
+// The DB allows broader transitions (e.g. wrap-around resets completed/skipped → pending,
+// and admin/edge-function paths may reset assigned → pending or skip from pending directly).
 const VALID_TRANSITIONS: Partial<Record<TopicMissionStatus, TopicMissionStatus[]>> = {
-  pending: ['assigned'],
-  assigned: ['completed', 'skipped'],
+  pending: ['assigned', 'skipped'],
+  assigned: ['completed', 'skipped', 'pending'],
+  completed: ['pending'],
+  skipped: ['pending'],
 };
 
 export function isValidStatusTransition(from: TopicMissionStatus, to: TopicMissionStatus): boolean {
