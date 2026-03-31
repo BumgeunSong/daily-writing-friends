@@ -142,3 +142,15 @@ Final gate check after PR creation. Verified no code drift since spec-alignment.
 - All 27/27 requirements: **Aligned**
 
 **Status:** Specs are trustworthy. PR is safe to merge.
+
+---
+
+### Session 12 — Retrospective (this session)
+
+Wrote full change lifecycle retrospective.
+
+**Files changed:**
+- `openspec/changes/topic-mission-automation/retro.md` — **Created**: full retrospective (Timeline, Wins, Misses, Improvement Ideas, Harness Observations)
+- `openspec/changes/topic-mission-automation/handoff.md` — Updated (this file)
+
+**Status:** Change lifecycle complete. Retro written and committed.
