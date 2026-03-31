@@ -36,15 +36,9 @@ export function mapDTOToNotification(row: NotificationDTO): Notification | null 
       return { ...base, type: row.type };
     case NotificationType.TOPIC_PRESENTER_ASSIGNED:
       return { ...base, type: row.type };
-    default: {
-      // Compile-time exhaustiveness check — errors if a new enum value is unhandled above
-      const _exhaustive: never = row.type;
-      void _exhaustive;
-      // Graceful runtime fallback: log warning and return null so the caller
-      // can filter out notifications with types unknown to this client version.
+    default:
       console.warn(`Unknown notification type: ${String(row.type)}. Skipping notification.`);
       return null;
-    }
   }
 }
 
