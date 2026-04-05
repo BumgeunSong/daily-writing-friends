@@ -56,6 +56,7 @@ export function useCreateUpcomingBoard() {
     mutationFn: async (data: CreateBoardData) => {
       const supabase = getSupabaseClient()
       const { data: inserted, error } = await supabase.from('boards').insert({
+        id: crypto.randomUUID(),
         title: data.title,
         description: data.description,
         first_day: data.firstDay.toISOString(),
