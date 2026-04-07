@@ -1,32 +1,45 @@
 'use client'
 
-import { fetchBoardMapped, fetchBoardUsers as fetchBoardUsersFromSupabase, fetchWaitingUserIds } from '@/apis/supabase-reads'
-import { ArrowLeft, Users, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
+import { useState, useRef, useCallback } from 'react'
+import { fetchBoardMapped, fetchBoardUsers as fetchBoardUsersFromSupabase, fetchWaitingUserIds, searchUsers } from '@/apis/supabase-reads'
+import { ArrowLeft, Users, Loader2, AlertCircle, RefreshCw, UserPlus, Search } from 'lucide-react'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
   CardTitle,
   CardFooter
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table"
-import { 
-  useQuery, 
-  useQueryClient 
+import {
+  useQuery,
+  useQueryClient,
+  useMutation
 } from '@tanstack/react-query'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useRouter } from 'next/navigation'
 import { useParams } from 'next/navigation'
+import { toast } from 'sonner'
+import { Input } from '@/components/ui/input'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { getSupabaseClient } from '@/lib/supabase'
 
 interface BoardUser {
   id: string
@@ -126,6 +139,66 @@ export default function BoardDetailPage() {
     queryFn: () => fetchWaitingUserIds(boardId),
     enabled: !!boardId,
     staleTime: 2 * 60 * 1000, // 2분
+  })
+
+  // --- Add User Dialog state ---
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<Awaited<ReturnType<typeof searchUsers>>>([])
+  const [searching, setSearching] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const searchCounterRef = useRef(0)
+
+  const handleSearchInput = useCallback((value: string) => {
+    setSearchQuery(value)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    if (value.length < 2) {
+      setSearchResults([])
+      setSearching(false)
+      return
+    }
+    setSearching(true)
+    debounceRef.current = setTimeout(async () => {
+      const currentSearch = ++searchCounterRef.current
+      try {
+        const results = await searchUsers(value)
+        if (currentSearch !== searchCounterRef.current) return
+        const existingUserIds = new Set(users.map(u => u.id))
+        setSearchResults(results.filter(r => !existingUserIds.has(r.id)))
+      } catch {
+        if (currentSearch !== searchCounterRef.current) return
+        toast.error('사용자 검색 중 오류가 발생했습니다.')
+        setSearchResults([])
+      } finally {
+        if (currentSearch === searchCounterRef.current) {
+          setSearching(false)
+        }
+      }
+    }, 300)
+  }, [users])
+
+  const addUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const supabase = getSupabaseClient()
+      const { error } = await supabase
+        .from('user_board_permissions')
+        .upsert(
+          { user_id: userId, board_id: boardId, permission: 'write' },
+          { onConflict: 'user_id,board_id' }
+        )
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['boardUsers', boardId] })
+      queryClient.invalidateQueries({ queryKey: ['waitingUsers', boardId] })
+      setDialogOpen(false)
+      setSearchQuery('')
+      setSearchResults([])
+      toast.success('사용자에게 쓰기 권한이 부여되었습니다.')
+    },
+    onError: () => {
+      toast.error('권한 부여 중 오류가 발생했습니다.')
+    },
   })
 
   const handleGoBack = () => {
@@ -292,16 +365,90 @@ export default function BoardDetailPage() {
                 이 게시판에 접근 권한을 가진 사용자 목록입니다.
               </CardDescription>
             </div>
-            {usersError && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => refetchUsers()}
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                새로고침
-              </Button>
-            )}
+            <div className="flex gap-2">
+              <Dialog open={dialogOpen} onOpenChange={(open) => {
+                setDialogOpen(open)
+                if (!open) {
+                  setSearchQuery('')
+                  setSearchResults([])
+                  setSearching(false)
+                  if (debounceRef.current) clearTimeout(debounceRef.current)
+                }
+              }}>
+                <DialogTrigger asChild>
+                  <Button size="sm">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    사용자 추가
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>사용자 추가</DialogTitle>
+                    <DialogDescription>
+                      이름, 닉네임, 또는 이메일로 검색하여 쓰기 권한을 부여합니다.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="이름, 닉네임, 이메일 검색..."
+                        value={searchQuery}
+                        onChange={(e) => handleSearchInput(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                    {searching && (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    )}
+                    {!searching && searchResults.length > 0 && (
+                      <div className="max-h-60 overflow-y-auto border rounded-md">
+                        {searchResults.map((user) => (
+                          <div
+                            key={user.id}
+                            className="flex items-center justify-between px-3 py-2 hover:bg-muted/50 border-b last:border-b-0"
+                          >
+                            <div className="min-w-0">
+                              <div className="font-medium text-sm truncate">
+                                {user.nickname || user.real_name || '이름 없음'}
+                              </div>
+                              <div className="text-xs text-muted-foreground truncate">
+                                {user.email || '이메일 없음'}
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => addUserMutation.mutate(user.id)}
+                              disabled={addUserMutation.isPending}
+                            >
+                              {addUserMutation.isPending && addUserMutation.variables === user.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                '추가'
+                              )}
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {!searching && searchQuery.length >= 2 && searchResults.length === 0 && (
+                      <div className="text-center py-4 text-sm text-muted-foreground">
+                        검색 결과가 없습니다.
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+              {usersError && (
+                <Button variant="outline" size="sm" onClick={() => refetchUsers()}>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  새로고침
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
