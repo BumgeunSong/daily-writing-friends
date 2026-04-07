@@ -190,6 +190,27 @@ export async function fetchUsersByIds(userIds: string[]): Promise<SupabaseUser[]
   return data as SupabaseUser[]
 }
 
+/** Search users by nickname, real_name, or email. Returns up to 10 matches. */
+export async function searchUsers(query: string) {
+  if (!query || query.length < 2) return []
+
+  const supabase = getSupabaseClient()
+  // Escape characters that break PostgREST .or() filter syntax
+  const escaped = query.replace(/[,.()"'\\]/g, '')
+  if (!escaped) return []
+
+  const pattern = `%${escaped}%`
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, real_name, nickname, email')
+    .or(`nickname.ilike.${pattern},real_name.ilike.${pattern},email.ilike.${pattern}`)
+    .limit(10)
+
+  if (error) throw error
+  return data ?? []
+}
+
 // ---------------------------------------------------------------------------
 // Post queries
 // ---------------------------------------------------------------------------
