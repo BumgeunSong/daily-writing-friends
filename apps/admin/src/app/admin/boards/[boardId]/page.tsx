@@ -369,10 +369,14 @@ export default function BoardDetailPage() {
               <Dialog open={dialogOpen} onOpenChange={(open) => {
                 setDialogOpen(open)
                 if (!open) {
+                  searchCounterRef.current += 1
                   setSearchQuery('')
                   setSearchResults([])
                   setSearching(false)
-                  if (debounceRef.current) clearTimeout(debounceRef.current)
+                  if (debounceRef.current) {
+                    clearTimeout(debounceRef.current)
+                    debounceRef.current = null
+                  }
                 }
               }}>
                 <DialogTrigger asChild>
