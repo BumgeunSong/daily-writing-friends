@@ -195,8 +195,9 @@ export async function searchUsers(query: string) {
   if (!query || query.length < 2) return []
 
   const supabase = getSupabaseClient()
-  // Escape characters that break PostgREST .or() filter syntax
-  const escaped = query.replace(/[,.()"'\\]/g, '')
+  // Only escape characters that break PostgREST .or() filter syntax (commas, parens)
+  // Keep dots and other valid email/name characters intact
+  const escaped = query.replace(/[,()"'\\]/g, '')
   if (!escaped) return []
 
   const pattern = `%${escaped}%`
