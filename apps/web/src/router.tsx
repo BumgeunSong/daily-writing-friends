@@ -1,4 +1,5 @@
-import { createBrowserRouter, redirect, ScrollRestoration } from 'react-router-dom';
+import { redirect, ScrollRestoration } from 'react-router-dom';
+import { sentryCreateBrowserRouter } from './sentry';
 import './index.css';
 import { Toaster } from '@/shared/ui/sonner';
 
@@ -148,7 +149,7 @@ const privateRoutesWithoutNav = {
 
 // --- Router 생성 ---
 
-export const router = createBrowserRouter([
+export const router = sentryCreateBrowserRouter([
   {
     path: '/',
     element: <RootLayout />,

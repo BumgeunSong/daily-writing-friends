@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { FirebaseError } from 'firebase/app';
 import type { LoaderFunctionArgs } from 'react-router-dom';
 import { SupabaseNetworkError } from '@/shared/api/supabaseClient';
@@ -15,8 +16,9 @@ export async function boardLoader({ params }: LoaderFunctionArgs) {
   }
 
   try {
+    return await Sentry.startSpan({ name: 'boardLoader', op: 'route.loader', attributes: { boardId } }, async () => {
     // Get current user
-    const user = await getCurrentUser();
+    const user = await Sentry.startSpan({ name: 'getCurrentUser', op: 'auth' }, () => getCurrentUser());
 
     if (!user) {
       // Route guard (PrivateRoutes) will redirect to /login
@@ -24,7 +26,7 @@ export async function boardLoader({ params }: LoaderFunctionArgs) {
     }
 
     // Check board permissions before allowing access
-    const userData = await fetchUser(user.uid);
+    const userData = await Sentry.startSpan({ name: 'fetchUser', op: 'db.query', attributes: { userId: user.uid } }, () => fetchUser(user.uid));
     if (!userData) {
       // Track permission error for missing user data
       const permissionError = new FirebaseError('permission-denied', 'User data not found');
@@ -73,6 +75,7 @@ export async function boardLoader({ params }: LoaderFunctionArgs) {
     }
 
     return { boardId };
+    });
   } catch (error) {
     console.error('Failed to validate board access:', error);
 

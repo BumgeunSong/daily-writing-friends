@@ -9,6 +9,9 @@ vi.mock('@sentry/react', () => ({
   captureException: vi.fn(),
   withScope: vi.fn((cb: (scope: Record<string, unknown>) => void) => cb({ setContext: vi.fn(), setFingerprint: vi.fn() })),
   addBreadcrumb: vi.fn(),
+  startSpan: vi.fn((_ctx: unknown, cb: () => unknown) => cb()),
+  wrapCreateBrowserRouterV6: vi.fn((createRouter: unknown) => createRouter),
+  reactRouterV6BrowserTracingIntegration: vi.fn(),
 }));
 
 // React Testing Library의 DOM 매처 확장
