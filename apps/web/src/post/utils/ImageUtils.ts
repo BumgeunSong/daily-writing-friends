@@ -1,6 +1,6 @@
 import heic2any from 'heic2any';
 
-const MAX_IMAGE_DIMENSION_FOR_UPLOAD = 1920;
+const MAX_IMAGE_DIMENSION_FOR_UPLOAD = 1200;
 const JPEG_QUALITY_FOR_UPLOAD = 0.85;
 
 const cropAndResizeImage = async (file: File, callback: (resizedFile: File) => void) => {

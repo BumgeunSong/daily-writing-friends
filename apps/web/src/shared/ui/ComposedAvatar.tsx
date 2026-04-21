@@ -1,5 +1,7 @@
 import { User as UserIcon } from 'lucide-react';
 import type React from 'react';
+import { useThumbnailUrl } from '@/shared/hooks/useThumbnailUrl';
+import { isFirebaseStorageUrl, THUMB_SIZES } from '@/shared/utils/thumbnailUrl';
 import { Avatar, AvatarImage, AvatarFallback } from './avatar';
 
 interface ComposedAvatarProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -25,7 +27,16 @@ const ComposedAvatar: React.FC<ComposedAvatarProps> = ({
   className = '',
   ...rest
 }) => {
-  const optimizedSrc = src ? appendGoogleAvatarSizeParam(src, size) : '';
+  // Only resolve Firebase Storage URLs through the resize extension;
+  // Google avatar URLs use their own size parameter.
+  const firebaseSrc = src && isFirebaseStorageUrl(src) ? src : null;
+  const resolvedFirebaseSrc = useThumbnailUrl(firebaseSrc, THUMB_SIZES.AVATAR);
+
+  const optimizedSrc = (() => {
+    if (!src) return '';
+    if (isFirebaseStorageUrl(src)) return resolvedFirebaseSrc || src;
+    return appendGoogleAvatarSizeParam(src, size);
+  })();
 
   return (
     <Avatar className={className} style={{ width: size, height: size }} {...rest}>
