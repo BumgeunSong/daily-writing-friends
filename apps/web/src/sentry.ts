@@ -6,7 +6,7 @@ import { isIndexedDbConnectionError } from '@/shared/lib/queryErrorTracking';
 // Configuration constants
 const SENTRY_CONFIG = {
   DSN: 'https://8909fb2b0ca421e67d747c29dc427694@o4508460976635904.ingest.us.sentry.io/4508460981747712',
-  TRACE_SAMPLE_RATE: 1.0,
+  TRACE_SAMPLE_RATE: Number(import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE) || 1.0,
   REPLAY_SAMPLE_RATE: 0.1,
   REPLAY_ON_ERROR_RATE: 1.0,
 } as const;
@@ -113,7 +113,7 @@ export const initSentry = (): void => {
     tracePropagationTargets: [
       'localhost',
       /^https:\/\/daily-writing-friends\.com\/api/,
-      /^https:\/\/.*\.supabase\.co/,
+      import.meta.env.VITE_SUPABASE_URL,
     ],
     replaysSessionSampleRate: isDevelopment ? 0 : SENTRY_CONFIG.REPLAY_SAMPLE_RATE,
     replaysOnErrorSampleRate: SENTRY_CONFIG.REPLAY_ON_ERROR_RATE,
