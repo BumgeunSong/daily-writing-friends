@@ -5,7 +5,7 @@ import { useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchPost, updatePost } from '@/post/utils/postUtils';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
-import { toast } from '@/shared/hooks/use-toast';
+import { toast } from 'sonner';
 import { Button } from '@/shared/ui/button';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { formatDate } from '@/shared/utils/dateUtils';
@@ -84,11 +84,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
       queryClient.invalidateQueries(['post', boardId, postId]);
     } catch (error) {
       console.error('Error updating post:', error);
-      toast({
-        title: '오류',
-        description: '게시물 수정에 실패했습니다.',
-        variant: 'destructive',
-      });
+      toast.error('게시물 수정에 실패했습니다.', { position: 'bottom-center' });
     }
   };
 
