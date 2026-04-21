@@ -85,9 +85,12 @@ export async function getResizedUrl(
     const thumbUrl = await getDownloadURL(ref(storage, thumbPath));
     cache.set(cacheKey, thumbUrl);
     return thumbUrl;
-  } catch {
-    // Resized version doesn't exist — fall back to original
-    cache.set(cacheKey, null);
+  } catch (error: unknown) {
+    // Only cache "not found" errors — transient failures should be retried
+    const code = (error as { code?: string })?.code;
+    if (code === 'storage/object-not-found') {
+      cache.set(cacheKey, null);
+    }
     return originalUrl;
   }
 }
