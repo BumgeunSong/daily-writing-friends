@@ -16,7 +16,8 @@ export const PostCardContent: React.FC<PostCardContentProps> = ({
   isMobile = false,
   isDesktop = false,
 }) => {
-  const optimizedUrl = useThumbnailUrl(thumbnailImageURL ?? null);
+  const shouldLoadThumbnail = isMobile && !isPrivate && !!thumbnailImageURL;
+  const optimizedUrl = useThumbnailUrl(shouldLoadThumbnail ? thumbnailImageURL! : null);
   return (
     <CardContent
       className={`min-h-[44px] pb-3 pt-1 ${

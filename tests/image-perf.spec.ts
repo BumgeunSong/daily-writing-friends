@@ -11,7 +11,9 @@ import path from 'path';
  *
  * Run: npx playwright test tests/image-perf.spec.ts --project=chromium
  */
-test('measure image loading performance on board feed', async ({ page }) => {
+test('measure image loading performance on board feed', async ({ page, browserName }) => {
+  test.skip(browserName !== 'chromium', 'LCP/CLS PerformanceObserver only reliable in Chromium');
+
   // 1. Inject PerformanceObserver BEFORE navigation to capture LCP and CLS.
   //    Entries are stored on window globals because getEntriesByType()
   //    does not work for 'largest-contentful-paint' or 'layout-shift' —
@@ -46,13 +48,23 @@ test('measure image loading performance on board feed', async ({ page }) => {
   // 4. Wait for post cards to appear (content-based, not networkidle)
   await page.waitForSelector('img', { state: 'attached', timeout: 15_000 });
 
-  // 5. Scroll down to trigger lazy-loaded images (if any)
+  // 5. Scroll down to trigger lazy-loaded images (if any).
+  //    Recalculate scrollHeight each iteration to handle infinite scroll.
   await page.evaluate(async () => {
     const scrollStep = window.innerHeight;
-    const maxScroll = document.body.scrollHeight;
-    for (let y = 0; y < maxScroll; y += scrollStep) {
-      window.scrollTo(0, y);
-      await new Promise((r) => setTimeout(r, 500));
+    let prevScrollHeight = 0;
+    while (true) {
+      const maxScroll = document.body.scrollHeight;
+      if (window.scrollY + window.innerHeight >= maxScroll && maxScroll === prevScrollHeight) {
+        break;
+      }
+      prevScrollHeight = maxScroll;
+      for (let y = window.scrollY; y < maxScroll; y += scrollStep) {
+        window.scrollTo(0, y);
+        await new Promise((r) => setTimeout(r, 500));
+      }
+      // Wait for any new content to load
+      await new Promise((r) => setTimeout(r, 1000));
     }
     // Scroll back to top
     window.scrollTo(0, 0);

@@ -9,9 +9,10 @@ export const PostCardThumbnail: React.FC<PostCardThumbnailProps> = ({
   thumbnailImageURL,
   isPrivate,
 }) => {
-  const optimizedUrl = useThumbnailUrl(thumbnailImageURL);
+  const shouldLoadThumbnail = !isPrivate && !!thumbnailImageURL;
+  const optimizedUrl = useThumbnailUrl(shouldLoadThumbnail ? thumbnailImageURL : null);
 
-  if (isPrivate || !thumbnailImageURL) {
+  if (!shouldLoadThumbnail) {
     return null;
   }
 
