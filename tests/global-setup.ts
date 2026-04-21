@@ -24,6 +24,11 @@ async function globalSetup() {
     return;
   }
 
+  if (process.env.SKIP_SEED) {
+    console.log('SKIP_SEED set: skipping Supabase health check and user seeding.');
+    return;
+  }
+
   try {
     await checkSupabaseRunning();
     await seedUsers();

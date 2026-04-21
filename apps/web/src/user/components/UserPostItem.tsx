@@ -42,6 +42,8 @@ export const PostItem: React.FC<PostItemProps> = ({ post }) => {
                             alt={post.title}
                             width={120}
                             height={68}
+                            loading="lazy"
+                            decoding="async"
                             className="reading-shadow aspect-[16/9] rounded-lg object-cover"
                         />
                     </div>

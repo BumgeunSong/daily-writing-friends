@@ -18,6 +18,10 @@ export const PostCardThumbnail: React.FC<PostCardThumbnailProps> = ({
           src={thumbnailImageURL || '/placeholder.svg'}
           alt='게시글 썸네일'
           className='size-full object-cover'
+          loading='lazy'
+          decoding='async'
+          width={391}
+          height={220}
         />
       </div>
     </div>
