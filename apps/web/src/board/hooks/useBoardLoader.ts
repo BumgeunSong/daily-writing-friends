@@ -17,64 +17,64 @@ export async function boardLoader({ params }: LoaderFunctionArgs) {
 
   try {
     return await Sentry.startSpan({ name: 'boardLoader', op: 'route.loader', attributes: { boardId } }, async () => {
-    // Get current user
-    const user = await Sentry.startSpan({ name: 'getCurrentUser', op: 'auth' }, () => getCurrentUser());
+      // Get current user
+      const user = await Sentry.startSpan({ name: 'getCurrentUser', op: 'auth' }, () => getCurrentUser());
 
-    if (!user) {
-      // Route guard (PrivateRoutes) will redirect to /login
-      return { boardId };
-    }
-
-    // Check board permissions before allowing access
-    const userData = await Sentry.startSpan({ name: 'fetchUser', op: 'db.query' }, () => fetchUser(user.uid));
-    if (!userData) {
-      // Track permission error for missing user data
-      const permissionError = new FirebaseError('permission-denied', 'User data not found');
-      trackFirebasePermissionError(permissionError, {
-        operation: 'read',
-        path: `users/${user.uid}`,
-        userId: user.uid,
-        additionalInfo: {
-          reason: 'User document not found in Supabase',
-          boardId,
-        },
-      });
-
-      throw new Response('User data not found', { status: 403 });
-    }
-
-    const userPermission = userData.boardPermissions?.[boardId];
-    if (userPermission !== 'read' && userPermission !== 'write') {
-      // Track permission error for insufficient board permissions
-      const permissionError = new FirebaseError('permission-denied', 'Insufficient board permissions');
-      trackFirebasePermissionError(permissionError, {
-        operation: 'read',
-        path: `boards/${boardId}`,
-        userId: user.uid,
-        additionalInfo: {
-          reason: 'User lacks read/write permission for board',
-          userPermission: userPermission || 'none',
-          requiredPermission: 'read or write',
-          boardId,
-          availablePermissions: Object.keys(userData.boardPermissions || {}),
-        },
-      });
-
-      // Log hints for debugging
-      const hints = getPermissionErrorHints('boards', 'read');
-      if (hints) {
-        console.error('Board Permission Error - Debug Info:', {
-          boardId,
-          userId: user.uid,
-          currentPermission: userPermission || 'none',
-          ...hints,
-        });
+      if (!user) {
+        // Route guard (PrivateRoutes) will redirect to /login
+        return { boardId };
       }
 
-      throw new Response('Access denied - insufficient board permissions', { status: 403 });
-    }
+      // Check board permissions before allowing access
+      const userData = await Sentry.startSpan({ name: 'fetchUser', op: 'db.query' }, () => fetchUser(user.uid));
+      if (!userData) {
+        // Track permission error for missing user data
+        const permissionError = new FirebaseError('permission-denied', 'User data not found');
+        trackFirebasePermissionError(permissionError, {
+          operation: 'read',
+          path: `users/${user.uid}`,
+          userId: user.uid,
+          additionalInfo: {
+            reason: 'User document not found in Supabase',
+            boardId,
+          },
+        });
 
-    return { boardId };
+        throw new Response('User data not found', { status: 403 });
+      }
+
+      const userPermission = userData.boardPermissions?.[boardId];
+      if (userPermission !== 'read' && userPermission !== 'write') {
+        // Track permission error for insufficient board permissions
+        const permissionError = new FirebaseError('permission-denied', 'Insufficient board permissions');
+        trackFirebasePermissionError(permissionError, {
+          operation: 'read',
+          path: `boards/${boardId}`,
+          userId: user.uid,
+          additionalInfo: {
+            reason: 'User lacks read/write permission for board',
+            userPermission: userPermission || 'none',
+            requiredPermission: 'read or write',
+            boardId,
+            availablePermissions: Object.keys(userData.boardPermissions || {}),
+          },
+        });
+
+        // Log hints for debugging
+        const hints = getPermissionErrorHints('boards', 'read');
+        if (hints) {
+          console.error('Board Permission Error - Debug Info:', {
+            boardId,
+            userId: user.uid,
+            currentPermission: userPermission || 'none',
+            ...hints,
+          });
+        }
+
+        throw new Response('Access denied - insufficient board permissions', { status: 403 });
+      }
+
+      return { boardId };
     });
   } catch (error) {
     console.error('Failed to validate board access:', error);
