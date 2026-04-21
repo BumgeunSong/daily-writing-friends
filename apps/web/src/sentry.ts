@@ -1,10 +1,12 @@
 import * as Sentry from '@sentry/react';
+import { useEffect } from 'react';
+import { useLocation, useNavigationType, createRoutesFromChildren, matchRoutes, createBrowserRouter } from 'react-router-dom';
 import { isIndexedDbConnectionError } from '@/shared/lib/queryErrorTracking';
 
 // Configuration constants
 const SENTRY_CONFIG = {
   DSN: 'https://8909fb2b0ca421e67d747c29dc427694@o4508460976635904.ingest.us.sentry.io/4508460981747712',
-  TRACE_SAMPLE_RATE: 0.1,
+  TRACE_SAMPLE_RATE: 1.0,
   REPLAY_SAMPLE_RATE: 0.1,
   REPLAY_ON_ERROR_RATE: 1.0,
 } as const;
@@ -98,13 +100,20 @@ export const initSentry = (): void => {
     environment,
     sendDefaultPii: true,
     integrations: [
-      Sentry.browserTracingIntegration(),
+      Sentry.reactRouterV6BrowserTracingIntegration({
+        useEffect,
+        useLocation,
+        useNavigationType,
+        createRoutesFromChildren,
+        matchRoutes,
+      }),
       Sentry.replayIntegration(),
     ],
     tracesSampleRate: SENTRY_CONFIG.TRACE_SAMPLE_RATE,
     tracePropagationTargets: [
       'localhost',
       /^https:\/\/daily-writing-friends\.com\/api/,
+      /^https:\/\/.*\.supabase\.co/,
     ],
     replaysSessionSampleRate: isDevelopment ? 0 : SENTRY_CONFIG.REPLAY_SAMPLE_RATE,
     replaysOnErrorSampleRate: SENTRY_CONFIG.REPLAY_ON_ERROR_RATE,
@@ -176,3 +185,5 @@ export const setSentryContext = (key: string, context: Record<string, unknown>) 
 export const setSentryTags = (tags: Record<string, string>) => {
   Sentry.setTags(tags);
 };
+
+export const sentryCreateBrowserRouter = Sentry.wrapCreateBrowserRouterV6(createBrowserRouter);

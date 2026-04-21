@@ -20,6 +20,9 @@ vi.mock('@sentry/react', () => ({
   captureException: vi.fn(),
   withScope: vi.fn((cb: (scope: Record<string, unknown>) => void) => cb({ setContext: vi.fn(), setFingerprint: vi.fn() })),
   addBreadcrumb: vi.fn(),
+  startSpan: vi.fn((_ctx: unknown, cb: () => unknown) => cb()),
+  wrapCreateBrowserRouterV6: vi.fn((createRouter: unknown) => createRouter),
+  reactRouterV6BrowserTracingIntegration: vi.fn(),
 }));
 
 // react-router-dom: Link만 mock, 나머지는 실제 모듈 사용
