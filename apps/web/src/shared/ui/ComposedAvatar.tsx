@@ -29,12 +29,12 @@ const ComposedAvatar: React.FC<ComposedAvatarProps> = ({
 }) => {
   // Only resolve Firebase Storage URLs through the resize extension;
   // Google avatar URLs use their own size parameter.
-  const firebaseSrc = src && isFirebaseStorageUrl(src) ? src : null;
-  const resolvedFirebaseSrc = useThumbnailUrl(firebaseSrc, THUMB_SIZES.AVATAR);
+  const isFirebase = !!src && isFirebaseStorageUrl(src);
+  const resolvedFirebaseSrc = useThumbnailUrl(isFirebase ? src : null, THUMB_SIZES.AVATAR);
 
   const optimizedSrc = (() => {
     if (!src) return '';
-    if (isFirebaseStorageUrl(src)) return resolvedFirebaseSrc || src;
+    if (isFirebase) return resolvedFirebaseSrc || src;
     return appendGoogleAvatarSizeParam(src, size);
   })();
 

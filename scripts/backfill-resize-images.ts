@@ -33,7 +33,7 @@ const require = createRequire(import.meta.url);
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-const BUCKET_NAME = 'artico-app-4f9d4.firebasestorage.app';
+const BUCKET_NAME = 'artico-app-4f9d4.appspot.com';
 const PREFIXES = ['postImages/', 'profilePhotos/'];
 const RESIZE_SUFFIXES = ['_600x338', '_128x128'];
 const DRY_RUN = process.argv.includes('--dry-run');
