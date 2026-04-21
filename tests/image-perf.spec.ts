@@ -13,6 +13,7 @@ import path from 'path';
  */
 test('measure image loading performance on board feed', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'LCP/CLS PerformanceObserver only reliable in Chromium');
+  test.setTimeout(120_000); // Extended timeout for scroll + image loading
 
   // 1. Inject PerformanceObserver BEFORE navigation to capture LCP and CLS.
   //    Entries are stored on window globals because getEntriesByType()
