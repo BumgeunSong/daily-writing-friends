@@ -1,3 +1,5 @@
+import { useThumbnailUrl } from '@/shared/hooks/useThumbnailUrl';
+
 interface PostCardThumbnailProps {
   thumbnailImageURL: string | null;
   isPrivate: boolean;
@@ -7,6 +9,8 @@ export const PostCardThumbnail: React.FC<PostCardThumbnailProps> = ({
   thumbnailImageURL,
   isPrivate,
 }) => {
+  const optimizedUrl = useThumbnailUrl(thumbnailImageURL);
+
   if (isPrivate || !thumbnailImageURL) {
     return null;
   }
@@ -15,7 +19,7 @@ export const PostCardThumbnail: React.FC<PostCardThumbnailProps> = ({
     <div className='w-1/3 p-3'>
       <div className='reading-shadow aspect-video w-full overflow-hidden rounded-lg bg-muted'>
         <img
-          src={thumbnailImageURL || '/placeholder.svg'}
+          src={optimizedUrl || '/placeholder.svg'}
           alt='게시글 썸네일'
           className='size-full object-cover'
           loading='lazy'

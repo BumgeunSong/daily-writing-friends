@@ -1,3 +1,4 @@
+import { useThumbnailUrl } from '@/shared/hooks/useThumbnailUrl';
 import { CardContent } from '@/shared/ui/card';
 
 interface PostCardContentProps {
@@ -15,6 +16,7 @@ export const PostCardContent: React.FC<PostCardContentProps> = ({
   isMobile = false,
   isDesktop = false,
 }) => {
+  const optimizedUrl = useThumbnailUrl(thumbnailImageURL ?? null);
   return (
     <CardContent
       className={`min-h-[44px] pb-3 pt-1 ${
@@ -42,7 +44,7 @@ prose-ul:my-1.5'
       {isMobile && !isPrivate && thumbnailImageURL && (
         <div className='reading-shadow mt-4 aspect-video w-full overflow-hidden rounded-lg bg-muted'>
           <img
-            src={thumbnailImageURL || '/placeholder.svg'}
+            src={optimizedUrl || '/placeholder.svg'}
             alt='게시글 썸네일'
             className='size-full object-cover'
             loading='lazy'
