@@ -69,10 +69,13 @@ export default function PostFreewritingPage() {
     }
   }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault()
 
-    if (!currentUser || !boardId) return
+    if (!currentUser || !boardId) {
+      toast.error("로그인 세션이 만료되었습니다. 글을 복사해두고 페이지를 새로고침해주세요.", {position: 'bottom-center'})
+      return
+    }
 
     const hasTitleAndContent = postTitle.trim() && content.trim()
     if (!hasTitleAndContent) {
@@ -132,8 +135,8 @@ export default function PostFreewritingPage() {
         rightActions={
           <Button
             variant="default"
-            type="submit"
-            form="freewriting-form"
+            type="button"
+            onClick={() => handleSubmit()}
             disabled={isUploadButtonDisabled}
           >
             {isSubmitting ? (

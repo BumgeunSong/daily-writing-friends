@@ -73,8 +73,8 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
     setEditState((prev) => ({ ...prev, content }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!editState.title.trim() || !editState.content.trim()) return;
 
     try {
@@ -98,8 +98,8 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
         rightActions={
           <Button
             variant='default'
-            type='submit'
-            form='post-edit-form'
+            type='button'
+            onClick={() => handleSubmit()}
             disabled={isImageUploading || !editState.title.trim() || !editState.content.trim()}
           >
             <Save className='mr-2 size-4' /> 수정 완료
