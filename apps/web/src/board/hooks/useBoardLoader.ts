@@ -26,7 +26,7 @@ export async function boardLoader({ params }: LoaderFunctionArgs) {
     }
 
     // Check board permissions before allowing access
-    const userData = await Sentry.startSpan({ name: 'fetchUser', op: 'db.query', attributes: { userId: user.uid } }, () => fetchUser(user.uid));
+    const userData = await Sentry.startSpan({ name: 'fetchUser', op: 'db.query' }, () => fetchUser(user.uid));
     if (!userData) {
       // Track permission error for missing user data
       const permissionError = new FirebaseError('permission-denied', 'User data not found');
