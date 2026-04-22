@@ -1,12 +1,5 @@
 import { test, expect } from '@playwright/test';
-import {
-  FIXTURE_ALL_FORMATS,
-  FIXTURE_WITH_IMAGES,
-  FIXTURE_KOREAN_MIXED,
-  FIXTURE_EMPTY,
-  FIXTURE_REAL_POST,
-  FIXTURES,
-} from './fixtures/editor-html-fixtures';
+import { FIXTURES } from './fixtures/editor-html-fixtures';
 import { EDITOR_URL, EDITOR_AREA, EDITOR_OUTPUT } from './helpers/editor-helpers';
 
 test.describe('Editor Content Rendering', () => {
@@ -83,7 +76,7 @@ test.describe('Editor Content Rendering', () => {
     // Read output HTML
     const outputHtml = await page.locator(EDITOR_OUTPUT).innerHTML();
 
-    // Key semantic elements should be preserved
+    // CONTRACT: verify these tags match after editor migration — Tiptap should preserve standard semantic HTML
     expect(outputHtml).toContain('<h1>');
     expect(outputHtml).toContain('<strong>');
     expect(outputHtml).toContain('<em>');
@@ -102,6 +95,7 @@ test.describe('Editor Content Rendering', () => {
       expect(html.length).toBeGreaterThan(0);
     }).toPass({ timeout: 5000 });
 
+    // CONTRACT: verify these tags match after editor migration
     const outputHtml = await page.locator(EDITOR_OUTPUT).innerHTML();
     expect(outputHtml).toContain('<h2>');
     expect(outputHtml).toContain('<strong>');
