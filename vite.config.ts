@@ -84,7 +84,7 @@ export default defineConfig(({ mode }) => {
       globals: true,
       environment: 'jsdom',
       setupFiles: [],
-      include: [],
+      include: ['tests/**/*.test.ts'],
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json-summary', 'json', 'lcov'],
