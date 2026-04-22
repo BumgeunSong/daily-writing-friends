@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PostEditor } from '@/post/components/PostEditor';
 
-// Toolbar button mapping: data-testid -> editor toolbar query selector
+// Toolbar button mapping: data-testid -> editor toolbar CSS selector
 const TOOLBAR_MAPPINGS: Record<string, string> = {
-  'toolbar-bold': '.ql-bold, button[data-testid="toolbar-bold"]',
-  'toolbar-italic': '.ql-italic, button[data-testid="toolbar-italic"]',
+  'toolbar-bold': '.ql-bold',
+  'toolbar-italic': '.ql-italic',
   'toolbar-underline': '.ql-underline',
   'toolbar-strike': '.ql-strike',
   'toolbar-h1': '.ql-header[value="1"]',
@@ -17,42 +17,12 @@ const TOOLBAR_MAPPINGS: Record<string, string> = {
   'toolbar-image': '.ql-image',
 };
 
-function ToolbarProxy({ containerRef }: { containerRef: React.RefObject<HTMLDivElement | null> }) {
-  const handleClick = useCallback((testId: string) => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const selector = TOOLBAR_MAPPINGS[testId];
-    if (!selector) return;
-
-    const button = container.querySelector(selector) as HTMLButtonElement;
-    if (button) {
-      button.click();
-    }
-  }, [containerRef]);
-
-  return (
-    <div data-testid="toolbar-proxy" style={{ display: 'none' }}>
-      {Object.keys(TOOLBAR_MAPPINGS).map((testId) => (
-        <button
-          key={testId}
-          data-testid={testId}
-          onClick={() => handleClick(testId)}
-          type="button"
-        />
-      ))}
-    </div>
-  );
-}
-
 export default function EditorTestPage() {
   const [searchParams] = useSearchParams();
   const fixtureName = searchParams.get('fixture');
 
-  // Load fixture content if specified
   const [initialContent] = useState<string>(() => {
     if (!fixtureName) return '';
-    // Fixtures are injected via window for test setup
     const win = window as unknown as { __TEST_FIXTURES__?: Record<string, string> };
     return win.__TEST_FIXTURES__?.[fixtureName] ?? '';
   });
@@ -60,32 +30,42 @@ export default function EditorTestPage() {
   const [content, setContent] = useState<string>(initialContent);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Set data-testid="editor-area" on the contenteditable element
+  // Stamp data-testid on the contenteditable element and toolbar buttons
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const observer = new MutationObserver(() => {
+    const stampTestIds = () => {
+      // Contenteditable element
       const editable = container.querySelector('[contenteditable="true"]');
-      if (editable && !editable.hasAttribute('data-testid')) {
+      if (editable && editable.getAttribute('data-testid') !== 'editor-area') {
         editable.setAttribute('data-testid', 'editor-area');
       }
-    });
 
-    // Initial check
-    const editable = container.querySelector('[contenteditable="true"]');
-    if (editable) {
-      editable.setAttribute('data-testid', 'editor-area');
-    }
+      // Toolbar buttons
+      for (const [testId, selector] of Object.entries(TOOLBAR_MAPPINGS)) {
+        const btn = container.querySelector(selector);
+        if (btn && btn.getAttribute('data-testid') !== testId) {
+          btn.setAttribute('data-testid', testId);
+        }
+      }
+    };
 
-    observer.observe(container, { childList: true, subtree: true });
-    return () => observer.disconnect();
+    stampTestIds();
+
+    const observer = new MutationObserver(() => stampTestIds());
+    observer.observe(container, { childList: true, subtree: true, attributes: true, attributeFilter: ['contenteditable'] });
+
+    const interval = setInterval(stampTestIds, 100);
+
+    return () => {
+      observer.disconnect();
+      clearInterval(interval);
+    };
   }, []);
 
   return (
     <div data-testid="editor-test-page">
-      <ToolbarProxy containerRef={containerRef} />
-
       <div ref={containerRef} data-testid="editor-container">
         <PostEditor
           value={content}
