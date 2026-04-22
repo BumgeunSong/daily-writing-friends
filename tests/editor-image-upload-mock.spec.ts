@@ -23,30 +23,51 @@ function createTestImageBuffer(): Buffer {
   );
 }
 
-// Setup: mock Supabase Storage endpoints
+// Setup: mock Firebase Storage endpoints used by useImageUpload hook
 async function setupMockUpload(page: import('@playwright/test').Page) {
-  await page.route('**/storage/v1/object/**', (route) => {
-    if (route.request().method() === 'POST') {
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ Key: 'test/mock-image.jpg' }),
-      });
-    }
-    return route.fulfill({
-      status: 200,
+  const mockObjectPath = 'postImages/20260422/120000_test-image.jpg';
+  const mockDownloadToken = 'mock-download-token';
+
+  const fulfillUpload = () => ({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      name: mockObjectPath,
+      bucket: 'artico-app-4f9d4.firebasestorage.app',
       contentType: 'image/jpeg',
-      body: createTestImageBuffer(),
-    });
+      downloadTokens: mockDownloadToken,
+    }),
   });
 
-  await page.route('**/storage/v1/object/public/**', (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'image/jpeg',
-      body: createTestImageBuffer(),
-    })
-  );
+  const fulfillImage = () => ({
+    status: 200,
+    contentType: 'image/jpeg',
+    body: createTestImageBuffer(),
+  });
+
+  // Firebase Storage REST API (production)
+  await page.route('**/firebasestorage.googleapis.com/**', (route) => {
+    const url = route.request().url();
+    const method = route.request().method();
+
+    // Download request (alt=media)
+    if (url.includes('alt=media') || url.includes('token=')) {
+      return route.fulfill(fulfillImage());
+    }
+    // Upload request (POST/PUT)
+    if (method !== 'GET') {
+      return route.fulfill(fulfillUpload());
+    }
+    // Metadata request
+    return route.fulfill(fulfillUpload());
+  });
+
+  // Firebase Storage emulator (local dev)
+  await page.route('**/127.0.0.1:*/v0/b/**', (route) => {
+    if (route.request().method() !== 'GET') return route.fulfill(fulfillUpload());
+    if (route.request().url().includes('alt=media')) return route.fulfill(fulfillImage());
+    return route.fulfill(fulfillUpload());
+  });
 }
 
 let testImagePath: string;
@@ -85,7 +106,7 @@ test.describe('Editor Image Upload (Mocked)', () => {
     // Cancel the file chooser (don't actually upload)
   });
 
-  test.fixme('clipboard paste inserts image', async ({ page }) => {
+  test('clipboard paste inserts image', async ({ page }) => {
     const editor = page.locator(EDITOR_AREA);
     await editor.click();
 
@@ -113,7 +134,7 @@ test.describe('Editor Image Upload (Mocked)', () => {
     }).toPass({ timeout: 15000 });
   });
 
-  test.fixme('drag and drop inserts image', async ({ page }) => {
+  test('drag and drop inserts image', async ({ page }) => {
     const editor = page.locator(EDITOR_AREA);
     const fileBuffer = fs.readFileSync(testImagePath);
 
