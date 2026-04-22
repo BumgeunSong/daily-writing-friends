@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { modPress, EDITOR_URL, EDITOR_AREA, EDITOR_OUTPUT } from './helpers/editor-helpers';
+import { modPress, modShiftPress, EDITOR_URL, EDITOR_AREA, EDITOR_OUTPUT } from './helpers/editor-helpers';
 
 test.describe('Editor Text Formatting', () => {
   test.beforeEach(async ({ page }) => {
@@ -164,7 +164,7 @@ test.describe('Editor Text Formatting', () => {
     }).toPass({ timeout: 5000 });
 
     // Redo heading
-    await page.keyboard.press(`${process.platform === 'darwin' ? 'Meta' : 'Control'}+Shift+Z`);
+    await modShiftPress(page, 'Z');
     await page.keyboard.type(' ');
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();

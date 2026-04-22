@@ -13,6 +13,10 @@ export async function modPress(page: Page, key: string): Promise<void> {
   await page.keyboard.press(`${getModKey()}+${key}`);
 }
 
+export async function modShiftPress(page: Page, key: string): Promise<void> {
+  await page.keyboard.press(`${getModKey()}+Shift+${key}`);
+}
+
 /**
  * Get text content with &nbsp; (U+00A0) normalized to regular spaces.
  * Rich text editors render spaces as &nbsp; which breaks string comparison.

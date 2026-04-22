@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { modPress, getTextContent, EDITOR_URL, EDITOR_AREA, EDITOR_OUTPUT } from './helpers/editor-helpers';
+import { modPress, modShiftPress, getTextContent, EDITOR_URL, EDITOR_AREA, EDITOR_OUTPUT } from './helpers/editor-helpers';
 
-test.describe('Editor Paste and Undo/Redo', () => {
+test.describe('Editor Undo/Redo', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(EDITOR_URL);
     await page.waitForSelector(EDITOR_AREA, { timeout: 10000 });
@@ -53,7 +53,7 @@ test.describe('Editor Paste and Undo/Redo', () => {
       expect(html).not.toContain('second');
     }).toPass({ timeout: 5000 });
 
-    await page.keyboard.press(`${process.platform === 'darwin' ? 'Meta' : 'Control'}+Shift+Z`);
+    await modShiftPress(page, 'Z');
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();
       expect(html).toContain('second');
