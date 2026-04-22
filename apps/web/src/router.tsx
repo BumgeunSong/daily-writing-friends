@@ -147,6 +147,20 @@ const privateRoutesWithoutNav = {
   ],
 };
 
+// Dev-only routes (tree-shaken in production)
+const devRoutes = import.meta.env.DEV ? {
+  path: 'test',
+  children: [
+    {
+      path: 'editor',
+      lazy: async () => {
+        const { default: EditorTestPage } = await import('@/test/EditorTestPage');
+        return { Component: EditorTestPage };
+      },
+    },
+  ],
+} : null;
+
 // --- Router 생성 ---
 
 export const router = sentryCreateBrowserRouter([
@@ -170,6 +184,7 @@ export const router = sentryCreateBrowserRouter([
       publicRoutes,
       privateRoutesWithNav,
       privateRoutesWithoutNav,
+      ...(devRoutes ? [devRoutes] : []),
       catchAllRedirectRoute,
     ],
   },
