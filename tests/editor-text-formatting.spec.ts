@@ -12,11 +12,11 @@ test.describe('Editor Text Formatting', () => {
     await page.keyboard.type('hello world');
     await modPress(page, 'A');
     await modPress(page, 'B');
-    // Type a space to force onChange to fire with updated content
     await page.keyboard.press('End');
     await page.keyboard.type(' ');
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();
+      // CONTRACT: Tiptap also uses <strong> by default
       expect(html).toContain('<strong>');
     }).toPass({ timeout: 5000 });
   });
@@ -30,6 +30,7 @@ test.describe('Editor Text Formatting', () => {
     await page.keyboard.type(' ');
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();
+      // CONTRACT: Tiptap also uses <em> by default
       expect(html).toContain('<em>');
     }).toPass({ timeout: 5000 });
   });
@@ -43,18 +44,19 @@ test.describe('Editor Text Formatting', () => {
     await page.keyboard.type(' ');
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();
+      // CONTRACT: Tiptap may use <u> or <span style="text-decoration: underline"> — verify after migration
       expect(html).toContain('<u>');
     }).toPass({ timeout: 5000 });
   });
 
   test('strikethrough formatting wraps text in <s>', async ({ page }) => {
     await page.click(EDITOR_AREA);
-    // Type text with strikethrough already active via toolbar
     await page.click('[data-testid="toolbar-strike"]');
     await page.click(EDITOR_AREA);
     await page.keyboard.type('struck text');
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();
+      // CONTRACT: Tiptap Strike uses <s> by default, but some configs use <del> — verify after migration
       expect(html).toContain('<s>');
     }).toPass({ timeout: 5000 });
   });
