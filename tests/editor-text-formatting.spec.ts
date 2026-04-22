@@ -1,9 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { modPress } from './helpers/editor-helpers';
-
-const EDITOR_URL = '/test/editor';
-const EDITOR_AREA = '[data-testid="editor-area"]';
-const EDITOR_OUTPUT = '[data-testid="editor-output"]';
+import { modPress, EDITOR_URL, EDITOR_AREA, EDITOR_OUTPUT } from './helpers/editor-helpers';
 
 test.describe('Editor Text Formatting', () => {
   test.beforeEach(async ({ page }) => {

@@ -7,10 +7,7 @@ import {
   FIXTURE_REAL_POST,
   FIXTURES,
 } from './fixtures/editor-html-fixtures';
-
-const EDITOR_URL = '/test/editor';
-const EDITOR_AREA = '[data-testid="editor-area"]';
-const EDITOR_OUTPUT = '[data-testid="editor-output"]';
+import { EDITOR_URL, EDITOR_AREA, EDITOR_OUTPUT } from './helpers/editor-helpers';
 
 test.describe('Editor Content Rendering', () => {
   // Inject fixtures into window before each test

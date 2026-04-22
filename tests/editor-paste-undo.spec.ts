@@ -1,9 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { modPress } from './helpers/editor-helpers';
-
-const EDITOR_URL = '/test/editor';
-const EDITOR_AREA = '[data-testid="editor-area"]';
-const EDITOR_OUTPUT = '[data-testid="editor-output"]';
+import { modPress, getTextContent, EDITOR_URL, EDITOR_AREA, EDITOR_OUTPUT } from './helpers/editor-helpers';
 
 test.describe('Editor Paste and Undo/Redo', () => {
   test.beforeEach(async ({ page }) => {
@@ -11,19 +7,18 @@ test.describe('Editor Paste and Undo/Redo', () => {
     await page.waitForSelector(EDITOR_AREA, { timeout: 10000 });
   });
 
-  // FIXME: keyboard.type intermittently doesn't trigger Quill onChange
-  test.fixme('typed text appears in output', async ({ page }) => {
+  test('typed text appears in output', async ({ page }) => {
     await page.click(EDITOR_AREA);
     await page.keyboard.type('Hello from paste test');
     await expect(async () => {
-      const html = await page.locator(EDITOR_OUTPUT).innerHTML();
-      expect(html).toContain('Hello from paste test');
+      const text = await getTextContent(page.locator(EDITOR_OUTPUT));
+      expect(text).toContain('Hello from paste test');
     }).toPass({ timeout: 5000 });
   });
 
   test('undo removes last typed batch', async ({ page }) => {
     await page.click(EDITOR_AREA);
-    // Type word by word with pauses so Quill creates separate undo batches
+    // QUILL-SPECIFIC: 1s pause creates separate undo batches in Quill's time-based history
     await page.keyboard.type('first');
     await page.waitForTimeout(1000);
     await page.keyboard.type(' second');
