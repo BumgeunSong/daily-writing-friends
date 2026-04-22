@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { modPress } from './helpers/editor-helpers';
 
 const EDITOR_URL = '/test/editor';
 const EDITOR_AREA = '[data-testid="editor-area"]';
@@ -13,11 +14,11 @@ test.describe('Editor Text Formatting', () => {
   test('bold formatting wraps text in <strong>', async ({ page }) => {
     await page.click(EDITOR_AREA);
     await page.keyboard.type('hello world');
-    // Select all text
-    await page.keyboard.press('Control+A');
-    // Click bold button
-    await page.click('[data-testid="toolbar-bold"]');
-    // Assert output contains <strong>
+    await modPress(page, 'A');
+    await modPress(page, 'B');
+    // Type a space to force onChange to fire with updated content
+    await page.keyboard.press('End');
+    await page.keyboard.type(' ');
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();
       expect(html).toContain('<strong>');
@@ -27,8 +28,10 @@ test.describe('Editor Text Formatting', () => {
   test('italic formatting wraps text in <em>', async ({ page }) => {
     await page.click(EDITOR_AREA);
     await page.keyboard.type('hello world');
-    await page.keyboard.press('Control+A');
-    await page.click('[data-testid="toolbar-italic"]');
+    await modPress(page, 'A');
+    await modPress(page, 'I');
+    await page.keyboard.press('End');
+    await page.keyboard.type(' ');
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();
       expect(html).toContain('<em>');
@@ -38,8 +41,10 @@ test.describe('Editor Text Formatting', () => {
   test('underline formatting wraps text in <u>', async ({ page }) => {
     await page.click(EDITOR_AREA);
     await page.keyboard.type('hello world');
-    await page.keyboard.press('Control+A');
-    await page.click('[data-testid="toolbar-underline"]');
+    await modPress(page, 'A');
+    await modPress(page, 'U');
+    await page.keyboard.press('End');
+    await page.keyboard.type(' ');
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();
       expect(html).toContain('<u>');
@@ -48,9 +53,10 @@ test.describe('Editor Text Formatting', () => {
 
   test('strikethrough formatting wraps text in <s>', async ({ page }) => {
     await page.click(EDITOR_AREA);
-    await page.keyboard.type('hello world');
-    await page.keyboard.press('Control+A');
+    // Type text with strikethrough already active via toolbar
     await page.click('[data-testid="toolbar-strike"]');
+    await page.click(EDITOR_AREA);
+    await page.keyboard.type('struck text');
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();
       expect(html).toContain('<s>');
@@ -109,20 +115,31 @@ test.describe('Editor Text Formatting', () => {
     }).toPass({ timeout: 5000 });
   });
 
-  test('undo reverses last action', async ({ page }) => {
+  test('undo reverses formatting change', async ({ page }) => {
     await page.click(EDITOR_AREA);
     await page.keyboard.type('hello');
-    // Wait for text to appear in output
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();
       expect(html).toContain('hello');
     }).toPass({ timeout: 5000 });
 
-    // Undo
-    await page.keyboard.press('Control+Z');
+    // Apply bold then undo it
+    await modPress(page, 'A');
+    await page.keyboard.press('Control+B');
+    await page.keyboard.press('End');
+    await page.keyboard.type(' ');
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();
-      expect(html).not.toContain('hello');
+      expect(html).toContain('<strong>');
+    }).toPass({ timeout: 5000 });
+
+    // Undo bold
+    await modPress(page, 'Z');
+    await modPress(page, 'Z');
+    await page.keyboard.type(' ');
+    await expect(async () => {
+      const html = await page.locator(EDITOR_OUTPUT).innerHTML();
+      expect(html).not.toContain('<strong>');
     }).toPass({ timeout: 5000 });
   });
 
@@ -134,11 +151,27 @@ test.describe('Editor Text Formatting', () => {
       expect(html).toContain('hello');
     }).toPass({ timeout: 5000 });
 
-    await page.keyboard.press('Control+Z');
-    await page.keyboard.press('Control+Shift+Z');
+    // Apply heading
+    await page.click('[data-testid="toolbar-h1"]');
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();
-      expect(html).toContain('hello');
+      expect(html).toContain('<h1>');
+    }).toPass({ timeout: 5000 });
+
+    // Undo heading
+    await modPress(page, 'Z');
+    await page.keyboard.type(' ');
+    await expect(async () => {
+      const html = await page.locator(EDITOR_OUTPUT).innerHTML();
+      expect(html).not.toContain('<h1>');
+    }).toPass({ timeout: 5000 });
+
+    // Redo heading
+    await page.keyboard.press(`${process.platform === 'darwin' ? 'Meta' : 'Control'}+Shift+Z`);
+    await page.keyboard.type(' ');
+    await expect(async () => {
+      const html = await page.locator(EDITOR_OUTPUT).innerHTML();
+      expect(html).toContain('<h1>');
     }).toPass({ timeout: 5000 });
   });
 });
