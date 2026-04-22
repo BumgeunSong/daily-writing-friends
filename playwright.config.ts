@@ -6,6 +6,7 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   globalSetup: './tests/global-setup.ts',
   testDir: './tests',
+  testIgnore: ['**/fixtures/**', '**/helpers/**', '**/*.test.ts'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

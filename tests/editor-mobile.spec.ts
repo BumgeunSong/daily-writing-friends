@@ -1,8 +1,5 @@
 import { test, expect, devices } from '@playwright/test';
-
-const EDITOR_URL = '/test/editor';
-const EDITOR_AREA = '[data-testid="editor-area"]';
-const EDITOR_OUTPUT = '[data-testid="editor-output"]';
+import { getTextContent, EDITOR_URL, EDITOR_AREA, EDITOR_OUTPUT } from './helpers/editor-helpers';
 
 // Use mobile viewport for all tests in this suite
 test.use({ ...devices['Pixel 5'] });
@@ -18,30 +15,26 @@ test.describe('Editor Mobile Viewport', () => {
     await expect(editor).toBeVisible();
   });
 
-  // FIXME: keyboard.type doesn't reliably trigger Quill onChange in Pixel 5 emulation
-  test.fixme('editor accepts input at mobile viewport', async ({ page }) => {
-    // Click to focus (mouse click works even on mobile viewport emulation)
+  test('editor accepts input at mobile viewport', async ({ page }) => {
     await page.click(EDITOR_AREA);
-    // Type enough content to fill the viewport
     for (let i = 0; i < 10; i++) {
       await page.keyboard.type(`Line ${i + 1}`);
       await page.keyboard.press('Enter');
     }
 
     await expect(async () => {
-      const html = await page.locator(EDITOR_OUTPUT).innerHTML();
-      expect(html).toContain('Line 10');
+      const text = await getTextContent(page.locator(EDITOR_OUTPUT));
+      expect(text).toContain('Line 10');
     }).toPass({ timeout: 5000 });
   });
 
-  // FIXME: keyboard.type doesn't reliably trigger Quill onChange in Pixel 5 emulation
-  test.fixme('typing at mobile viewport produces correct output', async ({ page }) => {
+  test('typing at mobile viewport produces correct output', async ({ page }) => {
     await page.click(EDITOR_AREA);
     await page.keyboard.type('Mobile typing test');
 
     await expect(async () => {
-      const html = await page.locator(EDITOR_OUTPUT).innerHTML();
-      expect(html).toContain('Mobile typing test');
+      const text = await getTextContent(page.locator(EDITOR_OUTPUT));
+      expect(text).toContain('Mobile typing test');
     }).toPass({ timeout: 5000 });
   });
 
@@ -77,14 +70,13 @@ test.describe('Editor Mobile Viewport', () => {
     expect(toolbarBox!.y).toBeGreaterThanOrEqual(0);
   });
 
-  // FIXME: keyboard.type doesn't reliably trigger Quill onChange in Pixel 5 emulation
-  test.fixme('Korean text at mobile viewport works correctly', async ({ page }) => {
+  test('Korean text at mobile viewport works correctly', async ({ page }) => {
     await page.click(EDITOR_AREA);
     await page.keyboard.type('모바일에서 한글 입력 테스트');
 
     await expect(async () => {
-      const html = await page.locator(EDITOR_OUTPUT).innerHTML();
-      expect(html).toContain('모바일에서 한글 입력 테스트');
+      const text = await getTextContent(page.locator(EDITOR_OUTPUT));
+      expect(text).toContain('모바일에서 한글 입력 테스트');
     }).toPass({ timeout: 5000 });
   });
 });

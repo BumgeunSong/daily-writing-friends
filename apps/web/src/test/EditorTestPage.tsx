@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PostEditor } from '@/post/components/PostEditor';
 
-// Toolbar button mapping: data-testid -> editor toolbar CSS selector
+// QUILL-SPECIFIC: Update these selectors when changing editor library (e.g., Tiptap migration)
 const TOOLBAR_MAPPINGS: Record<string, string> = {
   'toolbar-bold': '.ql-bold',
   'toolbar-italic': '.ql-italic',
