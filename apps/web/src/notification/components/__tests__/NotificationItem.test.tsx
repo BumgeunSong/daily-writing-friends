@@ -88,7 +88,8 @@ describe('NotificationItem', () => {
   });
 
   describe('link generation', () => {
-    it('generates correct link URL for notification', () => {
+    // T.13: comment_on_post navigates to post URL (unchanged)
+    it('generates correct post link URL for comment_on_post', () => {
       const notification = createMockNotification({
         boardId: 'my-board',
         postId: 'my-post',
@@ -98,6 +99,29 @@ describe('NotificationItem', () => {
 
       const link = screen.getByRole('link');
       expect(link).toHaveAttribute('href', '/board/my-board/post/my-post');
+    });
+
+    // T.12: topic_presenter_assigned navigates to /board/:boardId (no postId in URL)
+    it('generates board-only link for topic_presenter_assigned', () => {
+      const mockDate = new Date('2026-01-04T10:00:00Z');
+      const notification: Notification = {
+        id: 'notif-topic',
+        type: NotificationType.TOPIC_PRESENTER_ASSIGNED,
+        boardId: 'board-123',
+        fromUserId: 'system-user',
+        message: '글쓰기 모임에서 이번 주 발표자로 선정되었어요!',
+        timestamp: {
+          seconds: mockDate.getTime() / 1000,
+          nanoseconds: 0,
+          toDate: () => mockDate,
+        } as FirebaseTimestamp,
+        read: false,
+      };
+
+      renderWithRouter(<NotificationItem notification={notification} />);
+
+      const link = screen.getByRole('link');
+      expect(link).toHaveAttribute('href', '/board/board-123');
     });
   });
 

@@ -1050,7 +1050,7 @@ export interface NotificationDTO {
   id: string;
   type: NotificationType;
   boardId: string;
-  postId: string;
+  postId?: string;
   commentId?: string;
   replyId?: string;
   fromUserId: string;
@@ -1113,7 +1113,7 @@ export async function fetchNotificationsFromSupabase(
     // type is validated downstream by mapDTOToNotification's exhaustive switch
     type: row.type as NotificationType,
     boardId: row.board_id,
-    postId: row.post_id,
+    postId: row.post_id ?? undefined,
     commentId: row.comment_id || undefined,
     replyId: row.reply_id || undefined,
     fromUserId: row.actor_id,

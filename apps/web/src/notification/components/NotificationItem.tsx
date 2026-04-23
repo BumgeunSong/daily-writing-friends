@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Notification } from '@/notification/model/Notification';
+import { NotificationType } from '@/notification/model/Notification';
 import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
 
 interface NotificationItemProps {
@@ -7,6 +8,12 @@ interface NotificationItemProps {
 }
 
 function getNotificationLink(notification: Notification): string {
+  if (notification.type === NotificationType.TOPIC_PRESENTER_ASSIGNED) {
+    return `/board/${notification.boardId}`;
+  }
+  if (!notification.postId) {
+    return `/board/${notification.boardId}`;
+  }
   return `/board/${notification.boardId}/post/${notification.postId}`;
 }
 

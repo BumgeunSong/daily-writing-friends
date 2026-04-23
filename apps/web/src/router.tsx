@@ -43,6 +43,7 @@ import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { PermissionErrorBoundary } from '@/shared/components/PermissionErrorBoundary';
 import StatusMessage from '@/shared/components/StatusMessage';
 import StatsPage from '@/stats/components/StatsPage';
+import TopicRegistrationPage from '@/topic/components/TopicRegistrationPage';
 import BlockedUsersPage from '@/user/components/BlockedUsersPage';
 import EditAccountPage from '@/user/components/EditAccountPage';
 import UserPage from '@/user/components/UserPage';
@@ -131,6 +132,7 @@ const privateRoutesWithoutNav = {
   path: '',
   element: <PrivateRoutes />,
   children: [
+    { path: 'board/:boardId/topic', element: <TopicRegistrationPage /> },
     { path: 'board/:boardId/free-writing/intro', element: <PostFreewritingIntro /> },
     { path: 'create/:boardId/free-writing', element: <PostFreewritingPage /> },
     { path: 'create/:boardId', element: <PostCreationPage />, action: createPostAction },

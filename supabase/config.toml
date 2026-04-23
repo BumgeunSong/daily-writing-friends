@@ -369,6 +369,9 @@ port = 54327
 backend = "postgres"
 
 # Experimental features may be deprecated any time
+[functions.assign-topic-presenter]
+verify_jwt = true
+
 [experimental]
 # Configures Postgres storage engine to use OrioleDB (S3)
 orioledb_version = ""

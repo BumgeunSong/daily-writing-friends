@@ -4,7 +4,7 @@ import type { Notification } from '@/notification/model/Notification';
 import { NotificationType } from '@/notification/model/Notification';
 import { type FirebaseTimestamp, createTimestamp } from '@/shared/model/Timestamp';
 
-export function mapDTOToNotification(row: NotificationDTO): Notification {
+export function mapDTOToNotification(row: NotificationDTO): Notification | null {
   const base = {
     id: row.id,
     boardId: row.boardId,
@@ -34,10 +34,11 @@ export function mapDTOToNotification(row: NotificationDTO): Notification {
       return { ...base, type: row.type, commentId: row.commentId, replyId: row.replyId };
     case NotificationType.LIKE_ON_POST:
       return { ...base, type: row.type };
-    default: {
-      const _exhaustive: never = row.type;
-      throw new Error(`Unknown notification type: ${_exhaustive}`);
-    }
+    case NotificationType.TOPIC_PRESENTER_ASSIGNED:
+      return { ...base, type: row.type };
+    default:
+      console.warn(`Unknown notification type: ${String(row.type)}. Skipping notification.`);
+      return null;
   }
 }
 
@@ -56,5 +57,5 @@ export const fetchNotifications = async (
 ): Promise<Notification[]> => {
   const afterStr = after ? after.toDate().toISOString() : undefined;
   const rows = await fetchNotificationsFromSupabase(userId, limitCount, afterStr);
-  return rows.map(mapDTOToNotification);
+  return rows.map(mapDTOToNotification).filter((n): n is Notification => n !== null);
 };

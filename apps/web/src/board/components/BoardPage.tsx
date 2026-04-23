@@ -8,6 +8,7 @@ import RecentPostCardList from "@/board/components/RecentPostCardList"
 import { WritingActionButton } from "@/board/components/WritingActionButton"
 import { useSessionStorage } from "@/shared/hooks/useSessionStorage"
 import { Button } from "@/shared/ui/button"
+import { PresenterBanner } from "@/topic/components/PresenterBanner"
 
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>()
@@ -47,6 +48,7 @@ export default function BoardPage() {
     <div className="min-h-screen bg-background">
       <BoardPageHeader boardId={boardId} />
       <main className="container mx-auto px-3 py-2 pb-24 md:px-4">
+        <PresenterBanner boardId={boardId} />
         <div className="mb-4">
           <PostFilterTabs selected={filter} onChange={setFilter} />
         </div>
