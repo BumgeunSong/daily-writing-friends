@@ -287,7 +287,7 @@ export function PostTextEditor({
       <div className='relative w-full space-y-2'>
         <div
           aria-busy={isUploading}
-          className={`w-full rounded-xl border-0 bg-background transition-all duration-300 ${isDragOver ? 'ring-2 ring-primary/50' : ''}`}
+          className={`w-full rounded-xl border-0 bg-background transition-shadow duration-300 ${isDragOver ? 'ring-2 ring-primary/50' : ''}`}
         >
           <ReactQuill
             ref={quillRef}

@@ -38,7 +38,7 @@ export const PostUserProfile: React.FC<PostUserProfileProps> = ({
         type='button'
         onClick={onClickProfile}
         aria-label='작성자 프로필로 이동'
-        className='group/profile min-h-[44px] min-w-[44px] cursor-pointer rounded-full transition-all duration-150 active:scale-95 active:bg-accent/20'
+        className='group/profile min-h-[44px] min-w-[44px] cursor-pointer rounded-full transition-[transform,background-color] duration-150 active:scale-[0.96] active:bg-accent/20'
       >
         <ComposedAvatar
           src={authorData?.profilePhotoURL || authorData?.profileImageURL}

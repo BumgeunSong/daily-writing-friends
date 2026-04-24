@@ -71,7 +71,7 @@ function UserProfileSettingsButton({ uid }: { uid: string }) {
       variant='ghost'
       size='icon'
       aria-label='설정'
-      className='reading-hover reading-focus ml-2 shrink-0 transition-all duration-200 active:scale-[0.99]'
+      className='reading-hover reading-focus ml-2 shrink-0 transition-[transform,background-color] duration-200 active:scale-[0.99]'
       onClick={() => navigate(`/account/edit/${uid}`)}
     >
       <Edit className='size-4 text-muted-foreground md:size-5' />

@@ -120,7 +120,7 @@ export function SentryFeedbackDialog({ triggerButton }: SentryFeedbackDialogProp
         {triggerButton || (
           <Button
             variant='ghost'
-            className='reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-all duration-200'
+            className='reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-[background-color] duration-200'
           >
             <MessageCircle className='size-5 text-muted-foreground' />
             <span className='text-foreground'>피드백 보내기</span>

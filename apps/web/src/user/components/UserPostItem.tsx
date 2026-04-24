@@ -14,7 +14,7 @@ export const PostItem: React.FC<PostItemProps> = ({ post }) => {
     const isPrivate = post.visibility === 'private';
     const contentPreview = getContentPreview(post.content)
     return (
-        <Card className="reading-shadow reading-hover border-border/50 transition-all duration-200 active:scale-[0.99]">
+        <Card className="reading-shadow reading-hover border-border/50 transition-[transform,background-color] duration-200 active:scale-[0.99]">
             <Link to={`/board/${post.boardId}/post/${post.id}`}
                   className="reading-focus flex gap-4">
                 <div className="min-w-0 flex-1">

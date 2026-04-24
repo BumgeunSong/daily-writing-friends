@@ -31,7 +31,7 @@ export const BoardPageHeader: React.FC<BoardHeaderProps> = ({ boardId }) => {
       <div className="container mx-auto flex items-center justify-between px-3 md:px-4">
         <Link
           to="/boards/list"
-          className="reading-hover reading-focus flex min-h-[44px] items-center space-x-2 rounded-lg p-2 text-foreground transition-all duration-200 active:scale-[0.99]"
+          className="reading-hover reading-focus flex min-h-[44px] items-center space-x-2 rounded-lg p-2 text-foreground transition-[transform,background-color] duration-200 active:scale-[0.99]"
         >
           <span className="text-xl font-semibold tracking-tight md:text-2xl">{title || "타이틀 없음"}</span>
           <ChevronDown className="size-4 md:size-5" />

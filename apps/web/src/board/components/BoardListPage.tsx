@@ -73,7 +73,7 @@ const BoardListPage: React.FC = () => {
                   key={board.id}
                   className="reading-focus block"
                 >
-                  <div className={`reading-shadow reading-hover rounded-lg border bg-card p-4 transition-all duration-200 active:scale-[0.99] ${
+                  <div className={`reading-shadow reading-hover rounded-lg border bg-card p-4 transition-[transform,background-color] duration-200 active:scale-[0.99] ${
                     isActiveBoard 
                       ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20' 
                       : 'border-border/50'

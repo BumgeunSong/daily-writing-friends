@@ -78,7 +78,7 @@ export default function UserSettingPage() {
           </div>
           <Button
             variant="ghost"
-            className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-all duration-200"
+            className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-[background-color] duration-200"
             onClick={handleSignOut}
           >
             <LogOut className="size-5 text-muted-foreground" /> 
@@ -89,7 +89,7 @@ export default function UserSettingPage() {
             <AlertDialogTrigger asChild>
               <Button
                 variant="destructive"
-                className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-all duration-200"
+                className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-[background-color] duration-200"
               >
                 <Trash2 className="size-5" /> 
                 <span>캐시 삭제</span>
@@ -109,7 +109,7 @@ export default function UserSettingPage() {
           </AlertDialog>
           <Button
             variant="ghost"
-            className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-all duration-200"
+            className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-[background-color] duration-200"
             onClick={() => navigate('/join/form')}
           >
             <SquareArrowRight className="size-5 text-ring" /> 
@@ -118,7 +118,7 @@ export default function UserSettingPage() {
           {blockUserFeatureEnabled && (
             <Button
               variant="ghost"
-              className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none px-4 text-base transition-all duration-200"
+              className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none px-4 text-base transition-[background-color] duration-200"
               onClick={() => navigate('/user/blocked-users')}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="size-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">

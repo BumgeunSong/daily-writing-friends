@@ -32,7 +32,7 @@ const PostFreewritingTutorial: React.FC = () => {
       key={card.title}
       whileHover={{ y: -5 }}
       transition={{ type: "spring", stiffness: 300 }}
-      className="flex flex-col rounded-xl border bg-card p-5 shadow-sm transition-all hover:shadow-md"
+      className="flex flex-col rounded-xl border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
     >
       <span className="mb-3 text-3xl">{card.emoji}</span>
       <h3 className="mb-2 text-lg font-semibold">{card.title}</h3>

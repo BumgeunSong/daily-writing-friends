@@ -65,7 +65,7 @@ export default function ReviewCarousel() {
               <button
                 key={review.id}
                 onClick={() => handleDotClick(index)}
-                className={`size-2 rounded-full transition-all ${
+                className={`size-2 rounded-full transition-[width,background-color] ${
                   selectedIndex === index ? 'w-6 bg-primary' : 'bg-muted-foreground/30'
                 }`}
                 aria-label={`Go to review ${index + 1}`}
