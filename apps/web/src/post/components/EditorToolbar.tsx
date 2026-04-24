@@ -109,6 +109,7 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
             icon={<Bold className='size-5' />}
             title='Bold (Ctrl+B)'
             ariaLabel='Bold'
+            data-testid='toolbar-bold'
           />
 
           <ToolbarButton
@@ -117,6 +118,7 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
             icon={<Italic className='size-5' />}
             title='Italic (Ctrl+I)'
             ariaLabel='Italic'
+            data-testid='toolbar-italic'
           />
 
           <ToolbarButton
@@ -125,6 +127,7 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
             icon={<Strikethrough className='size-5' />}
             title='Strikethrough'
             ariaLabel='Strikethrough'
+            data-testid='toolbar-strike'
           />
 
           <div className='mx-1 h-6 w-px bg-border' />
@@ -136,6 +139,7 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
             icon={<Heading1 className='size-5' />}
             title='Heading 1'
             ariaLabel='Heading 1'
+            data-testid='toolbar-h1'
           />
 
           <ToolbarButton
@@ -144,6 +148,7 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
             icon={<Heading2 className='size-5' />}
             title='Heading 2'
             ariaLabel='Heading 2'
+            data-testid='toolbar-h2'
           />
 
           <div className='mx-1 h-6 w-px bg-border' />
@@ -155,6 +160,7 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
             icon={<Quote className='size-5' />}
             title='Blockquote'
             ariaLabel='Blockquote'
+            data-testid='toolbar-blockquote'
           />
 
           <ToolbarButton
@@ -163,6 +169,7 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
             icon={<List className='size-5' />}
             title='Bullet List'
             ariaLabel='Bullet List'
+            data-testid='toolbar-bullet-list'
           />
 
           <ToolbarButton
@@ -171,6 +178,7 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
             icon={<ListOrdered className='size-5' />}
             title='Ordered List'
             ariaLabel='Ordered List'
+            data-testid='toolbar-ordered-list'
           />
 
           <div className='mx-1 h-6 w-px bg-border' />
@@ -185,6 +193,7 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
                   icon={<Link2 className='size-5' />}
                   title='Insert Link'
                   ariaLabel='Insert Link'
+                  data-testid='toolbar-link'
                 />
               </div>
             </PopoverTrigger>
@@ -243,6 +252,7 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
             icon={<ImageIcon className='size-5' />}
             title='Insert Image'
             ariaLabel='Insert Image'
+            data-testid='toolbar-image'
           />
         </div>
       </div>

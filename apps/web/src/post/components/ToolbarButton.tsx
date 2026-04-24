@@ -7,6 +7,7 @@ interface ToolbarButtonProps {
   title: string;
   ariaLabel?: string;
   className?: string;
+  'data-testid'?: string;
 }
 
 export function ToolbarButton({
@@ -16,6 +17,7 @@ export function ToolbarButton({
   title,
   ariaLabel,
   className,
+  'data-testid': testId,
 }: ToolbarButtonProps) {
   return (
     <button
@@ -24,6 +26,7 @@ export function ToolbarButton({
       aria-pressed={isActive}
       aria-label={ariaLabel || title}
       title={title}
+      data-testid={testId}
       className={cn(
         'inline-flex size-10 shrink-0 items-center justify-center rounded-md transition-colors',
         'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
