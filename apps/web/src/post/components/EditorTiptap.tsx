@@ -14,6 +14,7 @@ interface EditorTiptapProps {
   initialJson?: ProseMirrorDoc;
   onChange: (output: { html: string; json: ProseMirrorDoc }) => void;
   placeholder?: string;
+  onUploadingChange?: (isUploading: boolean) => void;
 }
 
 export interface EditorTiptapHandle {
@@ -25,7 +26,7 @@ export interface EditorTiptapHandle {
  * A rich text editor with image upload support and responsive toolbar
  */
 export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
-  ({ initialHtml, initialJson, onChange, placeholder = '내용을 입력하세요...' }, ref) => {
+  ({ initialHtml, initialJson, onChange, placeholder = '내용을 입력하세요...', onUploadingChange }, ref) => {
     // Initialize editor with custom configuration
     const editor = useTiptapEditor({
       initialHtml,
@@ -38,6 +39,11 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
     const { openFilePicker, handlePaste, isUploading, uploadProgress } = useTiptapImageUpload({
       editor,
     });
+
+    // Expose upload state to parent for submit button control
+    useEffect(() => {
+      onUploadingChange?.(isUploading);
+    }, [isUploading, onUploadingChange]);
 
     // Copy functionality
     const { editorElementRef } = useEditorCopy(editor);
