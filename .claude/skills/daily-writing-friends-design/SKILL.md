@@ -122,6 +122,71 @@ const { theme, toggleTheme } = useTheme();
 
 ---
 
+## UI Polish Baseline
+
+These rules are **mandatory** for all UI work. They prevent the most common issues that make interfaces feel off.
+
+### Never use `transition-all`
+
+Always specify exact properties. `transition-all` animates unrelated properties and causes jank.
+
+```tsx
+// BAD
+className="transition-all duration-200"
+
+// GOOD - specify what actually changes
+className="transition-transform duration-200"
+className="transition-[transform,background-color] duration-200"
+className="transition-colors duration-200"
+```
+
+### Minimum 40px touch targets
+
+Every interactive element must have at least 40×40px hit area. If the visible element is smaller, extend with padding.
+
+```tsx
+// BAD - 24px tall
+<Button size='sm' className='h-6 px-2'>
+
+// GOOD - 36px (size-9) minimum for icon buttons
+<Button size='icon' className='size-9'>
+```
+
+### Tabular numbers on dynamic counts
+
+Any number that changes dynamically must use `tabular-nums` to prevent layout shift.
+
+```tsx
+<span className="tabular-nums">{count}</span>
+```
+
+### Image outlines
+
+All user-uploaded images (avatars, thumbnails) need a subtle outline to prevent bleed on matching backgrounds. Use pure black/white only — never tinted neutrals.
+
+```tsx
+className="ring-1 ring-black/10 dark:ring-white/10"
+```
+
+### Concentric border radius
+
+When nesting rounded elements, outer radius = inner radius + padding. Mismatched radii is the #1 thing that makes UIs feel off.
+
+### Shadows over borders for major surfaces
+
+Use layered `box-shadow` instead of hard borders for major surface dividers (nav bars, toolbars). Borders are fine for content separators (`border-border/50`).
+
+### Press feedback on buttons
+
+All buttons get `active:scale-[0.96]` via the base Button component. Cards and list items use `active:scale-[0.99]`.
+
+### Text wrapping
+
+- Headings: `text-wrap: balance` (Tailwind: `text-balance`)
+- Body text: `text-wrap: pretty` (Tailwind: `text-pretty`)
+
+---
+
 ## Principles
 
 1. **Premium minimal** - Less visual noise, Bear app style
@@ -129,3 +194,4 @@ const { theme, toggleTheme } = useTheme();
 3. **Consistent hierarchy** - Follow button/color hierarchy strictly
 4. **Dual-mode** - All UI must work in both light and dark modes
 5. **Mobile-first** - Responsive spacing and touch targets
+6. **Polish baseline** - Follow UI Polish Baseline rules above on every change
