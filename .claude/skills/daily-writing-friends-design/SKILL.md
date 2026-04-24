@@ -115,7 +115,7 @@ const { theme, toggleTheme } = useTheme();
 
 ### Accessibility
 
-- Touch targets: minimum 40x40px (h-9 / size-9)
+- Touch targets: minimum 36px (size-9 / h-9)
 - Color contrast: 4.5:1 for text, 3:1 for large text
 - Focus visibility: use `reading-focus`
 - Screen reader: use `sr-only` for hidden text
@@ -140,15 +140,15 @@ className="transition-[transform,background-color] duration-200"
 className="transition-colors duration-200"
 ```
 
-### Minimum 40px touch targets
+### Minimum 36px touch targets
 
-Every interactive element must have at least 40×40px hit area. If the visible element is smaller, extend with padding.
+Every interactive element must have at least 36×36px hit area (size-9). If the visible element is smaller, extend with padding.
 
 ```tsx
 // BAD - 24px tall
 <Button size='sm' className='h-6 px-2'>
 
-// GOOD - 36px (size-9) minimum for icon buttons
+// GOOD - 36px minimum for icon buttons
 <Button size='icon' className='size-9'>
 ```
 
@@ -165,6 +165,10 @@ Any number that changes dynamically must use `tabular-nums` to prevent layout sh
 All user-uploaded images (avatars, thumbnails) need a subtle outline to prevent bleed on matching backgrounds. Use pure black/white only — never tinted neutrals.
 
 ```tsx
+// On elements inside overflow-hidden containers, use ring-inset
+className="ring-1 ring-inset ring-black/10 dark:ring-white/10"
+
+// On elements without overflow clipping
 className="ring-1 ring-black/10 dark:ring-white/10"
 ```
 
