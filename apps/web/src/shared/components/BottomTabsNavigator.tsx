@@ -42,7 +42,7 @@ export default function BottomTabsNavigator() {
               handleTabAction(tab.name);
             }}
             className={cn(
-              "flex flex-col items-center p-4 min-h-[44px] transition-[color,background-color,transform] duration-200 reading-focus active:scale-[0.90]",
+              "flex flex-col items-center p-4 min-h-[44px] transition-[color,background-color,transform] duration-200 reading-focus active:scale-[0.96]",
               location.pathname === tab.path ? 'text-primary' : 'text-muted-foreground'
             )}
           >

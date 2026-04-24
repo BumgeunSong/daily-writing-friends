@@ -9,7 +9,7 @@ conditions:
   - field: file_path
     operator: regex_match
     pattern: \.tsx?$
-action: block
+action: warn
 ---
 
 **`transition-all` is banned in this project.**

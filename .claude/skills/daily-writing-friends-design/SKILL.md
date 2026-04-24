@@ -115,7 +115,7 @@ const { theme, toggleTheme } = useTheme();
 
 ### Accessibility
 
-- Touch targets: minimum 44x44px
+- Touch targets: minimum 40x40px (h-9 / size-9)
 - Color contrast: 4.5:1 for text, 3:1 for large text
 - Focus visibility: use `reading-focus`
 - Screen reader: use `sr-only` for hidden text
