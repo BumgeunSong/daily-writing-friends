@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from '@/shared/ui/alert-dialog';
 import { Button } from '@/shared/ui/button';
+import type { ProseMirrorDoc } from '@/post/model/Post';
 import { PostEditor } from './PostEditor';
 import { PostEditorHeader } from './PostEditorHeader';
 import { PostTitleEditor } from './PostTitleEditor';
@@ -52,6 +53,7 @@ export default function PostCreationPage() {
 
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [isImageUploading, setIsImageUploading] = useState(false);
+  const [contentJson, setContentJson] = useState<ProseMirrorDoc | undefined>();
   const isSubmitting = navigation.state === 'submitting';
 
   useEffect(() => {
@@ -105,11 +107,15 @@ export default function PostCreationPage() {
           <input type='hidden' name='title' value={title} />
           <input type='hidden' name='content' value={content} />
           <input type='hidden' name='draftId' value={draftIdToSubmit} />
+          {contentJson && (
+            <input type="hidden" name="contentJson" value={JSON.stringify(contentJson)} />
+          )}
 
           <PostTitleEditor value={title} onChange={(e) => setTitle(e.target.value)} />
           <PostEditor
             value={content}
             onChange={setContent}
+            onContentJsonChange={setContentJson}
             onUploadingChange={setIsImageUploading}
           />
         </Form>
