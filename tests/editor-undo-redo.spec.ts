@@ -18,9 +18,12 @@ test.describe('Editor Undo/Redo', () => {
 
   test('undo removes last typed batch', async ({ page }) => {
     await page.click(EDITOR_AREA);
-    // QUILL-SPECIFIC: 1s pause creates separate undo batches in Quill's time-based history
     await page.keyboard.type('first');
-    await page.waitForTimeout(1000);
+
+    // Create a new undo batch by blurring and refocusing
+    await page.click('[data-testid="editor-test-page"]');
+    await page.click(EDITOR_AREA);
+    await page.keyboard.press('End');
     await page.keyboard.type(' second');
 
     await expect(async () => {
@@ -39,7 +42,11 @@ test.describe('Editor Undo/Redo', () => {
   test('redo restores undone text', async ({ page }) => {
     await page.click(EDITOR_AREA);
     await page.keyboard.type('first');
-    await page.waitForTimeout(1000);
+
+    // Create a new undo batch by blurring and refocusing
+    await page.click('[data-testid="editor-test-page"]');
+    await page.click(EDITOR_AREA);
+    await page.keyboard.press('End');
     await page.keyboard.type(' second');
 
     await expect(async () => {
