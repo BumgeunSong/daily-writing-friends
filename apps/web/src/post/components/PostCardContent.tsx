@@ -47,7 +47,7 @@ prose-ul:my-1.5'
           <img
             src={optimizedUrl || '/placeholder.svg'}
             alt='게시글 썸네일'
-            className='size-full object-cover'
+            className='size-full object-cover ring-1 ring-black/10 dark:ring-white/10 rounded-lg'
             loading='lazy'
             decoding='async'
             width={600}
