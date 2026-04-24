@@ -17,7 +17,7 @@ export const PostCardFooter: React.FC<PostCardFooterProps> = ({
     <CardFooter className='flex min-h-[44px] justify-between border-t border-border/50 p-3 md:px-4'>
       <div className='flex items-center text-muted-foreground'>
         <MessageCircle className='mr-1.5 size-4' />
-        <p className='text-sm font-medium'>{countOfComments + countOfReplies}</p>
+        <p className='text-sm font-medium tabular-nums'>{countOfComments + countOfReplies}</p>
       </div>
       {weekDaysFromFirstDay !== undefined && (
         <Badge
