@@ -54,10 +54,10 @@ const CommentRow: React.FC<CommentRowProps> = ({
         <CommentHeader userId={comment.userId} createdAt={comment.createdAt} />
         {isAuthor && (
           <div className='flex items-center space-x-1'>
-            <Button variant='ghost' size='sm' onClick={handleEditToggle} className='h-6 px-2'>
+            <Button variant='ghost' size='icon' onClick={handleEditToggle} className='size-9'>
               <EditIcon className='size-4' />
             </Button>
-            <Button variant='destructive' size='sm' onClick={handleDelete} className='h-6 px-2'>
+            <Button variant='destructive' size='icon' onClick={handleDelete} className='size-9'>
               <Trash2 className='size-4' />
             </Button>
           </div>

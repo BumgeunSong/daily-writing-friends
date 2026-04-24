@@ -49,7 +49,7 @@ const ReactWithEmoji: React.FC<ReactWithEmojiProps> = ({ onCreate, disabled = fa
         <Button
           variant="outline"
           size="sm"
-          className="size-7 rounded-full border border-border bg-background p-0 hover:bg-muted"
+          className="size-9 rounded-full border border-border bg-background p-0 hover:bg-muted"
           disabled={disabled || loading}
           data-testid="reaction-button"
         >

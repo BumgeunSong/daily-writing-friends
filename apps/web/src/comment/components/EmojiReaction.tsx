@@ -78,7 +78,7 @@ const EmojiReaction: React.FC<EmojiReactionProps> = ({ content, count, users, cu
               variant={hasReacted ? "secondary" : "outline"}
               size="sm"
               className={`
-                h-7 rounded-full px-2.5 py-0 text-sm transition-all
+                h-9 rounded-full px-2.5 py-0 text-sm transition-[color,background-color,border-color,box-shadow]
                 ${
                   hasReacted
                     ? "border-transparent bg-secondary/80 shadow-sm hover:bg-secondary"
@@ -95,7 +95,7 @@ const EmojiReaction: React.FC<EmojiReactionProps> = ({ content, count, users, cu
               ) : (
                 <span className="flex items-center gap-1">
                   <span>{content}</span>
-                  <span className="text-xs font-medium">{count}</span>
+                  <span className="text-xs font-medium tabular-nums">{count}</span>
                 </span>
               )}
             </Button>
