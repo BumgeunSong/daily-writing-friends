@@ -2,6 +2,7 @@ import { User as UserIcon } from 'lucide-react';
 import type React from 'react';
 import { useThumbnailUrl } from '@/shared/hooks/useThumbnailUrl';
 import { isFirebaseStorageUrl, THUMB_SIZES } from '@/shared/utils/thumbnailUrl';
+import { cn } from '@/shared/utils/cn';
 import { Avatar, AvatarImage, AvatarFallback } from './avatar';
 
 interface ComposedAvatarProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -39,7 +40,7 @@ const ComposedAvatar: React.FC<ComposedAvatarProps> = ({
   })();
 
   return (
-    <Avatar className={`ring-1 ring-black/10 dark:ring-white/10 ${className}`} style={{ width: size, height: size }} {...rest}>
+    <Avatar className={cn('ring-1 ring-black/10 dark:ring-white/10', className)} style={{ width: size, height: size }} {...rest}>
       <AvatarImage src={optimizedSrc} alt={alt} loading="lazy" decoding="async" />
       <AvatarFallback>
         {fallback.length === 1 ? fallback : <UserIcon className="size-3.5" />}
