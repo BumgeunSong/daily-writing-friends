@@ -4,6 +4,7 @@ import type React from 'react';
 import { useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchPost, updatePost } from '@/post/utils/postUtils';
+import type { ProseMirrorDoc } from '@/post/model/Post';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { toast } from 'sonner';
 import { Button } from '@/shared/ui/button';
@@ -64,6 +65,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
     content: post?.content || '',
   });
   const [isImageUploading, setIsImageUploading] = useState(false);
+  const [contentJson, setContentJson] = useState<ProseMirrorDoc | undefined>();
 
   const setTitle = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setEditState((prev) => ({ ...prev, title: e.target.value }));
@@ -78,7 +80,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
     if (!editState.title.trim() || !editState.content.trim()) return;
 
     try {
-      await updatePost(boardId, postId, editState.title, editState.content);
+      await updatePost(boardId, postId, editState.title, editState.content, contentJson);
       navigate(`/board/${boardId}/post/${postId}`);
       // Invalidate after navigation to avoid unnecessary refetching on edit page
       queryClient.invalidateQueries(['post', boardId, postId]);
@@ -117,6 +119,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
             onChange={setContent}
             placeholder='내용을 수정하세요...'
             onUploadingChange={setIsImageUploading}
+            onContentJsonChange={setContentJson}
           />
 
           <div className='flex items-center justify-center pt-4 text-sm text-muted-foreground'>
