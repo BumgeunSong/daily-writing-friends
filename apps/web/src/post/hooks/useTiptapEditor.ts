@@ -2,6 +2,7 @@ import Dropcursor from '@tiptap/extension-dropcursor';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import Underline from '@tiptap/extension-underline';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useRef, useEffect } from 'react';
@@ -44,6 +45,7 @@ export function useTiptapEditor({
         levels: [1, 2],
       },
     }),
+    Underline,
     Link.configure({
       openOnClick: true,
       autolink: true,
@@ -71,6 +73,8 @@ export function useTiptapEditor({
 
   // Initialize editor
   const editor = useEditor({
+    immediatelyRender: true,
+    shouldRerenderOnTransaction: false,
     extensions,
     content: initialJson || initialHtml || '',
     editorProps: {
