@@ -27,7 +27,7 @@ export default function BottomTabsNavigator() {
   return (
     <nav 
       className={cn(
-        "fixed inset-x-0 bottom-0 border-t border-border bg-background z-50 transition-all duration-200 ease-out",
+        "fixed inset-x-0 bottom-0 bg-background z-50 shadow-[0_-1px_3px_rgba(0,0,0,0.08)] dark:shadow-[0_-1px_3px_rgba(0,0,0,0.3)] transition-transform duration-200 ease-out",
         isIOS && "pb-2",
         isNavVisible ? "translate-y-0" : "translate-y-full"
       )}
@@ -42,7 +42,7 @@ export default function BottomTabsNavigator() {
               handleTabAction(tab.name);
             }}
             className={cn(
-              "flex flex-col items-center p-4 min-h-[44px] transition-colors duration-200 reading-focus",
+              "flex flex-col items-center p-4 min-h-[44px] transition-[color,background-color,transform] duration-200 reading-focus active:scale-[0.90]",
               location.pathname === tab.path ? 'text-primary' : 'text-muted-foreground'
             )}
           >
