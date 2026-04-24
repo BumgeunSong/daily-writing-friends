@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PostEditor } from '@/post/components/PostEditor';
 
-// QUILL-SPECIFIC: Update these selectors when changing editor library (e.g., Tiptap migration)
-const TOOLBAR_MAPPINGS: Record<string, string> = {
+// QUILL-SPECIFIC: Only used when Quill is forced via forceEditor="quill"
+const QUILL_TOOLBAR_MAPPINGS: Record<string, string> = {
   'toolbar-bold': '.ql-bold',
   'toolbar-italic': '.ql-italic',
   'toolbar-underline': '.ql-underline',
@@ -30,20 +30,23 @@ export default function EditorTestPage() {
   const [content, setContent] = useState<string>(initialContent);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Stamp data-testid on the contenteditable element and toolbar buttons
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const stampTestIds = () => {
-      // Contenteditable element
+      // Always stamp contenteditable as editor-area
       const editable = container.querySelector('[contenteditable="true"]');
       if (editable && editable.getAttribute('data-testid') !== 'editor-area') {
         editable.setAttribute('data-testid', 'editor-area');
       }
 
-      // Toolbar buttons
-      for (const [testId, selector] of Object.entries(TOOLBAR_MAPPINGS)) {
+      // Tiptap buttons already have data-testid — skip Quill stamping
+      const tiptapButton = container.querySelector('[data-testid="toolbar-bold"]');
+      if (tiptapButton) return;
+
+      // Quill fallback
+      for (const [testId, selector] of Object.entries(QUILL_TOOLBAR_MAPPINGS)) {
         const btn = container.querySelector(selector);
         if (btn && btn.getAttribute('data-testid') !== testId) {
           btn.setAttribute('data-testid', testId);
@@ -71,10 +74,11 @@ export default function EditorTestPage() {
           value={content}
           onChange={setContent}
           placeholder="테스트 에디터..."
+          forceEditor="tiptap"
         />
       </div>
 
-      {/* Hidden output panel for E2E assertions */}
+      {/* Hidden output panel for E2E assertions — dev-only route, content is DOMPurify-sanitized */}
       <div
         data-testid="editor-output"
         style={{ position: 'absolute', left: '-9999px', top: '-9999px' }}
