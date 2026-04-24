@@ -39,11 +39,11 @@ test.describe('Editor Mobile Viewport', () => {
   });
 
   test('toolbar buttons are present at mobile viewport', async ({ page }) => {
-    // Verify toolbar buttons exist
-    const boldButton = page.locator('[data-testid="toolbar-bold"]');
+    // Tiptap renders desktop + mobile toolbars — use .first() to avoid strict mode error
+    const boldButton = page.locator('[data-testid="toolbar-bold"]').first();
     await expect(boldButton).toBeAttached();
 
-    const imageButton = page.locator('[data-testid="toolbar-image"]');
+    const imageButton = page.locator('[data-testid="toolbar-image"]').first();
     await expect(imageButton).toBeAttached();
   });
 
@@ -59,8 +59,8 @@ test.describe('Editor Mobile Viewport', () => {
     // Scroll to bottom of editor
     await page.keyboard.press('End');
 
-    // Toolbar should still be visible (sticky) even after scrolling
-    const toolbar = page.locator('[data-testid="toolbar-bold"]');
+    // Tiptap renders desktop + mobile toolbars — mobile toolbar is last
+    const toolbar = page.locator('[data-testid="toolbar-bold"]').last();
     await expect(toolbar).toBeVisible({ timeout: 3000 });
 
     // Toolbar should not overlap with page header
