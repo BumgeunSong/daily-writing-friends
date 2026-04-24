@@ -58,11 +58,11 @@ export function PostDetailHeader({
             {/* 수정/삭제 버튼: 작성자만 노출, 비공개글은 제외 */}
             {isAuthor && post.visibility !== PostVisibility.PRIVATE && boardId && postId && (
               <>
-                <Link to={`/board/${boardId}/edit/${postId}`}>
-                  <Button variant='ghost' size='icon' aria-label='수정'>
+                <Button variant='ghost' size='icon' aria-label='수정' asChild>
+                  <Link to={`/board/${boardId}/edit/${postId}`}>
                     <Edit className='size-4' />
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
                 <Button
                   variant='destructive'
                   size='icon'
