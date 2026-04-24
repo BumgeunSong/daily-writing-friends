@@ -58,13 +58,13 @@ export default function StatsPage() {
             <TabsList className='mb-4 flex w-full justify-between rounded-lg bg-muted'>
               <TabsTrigger
                 value='posting'
-                className='data-[state=active]:reading-shadow reading-hover reading-focus flex-1 rounded-lg p-2 text-base transition-all duration-200 data-[state=active]:bg-background'
+                className='data-[state=active]:reading-shadow reading-hover reading-focus flex-1 rounded-lg p-2 text-base transition-[color,background-color,box-shadow] duration-200 data-[state=active]:bg-background'
               >
                 글쓰기
               </TabsTrigger>
               <TabsTrigger
                 value='commenting'
-                className='data-[state=active]:reading-shadow reading-hover reading-focus flex flex-1 items-center justify-center gap-2 rounded-lg p-2 text-base transition-all duration-200 data-[state=active]:bg-background'
+                className='data-[state=active]:reading-shadow reading-hover reading-focus flex flex-1 items-center justify-center gap-2 rounded-lg p-2 text-base transition-[color,background-color,box-shadow] duration-200 data-[state=active]:bg-background'
               >
                 댓글·답글
                 {isLoadingCommenting && (

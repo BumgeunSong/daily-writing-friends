@@ -34,7 +34,7 @@ export default function BoardPage() {
           <p className="mt-4 text-base text-muted-foreground md:text-lg">존재하지 않는 게시판이거나 잘못된 경로입니다.</p>
           <Button
             onClick={() => navigate("/")}
-            className="reading-hover reading-focus mt-6 h-11 min-w-[44px] rounded-lg transition-all duration-200 active:scale-[0.99] md:h-10"
+            className="reading-hover reading-focus mt-6 h-11 min-w-[44px] rounded-lg transition-[transform,background-color] duration-200 active:scale-[0.99] md:h-10"
           >
             홈으로 돌아가기
           </Button>

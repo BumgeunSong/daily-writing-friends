@@ -24,7 +24,7 @@ export function UserPageHeader({ isMyPage }: UserPageHeaderProps) {
         </div>
         <button
           onClick={handleGoToSettings}
-          className="reading-hover reading-focus flex min-h-[44px] items-center space-x-2 rounded-lg p-2 text-foreground transition-all duration-200 active:scale-[0.99]"
+          className="reading-hover reading-focus flex min-h-[44px] items-center space-x-2 rounded-lg p-2 text-foreground transition-[transform,background-color] duration-200 active:scale-[0.99]"
           aria-label="Go to user settings"
         >
           <Menu className="size-4 md:size-5" />

@@ -34,7 +34,7 @@ export function PostingStreakBadge({ streak, isLoading }: PostingStreakBadgeProp
         <div
           key={`streak-${index}`}
           className={cn(
-            'size-2 rounded-full transition-all duration-300',
+            'size-2 rounded-full transition-colors duration-300',
             posted
               ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.4),0_0_3px_rgba(52,211,153,0.6),inset_0_0_2px_rgba(255,255,255,0.5)]'
               : 'bg-muted-foreground/20 shadow-[inset_0_0_2px_rgba(0,0,0,0.2)]',

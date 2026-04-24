@@ -16,7 +16,7 @@ export function UserPostingStatsCard({ stats, onClick, isCurrentUser = false }: 
   return (
     <Card className='w-full rounded-xl border border-border/50 bg-card shadow-sm'>
       <CardContent
-        className='reading-hover reading-focus flex cursor-pointer items-start gap-4 px-3 py-4 transition-all duration-200 active:scale-[0.99] md:px-4'
+        className='reading-hover reading-focus flex cursor-pointer items-start gap-4 px-3 py-4 transition-[transform,background-color] duration-200 active:scale-[0.99] md:px-4'
         onClick={onClick}
         role={onClick ? 'button' : undefined}
         tabIndex={onClick ? 0 : undefined}

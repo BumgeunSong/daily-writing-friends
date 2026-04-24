@@ -113,7 +113,7 @@ export default function EditAccountPage() {
               <Button
                 type='button'
                 variant='outline'
-                className='reading-hover reading-focus min-h-[44px] w-full transition-all duration-200 active:scale-[0.99]'
+                className='reading-hover reading-focus min-h-[44px] w-full transition-[transform,background-color] duration-200 active:scale-[0.99]'
                 onClick={() => window.history.back()}
                 disabled={isLoadingUpdate}
               >
@@ -122,7 +122,7 @@ export default function EditAccountPage() {
               <Button 
                 type='submit'
                 variant='default'
-                className='reading-hover reading-focus min-h-[44px] w-full transition-all duration-200 active:scale-[0.99]' 
+                className='reading-hover reading-focus min-h-[44px] w-full transition-[transform,background-color] duration-200 active:scale-[0.99]' 
                 disabled={isLoadingUpdate}
               >
                 {isLoadingUpdate ? <Loader2 className='size-4 animate-spin' /> : '저장하기'}

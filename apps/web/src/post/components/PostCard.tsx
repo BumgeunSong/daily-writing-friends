@@ -49,7 +49,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, pref
 
   return (
     <Card
-      className='reading-shadow nav-hover reading-focus cursor-pointer border-border/50 transition-all duration-200 hover:border-border active:scale-[0.99]'
+      className='reading-shadow nav-hover reading-focus cursor-pointer border-border/50 transition-[transform,border-color] duration-200 hover:border-border active:scale-[0.99]'
       onClick={handleCardClick}
       role='button'
       tabIndex={0}

@@ -42,7 +42,7 @@ function WritingActionItem({
       <Button
         variant="default"
         size="sm"
-        className="reading-shadow reading-focus size-10 rounded-full transition-all duration-200 hover:scale-110 active:scale-[0.99]"
+        className="reading-shadow reading-focus size-10 rounded-full transition-transform duration-200 hover:scale-110 active:scale-[0.99]"
         aria-label={ariaLabel}
       >
         <Icon className="size-4" />
@@ -76,7 +76,7 @@ function ExpandedMenu({ boardId, isExpanded, onClose }: ExpandedMenuProps) {
   return (
     <div
       className={cn(
-        "flex flex-col items-end space-y-2 transition-all duration-200 ease-in-out",
+        "flex flex-col items-end space-y-2 transition-[opacity,transform] duration-200 ease-in-out",
         isExpanded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"
       )}
     >
@@ -105,7 +105,7 @@ function MainToggleButton({ isExpanded, onToggle }: MainToggleButtonProps) {
     <Button
       variant="cta"
       size="icon"
-      className="reading-shadow reading-focus z-50 size-12 rounded-full transition-all duration-200 hover:scale-110 active:scale-[0.99]"
+      className="reading-shadow reading-focus z-50 size-12 rounded-full transition-transform duration-200 hover:scale-110 active:scale-[0.99]"
       aria-label={isExpanded ? "Close Writing Options" : "Open Writing Options"}
       onClick={onToggle}
     >

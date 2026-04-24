@@ -35,7 +35,7 @@ export default function FormField({
           id={id}
           {...register(id)}
           placeholder={placeholder}
-          className="min-h-[100px] rounded-md text-base transition-all focus-visible:ring-slate-400"
+          className="min-h-[100px] rounded-md text-base transition-shadow focus-visible:ring-slate-400"
         />
       ) : (
         <Input
@@ -44,7 +44,7 @@ export default function FormField({
           inputMode={inputMode}
           {...register(id)}
           placeholder={placeholder}
-          className="h-12 rounded-md text-base transition-all focus-visible:ring-slate-400 lg:h-14"
+          className="h-12 rounded-md text-base transition-shadow focus-visible:ring-slate-400 lg:h-14"
         />
       )}
       {error && <p className="mt-1 text-sm text-red-500">{error.message}</p>}
