@@ -1,4 +1,4 @@
-import { useImperativeHandle, forwardRef, useEffect } from 'react';
+import { useImperativeHandle, forwardRef, useEffect, useRef } from 'react';
 import { useEditorCopy } from '@/post/hooks/useEditorCopy';
 import { useTiptapEditor } from '@/post/hooks/useTiptapEditor';
 import { useTiptapImageUpload } from '@/post/hooks/useTiptapImageUpload';
@@ -49,8 +49,9 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
     useEditorCopy(editor);
 
     // Handle paste and drop events for images
-    // Must use a timer to wait for editor.view.dom — editorElementRef.current is set
-    // asynchronously and mutating a ref doesn't trigger useEffect re-runs
+    // Must use a timer to wait for editor.view.dom (available after ProseMirror mounts)
+    const cleanupRef = useRef<(() => void) | null>(null);
+
     useEffect(() => {
       if (!editor) return;
 
@@ -68,18 +69,19 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
 
         editorElement.addEventListener('paste', handleEditorPaste);
         editorElement.addEventListener('drop', handleEditorDrop);
+        editorElement.setAttribute('data-image-handlers', 'ready');
 
-        // Store cleanup functions on the element for the effect cleanup
-        (editorElement as any).__cleanupImageHandlers = () => {
+        cleanupRef.current = () => {
           editorElement.removeEventListener('paste', handleEditorPaste);
           editorElement.removeEventListener('drop', handleEditorDrop);
+          editorElement.removeAttribute('data-image-handlers');
         };
       }, 150);
 
       return () => {
         clearTimeout(timer);
-        const editorElement = editor.view?.dom;
-        (editorElement as any)?.__cleanupImageHandlers?.();
+        cleanupRef.current?.();
+        cleanupRef.current = null;
       };
     }, [editor, handlePaste, handleDrop]);
 

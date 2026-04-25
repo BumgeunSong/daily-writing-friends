@@ -112,8 +112,8 @@ test.describe('Editor Image Upload (Mocked)', () => {
 
     const fileBuffer = fs.readFileSync(testImagePath);
 
-    // Wait for Tiptap's paste/drop handlers to be attached (150ms timer in EditorTiptap)
-    await page.waitForTimeout(200);
+    // Wait for Tiptap's paste/drop handlers to be attached (signaled by data attribute)
+    await page.waitForSelector('[data-image-handlers="ready"]', { timeout: 5000 });
 
     // Synthetic ClipboardEvent ignores clipboardData in constructor — use Object.defineProperty
     // Must include getData/types so ProseMirror's internal paste handler doesn't throw
@@ -149,8 +149,8 @@ test.describe('Editor Image Upload (Mocked)', () => {
     await page.click(EDITOR_AREA);
     const fileBuffer = fs.readFileSync(testImagePath);
 
-    // Wait for Tiptap's drop handler to be attached
-    await page.waitForTimeout(200);
+    // Wait for Tiptap's drop handler to be attached (signaled by data attribute)
+    await page.waitForSelector('[data-image-handlers="ready"]', { timeout: 5000 });
 
     // Synthetic DragEvent ignores dataTransfer in constructor — use Object.defineProperty
     // Must include getData/types so ProseMirror's internal drop handler doesn't throw
