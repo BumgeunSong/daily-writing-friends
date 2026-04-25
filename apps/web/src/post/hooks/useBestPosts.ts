@@ -1,9 +1,9 @@
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { fetchBestPosts, isWithinDays } from '@/post/api/post';
 import type { Post } from '@/post/model/Post';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { getBlockedByUsers } from '@/user/api/user';
+import { useBlockedByUsers } from '@/user/hooks/useBlockedByUsers';
 
 const BEST_POSTS_DAYS_RANGE = 7;
 const MAX_PAGES_TO_FETCH = 5;
@@ -16,19 +16,13 @@ const PAGE_SIZE = 20;
  */
 export const useBestPosts = (boardId: string, targetCount: number) => {
   const { currentUser } = useAuth();
-  const [blockedByUsers, setBlockedByUsers] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (currentUser?.uid) {
-      getBlockedByUsers(currentUser.uid).then(setBlockedByUsers);
-    }
-  }, [currentUser?.uid]);
+  const { data: blockedByUsers } = useBlockedByUsers(currentUser?.uid);
 
   const queryResult = useInfiniteQuery<Post[]>(
     ['bestPosts', boardId, blockedByUsers],
-    ({ pageParam = undefined }) => fetchBestPosts(boardId, PAGE_SIZE, blockedByUsers, pageParam),
+    ({ pageParam = undefined }) => fetchBestPosts(boardId, PAGE_SIZE, blockedByUsers ?? [], pageParam),
     {
-      enabled: !!boardId && !!currentUser?.uid,
+      enabled: !!boardId && !!currentUser?.uid && !!blockedByUsers,
       getNextPageParam: (lastPage, allPages) => {
         if (lastPage.length === 0 || lastPage.length < PAGE_SIZE) return undefined;
         if (allPages.length >= MAX_PAGES_TO_FETCH) return undefined;
@@ -68,6 +62,6 @@ export const useBestPosts = (boardId: string, targetCount: number) => {
   return {
     ...queryResult,
     recentPosts: recentPosts.slice(0, targetCount),
-    blockedByUsers,
+    blockedByUsers: blockedByUsers ?? [],
   };
 };
