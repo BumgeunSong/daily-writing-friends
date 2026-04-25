@@ -107,27 +107,34 @@ test.describe('Editor Image Upload (Mocked)', () => {
     // Cancel the file chooser (don't actually upload)
   });
 
-  // FIXME: Tiptap handles paste events through useTiptapImageUpload hook with a different event flow.
-  // The test dispatches ClipboardEvent directly on the contenteditable, but Tiptap's paste handler
-  // is attached via addEventListener on the editor element ref — needs investigation.
-  test.fixme('clipboard paste inserts image', async ({ page }) => {
-    const editor = page.locator(EDITOR_AREA);
-    await editor.click();
+  test('clipboard paste inserts image', async ({ page }) => {
+    await page.click(EDITOR_AREA);
 
     const fileBuffer = fs.readFileSync(testImagePath);
 
-    await editor.evaluate(
-      async (el, { buffer }) => {
+    // Wait for Tiptap's paste/drop handlers to be attached (150ms timer in EditorTiptap)
+    await page.waitForTimeout(200);
+
+    // Synthetic ClipboardEvent ignores clipboardData in constructor — use Object.defineProperty
+    // Must include getData/types so ProseMirror's internal paste handler doesn't throw
+    await page.evaluate(
+      async ({ buffer }) => {
+        const editorEl = document.querySelector('[contenteditable="true"]');
+        if (!editorEl) throw new Error('contenteditable not found');
         const uint8 = new Uint8Array(buffer);
         const file = new File([uint8], 'pasted-image.jpg', { type: 'image/jpeg' });
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        const pasteEvent = new ClipboardEvent('paste', {
-          clipboardData: dataTransfer,
-          bubbles: true,
-          cancelable: true,
+
+        const pasteEvent = new ClipboardEvent('paste', { bubbles: true, cancelable: true });
+        Object.defineProperty(pasteEvent, 'clipboardData', {
+          value: {
+            items: [{ type: 'image/jpeg', kind: 'file', getAsFile: () => file }],
+            files: [file],
+            types: ['Files'],
+            getData: () => '',
+            setData: () => {},
+          },
         });
-        el.dispatchEvent(pasteEvent);
+        editorEl.dispatchEvent(pasteEvent);
       },
       { buffer: Array.from(fileBuffer) },
     );
@@ -138,21 +145,37 @@ test.describe('Editor Image Upload (Mocked)', () => {
     }).toPass({ timeout: 15000 });
   });
 
-  // FIXME: Same as clipboard paste — Tiptap's drag-drop handler differs from Quill's DOM event flow.
-  test.fixme('drag and drop inserts image', async ({ page }) => {
-    const editor = page.locator(EDITOR_AREA);
+  test('drag and drop inserts image', async ({ page }) => {
+    await page.click(EDITOR_AREA);
     const fileBuffer = fs.readFileSync(testImagePath);
 
-    await editor.evaluate(
-      async (el, { buffer }) => {
+    // Wait for Tiptap's drop handler to be attached
+    await page.waitForTimeout(200);
+
+    // Synthetic DragEvent ignores dataTransfer in constructor — use Object.defineProperty
+    // Must include getData/types so ProseMirror's internal drop handler doesn't throw
+    await page.evaluate(
+      async ({ buffer }) => {
+        const editorEl = document.querySelector('[contenteditable="true"]');
+        if (!editorEl) throw new Error('contenteditable not found');
         const uint8 = new Uint8Array(buffer);
         const file = new File([uint8], 'dropped-image.jpg', { type: 'image/jpeg' });
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
 
-        el.dispatchEvent(new DragEvent('dragenter', { dataTransfer, bubbles: true }));
-        el.dispatchEvent(new DragEvent('dragover', { dataTransfer, bubbles: true }));
-        el.dispatchEvent(new DragEvent('drop', { dataTransfer, bubbles: true }));
+        const mockDataTransfer = {
+          items: [{ type: 'image/jpeg', kind: 'file', getAsFile: () => file }],
+          files: [file],
+          types: ['Files'],
+          getData: () => '',
+          setData: () => {},
+          dropEffect: 'copy',
+          effectAllowed: 'all',
+        };
+
+        for (const eventType of ['dragenter', 'dragover', 'drop'] as const) {
+          const event = new DragEvent(eventType, { bubbles: true, cancelable: true });
+          Object.defineProperty(event, 'dataTransfer', { value: mockDataTransfer });
+          editorEl.dispatchEvent(event);
+        }
       },
       { buffer: Array.from(fileBuffer) },
     );
