@@ -26,12 +26,16 @@ export function PostEditor({
   // Lock in the editor choice on first resolved render to prevent mid-session remounts
   const lockedEditorRef = useRef<'tiptap' | 'quill' | null>(null);
   if (!isLoading && lockedEditorRef.current === null) {
-    lockedEditorRef.current = forceEditor ?? (flagEnabled ? 'tiptap' : 'quill');
+    lockedEditorRef.current = flagEnabled ? 'tiptap' : 'quill';
   }
   const editorChoice = forceEditor ?? lockedEditorRef.current;
-  const useTiptap = editorChoice === 'tiptap';
 
-  if (useTiptap) {
+  // Show nothing while Remote Config loads (unless forceEditor bypasses it)
+  if (!editorChoice) {
+    return null;
+  }
+
+  if (editorChoice === 'tiptap') {
     return (
       <EditorTiptap
         initialHtml={value}
