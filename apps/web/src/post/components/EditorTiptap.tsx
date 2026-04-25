@@ -36,7 +36,7 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
     });
 
     // Image upload functionality
-    const { openFilePicker, handlePaste, isUploading, uploadProgress } = useTiptapImageUpload({
+    const { openFilePicker, handlePaste, uploadFile, isUploading, uploadProgress } = useTiptapImageUpload({
       editor,
     });
 
@@ -46,22 +46,54 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
     }, [isUploading, onUploadingChange]);
 
     // Copy functionality
-    const { editorElementRef } = useEditorCopy(editor);
+    useEditorCopy(editor);
 
-    // Handle paste events for images
+    // Handle paste and drop events for images
+    // Must use a timer to wait for editor.view.dom — editorElementRef.current is set
+    // asynchronously and mutating a ref doesn't trigger useEffect re-runs
     useEffect(() => {
-      const handleEditorPaste = async (event: ClipboardEvent) => {
-        await handlePaste(event);
-      };
+      if (!editor) return;
 
-      const editorElement = editorElementRef.current;
-      if (editorElement) {
-        editorElement.addEventListener('paste', handleEditorPaste);
-        return () => {
-          editorElement.removeEventListener('paste', handleEditorPaste);
+      const timer = setTimeout(() => {
+        const editorElement = editor.view?.dom;
+        if (!editorElement) return;
+
+        const handleEditorPaste = async (event: ClipboardEvent) => {
+          await handlePaste(event);
         };
-      }
-    }, [handlePaste, editorElementRef]);
+
+        const handleEditorDrop = async (event: DragEvent) => {
+          const items = event.dataTransfer?.items;
+          if (!items) return;
+
+          for (const item of Array.from(items)) {
+            if (item.kind === 'file' && item.type.startsWith('image/')) {
+              event.preventDefault();
+              const file = item.getAsFile();
+              if (file) {
+                const downloadURL = await uploadFile(file);
+                editor.chain().focus().setImage({ src: downloadURL, alt: file.name }).run();
+              }
+            }
+          }
+        };
+
+        editorElement.addEventListener('paste', handleEditorPaste);
+        editorElement.addEventListener('drop', handleEditorDrop);
+
+        // Store cleanup functions on the element for the effect cleanup
+        (editorElement as any).__cleanupImageHandlers = () => {
+          editorElement.removeEventListener('paste', handleEditorPaste);
+          editorElement.removeEventListener('drop', handleEditorDrop);
+        };
+      }, 150);
+
+      return () => {
+        clearTimeout(timer);
+        const editorElement = editor.view?.dom;
+        (editorElement as any)?.__cleanupImageHandlers?.();
+      };
+    }, [editor, handlePaste, uploadFile]);
 
     // Expose focus method
     useImperativeHandle(
