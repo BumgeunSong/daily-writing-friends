@@ -84,17 +84,16 @@ export function useTiptapEditor({
           'prose prose-lg max-w-none min-h-[300px] focus:outline-none px-0 py-6 dark:prose-invert prose-headings:text-foreground prose-strong:text-foreground prose-a:text-accent prose-blockquote:border-l-muted-foreground prose-blockquote:text-muted-foreground',
       },
       handlePaste: (_view, event) => {
-        // Check if clipboard contains image
         const items = event.clipboardData?.items;
         if (!items) return false;
 
         for (const item of Array.from(items)) {
           if (item.type.startsWith('image/')) {
-            // Will be handled by our custom paste handler
-            return false;
+            // Block ProseMirror's default paste — our addEventListener handler uploads instead
+            return true;
           }
         }
-        return false; // Let TipTap handle other paste events
+        return false;
       },
     },
     onUpdate: ({ editor }) => {

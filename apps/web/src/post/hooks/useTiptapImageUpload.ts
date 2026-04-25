@@ -119,7 +119,8 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
     for (const item of Array.from(items)) {
       if (item.type.startsWith('image/')) {
         event.preventDefault();
-        
+        event.stopPropagation();
+
         const file = item.getAsFile();
         if (!file) continue;
 
@@ -129,9 +130,9 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
 
           // Simulate progress
           setUploadProgress(20);
-          
+
           const downloadURL = await uploadFile(file);
-          
+
           setUploadProgress(70);
 
           // Insert image into editor
@@ -183,6 +184,7 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
     for (const item of Array.from(items)) {
       if (item.kind === 'file' && item.type.startsWith('image/')) {
         event.preventDefault();
+        event.stopPropagation();
 
         const file = item.getAsFile();
         if (!file) continue;
