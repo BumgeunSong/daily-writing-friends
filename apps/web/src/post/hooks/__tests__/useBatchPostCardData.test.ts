@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildPostCardDataMap, deduplicateAuthorIds } from '../useBatchPostCardData';
+import { buildPostCardDataMap, deduplicateAuthorIds } from '@/post/utils/batchPostCardDataUtils';
 import type { Post } from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
 import type { BasicUserRow, UserIdRow, PostDateRow } from '@/shared/api/supabaseReads';
