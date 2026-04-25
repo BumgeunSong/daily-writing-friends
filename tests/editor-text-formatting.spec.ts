@@ -30,11 +30,10 @@ test.describe('Editor Text Formatting', () => {
     }).toPass({ timeout: 5000 });
   });
 
-  // FIXME: Cmd+U is intercepted by Chromium (view-source shortcut) and no underline toolbar button exists.
-  // Re-enable after adding an underline button to EditorToolbar, or test manually.
-  test.fixme('underline formatting wraps text in <u>', async ({ page }) => {
+  test('underline formatting wraps text in <u>', async ({ page }) => {
     await page.click(EDITOR_AREA);
-    await modPress(page, 'U');
+    await page.click('[data-testid="toolbar-underline"]');
+    await page.click(EDITOR_AREA);
     await page.keyboard.type('underlined text');
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();
@@ -132,8 +131,7 @@ test.describe('Editor Text Formatting', () => {
     }).toPass({ timeout: 5000 });
   });
 
-  // FIXME: redo after toolbar-applied heading doesn't reliably trigger onChange
-  test.fixme('redo restores undone action', async ({ page }) => {
+  test('redo restores undone action', async ({ page }) => {
     await page.click(EDITOR_AREA);
     await page.keyboard.type('hello');
     await expect(async () => {
@@ -143,12 +141,14 @@ test.describe('Editor Text Formatting', () => {
 
     // Apply heading
     await page.click('[data-testid="toolbar-h1"]');
+    await page.keyboard.type(' ');
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();
       expect(html).toContain('<h1>');
     }).toPass({ timeout: 5000 });
 
     // Undo heading
+    await modPress(page, 'Z');
     await modPress(page, 'Z');
     await page.keyboard.type(' ');
     await expect(async () => {
@@ -157,6 +157,7 @@ test.describe('Editor Text Formatting', () => {
     }).toPass({ timeout: 5000 });
 
     // Redo heading
+    await modShiftPress(page, 'Z');
     await modShiftPress(page, 'Z');
     await page.keyboard.type(' ');
     await expect(async () => {
