@@ -67,13 +67,22 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
           await handleDrop(event);
         };
 
-        editorElement.addEventListener('paste', handleEditorPaste);
-        editorElement.addEventListener('drop', handleEditorDrop);
+        const handleDragOver = (event: DragEvent) => {
+          if (event.dataTransfer?.types?.includes('Files')) {
+            event.preventDefault();
+          }
+        };
+
+        // Use capture phase to run before ProseMirror's bubble-phase handlers
+        editorElement.addEventListener('paste', handleEditorPaste, true);
+        editorElement.addEventListener('drop', handleEditorDrop, true);
+        editorElement.addEventListener('dragover', handleDragOver);
         editorElement.setAttribute('data-image-handlers', 'ready');
 
         cleanupRef.current = () => {
-          editorElement.removeEventListener('paste', handleEditorPaste);
-          editorElement.removeEventListener('drop', handleEditorDrop);
+          editorElement.removeEventListener('paste', handleEditorPaste, true);
+          editorElement.removeEventListener('drop', handleEditorDrop, true);
+          editorElement.removeEventListener('dragover', handleDragOver);
           editorElement.removeAttribute('data-image-handlers');
         };
       }, 150);
