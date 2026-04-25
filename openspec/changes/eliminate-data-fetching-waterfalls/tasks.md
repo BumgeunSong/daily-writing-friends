@@ -2,7 +2,7 @@
 
 - [x] 1.1 Add `useBatchPostCardData(recentPosts)` call to BestPostCardList component
 - [x] 1.2 Pass `prefetchedData` and `isBatchMode` props to each PostCard in BestPostCardList
-- [ ] 1.3 Verify BestPostCardList renders correctly with batch data (manual smoke test, post-deploy)
+- [x] 1.3 Verify BestPostCardList renders correctly with batch data (smoke test passed on local Supabase)
 
 ## 2. Phase 2 — Shared Blocked Users Query
 
