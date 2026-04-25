@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { ProseMirrorDoc } from '@/post/model/Post';
 import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { EditorTiptap } from './EditorTiptap';
@@ -20,8 +21,15 @@ export function PostEditor({
   onContentJsonChange,
   forceEditor,
 }: PostEditorProps) {
-  const { value: flagEnabled } = useRemoteConfig('tiptap_editor_enabled');
-  const useTiptap = forceEditor === 'tiptap' || (forceEditor !== 'quill' && flagEnabled);
+  const { value: flagEnabled, isLoading } = useRemoteConfig('tiptap_editor_enabled');
+
+  // Lock in the editor choice on first resolved render to prevent mid-session remounts
+  const lockedEditorRef = useRef<'tiptap' | 'quill' | null>(null);
+  if (!isLoading && lockedEditorRef.current === null) {
+    lockedEditorRef.current = forceEditor ?? (flagEnabled ? 'tiptap' : 'quill');
+  }
+  const editorChoice = forceEditor ?? lockedEditorRef.current;
+  const useTiptap = editorChoice === 'tiptap';
 
   if (useTiptap) {
     return (

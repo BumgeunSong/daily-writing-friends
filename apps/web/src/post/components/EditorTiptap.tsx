@@ -36,7 +36,7 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
     });
 
     // Image upload functionality
-    const { openFilePicker, handlePaste, uploadFile, isUploading, uploadProgress } = useTiptapImageUpload({
+    const { openFilePicker, handlePaste, handleDrop, isUploading, uploadProgress } = useTiptapImageUpload({
       editor,
     });
 
@@ -63,19 +63,7 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
         };
 
         const handleEditorDrop = async (event: DragEvent) => {
-          const items = event.dataTransfer?.items;
-          if (!items) return;
-
-          for (const item of Array.from(items)) {
-            if (item.kind === 'file' && item.type.startsWith('image/')) {
-              event.preventDefault();
-              const file = item.getAsFile();
-              if (file) {
-                const downloadURL = await uploadFile(file);
-                editor.chain().focus().setImage({ src: downloadURL, alt: file.name }).run();
-              }
-            }
-          }
+          await handleDrop(event);
         };
 
         editorElement.addEventListener('paste', handleEditorPaste);
@@ -93,7 +81,7 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
         const editorElement = editor.view?.dom;
         (editorElement as any)?.__cleanupImageHandlers?.();
       };
-    }, [editor, handlePaste, uploadFile]);
+    }, [editor, handlePaste, handleDrop]);
 
     // Expose focus method
     useImperativeHandle(

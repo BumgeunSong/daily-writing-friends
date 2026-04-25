@@ -173,10 +173,73 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
     return false; // Not handled
   }, [editor, uploadFile]);
 
+  /**
+   * Handle drop event for image upload
+   */
+  const handleDrop = useCallback(async (event: DragEvent): Promise<boolean> => {
+    const items = event.dataTransfer?.items;
+    if (!items) return false;
+
+    for (const item of Array.from(items)) {
+      if (item.kind === 'file' && item.type.startsWith('image/')) {
+        event.preventDefault();
+
+        const file = item.getAsFile();
+        if (!file) continue;
+
+        try {
+          setIsUploading(true);
+          setUploadProgress(0);
+
+          setUploadProgress(20);
+
+          const downloadURL = await uploadFile(file);
+
+          setUploadProgress(70);
+
+          if (editor) {
+            editor
+              .chain()
+              .focus()
+              .setImage({ src: downloadURL, alt: file.name })
+              .run();
+          }
+
+          setUploadProgress(100);
+          toast.success('이미지가 업로드되었습니다.', {
+            position: 'bottom-center',
+          });
+
+          return true;
+
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : '이미지 업로드에 실패했습니다.';
+
+          Sentry.captureException(error, {
+            tags: { feature: 'image_upload', operation: 'drop_upload' },
+            extra: { fileSize: file?.size, fileType: file?.type }
+          });
+
+          toast.error(errorMessage, {
+            position: 'bottom-center',
+          });
+        } finally {
+          setTimeout(() => {
+            setIsUploading(false);
+            setUploadProgress(0);
+          }, 500);
+        }
+      }
+    }
+
+    return false;
+  }, [editor, uploadFile]);
+
   return {
     openFilePicker,
     uploadFile,
     handlePaste,
+    handleDrop,
     isUploading,
     uploadProgress,
   };

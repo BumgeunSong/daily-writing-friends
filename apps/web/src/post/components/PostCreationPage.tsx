@@ -108,7 +108,7 @@ export default function PostCreationPage() {
           <input type='hidden' name='content' value={content} />
           <input type='hidden' name='draftId' value={draftIdToSubmit} />
           {contentJson && (
-            <input type="hidden" name="contentJson" value={JSON.stringify(contentJson)} />
+            <input type='hidden' name='contentJson' value={JSON.stringify(contentJson)} />
           )}
 
           <PostTitleEditor value={title} onChange={(e) => setTitle(e.target.value)} />
