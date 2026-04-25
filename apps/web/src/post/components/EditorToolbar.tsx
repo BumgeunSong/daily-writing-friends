@@ -2,6 +2,7 @@ import { useEditorState } from '@tiptap/react';
 import {
   Bold,
   Italic,
+  Underline as UnderlineIcon,
   Strikethrough,
   Heading1,
   Heading2,
@@ -40,6 +41,7 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
     selector: ctx => ({
       isBold: ctx.editor.isActive('bold'),
       isItalic: ctx.editor.isActive('italic'),
+      isUnderline: ctx.editor.isActive('underline'),
       isStrike: ctx.editor.isActive('strike'),
       isHeading1: ctx.editor.isActive('heading', { level: 1 }),
       isHeading2: ctx.editor.isActive('heading', { level: 2 }),
@@ -119,6 +121,15 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
             title='Italic (Ctrl+I)'
             ariaLabel='Italic'
             data-testid='toolbar-italic'
+          />
+
+          <ToolbarButton
+            isActive={editorState.isUnderline}
+            onClick={() => editor.chain().focus().toggleUnderline().run()}
+            icon={<UnderlineIcon className='size-5' />}
+            title='Underline (Ctrl+U)'
+            ariaLabel='Underline'
+            data-testid='toolbar-underline'
           />
 
           <ToolbarButton

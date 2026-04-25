@@ -58,6 +58,7 @@ export function useTiptapEditor({
       validate: (href) => /^https?:\/\//.test(href),
     }),
     Image.configure({
+      allowBase64: true,
       HTMLAttributes: {
         class: 'max-w-full h-auto rounded-lg',
       },
@@ -82,7 +83,7 @@ export function useTiptapEditor({
         class:
           'prose prose-lg max-w-none min-h-[300px] focus:outline-none px-0 py-6 dark:prose-invert prose-headings:text-foreground prose-strong:text-foreground prose-a:text-accent prose-blockquote:border-l-muted-foreground prose-blockquote:text-muted-foreground',
       },
-      handlePaste: (view, event) => {
+      handlePaste: (_view, event) => {
         // Check if clipboard contains image
         const items = event.clipboardData?.items;
         if (!items) return false;
