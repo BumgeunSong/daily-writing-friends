@@ -33,7 +33,8 @@ export default defineConfig({
   },
 
   webServer: {
-    command: `pnpm --filter web exec vite -- --port ${port}`,
+    command: `npx vite --port ${port}`,
+    cwd: './apps/web',
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
@@ -43,6 +44,7 @@ export default defineConfig({
       NODE_ENV: 'test',
       E2E_BASE_URL: baseURL,
     },
+    stdout: 'pipe',
   },
 
   outputDir: 'test-results/',
