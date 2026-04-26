@@ -1,0 +1,37 @@
+{
+  "boardId": "e2e-test-board",
+  "postIds": [
+    "e2e-post-000",
+    "e2e-post-001",
+    "e2e-post-002",
+    "e2e-post-003",
+    "e2e-post-004",
+    "e2e-post-005",
+    "e2e-post-006",
+    "e2e-post-007",
+    "e2e-post-008",
+    "e2e-post-009",
+    "e2e-post-010",
+    "e2e-post-011",
+    "e2e-post-012",
+    "e2e-post-013",
+    "e2e-post-014",
+    "e2e-post-015",
+    "e2e-post-016",
+    "e2e-post-017",
+    "e2e-post-018",
+    "e2e-post-019",
+    "e2e-post-020",
+    "e2e-post-021",
+    "e2e-post-022",
+    "e2e-post-023",
+    "e2e-post-024"
+  ],
+  "commentIds": [
+    "e2e-comment-001",
+    "e2e-comment-002"
+  ],
+  "memberUserId": "4a41167f-42a1-4fe6-8215-56edeb5da63b",
+  "nonMemberUserId": "37d461f9-db9d-43e8-95bc-c134cd47b637",
+  "pageSize": 20
+}

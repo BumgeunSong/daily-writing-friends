@@ -1,0 +1,56 @@
+name: Test Gate
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  check-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for test files in PR
+        id: check
+        run: |
+          # Get changed files in this PR
+          CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+
+          # Check if any src/ files changed
+          SRC_CHANGED=$(echo "$CHANGED_FILES" | grep -c '^apps/web/src/' || true)
+
+          if [ "$SRC_CHANGED" -eq 0 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "No src/ changes detected, skipping test gate."
+            exit 0
+          fi
+
+          # Check if any test files are included
+          TEST_FILES=$(echo "$CHANGED_FILES" | grep -cE '\.(test|spec)\.(ts|tsx)$' || true)
+
+          if [ "$TEST_FILES" -eq 0 ]; then
+            echo "missing=true" >> "$GITHUB_OUTPUT"
+            echo "src/ files changed but no test files found."
+          else
+            echo "missing=false" >> "$GITHUB_OUTPUT"
+            echo "Found $TEST_FILES test file(s) in the changeset."
+          fi
+
+      - name: Add missing-tests label
+        if: steps.check.outputs.missing == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr edit "$PR_NUMBER" --add-label "missing-tests"
+
+      - name: Remove missing-tests label
+        if: steps.check.outputs.missing == 'false' && steps.check.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr edit "$PR_NUMBER" --remove-label "missing-tests" || true

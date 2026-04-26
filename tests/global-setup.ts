@@ -32,6 +32,7 @@ async function globalSetup() {
   try {
     await checkSupabaseRunning();
     await seedUsers();
+    await seedDomain();
     console.log('Global setup completed successfully');
   } catch (error) {
     console.error('Global setup failed:', error);
@@ -47,7 +48,7 @@ async function checkSupabaseRunning() {
   console.log('Checking if Supabase local is running...');
 
   const healthUrl = 'http://127.0.0.1:54321/auth/v1/health';
-  const maxAttempts = 10;
+  const maxAttempts = 30;
   const intervalMs = 1000;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -73,6 +74,34 @@ async function checkSupabaseRunning() {
     'If Supabase is already started, make sure the API is reachable at:\n' +
     `  ${healthUrl}`
   );
+}
+
+/**
+ * Seed the database with E2E domain data (boards, posts, comments, memberships)
+ */
+async function seedDomain() {
+  console.log('Seeding database with domain data...');
+
+  try {
+    const { stdout, stderr } = await execAsync('npx tsx scripts/seed-e2e-domain.ts', {
+      cwd: path.resolve(__dirname, '..'),
+      timeout: 30000,
+    });
+
+    if (stdout) {
+      console.log(stdout.trim());
+    }
+
+    if (stderr && stderr.toLowerCase().includes('error')) {
+      console.warn('Domain seeding warnings:', stderr);
+    }
+
+    console.log('Domain data seeded successfully');
+
+  } catch (error) {
+    console.error('Failed to seed domain data:', error);
+    throw new Error(`Domain seeding failed: ${error}`);
+  }
 }
 
 /**

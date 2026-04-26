@@ -43,7 +43,7 @@ export function getSupabaseEnv() {
     throw new Error('Missing SUPABASE_ANON_KEY or VITE_SUPABASE_ANON_KEY');
   }
 
-  const baseURL = process.env.BASE_URL || 'http://localhost:5173';
+  const baseURL = process.env.E2E_BASE_URL || process.env.BASE_URL || 'http://localhost:5174';
 
   return { supabaseUrl, anonKey, baseURL };
 }
