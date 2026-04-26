@@ -60,6 +60,29 @@ export async function updateAuthUserMetadata(metadata: {
   if (error) throw error;
 }
 
+/**
+ * Send a 6-digit OTP code to the given email address.
+ * Only works for existing accounts (shouldCreateUser: false).
+ */
+export async function sendEmailOtp(email: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser: false },
+  });
+  if (error) throw error;
+}
+
+/**
+ * Verify the OTP code. On success, Supabase creates a session
+ * and onAuthStateChange fires SIGNED_IN.
+ */
+export async function verifyEmailOtp(email: string, token: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+  if (error) throw error;
+}
+
 export function mapToAuthUser(user: {
   id: string;
   email?: string;

@@ -1,12 +1,21 @@
+import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
+import { Input } from '@/shared/ui/input';
+import { Separator } from '@/shared/ui/separator';
 import { useGoogleLoginWithRedirect } from '@/login/hooks/useGoogleLoginWithRedirect';
+import { useEmailOtpLogin } from '@/login/hooks/useEmailOtpLogin';
 
 export default function LoginPage() {
   const { loading } = useAuth();
-  const { handleLogin, isLoading, error } = useGoogleLoginWithRedirect();
+  const { handleLogin, isLoading: isGoogleLoading, error: googleError } = useGoogleLoginWithRedirect();
+  const {
+    step, email, setEmail, isLoading: isOtpLoading, error: otpError,
+    handleSendOtp, handleVerifyOtp, handleBack,
+  } = useEmailOtpLogin();
+  const [otpCode, setOtpCode] = useState('');
 
   if (loading) {
     return (
@@ -32,10 +41,10 @@ export default function LoginPage() {
           <Button
             variant="default"
             onClick={() => handleLogin()}
-            disabled={isLoading}
+            disabled={isGoogleLoading}
             className='min-h-[44px] w-full'
           >
-            {isLoading ? (
+            {isGoogleLoading ? (
               <>
                 <Loader2 className='mr-2 size-4 animate-spin' />
                 로그인 중...
@@ -44,8 +53,94 @@ export default function LoginPage() {
               '구글로 로그인하기'
             )}
           </Button>
-          {error && (
-            <p className='text-sm text-destructive'>{error.message}</p>
+          {googleError && (
+            <p className='text-sm text-destructive'>{googleError.message}</p>
+          )}
+
+          <div className='flex w-full items-center gap-3 py-2'>
+            <Separator className='flex-1' />
+            <span className='text-xs text-muted-foreground'>또는</span>
+            <Separator className='flex-1' />
+          </div>
+
+          {step === 'email' ? (
+            <form
+              className='flex w-full flex-col gap-2'
+              onSubmit={(e) => { e.preventDefault(); handleSendOtp(); }}
+            >
+              <Input
+                type='email'
+                placeholder='이메일 주소'
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className='min-h-[44px]'
+              />
+              <Button
+                type='submit'
+                variant='outline'
+                disabled={isOtpLoading || !email}
+                className='min-h-[44px] w-full'
+              >
+                {isOtpLoading ? (
+                  <>
+                    <Loader2 className='mr-2 size-4 animate-spin' />
+                    전송 중...
+                  </>
+                ) : (
+                  '이메일로 인증 코드 받기'
+                )}
+              </Button>
+            </form>
+          ) : (
+            <form
+              className='flex w-full flex-col gap-2'
+              onSubmit={(e) => { e.preventDefault(); handleVerifyOtp(otpCode); }}
+            >
+              <p className='text-center text-sm text-muted-foreground'>
+                <span className='font-medium text-foreground'>{email}</span>
+                {' '}으로 전송된
+                <br />
+                6자리 인증 코드를 입력해주세요
+              </p>
+              <Input
+                type='text'
+                inputMode='numeric'
+                maxLength={6}
+                placeholder='인증 코드 6자리'
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                autoFocus
+                required
+                className='min-h-[44px] text-center text-lg tracking-widest'
+              />
+              <Button
+                type='submit'
+                variant='outline'
+                disabled={isOtpLoading || otpCode.length !== 6}
+                className='min-h-[44px] w-full'
+              >
+                {isOtpLoading ? (
+                  <>
+                    <Loader2 className='mr-2 size-4 animate-spin' />
+                    확인 중...
+                  </>
+                ) : (
+                  '로그인'
+                )}
+              </Button>
+              <button
+                type='button'
+                onClick={handleBack}
+                className='text-sm text-muted-foreground underline hover:text-foreground'
+              >
+                이메일 다시 입력하기
+              </button>
+            </form>
+          )}
+
+          {otpError && (
+            <p className='text-sm text-destructive'>{otpError}</p>
           )}
         </CardFooter>
       </Card>
