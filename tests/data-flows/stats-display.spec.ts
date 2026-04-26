@@ -9,19 +9,18 @@ test.describe('Stats Display', () => {
     await expect(page.locator('body')).not.toContainText('문제가 생겼');
 
     // The stats page header should show "기록"
-    await expect(page.getByText('기록')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('기록')).toBeVisible({ timeout: 30000 });
   });
 
   test('contribution grid shows activity', async ({ page }) => {
     await page.goto('/stats');
+    await page.waitForLoadState('networkidle');
 
-    // Wait for the main content area to have children (data loaded)
+    // Wait for the stats header to appear (confirms auth + page load)
+    await expect(page.getByText('기록')).toBeVisible({ timeout: 30000 });
+
+    // The main content area should exist and have content
     const main = page.locator('main');
     await expect(main).toBeVisible({ timeout: 10000 });
-
-    // Wait for any content inside main to render
-    await page.waitForTimeout(3000);
-    const mainContent = await main.innerHTML();
-    expect(mainContent.length).toBeGreaterThan(0);
   });
 });

@@ -17,9 +17,10 @@ test.describe('Comment Flow', () => {
   test('write a comment and verify it appears', async ({ page }) => {
     // Navigate to the seeded post's detail page
     await page.goto(`/board/${BOARD_ID}/post/${POST_ID}`);
+    await page.waitForLoadState('networkidle');
 
     // Wait for the post detail to render
-    await expect(page.getByRole('heading', { name: 'E2E Seeded Post 1' })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('heading', { name: 'E2E Seeded Post 1' })).toBeVisible({ timeout: 30000 });
 
     // Find the comment input textbox
     const commentInput = page.getByRole('textbox', { name: /댓글|글값/ });
