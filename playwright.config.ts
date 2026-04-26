@@ -33,7 +33,7 @@ export default defineConfig({
   },
 
   webServer: {
-    command: `cd apps/web && npx vite --port ${port}`,
+    command: `pnpm --filter web exec vite -- --port ${port}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
