@@ -26,13 +26,7 @@ jobs:
           version: latest
 
       - name: Start Supabase
-        run: |
-          # Skip seed.sql — it has legacy non-UUID data that fails after schema migration.
-          # E2E seed scripts (seed-e2e-users.ts, seed-e2e-domain.ts) handle all test data.
-          mv supabase/seed.sql supabase/seed.sql.bak
-          touch supabase/seed.sql
-          supabase start
-          mv supabase/seed.sql.bak supabase/seed.sql
+        run: supabase start
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
