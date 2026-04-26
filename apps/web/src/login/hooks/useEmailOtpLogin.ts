@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { sendEmailOtp, verifyEmailOtp } from '@/shared/auth/supabaseAuth';
+import { toKoreanErrorMessage } from '@/login/utils/otpErrorMessages';
 
 type Step = 'email' | 'code';
 
@@ -12,17 +13,6 @@ interface UseEmailOtpLoginReturn {
   handleSendOtp: () => Promise<void>;
   handleVerifyOtp: (token: string) => Promise<void>;
   handleBack: () => void;
-}
-
-function toKoreanErrorMessage(err: unknown, step: Step): string {
-  const message = err instanceof Error ? err.message : String(err);
-  if (message.includes('Signups not allowed')) {
-    return '등록되지 않은 이메일입니다.';
-  }
-  if (step === 'code') {
-    return '인증 코드가 올바르지 않습니다.';
-  }
-  return '오류가 발생했습니다. 다시 시도해주세요.';
 }
 
 export function useEmailOtpLogin(): UseEmailOtpLoginReturn {
