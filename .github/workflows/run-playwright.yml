@@ -38,6 +38,18 @@ jobs:
         run: |
           printf 'VITE_SUPABASE_URL=http://127.0.0.1:54321\nVITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0\n' > .env.local
 
+      - name: Debug env state
+        run: |
+          echo "=== .env files ==="
+          ls -la .env* 2>/dev/null || echo "No .env files at root"
+          ls -la apps/web/.env* 2>/dev/null || echo "No .env files in apps/web"
+          echo "=== Checking VITE_SUPABASE_URL ==="
+          echo "process.env: $VITE_SUPABASE_URL"
+          echo "=== Supabase status ==="
+          curl -s http://127.0.0.1:54321/auth/v1/health || echo "Supabase not reachable"
+        env:
+          VITE_SUPABASE_URL: http://127.0.0.1:54321
+
       - name: Run Playwright tests
         run: npx playwright test --project=chromium-data-flows --project=chromium-non-member
         env:
