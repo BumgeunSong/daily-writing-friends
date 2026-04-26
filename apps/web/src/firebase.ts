@@ -18,11 +18,16 @@ import { createFirebaseConfig, shouldUseEmulators } from './firebase/utils';
 
 // Initialize Firebase app
 const firebaseConfig = createFirebaseConfig();
-const app = initializeApp(firebaseConfig);
+const hasFirebaseConfig = Boolean(firebaseConfig.projectId);
+const app = hasFirebaseConfig ? initializeApp(firebaseConfig) : null;
 
 // Initialize core services
-const storage = getStorage(app);
-const installations = getInstallations(app);
+const storage = app ? getStorage(app) : null;
+const installations = app ? getInstallations(app) : null;
+
+if (!hasFirebaseConfig) {
+  console.warn('Firebase config missing (projectId not set). Firebase services disabled.');
+}
 
 // Non-critical services (initialized conditionally, wrapped in object to avoid mutable exports)
 const optionalServices: {
@@ -37,7 +42,7 @@ const optionalServices: {
 
 const useEmulators = shouldUseEmulators();
 
-if (!useEmulators && typeof window !== 'undefined') {
+if (app && !useEmulators && typeof window !== 'undefined') {
   try {
     optionalServices.remoteConfig = getRemoteConfig(app);
     configureRemoteConfig(optionalServices.remoteConfig);
@@ -61,14 +66,16 @@ if (!useEmulators && typeof window !== 'undefined') {
   } catch (error) {
     console.warn('Optional Firebase services not available:', error);
   }
-} else {
+} else if (app) {
   console.log(
     '🧪 Analytics, Performance, and Remote Config disabled in emulator mode - using default values',
   );
 }
 
 // Connect to emulators if enabled
-connectToEmulators(storage);
+if (storage) {
+  connectToEmulators(storage);
+}
 
 // Export configuration flags for other modules
 export const isUsingEmulators = useEmulators;
