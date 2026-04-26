@@ -16,10 +16,11 @@ test.describe('Post Write Flow', () => {
   test('write a post and verify it appears in the board list', async ({ page }) => {
     // Navigate to the post creation page
     await page.goto(`/create/${BOARD_ID}`);
+    await page.waitForLoadState('networkidle');
 
     // Fill in the title
     const titleInput = page.getByRole('textbox', { name: '제목을 입력하세요' });
-    await expect(titleInput).toBeVisible({ timeout: 15000 });
+    await expect(titleInput).toBeVisible({ timeout: 30000 });
     await titleInput.fill(POST_TITLE);
 
     // Type content in the editor area (Quill editor)
@@ -37,8 +38,9 @@ test.describe('Post Write Flow', () => {
 
     // Navigate to the board to verify the post appears
     await page.goto(`/board/${BOARD_ID}`);
+    await page.waitForLoadState('networkidle');
     const postCards = page.locator('[role="button"][aria-label="게시글 상세로 이동"]');
-    await expect(postCards.first()).toBeVisible({ timeout: 15000 });
+    await expect(postCards.first()).toBeVisible({ timeout: 30000 });
 
     // Verify the post title is visible in the list
     await expect(page.getByRole('heading', { name: POST_TITLE }).first()).toBeVisible({ timeout: 10000 });

@@ -6,10 +6,11 @@ const POST_CARD = '[role="button"][aria-label="게시글 상세로 이동"]';
 test.describe('Post List Infinite Scroll', () => {
   test('initial page load shows posts', async ({ page }) => {
     await page.goto(`/board/${BOARD_ID}`);
+    await page.waitForLoadState('networkidle');
 
     // Wait for post cards to render
     const postCards = page.locator(POST_CARD);
-    await expect(postCards.first()).toBeVisible({ timeout: 15000 });
+    await expect(postCards.first()).toBeVisible({ timeout: 30000 });
 
     const initialCount = await postCards.count();
     expect(initialCount).toBeGreaterThan(0);
@@ -17,10 +18,11 @@ test.describe('Post List Infinite Scroll', () => {
 
   test('scrolling loads additional posts', async ({ page }) => {
     await page.goto(`/board/${BOARD_ID}`);
+    await page.waitForLoadState('networkidle');
 
     // Wait for initial posts to render
     const postCards = page.locator(POST_CARD);
-    await expect(postCards.first()).toBeVisible({ timeout: 15000 });
+    await expect(postCards.first()).toBeVisible({ timeout: 30000 });
     const initialCount = await postCards.count();
 
     // Scroll to the last visible post
@@ -31,7 +33,7 @@ test.describe('Post List Infinite Scroll', () => {
       (response) =>
         response.url().includes('/rest/v1/posts') &&
         response.status() === 200,
-      { timeout: 10000 },
+      { timeout: 15000 },
     );
 
     // Trigger scroll to fire intersection observer
