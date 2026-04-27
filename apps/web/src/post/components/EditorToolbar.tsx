@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useKeyboardInset } from '@/post/hooks/useKeyboardInset';
 import { useScrollIndicators } from '@/post/hooks/useScrollIndicators';
 import { isValidHttpUrl } from '@/post/utils/sanitizeHtml';
 import { Button } from '@/shared/ui/button';
@@ -34,6 +35,7 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
   const [linkUrl, setLinkUrl] = useState('');
   const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false);
   const { scrollContainerRef, canScrollLeft, canScrollRight } = useScrollIndicators();
+  const keyboardInset = useKeyboardInset();
 
   // Use TipTap's useEditorState for optimized re-renders
   const editorState = useEditorState({
@@ -86,8 +88,15 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
         'px-4 py-2 my-4',
       );
 
+  // Use `bottom` (not `transform`) to avoid creating a new containing block
+  // that could affect backdrop-filter rendering on some Safari versions.
+  const stickyStyle =
+    variant === 'sticky' && keyboardInset > 0
+      ? { bottom: `${keyboardInset}px` }
+      : undefined;
+
   return (
-    <div className={containerClass}>
+    <div className={containerClass} style={stickyStyle}>
       <div className='relative mx-auto max-w-4xl'>
         {/* Left gradient indicator */}
         {canScrollLeft && (
