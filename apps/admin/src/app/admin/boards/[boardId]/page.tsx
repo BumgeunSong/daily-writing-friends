@@ -1,7 +1,14 @@
 'use client'
 
 import { useState, useRef, useCallback } from 'react'
-import { fetchBoardMapped, fetchBoardUsers as fetchBoardUsersFromSupabase, fetchWaitingUserIds, searchUsers } from '@/apis/supabase-reads'
+import {
+  adminQueryKeys,
+  approveUser,
+  getBoard,
+  getBoardUsers,
+  getWaitingUsers,
+  searchUsers,
+} from '@/apis/admin-api'
 import { ArrowLeft, Users, Loader2, AlertCircle, RefreshCw, UserPlus, Search } from 'lucide-react'
 import {
   Card,
@@ -39,9 +46,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { getSupabaseClient } from '@/lib/supabase'
 
-interface BoardUser {
+interface BoardUserRow {
   id: string
   realName: string | null
   nickname: string | null
@@ -50,16 +56,15 @@ interface BoardUser {
   permission: string
 }
 
-// 게시판 정보 조회 함수
-const fetchBoard = async (boardId: string) => {
-  if (!boardId) return null
-  return fetchBoardMapped(boardId)
+function parseIsoDate(value: string | null | undefined): Date | null {
+  if (!value) return null
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? null : d
 }
 
-// 게시판 권한을 가진 사용자 목록 조회 함수
-const fetchBoardUsers = async (boardId: string): Promise<BoardUser[]> => {
+const fetchBoardUsersHydrated = async (boardId: string): Promise<BoardUserRow[]> => {
   if (!boardId) return []
-  const rows = await fetchBoardUsersFromSupabase(boardId)
+  const rows = await getBoardUsers(boardId)
   return rows.map(row => ({
     id: row.user.id,
     realName: row.user.real_name,
@@ -70,7 +75,6 @@ const fetchBoardUsers = async (boardId: string): Promise<BoardUser[]> => {
   }))
 }
 
-// 권한 레벨에 따른 뱃지 스타일 반환
 const getPermissionBadge = (permission: 'read' | 'write' | 'admin') => {
   switch (permission) {
     case 'admin':
@@ -106,42 +110,38 @@ export default function BoardDetailPage() {
   const queryClient = useQueryClient()
   const boardId = params.boardId as string
 
-  // 게시판 정보 쿼리
-  const { 
+  const {
     data: board,
     isLoading: boardLoading,
     error: boardError
   } = useQuery({
-    queryKey: ['board', boardId],
-    queryFn: () => fetchBoard(boardId),
+    queryKey: adminQueryKeys.board(boardId),
+    queryFn: () => getBoard(boardId),
     enabled: !!boardId,
-    staleTime: 5 * 60 * 1000, // 5분
+    staleTime: 5 * 60 * 1000,
   })
 
-  // 게시판 사용자 목록 쿼리
   const {
     data: users = [],
     isLoading: usersLoading,
     error: usersError,
     refetch: refetchUsers
   } = useQuery({
-    queryKey: ['boardUsers', boardId],
-    queryFn: () => fetchBoardUsers(boardId),
+    queryKey: adminQueryKeys.boardUsers(boardId),
+    queryFn: () => fetchBoardUsersHydrated(boardId),
     enabled: !!boardId,
-    staleTime: 2 * 60 * 1000, // 2분
+    staleTime: 2 * 60 * 1000,
   })
 
-  // 대기 중인 사용자 쿼리
   const {
     data: waitingUsers = [],
   } = useQuery({
-    queryKey: ['waitingUsers', boardId],
-    queryFn: () => fetchWaitingUserIds(boardId),
+    queryKey: adminQueryKeys.waitingUsers(boardId),
+    queryFn: () => getWaitingUsers(boardId),
     enabled: !!boardId,
-    staleTime: 2 * 60 * 1000, // 2분
+    staleTime: 2 * 60 * 1000,
   })
 
-  // --- Add User Dialog state ---
   const [dialogOpen, setDialogOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<Awaited<ReturnType<typeof searchUsers>>>([])
@@ -177,24 +177,23 @@ export default function BoardDetailPage() {
     }, 300)
   }, [users])
 
+  // Reuses the approve route — granting write permission is the same operation
+  // whether the user came from the waiting list or was added directly here.
   const addUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      const supabase = getSupabaseClient()
-      const { error } = await supabase
-        .from('user_board_permissions')
-        .upsert(
-          { user_id: userId, board_id: boardId, permission: 'write' },
-          { onConflict: 'user_id,board_id' }
-        )
-      if (error) throw error
+      return approveUser({ userId, boardId })
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['boardUsers', boardId] })
-      queryClient.invalidateQueries({ queryKey: ['waitingUsers', boardId] })
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.boardUsers(boardId) })
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.waitingUsers(boardId) })
       setDialogOpen(false)
       setSearchQuery('')
       setSearchResults([])
-      toast.success('사용자에게 쓰기 권한이 부여되었습니다.')
+      toast.success(
+        res.firstTime
+          ? '사용자에게 쓰기 권한이 부여되었습니다.'
+          : '이미 권한을 가진 사용자입니다.'
+      )
     },
     onError: () => {
       toast.error('권한 부여 중 오류가 발생했습니다.')
@@ -236,7 +235,7 @@ export default function BoardDetailPage() {
           <ArrowLeft className="mr-2 h-4 w-4" />
           게시판 목록으로 돌아가기
         </Button>
-        
+
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>게시판 정보를 불러올 수 없습니다</AlertTitle>
@@ -244,9 +243,9 @@ export default function BoardDetailPage() {
             {boardError instanceof Error ? boardError.message : '게시판이 존재하지 않거나 접근할 수 없습니다.'}
           </AlertDescription>
           <div className="mt-4">
-            <Button 
-              variant="outline" 
-              onClick={() => queryClient.invalidateQueries({ queryKey: ['board', boardId] })}
+            <Button
+              variant="outline"
+              onClick={() => queryClient.invalidateQueries({ queryKey: adminQueryKeys.board(boardId) })}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               다시 시도
@@ -257,17 +256,13 @@ export default function BoardDetailPage() {
     )
   }
 
-  const firstDay = board.firstDay instanceof Date ? board.firstDay : null
-
-  const createdAt = board.createdAt instanceof Date ? board.createdAt : null
+  const firstDay = parseIsoDate(board.first_day)
+  const createdAt = parseIsoDate(board.created_at)
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          onClick={handleGoBack}
-        >
+        <Button variant="ghost" onClick={handleGoBack}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           게시판 목록으로 돌아가기
         </Button>
@@ -280,7 +275,6 @@ export default function BoardDetailPage() {
         </p>
       </div>
 
-      {/* 게시판 정보 카드 */}
       <Card>
         <CardHeader>
           <CardTitle>게시판 정보</CardTitle>
@@ -288,12 +282,12 @@ export default function BoardDetailPage() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-muted-foreground">제목</label>
+              <span className="text-sm font-medium text-muted-foreground">제목</span>
               <div className="mt-1 text-sm">{board.title}</div>
             </div>
-            
+
             <div>
-              <label className="text-sm font-medium text-muted-foreground">코호트</label>
+              <span className="text-sm font-medium text-muted-foreground">코호트</span>
               <div className="mt-1">
                 {board.cohort ? (
                   <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
@@ -304,9 +298,9 @@ export default function BoardDetailPage() {
                 )}
               </div>
             </div>
-            
+
             <div>
-              <label className="text-sm font-medium text-muted-foreground">시작일</label>
+              <span className="text-sm font-medium text-muted-foreground">시작일</span>
               <div className="mt-1 text-sm">
                 {firstDay ? (
                   <div>
@@ -317,9 +311,9 @@ export default function BoardDetailPage() {
                 )}
               </div>
             </div>
-            
+
             <div>
-              <label className="text-sm font-medium text-muted-foreground">생성일</label>
+              <span className="text-sm font-medium text-muted-foreground">생성일</span>
               <div className="mt-1 text-sm">
                 {createdAt ? (
                   createdAt.toLocaleDateString('ko-KR')
@@ -329,16 +323,16 @@ export default function BoardDetailPage() {
               </div>
             </div>
           </div>
-          
+
           <div>
-            <label className="text-sm font-medium text-muted-foreground">설명</label>
+            <span className="text-sm font-medium text-muted-foreground">설명</span>
             <div className="mt-1 text-sm">
               {board.description || '설명이 없습니다.'}
             </div>
           </div>
-          
+
           <div>
-            <label className="text-sm font-medium text-muted-foreground">대기 중인 사용자</label>
+            <span className="text-sm font-medium text-muted-foreground">대기 중인 사용자</span>
             <div className="mt-1 text-sm">
               {waitingUsers.length > 0 ? (
                 <span className="text-orange-600">{waitingUsers.length}명 대기 중</span>
@@ -350,7 +344,6 @@ export default function BoardDetailPage() {
         </CardContent>
       </Card>
 
-      {/* 사용자 권한 목록 카드 */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -487,28 +480,28 @@ export default function BoardDetailPage() {
               </TableHeader>
               <TableBody>
                 {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">
-                        {user.nickname || '닉네임 없음'}
-                      </TableCell>
-                      <TableCell>
-                        {user.realName || '실명 없음'}
-                      </TableCell>
-                      <TableCell>
-                        {user.email || '이메일 없음'}
-                      </TableCell>
-                      <TableCell>
-                        {user.phoneNumber ? (
-                          user.phoneNumber
-                        ) : (
-                          <span className="text-gray-400">null</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {getPermissionBadge(user.permission as 'read' | 'write' | 'admin')}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">
+                      {user.nickname || '닉네임 없음'}
+                    </TableCell>
+                    <TableCell>
+                      {user.realName || '실명 없음'}
+                    </TableCell>
+                    <TableCell>
+                      {user.email || '이메일 없음'}
+                    </TableCell>
+                    <TableCell>
+                      {user.phoneNumber ? (
+                        user.phoneNumber
+                      ) : (
+                        <span className="text-gray-400">null</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {getPermissionBadge(user.permission as 'read' | 'write' | 'admin')}
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           )}

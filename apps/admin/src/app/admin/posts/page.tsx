@@ -1,25 +1,30 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { fetchBoardsMapped, fetchPosts as fetchPostsFromSupabase, fetchUsersByIds } from '@/apis/supabase-reads'
+import {
+  adminQueryKeys,
+  getBoards,
+  getPosts as getPostsFromApi,
+  getUsersByIds,
+} from '@/apis/admin-api'
 import { Copy, Loader2, AlertCircle, RefreshCw, FileText } from 'lucide-react'
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
   CardTitle,
   CardFooter
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table"
 import {
   Select,
@@ -29,18 +34,17 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
-import { 
-  useQuery, 
-  useQueryClient 
+import {
+  useQuery,
+  useQueryClient
 } from '@tanstack/react-query'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Post, User } from '@/types/firestore'
 
-// 여러 사용자 정보를 한번에 조회하는 함수
 const fetchUsers = async (userIds: string[]): Promise<Record<string, User>> => {
   const uniqueIds = [...new Set(userIds.filter(Boolean))]
   if (uniqueIds.length === 0) return {}
-  const rows = await fetchUsersByIds(uniqueIds)
+  const rows = await getUsersByIds(uniqueIds)
   const map: Record<string, User> = {}
   for (const row of rows) {
     map[row.id] = {
@@ -58,10 +62,9 @@ const fetchUsers = async (userIds: string[]): Promise<Record<string, User>> => {
   return map
 }
 
-// 게시물 목록 조회 함수
-const fetchPosts = async (boardId: string | null, dateRange: 'week' | 'all'): Promise<Post[]> => {
+const hydratePosts = async (boardId: string | null, dateRange: 'week' | 'all'): Promise<Post[]> => {
   if (!boardId) return []
-  const rows = await fetchPostsFromSupabase(boardId, dateRange)
+  const rows = await getPostsFromApi(boardId, dateRange)
   return rows.map(row => ({
     id: row.id,
     boardId: row.board_id,
@@ -83,11 +86,10 @@ export default function PostsPage() {
   const [dateRange, setDateRange] = useState<'week' | 'all'>('all')
   const queryClient = useQueryClient()
 
-  // 로컬 스토리지에서 이전에 선택한 게시판 ID 불러오기
   useEffect(() => {
     const storedBoardId = localStorage.getItem('adminPosts_selectedBoardId')
     const storedDateRange = localStorage.getItem('adminPosts_dateRange') as 'week' | 'all'
-    
+
     if (storedBoardId) {
       setSelectedBoardId(storedBoardId)
     }
@@ -96,11 +98,10 @@ export default function PostsPage() {
     }
   }, [])
 
-  // 선택한 게시판 ID를 로컬 스토리지에 저장
   const handleBoardSelection = (value: string) => {
     const boardId = value || null
     setSelectedBoardId(boardId)
-    
+
     if (boardId) {
       localStorage.setItem('adminPosts_selectedBoardId', boardId)
     } else {
@@ -108,13 +109,11 @@ export default function PostsPage() {
     }
   }
 
-  // 날짜 범위 변경 핸들러
   const handleDateRangeChange = (value: 'week' | 'all') => {
     setDateRange(value)
     localStorage.setItem('adminPosts_dateRange', value)
   }
 
-  // 게시물 URL 복사 함수
   const copyPostUrl = (boardId: string, postId: string, postTitle: string, authorNickname: string) => {
     const url = `https://dailywritingfriends.com/board/${boardId}/post/${postId}`
     const clipboardText = `${postTitle} by ${authorNickname}\n${url}`
@@ -125,43 +124,42 @@ export default function PostsPage() {
     })
   }
 
-  // 게시판 목록 쿼리
-  const { 
-    data: boards, 
-    isLoading: boardsLoading, 
-    error: boardsError 
+  const {
+    data: boards,
+    isLoading: boardsLoading,
+    error: boardsError
   } = useQuery({
-    queryKey: ['boards'],
-    queryFn: fetchBoardsMapped,
-    staleTime: 5 * 60 * 1000, // 5분
+    queryKey: adminQueryKeys.boards,
+    queryFn: getBoards,
+    staleTime: 5 * 60 * 1000,
   })
 
-  // 게시물 목록 쿼리
-  const { 
+  const {
     data: posts = [],
     isLoading: postsLoading,
     error: postsError,
     refetch: refetchPosts
   } = useQuery({
-    queryKey: ['posts', selectedBoardId, dateRange],
-    queryFn: () => fetchPosts(selectedBoardId, dateRange),
+    queryKey: selectedBoardId
+      ? adminQueryKeys.posts(selectedBoardId, dateRange)
+      : ['admin', 'posts', '__none__'],
+    queryFn: () => hydratePosts(selectedBoardId, dateRange),
     enabled: !!selectedBoardId,
-    staleTime: 2 * 60 * 1000, // 2분
+    staleTime: 2 * 60 * 1000,
   })
 
-  // 게시물 작성자들의 사용자 정보 조회
   const authorIds = useMemo(
     () => [...new Set(posts.map(p => p.authorId).filter(Boolean))].sort(),
     [posts]
   )
-  const { 
+  const {
     data: usersMap = {},
     isLoading: usersLoading
   } = useQuery({
-    queryKey: ['users', authorIds],
+    queryKey: adminQueryKeys.usersByIds(authorIds),
     queryFn: () => fetchUsers(authorIds),
     enabled: authorIds.length > 0,
-    staleTime: 10 * 60 * 1000, // 10분 (사용자 정보는 더 오래 캐시)
+    staleTime: 10 * 60 * 1000,
   })
 
   const selectedBoard = boards?.find(board => board.id === selectedBoardId)
@@ -196,9 +194,9 @@ export default function PostsPage() {
           {boardsError instanceof Error ? boardsError.message : '서버 오류가 발생했습니다. 나중에 다시 시도해주세요.'}
         </AlertDescription>
         <div className="mt-4">
-          <Button 
-            variant="outline" 
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['boards'] })}
+          <Button
+            variant="outline"
+            onClick={() => queryClient.invalidateQueries({ queryKey: adminQueryKeys.boards })}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
             다시 시도
@@ -227,7 +225,7 @@ export default function PostsPage() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">게시판 선택</label>
+              <span className="text-sm font-medium">게시판 선택</span>
               <Select
                 value={selectedBoardId || ""}
                 onValueChange={handleBoardSelection}
@@ -239,9 +237,8 @@ export default function PostsPage() {
                   {boards && boards.length > 0 ? (
                     [...boards]
                       .sort((a, b) => {
-                        // 코호트 번호 기준 내림차순 정렬 (높은 번호 -> 낮은 번호)
-                        const cohortA = a.cohort || 0;
-                        const cohortB = b.cohort || 0;
+                        const cohortA = a.cohort ?? 0;
+                        const cohortB = b.cohort ?? 0;
                         return cohortB - cohortA;
                       })
                       .map((board) => (
@@ -257,9 +254,9 @@ export default function PostsPage() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
-              <label className="text-sm font-medium">기간 선택</label>
+              <span className="text-sm font-medium">기간 선택</span>
               <Select
                 value={dateRange}
                 onValueChange={handleDateRangeChange}
@@ -289,13 +286,13 @@ export default function PostsPage() {
                   </span>
                 </CardTitle>
                 <CardDescription>
-                  {selectedBoard?.title} 게시판의 게시물 목록입니다. 
+                  {selectedBoard?.title} 게시판의 게시물 목록입니다.
                   {dateRange === 'week' && ' (이번 주 게시물만 표시)'}
                 </CardDescription>
               </div>
               {postsError && (
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => refetchPosts()}
                 >
@@ -325,7 +322,7 @@ export default function PostsPage() {
               <div className="text-center py-8 text-muted-foreground">
                 <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                 <p>
-                  {dateRange === 'week' 
+                  {dateRange === 'week'
                     ? '이번 주에 작성된 게시물이 없습니다.'
                     : '게시물이 없습니다.'
                   }
@@ -352,10 +349,10 @@ export default function PostsPage() {
                     const createdAt = post.createdAt instanceof Date
                       ? post.createdAt
                       : null
-                    
+
                     const author = usersMap[post.authorId]
                     const authorNickname = author?.nickname || '닉네임 없음'
-                    
+
                     return (
                       <TableRow key={post.id}>
                         <TableCell className="font-medium text-center">
@@ -381,9 +378,9 @@ export default function PostsPage() {
                                 {createdAt.toLocaleDateString('ko-KR')}
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                {createdAt.toLocaleTimeString('ko-KR', { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit' 
+                                {createdAt.toLocaleTimeString('ko-KR', {
+                                  hour: '2-digit',
+                                  minute: '2-digit'
                                 })}
                               </div>
                             </div>
@@ -429,4 +426,4 @@ export default function PostsPage() {
       )}
     </div>
   )
-} 
+}

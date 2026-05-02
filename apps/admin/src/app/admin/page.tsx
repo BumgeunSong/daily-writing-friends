@@ -1,7 +1,7 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { fetchAllUsers, fetchBoardsMapped } from '@/apis/supabase-reads'
+import { adminQueryKeys, getBoards, getMe, getUsers } from '@/apis/admin-api'
 import { useAuth } from '@/hooks/useAuth'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
@@ -17,36 +17,53 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { User, Users, Newspaper, Clock, MessageSquare } from "lucide-react"
 
-const ADMIN_EMAIL: Set<string> = new Set(['isp1195@gmail.com', 'bob070030@gmail.com'])
-
 export default function AdminPage() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
 
+  const isSignedIn = !authLoading && !!user
+
+  // Server-side admin check. Replaces the previously-hardcoded email Set
+  // that leaked admin identities to the client bundle. Allowlist lives in
+  // ADMIN_EMAILS on the server only.
+  const {
+    data: meData,
+    isLoading: meLoading,
+    isError: meErrored,
+  } = useQuery({
+    queryKey: adminQueryKeys.me,
+    queryFn: getMe,
+    enabled: isSignedIn,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  })
+
+  const isAdmin = meData?.isAdmin === true
+
   const { data: users, isLoading: usersLoading, error: dataError } = useQuery({
-    queryKey: ['allUsers'],
-    queryFn: fetchAllUsers,
-    enabled: !authLoading && !!user,
+    queryKey: adminQueryKeys.users,
+    queryFn: getUsers,
+    enabled: isAdmin,
   })
 
   const { data: boards, isLoading: boardsLoading } = useQuery({
-    queryKey: ['boards'],
-    queryFn: fetchBoardsMapped,
+    queryKey: adminQueryKeys.boards,
+    queryFn: getBoards,
     staleTime: 5 * 60 * 1000,
-    enabled: !authLoading && !!user,
+    enabled: isAdmin,
   })
 
-  const isAdmin = ADMIN_EMAIL.has(user?.email || '')
-
-  // 인증 상태 확인 및 권한 없는 사용자 리디렉션
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login')
     }
   }, [user, authLoading, router])
 
-  // 로딩 중인 경우
-  if (authLoading || usersLoading || boardsLoading) {
+  // Loading skeleton: shown while we don't yet know if the viewer is admin.
+  // Critical: never render dashboard content (or even reveal page structure
+  // beyond a generic skeleton) while isAdmin is undefined — otherwise a
+  // non-admin would see a flash of the admin shell.
+  if (authLoading || (isSignedIn && meLoading)) {
     return (
       <div className="space-y-4">
         <Card>
@@ -64,14 +81,15 @@ export default function AdminPage() {
     )
   }
 
-  // 관리자가 아닌 경우
   if (!isAdmin) {
     return (
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-red-500">접근 제한됨</CardTitle>
           <CardDescription>
-            이 페이지에 접근할 수 있는 권한이 없습니다.
+            {meErrored
+              ? '관리자 권한 확인 중 오류가 발생했습니다. 다시 로그인해 주세요.'
+              : '이 페이지에 접근할 수 있는 권한이 없습니다.'}
           </CardDescription>
         </CardHeader>
         <CardFooter>
@@ -83,7 +101,24 @@ export default function AdminPage() {
     )
   }
 
-  // 대시보드 카드 데이터
+  if (usersLoading || boardsLoading) {
+    return (
+      <div className="space-y-4">
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="h-4 w-1/2" />
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-20 w-full" />
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   const dashboardItems = [
     {
       title: '전체 사용자',
@@ -190,20 +225,23 @@ export default function AdminPage() {
               </p>
             ) : (
               <div className="space-y-4">
-                {boards.slice(0, 5).map((board) => (
-                  <div key={board.id} className="flex items-center space-x-4">
-                    <div className="rounded-full bg-muted p-2">
-                      <Newspaper className="h-4 w-4" />
+                {boards.slice(0, 5).map((board) => {
+                  const description = board.description ?? ''
+                  return (
+                    <div key={board.id} className="flex items-center space-x-4">
+                      <div className="rounded-full bg-muted p-2">
+                        <Newspaper className="h-4 w-4" />
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <p className="text-sm font-medium leading-none">{board.title || '제목 없음'}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {description.substring(0, 50) || '설명 없음'}
+                          {description.length > 50 ? '...' : ''}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none">{board.title || '제목 없음'}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {board.description?.substring(0, 50) || '설명 없음'}
-                        {board.description?.length > 50 ? '...' : ''}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </CardContent>

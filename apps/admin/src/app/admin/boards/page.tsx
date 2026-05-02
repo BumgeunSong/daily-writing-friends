@@ -1,29 +1,29 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { fetchBoardsMapped } from '@/apis/supabase-reads'
+import { adminQueryKeys, getBoards } from '@/apis/admin-api'
 import { Eye, AlertCircle, RefreshCw, Newspaper, Plus, Settings2, CheckCircle2, Clock } from 'lucide-react'
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
   CardTitle,
   CardFooter
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table"
-import { 
-  useQuery, 
-  useQueryClient 
+import {
+  useQuery,
+  useQueryClient
 } from '@tanstack/react-query'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -33,6 +33,12 @@ import { useRouter } from 'next/navigation'
 import { useCreateUpcomingBoard } from '@/hooks/useCreateUpcomingBoard'
 import { useRemoteConfig } from '@/hooks/useRemoteConfig'
 import { toast } from 'sonner'
+
+function parseIsoDate(value: string | null | undefined): Date | null {
+  if (!value) return null
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? null : d
+}
 
 export default function BoardsPage() {
   const router = useRouter()
@@ -50,23 +56,20 @@ export default function BoardsPage() {
     clearError
   } = useRemoteConfig()
 
-  // 편집 모드 상태
   const [isEditingConfig, setIsEditingConfig] = useState(false)
   const [tempActiveId, setTempActiveId] = useState('')
   const [tempUpcomingId, setTempUpcomingId] = useState('')
 
-  // 게시판 목록 쿼리
-  const { 
-    data: boards = [], 
-    isLoading: boardsLoading, 
-    error: boardsError 
+  const {
+    data: boards = [],
+    isLoading: boardsLoading,
+    error: boardsError
   } = useQuery({
-    queryKey: ['boards'],
-    queryFn: fetchBoardsMapped,
-    staleTime: 5 * 60 * 1000, // 5분
+    queryKey: adminQueryKeys.boards,
+    queryFn: getBoards,
+    staleTime: 5 * 60 * 1000,
   })
 
-  // Remote Config 값이 변경되면 임시 값 업데이트
   useEffect(() => {
     if (!isEditingConfig) {
       setTempActiveId(activeBoardId)
@@ -74,12 +77,10 @@ export default function BoardsPage() {
     }
   }, [activeBoardId, upcomingBoardId, isEditingConfig])
 
-  // 게시판 상세 페이지로 이동
   const handleViewBoard = (boardId: string) => {
     router.push(`/admin/boards/${boardId}`)
   }
 
-  // 새 코호트 생성
   const handleCreateCohort = async () => {
     try {
       await createNextCohort()
@@ -90,13 +91,9 @@ export default function BoardsPage() {
     }
   }
 
-  // 활성 게시판 설정 저장
   const handleSaveConfig = async () => {
     try {
-      // Force refresh to get latest values before updating
       await forceRefresh()
-
-      // Small delay to ensure values are propagated
       await new Promise(resolve => setTimeout(resolve, 100))
 
       updateBoards(
@@ -108,7 +105,6 @@ export default function BoardsPage() {
           onSuccess: () => {
             toast.success('활성 게시판 설정이 저장되었습니다.')
             setIsEditingConfig(false)
-            // Refresh again after save to ensure UI shows latest values
             forceRefresh()
           },
           onError: (error) => {
@@ -123,7 +119,6 @@ export default function BoardsPage() {
     }
   }
 
-  // 편집 취소
   const handleCancelEdit = () => {
     setTempActiveId(activeBoardId)
     setTempUpcomingId(upcomingBoardId)
@@ -131,7 +126,6 @@ export default function BoardsPage() {
     clearError()
   }
 
-  // 유효성 검사
   const isValid = validateBoards(tempActiveId, tempUpcomingId)
 
   if (boardsLoading) {
@@ -163,9 +157,9 @@ export default function BoardsPage() {
           {boardsError instanceof Error ? boardsError.message : '서버 오류가 발생했습니다. 나중에 다시 시도해주세요.'}
         </AlertDescription>
         <div className="mt-4">
-          <Button 
-            variant="outline" 
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['boards'] })}
+          <Button
+            variant="outline"
+            onClick={() => queryClient.invalidateQueries({ queryKey: adminQueryKeys.boards })}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
             다시 시도
@@ -175,7 +169,6 @@ export default function BoardsPage() {
     )
   }
 
-  // 활성/예정 게시판 정보 가져오기
   const activeBoard = boards.find(b => b.id === activeBoardId)
   const upcomingBoard = boards.find(b => b.id === upcomingBoardId)
   const tempActiveBoard = boards.find(b => b.id === tempActiveId)
@@ -190,7 +183,6 @@ export default function BoardsPage() {
         </p>
       </div>
 
-      {/* 활성 게시판 관리 카드 */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -218,7 +210,6 @@ export default function BoardsPage() {
                     variant="outline"
                     size="sm"
                     onClick={async () => {
-                      // Refresh before entering edit mode to get latest values
                       await forceRefresh()
                       setIsEditingConfig(true)
                     }}
@@ -233,7 +224,6 @@ export default function BoardsPage() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-6 md:grid-cols-2">
-            {/* 현재 진행 중 */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -256,7 +246,7 @@ export default function BoardsPage() {
                   </Select>
                   {tempActiveBoard && (
                     <div className="text-sm text-muted-foreground pl-1">
-                      {tempActiveBoard.description}
+                      {tempActiveBoard.description ?? ''}
                     </div>
                   )}
                 </>
@@ -266,7 +256,7 @@ export default function BoardsPage() {
                     <>
                       <div className="font-medium">{activeBoard.title}</div>
                       <div className="text-sm text-muted-foreground">
-                        {activeBoard.description}
+                        {activeBoard.description ?? ''}
                       </div>
                     </>
                   ) : (
@@ -276,7 +266,6 @@ export default function BoardsPage() {
               )}
             </div>
 
-            {/* 다음 예정 */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-blue-600" />
@@ -299,7 +288,7 @@ export default function BoardsPage() {
                   </Select>
                   {tempUpcomingBoard && (
                     <div className="text-sm text-muted-foreground pl-1">
-                      {tempUpcomingBoard.description}
+                      {tempUpcomingBoard.description ?? ''}
                     </div>
                   )}
                 </>
@@ -309,7 +298,7 @@ export default function BoardsPage() {
                     <>
                       <div className="font-medium">{upcomingBoard.title}</div>
                       <div className="text-sm text-muted-foreground">
-                        {upcomingBoard.description}
+                        {upcomingBoard.description ?? ''}
                       </div>
                     </>
                   ) : (
@@ -320,7 +309,6 @@ export default function BoardsPage() {
             </div>
           </div>
 
-          {/* 유효성 검사 오류 */}
           {isEditingConfig && !isValid && tempActiveId && tempUpcomingId && (
             <Alert variant="destructive" className="mt-4">
               <AlertCircle className="h-4 w-4" />
@@ -330,7 +318,6 @@ export default function BoardsPage() {
             </Alert>
           )}
 
-          {/* 액션 버튼 */}
           {isEditingConfig && (
             <div className="flex gap-2 mt-4">
               <Button
@@ -339,8 +326,8 @@ export default function BoardsPage() {
               >
                 {isRefreshing ? '새로고침 중...' : isUpdating ? '저장 중...' : '저장'}
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={handleCancelEdit}
                 disabled={isUpdating}
               >
@@ -351,7 +338,6 @@ export default function BoardsPage() {
         </CardContent>
       </Card>
 
-      {/* 게시판 목록 카드 */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -366,7 +352,7 @@ export default function BoardsPage() {
                 코호트별로 정렬된 게시판 목록입니다.
               </CardDescription>
             </div>
-            <Button 
+            <Button
               onClick={handleCreateCohort}
               disabled={isCreating}
             >
@@ -395,8 +381,8 @@ export default function BoardsPage() {
               </TableHeader>
               <TableBody>
                 {boards.map((board) => {
-                  const firstDay = board.firstDay instanceof Date ? board.firstDay : null
-                  const lastDay = board.lastDay instanceof Date ? board.lastDay : null
+                  const firstDay = parseIsoDate(board.first_day)
+                  const lastDay = parseIsoDate(board.last_day)
 
                   return (
                     <TableRow key={board.id}>
@@ -436,7 +422,7 @@ export default function BoardsPage() {
                               {firstDay.toLocaleDateString('ko-KR')}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {firstDay.toLocaleDateString('ko-KR', { 
+                              {firstDay.toLocaleDateString('ko-KR', {
                                 weekday: 'short'
                               })}
                             </div>
@@ -452,7 +438,7 @@ export default function BoardsPage() {
                               {lastDay.toLocaleDateString('ko-KR')}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {lastDay.toLocaleDateString('ko-KR', { 
+                              {lastDay.toLocaleDateString('ko-KR', {
                                 weekday: 'short'
                               })}
                             </div>
@@ -486,4 +472,4 @@ export default function BoardsPage() {
       </Card>
     </div>
   )
-} 
+}
