@@ -2,25 +2,32 @@
 
 import { useState, useEffect } from 'react'
 import { Check, UserCheck, X, Loader2, HelpCircle, AlertCircle, RefreshCw } from 'lucide-react'
-import { getSupabaseClient } from '@/lib/supabase'
-import { fetchBoardsMapped, fetchBoardMapped, fetchWaitingUserIds, fetchPreviousCohortPostCount } from '@/apis/supabase-reads'
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
+import {
+  adminQueryKeys,
+  approveUser,
+  getBoard,
+  getBoards,
+  getPreviousCohortPostCount,
+  getWaitingUsers,
+  rejectUser,
+} from '@/apis/admin-api'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
   CardTitle,
   CardFooter
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table"
 import {
   Select,
@@ -36,28 +43,38 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { 
-  useQuery, 
-  useMutation, 
-  useQueryClient 
+import {
+  useQuery,
+  useMutation,
+  useQueryClient
 } from '@tanstack/react-query'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { WaitingUser } from '@/types/firestore'
 
-// 대기 중인 사용자 목록 조회 함수
-const fetchWaitingUsersData = async (boardId: string, cohort: number | undefined): Promise<WaitingUser[]> => {
+// Hydrate the page's WaitingUser shape from server-route data + previous-cohort
+// post counts. The N+1 round-trip pattern from the original implementation is
+// preserved (one call per waiting user) — server is now the rate-limited API,
+// not direct Supabase.
+const hydrateWaitingUsers = async (
+  boardId: string,
+  cohort: number | undefined
+): Promise<WaitingUser[]> => {
   if (!boardId) return []
-  const rows = await fetchWaitingUserIds(boardId)
+  const rows = await getWaitingUsers(boardId)
   if (!rows || rows.length === 0) return []
 
   const users = await Promise.all(
-    rows.map(async (row) => {
+    rows.map(async (row): Promise<WaitingUser | null> => {
       const u = row.user
       if (!u) return null
 
       let previousPostsCount: number | null = null
-      if (cohort) {
-        previousPostsCount = await fetchPreviousCohortPostCount(u.id, cohort)
+      if (cohort !== undefined && cohort !== null) {
+        try {
+          previousPostsCount = await getPreviousCohortPostCount(u.id, cohort)
+        } catch {
+          previousPostsCount = null
+        }
       }
 
       return {
@@ -83,7 +100,6 @@ export default function UserApprovalPage() {
   const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
-  // 로컬 스토리지에서 이전에 선택한 게시판 ID 불러오기
   useEffect(() => {
     const storedBoardId = localStorage.getItem('adminUserApproval_selectedBoardId')
     if (storedBoardId) {
@@ -91,11 +107,10 @@ export default function UserApprovalPage() {
     }
   }, [])
 
-  // 선택한 게시판 ID를 로컬 스토리지에 저장
   const handleBoardSelection = (value: string) => {
     const boardId = value || null
     setSelectedBoardId(boardId)
-    
+
     if (boardId) {
       localStorage.setItem('adminUserApproval_selectedBoardId', boardId)
     } else {
@@ -103,78 +118,65 @@ export default function UserApprovalPage() {
     }
   }
 
-  // 게시판 목록 쿼리
-  const { 
-    data: boards, 
-    isLoading: boardsLoading, 
-    error: boardsError 
+  const {
+    data: boards,
+    isLoading: boardsLoading,
+    error: boardsError
   } = useQuery({
-    queryKey: ['boards'],
-    queryFn: fetchBoardsMapped,
-    staleTime: 5 * 60 * 1000, // 5분
+    queryKey: adminQueryKeys.boards,
+    queryFn: getBoards,
+    staleTime: 5 * 60 * 1000,
   })
 
-  // 선택된 게시판 쿼리
   const {
     data: selectedBoard,
     isLoading: boardLoading,
     error: boardError
   } = useQuery({
-    queryKey: ['board', selectedBoardId],
-    queryFn: () => selectedBoardId ? fetchBoardMapped(selectedBoardId) : null,
+    queryKey: selectedBoardId
+      ? adminQueryKeys.board(selectedBoardId)
+      : ['admin', 'board', '__none__'],
+    queryFn: () => (selectedBoardId ? getBoard(selectedBoardId) : null),
     enabled: !!selectedBoardId,
-    staleTime: 5 * 60 * 1000, // 5분
+    staleTime: 5 * 60 * 1000,
   })
 
-  // 대기 중인 사용자 목록 쿼리
+  const waitingQueryKey = selectedBoardId
+    ? [...adminQueryKeys.waitingUsers(selectedBoardId), selectedBoard?.cohort ?? null] as const
+    : ['admin', 'waiting-users', '__none__'] as const
+
   const {
     data: waitingUsers = [],
     isLoading: usersLoading,
     error: usersError,
     refetch: refetchUsers
   } = useQuery({
-    queryKey: ['waitingUsers', selectedBoardId, selectedBoard?.cohort],
-    queryFn: () => fetchWaitingUsersData(selectedBoardId!, selectedBoard?.cohort),
+    queryKey: waitingQueryKey,
+    queryFn: () =>
+      hydrateWaitingUsers(selectedBoardId!, selectedBoard?.cohort ?? undefined),
     enabled: !!selectedBoardId && selectedBoard !== undefined,
-    staleTime: 2 * 60 * 1000, // 2분
+    staleTime: 2 * 60 * 1000,
   })
 
-  // 사용자 승인 뮤테이션
   const approveUserMutation = useMutation({
     mutationFn: async (userId: string) => {
       if (!selectedBoardId) throw new Error('선택된 게시판이 없습니다.')
-
-      const supabase = getSupabaseClient()
-
-      // 1. 사용자의 boardPermissions 업데이트 - 쓰기 권한 부여
-      const { error: permError } = await supabase
-        .from('user_board_permissions')
-        .upsert(
-          { user_id: userId, board_id: selectedBoardId, permission: 'write' },
-          { onConflict: 'user_id,board_id' }
-        )
-      if (permError) throw permError
-
-      // 2. 게시판의 waitingUsersIds에서 사용자 제거
-      const { error: waitError } = await supabase
-        .from('board_waiting_users')
-        .delete()
-        .match({ board_id: selectedBoardId, user_id: userId })
-      if (waitError) throw waitError
-
-      return userId
+      const res = await approveUser({ userId, boardId: selectedBoardId })
+      return { userId, status: res.status, firstTime: res.firstTime }
     },
-    onSuccess: (userId) => {
-      // 캐시 데이터 업데이트
-      queryClient.invalidateQueries({ queryKey: ['board', selectedBoardId] })
-
-      // 대기 중인 사용자 목록에서 해당 사용자 제거
-      queryClient.setQueryData(['waitingUsers', selectedBoardId, selectedBoard?.cohort], (oldData: WaitingUser[] | undefined) => {
-        if (!oldData) return []
-        return oldData.filter(user => user.id !== userId)
-      })
-
-      toast.success("사용자에게 게시판 접근 권한이 부여되었습니다.")
+    onSuccess: ({ userId, firstTime }) => {
+      if (selectedBoardId) {
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.board(selectedBoardId) })
+        queryClient.setQueryData(waitingQueryKey, (oldData: WaitingUser[] | undefined) => {
+          if (!oldData) return []
+          return oldData.filter(user => user.id !== userId)
+        })
+      }
+      toast.success(
+        firstTime
+          ? "사용자에게 게시판 접근 권한이 부여되었습니다."
+          : "이미 처리된 사용자입니다."
+      )
     },
     onError: (error) => {
       console.error('Error approving user:', error)
@@ -182,33 +184,25 @@ export default function UserApprovalPage() {
     }
   })
 
-  // 사용자 거부 뮤테이션
   const rejectUserMutation = useMutation({
     mutationFn: async (userId: string) => {
       if (!selectedBoardId) throw new Error('선택된 게시판이 없습니다.')
-
-      const supabase = getSupabaseClient()
-
-      // 게시판의 waitingUsersIds에서 사용자 제거
-      const { error } = await supabase
-        .from('board_waiting_users')
-        .delete()
-        .match({ board_id: selectedBoardId, user_id: userId })
-      if (error) throw error
-
-      return userId
+      const res = await rejectUser({ userId, boardId: selectedBoardId })
+      return { userId, status: res.status, firstTime: res.firstTime }
     },
-    onSuccess: (userId) => {
-      // 캐시 데이터 업데이트
-      queryClient.invalidateQueries({ queryKey: ['board', selectedBoardId] })
-
-      // 대기 중인 사용자 목록에서 해당 사용자 제거
-      queryClient.setQueryData(['waitingUsers', selectedBoardId, selectedBoard?.cohort], (oldData: WaitingUser[] | undefined) => {
-        if (!oldData) return []
-        return oldData.filter(user => user.id !== userId)
-      })
-
-      toast.success("사용자의 게시판 가입 요청이 거부되었습니다.")
+    onSuccess: ({ userId, firstTime }) => {
+      if (selectedBoardId) {
+        queryClient.invalidateQueries({ queryKey: adminQueryKeys.board(selectedBoardId) })
+        queryClient.setQueryData(waitingQueryKey, (oldData: WaitingUser[] | undefined) => {
+          if (!oldData) return []
+          return oldData.filter(user => user.id !== userId)
+        })
+      }
+      toast.success(
+        firstTime
+          ? "사용자의 게시판 가입 요청이 거부되었습니다."
+          : "이미 처리된 사용자입니다."
+      )
     },
     onError: (error) => {
       console.error('Error rejecting user:', error)
@@ -254,9 +248,9 @@ export default function UserApprovalPage() {
           {boardsError instanceof Error ? boardsError.message : '서버 오류가 발생했습니다. 나중에 다시 시도해주세요.'}
         </AlertDescription>
         <div className="mt-4">
-          <Button 
-            variant="outline" 
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['boards'] })}
+          <Button
+            variant="outline"
+            onClick={() => queryClient.invalidateQueries({ queryKey: adminQueryKeys.boards })}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
             다시 시도
@@ -304,9 +298,8 @@ export default function UserApprovalPage() {
               {boards && boards.length > 0 ? (
                 [...boards]
                   .sort((a, b) => {
-                    // 코호트 번호 기준 내림차순 정렬 (높은 번호 -> 낮은 번호)
-                    const cohortA = a.cohort || 0;
-                    const cohortB = b.cohort || 0;
+                    const cohortA = a.cohort ?? 0;
+                    const cohortB = b.cohort ?? 0;
                     return cohortB - cohortA;
                   })
                   .map((board) => (
@@ -342,8 +335,8 @@ export default function UserApprovalPage() {
                 </CardDescription>
               </div>
               {usersError && (
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => refetchUsers()}
                 >
@@ -470,4 +463,4 @@ export default function UserApprovalPage() {
       )}
     </div>
   )
-} 
+}

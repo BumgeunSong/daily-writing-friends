@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { fetchAppConfig, updateAppConfig } from '@/apis/supabase-reads'
+import { adminQueryKeys, getAppConfig, updateAppConfig } from '@/apis/admin-api'
 
 interface UpdateBoardsParams {
   activeBoardId: string
@@ -17,15 +17,15 @@ export function useRemoteConfig() {
     isFetching,
     refetch,
   } = useQuery({
-    queryKey: ['appConfig'],
-    queryFn: fetchAppConfig,
+    queryKey: adminQueryKeys.appConfig,
+    queryFn: getAppConfig,
     staleTime: 30 * 1000,
     gcTime: 60 * 1000,
     refetchInterval: 30 * 1000,
   })
 
   const forceRefresh = async () => {
-    await queryClient.invalidateQueries({ queryKey: ['appConfig'] })
+    await queryClient.invalidateQueries({ queryKey: adminQueryKeys.appConfig })
   }
 
   const updateMutation = useMutation({
@@ -33,10 +33,10 @@ export function useRemoteConfig() {
       if (activeBoardId && upcomingBoardId && activeBoardId === upcomingBoardId) {
         throw new Error('현재 진행 중인 게시판과 다음 예정 게시판은 달라야 합니다.')
       }
-      await updateAppConfig(activeBoardId, upcomingBoardId)
+      await updateAppConfig({ activeBoardId, upcomingBoardId })
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appConfig'] })
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.appConfig })
       setError(null)
     },
     onError: (error: Error) => {
