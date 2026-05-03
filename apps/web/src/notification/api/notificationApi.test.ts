@@ -1,8 +1,15 @@
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+
 import { createTimestamp } from '@/shared/model/Timestamp';
-import { describe, it, expect } from 'vitest';
 import { NotificationType } from '@/notification/model/Notification';
 import type { NotificationDTO } from '@/shared/api/supabaseReads';
-import { mapDTOToNotification } from './notificationApi';
+import { fetchNotifications, mapDTOToNotification } from './notificationApi';
+
+const mockFetchNotificationsFromSupabase = vi.fn();
+vi.mock('@/shared/api/supabaseReads', () => ({
+  fetchNotificationsFromSupabase: (...args: unknown[]) =>
+    mockFetchNotificationsFromSupabase(...args),
+}));
 
 const baseDTO: NotificationDTO = {
   id: 'n1',
@@ -103,6 +110,79 @@ describe('mapDTOToNotification', () => {
     it('throws on unknown notification type', () => {
       const dto = { ...baseDTO, type: 'invalid_type' as NotificationType };
       expect(() => mapDTOToNotification(dto)).toThrow('Unknown notification type: invalid_type');
+    });
+  });
+});
+
+describe('fetchNotifications', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('when Supabase returns notifications', () => {
+    it('maps the rows to Notification domain objects', async () => {
+      const now = new Date();
+
+      mockFetchNotificationsFromSupabase.mockResolvedValue([
+        {
+          id: 'notif-1',
+          type: NotificationType.COMMENT_ON_POST,
+          boardId: 'board-1',
+          postId: 'post-1',
+          commentId: 'comment-1',
+          fromUserId: 'user-1',
+          message: 'Test',
+          timestamp: now.toISOString(),
+          read: false,
+        },
+      ]);
+
+      const result = await fetchNotifications('user-123', 10);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('notif-1');
+      expect(result[0].message).toBe('Test');
+    });
+  });
+
+  describe('when Supabase returns no rows', () => {
+    it('returns an empty array', async () => {
+      mockFetchNotificationsFromSupabase.mockResolvedValue([]);
+
+      const result = await fetchNotifications('user-123', 10);
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('when called with a cursor timestamp', () => {
+    it('forwards the cursor as an ISO string to Supabase', async () => {
+      const now = new Date();
+      const cursorTimestamp = createTimestamp(new Date(Date.now() - 1_000_000));
+
+      mockFetchNotificationsFromSupabase.mockResolvedValue([
+        {
+          id: 'notif-page2-1',
+          type: NotificationType.COMMENT_ON_POST,
+          boardId: 'board-1',
+          postId: 'post-1',
+          commentId: 'comment-1',
+          fromUserId: 'user-1',
+          message: 'Page 2 notification',
+          timestamp: now.toISOString(),
+          read: false,
+        },
+      ]);
+
+      const result = await fetchNotifications('user-123', 10, cursorTimestamp);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('notif-page2-1');
+      expect(mockFetchNotificationsFromSupabase).toHaveBeenCalledWith(
+        'user-123',
+        10,
+        expect.any(String),
+      );
     });
   });
 });
