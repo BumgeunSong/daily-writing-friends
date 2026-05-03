@@ -5,6 +5,7 @@ import {
   fetchPostingDataForContributions,
   createUserInfo,
 } from '@/stats/api/stats';
+import { TEMPERATURE_WINDOW_WORKING_DAYS } from '@/stats/constants';
 import type { WritingStats } from '@/stats/model/WritingStats';
 import {
   sortWritingStats,
@@ -49,7 +50,10 @@ async function fetchMultipleUserStats(
 
 async function fetchSingleUserStats(user: User): Promise<WritingStats | null> {
   try {
-    const contributionPostings = await fetchPostingDataForContributions(user.uid, 20);
+    const contributionPostings = await fetchPostingDataForContributions(
+      user.uid,
+      TEMPERATURE_WINDOW_WORKING_DAYS,
+    );
     return calculateWritingStats(user, contributionPostings);
   } catch (error) {
     return null;
@@ -60,7 +64,7 @@ function calculateWritingStats(
   user: User,
   contributionPostings: Posting[],
 ): WritingStats {
-  const workingDays = getRecentWorkingDays(20);
+  const workingDays = getRecentWorkingDays(TEMPERATURE_WINDOW_WORKING_DAYS);
   const contributions = createContributions(contributionPostings, workingDays);
 
   return {

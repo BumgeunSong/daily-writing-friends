@@ -7,6 +7,7 @@ import { createNotificationQueryKey } from '@/notification/utils/notificationQue
 import {
   flattenNotificationPages,
   getLastNotificationTimestamp,
+  reportNotificationFetchError,
 } from '@/notification/utils/notificationUtils';
 
 const NOTIFICATIONS_CONFIG = {
@@ -47,8 +48,10 @@ export const useNotifications = (
       enabled: userId != null,
       getNextPageParam: (lastPage) => getLastNotificationTimestamp(lastPage),
       onError: (error) => {
-        console.error('알림 데이터를 불러오던 중 에러가 발생했습니다:', error);
-        Sentry.captureException(error);
+        reportNotificationFetchError(error, {
+          log: (message, err) => console.error(message, err),
+          capture: (err) => Sentry.captureException(err),
+        });
       },
       ...NOTIFICATIONS_CONFIG,
       refetchOnWindowFocus: true,

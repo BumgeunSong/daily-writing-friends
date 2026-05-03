@@ -15,11 +15,13 @@ import {
 } from '@/shared/api/supabaseReads';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { getDateRange } from '@/stats/api/stats';
+import {
+  STREAK_WINDOW_WORKING_DAYS,
+  TEMPERATURE_WINDOW_WORKING_DAYS,
+} from '@/stats/constants';
 
 export type { PostCardPrefetchedData } from '@/post/utils/batchPostCardDataUtils';
 
-const STREAK_WINDOW_WORKING_DAYS = 5;
-const TEMPERATURE_WINDOW_WORKING_DAYS = 20;
 const STALE_TIME_MS = 5 * 60 * 1000;
 const CACHE_TIME_MS = 10 * 60 * 1000;
 
