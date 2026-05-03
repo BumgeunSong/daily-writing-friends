@@ -57,10 +57,12 @@ function useLatestValueRef<T>(value: T): MutableRefObject<T> {
  * Owns Autosave + Manual Save for a Draft on a Board.
  *
  * Interface invariants:
- *  - Interval saves coalesce by drop: if a save is in flight when a tick fires,
- *    the tick is skipped; the next tick catches the latest content via refs.
- *  - manualSave coalesces by squash: latest content is persisted exactly once
- *    after any in-flight save completes, even when called repeatedly during it.
+ *  - All writes (interval + manualSave) flow through one squash invoker, so at
+ *    most one save is in flight at a time and at most one follow-up is queued.
+ *    The follow-up reads live content via refs at the moment it runs, so the
+ *    latest user input always wins. Without this, a manual save during an
+ *    in-flight interval mutation would spawn a concurrent write — and if
+ *    draftId is still null at that point, two drafts would be created.
  *  - Empty title AND empty content → save is skipped silently.
  *  - Retry: at most {@link MAX_DRAFT_RETRY_ATTEMPTS} attempts, exponential backoff
  *    capped at {@link MAX_DRAFT_RETRY_DELAY_MS}; no retry on SupabaseWriteError or TypeError.
@@ -89,7 +91,7 @@ export function useDraftAutosave({
   const contentRef = useLatestValueRef(content);
   const saveDraftFnRef = useLatestValueRef(saveDraftFn);
 
-  const { mutate, mutateAsync, isLoading, error } = useMutation<Draft | null, Error, void>({
+  const { mutateAsync, isLoading, error } = useMutation<Draft | null, Error, void>({
     mutationKey: ['draft', 'save', boardId],
     mutationFn: async () => {
       if (!userId || !boardId) {
@@ -141,14 +143,13 @@ export function useDraftAutosave({
 
   useInterval(
     () => {
-      if (isLoading) return;
       const current: DraftContentSnapshot = {
         title: titleRef.current,
         content: contentRef.current,
       };
       if (shouldSkipEmptyDraft(current.title, current.content)) return;
       if (!hasContentChanged(current, lastSavedSnapshot)) return;
-      mutate();
+      void squashedSaveRef.current!();
     },
     { delay: intervalMs, enabled },
   );
