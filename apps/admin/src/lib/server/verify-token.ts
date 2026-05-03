@@ -1,9 +1,9 @@
-import "server-only";
+import 'server-only';
 
-import { createRemoteJWKSet, jwtVerify, JWTPayload } from "jose";
+import { createRemoteJWKSet, jwtVerify, JWTPayload } from 'jose';
 
 const FIREBASE_JWKS_URL =
-  "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";
+  'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
 
 export type FirebaseTokenClaims = JWTPayload & {
   email?: string;
@@ -22,7 +22,7 @@ export type CreateVerifierOptions = {
 export function createVerifier(options: CreateVerifierOptions): Verifier {
   const { jwksUrl = FIREBASE_JWKS_URL, projectId, clockTolerance = 30 } = options;
   if (!projectId) {
-    throw new Error("createVerifier requires a non-empty projectId.");
+    throw new Error('createVerifier requires a non-empty projectId.');
   }
 
   const jwks = createRemoteJWKSet(new URL(jwksUrl));
@@ -31,7 +31,7 @@ export function createVerifier(options: CreateVerifierOptions): Verifier {
     const { payload } = await jwtVerify(token, jwks, {
       issuer: `https://securetoken.google.com/${projectId}`,
       audience: projectId,
-      algorithms: ["RS256"],
+      algorithms: ['RS256'],
       clockTolerance,
     });
     return payload as FirebaseTokenClaims;
@@ -45,7 +45,7 @@ export function getDefaultVerifier(): Verifier {
   const projectId = process.env.FIREBASE_PROJECT_ID;
   if (!projectId) {
     throw new Error(
-      "FIREBASE_PROJECT_ID is not configured. Required to verify Firebase ID tokens."
+      'FIREBASE_PROJECT_ID is not configured. Required to verify Firebase ID tokens.',
     );
   }
   defaultVerifierCache = createVerifier({ projectId });

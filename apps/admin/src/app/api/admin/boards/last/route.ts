@@ -1,19 +1,16 @@
-import { withAdmin, AdminApiError } from "@/lib/server/with-admin";
-import { getServerSupabase } from "@/lib/server/supabase";
-import {
-  GetLastBoardResponseSchema,
-  type SupabaseBoard,
-} from "@/types/admin-api-contracts";
+import { withAdmin, AdminApiError } from '@/lib/server/with-admin';
+import { getServerSupabase } from '@/lib/server/supabase';
+import { GetLastBoardResponseSchema, type SupabaseBoard } from '@/types/admin-api-contracts';
 
 export const GET = withAdmin({
-  kind: "read",
+  kind: 'read',
   schema: GetLastBoardResponseSchema,
   handler: async () => {
     const supabase = getServerSupabase();
     const { data, error } = await supabase
-      .from("boards")
-      .select("*")
-      .order("cohort", { ascending: false, nullsFirst: false })
+      .from('boards')
+      .select('*')
+      .order('cohort', { ascending: false, nullsFirst: false })
       .limit(1)
       .maybeSingle();
     if (error) throw AdminApiError.serverError(error.message);

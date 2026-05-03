@@ -1,22 +1,22 @@
-import "server-only";
+import 'server-only';
 
-import type { NextRequest } from "next/server";
-import { getDefaultVerifier, type FirebaseTokenClaims, type Verifier } from "./verify-token";
+import type { NextRequest } from 'next/server';
+import { getDefaultVerifier, type FirebaseTokenClaims, type Verifier } from './verify-token';
 
 export class AdminAuthError extends Error {
-  readonly code: "unauthorized" | "forbidden";
+  readonly code: 'unauthorized' | 'forbidden';
   readonly status: 401 | 403;
-  constructor(code: "unauthorized" | "forbidden", message: string) {
+  constructor(code: 'unauthorized' | 'forbidden', message: string) {
     super(message);
-    this.name = "AdminAuthError";
+    this.name = 'AdminAuthError';
     this.code = code;
-    this.status = code === "unauthorized" ? 401 : 403;
+    this.status = code === 'unauthorized' ? 401 : 403;
   }
 }
 
 function parseAdminEmails(raw: string | undefined): string[] {
-  return (raw ?? "")
-    .split(",")
+  return (raw ?? '')
+    .split(',')
     .map((e) => e.trim().toLowerCase())
     .filter((e) => e.length > 0);
 }
@@ -25,8 +25,8 @@ const adminEmails = parseAdminEmails(process.env.ADMIN_EMAILS);
 
 if (adminEmails.length === 0) {
   throw new Error(
-    "ADMIN_EMAILS is empty or unset. The admin server routes refuse to start without an allowlist. " +
-      "Set ADMIN_EMAILS to a comma-separated list of admin email addresses."
+    'ADMIN_EMAILS is empty or unset. The admin server routes refuse to start without an allowlist. ' +
+      'Set ADMIN_EMAILS to a comma-separated list of admin email addresses.',
   );
 }
 
@@ -42,16 +42,13 @@ export function isAdminEmail(email: string | undefined | null): boolean {
 }
 
 function extractBearerToken(req: NextRequest | Request): string {
-  const header = req.headers.get("authorization") ?? req.headers.get("Authorization");
+  const header = req.headers.get('authorization') ?? req.headers.get('Authorization');
   if (!header) {
-    throw new AdminAuthError("unauthorized", "Missing Authorization header.");
+    throw new AdminAuthError('unauthorized', 'Missing Authorization header.');
   }
   const match = /^Bearer\s+(.+)$/i.exec(header.trim());
   if (!match) {
-    throw new AdminAuthError(
-      "unauthorized",
-      "Authorization header must be 'Bearer <token>'."
-    );
+    throw new AdminAuthError('unauthorized', "Authorization header must be 'Bearer <token>'.");
   }
   return match[1];
 }
@@ -63,7 +60,7 @@ export type RequireAdminResult = {
 
 export async function verifyAdmin(
   req: NextRequest | Request,
-  verifier: Verifier = getDefaultVerifier()
+  verifier: Verifier = getDefaultVerifier(),
 ): Promise<RequireAdminResult> {
   const token = extractBearerToken(req);
 
@@ -72,19 +69,19 @@ export async function verifyAdmin(
     claims = await verifier(token);
   } catch (e) {
     throw new AdminAuthError(
-      "unauthorized",
-      e instanceof Error ? `Token verification failed: ${e.message}` : "Token verification failed."
+      'unauthorized',
+      e instanceof Error ? `Token verification failed: ${e.message}` : 'Token verification failed.',
     );
   }
 
   const rawEmail = claims.email;
-  const email = typeof rawEmail === "string" ? rawEmail.trim() : "";
+  const email = typeof rawEmail === 'string' ? rawEmail.trim() : '';
   if (email.length === 0) {
-    throw new AdminAuthError("unauthorized", "Token has no email claim.");
+    throw new AdminAuthError('unauthorized', 'Token has no email claim.');
   }
 
   if (!ADMIN_EMAIL_SET.has(email.toLowerCase())) {
-    throw new AdminAuthError("forbidden", "Account is not in admin allowlist.");
+    throw new AdminAuthError('forbidden', 'Account is not in admin allowlist.');
   }
 
   return { email, claims };
@@ -92,7 +89,7 @@ export async function verifyAdmin(
 
 export async function requireAdmin(
   req: NextRequest | Request,
-  verifier?: Verifier
+  verifier?: Verifier,
 ): Promise<RequireAdminResult> {
   return verifyAdmin(req, verifier);
 }
@@ -105,7 +102,7 @@ export type AuthenticatedIdentity = {
 
 export async function authenticateOptional(
   req: NextRequest | Request,
-  verifier: Verifier = getDefaultVerifier()
+  verifier: Verifier = getDefaultVerifier(),
 ): Promise<AuthenticatedIdentity> {
   const token = extractBearerToken(req);
   let claims: FirebaseTokenClaims;
@@ -113,13 +110,13 @@ export async function authenticateOptional(
     claims = await verifier(token);
   } catch (e) {
     throw new AdminAuthError(
-      "unauthorized",
-      e instanceof Error ? `Token verification failed: ${e.message}` : "Token verification failed."
+      'unauthorized',
+      e instanceof Error ? `Token verification failed: ${e.message}` : 'Token verification failed.',
     );
   }
-  const email = typeof claims.email === "string" ? claims.email.trim() : "";
+  const email = typeof claims.email === 'string' ? claims.email.trim() : '';
   if (email.length === 0) {
-    throw new AdminAuthError("unauthorized", "Token has no email claim.");
+    throw new AdminAuthError('unauthorized', 'Token has no email claim.');
   }
   return {
     email,

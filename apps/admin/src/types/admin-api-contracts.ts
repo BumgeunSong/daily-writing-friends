@@ -1,15 +1,15 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 // =============================================================================
 // Error envelope (every non-2xx response from /api/admin/** matches this shape)
 // =============================================================================
 
 export const AdminApiErrorCodeSchema = z.enum([
-  "unauthorized",
-  "forbidden",
-  "rate-limited",
-  "bad-request",
-  "server-error",
+  'unauthorized',
+  'forbidden',
+  'rate-limited',
+  'bad-request',
+  'server-error',
 ]);
 export type AdminApiErrorCode = z.infer<typeof AdminApiErrorCodeSchema>;
 
@@ -23,11 +23,7 @@ export type AdminApiErrorBody = z.infer<typeof AdminApiErrorSchema>;
 // Audit log action enum
 // =============================================================================
 
-export type AdminAction =
-  | "user.approve"
-  | "user.reject"
-  | "board.create"
-  | "app-config.update";
+export type AdminAction = 'user.approve' | 'user.reject' | 'board.create' | 'app-config.update';
 
 // =============================================================================
 // Domain shapes — mirror Supabase row shapes 1:1 (snake_case) so existing pages
@@ -86,7 +82,7 @@ export const SupabaseUserSchema = z.object({
 export type SupabaseUser = z.infer<typeof SupabaseUserSchema>;
 
 export const BoardUserSchema = z.object({
-  permission: z.enum(["read", "write"]),
+  permission: z.enum(['read', 'write']),
   user: z.object({
     id: z.string(),
     real_name: z.string().nullable(),
@@ -207,11 +203,9 @@ export type GetUsersByIdsResponse = z.infer<typeof GetUsersByIdsResponseSchema>;
 export const GetPreviousCohortPostsResponseSchema = z.object({
   count: z.number().nullable(),
 });
-export type GetPreviousCohortPostsResponse = z.infer<
-  typeof GetPreviousCohortPostsResponseSchema
->;
+export type GetPreviousCohortPostsResponse = z.infer<typeof GetPreviousCohortPostsResponseSchema>;
 
-export const PostsRangeSchema = z.enum(["week", "all"]);
+export const PostsRangeSchema = z.enum(['week', 'all']);
 export type PostsRange = z.infer<typeof PostsRangeSchema>;
 
 export const GetPostsResponseSchema = z.object({
@@ -235,7 +229,7 @@ export const ApproveUserRequestSchema = z.object({
 export type ApproveUserRequest = z.infer<typeof ApproveUserRequestSchema>;
 
 export const ApproveUserResponseSchema = z.object({
-  status: z.enum(["approved", "already-handled"]),
+  status: z.enum(['approved', 'already-handled']),
   firstTime: z.boolean(),
 });
 export type ApproveUserResponse = z.infer<typeof ApproveUserResponseSchema>;
@@ -247,7 +241,7 @@ export const RejectUserRequestSchema = z.object({
 export type RejectUserRequest = z.infer<typeof RejectUserRequestSchema>;
 
 export const RejectUserResponseSchema = z.object({
-  status: z.enum(["rejected", "already-handled"]),
+  status: z.enum(['rejected', 'already-handled']),
   firstTime: z.boolean(),
 });
 export type RejectUserResponse = z.infer<typeof RejectUserResponseSchema>;
@@ -288,7 +282,7 @@ export function mapToBoard(row: SupabaseBoard): Board {
   const board: Board = {
     id: row.id,
     title: row.title,
-    description: row.description ?? "",
+    description: row.description ?? '',
     createdAt: row.created_at,
   };
   if (row.cohort !== null) board.cohort = row.cohort;
