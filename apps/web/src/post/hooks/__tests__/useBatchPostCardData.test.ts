@@ -54,14 +54,14 @@ describe('buildPostCardDataMap', () => {
 
   describe('when author not found in users table', () => {
     it('returns fallback data with displayName "??" and empty profileImageURL', () => {
-      const result = buildPostCardDataMap(
-        ['unknown-user'],
-        [],
-        [],
-        [],
-        [],
-        workingDays,
-      );
+      const result = buildPostCardDataMap({
+        authorIds: ['unknown-user'],
+        users: [],
+        commentRows: [],
+        replyRows: [],
+        postRows: [],
+        streakWorkingDays: workingDays,
+      });
 
       const data = result.get('unknown-user');
       expect(data).toBeDefined();
@@ -76,7 +76,7 @@ describe('buildPostCardDataMap', () => {
         { id: 'user-1', nickname: 'Cool Nick', real_name: 'Real Name', profile_photo_url: 'https://photo.url' },
       ];
 
-      const result = buildPostCardDataMap(['user-1'], users, [], [], [], workingDays);
+      const result = buildPostCardDataMap({ authorIds: ['user-1'], users, commentRows: [], replyRows: [], postRows: [], streakWorkingDays: workingDays });
 
       expect(result.get('user-1')!.authorData.displayName).toBe('Cool Nick');
       expect(result.get('user-1')!.authorData.profileImageURL).toBe('https://photo.url');
@@ -89,7 +89,7 @@ describe('buildPostCardDataMap', () => {
         { id: 'user-1', nickname: null, real_name: 'Real Name', profile_photo_url: null },
       ];
 
-      const result = buildPostCardDataMap(['user-1'], users, [], [], [], workingDays);
+      const result = buildPostCardDataMap({ authorIds: ['user-1'], users, commentRows: [], replyRows: [], postRows: [], streakWorkingDays: workingDays });
 
       expect(result.get('user-1')!.authorData.displayName).toBe('Real Name');
       expect(result.get('user-1')!.authorData.profileImageURL).toBe('');
@@ -102,7 +102,7 @@ describe('buildPostCardDataMap', () => {
         { id: 'user-1', nickname: '   ', real_name: 'Real Name', profile_photo_url: null },
       ];
 
-      const result = buildPostCardDataMap(['user-1'], users, [], [], [], workingDays);
+      const result = buildPostCardDataMap({ authorIds: ['user-1'], users, commentRows: [], replyRows: [], postRows: [], streakWorkingDays: workingDays });
 
       expect(result.get('user-1')!.authorData.displayName).toBe('Real Name');
     });
@@ -114,14 +114,14 @@ describe('buildPostCardDataMap', () => {
         { id: 'user-1', nickname: 'Alice', real_name: null, profile_photo_url: null },
       ];
 
-      const result = buildPostCardDataMap(
-        ['user-1', 'user-missing'],
+      const result = buildPostCardDataMap({
+        authorIds: ['user-1', 'user-missing'],
         users,
-        [],
-        [],
-        [],
-        workingDays,
-      );
+        commentRows: [],
+        replyRows: [],
+        postRows: [],
+        streakWorkingDays: workingDays,
+      });
 
       expect(result.size).toBe(2);
       expect(result.get('user-1')!.authorData.displayName).toBe('Alice');
@@ -142,14 +142,14 @@ describe('buildPostCardDataMap', () => {
         { user_id: 'user-1', created_at: '2026-04-23' },
       ];
 
-      const result = buildPostCardDataMap(
-        ['user-1'],
+      const result = buildPostCardDataMap({
+        authorIds: ['user-1'],
         users,
         commentRows,
         replyRows,
-        [],
-        workingDays,
-      );
+        postRows: [],
+        streakWorkingDays: workingDays,
+      });
 
       expect(result.get('user-1')!.badges.length).toBeGreaterThan(0);
     });
@@ -161,7 +161,7 @@ describe('buildPostCardDataMap', () => {
         { id: 'user-1', nickname: 'Alice', real_name: null, profile_photo_url: null },
       ];
 
-      const result = buildPostCardDataMap(['user-1'], users, [], [], [], workingDays);
+      const result = buildPostCardDataMap({ authorIds: ['user-1'], users, commentRows: [], replyRows: [], postRows: [], streakWorkingDays: workingDays });
 
       expect(result.get('user-1')!.badges).toEqual([]);
     });
@@ -177,14 +177,14 @@ describe('buildPostCardDataMap', () => {
         { author_id: 'user-1', created_at: '2026-04-23T10:00:00Z' },
       ];
 
-      const result = buildPostCardDataMap(
-        ['user-1'],
+      const result = buildPostCardDataMap({
+        authorIds: ['user-1'],
         users,
-        [],
-        [],
+        commentRows: [],
+        replyRows: [],
         postRows,
-        workingDays,
-      );
+        streakWorkingDays: workingDays,
+      });
 
       const streak = result.get('user-1')!.streak;
       expect(streak).toHaveLength(5);

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
+
 import type { Post } from '@/post/model/Post';
 import {
   buildPostCardDataMap,
@@ -16,7 +17,11 @@ import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { getDateRange } from '@/stats/api/stats';
 
 export type { PostCardPrefetchedData } from '@/post/utils/batchPostCardDataUtils';
-export { deduplicateAuthorIds, buildPostCardDataMap } from '@/post/utils/batchPostCardDataUtils';
+
+const STREAK_WINDOW_WORKING_DAYS = 5;
+const TEMPERATURE_WINDOW_WORKING_DAYS = 20;
+const STALE_TIME_MS = 5 * 60 * 1000;
+const CACHE_TIME_MS = 10 * 60 * 1000;
 
 export function useBatchPostCardData(posts: Post[]) {
   const authorIds = useMemo(
@@ -32,8 +37,8 @@ export function useBatchPostCardData(posts: Post[]) {
     queryKey: ['batchPostCardData', authorIdsKey],
     queryFn: () => fetchBatchPostCardData(authorIds),
     enabled: authorIds.length > 0,
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000,
+    staleTime: STALE_TIME_MS,
+    cacheTime: CACHE_TIME_MS,
     refetchOnWindowFocus: false,
   });
 }
@@ -41,17 +46,24 @@ export function useBatchPostCardData(posts: Post[]) {
 async function fetchBatchPostCardData(
   authorIds: string[],
 ): Promise<Map<string, PostCardPrefetchedData>> {
-  const workingDays5 = getRecentWorkingDays(5);
-  const workingDays20 = getRecentWorkingDays(20);
-  const badgeDateRange = getDateRange(workingDays20);
-  const streakDateRange = getDateRange(workingDays5);
+  const streakWorkingDays = getRecentWorkingDays(STREAK_WINDOW_WORKING_DAYS);
+  const temperatureWorkingDays = getRecentWorkingDays(TEMPERATURE_WINDOW_WORKING_DAYS);
+  const temperatureDateRange = getDateRange(temperatureWorkingDays);
+  const streakDateRange = getDateRange(streakWorkingDays);
 
   const [users, commentRows, replyRows, postRows] = await Promise.all([
     fetchBatchUsersBasic(authorIds),
-    fetchBatchCommentUserIdsByDateRange(authorIds, badgeDateRange.start, badgeDateRange.end),
-    fetchBatchReplyUserIdsByDateRange(authorIds, badgeDateRange.start, badgeDateRange.end),
+    fetchBatchCommentUserIdsByDateRange(authorIds, temperatureDateRange.start, temperatureDateRange.end),
+    fetchBatchReplyUserIdsByDateRange(authorIds, temperatureDateRange.start, temperatureDateRange.end),
     fetchBatchPostDatesByDateRange(authorIds, streakDateRange.start, streakDateRange.end),
   ]);
 
-  return buildPostCardDataMap(authorIds, users, commentRows, replyRows, postRows, workingDays5);
+  return buildPostCardDataMap({
+    authorIds,
+    users,
+    commentRows,
+    replyRows,
+    postRows,
+    streakWorkingDays,
+  });
 }
