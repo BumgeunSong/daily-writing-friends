@@ -45,7 +45,7 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
   try {
 
     // Create the post with optional contentJson
-    await createPost(boardId, title, content, authorId, authorName, undefined, contentJson);
+    await createPost({ boardId, title, content, authorId, authorName, contentJson });
     
     // Send analytics
     sendAnalyticsEvent(AnalyticsEvent.CREATE_POST, {

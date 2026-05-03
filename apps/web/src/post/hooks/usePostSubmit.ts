@@ -38,7 +38,7 @@ export function usePostSubmit({
     
     try {
       setIsSubmitting(true);
-      await createPost(boardId, title, content, userId, userName);
+      await createPost({ boardId, title, content, authorId: userId, authorName: userName });
       sendAnalyticsEvent(AnalyticsEvent.CREATE_POST, {
         boardId,
         title,

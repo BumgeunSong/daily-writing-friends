@@ -80,7 +80,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
     if (!editState.title.trim() || !editState.content.trim()) return;
 
     try {
-      await updatePost(boardId, postId, editState.title, editState.content, contentJson);
+      await updatePost({ postId, title: editState.title, content: editState.content, contentJson });
       navigate(`/board/${boardId}/post/${postId}`);
       // Invalidate after navigation to avoid unnecessary refetching on edit page
       queryClient.invalidateQueries(['post', boardId, postId]);
