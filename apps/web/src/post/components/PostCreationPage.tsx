@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Form, useNavigation, useActionData, useSearchParams } from 'react-router-dom';
 import { DraftsDrawer } from '@/draft/components/DraftsDrawer';
-import { useAutoSaveDrafts } from '@/draft/hooks/useAutoSaveDrafts';
+import { useDraftAutosave } from '@/draft/hooks/useDraftAutosave';
 import { useDraftLoader } from '@/draft/hooks/useDraftLoader';
 import { usePostEditor } from '@/post/hooks/usePostEditor';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -62,7 +62,7 @@ export default function PostCreationPage() {
     }
   }, [actionData?.error]);
 
-  const { draftId: autoSavedDraftId } = useAutoSaveDrafts({
+  const { draftId: autoSavedDraftId } = useDraftAutosave({
     boardId: boardId || '',
     userId: currentUser?.uid,
     title,
