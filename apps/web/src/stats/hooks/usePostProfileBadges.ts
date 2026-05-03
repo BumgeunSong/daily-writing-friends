@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchCommentingData } from '@/stats/api/stats';
+import { TEMPERATURE_WINDOW_WORKING_DAYS } from '@/stats/constants';
 import type { WritingBadge } from '@/stats/model/WritingStats';
 import { calculateCommentTemperature } from '@/stats/utils/commentTemperature';
 import type { Commenting } from '@/user/model/Commenting';
@@ -15,7 +16,7 @@ export function usePostProfileBadges(userId: string) {
 
 async function fetchUserBadges(userId: string): Promise<WritingBadge[]> {
   try {
-    const commentingData = await fetchCommentingData(userId, 20);
+    const commentingData = await fetchCommentingData(userId, TEMPERATURE_WINDOW_WORKING_DAYS);
     const commentingBadges = createCommentingBadges(commentingData);
 
     return commentingBadges;
