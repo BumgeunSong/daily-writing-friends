@@ -15,14 +15,23 @@ export function deduplicateAuthorIds(posts: Post[]): string[] {
   return [...new Set(posts.map(p => p.authorId).filter(Boolean))];
 }
 
-export function buildPostCardDataMap(
-  authorIds: string[],
-  users: BasicUserRow[],
-  commentRows: UserIdRow[],
-  replyRows: UserIdRow[],
-  postRows: PostDateRow[],
-  workingDays: Date[],
-): Map<string, PostCardPrefetchedData> {
+export interface BuildPostCardDataMapInput {
+  authorIds: string[];
+  users: BasicUserRow[];
+  commentRows: UserIdRow[];
+  replyRows: UserIdRow[];
+  postRows: PostDateRow[];
+  streakWorkingDays: Date[];
+}
+
+export function buildPostCardDataMap({
+  authorIds,
+  users,
+  commentRows,
+  replyRows,
+  postRows,
+  streakWorkingDays,
+}: BuildPostCardDataMapInput): Map<string, PostCardPrefetchedData> {
   const usersMap = new Map(users.map(u => [u.id, u]));
 
   const activityCountMap = new Map<string, number>();
@@ -53,7 +62,7 @@ export function buildPostCardDataMap(
       : [];
 
     const postDates = postDatesMap.get(authorId) ?? new Set<string>();
-    const streak = workingDays.map(day => postDates.has(getDateKey(day)));
+    const streak = streakWorkingDays.map(day => postDates.has(getDateKey(day)));
 
     result.set(authorId, { authorData, badges, streak });
   }
