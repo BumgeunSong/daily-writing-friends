@@ -1,6 +1,6 @@
 import { MessageCircle } from "lucide-react"
 import { Link } from "react-router-dom"
-import { getContentPreview } from "@/post/utils/contentUtils"
+import { renderPostPreviewHtml } from "@/post/utils/contentUtils"
 import { Card, CardContent, CardFooter } from "@/shared/ui/card"
 import { Skeleton } from "@/shared/ui/skeleton"
 import { formatDate, toDate } from "@/shared/utils/dateUtils"
@@ -12,7 +12,7 @@ interface PostItemProps {
 
 export const PostItem: React.FC<PostItemProps> = ({ post }) => {
     const isPrivate = post.visibility === 'private';
-    const contentPreview = getContentPreview(post.content)
+    const contentPreview = renderPostPreviewHtml(post.content)
     return (
         <Card className="reading-shadow reading-hover border-border/50 transition-[transform,background-color] duration-200 active:scale-[0.99]">
             <Link to={`/board/${post.boardId}/post/${post.id}`}

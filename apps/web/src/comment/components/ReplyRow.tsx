@@ -4,7 +4,7 @@ import { CommentHeader } from '@/comment/components/CommentHeader';
 import ReactionList from '@/comment/components/ReactionList';
 import ReplyInput from '@/comment/components/ReplyInput';
 import { useDeleteReply, useEditReply } from '@/comment/hooks/useCreateReply';
-import { sanitizeCommentContent } from '@/post/utils/contentUtils';
+import { renderCommentBodyHtml } from '@/post/utils/contentUtils';
 import { Button } from '@/shared/ui/button';
 import type { Reply } from '@/comment/model/Reply';
 import type React from 'react';
@@ -38,7 +38,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
   };
 
   const EditIcon = isEditing ? X : Edit;
-  const sanitizedContent = sanitizeCommentContent(reply.content);
+  const sanitizedContent = renderCommentBodyHtml(reply.content);
 
   return (
     <div className='group flex flex-col space-y-3 pb-4'>

@@ -5,7 +5,7 @@ import { useCopyHandler } from '@/post/hooks/useCopyHandler';
 import type { Post} from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
 import { KOREAN_OPTIMAL_LINE_HEIGHT } from '@/post/constants/typography';
-import { sanitizePostContent } from '@/post/utils/contentUtils';
+import { renderPostBodyHtml } from '@/post/utils/contentUtils';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { CopyErrorBoundary } from './CopyErrorBoundary';
 
@@ -53,7 +53,7 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
     }
 
     try {
-        const sanitizedContent = sanitizePostContent(post.content);
+        const sanitizedContent = renderPostBodyHtml(post.content);
         return (
             <CopyErrorBoundary>
                 <div className="relative">

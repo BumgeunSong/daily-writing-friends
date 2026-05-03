@@ -1,163 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import {
-  convertUrlsToLinks,
-  convertQuotesToBlockquotes,
-  getContentPreview,
-  sanitizePostContent,
-  sanitizeCommentContent,
-  convertHtmlToText,
+  renderPostPreviewHtml,
+  renderPostBodyHtml,
+  renderCommentBodyHtml,
+  extractPlainText,
 } from './contentUtils';
 
 describe('contentUtils', () => {
-  describe('convertUrlsToLinks', () => {
-    it('should convert http URL to anchor tag', () => {
-      const content = 'Check out http://example.com for more info';
-      const result = convertUrlsToLinks(content);
-
-      expect(result).toContain('<a href="http://example.com"');
-      expect(result).toContain('target="_blank"');
-      expect(result).toContain('rel="noopener noreferrer"');
-    });
-
-    it('should convert https URL to anchor tag', () => {
-      const content = 'Visit https://secure.example.com';
-      const result = convertUrlsToLinks(content);
-
-      expect(result).toContain('<a href="https://secure.example.com"');
-    });
-
-    it('should add http prefix to URLs without protocol', () => {
-      const content = 'Go to www.example.com';
-      const result = convertUrlsToLinks(content);
-
-      expect(result).toContain('<a href="http://www.example.com"');
-      expect(result).toContain('>www.example.com</a>');
-    });
-
-    it('should handle multiple URLs in content', () => {
-      const content = 'Check http://one.com and http://two.com';
-      const result = convertUrlsToLinks(content);
-
-      expect(result).toContain('href="http://one.com"');
-      expect(result).toContain('href="http://two.com"');
-    });
-
-    it('should preserve non-URL text', () => {
-      const content = 'Hello world without any URLs';
-      const result = convertUrlsToLinks(content);
-
-      expect(result).toBe(content);
-    });
-
-    it('should handle URLs with paths and query strings', () => {
-      const content = 'Visit https://example.com/path?query=value&other=123';
-      const result = convertUrlsToLinks(content);
-
-      expect(result).toContain('href="https://example.com/path?query=value&other=123"');
-    });
-
-    it('should handle URLs with fragments', () => {
-      const content = 'See https://example.com/page#section';
-      const result = convertUrlsToLinks(content);
-
-      expect(result).toContain('https://example.com/page#section');
-    });
-  });
-
-  describe('convertQuotesToBlockquotes', () => {
-    it('should convert single line starting with > to blockquote', () => {
-      const content = '> This is a quote';
-      const result = convertQuotesToBlockquotes(content);
-
-      expect(result).toBe('<blockquote>This is a quote</blockquote>');
-    });
-
-    it('should convert multiple consecutive quote lines to single blockquote', () => {
-      const content = '> Line 1\n> Line 2\n> Line 3';
-      const result = convertQuotesToBlockquotes(content);
-
-      expect(result).toBe('<blockquote>Line 1\nLine 2\nLine 3</blockquote>');
-    });
-
-    it('should preserve non-quote lines', () => {
-      const content = 'Normal line';
-      const result = convertQuotesToBlockquotes(content);
-
-      expect(result).toBe('Normal line');
-    });
-
-    it('should handle quote followed by normal text', () => {
-      const content = '> Quote line\nNormal line';
-      const result = convertQuotesToBlockquotes(content);
-
-      expect(result).toContain('<blockquote>Quote line</blockquote>');
-      expect(result).toContain('Normal line');
-    });
-
-    it('should attach text after blockquote without extra newline', () => {
-      const content = '> Quote\nReply';
-      const result = convertQuotesToBlockquotes(content);
-
-      expect(result).toBe('<blockquote>Quote</blockquote>Reply');
-    });
-
-    it('should handle multiple separate quote blocks', () => {
-      const content = '> First quote\nMiddle text\n> Second quote';
-      const result = convertQuotesToBlockquotes(content);
-
-      expect(result).toContain('<blockquote>First quote</blockquote>');
-      expect(result).toContain('Middle text');
-      expect(result).toContain('<blockquote>Second quote</blockquote>');
-    });
-
-    it('should strip whitespace after > in quote lines', () => {
-      const content = '>  Spaced quote';
-      const result = convertQuotesToBlockquotes(content);
-
-      expect(result).toBe('<blockquote>Spaced quote</blockquote>');
-    });
-
-    it('should handle empty lines between quotes', () => {
-      const content = '> Quote 1\n\n> Quote 2';
-      const result = convertQuotesToBlockquotes(content);
-
-      expect(result).toContain('<blockquote>Quote 1</blockquote>');
-      expect(result).toContain('<blockquote>Quote 2</blockquote>');
-    });
-
-    it('should return empty string for empty input', () => {
-      const result = convertQuotesToBlockquotes('');
-
-      expect(result).toBe('');
-    });
-
-    it('should handle content ending with quote', () => {
-      const content = 'Start\n> End quote';
-      const result = convertQuotesToBlockquotes(content);
-
-      expect(result).toContain('Start');
-      expect(result).toContain('<blockquote>End quote</blockquote>');
-    });
-
-    it('should handle content starting with quote then normal text', () => {
-      const content = '> Opening quote\nFollowing paragraph\nAnother line';
-      const result = convertQuotesToBlockquotes(content);
-
-      expect(result).toBe('<blockquote>Opening quote</blockquote>Following paragraph\nAnother line');
-    });
-  });
-
-  describe('getContentPreview', () => {
+  describe('renderPostPreviewHtml', () => {
     it('should sanitize and process HTML content', () => {
       const content = '<p>Hello World</p>';
-      const result = getContentPreview(content);
+      const result = renderPostPreviewHtml(content);
 
       expect(result).toContain('Hello World');
     });
 
     it('should remove image tags', () => {
       const content = '<p>Text <img src="image.jpg" alt="test" /> more text</p>';
-      const result = getContentPreview(content);
+      const result = renderPostPreviewHtml(content);
 
       expect(result).not.toContain('<img');
       expect(result).not.toContain('image.jpg');
@@ -165,7 +25,7 @@ describe('contentUtils', () => {
 
     it('should convert heading tags to paragraphs', () => {
       const content = '<h1>Heading</h1><p>Paragraph</p>';
-      const result = getContentPreview(content);
+      const result = renderPostPreviewHtml(content);
 
       expect(result).not.toContain('<h1>');
       expect(result).toContain('Heading');
@@ -173,7 +33,7 @@ describe('contentUtils', () => {
 
     it('should convert list items to paragraphs with dash prefix', () => {
       const content = '<ul><li>Item 1</li><li>Item 2</li></ul>';
-      const result = getContentPreview(content);
+      const result = renderPostPreviewHtml(content);
 
       expect(result).toContain('- Item 1');
       expect(result).toContain('- Item 2');
@@ -181,7 +41,7 @@ describe('contentUtils', () => {
 
     it('should remove empty tags', () => {
       const content = '<p>Text</p><p></p><p>More</p>';
-      const result = getContentPreview(content);
+      const result = renderPostPreviewHtml(content);
 
       // Empty paragraphs should be removed
       expect(result).toContain('Text');
@@ -190,17 +50,17 @@ describe('contentUtils', () => {
 
     it('should handle nested HTML elements', () => {
       const content = '<div><p><strong>Bold</strong> and <em>italic</em></p></div>';
-      const result = getContentPreview(content);
+      const result = renderPostPreviewHtml(content);
 
       expect(result).toContain('Bold');
       expect(result).toContain('italic');
     });
   });
 
-  describe('sanitizePostContent', () => {
+  describe('renderPostBodyHtml', () => {
     it('should sanitize basic HTML content', () => {
       const content = '<p>Hello <strong>World</strong></p>';
-      const result = sanitizePostContent(content);
+      const result = renderPostBodyHtml(content);
 
       expect(result).toContain('Hello');
       expect(result).toContain('World');
@@ -208,7 +68,7 @@ describe('contentUtils', () => {
 
     it('should convert Quill bullet lists from ol to ul', () => {
       const content = '<ol><li data-list="bullet">Item 1</li><li data-list="bullet">Item 2</li></ol>';
-      const result = sanitizePostContent(content);
+      const result = renderPostBodyHtml(content);
 
       expect(result).toContain('<ul');
       expect(result).not.toMatch(/<ol[^>]*><li data-list="bullet"/);
@@ -216,7 +76,7 @@ describe('contentUtils', () => {
 
     it('should preserve ordered lists without bullet data attribute', () => {
       const content = '<ol><li>Item 1</li><li>Item 2</li></ol>';
-      const result = sanitizePostContent(content);
+      const result = renderPostBodyHtml(content);
 
       expect(result).toContain('<ol');
     });
@@ -224,7 +84,7 @@ describe('contentUtils', () => {
     it('should handle mixed list types in separate ol elements', () => {
       const content =
         '<ol><li data-list="bullet">Bullet</li></ol><ol><li>Numbered</li></ol>';
-      const result = sanitizePostContent(content);
+      const result = renderPostBodyHtml(content);
 
       expect(result).toContain('<ul');
       expect(result).toContain('<ol');
@@ -233,7 +93,7 @@ describe('contentUtils', () => {
     it('should split mixed bullet and ordered items within a single ol', () => {
       const content =
         '<ol><li data-list="bullet">Bullet 1</li><li>Ordered 1</li><li data-list="bullet">Bullet 2</li></ol>';
-      const result = sanitizePostContent(content);
+      const result = renderPostBodyHtml(content);
 
       expect(result).toContain('<ul');
       expect(result).toContain('<ol');
@@ -244,7 +104,7 @@ describe('contentUtils', () => {
 
     it('should remove malicious script tags', () => {
       const content = '<p>Safe</p><script>alert("XSS")</script>';
-      const result = sanitizePostContent(content);
+      const result = renderPostBodyHtml(content);
 
       expect(result).not.toContain('<script');
       expect(result).not.toContain('alert');
@@ -253,7 +113,7 @@ describe('contentUtils', () => {
 
     it('should convert newlines to <br> tags for plain text content', () => {
       const content = '첫 번째 줄\n두 번째 줄';
-      const result = sanitizePostContent(content);
+      const result = renderPostBodyHtml(content);
 
       expect(result).toContain('<br>');
       expect(result).toContain('첫 번째 줄');
@@ -262,14 +122,14 @@ describe('contentUtils', () => {
 
     it('should convert multiple newlines to multiple <br> tags for plain text', () => {
       const content = 'Line 1\nLine 2\nLine 3';
-      const result = sanitizePostContent(content);
+      const result = renderPostBodyHtml(content);
 
       expect(result).toContain('Line 1<br>Line 2<br>Line 3');
     });
 
     it('should NOT convert newlines for HTML content (already has HTML tags)', () => {
       const content = '<p>Line 1</p>\n<p>Line 2</p>';
-      const result = sanitizePostContent(content);
+      const result = renderPostBodyHtml(content);
 
       expect(result).toContain('<p>Line 1</p>');
       expect(result).toContain('<p>Line 2</p>');
@@ -278,7 +138,7 @@ describe('contentUtils', () => {
 
     it('should handle plain text with consecutive newlines', () => {
       const content = 'Line 1\n\nLine 2';
-      const result = sanitizePostContent(content);
+      const result = renderPostBodyHtml(content);
 
       expect(result).toContain('<br>');
       expect(result).toContain('Line 1');
@@ -287,7 +147,7 @@ describe('contentUtils', () => {
 
     it('should preserve empty paragraphs as visible line breaks', () => {
       const content = '<p>하이아이</p><p></p><p>호이오이</p>';
-      const result = sanitizePostContent(content);
+      const result = renderPostBodyHtml(content);
 
       expect(result).toContain('<p><br></p>');
       expect(result).toContain('하이아이');
@@ -296,7 +156,7 @@ describe('contentUtils', () => {
 
     it('should preserve multiple consecutive empty paragraphs each as a separate line break', () => {
       const content = '<p>Before</p><p></p><p></p><p>After</p>';
-      const result = sanitizePostContent(content);
+      const result = renderPostBodyHtml(content);
 
       const matches = result.match(/<p><br><\/p>/g);
       expect(matches).not.toBeNull();
@@ -307,7 +167,7 @@ describe('contentUtils', () => {
 
     it('should preserve an empty paragraph at the start of content', () => {
       const content = '<p></p><p>텍스트</p>';
-      const result = sanitizePostContent(content);
+      const result = renderPostBodyHtml(content);
 
       expect(result).toContain('<p><br></p>');
       expect(result).toContain('텍스트');
@@ -315,7 +175,7 @@ describe('contentUtils', () => {
 
     it('should preserve an empty paragraph at the end of content', () => {
       const content = '<p>텍스트</p><p></p>';
-      const result = sanitizePostContent(content);
+      const result = renderPostBodyHtml(content);
 
       expect(result).toContain('<p><br></p>');
       expect(result).toContain('텍스트');
@@ -324,7 +184,7 @@ describe('contentUtils', () => {
     it('should split a mixed list where ordered items come before a bullet item', () => {
       const content =
         '<ol><li>Ordered 1</li><li>Ordered 2</li><li data-list="bullet">Bullet</li></ol>';
-      const result = sanitizePostContent(content);
+      const result = renderPostBodyHtml(content);
 
       expect(result).toContain('<ol');
       expect(result).toContain('<ul');
@@ -336,7 +196,7 @@ describe('contentUtils', () => {
     it('should preserve data-list attribute on li elements after splitting a mixed list', () => {
       const content =
         '<ol><li data-list="bullet">Bullet</li><li>Ordered</li></ol>';
-      const result = sanitizePostContent(content);
+      const result = renderPostBodyHtml(content);
 
       expect(result).toContain('data-list="bullet"');
     });
@@ -344,7 +204,7 @@ describe('contentUtils', () => {
     it('should preserve ordered list numbering continuity when splitting mixed lists', () => {
       const content =
         '<ol><li>First</li><li>Second</li><li data-list="bullet">Bullet</li><li>Third</li></ol>';
-      const result = sanitizePostContent(content);
+      const result = renderPostBodyHtml(content);
 
       // 두 번째 ol은 start="3"이어야 번호가 연속됨
       expect(result).toMatch(/<ol[^>]*start="3"[^>]*>/);
@@ -353,10 +213,10 @@ describe('contentUtils', () => {
     });
   });
 
-  describe('sanitizeCommentContent', () => {
+  describe('renderCommentBodyHtml', () => {
     it('should convert URLs to clickable links', () => {
       const content = 'Check out https://example.com';
-      const result = sanitizeCommentContent(content);
+      const result = renderCommentBodyHtml(content);
 
       expect(result).toContain('<a href="https://example.com"');
       expect(result).toContain('rel="noopener noreferrer"');
@@ -364,7 +224,7 @@ describe('contentUtils', () => {
 
     it('should convert > lines to blockquotes', () => {
       const content = '> This is a quote\nThis is not';
-      const result = sanitizeCommentContent(content);
+      const result = renderCommentBodyHtml(content);
 
       expect(result).toContain('<blockquote>');
       expect(result).toContain('This is a quote');
@@ -372,7 +232,7 @@ describe('contentUtils', () => {
 
     it('should handle multiple consecutive quote lines', () => {
       const content = '> Line 1\n> Line 2\n> Line 3';
-      const result = sanitizeCommentContent(content);
+      const result = renderCommentBodyHtml(content);
 
       expect(result).toContain('<blockquote>');
       expect(result).toContain('Line 1');
@@ -382,7 +242,7 @@ describe('contentUtils', () => {
 
     it('should handle quote followed by text', () => {
       const content = '> Quote\nReply text';
-      const result = sanitizeCommentContent(content);
+      const result = renderCommentBodyHtml(content);
 
       expect(result).toContain('<blockquote>');
       expect(result).toContain('Quote');
@@ -391,7 +251,7 @@ describe('contentUtils', () => {
 
     it('should sanitize dangerous HTML in comments', () => {
       const content = '<script>alert("XSS")</script>Normal text';
-      const result = sanitizeCommentContent(content);
+      const result = renderCommentBodyHtml(content);
 
       expect(result).not.toContain('<script');
       expect(result).toContain('Normal text');
@@ -399,30 +259,30 @@ describe('contentUtils', () => {
 
     it('should convert Quill bullet lists in comments', () => {
       const content = '<ol><li data-list="bullet">Comment bullet</li></ol>';
-      const result = sanitizeCommentContent(content);
+      const result = renderCommentBodyHtml(content);
 
       expect(result).toContain('<ul');
     });
   });
 
-  describe('convertHtmlToText', () => {
+  describe('extractPlainText', () => {
     it('should remove all HTML tags', () => {
       const html = '<p>Hello <strong>World</strong></p>';
-      const result = convertHtmlToText(html);
+      const result = extractPlainText(html);
 
       expect(result).toBe('Hello World');
     });
 
     it('should convert <br> tags to newlines', () => {
       const html = 'Line 1<br>Line 2<br/>Line 3';
-      const result = convertHtmlToText(html);
+      const result = extractPlainText(html);
 
       expect(result).toBe('Line 1\nLine 2\nLine 3');
     });
 
     it('should convert paragraph breaks to newlines', () => {
       const html = '<p>Paragraph 1</p><p>Paragraph 2</p>';
-      const result = convertHtmlToText(html);
+      const result = extractPlainText(html);
 
       expect(result).toContain('Paragraph 1');
       expect(result).toContain('\n');
@@ -431,28 +291,28 @@ describe('contentUtils', () => {
 
     it('should decode HTML entities', () => {
       const html = '&lt;div&gt; &amp; &quot;quotes&quot; &#39;apostrophe&#39;';
-      const result = convertHtmlToText(html);
+      const result = extractPlainText(html);
 
       expect(result).toBe('<div> & "quotes" \'apostrophe\'');
     });
 
     it('should convert &nbsp; to space', () => {
       const html = 'Hello&nbsp;World';
-      const result = convertHtmlToText(html);
+      const result = extractPlainText(html);
 
       expect(result).toBe('Hello World');
     });
 
     it('should collapse multiple spaces to single space', () => {
       const html = 'Hello     World';
-      const result = convertHtmlToText(html);
+      const result = extractPlainText(html);
 
       expect(result).toBe('Hello World');
     });
 
     it('should limit consecutive newlines to two', () => {
       const html = '<p>One</p><p></p><p></p><p></p><p>Two</p>';
-      const result = convertHtmlToText(html);
+      const result = extractPlainText(html);
 
       // Should not have more than 2 consecutive newlines
       expect(result).not.toMatch(/\n\s*\n\s*\n/);
@@ -460,29 +320,29 @@ describe('contentUtils', () => {
 
     it('should trim leading and trailing whitespace', () => {
       const html = '   <p>Content</p>   ';
-      const result = convertHtmlToText(html);
+      const result = extractPlainText(html);
 
       expect(result).toBe('Content');
     });
 
     it('should return empty string for null input', () => {
-      const result = convertHtmlToText(null as unknown as string);
+      const result = extractPlainText(null as unknown as string);
       expect(result).toBe('');
     });
 
     it('should return empty string for undefined input', () => {
-      const result = convertHtmlToText(undefined as unknown as string);
+      const result = extractPlainText(undefined as unknown as string);
       expect(result).toBe('');
     });
 
     it('should return empty string for empty input', () => {
-      const result = convertHtmlToText('');
+      const result = extractPlainText('');
       expect(result).toBe('');
     });
 
     it('should handle nested tags correctly', () => {
       const html = '<div><span><strong>Nested</strong></span></div>';
-      const result = convertHtmlToText(html);
+      const result = extractPlainText(html);
 
       expect(result).toBe('Nested');
     });
@@ -498,7 +358,7 @@ describe('contentUtils', () => {
           </ul>
         </div>
       `;
-      const result = convertHtmlToText(html);
+      const result = extractPlainText(html);
 
       expect(result).toContain('Title');
       expect(result).toContain('Paragraph');

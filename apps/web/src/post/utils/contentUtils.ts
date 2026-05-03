@@ -19,7 +19,7 @@ const convertNewlinesToBr = (content: string): string => {
 };
 
 // 게시글 본문용 DOMPurify 설정
-const sanitizePostContent = (content: string): string => {
+const renderPostBodyHtml = (content: string): string => {
   // 일반 텍스트인 경우 줄바꿈을 <br> 태그로 변환 (이전 형식 호환성)
   const contentWithBreaks = convertNewlinesToBr(content);
 
@@ -221,7 +221,7 @@ const convertQuotesToBlockquotes = (content: string): string => {
 };
 
 // 댓글/답글용 DOMPurify 설정 (게시글과 동일하게 적용)
-const sanitizeCommentContent = (content: string): string => {
+const renderCommentBodyHtml = (content: string): string => {
   // 1. 인용문 변환 적용
   const contentWithQuotes = convertQuotesToBlockquotes(content);
 
@@ -320,7 +320,7 @@ const createTempElement = (html: string): HTMLDivElement => {
   return tempDiv;
 };
 
-const getContentPreview = (content: string): string => {
+const renderPostPreviewHtml = (content: string): string => {
   // 1. XSS 방지를 위한 콘텐츠 정제
   const sanitizedContent = DOMPurify.sanitize(content);
 
@@ -344,7 +344,7 @@ const getContentPreview = (content: string): string => {
  * @param html - 변환할 HTML 문자열
  * @returns 순수 텍스트 문자열
  */
-const convertHtmlToText = (html: string): string => {
+const extractPlainText = (html: string): string => {
   try {
     if (!html || typeof html !== 'string') {
       return '';
@@ -381,10 +381,8 @@ const convertHtmlToText = (html: string): string => {
 };
 
 export {
-  convertUrlsToLinks,
-  convertQuotesToBlockquotes,
-  getContentPreview,
-  sanitizePostContent,
-  sanitizeCommentContent,
-  convertHtmlToText
+  renderPostPreviewHtml,
+  renderPostBodyHtml,
+  renderCommentBodyHtml,
+  extractPlainText,
 };
