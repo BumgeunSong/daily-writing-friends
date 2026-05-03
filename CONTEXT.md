@@ -18,3 +18,12 @@ A cohort container. Groups posts written by members of one writing cohort.
 
 **Post**
 A published piece of daily writing on a Board. Created from a Draft (or directly).
+
+**Post body**
+The full HTML rendering of a Post's content, displayed on its detail page. Sanitized via the Content Rendering module before display. Plain-text input is converted (newlines to `<br>`, Quill bullet lists to `<ul>`).
+
+**Comment body**
+The full HTML rendering of a Comment or Reply, displayed in the comment list. Sanitized via the Content Rendering module. Adds blockquote conversion for `>` quote lines and auto-links bare URLs.
+
+**Post preview**
+A trimmed HTML rendering of a Post used in feed cards and lists. Strips images, demotes headings to paragraphs, removes empty tags. Distinct from the full Post body in shape, not just length.

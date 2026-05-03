@@ -4,7 +4,7 @@ import { CommentInput } from '@/comment/components/CommentInput';
 import { CommentHeader } from '@/comment/components/CommentHeader';
 import ReactionList from '@/comment/components/ReactionList';
 import { useDeleteComment, useEditComment } from '@/comment/hooks/useCreateComment';
-import { sanitizeCommentContent } from '@/post/utils/contentUtils';
+import { renderCommentBodyHtml } from '@/post/utils/contentUtils';
 import { Button } from '@/shared/ui/button';
 import Replies from './Replies';
 import type { Comment } from '@/comment/model/Comment';
@@ -46,7 +46,7 @@ const CommentRow: React.FC<CommentRowProps> = ({
   };
 
   const EditIcon = isEditing ? X : Edit;
-  const sanitizedContent = sanitizeCommentContent(comment.content);
+  const sanitizedContent = renderCommentBodyHtml(comment.content);
 
   return (
     <div className='flex flex-col space-y-3 pb-4'>

@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react';
-import { convertHtmlToText } from '@/post/utils/contentUtils';
+import { extractPlainText } from '@/post/utils/contentUtils';
 
 /**
  * HTML 콘텐츠를 순수 텍스트로 복사하는 커스텀 훅
@@ -16,7 +16,7 @@ export const useCopyHandler = (
       const html = getHtml();
       if (!html) return;
       
-      const plainText = convertHtmlToText(html);
+      const plainText = extractPlainText(html);
       if (!plainText) return;
       
       e.clipboardData?.setData('text/plain', plainText);

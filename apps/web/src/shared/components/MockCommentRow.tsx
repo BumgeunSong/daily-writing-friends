@@ -1,6 +1,6 @@
 import { createTimestamp } from '@/shared/model/Timestamp';
 import type { Comment } from '@/comment/model/Comment';
-import { sanitizeCommentContent } from '@/post/utils/contentUtils';
+import { renderCommentBodyHtml } from '@/post/utils/contentUtils';
 import { AvatarFallback, AvatarImage, Avatar } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 
@@ -43,7 +43,7 @@ export default function MockCommentRow() {
       <div className='text-base'>
         <div
           className='prose prose-slate whitespace-pre-wrap dark:prose-invert'
-          dangerouslySetInnerHTML={{ __html: sanitizeCommentContent(mockComment.content) }}
+          dangerouslySetInnerHTML={{ __html: renderCommentBodyHtml(mockComment.content) }}
         />
       </div>
       <div className='mt-2 flex items-center space-x-2'>

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import type { PostAuthorData } from '@/post/components/PostUserProfile';
 import type { PostCardPrefetchedData } from '@/post/hooks/useBatchPostCardData';
 import { type Post, PostVisibility } from '@/post/model/Post';
-import { getContentPreview } from '@/post/utils/contentUtils';
+import { renderPostPreviewHtml } from '@/post/utils/contentUtils';
 import { usePostingStreak } from '@/stats/hooks/usePostingStreak';
 import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';
 import type { WritingBadge } from '@/stats/model/WritingStats';
@@ -37,7 +37,7 @@ export const usePostCard = (
 
   const isPrivate = post.visibility === PostVisibility.PRIVATE;
   const contentPreview = useMemo(
-    () => (!isPrivate ? getContentPreview(post.content) : null),
+    () => (!isPrivate ? renderPostPreviewHtml(post.content) : null),
     [post.content, isPrivate],
   );
 
