@@ -1,12 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import {
-  AdminAuthError,
-  authenticateOptional,
-} from "@/lib/server/auth";
-import {
-  AdminApiErrorBody,
-  GetMeResponseSchema,
-} from "@/types/admin-api-contracts";
+import { NextRequest, NextResponse } from 'next/server';
+import { AdminAuthError, authenticateOptional } from '@/lib/server/auth';
+import { AdminApiErrorBody, GetMeResponseSchema } from '@/types/admin-api-contracts';
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
@@ -18,8 +12,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       const body: AdminApiErrorBody = { error: e.message, code: e.code };
       return NextResponse.json(body, { status: e.status });
     }
-    console.error("[admin] /api/admin/me unhandled error:", e);
-    const body: AdminApiErrorBody = { error: "Internal server error.", code: "server-error" };
+    console.error('[admin] /api/admin/me unhandled error:', e);
+    const body: AdminApiErrorBody = { error: 'Internal server error.', code: 'server-error' };
     return NextResponse.json(body, { status: 500 });
   }
 }
