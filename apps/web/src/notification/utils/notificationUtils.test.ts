@@ -2,9 +2,7 @@ import { createTimestamp } from '@/shared/model/Timestamp';
 import { describe, it, expect } from 'vitest';
 import { NotificationType } from '@/notification/model/Notification';
 import {
-  createNotificationQueryKey,
   flattenNotificationPages,
-  shouldFetchNextPage,
   getLastNotificationTimestamp,
 } from './notificationUtils';
 import type { Notification } from '@/notification/model/Notification';
@@ -26,25 +24,6 @@ function createMockNotification(overrides: Partial<CommentNotification> = {}): N
 }
 
 describe('notificationUtils', () => {
-  describe('createNotificationQueryKey', () => {
-    it('should create query key with userId', () => {
-      const result = createNotificationQueryKey('user-123');
-      expect(result).toEqual(['notifications', 'user-123']);
-    });
-
-    it('should create query key with null userId', () => {
-      const result = createNotificationQueryKey(null);
-      expect(result).toEqual(['notifications', null]);
-    });
-
-    it('should return readonly tuple', () => {
-      const result = createNotificationQueryKey('user-123');
-      // TypeScript would catch modifications, but we can test the values
-      expect(result[0]).toBe('notifications');
-      expect(result[1]).toBe('user-123');
-    });
-  });
-
   describe('flattenNotificationPages', () => {
     it('should flatten multiple pages into single array', () => {
       const pages = [
@@ -116,32 +95,6 @@ describe('notificationUtils', () => {
       const result = flattenNotificationPages(pages);
 
       expect(result[0]).toEqual(notification);
-    });
-  });
-
-  describe('shouldFetchNextPage', () => {
-    it('should return true when in view and has next page', () => {
-      expect(shouldFetchNextPage(true, true)).toBe(true);
-    });
-
-    it('should return false when not in view', () => {
-      expect(shouldFetchNextPage(false, true)).toBe(false);
-    });
-
-    it('should return false when no next page', () => {
-      expect(shouldFetchNextPage(true, false)).toBe(false);
-    });
-
-    it('should return false when not in view and no next page', () => {
-      expect(shouldFetchNextPage(false, false)).toBe(false);
-    });
-
-    it('should return false when hasNextPage is undefined', () => {
-      expect(shouldFetchNextPage(true, undefined)).toBe(false);
-    });
-
-    it('should return false when both are falsy', () => {
-      expect(shouldFetchNextPage(false, undefined)).toBe(false);
     });
   });
 

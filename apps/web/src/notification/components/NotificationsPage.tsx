@@ -5,7 +5,6 @@ import NotificationsHeader from '@/notification/components/NotificationsHeader';
 import { NotificationsLoading } from '@/notification/components/NotificationsLoading';
 import { useNotificationRefresh } from '@/notification/hooks/useNotificationRefresh';
 import { useNotifications } from '@/notification/hooks/useNotifications';
-import { flattenNotificationPages } from '@/notification/utils/notificationUtils';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -32,13 +31,13 @@ const NotificationsPage = () => {
   
   // ACTION - Fetch notifications
   const {
-    data: notifications,
+    notifications,
     isLoading,
     isError,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage
-  } = useNotifications(currentUser?.uid, NOTIFICATIONS_CONFIG.LIMIT_COUNT);
+    isFetchingNextPage,
+  } = useNotifications(currentUser?.uid ?? null, NOTIFICATIONS_CONFIG.LIMIT_COUNT);
 
   // ACTION - Notification refresh handler
   const { refresh: handleRefreshNotifications } = useNotificationRefresh({
@@ -56,9 +55,6 @@ const NotificationsPage = () => {
   
   // ACTION - Register tab handler
   useRegisterTabHandler('Notifications', handleRefreshNotifications);
-
-  // CALCULATION - Transform data for rendering
-  const allNotifications = flattenNotificationPages(notifications?.pages);
 
   // CALCULATION - Render states
   if (isLoading) {
@@ -81,7 +77,7 @@ const NotificationsPage = () => {
         <main className="container mx-auto flex-1 overflow-hidden px-3 md:px-4">
           <NotificationsContent
             scrollAreaId={NOTIFICATIONS_CONFIG.SCROLL_ID}
-            notifications={allNotifications}
+            notifications={notifications}
             scrollRef={scrollRef}
             observerRef={observerRef}
             isLoadingMore={isLoadingMore}

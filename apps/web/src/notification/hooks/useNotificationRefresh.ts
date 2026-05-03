@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
-import { createNotificationQueryKey } from '@/notification/utils/notificationUtils';
+import { createNotificationQueryKey } from '@/notification/utils/notificationQueryKeys';
 import { useScrollAreaControl } from '@/shared/hooks/useScrollAreaControl';
 
 interface NotificationRefreshOptions {

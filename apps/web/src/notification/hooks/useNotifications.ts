@@ -1,26 +1,42 @@
 import * as Sentry from '@sentry/react';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { fetchNotifications } from '@/notification/api/notificationApi';
-import { createNotificationQueryKey, getLastNotificationTimestamp } from '@/notification/utils/notificationUtils';
 
-// DATA - Query configuration
+import { fetchNotifications } from '@/notification/api/notificationApi';
+import type { Notification } from '@/notification/model/Notification';
+import { createNotificationQueryKey } from '@/notification/utils/notificationQueryKeys';
+import {
+  flattenNotificationPages,
+  getLastNotificationTimestamp,
+} from '@/notification/utils/notificationUtils';
+
 const NOTIFICATIONS_CONFIG = {
-  STALE_TIME: 1000 * 30, // 30초
-  CACHE_TIME: 1000 * 60 * 5, // 5분
-  REFETCH_INTERVAL: 1000 * 60, // 1분
+  STALE_TIME: 1000 * 30,
+  CACHE_TIME: 1000 * 60 * 5,
+  REFETCH_INTERVAL: 1000 * 60,
 } as const;
 
+interface UseNotificationsResult {
+  notifications: Notification[];
+  isLoading: boolean;
+  isError: boolean;
+  hasNextPage: boolean | undefined;
+  isFetchingNextPage: boolean;
+  fetchNextPage: () => Promise<unknown>;
+}
+
 /**
- * 사용자의 알림 목록을 가져오는 훅
- * @param userId 사용자 ID
- * @param limitCount 한 번에 가져올 알림 수
- * @returns React Query의 useInfiniteQuery 결과 객체
+ * Hook for the user's Notification Feed.
+ *
+ * Returns a flat list of notifications, hiding React Query's per-page shape
+ * from the caller. Pagination, error capture, and refetch policy live behind
+ * the seam.
  */
-export const useNotifications = (userId: string | null, limitCount: number) => {
-  return useInfiniteQuery(
-    // DATA - Query key using pure function
+export const useNotifications = (
+  userId: string | null,
+  limitCount: number,
+): UseNotificationsResult => {
+  const query = useInfiniteQuery(
     createNotificationQueryKey(userId),
-    // ACTION - Fetch function with explicit null guard
     ({ pageParam }) => {
       if (!userId) {
         throw new Error('User ID is required to fetch notifications');
@@ -29,15 +45,22 @@ export const useNotifications = (userId: string | null, limitCount: number) => {
     },
     {
       enabled: userId != null,
-      // CALCULATION - Get next page parameter using pure function
       getNextPageParam: (lastPage) => getLastNotificationTimestamp(lastPage),
-      // ACTION - Error handling
       onError: (error) => {
         console.error('알림 데이터를 불러오던 중 에러가 발생했습니다:', error);
         Sentry.captureException(error);
       },
       ...NOTIFICATIONS_CONFIG,
       refetchOnWindowFocus: true,
-    }
+    },
   );
+
+  return {
+    notifications: flattenNotificationPages(query.data?.pages),
+    isLoading: query.isLoading,
+    isError: query.isError,
+    hasNextPage: query.hasNextPage,
+    isFetchingNextPage: query.isFetchingNextPage,
+    fetchNextPage: query.fetchNextPage,
+  };
 };
