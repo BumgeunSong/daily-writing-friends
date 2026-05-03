@@ -88,14 +88,14 @@ export default function PostFreewritingPage() {
     try {
       const contentWithTopic = prependTopicToContent(content, selectedTopic)
 
-      const newPost = await createPost(
+      const newPost = await createPost({
         boardId,
-        postTitle,
-        contentWithTopic,
-        currentUser.uid,
-        userNickname ?? '',
-        PostVisibility.PRIVATE,
-      )
+        title: postTitle,
+        content: contentWithTopic,
+        authorId: currentUser.uid,
+        authorName: userNickname ?? '',
+        visibility: PostVisibility.PRIVATE,
+      })
 
       toast.success("프리라이팅으로 쓴 글은 다른 사람에게 보이지 않아요.", {position: 'bottom-center'})
 

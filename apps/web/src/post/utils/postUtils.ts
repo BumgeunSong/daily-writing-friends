@@ -32,15 +32,25 @@ export const usePostTitle = (boardId: string, postId: string) => {
   });
 };
 
-export async function createPost(
-  boardId: string,
-  title: string,
-  content: string,
-  authorId: string,
-  authorName: string,
-  visibility?: PostVisibility,
-  contentJson?: ProseMirrorDoc,
-): Promise<Post> {
+export interface CreatePostInput {
+  boardId: string;
+  title: string;
+  content: string;
+  authorId: string;
+  authorName: string;
+  visibility?: PostVisibility;
+  contentJson?: ProseMirrorDoc;
+}
+
+export async function createPost({
+  boardId,
+  title,
+  content,
+  authorId,
+  authorName,
+  visibility,
+  contentJson,
+}: CreatePostInput): Promise<Post> {
   const supabase = getSupabaseClient();
   const id = crypto.randomUUID();
   const createdAt = new Date().toISOString();
@@ -91,13 +101,19 @@ export async function createPost(
   return post;
 }
 
-export const updatePost = async (
-  _boardId: string,
-  postId: string,
-  title: string,
-  content: string,
-  contentJson?: ProseMirrorDoc,
-): Promise<void> => {
+export interface UpdatePostInput {
+  postId: string;
+  title: string;
+  content: string;
+  contentJson?: ProseMirrorDoc;
+}
+
+export const updatePost = async ({
+  postId,
+  title,
+  content,
+  contentJson,
+}: UpdatePostInput): Promise<void> => {
   const supabase = getSupabaseClient();
   const updatedAt = new Date().toISOString();
 
