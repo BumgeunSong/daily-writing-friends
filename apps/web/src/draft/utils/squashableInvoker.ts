@@ -16,14 +16,13 @@ export function createSquashableInvoker(
   let queued: Promise<void> | null = null;
 
   function startFreshOperation(): Promise<void> {
-    const operationPromise = operation();
-    const wrapper = operationPromise.finally(() => {
+    const wrapper: Promise<void> = operation().finally(() => {
       if (inFlight === wrapper) {
         inFlight = null;
       }
     });
     inFlight = wrapper;
-    return operationPromise;
+    return wrapper;
   }
 
   return function trigger(): Promise<void> {

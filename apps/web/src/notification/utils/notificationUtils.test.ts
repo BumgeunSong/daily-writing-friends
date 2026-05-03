@@ -1,9 +1,10 @@
 import { createTimestamp } from '@/shared/model/Timestamp';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { NotificationType } from '@/notification/model/Notification';
 import {
   flattenNotificationPages,
   getLastNotificationTimestamp,
+  reportNotificationFetchError,
 } from './notificationUtils';
 import type { Notification } from '@/notification/model/Notification';
 import type { CommentNotification } from '@/notification/model/Notification';
@@ -138,6 +139,43 @@ describe('notificationUtils', () => {
       const result = getLastNotificationTimestamp(notifications);
 
       expect(result).toBe(olderTimestamp); // Returns last in array, not newest
+    });
+  });
+
+  describe('reportNotificationFetchError', () => {
+    it('forwards the error to the capture sink', () => {
+      const log = vi.fn();
+      const capture = vi.fn();
+      const error = new Error('fetch failed');
+
+      reportNotificationFetchError(error, { log, capture });
+
+      expect(capture).toHaveBeenCalledTimes(1);
+      expect(capture).toHaveBeenCalledWith(error);
+    });
+
+    it('logs the error with the Korean prefix', () => {
+      const log = vi.fn();
+      const capture = vi.fn();
+      const error = new Error('boom');
+
+      reportNotificationFetchError(error, { log, capture });
+
+      expect(log).toHaveBeenCalledTimes(1);
+      const [message, loggedError] = log.mock.calls[0];
+      expect(message).toContain('알림 데이터를 불러오던');
+      expect(loggedError).toBe(error);
+    });
+
+    it('passes non-Error values through to both sinks unchanged', () => {
+      const log = vi.fn();
+      const capture = vi.fn();
+      const value = { code: 500, payload: null };
+
+      reportNotificationFetchError(value, { log, capture });
+
+      expect(log.mock.calls[0][1]).toBe(value);
+      expect(capture).toHaveBeenCalledWith(value);
     });
   });
 });

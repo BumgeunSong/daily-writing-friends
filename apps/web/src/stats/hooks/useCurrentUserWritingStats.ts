@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { Posting } from '@/post/model/Posting';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { fetchPostingDataForContributions, createUserInfo } from '@/stats/api/stats';
+import { TEMPERATURE_WINDOW_WORKING_DAYS } from '@/stats/constants';
 import type { WritingStats } from '@/stats/model/WritingStats';
 import { createContributions } from '@/stats/utils/writingStatsUtils';
 import type { User } from '@/user/model/User';
@@ -24,12 +25,15 @@ export function useCurrentUserWritingStats(currentUser: User | null | undefined)
 }
 
 async function fetchCurrentUserStats(user: User): Promise<WritingStats> {
-  const contributionPostings = await fetchPostingDataForContributions(user.uid, 20);
+  const contributionPostings = await fetchPostingDataForContributions(
+    user.uid,
+    TEMPERATURE_WINDOW_WORKING_DAYS,
+  );
   return calculateWritingStats(user, contributionPostings);
 }
 
 function calculateWritingStats(user: User, contributionPostings: Posting[]): WritingStats {
-  const workingDays = getRecentWorkingDays(20);
+  const workingDays = getRecentWorkingDays(TEMPERATURE_WINDOW_WORKING_DAYS);
   const contributions = createContributions(contributionPostings, workingDays);
 
   return {

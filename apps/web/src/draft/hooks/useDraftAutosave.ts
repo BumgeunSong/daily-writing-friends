@@ -146,6 +146,7 @@ export function useDraftAutosave({
         title: titleRef.current,
         content: contentRef.current,
       };
+      if (shouldSkipEmptyDraft(current.title, current.content)) return;
       if (!hasContentChanged(current, lastSavedSnapshot)) return;
       mutate();
     },

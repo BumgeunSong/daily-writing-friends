@@ -29,8 +29,7 @@ export class CopyErrorBoundary extends Component<CopyErrorBoundaryProps, CopyErr
     // 복사 관련 에러만 캐치 (다른 에러는 상위로 전파)
     const isCopyError =
       error.message.includes('copy') ||
-      error.message.includes('clipboard') ||
-      error.message.includes('convertHtmlToText');
+      error.message.includes('clipboard');
 
     if (isCopyError) {
       return {

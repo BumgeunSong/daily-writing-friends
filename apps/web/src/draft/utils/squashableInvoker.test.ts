@@ -106,4 +106,56 @@ describe('createSquashableInvoker', () => {
       expect(invocations).toBe(2);
     });
   });
+
+  describe('after awaiting a trigger whose operation suspends on a microtask', () => {
+    it('starts the next call immediately as a fresh in-flight rather than queueing', async () => {
+      let invocations = 0;
+      const trigger = createSquashableInvoker(async () => {
+        invocations += 1;
+        await Promise.resolve();
+      });
+
+      await trigger();
+      expect(invocations).toBe(1);
+
+      const secondCall = trigger();
+      // Synchronously after trigger() returns, the operation should already have
+      // been called - proving inFlight was cleared before the prior await resumed.
+      expect(invocations).toBe(2);
+      await secondCall;
+    });
+  });
+
+  describe('when the follow-up reads from external mutable state', () => {
+    it('observes the latest value at the moment the follow-up runs, not a snapshot from the first call', async () => {
+      const seenValues: number[] = [];
+      let counter = 0;
+      const deferreds: Deferred[] = [];
+      const trigger = createSquashableInvoker(async () => {
+        seenValues.push(counter);
+        const deferred = createDeferred();
+        deferreds.push(deferred);
+        await deferred.promise;
+      });
+
+      const firstCall = trigger();
+      counter = 1;
+      const secondCall = trigger();
+      counter = 2;
+      const thirdCall = trigger();
+      counter = 3;
+
+      expect(seenValues).toEqual([0]);
+
+      deferreds[0].resolve();
+      await flushMicrotasks();
+
+      // The follow-up runs once for both queued callers and reads counter at the
+      // moment it runs (after counter became 3), not at the moment they were queued.
+      expect(seenValues).toEqual([0, 3]);
+
+      deferreds[1].resolve();
+      await Promise.all([firstCall, secondCall, thirdCall]);
+    });
+  });
 });
