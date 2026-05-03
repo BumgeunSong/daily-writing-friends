@@ -120,7 +120,7 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
           onClick={() => handlePostClick(post.id)}
           onClickProfile={onClickProfile}
           prefetchedData={batchData?.get(post.authorId)}
-          isBatchMode={!!batchData}
+          isBatchMode={allPosts.length > 0}
         />
       ))}
       <div ref={inViewRef} />

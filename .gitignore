@@ -108,3 +108,5 @@ tests/fixtures/e2e-users.json
 
 # Image performance reports (generated)
 test-results/image-perf-report.json
+
+package-lock.json
