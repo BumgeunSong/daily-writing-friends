@@ -604,7 +604,7 @@ Insert between the Dark Mode row (lines 64-78) and the Logout button (lines 79-8
 - `true` (already set) → "비밀번호 변경" + `설정됨` badge → navigate to `ROUTES.CHANGE_PASSWORD`
 - `null` (loading) → render skeleton row
 
-Match the existing button class string exactly: `"reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-all duration-200"`.
+Match the existing button class string exactly (note: project guide bans `transition-all`, so the existing rows use `transition-[background-color]`): `"reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-[background-color] duration-200"`.
 
 **Commit:**
 ```

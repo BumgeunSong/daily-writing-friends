@@ -75,7 +75,7 @@ export default function LoginPage() {
           <Button
             variant='default'
             onClick={() => handleGoogleLogin()}
-            disabled={isGoogleLoading || isEmailLoading}
+            disabled={isGoogleLoading}
             className='min-h-[44px] w-full'
           >
             {isGoogleLoading ? (
@@ -124,7 +124,7 @@ export default function LoginPage() {
             <Button
               variant='default'
               type='submit'
-              disabled={isGoogleLoading || isEmailLoading}
+              disabled={isEmailLoading}
               className='min-h-[44px] w-full'
             >
               {isEmailLoading ? (

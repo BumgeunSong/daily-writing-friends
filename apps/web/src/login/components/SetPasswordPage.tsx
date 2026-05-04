@@ -43,16 +43,30 @@ export default function SetPasswordPage() {
     const supabase = getSupabaseClient();
     let resolved = false;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' || (event === 'INITIAL_SESSION' && session)) {
+    // Recovery sessions only: PASSWORD_RECOVERY event, or a fresh URL hash with type=recovery.
+    // A pre-existing INITIAL_SESSION must be ignored — otherwise any logged-in user
+    // landing on this URL would see a password-change form not gated by re-auth.
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    const hasRecoveryHash = /[#&]type=recovery(&|$)/.test(hash);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
         resolved = true;
         setRecoveryStatus('active');
       }
     });
 
-    const fallback = setTimeout(() => {
-      if (!resolved) setRecoveryStatus('invalid');
-    }, 1500);
+    if (hasRecoveryHash) {
+      // Token present but PASSWORD_RECOVERY may not fire if listener attaches late.
+      // Wait briefly for the event; if it never fires, the token was malformed → invalid.
+    }
+
+    const fallback = setTimeout(
+      () => {
+        if (!resolved) setRecoveryStatus('invalid');
+      },
+      hasRecoveryHash ? 3000 : 800,
+    );
 
     return () => {
       subscription.unsubscribe();
