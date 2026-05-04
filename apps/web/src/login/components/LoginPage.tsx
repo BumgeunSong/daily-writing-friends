@@ -1,12 +1,43 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { Link } from 'react-router-dom';
+import { z } from 'zod';
+import { ROUTES } from '@/login/constants';
+import { useEmailLogin } from '@/login/hooks/useEmailLogin';
+import { useGoogleLoginWithRedirect } from '@/login/hooks/useGoogleLoginWithRedirect';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
-import { useGoogleLoginWithRedirect } from '@/login/hooks/useGoogleLoginWithRedirect';
+import FormField from './JoinFormField';
+
+const loginSchema = z.object({
+  email: z.string().email('올바른 이메일 형식이 아닙니다.'),
+  password: z.string().min(1, '비밀번호를 입력해주세요.'),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+
+function isKakaoBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return navigator.userAgent.toLowerCase().includes('kakaotalk');
+}
 
 export default function LoginPage() {
   const { loading } = useAuth();
-  const { handleLogin, isLoading, error } = useGoogleLoginWithRedirect();
+  const { handleLogin: handleGoogleLogin, isLoading: isGoogleLoading, error: googleError } =
+    useGoogleLoginWithRedirect();
+  const { handleLogin: handleEmailLogin, isLoading: isEmailLoading, error: emailError } =
+    useEmailLogin();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+  });
 
   if (loading) {
     return (
@@ -17,25 +48,37 @@ export default function LoginPage() {
     );
   }
 
+  const onSubmit = ({ email, password }: LoginFormValues) => handleEmailLogin(email, password);
+
+  const showKakaoBanner = isKakaoBrowser();
+  const error = emailError ?? googleError;
+
   return (
     <div className='flex min-h-screen items-center justify-center bg-background px-3 md:px-4'>
       <Card className='reading-shadow w-full max-w-md border-border/50'>
         <CardHeader className='text-center'>
-          <CardTitle className='text-2xl font-semibold tracking-tight text-foreground md:text-3xl'>매일 글쓰기 프렌즈</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className='mb-6 flex justify-center'>
-            <img src='/pencil_icon.svg' alt='Logo' className='size-16' />
+          <CardTitle className='text-2xl font-semibold tracking-tight text-foreground md:text-3xl'>
+            매일 글쓰기 프렌즈
+          </CardTitle>
+          <div className='flex justify-center pt-2'>
+            <img src='/pencil_icon.svg' alt='Logo' className='size-12' />
           </div>
-        </CardContent>
-        <CardFooter className='flex-col gap-2'>
+        </CardHeader>
+
+        <CardContent className='space-y-4'>
+          {showKakaoBanner && (
+            <div className='rounded-md border border-border/50 bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground'>
+              카카오톡에서 열었을 때는 <span className='font-medium text-foreground'>이메일 로그인</span>을 이용해주세요.
+            </div>
+          )}
+
           <Button
-            variant="default"
-            onClick={() => handleLogin()}
-            disabled={isLoading}
+            variant='default'
+            onClick={() => handleGoogleLogin()}
+            disabled={isGoogleLoading || isEmailLoading}
             className='min-h-[44px] w-full'
           >
-            {isLoading ? (
+            {isGoogleLoading ? (
               <>
                 <Loader2 className='mr-2 size-4 animate-spin' />
                 로그인 중...
@@ -44,9 +87,65 @@ export default function LoginPage() {
               '구글로 로그인하기'
             )}
           </Button>
-          {error && (
-            <p className='text-sm text-destructive'>{error.message}</p>
-          )}
+
+          <div className='relative'>
+            <div className='absolute inset-0 flex items-center'>
+              <span className='w-full border-t border-border/50' />
+            </div>
+            <div className='relative flex justify-center text-xs'>
+              <span className='bg-card px-3 text-muted-foreground'>또는</span>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+            <FormField
+              id='email'
+              label='이메일'
+              type='email'
+              inputMode='email'
+              placeholder='you@example.com'
+              register={register}
+              error={errors.email}
+            />
+            <FormField
+              id='password'
+              label='비밀번호'
+              type='password'
+              inputMode='text'
+              placeholder='비밀번호를 입력해주세요'
+              register={register}
+              error={errors.password}
+            />
+
+            {error && (
+              <p className='text-sm text-destructive'>{error.message}</p>
+            )}
+
+            <Button
+              variant='default'
+              type='submit'
+              disabled={isGoogleLoading || isEmailLoading}
+              className='min-h-[44px] w-full'
+            >
+              {isEmailLoading ? (
+                <>
+                  <Loader2 className='mr-2 size-4 animate-spin' />
+                  로그인 중...
+                </>
+              ) : (
+                '이메일로 로그인'
+              )}
+            </Button>
+          </form>
+        </CardContent>
+
+        <CardFooter className='flex justify-between pt-0 text-sm'>
+          <Link to={ROUTES.FORGOT_PASSWORD} className='text-ring hover:underline'>
+            비밀번호를 잊으셨나요?
+          </Link>
+          <Link to={ROUTES.SIGNUP} className='text-ring hover:underline'>
+            회원가입
+          </Link>
         </CardFooter>
       </Card>
     </div>
