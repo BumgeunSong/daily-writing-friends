@@ -4,14 +4,12 @@ import { Button } from '@/shared/ui/button';
 
 interface IntroCTAProps {
   cohort?: number;
-  onLogin: (returnTo?: string) => void;
   isLoading?: boolean;
   isInWaitingList?: boolean;
   isLoggedIn?: boolean;
 }
 
 export default function IntroCTA({
-  onLogin,
   cohort,
   isLoading = false,
   isInWaitingList = false,
@@ -33,11 +31,16 @@ export default function IntroCTA({
     return null;
   };
 
+  const goToLoginWith = (returnTo: string) => {
+    sessionStorage.setItem('returnTo', returnTo);
+    navigate(ROUTES.LOGIN);
+  };
+
   const handlePrimaryClick = () => {
     if (isLoggedIn) {
       navigate(ROUTES.JOIN_FORM);
     } else {
-      onLogin(ROUTES.JOIN);
+      goToLoginWith(ROUTES.JOIN);
     }
   };
 
@@ -45,7 +48,7 @@ export default function IntroCTA({
     if (isLoggedIn) {
       navigate(ROUTES.BOARDS);
     } else {
-      onLogin(ROUTES.BOARDS);
+      goToLoginWith(ROUTES.BOARDS);
     }
   };
 

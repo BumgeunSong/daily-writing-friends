@@ -10,7 +10,6 @@ import { IntroPageLayout } from '@/login/components/IntroPageLayout';
 import ReviewCarousel from '@/login/components/ReviewCarousel';
 import { useActiveUser } from '@/login/hooks/useActiveUser';
 import { useDaysUntilCohortStart } from '@/login/hooks/useDaysUntilCohortStart';
-import { useGoogleLoginWithRedirect } from '@/login/hooks/useGoogleLoginWithRedirect';
 import { useIsUserInWaitingList } from '@/login/hooks/useIsUserInWaitingList';
 import { useUpcomingBoard } from '@/login/hooks/useUpcomingBoard';
 import NoticeSection from '@/shared/components/NoticeSection';
@@ -25,16 +24,14 @@ export default function JoinIntroPage() {
 
   // Business logic hooks
   const daysRemaining = useDaysUntilCohortStart(upcomingBoard?.firstDay);
-  const { handleLogin, isLoading: isLoginLoading } = useGoogleLoginWithRedirect();
 
-  const isLoading = isLoginLoading || isCheckingWaitingList;
+  const isLoading = isCheckingWaitingList;
   const isLoggedIn = !!currentUser;
 
   return (
     <IntroPageLayout
       footer={
         <IntroCTA
-          onLogin={handleLogin}
           cohort={upcomingBoard?.cohort}
           isLoading={isLoading}
           isInWaitingList={isInWaitingList}
