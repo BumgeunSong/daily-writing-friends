@@ -1,4 +1,5 @@
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { ROUTES } from '@/login/constants';
 import type { AuthUser } from '@/shared/hooks/useAuth';
 
 /**
@@ -57,6 +58,60 @@ export async function updateAuthUserMetadata(metadata: {
 }): Promise<void> {
   const supabase = getSupabaseClient();
   const { error } = await supabase.auth.updateUser({ data: metadata });
+  if (error) throw error;
+}
+
+/**
+ * Sign up with email + password. Triggers Supabase verification email.
+ * Auto-links to existing identity if email matches a verified user.
+ */
+export async function signUpWithEmail(email: string, password: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo: `${window.location.origin}${ROUTES.LOGIN}` },
+  });
+  if (error) throw error;
+}
+
+/**
+ * Sign in with email + password.
+ * Throws "Email not confirmed" when verification is pending.
+ */
+export async function signInWithEmail(email: string, password: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+}
+
+/**
+ * Send password reset link. Redirects user back to /set-password with token.
+ */
+export async function sendPasswordResetEmail(email: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}${ROUTES.SET_PASSWORD}`,
+  });
+  if (error) throw error;
+}
+
+/**
+ * Resend the verification email for an unconfirmed signup.
+ */
+export async function resendVerificationEmail(email: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase.auth.resend({ type: 'signup', email });
+  if (error) throw error;
+}
+
+/**
+ * Set or change the password for the currently authenticated user.
+ * Used by Settings flow — requires active session.
+ */
+export async function setPasswordForCurrentUser(newPassword: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
   if (error) throw error;
 }
 
