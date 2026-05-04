@@ -32,8 +32,11 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 
 function mapSignupErrorToKorean(err: unknown): string {
   const msg = err instanceof Error ? err.message.toLowerCase() : '';
+  // "User already registered" fires when an email-identity collision is detected.
+  // For Google-linked accounts Supabase silently sends a verification email and our
+  // success path navigates to /verify-email — the link click triggers automatic linking.
   if (msg.includes('already registered') || msg.includes('user already')) {
-    return '이미 가입된 이메일입니다. 로그인해주세요.';
+    return '이미 가입된 이메일입니다. 로그인하거나 비밀번호 찾기를 이용해주세요.';
   }
   return '회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.';
 }

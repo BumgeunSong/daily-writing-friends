@@ -8,6 +8,7 @@ import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
 
 const RESEND_COOLDOWN_SECONDS = 30;
+const PENDING_EMAIL_KEY = 'pendingVerificationEmail';
 
 interface VerifyEmailLocationState {
   email?: string;
@@ -17,7 +18,14 @@ export default function VerifyEmailPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const stateEmail = (location.state as VerifyEmailLocationState | null)?.email;
-  const email = stateEmail ?? '';
+  // Persist email to sessionStorage so refresh / direct entry doesn't break the resend button.
+  const [email] = useState(() => {
+    if (stateEmail) {
+      sessionStorage.setItem(PENDING_EMAIL_KEY, stateEmail);
+      return stateEmail;
+    }
+    return sessionStorage.getItem(PENDING_EMAIL_KEY) ?? '';
+  });
 
   const [cooldown, setCooldown] = useState(0);
   const [isResending, setIsResending] = useState(false);
