@@ -22,6 +22,20 @@ export const ROUTES = {
   JOIN: '/join',
   /** 가입 폼 페이지 */
   JOIN_FORM: '/join/form',
+  /** 통합 로그인 페이지 (Google + 이메일) */
+  LOGIN: '/login',
+  /** 이메일 회원가입 페이지 */
+  SIGNUP: '/signup',
+  /** 이메일 인증 대기 페이지 */
+  VERIFY_EMAIL: '/verify-email',
+  /** 비밀번호 재설정 요청 페이지 */
+  FORGOT_PASSWORD: '/forgot-password',
+  /** 비밀번호 재설정 확정 페이지 (recovery 세션) */
+  SET_PASSWORD: '/set-password',
+  /** 설정 - 비밀번호 추가 페이지 */
+  ADD_PASSWORD: '/settings/add-password',
+  /** 설정 - 비밀번호 변경 페이지 */
+  CHANGE_PASSWORD: '/settings/change-password',
 } as const;
 
 /**
