@@ -16,7 +16,28 @@ const UNIQUE_VIOLATION = '23505';
 // Fairy uses the X-Fairy-Signature header per its webhook spec.
 const SIGNATURE_HEADER = 'X-Fairy-Signature';
 
+// Per Fairy spec, the only event type currently sent. Any future event types are
+// rejected with 200/ignored so a signed unrelated event cannot accidentally grant a badge.
+const ALLOWED_EVENT = 'payment.completed';
+
+const JSON_HEADERS = { 'Content-Type': 'application/json' } as const;
+
+function jsonResponse(status: number, body: Record<string, unknown>): Response {
+  return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
+}
+
 serve(async (req) => {
+  try {
+    return await handleRequest(req);
+  } catch (err) {
+    // Last-resort guard: any unexpected throw lands here and returns a controlled JSON
+    // 500 so Fairy retries (instead of seeing a raw stack trace from the runtime).
+    console.error('fairy-webhook: unhandled error', err instanceof Error ? err.stack : err);
+    return jsonResponse(500, { error: 'internal_error' });
+  }
+});
+
+async function handleRequest(req: Request): Promise<Response> {
   const rawBody = await req.text();
   const signature = req.headers.get(SIGNATURE_HEADER) ?? '';
   const secret = Deno.env.get('FAIRY_WEBHOOK_SECRET') ?? '';
@@ -47,13 +68,15 @@ serve(async (req) => {
     source: payload.data.source,
   };
 
+  if (payload.event !== ALLOWED_EVENT) {
+    console.log('fairy-webhook: ignored unsupported event', logBase);
+    return jsonResponse(200, { status: 'ignored', reason: 'unsupported_event' });
+  }
+
   // Fairy's "send test" feature should never grant a real badge.
   if (payload.data.source === 'test') {
     console.log('fairy-webhook: test source acknowledged', logBase);
-    return new Response(JSON.stringify({ status: 'test_ok' }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonResponse(200, { status: 'test_ok' });
   }
 
   const supabase = createClient(
@@ -66,25 +89,16 @@ serve(async (req) => {
 
   if (insertResult === 'duplicate') {
     console.log('fairy-webhook: duplicate paymentId, idempotent ack', { ...logBase, userId, method });
-    return new Response(JSON.stringify({ status: 'duplicate' }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonResponse(200, { status: 'duplicate' });
   }
 
   if (insertResult === 'error') {
-    return new Response(JSON.stringify({ error: 'insert_failed' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return jsonResponse(500, { error: 'insert_failed' });
   }
 
   console.log('fairy-webhook: donation recorded', { ...logBase, userId, method });
-  return new Response(JSON.stringify({ status: 'recorded', matched: method !== null }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
-});
+  return jsonResponse(200, { status: 'recorded', matched: method !== null });
+}
 
 async function resolveDonatorUser(
   supabase: SupabaseClient,
@@ -108,10 +122,14 @@ async function lookupUserById(supabase: SupabaseClient, id: string): Promise<str
 }
 
 async function lookupUserByEmail(supabase: SupabaseClient, email: string): Promise<string | null> {
+  // Postgres ILIKE treats % and _ as wildcards. RFC 5321 allows underscore in the local
+  // part of an email, so we escape both (and the backslash itself) to force a literal
+  // case-insensitive match. Without this, donor "a_b@c.com" would also match "axb@c.com".
+  const literal = email.replace(/[\\%_]/g, (c) => `\\${c}`);
   const { data, error } = await supabase
     .from('users')
     .select('id')
-    .ilike('email', email)
+    .ilike('email', literal)
     .limit(1)
     .maybeSingle();
   if (error) {

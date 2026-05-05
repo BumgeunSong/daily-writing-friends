@@ -28,8 +28,9 @@ CREATE INDEX donations_unmatched_idx
   WHERE user_id IS NULL;
 
 -- Public, sanitized view: only user_id and timing. PII (email, message, amount) stays
--- in the table behind RLS. Test webhooks (source = 'test') are excluded so a Fairy
--- preflight test never grants a real badge, but stay in the table for forensics.
+-- in the table behind RLS. The Edge Function short-circuits on source = 'test' before
+-- any insert, so test webhooks should never appear in this table. The source <> 'test'
+-- predicate is a second-line defense in case a 'test' row ever leaks in.
 CREATE OR REPLACE VIEW donator_status AS
   SELECT
     user_id,

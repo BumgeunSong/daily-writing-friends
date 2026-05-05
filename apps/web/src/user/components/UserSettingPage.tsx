@@ -158,7 +158,7 @@ export default function UserSettingPage() {
           <Button
             asChild
             variant="ghost"
-            className="reading-hover reading-focus flex h-auto w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 py-3 text-base transition-[background-color] duration-200"
+            className="reading-hover reading-focus flex h-auto w-full items-center justify-start gap-3 whitespace-normal rounded-none border-b border-border/30 px-4 py-3 text-base transition-[background-color] duration-200"
           >
             <a
               href={donateUrl}
