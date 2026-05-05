@@ -10,6 +10,7 @@ import { PasswordRequirements } from '@/login/components/PasswordRequirements';
 import { ROUTES } from '@/login/constants';
 import { validatePassword } from '@/login/utils/passwordValidation';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { mapSetPasswordErrorToKorean } from '@/shared/auth/authErrors';
 import { setPasswordForCurrentUser } from '@/shared/auth/supabaseAuth';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Button } from '@/shared/ui/button';
@@ -142,8 +143,8 @@ function AddEmailMethodForm({
       setSubmitError(null);
       await setPasswordForCurrentUser(password);
       await onSuccess();
-    } catch {
-      setSubmitError('저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    } catch (err) {
+      setSubmitError(mapSetPasswordErrorToKorean(err));
     } finally {
       setIsSubmitting(false);
     }
