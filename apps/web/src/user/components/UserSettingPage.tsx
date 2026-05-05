@@ -102,7 +102,6 @@ export default function UserSettingPage() {
             >
               <KeyRound className="size-5 text-muted-foreground" />
               <span className="text-foreground">로그인 수단 추가</span>
-              <span className="ml-auto text-xs text-muted-foreground">이메일/비밀번호 로그인</span>
             </Button>
           )}
           <Button
