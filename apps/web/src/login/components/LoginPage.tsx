@@ -51,7 +51,6 @@ export default function LoginPage() {
   const onSubmit = ({ email, password }: LoginFormValues) => handleEmailLogin(email, password);
 
   const showKakaoBanner = isKakaoBrowser();
-  const error = emailError ?? googleError;
 
   return (
     <div className='flex min-h-screen items-center justify-center bg-background px-3 md:px-4'>
@@ -72,21 +71,26 @@ export default function LoginPage() {
             </div>
           )}
 
-          <Button
-            variant='default'
-            onClick={() => handleGoogleLogin()}
-            disabled={isGoogleLoading}
-            className='min-h-[44px] w-full'
-          >
-            {isGoogleLoading ? (
-              <>
-                <Loader2 className='mr-2 size-4 animate-spin' />
-                로그인 중...
-              </>
-            ) : (
-              '구글로 로그인하기'
+          <div className='space-y-2'>
+            <Button
+              variant='default'
+              onClick={() => handleGoogleLogin()}
+              disabled={isGoogleLoading}
+              className='min-h-[44px] w-full'
+            >
+              {isGoogleLoading ? (
+                <>
+                  <Loader2 className='mr-2 size-4 animate-spin' />
+                  로그인 중...
+                </>
+              ) : (
+                '구글로 로그인하기'
+              )}
+            </Button>
+            {googleError && (
+              <p className='text-sm text-destructive'>{googleError.message}</p>
             )}
-          </Button>
+          </div>
 
           <div className='relative'>
             <div className='absolute inset-0 flex items-center'>
@@ -117,8 +121,8 @@ export default function LoginPage() {
               error={errors.password}
             />
 
-            {error && (
-              <p className='text-sm text-destructive'>{error.message}</p>
+            {emailError && (
+              <p className='text-sm text-destructive'>{emailError.message}</p>
             )}
 
             <Button

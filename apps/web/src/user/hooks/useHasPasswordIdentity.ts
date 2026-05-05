@@ -17,6 +17,9 @@ export function useHasPasswordIdentity(): boolean | null {
       setHasPassword(null);
       return;
     }
+    // Reset to loading state immediately so a stale value from a previous user
+    // is never visible while the new request is in flight.
+    setHasPassword(null);
     let cancelled = false;
     getSupabaseClient()
       .auth.getUser()
