@@ -145,7 +145,7 @@ export const ROUTES = {
   VERIFY_EMAIL: '/verify-email',
   FORGOT_PASSWORD: '/forgot-password',
   SET_PASSWORD: '/set-password',
-  ADD_PASSWORD: '/settings/add-password',
+  ADD_LOGIN_METHOD: '/settings/add-login-method',
   CHANGE_PASSWORD: '/settings/change-password',
 } as const;
 ```
@@ -262,7 +262,7 @@ Why first: avoids breaking `pnpm tsc` while building each screen.
 
 **Files:**
 - Create stubs: `SignupPage.tsx`, `VerifyEmailPage.tsx`, `ForgotPasswordPage.tsx`, `SetPasswordPage.tsx` under `apps/web/src/login/components/`
-- Create stubs: `AddPasswordPage.tsx`, `ChangePasswordPage.tsx` under `apps/web/src/user/components/`
+- Create stubs: `AddLoginMethodPage.tsx`, `ChangePasswordPage.tsx` under `apps/web/src/user/components/`
 - Modify: `apps/web/src/router.tsx`
 
 **Step 1: Stub component template** (apply to each)
@@ -287,7 +287,7 @@ In `publicRoutes.children`:
 
 In `privateRoutesWithoutNav.children`:
 ```tsx
-{ path: 'settings/add-password', element: <AddPasswordPage /> },
+{ path: 'settings/add-login-method', element: <AddLoginMethodPage /> },
 { path: 'settings/change-password', element: <ChangePasswordPage /> },
 ```
 
@@ -600,7 +600,7 @@ useHasPasswordIdentity hook 추가
 - Modify: `apps/web/src/user/components/UserSettingPage.tsx`
 
 Insert between the Dark Mode row (lines 64-78) and the Logout button (lines 79-86). Use `KeyRound` from `lucide-react`. Two states from `useHasPasswordIdentity`:
-- `false` (no password yet) → "비밀번호 추가" + right-aligned `설정 안 됨` badge → navigate to `ROUTES.ADD_PASSWORD`
+- `false` (no password yet) → "로그인 수단 추가" + right-aligned `이메일/비밀번호 로그인` aux text → navigate to `ROUTES.ADD_LOGIN_METHOD`
 - `true` (already set) → "비밀번호 변경" + `설정됨` badge → navigate to `ROUTES.CHANGE_PASSWORD`
 - `null` (loading) → render skeleton row
 
@@ -616,21 +616,22 @@ Match the existing button class string exactly (note: project guide bans `transi
 
 ---
 
-### Task 7.3: `AddPasswordPage`
+### Task 7.3: `AddLoginMethodPage`
 
 **Files:**
-- Modify: `apps/web/src/user/components/AddPasswordPage.tsx`
+- Modify: `apps/web/src/user/components/AddLoginMethodPage.tsx`
 
-Per design doc section 5. Two password fields + `PasswordRequirements`. Submit calls `setPasswordForCurrentUser`. Success → toast "비밀번호가 설정되었습니다. 이제 이메일로도 로그인할 수 있어요." → `navigate(-1)` back to Settings. The password row will refresh because `useHasPasswordIdentity` re-runs on mount.
+Per design doc section 5. "한 계정 = 여러 로그인 방법" 멘탈 모델을 직접 보여주는 2-카드 레이아웃: 상단에 현재 사용 중인 Google 카드 (avatar + email + "✓ 연결됨"), 하단에 추가 가능한 이메일/비밀번호 카드 (Mail 아이콘 + "XXX로 로그인할 수 있어요" 안내문 + 두 password 필드 + `PasswordRequirements`). Submit calls `setPasswordForCurrentUser`. Success → toast "이메일/비밀번호 로그인이 추가되었습니다." → `navigate(-1)` back to Settings. The password row will refresh because `useHasPasswordIdentity` re-runs on mount.
 
-Button: `variant="cta"` (per design — this is a value-adding conversion).
+Button: `variant="cta"`, 라벨 "추가하기" (per design — value-adding conversion). "비밀번호 추가" 라는 모호한 카피 대신 "추가하기" / "XXX로 로그인할 수 있어요" 로 "왜 비밀번호를 추가하지?" 질문을 차단.
 
 **Commit:**
 ```
-/settings/add-password 화면 구현
+/settings/add-login-method 화면 구현
 
-- 로그인 상태에서 updateUser({ password })로 비밀번호를 직접 추가
+- 로그인 상태에서 updateUser({ password })로 이메일/비밀번호 로그인을 직접 추가
 - 이메일 매직링크 불필요 (이미 인증된 세션)
+- "한 계정 = 여러 로그인 방법" 멘탈 모델을 카드 레이아웃으로 시각화
 ```
 
 ---
@@ -640,7 +641,7 @@ Button: `variant="cta"` (per design — this is a value-adding conversion).
 **Files:**
 - Modify: `apps/web/src/user/components/ChangePasswordPage.tsx`
 
-Same shape as `AddPasswordPage` but headline is "비밀번호 변경" and button is `variant="default"` (existing-setting update, not new conversion).
+Same form shape as `AddLoginMethodPage` but standalone (no "현재 사용 중" / "추가할 수 있는 방법" 카드) — 헤드라인 "비밀번호 변경", 버튼 `variant="default"` (existing-setting update, not new conversion). 비밀번호를 이미 가진 사용자에게는 변경 멘탈 모델이 정확하므로 카피/라우트(`/settings/change-password`)를 그대로 유지.
 
 **Per Q1 decision:** No current-password field. Already-logged-in session is enough.
 
@@ -701,7 +702,7 @@ JoinIntroPage 진입 동선 정리
 
 **Path B — Existing Google user adds password:**
 1. Sign in with Google
-2. Settings → "비밀번호 추가" row → `/settings/add-password`
+2. Settings → "로그인 수단 추가" row → `/settings/add-login-method`
 3. Submit valid password → toast → back to Settings
 4. Settings now shows "비밀번호 변경" with `설정됨` badge
 5. Sign out → `/login` → email/password with same email → succeeds (auto-linked)
