@@ -225,7 +225,7 @@ function UnverifiedEmailCard({ email }: { email: string }) {
     try {
       setIsSending(true);
       await sendPasswordResetEmail(email);
-      toast.success('인증 메일을 보냈어요. 메일에서 링크를 눌러 비밀번호를 다시 설정해주세요.', {
+      toast.success('인증 메일을 보냈어요. 메일에서 링크를 눌러 추가를 완료해주세요.', {
         position: 'bottom-center',
       });
     } catch {
@@ -249,8 +249,7 @@ function UnverifiedEmailCard({ email }: { email: string }) {
           <p className='mt-2 flex items-start gap-1 text-xs text-amber-600 dark:text-amber-400 text-pretty'>
             <AlertTriangle className='mt-0.5 size-3.5 shrink-0' />
             <span>
-              비밀번호 추가가 마무리되지 않았어요. 보내드린 메일에서 링크를 눌러 비밀번호를
-              확정해주세요.
+              이메일/비밀번호로 로그인하려면 메일에서 인증 링크를 한 번 눌러주세요.
             </span>
           </p>
         </div>
