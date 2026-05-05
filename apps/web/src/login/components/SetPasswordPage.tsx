@@ -41,36 +41,47 @@ export default function SetPasswordPage() {
 
   useEffect(() => {
     const supabase = getSupabaseClient();
-    let resolved = false;
+    let cancelled = false;
 
-    // Recovery sessions only: PASSWORD_RECOVERY event, or a fresh URL hash with type=recovery.
+    // Recovery sessions only: a `type=recovery` URL hash, or a PASSWORD_RECOVERY event.
     // A pre-existing INITIAL_SESSION must be ignored — otherwise any logged-in user
     // landing on this URL would see a password-change form not gated by re-auth.
     const hash = typeof window !== 'undefined' ? window.location.hash : '';
     const hasRecoveryHash = /[#&]type=recovery(&|$)/.test(hash);
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (cancelled) return;
       if (event === 'PASSWORD_RECOVERY') {
-        resolved = true;
         setRecoveryStatus('active');
       }
     });
 
+    // If the URL has a recovery token, AuthProvider may have already consumed
+    // PASSWORD_RECOVERY before this page mounted. Inspect the current session
+    // explicitly so we don't show "expired" just because we missed the event.
     if (hasRecoveryHash) {
-      // Token present but PASSWORD_RECOVERY may not fire if listener attaches late.
-      // Wait briefly for the event; if it never fires, the token was malformed → invalid.
+      supabase.auth.getSession().then(({ data }) => {
+        if (cancelled) return;
+        setRecoveryStatus(data.session ? 'active' : 'invalid');
+      });
+    } else {
+      // No hash → wait briefly for the event in case routing was internal,
+      // then mark invalid. The form requires a recovery session to be useful.
+      const fallback = setTimeout(() => {
+        if (!cancelled) {
+          setRecoveryStatus((prev) => (prev === 'checking' ? 'invalid' : prev));
+        }
+      }, 800);
+      return () => {
+        cancelled = true;
+        subscription.unsubscribe();
+        clearTimeout(fallback);
+      };
     }
 
-    const fallback = setTimeout(
-      () => {
-        if (!resolved) setRecoveryStatus('invalid');
-      },
-      hasRecoveryHash ? 3000 : 800,
-    );
-
     return () => {
+      cancelled = true;
       subscription.unsubscribe();
-      clearTimeout(fallback);
     };
   }, []);
 
@@ -92,7 +103,14 @@ export default function SetPasswordPage() {
       setSubmitError(null);
       await setPasswordForCurrentUser(password);
       toast.success('비밀번호가 설정되었습니다.', { position: 'bottom-center' });
-      navigate(ROUTES.BOARDS);
+      const returnTo = sessionStorage.getItem('returnTo');
+      // Only honor app-internal paths to avoid open-redirect surprises.
+      const safeReturnTo =
+        returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//')
+          ? returnTo
+          : null;
+      if (safeReturnTo) sessionStorage.removeItem('returnTo');
+      navigate(safeReturnTo ?? ROUTES.BOARDS);
     } catch {
       setSubmitError('비밀번호 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
