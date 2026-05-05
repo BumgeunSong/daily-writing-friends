@@ -1,3 +1,5 @@
+import { DonatorBadge } from '@/donator/components/DonatorBadge';
+import { useDonatorStatus } from '@/donator/hooks/useDonatorStatus';
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { PostingStreakBadge } from '@/stats/components/PostingStreakBadge';
@@ -29,7 +31,9 @@ export const PostUserProfile: React.FC<PostUserProfileProps> = ({
   badges,
   streak,
   isStreakLoading,
-}) => (
+}) => {
+  const { isDonator } = useDonatorStatus(authorData?.id);
+  return (
   <div className='flex items-center'>
     {isLoading ? (
       <Skeleton className='size-7 rounded-full' />
@@ -55,11 +59,12 @@ export const PostUserProfile: React.FC<PostUserProfileProps> = ({
         <div className='flex flex-col gap-1'>
           <button
             type='button'
-            className='flex cursor-pointer items-center text-sm font-medium text-foreground/90 transition-colors duration-150 active:text-primary group-hover/profile:text-primary group-hover/profile:underline'
+            className='flex cursor-pointer items-center gap-1 text-sm font-medium text-foreground/90 transition-colors duration-150 active:text-primary group-hover/profile:text-primary group-hover/profile:underline'
             onClick={onClickProfile}
             aria-label='작성자 프로필로 이동'
           >
-            {authorData?.displayName}
+            <span>{authorData?.displayName}</span>
+            {isDonator && <DonatorBadge />}
           </button>
           {(streak || isStreakLoading || (badges && badges.length > 0)) && (
             <div className='flex flex-wrap items-center gap-1'>
@@ -73,4 +78,5 @@ export const PostUserProfile: React.FC<PostUserProfileProps> = ({
       )}
     </div>
   </div>
-);
+  );
+};

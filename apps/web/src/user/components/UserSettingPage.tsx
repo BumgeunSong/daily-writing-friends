@@ -1,9 +1,11 @@
 import { LogOut, Trash2, SquareArrowRight, Moon, Sun, Heart } from 'lucide-react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { signOutUser } from '@/shared/auth/supabaseAuth';
 import { SentryFeedbackDialog } from '@/shared/components/SentryFeedbackDialog';
 import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
+import { useAuth } from '@/shared/hooks/useAuth';
 import { useClearCache } from '@/shared/hooks/useClearCache';
 import { useTheme } from '@/shared/hooks/useTheme';
 import {
@@ -19,11 +21,21 @@ import {
 import { Button } from '@/shared/ui/button';
 import { Switch } from '@/shared/ui/switch';
 
+const FAIRY_DONATE_URL = 'https://fairy.hada.io/@daily-writing-friends';
+
+function buildDonateUrl(userId: string | undefined): string {
+  if (!userId) return FAIRY_DONATE_URL;
+  const payload = encodeURIComponent(JSON.stringify({ dwf_user_id: userId }));
+  return `${FAIRY_DONATE_URL}?payload=${payload}`;
+}
+
 export default function UserSettingPage() {
   const navigate = useNavigate();
   const clearCache = useClearCache();
   const { theme, toggleTheme } = useTheme();
   const { value: blockUserFeatureEnabled } = useRemoteConfig('block_user_feature_enabled');
+  const { currentUser } = useAuth();
+  const donateUrl = useMemo(() => buildDonateUrl(currentUser?.uid), [currentUser?.uid]);
 
   // 로그아웃
   const handleSignOut = async () => {
@@ -121,7 +133,7 @@ export default function UserSettingPage() {
             className="reading-hover reading-focus flex h-auto w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 py-3 text-base transition-[background-color] duration-200"
           >
             <a
-              href="https://fairy.hada.io/@daily-writing-friends"
+              href={donateUrl}
               target="_blank"
               rel="external noopener noreferrer"
             >
