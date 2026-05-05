@@ -5,7 +5,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { useRef, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { ProseMirrorDoc } from '@/post/model/Post';
 import { shouldSyncEditorContent } from '@/post/utils/editorContentSync';
 import { sanitize } from '@/post/utils/sanitizeHtml';
@@ -117,16 +117,42 @@ export function useTiptapEditor({
 
   // Tiptap's useEditor only seeds `content` once. When a draft loads after
   // mount, the editor would otherwise stay empty even though the prop changed.
+  // Refs let the blur handler always read the freshest target without re-binding.
+  const initialHtmlRef = useRef(initialHtml);
+  const initialJsonRef = useRef(initialJson);
   useEffect(() => {
+    initialHtmlRef.current = initialHtml;
+    initialJsonRef.current = initialJson;
+  }, [initialHtml, initialJson]);
+
+  const trySyncContent = useCallback(() => {
     if (!editor) return;
+    const targetHtml = initialHtmlRef.current;
+    const targetJson = initialJsonRef.current;
     const sync = shouldSyncEditorContent({
       currentHtml: editor.getHTML(),
-      targetHtml: initialHtml,
+      currentJsonStr: JSON.stringify(editor.getJSON()),
+      targetHtml,
+      targetJsonStr: targetJson === undefined ? undefined : JSON.stringify(targetJson),
       isFocused: editor.isFocused,
     });
     if (!sync) return;
-    editor.commands.setContent(initialJson || initialHtml || '', { emitUpdate: false });
-  }, [editor, initialHtml, initialJson]);
+    editor.commands.setContent(targetJson ?? targetHtml ?? '', { emitUpdate: false });
+  }, [editor]);
+
+  useEffect(() => {
+    trySyncContent();
+  }, [trySyncContent, initialHtml, initialJson]);
+
+  // Retry on blur so a target that arrived while the user was focused — e.g.
+  // they tapped the empty editor before the draft fetch resolved — still lands.
+  useEffect(() => {
+    if (!editor) return;
+    editor.on('blur', trySyncContent);
+    return () => {
+      editor.off('blur', trySyncContent);
+    };
+  }, [editor, trySyncContent]);
 
   return editor;
 }
