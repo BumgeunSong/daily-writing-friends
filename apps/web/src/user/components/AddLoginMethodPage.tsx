@@ -29,7 +29,7 @@ const addPasswordSchema = z
 
 type AddPasswordFormValues = z.infer<typeof addPasswordSchema>;
 
-export default function AddPasswordPage() {
+export default function AddLoginMethodPage() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);

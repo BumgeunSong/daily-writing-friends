@@ -48,7 +48,7 @@ import { PermissionErrorBoundary } from '@/shared/components/PermissionErrorBoun
 import StatusMessage from '@/shared/components/StatusMessage';
 import StatsPage from '@/stats/components/StatsPage';
 import BlockedUsersPage from '@/user/components/BlockedUsersPage';
-import AddPasswordPage from '@/user/components/AddPasswordPage';
+import AddLoginMethodPage from '@/user/components/AddLoginMethodPage';
 import ChangePasswordPage from '@/user/components/ChangePasswordPage';
 import EditAccountPage from '@/user/components/EditAccountPage';
 import UserPage from '@/user/components/UserPage';
@@ -153,7 +153,7 @@ const privateRoutesWithoutNav = {
     { path: 'join/form', element: <JoinFormPageForActiveOrNewUser /> },
     { path: 'join/form/new-user', element: <JoinFormPageForNewUser /> },
     { path: 'join/form/active-user', element: <JoinFormPageForActiveUser /> },
-    { path: 'settings/add-password', element: <AddPasswordPage /> },
+    { path: 'settings/add-login-method', element: <AddLoginMethodPage /> },
     { path: 'settings/change-password', element: <ChangePasswordPage /> },
     { path: 'debug-info', element: <DebugInfo /> },
   ],
