@@ -16,9 +16,11 @@ export async function fetchUser(uid: string): Promise<User | null> {
 }
 
 // Supabase에 User 데이터 생성
+// 동시성 안전: createUserIfNotExists 가 두 곳(useAuth + JoinForm)에서 동시에 호출될 수 있어
+// users_pkey 충돌이 나는 TOCTOU 레이스를 방지하기 위해 INSERT ... ON CONFLICT DO NOTHING 으로 idempotent 하게 작성한다.
 export async function createUser(data: User): Promise<void> {
     const supabase = getSupabaseClient();
-    throwOnError(await supabase.from('users').insert({
+    throwOnError(await supabase.from('users').upsert({
         id: data.uid,
         real_name: data.realName || null,
         nickname: data.nickname || null,
@@ -27,7 +29,7 @@ export async function createUser(data: User): Promise<void> {
         bio: data.bio || null,
         phone_number: data.phoneNumber || null,
         referrer: data.referrer || null,
-    }));
+    }, { onConflict: 'id', ignoreDuplicates: true }));
 
     // Sync boardPermissions to user_board_permissions table
     if (data.boardPermissions) {
