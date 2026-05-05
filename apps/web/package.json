@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:local": "vite --mode local-supabase --port 5174",
     "build": "vite build",
     "serve": "vite preview",
     "type-check": "tsc --noEmit",
