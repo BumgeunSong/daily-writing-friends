@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle2, ChevronRight, Loader2, Mail } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronRight, Loader2, Mail } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
@@ -11,11 +11,14 @@ import { ROUTES } from '@/login/constants';
 import { validatePassword } from '@/login/utils/passwordValidation';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { mapSetPasswordErrorToKorean } from '@/shared/auth/authErrors';
-import { setPasswordForCurrentUser } from '@/shared/auth/supabaseAuth';
+import {
+  resendVerificationEmail,
+  setPasswordForCurrentUser,
+} from '@/shared/auth/supabaseAuth';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
-import { useHasPasswordIdentity } from '@/user/hooks/useHasPasswordIdentity';
+import { useEmailIdentityStatus } from '@/user/hooks/useHasPasswordIdentity';
 
 const addLoginMethodSchema = z
   .object({
@@ -209,6 +212,63 @@ function AddEmailMethodForm({
   );
 }
 
+function UnverifiedEmailCard({ email }: { email: string }) {
+  const [isResending, setIsResending] = useState(false);
+
+  const handleResend = async () => {
+    if (!email) return;
+    try {
+      setIsResending(true);
+      await resendVerificationEmail(email);
+      toast.success('인증 메일을 다시 보냈어요. 메일함을 확인해주세요.', {
+        position: 'bottom-center',
+      });
+    } catch {
+      toast.error('인증 메일 재발송에 실패했어요. 잠시 후 다시 시도해주세요.', {
+        position: 'bottom-center',
+      });
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  return (
+    <div className='rounded-lg border border-border/50 bg-card p-4'>
+      <div className='flex items-start gap-3'>
+        <Mail className='mt-0.5 size-5 shrink-0 text-muted-foreground' />
+        <div className='min-w-0 flex-1'>
+          <p className='truncate text-sm font-medium text-foreground'>이메일/비밀번호</p>
+          {email && (
+            <p className='truncate text-xs text-muted-foreground'>{email}</p>
+          )}
+          <p className='mt-2 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400'>
+            <AlertTriangle className='size-3.5 shrink-0' />
+            인증 메일을 확인해주세요. 인증 전에는 이메일/비밀번호로 로그인할 수 없어요.
+          </p>
+        </div>
+      </div>
+      <div className='mt-3 flex justify-end'>
+        <Button
+          variant='outline'
+          size='sm'
+          onClick={handleResend}
+          disabled={isResending || !email}
+          className='h-9'
+        >
+          {isResending ? (
+            <>
+              <Loader2 className='mr-2 size-3.5 animate-spin' />
+              보내는 중...
+            </>
+          ) : (
+            '인증 메일 다시 받기'
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function MethodSectionSkeleton() {
   return (
     <div className='space-y-3'>
@@ -221,7 +281,7 @@ function MethodSectionSkeleton() {
 export default function AddLoginMethodPage() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const hasPassword = useHasPasswordIdentity();
+  const status = useEmailIdentityStatus();
 
   const email = currentUser?.email ?? '';
   const goToSettings = () => navigate(ROUTES.USER_SETTINGS);
@@ -258,9 +318,9 @@ export default function AddLoginMethodPage() {
             photoURL={currentUser?.photoURL ?? null}
           />
 
-          {hasPassword === null && <MethodSectionSkeleton />}
+          {status === null && <MethodSectionSkeleton />}
 
-          {hasPassword === true && (
+          {status === 'verified' && (
             <div className='space-y-3'>
               <p className='text-xs font-medium uppercase tracking-wider text-muted-foreground'>
                 추가된 방법
@@ -272,7 +332,16 @@ export default function AddLoginMethodPage() {
             </div>
           )}
 
-          {hasPassword === false && (
+          {status === 'unverified' && (
+            <div className='space-y-3'>
+              <p className='text-xs font-medium uppercase tracking-wider text-muted-foreground'>
+                인증 대기 중
+              </p>
+              <UnverifiedEmailCard email={email} />
+            </div>
+          )}
+
+          {status === 'none' && (
             <div className='space-y-3'>
               <p className='text-xs font-medium uppercase tracking-wider text-muted-foreground'>
                 추가할 수 있는 방법
@@ -287,7 +356,7 @@ export default function AddLoginMethodPage() {
             onClick={goToSettings}
             className='w-full text-muted-foreground'
           >
-            {hasPassword === true ? '돌아가기' : '취소'}
+            {status === 'none' ? '취소' : '돌아가기'}
           </Button>
         </CardContent>
       </Card>
