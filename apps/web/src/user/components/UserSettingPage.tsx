@@ -1,4 +1,4 @@
-import { LogOut, Trash2, SquareArrowRight, Moon, Sun } from 'lucide-react';
+import { LogOut, Trash2, SquareArrowRight, Moon, Sun, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { signOutUser } from '@/shared/auth/supabaseAuth';
@@ -112,8 +112,27 @@ export default function UserSettingPage() {
             className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-[background-color] duration-200"
             onClick={() => navigate('/join/form')}
           >
-            <SquareArrowRight className="size-5 text-ring" /> 
+            <SquareArrowRight className="size-5 text-ring" />
             <span className="text-ring">다음 기수 신청하기</span>
+          </Button>
+          <Button
+            asChild
+            variant="ghost"
+            className="reading-hover reading-focus flex h-auto w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 py-3 text-base transition-[background-color] duration-200"
+          >
+            <a
+              href="https://fairy.hada.io/@daily-writing-friends"
+              target="_blank"
+              rel="external noopener noreferrer"
+            >
+              <Heart className="size-5 shrink-0 text-muted-foreground" />
+              <div className="flex min-w-0 flex-col items-start gap-0.5">
+                <span className="text-foreground">후원하기</span>
+                <span className="text-pretty text-left text-xs font-normal leading-snug text-muted-foreground">
+                  작은 후원으로 매글프라는 공간이 오래갈 수 있도록 도와주세요.
+                </span>
+              </div>
+            </a>
           </Button>
           {blockUserFeatureEnabled && (
             <Button
