@@ -122,7 +122,7 @@ Responsibilities:
 - Reads `currentUser` from `useAuth`.
 - Fetches `upcomingBoard` via `useUpcomingBoard`.
 - Reads `useIsUserInWaitingList` — if already on list, redirects to `/boards`.
-- Renders profile form fields: `real_name` (required), `nickname` (required), `phone_number` (required), `referrer` (optional). Pre-fills from `public.users` row if data exists.
+- Renders profile form fields: `real_name` (required), `nickname` (required), **contact info** (required — see Section 8), `referrer` (optional). Pre-fills from `public.users` row if data exists.
 - Below the form: cohort card built from `upcomingBoard`. If null, shows "현재 신청 가능한 기수가 없어요. 프로필만 저장하고 나중에 신청할 수 있어요." and allows profile-only save.
 - On submit:
   1. `updateUser(uid, { ...profileData, onboardingComplete: true })`
@@ -164,7 +164,9 @@ AUTH STATE
 
 PROFILE STATE                                          [OnboardingPage]
   read:   fetchUser(uid)                               (pre-fill form)
-  write:  updateUser(uid, { realName, nickname, phoneNumber, referrer,
+  write:  updateUser(uid, { realName, nickname,
+                            phoneNumber, kakaoId,      (one is null)
+                            referrer,
                             onboardingComplete: true })
 
 WAITING-LIST STATE       [RootRedirect, OnboardingPage, JoinIntroPage]
@@ -223,3 +225,54 @@ Sequence (email/password new user):
    - Production Supabase dashboard email template (manual step before deploy).
 
    Document the dashboard step in the implementation plan so it isn't forgotten.
+
+---
+
+## 8. Contact Method Choice (phone OR Kakao ID)
+
+**Why:** the cohort organizer invites participants to the KakaoTalk group chat. Either a Kakao-linked phone number or a Kakao ID works. Forcing phone-only excludes users who don't want to share their number.
+
+### Schema change
+
+Add `kakao_id` column to `public.users`. Both `phone_number` and `kakao_id` nullable; DB constraint requires at least one to be non-null **only when `onboarding_complete = true`** (so users mid-flow aren't blocked).
+
+```sql
+ALTER TABLE users ADD COLUMN kakao_id TEXT;
+ALTER TABLE users ADD CONSTRAINT users_contact_required_when_onboarded
+  CHECK (NOT onboarding_complete OR phone_number IS NOT NULL OR kakao_id IS NOT NULL);
+```
+
+### UI: segmented control / tabs
+
+```
+[ 전화번호 ]  [ 카카오 ID ]
+┌────────────────────────────┐
+│ 010-1234-5678              │
+└────────────────────────────┘
+* 코호트 카톡방 초대를 위해 카톡 연결된 번호로 입력해주세요.
+```
+
+- Two tabs at the top: `전화번호` / `카카오 ID`. Default = `전화번호`.
+- Only the active tab's input is visible.
+- Switching tabs clears the inactive field's form state on submit (the inactive value is sent as `null`).
+- Helper text below the input explains why we need it (KakaoTalk invitation).
+
+### Validation
+
+- **Phone:** any 10–11 digits. Strip non-digits before storing. No Korean-mobile prefix gate (supports landline / overseas just in case).
+- **Kakao ID:** non-empty trimmed string, max 50 chars. No format check.
+- Submit-time gate: `if (activeTab === 'phone' ? !phoneNumber : !kakaoId) → form error`. The DB constraint is the safety net.
+
+### Existing users
+
+Pre-existing rows have `phone_number` populated and `kakao_id = null`. The check constraint accepts that. Backfill migration sets `onboarding_complete = true` for already-active users (see Section 7 #4), so the constraint won't bite them. Users on `/join/onboarding` see the phone-tab pre-filled with their existing `phone_number`; switching to the Kakao tab clears the phone value on submit.
+
+### Mapper updates
+
+- `apps/web/src/user/utils/userMappers.ts` — `mapUserToSupabaseUpdate` adds `kakao_id` mapping.
+- `User` interface (`apps/web/src/user/model/User.ts`) — add `kakaoId: string | null`.
+- `fetchUserFromSupabase` `select(...)` — add `kakao_id` column.
+
+### Out of scope for this design
+
+The admin-side workflow (how the organizer reads contact info to send invitations) — assumed unchanged. The admin already reads `phone_number`; they will now also need to check `kakao_id`. Track as a follow-up.
