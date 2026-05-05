@@ -12,7 +12,7 @@ import { validatePassword } from '@/login/utils/passwordValidation';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { mapSetPasswordErrorToKorean } from '@/shared/auth/authErrors';
 import {
-  resendVerificationEmail,
+  sendPasswordResetEmail,
   setPasswordForCurrentUser,
 } from '@/shared/auth/supabaseAuth';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -213,22 +213,27 @@ function AddEmailMethodForm({
 }
 
 function UnverifiedEmailCard({ email }: { email: string }) {
-  const [isResending, setIsResending] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
-  const handleResend = async () => {
+  // Why sendPasswordResetEmail instead of auth.resend({type:'signup'}):
+  // For OAuth users whose user.email_confirmed_at is already set, Supabase's
+  // resend silently no-ops (returns 200 with {}). The reset-password magic
+  // link works for any user, marks the email identity as verified upon use,
+  // and lands them on /set-password to confirm their password.
+  const handleSend = async () => {
     if (!email) return;
     try {
-      setIsResending(true);
-      await resendVerificationEmail(email);
-      toast.success('인증 메일을 다시 보냈어요. 메일함을 확인해주세요.', {
+      setIsSending(true);
+      await sendPasswordResetEmail(email);
+      toast.success('인증 메일을 보냈어요. 메일에서 링크를 눌러 비밀번호를 다시 설정해주세요.', {
         position: 'bottom-center',
       });
     } catch {
-      toast.error('인증 메일 재발송에 실패했어요. 잠시 후 다시 시도해주세요.', {
+      toast.error('인증 메일 발송에 실패했어요. 잠시 후 다시 시도해주세요.', {
         position: 'bottom-center',
       });
     } finally {
-      setIsResending(false);
+      setIsSending(false);
     }
   };
 
@@ -241,9 +246,12 @@ function UnverifiedEmailCard({ email }: { email: string }) {
           {email && (
             <p className='truncate text-xs text-muted-foreground'>{email}</p>
           )}
-          <p className='mt-2 flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400'>
-            <AlertTriangle className='size-3.5 shrink-0' />
-            인증 메일을 확인해주세요. 인증 전에는 이메일/비밀번호로 로그인할 수 없어요.
+          <p className='mt-2 flex items-start gap-1 text-xs text-amber-600 dark:text-amber-400 text-pretty'>
+            <AlertTriangle className='mt-0.5 size-3.5 shrink-0' />
+            <span>
+              비밀번호 추가가 마무리되지 않았어요. 보내드린 메일에서 링크를 눌러 비밀번호를
+              확정해주세요.
+            </span>
           </p>
         </div>
       </div>
@@ -251,17 +259,17 @@ function UnverifiedEmailCard({ email }: { email: string }) {
         <Button
           variant='outline'
           size='sm'
-          onClick={handleResend}
-          disabled={isResending || !email}
+          onClick={handleSend}
+          disabled={isSending || !email}
           className='h-9'
         >
-          {isResending ? (
+          {isSending ? (
             <>
               <Loader2 className='mr-2 size-3.5 animate-spin' />
               보내는 중...
             </>
           ) : (
-            '인증 메일 다시 받기'
+            '인증 메일 받기'
           )}
         </Button>
       </div>
