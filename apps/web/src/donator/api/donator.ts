@@ -1,19 +1,18 @@
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
-import {
-  type DonatorStatus,
-  type DonatorStatusRow,
-  mapDonatorStatusRow,
-} from '../model/DonatorStatus';
 
-export async function fetchDonatorStatusBatch(userIds: string[]): Promise<DonatorStatus[]> {
+interface DonatorStatusRow {
+  user_id: string;
+}
+
+export async function fetchActiveDonatorIds(userIds: string[]): Promise<string[]> {
   if (userIds.length === 0) return [];
 
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('donator_status')
-    .select('user_id, latest_donated_at, active_until, donation_count')
+    .select('user_id')
     .in('user_id', userIds);
 
   if (error) throw error;
-  return (data as DonatorStatusRow[]).map(mapDonatorStatusRow);
+  return (data as DonatorStatusRow[] | null ?? []).map((row) => row.user_id);
 }
