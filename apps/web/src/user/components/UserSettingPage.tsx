@@ -1,13 +1,15 @@
-import { LogOut, Trash2, SquareArrowRight, Moon, Sun, Heart } from 'lucide-react';
+import { Heart, KeyRound, LogOut, Trash2, SquareArrowRight, Moon, Sun } from 'lucide-react';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { ROUTES } from '@/login/constants';
 import { signOutUser } from '@/shared/auth/supabaseAuth';
 import { SentryFeedbackDialog } from '@/shared/components/SentryFeedbackDialog';
 import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useClearCache } from '@/shared/hooks/useClearCache';
 import { useTheme } from '@/shared/hooks/useTheme';
+import { useHasPasswordIdentity } from '@/user/hooks/useHasPasswordIdentity';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +38,7 @@ export default function UserSettingPage() {
   const { value: blockUserFeatureEnabled } = useRemoteConfig('block_user_feature_enabled');
   const { currentUser } = useAuth();
   const donateUrl = useMemo(() => buildDonateUrl(currentUser?.uid), [currentUser?.uid]);
+  const hasPassword = useHasPasswordIdentity();
 
   // 로그아웃
   const handleSignOut = async () => {
@@ -88,12 +91,37 @@ export default function UserSettingPage() {
               aria-label="다크 모드 토글"
             />
           </div>
+          {hasPassword === null ? (
+            <div className="flex h-14 w-full items-center gap-3 border-b border-border/30 px-4">
+              <div className="size-5 rounded-full bg-muted/60" />
+              <div className="h-4 w-24 rounded bg-muted/60" />
+            </div>
+          ) : hasPassword ? (
+            <Button
+              variant="ghost"
+              className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-[background-color] duration-200"
+              onClick={() => navigate(ROUTES.CHANGE_PASSWORD)}
+            >
+              <KeyRound className="size-5 text-muted-foreground" />
+              <span className="text-foreground">비밀번호 변경</span>
+              <span className="ml-auto text-xs text-muted-foreground">설정됨</span>
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-[background-color] duration-200"
+              onClick={() => navigate(ROUTES.ADD_LOGIN_METHOD)}
+            >
+              <KeyRound className="size-5 text-muted-foreground" />
+              <span className="text-foreground">로그인 수단 추가</span>
+            </Button>
+          )}
           <Button
             variant="ghost"
             className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none border-b border-border/30 px-4 text-base transition-[background-color] duration-200"
             onClick={handleSignOut}
           >
-            <LogOut className="size-5 text-muted-foreground" /> 
+            <LogOut className="size-5 text-muted-foreground" />
             <span className="text-foreground">로그아웃</span>
           </Button>
           <SentryFeedbackDialog />

@@ -1,0 +1,131 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { z } from 'zod';
+import FormField from '@/login/components/JoinFormField';
+import { PasswordRequirements } from '@/login/components/PasswordRequirements';
+import { validatePassword } from '@/login/utils/passwordValidation';
+import { setPasswordForCurrentUser } from '@/shared/auth/supabaseAuth';
+import { Button } from '@/shared/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
+
+const changePasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(1, '비밀번호를 입력해주세요.')
+      .refine((val) => validatePassword(val) === null, {
+        message: '비밀번호 요구사항을 확인해주세요.',
+      }),
+    passwordConfirm: z.string().min(1, '비밀번호 확인을 입력해주세요.'),
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: '비밀번호가 일치하지 않습니다.',
+    path: ['passwordConfirm'],
+  });
+
+type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
+
+export default function ChangePasswordPage() {
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<ChangePasswordFormValues>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: { password: '', passwordConfirm: '' },
+  });
+
+  const passwordValue = watch('password') ?? '';
+
+  const onSubmit = async ({ password }: ChangePasswordFormValues) => {
+    try {
+      setIsSubmitting(true);
+      setSubmitError(null);
+      await setPasswordForCurrentUser(password);
+      toast.success('비밀번호가 변경되었습니다.', { position: 'bottom-center' });
+      navigate(-1);
+    } catch {
+      setSubmitError('비밀번호 변경에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className='flex min-h-screen items-center justify-center bg-background px-3 md:px-4'>
+      <Card className='reading-shadow w-full max-w-md border-border/50'>
+        <CardHeader>
+          <CardTitle className='text-2xl font-semibold tracking-tight text-foreground'>
+            비밀번호 변경
+          </CardTitle>
+          <p className='text-sm text-muted-foreground'>새 비밀번호를 입력해주세요.</p>
+        </CardHeader>
+
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+            <div className='space-y-2'>
+              <FormField
+                id='password'
+                label='새 비밀번호'
+                type='password'
+                inputMode='text'
+                placeholder='새 비밀번호'
+                register={register}
+                error={errors.password}
+              />
+              <PasswordRequirements password={passwordValue} />
+            </div>
+
+            <FormField
+              id='passwordConfirm'
+              label='비밀번호 확인'
+              type='password'
+              inputMode='text'
+              placeholder='비밀번호를 한 번 더 입력해주세요'
+              register={register}
+              error={errors.passwordConfirm}
+            />
+
+            {submitError && (
+              <p className='text-sm text-destructive'>{submitError}</p>
+            )}
+
+            <Button
+              variant='default'
+              type='submit'
+              disabled={isSubmitting}
+              className='min-h-[44px] w-full'
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className='mr-2 size-4 animate-spin' />
+                  변경 중...
+                </>
+              ) : (
+                '비밀번호 변경'
+              )}
+            </Button>
+
+            <Button
+              variant='ghost'
+              type='button'
+              onClick={() => navigate(-1)}
+              className='w-full text-muted-foreground'
+            >
+              취소
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

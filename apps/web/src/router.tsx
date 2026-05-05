@@ -20,6 +20,10 @@ import JoinFormPageForActiveUser from '@/login/components/JoinFormPageForActiveU
 import JoinFormPageForNewUser from '@/login/components/JoinFormPageForNewUser';
 import JoinIntroPage from '@/login/components/JoinIntroPage';
 import LoginPage from '@/login/components/LoginPage';
+import SignupPage from '@/login/components/SignupPage';
+import VerifyEmailPage from '@/login/components/VerifyEmailPage';
+import ForgotPasswordPage from '@/login/components/ForgotPasswordPage';
+import SetPasswordPage from '@/login/components/SetPasswordPage';
 import NotificationsPage from '@/notification/components/NotificationsPage';
 import PostCompletionPage from '@/post/components/PostCompletionPage';
 import PostCreationPage from '@/post/components/PostCreationPage';
@@ -44,6 +48,8 @@ import { PermissionErrorBoundary } from '@/shared/components/PermissionErrorBoun
 import StatusMessage from '@/shared/components/StatusMessage';
 import StatsPage from '@/stats/components/StatsPage';
 import BlockedUsersPage from '@/user/components/BlockedUsersPage';
+import AddLoginMethodPage from '@/user/components/AddLoginMethodPage';
+import ChangePasswordPage from '@/user/components/ChangePasswordPage';
 import EditAccountPage from '@/user/components/EditAccountPage';
 import UserPage from '@/user/components/UserPage';
 import UserSettingPage from '@/user/components/UserSettingPage';
@@ -83,6 +89,10 @@ const publicRoutes = {
   element: <PublicRoutes />,
   children: [
     { path: 'login', element: <LoginPage /> },
+    { path: 'signup', element: <SignupPage /> },
+    { path: 'verify-email', element: <VerifyEmailPage /> },
+    { path: 'forgot-password', element: <ForgotPasswordPage /> },
+    { path: 'set-password', element: <SetPasswordPage /> },
     { path: 'join', element: <JoinIntroPage /> },
     { path: 'free-writing/tutorial', element: <PostFreewritingTutorial /> },
   ],
@@ -143,6 +153,8 @@ const privateRoutesWithoutNav = {
     { path: 'join/form', element: <JoinFormPageForActiveOrNewUser /> },
     { path: 'join/form/new-user', element: <JoinFormPageForNewUser /> },
     { path: 'join/form/active-user', element: <JoinFormPageForActiveUser /> },
+    { path: 'settings/add-login-method', element: <AddLoginMethodPage /> },
+    { path: 'settings/change-password', element: <ChangePasswordPage /> },
     { path: 'debug-info', element: <DebugInfo /> },
   ],
 };
