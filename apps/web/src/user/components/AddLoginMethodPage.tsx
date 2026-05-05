@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle2, Loader2, Mail } from 'lucide-react';
+import { CheckCircle2, ChevronRight, Loader2, Mail } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
@@ -7,11 +7,14 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import FormField from '@/login/components/JoinFormField';
 import { PasswordRequirements } from '@/login/components/PasswordRequirements';
+import { ROUTES } from '@/login/constants';
 import { validatePassword } from '@/login/utils/passwordValidation';
+import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { setPasswordForCurrentUser } from '@/shared/auth/supabaseAuth';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
+import { useHasPasswordIdentity } from '@/user/hooks/useHasPasswordIdentity';
 
 const addLoginMethodSchema = z
   .object({
@@ -29,6 +32,15 @@ const addLoginMethodSchema = z
   });
 
 type AddLoginMethodFormValues = z.infer<typeof addLoginMethodSchema>;
+
+function ConnectedBadge() {
+  return (
+    <span className='flex shrink-0 items-center gap-1 text-xs text-green-600 dark:text-green-400'>
+      <CheckCircle2 className='size-3.5' />
+      연결됨
+    </span>
+  );
+}
 
 function CurrentMethodCard({
   email,
@@ -62,18 +74,53 @@ function CurrentMethodCard({
           <p className='truncate text-sm font-medium text-foreground'>Google</p>
           <p className='truncate text-xs text-muted-foreground'>{email}</p>
         </div>
-        <span className='flex shrink-0 items-center gap-1 text-xs text-green-600 dark:text-green-400'>
-          <CheckCircle2 className='size-3.5' />
-          연결됨
-        </span>
+        <ConnectedBadge />
       </div>
     </div>
   );
 }
 
-export default function AddLoginMethodPage() {
-  const navigate = useNavigate();
-  const { currentUser } = useAuth();
+function ConnectedEmailCard({
+  email,
+  onChangePassword,
+}: {
+  email: string;
+  onChangePassword: () => void;
+}) {
+  return (
+    <div className='rounded-lg border border-border/50 bg-card p-4'>
+      <div className='flex items-center gap-3'>
+        <Mail className='size-5 shrink-0 text-muted-foreground' />
+        <div className='min-w-0 flex-1'>
+          <p className='truncate text-sm font-medium text-foreground'>이메일/비밀번호</p>
+          {email && (
+            <p className='truncate text-xs text-muted-foreground'>{email}</p>
+          )}
+        </div>
+        <ConnectedBadge />
+      </div>
+      <div className='mt-3 flex justify-end'>
+        <Button
+          variant='ghost'
+          size='sm'
+          onClick={onChangePassword}
+          className='-mr-2 h-9 text-ring hover:text-ring'
+        >
+          비밀번호 변경
+          <ChevronRight className='ml-1 size-4' />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function AddEmailMethodForm({
+  email,
+  onSuccess,
+}: {
+  email: string;
+  onSuccess: () => Promise<void>;
+}) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -94,10 +141,7 @@ export default function AddLoginMethodPage() {
       setIsSubmitting(true);
       setSubmitError(null);
       await setPasswordForCurrentUser(password);
-      toast.success('이메일/비밀번호 로그인이 추가되었습니다.', {
-        position: 'bottom-center',
-      });
-      navigate(-1);
+      await onSuccess();
     } catch {
       setSubmitError('저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
     } finally {
@@ -105,7 +149,94 @@ export default function AddLoginMethodPage() {
     }
   };
 
+  return (
+    <div className='rounded-lg border border-border/50 bg-card p-4'>
+      <div className='mb-3 flex items-center gap-2'>
+        <Mail className='size-5 text-muted-foreground' />
+        <span className='text-sm font-medium text-foreground'>이메일/비밀번호</span>
+      </div>
+
+      {email && (
+        <p className='mb-4 text-xs text-muted-foreground'>
+          <span className='font-medium text-foreground'>{email}</span>로 로그인할 수 있어요.
+        </p>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+        <div className='space-y-2'>
+          <FormField
+            id='password'
+            label='새 비밀번호'
+            type='password'
+            inputMode='text'
+            placeholder='새 비밀번호'
+            register={register}
+            error={errors.password}
+          />
+          <PasswordRequirements password={passwordValue} />
+        </div>
+
+        <FormField
+          id='passwordConfirm'
+          label='비밀번호 확인'
+          type='password'
+          inputMode='text'
+          placeholder='비밀번호를 한 번 더 입력해주세요'
+          register={register}
+          error={errors.passwordConfirm}
+        />
+
+        {submitError && <p className='text-sm text-destructive'>{submitError}</p>}
+
+        <Button
+          variant='cta'
+          type='submit'
+          disabled={isSubmitting}
+          className='min-h-[44px] w-full'
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className='mr-2 size-4 animate-spin' />
+              추가 중...
+            </>
+          ) : (
+            '추가하기'
+          )}
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+function MethodSectionSkeleton() {
+  return (
+    <div className='space-y-3'>
+      <div className='h-3 w-32 rounded bg-muted/60' />
+      <div className='h-24 rounded-lg border border-border/50 bg-muted/30' />
+    </div>
+  );
+}
+
+export default function AddLoginMethodPage() {
+  const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const hasPassword = useHasPasswordIdentity();
+
   const email = currentUser?.email ?? '';
+  const goToSettings = () => navigate(ROUTES.USER_SETTINGS);
+
+  const handleAddSuccess = async () => {
+    // Force the JWT to refresh so the freshly created email identity is
+    // visible to the next `auth.getUser()` call (the Settings row depends on it).
+    await getSupabaseClient().auth.refreshSession().catch(() => {
+      // Even if refresh fails, the identity is server-side; the row will
+      // catch up on the next mount.
+    });
+    toast.success('이메일/비밀번호 로그인이 추가되었습니다.', {
+      position: 'bottom-center',
+    });
+    navigate(ROUTES.USER_SETTINGS);
+  };
 
   return (
     <div className='flex min-h-screen items-start justify-center bg-background px-3 py-6 md:px-4'>
@@ -126,79 +257,36 @@ export default function AddLoginMethodPage() {
             photoURL={currentUser?.photoURL ?? null}
           />
 
-          <div className='space-y-3'>
-            <p className='text-xs font-medium uppercase tracking-wider text-muted-foreground'>
-              추가할 수 있는 방법
-            </p>
-            <div className='rounded-lg border border-border/50 bg-card p-4'>
-              <div className='mb-3 flex items-center gap-2'>
-                <Mail className='size-5 text-muted-foreground' />
-                <span className='text-sm font-medium text-foreground'>
-                  이메일/비밀번호
-                </span>
-              </div>
+          {hasPassword === null && <MethodSectionSkeleton />}
 
-              {email && (
-                <p className='mb-4 text-xs text-muted-foreground'>
-                  <span className='font-medium text-foreground'>{email}</span>로
-                  로그인할 수 있어요.
-                </p>
-              )}
-
-              <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
-                <div className='space-y-2'>
-                  <FormField
-                    id='password'
-                    label='새 비밀번호'
-                    type='password'
-                    inputMode='text'
-                    placeholder='새 비밀번호'
-                    register={register}
-                    error={errors.password}
-                  />
-                  <PasswordRequirements password={passwordValue} />
-                </div>
-
-                <FormField
-                  id='passwordConfirm'
-                  label='비밀번호 확인'
-                  type='password'
-                  inputMode='text'
-                  placeholder='비밀번호를 한 번 더 입력해주세요'
-                  register={register}
-                  error={errors.passwordConfirm}
-                />
-
-                {submitError && (
-                  <p className='text-sm text-destructive'>{submitError}</p>
-                )}
-
-                <Button
-                  variant='cta'
-                  type='submit'
-                  disabled={isSubmitting}
-                  className='min-h-[44px] w-full'
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className='mr-2 size-4 animate-spin' />
-                      추가 중...
-                    </>
-                  ) : (
-                    '추가하기'
-                  )}
-                </Button>
-              </form>
+          {hasPassword === true && (
+            <div className='space-y-3'>
+              <p className='text-xs font-medium uppercase tracking-wider text-muted-foreground'>
+                추가된 방법
+              </p>
+              <ConnectedEmailCard
+                email={email}
+                onChangePassword={() => navigate(ROUTES.CHANGE_PASSWORD)}
+              />
             </div>
-          </div>
+          )}
+
+          {hasPassword === false && (
+            <div className='space-y-3'>
+              <p className='text-xs font-medium uppercase tracking-wider text-muted-foreground'>
+                추가할 수 있는 방법
+              </p>
+              <AddEmailMethodForm email={email} onSuccess={handleAddSuccess} />
+            </div>
+          )}
 
           <Button
             variant='ghost'
             type='button'
-            onClick={() => navigate(-1)}
+            onClick={goToSettings}
             className='w-full text-muted-foreground'
           >
-            취소
+            {hasPassword === true ? '돌아가기' : '취소'}
           </Button>
         </CardContent>
       </Card>
