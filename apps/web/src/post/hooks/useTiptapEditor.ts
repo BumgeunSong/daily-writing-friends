@@ -7,6 +7,7 @@ import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useRef, useEffect } from 'react';
 import type { ProseMirrorDoc } from '@/post/model/Post';
+import { shouldSyncEditorContent } from '@/post/utils/editorContentSync';
 import { sanitize } from '@/post/utils/sanitizeHtml';
 
 // Editor configuration constants
@@ -113,6 +114,19 @@ export function useTiptapEditor({
       clearTimeout(debounceTimerRef.current);
     };
   }, []);
+
+  // Tiptap's useEditor only seeds `content` once. When a draft loads after
+  // mount, the editor would otherwise stay empty even though the prop changed.
+  useEffect(() => {
+    if (!editor) return;
+    const sync = shouldSyncEditorContent({
+      currentHtml: editor.getHTML(),
+      targetHtml: initialHtml,
+      isFocused: editor.isFocused,
+    });
+    if (!sync) return;
+    editor.commands.setContent(initialJson || initialHtml || '', { emitUpdate: false });
+  }, [editor, initialHtml, initialJson]);
 
   return editor;
 }
