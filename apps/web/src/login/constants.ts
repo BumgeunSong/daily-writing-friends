@@ -32,8 +32,8 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
   /** 비밀번호 재설정 확정 페이지 (recovery 세션) */
   SET_PASSWORD: '/set-password',
-  /** 설정 - 비밀번호 추가 페이지 */
-  ADD_PASSWORD: '/settings/add-password',
+  /** 설정 - 로그인 수단 추가 페이지 (이메일/비밀번호 추가) */
+  ADD_LOGIN_METHOD: '/settings/add-login-method',
   /** 설정 - 비밀번호 변경 페이지 */
   CHANGE_PASSWORD: '/settings/change-password',
 } as const;
