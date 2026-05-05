@@ -115,6 +115,10 @@ export async function setPasswordForCurrentUser(newPassword: string): Promise<vo
   if (error) throw error;
 }
 
+function asNonEmptyString(v: unknown): string | null {
+  return typeof v === 'string' && v.length > 0 ? v : null;
+}
+
 export function mapToAuthUser(user: {
   id: string;
   email?: string;
@@ -123,7 +127,7 @@ export function mapToAuthUser(user: {
   return {
     uid: user.id,
     email: user.email ?? null,
-    displayName: (user.user_metadata?.full_name as string) ?? null,
-    photoURL: (user.user_metadata?.avatar_url as string) ?? null,
+    displayName: asNonEmptyString(user.user_metadata?.full_name),
+    photoURL: asNonEmptyString(user.user_metadata?.avatar_url),
   };
 }

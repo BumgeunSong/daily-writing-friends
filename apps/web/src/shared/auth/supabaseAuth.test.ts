@@ -64,4 +64,22 @@ describe('mapToAuthUser', () => {
     expect(mapToAuthUser(user).displayName).toBeNull();
     expect(mapToAuthUser(user).photoURL).toBe('https://photo.jpg');
   });
+
+  it('returns null when full_name is not a string (e.g. number, object, null)', () => {
+    const cases: Array<unknown> = [42, null, { nested: 'object' }, true, []];
+    for (const value of cases) {
+      const user = { id: 'abc-123', user_metadata: { full_name: value } };
+      expect(mapToAuthUser(user).displayName).toBeNull();
+    }
+  });
+
+  it('returns null when avatar_url is not a string', () => {
+    const user = { id: 'abc-123', user_metadata: { avatar_url: 12345 } };
+    expect(mapToAuthUser(user).photoURL).toBeNull();
+  });
+
+  it('returns null for empty-string full_name (treated as missing)', () => {
+    const user = { id: 'abc-123', user_metadata: { full_name: '' } };
+    expect(mapToAuthUser(user).displayName).toBeNull();
+  });
 });

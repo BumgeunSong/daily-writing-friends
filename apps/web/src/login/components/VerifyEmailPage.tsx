@@ -10,14 +10,16 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/u
 const RESEND_COOLDOWN_SECONDS = 30;
 const PENDING_EMAIL_KEY = 'pendingVerificationEmail';
 
-interface VerifyEmailLocationState {
-  email?: string;
+function readEmailFromLocationState(state: unknown): string | null {
+  if (!state || typeof state !== 'object') return null;
+  const v = (state as Record<string, unknown>).email;
+  return typeof v === 'string' && v.length > 0 ? v : null;
 }
 
 export default function VerifyEmailPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const stateEmail = (location.state as VerifyEmailLocationState | null)?.email;
+  const stateEmail = readEmailFromLocationState(location.state);
   // Persist email to sessionStorage so refresh / direct entry doesn't break the resend button.
   const [email] = useState(() => {
     if (stateEmail) {
