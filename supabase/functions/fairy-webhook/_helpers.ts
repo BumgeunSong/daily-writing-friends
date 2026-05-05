@@ -1,19 +1,17 @@
 // Pure helpers for the Fairy donation webhook. No Supabase, no fetch, no env reads.
-
-export interface FairyDonor {
-  name?: string;
-  email: string;
-  message?: string;
-}
+// Schema mirrors the Fairy webhook spec (https://fairy.hada.io) exactly:
+// data carries flat fairyName / fairyEmail / fairyMessage fields, and source is
+// either "payple" (real payments) or "test" (preflight from the dashboard).
 
 export interface FairyPaymentData {
   paymentId: string;
   amount: number;
-  donor: FairyDonor;
-  source?: string;
-  payload?: string | Record<string, unknown> | null;
-  projectName?: string;
-  [key: string]: unknown;
+  fairyName: string | null;
+  fairyEmail: string;
+  fairyMessage: string | null;
+  projectName: string;
+  source: string;
+  payload?: Record<string, unknown> | null;
 }
 
 export interface FairyWebhookPayload {
@@ -42,28 +40,16 @@ export function parseFairyPayload(rawBody: string): FairyWebhookPayload | null {
   const data = parsed.data;
   if (typeof data.paymentId !== 'string' || data.paymentId.length === 0) return null;
   if (typeof data.amount !== 'number' || !Number.isFinite(data.amount)) return null;
-  if (!isRecord(data.donor) || typeof data.donor.email !== 'string') return null;
+  if (typeof data.fairyEmail !== 'string') return null;
+  if (typeof data.source !== 'string') return null;
 
   return parsed as unknown as FairyWebhookPayload;
 }
 
 export function extractDwfUserId(payload: FairyWebhookPayload): string | null {
   const raw = payload.data.payload;
-  if (raw === null || raw === undefined) return null;
-
-  let parsed: unknown;
-  if (typeof raw === 'string') {
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      return null;
-    }
-  } else {
-    parsed = raw;
-  }
-
-  if (!isRecord(parsed)) return null;
-  const id = parsed.dwf_user_id;
+  if (!isRecord(raw)) return null;
+  const id = raw.dwf_user_id;
   if (typeof id !== 'string' || id.length === 0) return null;
   return id;
 }

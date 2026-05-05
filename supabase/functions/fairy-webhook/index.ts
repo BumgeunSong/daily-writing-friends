@@ -92,7 +92,7 @@ async function resolveDonatorUser(
 ): Promise<{ userId: string | null; method: MatchMethod }> {
   const dwfUserId = extractDwfUserId(payload);
   const dwfUserMatch = dwfUserId ? await lookupUserById(supabase, dwfUserId) : null;
-  const emailMatch = dwfUserMatch ? null : await lookupUserByEmail(supabase, payload.data.donor.email);
+  const emailMatch = dwfUserMatch ? null : await lookupUserByEmail(supabase, payload.data.fairyEmail);
   const userId = dwfUserMatch ?? emailMatch ?? null;
   const method = resolveMatchMethod(dwfUserMatch, emailMatch);
   return { userId, method };
@@ -133,10 +133,10 @@ async function insertDonation(
     user_id: userId,
     amount_krw: Math.round(data.amount),
     donated_at: payload.timestamp ?? new Date().toISOString(),
-    fairy_name: data.donor.name ?? null,
-    fairy_email: data.donor.email,
-    fairy_message: data.donor.message ?? null,
-    source: data.source ?? 'unknown',
+    fairy_name: data.fairyName,
+    fairy_email: data.fairyEmail,
+    fairy_message: data.fairyMessage,
+    source: data.source,
     raw_payload: payload as unknown as Record<string, unknown>,
     match_method: method,
   });

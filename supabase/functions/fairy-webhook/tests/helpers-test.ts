@@ -6,15 +6,18 @@ import {
   verifyHmacSignature,
 } from '../_helpers.ts';
 
+// Real test payload from Fairy webhook spec docs.
 const PAYLOAD = {
   event: 'payment.completed',
-  timestamp: '2026-05-05T00:00:00Z',
+  timestamp: '2026-04-16T10:30:00.000Z',
   data: {
-    paymentId: 'pay_abc123',
+    paymentId: 'test_1713231000000',
     amount: 1000,
-    donor: { name: '홍길동', email: 'donor@example.com', message: 'thanks' },
+    fairyName: '테스트 Fairy',
+    fairyEmail: 'test@example.com',
+    fairyMessage: '테스트 웹훅 메시지입니다.',
     projectName: 'daily-writing-friends',
-    source: 'production',
+    source: 'test',
   },
 };
 
@@ -61,10 +64,21 @@ Deno.test('verifyHmacSignature', async (t) => {
 });
 
 Deno.test('parseFairyPayload', async (t) => {
-  await t.step('returns parsed payload for valid body', () => {
+  await t.step('parses Fairy spec test payload', () => {
     const result = parseFairyPayload(RAW_BODY);
-    assertEquals(result?.data.paymentId, 'pay_abc123');
-    assertEquals(result?.data.donor.email, 'donor@example.com');
+    assertEquals(result?.data.paymentId, 'test_1713231000000');
+    assertEquals(result?.data.fairyEmail, 'test@example.com');
+    assertEquals(result?.data.source, 'test');
+  });
+
+  await t.step('accepts null fairyName and fairyMessage per spec', () => {
+    const body = JSON.stringify({
+      ...PAYLOAD,
+      data: { ...PAYLOAD.data, fairyName: null, fairyMessage: null },
+    });
+    const result = parseFairyPayload(body);
+    assertEquals(result?.data.fairyName, null);
+    assertEquals(result?.data.fairyMessage, null);
   });
 
   await t.step('returns null for non-JSON', () => {
@@ -81,8 +95,8 @@ Deno.test('parseFairyPayload', async (t) => {
     assertEquals(parseFairyPayload(body), null);
   });
 
-  await t.step('returns null when donor.email missing', () => {
-    const body = JSON.stringify({ ...PAYLOAD, data: { ...PAYLOAD.data, donor: { name: 'x' } } });
+  await t.step('returns null when fairyEmail missing', () => {
+    const body = JSON.stringify({ ...PAYLOAD, data: { ...PAYLOAD.data, fairyEmail: undefined } });
     assertEquals(parseFairyPayload(body), null);
   });
 
@@ -90,31 +104,23 @@ Deno.test('parseFairyPayload', async (t) => {
     const body = JSON.stringify({ ...PAYLOAD, data: { ...PAYLOAD.data, amount: '1000' } });
     assertEquals(parseFairyPayload(body), null);
   });
+
+  await t.step('returns null when source missing', () => {
+    const body = JSON.stringify({ ...PAYLOAD, data: { ...PAYLOAD.data, source: undefined } });
+    assertEquals(parseFairyPayload(body), null);
+  });
 });
 
 Deno.test('extractDwfUserId', async (t) => {
   const userId = '550e8400-e29b-41d4-a716-446655440000';
 
-  await t.step('extracts dwf_user_id from string-encoded payload', () => {
-    const body = {
-      ...PAYLOAD,
-      data: { ...PAYLOAD.data, payload: JSON.stringify({ dwf_user_id: userId }) },
-    };
-    assertEquals(extractDwfUserId(body as never), userId);
-  });
-
-  await t.step('extracts dwf_user_id from already-parsed object payload', () => {
+  await t.step('extracts dwf_user_id from object payload (Fairy spec)', () => {
     const body = { ...PAYLOAD, data: { ...PAYLOAD.data, payload: { dwf_user_id: userId } } };
     assertEquals(extractDwfUserId(body as never), userId);
   });
 
-  await t.step('returns null when payload absent', () => {
+  await t.step('returns null when payload absent (test webhooks)', () => {
     assertEquals(extractDwfUserId(PAYLOAD as never), null);
-  });
-
-  await t.step('returns null when payload JSON malformed', () => {
-    const body = { ...PAYLOAD, data: { ...PAYLOAD.data, payload: '{bogus' } };
-    assertEquals(extractDwfUserId(body as never), null);
   });
 
   await t.step('returns null when dwf_user_id missing', () => {
