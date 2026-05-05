@@ -7,6 +7,8 @@ interface SupabaseIdentity {
   identity_data?: Record<string, unknown> | null;
 }
 
+export type EmailIdentityStatus = 'verified' | 'unverified' | 'none';
+
 /**
  * Pure check: does this user have a working email/password identity?
  *
@@ -17,43 +19,63 @@ interface SupabaseIdentity {
  * the user does NOT yet have a usable password.
  */
 export function hasUsablePasswordIdentity(identities: SupabaseIdentity[]): boolean {
-  return identities.some(
-    (i) => i.provider === 'email' && i.identity_data?.email_verified === true,
-  );
+  return getEmailIdentityStatus(identities) === 'verified';
 }
 
 /**
- * Returns whether the current user has a usable email/password identity.
- * - `null` while loading or when there is no user
- * - `true` when the user has a verified `provider: 'email'` identity
- * - `false` otherwise (Google-only, or an unconfirmed email-signup attempt)
+ * Pure status of the user's email/password identity.
+ * - `'none'` — no email identity at all (Google-only or never tried email)
+ * - `'unverified'` — email identity exists but `email_verified !== true`
+ *   (signup attempt with no verification, OR password set on an unverified user)
+ * - `'verified'` — email identity exists with `email_verified === true`
+ *   (only this state allows signInWithPassword to succeed)
  */
-export function useHasPasswordIdentity(): boolean | null {
+export function getEmailIdentityStatus(
+  identities: SupabaseIdentity[],
+): EmailIdentityStatus {
+  const emailIdentity = identities.find((i) => i.provider === 'email');
+  if (!emailIdentity) return 'none';
+  if (emailIdentity.identity_data?.email_verified === true) return 'verified';
+  return 'unverified';
+}
+
+/**
+ * Returns the current user's email-identity status, or `null` while loading.
+ */
+export function useEmailIdentityStatus(): EmailIdentityStatus | null {
   const { currentUser } = useAuth();
-  const [hasPassword, setHasPassword] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<EmailIdentityStatus | null>(null);
 
   useEffect(() => {
     if (!currentUser) {
-      setHasPassword(null);
+      setStatus(null);
       return;
     }
-    // Reset to loading state immediately so a stale value from a previous user
-    // is never visible while the new request is in flight.
-    setHasPassword(null);
+    setStatus(null);
     let cancelled = false;
     getSupabaseClient()
       .auth.getUser()
       .then(({ data }) => {
         if (cancelled) return;
-        setHasPassword(hasUsablePasswordIdentity(data.user?.identities ?? []));
+        setStatus(getEmailIdentityStatus(data.user?.identities ?? []));
       })
       .catch(() => {
-        if (!cancelled) setHasPassword(null);
+        if (!cancelled) setStatus(null);
       });
     return () => {
       cancelled = true;
     };
   }, [currentUser]);
 
-  return hasPassword;
+  return status;
+}
+
+/**
+ * Backward-compatible boolean wrapper. Prefer `useEmailIdentityStatus`
+ * when the caller needs to distinguish 'unverified' from 'none'.
+ */
+export function useHasPasswordIdentity(): boolean | null {
+  const status = useEmailIdentityStatus();
+  if (status === null) return null;
+  return status === 'verified';
 }

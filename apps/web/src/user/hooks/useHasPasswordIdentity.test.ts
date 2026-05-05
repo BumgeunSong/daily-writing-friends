@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { hasUsablePasswordIdentity } from './useHasPasswordIdentity';
+import {
+  getEmailIdentityStatus,
+  hasUsablePasswordIdentity,
+} from './useHasPasswordIdentity';
 
 describe('hasUsablePasswordIdentity', () => {
   it('returns false for empty identities', () => {
@@ -59,5 +62,42 @@ describe('hasUsablePasswordIdentity', () => {
         { provider: 'email', identity_data: { email_verified: 1 as unknown as boolean } },
       ]),
     ).toBe(false);
+  });
+});
+
+describe('getEmailIdentityStatus', () => {
+  it("returns 'none' when there is no email identity", () => {
+    expect(getEmailIdentityStatus([])).toBe('none');
+    expect(
+      getEmailIdentityStatus([
+        { provider: 'google', identity_data: { email_verified: true } },
+      ]),
+    ).toBe('none');
+  });
+
+  it("returns 'unverified' when email identity exists but is not verified", () => {
+    expect(
+      getEmailIdentityStatus([
+        { provider: 'email', identity_data: { email_verified: false } },
+      ]),
+    ).toBe('unverified');
+    expect(
+      getEmailIdentityStatus([
+        { provider: 'google', identity_data: { email_verified: true } },
+        { provider: 'email', identity_data: { email_verified: false } },
+      ]),
+    ).toBe('unverified');
+  });
+
+  it("returns 'unverified' when email identity is missing identity_data", () => {
+    expect(getEmailIdentityStatus([{ provider: 'email' }])).toBe('unverified');
+  });
+
+  it("returns 'verified' only when email identity has email_verified === true", () => {
+    expect(
+      getEmailIdentityStatus([
+        { provider: 'email', identity_data: { email_verified: true } },
+      ]),
+    ).toBe('verified');
   });
 });
