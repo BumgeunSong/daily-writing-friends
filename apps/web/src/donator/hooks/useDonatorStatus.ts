@@ -1,19 +1,16 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchActiveDonatorIds } from '../api/donator';
+import { buildDonatorQueryIds } from '../utils/donatorQueryKeys';
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
-
-function dedupeAndSort(userIds: string[]): string[] {
-  return [...new Set(userIds)].sort();
-}
 
 // TODO(perf): Each PostUserProfile renders calls useDonatorStatus independently. React
 // Query dedupes identical queryKeys, but a feed of N unique authors still fires N parallel
 // donator_status lookups on first load. Once we touch useBatchPostCardData again, hoist
 // this lookup there and pass isDonator down via PostCardPrefetchedData.
 export function useDonatorStatusBatch(userIds: string[]) {
-  const stableIds = useMemo(() => dedupeAndSort(userIds), [userIds]);
+  const stableIds = useMemo(() => buildDonatorQueryIds(userIds), [userIds]);
 
   const query = useQuery({
     queryKey: ['donator-status', stableIds],
