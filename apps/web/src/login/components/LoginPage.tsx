@@ -1,7 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { ROUTES } from '@/login/constants';
 import { useEmailLogin } from '@/login/hooks/useEmailLogin';
@@ -24,11 +25,21 @@ function isKakaoBrowser(): boolean {
 }
 
 export default function LoginPage() {
-  const { loading } = useAuth();
+  const navigate = useNavigate();
+  const { currentUser, loading } = useAuth();
   const { handleLogin: handleGoogleLogin, isLoading: isGoogleLoading, error: googleError } =
     useGoogleLoginWithRedirect();
   const { handleLogin: handleEmailLogin, isLoading: isEmailLoading, error: emailError } =
     useEmailLogin();
+
+  // 이메일 로그인은 OAuth 라운드트립이 없어서 PublicRoutes 가 자동 리다이렉트하지 않음.
+  // currentUser 가 set 되는 즉시(이메일 로그인 성공 / 이미 로그인된 채 /login 진입) 명시적으로 이동.
+  useEffect(() => {
+    if (loading || !currentUser) return;
+    const returnTo = sessionStorage.getItem('returnTo');
+    if (returnTo) sessionStorage.removeItem('returnTo');
+    navigate(returnTo || ROUTES.BOARDS, { replace: true });
+  }, [currentUser, loading, navigate]);
 
   const {
     register,
