@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapSetPasswordErrorToKorean } from './authErrors';
+import { isAlreadyRegisteredError, mapSetPasswordErrorToKorean } from './authErrors';
 
 describe('mapSetPasswordErrorToKorean', () => {
   it('returns specific message for same_password error code', () => {
@@ -38,5 +38,33 @@ describe('mapSetPasswordErrorToKorean', () => {
     expect(mapSetPasswordErrorToKorean(null)).toBe(
       '저장에 실패했습니다. 잠시 후 다시 시도해주세요.',
     );
+  });
+});
+
+describe('isAlreadyRegisteredError', () => {
+  it('detects user_already_exists error code', () => {
+    const err = Object.assign(new Error('User already registered'), {
+      code: 'user_already_exists',
+    });
+    expect(isAlreadyRegisteredError(err)).toBe(true);
+  });
+
+  it('detects "User already registered" message', () => {
+    expect(isAlreadyRegisteredError(new Error('User already registered'))).toBe(true);
+  });
+
+  it('detects "already registered" substring (case-insensitive)', () => {
+    expect(isAlreadyRegisteredError(new Error('Email Already Registered'))).toBe(true);
+  });
+
+  it('returns false for unrelated errors', () => {
+    expect(isAlreadyRegisteredError(new Error('Network error'))).toBe(false);
+    expect(isAlreadyRegisteredError(new Error('Invalid email'))).toBe(false);
+  });
+
+  it('returns false for non-Error throwables', () => {
+    expect(isAlreadyRegisteredError(null)).toBe(false);
+    expect(isAlreadyRegisteredError(undefined)).toBe(false);
+    expect(isAlreadyRegisteredError('boom')).toBe(false);
   });
 });

@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { ROUTES } from '@/login/constants';
 import { validatePassword } from '@/login/utils/passwordValidation';
+import { isAlreadyRegisteredError } from '@/shared/auth/authErrors';
 import { signUpWithEmail } from '@/shared/auth/supabaseAuth';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
@@ -30,14 +31,9 @@ const signupSchema = z
 
 type SignupFormValues = z.infer<typeof signupSchema>;
 
-function mapSignupErrorToKorean(err: unknown): string {
-  const msg = err instanceof Error ? err.message.toLowerCase() : '';
-  // "User already registered" fires when an email-identity collision is detected.
-  // For Google-linked accounts Supabase silently sends a verification email and our
-  // success path navigates to /verify-email — the link click triggers automatic linking.
-  if (msg.includes('already registered') || msg.includes('user already')) {
-    return '이미 가입된 이메일입니다. 로그인하거나 비밀번호 찾기를 이용해주세요.';
-  }
+function mapSignupErrorToKorean(): string {
+  // already_registered is now handled by funneling the user to /verify-email
+  // (see onSubmit). Anything that lands here is a real failure.
   return '회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.';
 }
 
@@ -65,7 +61,16 @@ export default function SignupPage() {
       await signUpWithEmail(email, password);
       navigate(ROUTES.VERIFY_EMAIL, { state: { email } });
     } catch (err) {
-      setSubmitError(mapSignupErrorToKorean(err));
+      // For OAuth-linked accounts Supabase still queues a verification email
+      // even when it returns "already registered". Funnel the user through
+      // /verify-email so the link click can complete automatic identity
+      // linking. Verify-email already handles 'no email arrived' via its
+      // resend button if the address turns out to be a verified email account.
+      if (isAlreadyRegisteredError(err)) {
+        navigate(ROUTES.VERIFY_EMAIL, { state: { email } });
+        return;
+      }
+      setSubmitError(mapSignupErrorToKorean());
     } finally {
       setIsSubmitting(false);
     }
