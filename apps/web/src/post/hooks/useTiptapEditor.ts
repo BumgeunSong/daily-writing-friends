@@ -7,7 +7,7 @@ import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useCallback, useEffect, useRef } from 'react';
 import type { ProseMirrorDoc } from '@/post/model/Post';
-import { shouldSyncEditorContent } from '@/post/utils/editorContentSync';
+import { decideEditorContentSync } from '@/post/utils/editorContentSync';
 import { sanitize } from '@/post/utils/sanitizeHtml';
 
 // Editor configuration constants
@@ -115,29 +115,49 @@ export function useTiptapEditor({
     };
   }, []);
 
-  // Tiptap's useEditor only seeds `content` once. When a draft loads after
-  // mount, the editor would otherwise stay empty even though the prop changed.
-  // Refs let the blur handler always read the freshest target without re-binding.
+  // Tiptap's useEditor only seeds `content` once. Refs keep the freshest
+  // target/onChange visible to the blur handler without re-binding it.
   const initialHtmlRef = useRef(initialHtml);
   const initialJsonRef = useRef(initialJson);
+  const onChangeRef = useRef(onChange);
   useEffect(() => {
     initialHtmlRef.current = initialHtml;
     initialJsonRef.current = initialJson;
-  }, [initialHtml, initialJson]);
+    onChangeRef.current = onChange;
+  }, [initialHtml, initialJson, onChange]);
+
+  // Tracks the target signature we last reconciled with the editor. Lets the
+  // decision skip blur events that fire mid-debounce, so user keystrokes are
+  // not overwritten by lagging parent state.
+  const lastSyncedSignatureRef = useRef<string | null>(null);
 
   const trySyncContent = useCallback(() => {
     if (!editor) return;
     const targetHtml = initialHtmlRef.current;
     const targetJson = initialJsonRef.current;
-    const sync = shouldSyncEditorContent({
-      currentHtml: editor.getHTML(),
+    const action = decideEditorContentSync({
+      // Sanitize before comparing — parent state holds sanitized HTML, while
+      // editor.getHTML() carries extension-rendered classes (e.g. Image).
+      currentSanitizedHtml: sanitize(editor.getHTML()),
       currentJsonStr: JSON.stringify(editor.getJSON()),
       targetHtml,
       targetJsonStr: targetJson === undefined ? undefined : JSON.stringify(targetJson),
       isFocused: editor.isFocused,
+      lastSyncedSignature: lastSyncedSignatureRef.current,
     });
-    if (!sync) return;
+    if (action.kind === 'skip') return;
+    if (action.kind === 'recordOnly') {
+      lastSyncedSignatureRef.current = action.signature;
+      return;
+    }
     editor.commands.setContent(targetJson ?? targetHtml ?? '', { emitUpdate: false });
+    lastSyncedSignatureRef.current = action.signature;
+    // emitUpdate:false suppresses Tiptap's onUpdate, which is what feeds the
+    // parent's contentJson. Mirror it ourselves so HTML and JSON stay paired.
+    onChangeRef.current({
+      html: sanitize(editor.getHTML()),
+      json: editor.getJSON(),
+    });
   }, [editor]);
 
   useEffect(() => {
