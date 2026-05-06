@@ -32,8 +32,6 @@ const signupSchema = z
 type SignupFormValues = z.infer<typeof signupSchema>;
 
 function mapSignupErrorToKorean(): string {
-  // already_registered is now handled by funneling the user to /verify-email
-  // (see onSubmit). Anything that lands here is a real failure.
   return '회원가입에 실패했습니다. 잠시 후 다시 시도해주세요.';
 }
 
@@ -61,13 +59,12 @@ export default function SignupPage() {
       await signUpWithEmail(email, password);
       navigate(ROUTES.VERIFY_EMAIL, { state: { email } });
     } catch (err) {
-      // For OAuth-linked accounts Supabase still queues a verification email
-      // even when it returns "already registered". Funnel the user through
-      // /verify-email so the link click can complete automatic identity
-      // linking. Verify-email already handles 'no email arrived' via its
-      // resend button if the address turns out to be a verified email account.
+      // Spike 2026-05-05 F1: Supabase returns 422 user_already_exists for an email
+      // that already has any identity. No confirmation email is queued, so routing
+      // to /verify-email would leave the user staring at an empty OTP screen.
+      // Direct them to /login with a clear hint to add a password via settings.
       if (isAlreadyRegisteredError(err)) {
-        navigate(ROUTES.VERIFY_EMAIL, { state: { email } });
+        setSubmitError('이미 가입된 이메일입니다. 구글로 로그인 후 [설정 > 로그인 수단 추가]에서 비밀번호를 설정해주세요.');
         return;
       }
       setSubmitError(mapSignupErrorToKorean());
