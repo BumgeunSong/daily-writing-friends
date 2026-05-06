@@ -16,7 +16,7 @@
 
 ## 2. Database Migration
 
-- [x] 2.1 Create `supabase/migrations/20260505000000_add_onboarding_complete_and_kakao_id.sql` with operations 1–5 from design.md D6 (column adds, kakao_id format CHECK, backfill, NOT VALID + VALIDATE for the contact-required CHECK)
+- [x] 2.1 Create `supabase/migrations/20260506000000_add_onboarding_complete_and_kakao_id.sql` with operations 1–5 from design.md D6 (column adds, kakao_id format CHECK, backfill, NOT VALID + VALIDATE for the contact-required CHECK). Note: timestamp prefix moved from `20260505000000` → `20260506000000` during PR CI to avoid `schema_migrations.version` collision with `20260505000000_donations.sql` on main.
 - [x] 2.2 Run `supabase db reset` locally; confirm the migration applies cleanly; verify `\d users` shows both new columns and both constraints
 - [x] 2.3 Seed a few rows in different states (active / waiting-list / phone-only / nothing) and assert backfill outcomes match the four scenarios in spec.md "Backfill marks pre-existing onboarded users"
 
