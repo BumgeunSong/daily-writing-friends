@@ -108,8 +108,15 @@ export function classifySupabaseAuthError(
   ) {
     return 'rate_limit';
   }
-  if (code === 'otp_expired' || /expired|invalid/i.test(message)) {
+  // The OTP-merged code is the primary signal. Only fall back to message-string
+  // matching when status confirms a 4xx auth failure, so unrelated errors like
+  // "Invalid login credentials" (signInWithPassword) don't get misclassified.
+  if (code === 'otp_expired') return 'invalid_or_expired';
+  if (status === 403 && /token.*(expired|invalid)|otp/i.test(message)) {
     return 'invalid_or_expired';
+  }
+  if (typeof code === 'string' && code !== '') {
+    console.warn('classifySupabaseAuthError: unmapped Supabase code', { code, status, message });
   }
   return 'unknown';
 }

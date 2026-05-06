@@ -101,12 +101,16 @@ describe('classifySupabaseAuthError', () => {
     expect(classifySupabaseAuthError({ status: 403, code: 'otp_expired', message: 'Token has expired or is invalid' })).toBe('invalid_or_expired');
   });
 
-  it('classifies "expired" message as invalid_or_expired', () => {
-    expect(classifySupabaseAuthError({ status: 400, message: 'Token has expired' })).toBe('invalid_or_expired');
+  it('classifies 403 + token-expired message as invalid_or_expired', () => {
+    expect(classifySupabaseAuthError({ status: 403, message: 'Token has expired or is invalid' })).toBe('invalid_or_expired');
   });
 
-  it('classifies "invalid" message as invalid_or_expired', () => {
-    expect(classifySupabaseAuthError({ status: 400, message: 'invalid token' })).toBe('invalid_or_expired');
+  it('classifies 403 + token-invalid message as invalid_or_expired', () => {
+    expect(classifySupabaseAuthError({ status: 403, message: 'Token is invalid' })).toBe('invalid_or_expired');
+  });
+
+  it('does NOT misclassify "Invalid login credentials" (signInWithPassword) as invalid_or_expired', () => {
+    expect(classifySupabaseAuthError({ status: 400, message: 'Invalid login credentials' })).toBe('unknown');
   });
 
   it('falls back to unknown for everything else', () => {
