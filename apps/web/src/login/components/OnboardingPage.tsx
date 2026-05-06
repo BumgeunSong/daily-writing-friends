@@ -55,6 +55,7 @@ export default function OnboardingPage() {
 
   const [tab, setTab] = useState<'phone' | 'kakao'>('phone');
   const [isPrefilling, setIsPrefilling] = useState(true);
+  const [prefillError, setPrefillError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const form = useForm<OnboardingFormSchema>({
@@ -73,7 +74,9 @@ export default function OnboardingPage() {
   const register = typedRegister as unknown as UseFormRegister<FieldValues>;
   const formValues = watch();
 
-  // Pre-fill from existing profile if any.
+  // Pre-fill from existing profile if any. If fetchUser fails, surface the error
+  // and BLOCK submit (see `submitDisabled` below) so a transient outage cannot
+  // overwrite real profile data with the blank form's defaults.
   useEffect(() => {
     if (!currentUser?.uid || authLoading) return;
     let cancelled = false;
@@ -98,6 +101,13 @@ export default function OnboardingPage() {
             setValue('nickname', currentUser.displayName);
           }
         }
+        setPrefillError(null);
+      } catch (err) {
+        if (cancelled) return;
+        console.error('OnboardingPage prefill error', err);
+        setPrefillError(
+          '기존 정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요. 그대로 제출하면 기존 정보가 덮어쓰일 수 있어요.',
+        );
       } finally {
         if (!cancelled) setIsPrefilling(false);
       }
@@ -132,6 +142,12 @@ export default function OnboardingPage() {
       toast.error('로그인 상태가 만료되었습니다. 다시 로그인해주세요.');
       return;
     }
+    if (prefillError) {
+      // Defensive: should be unreachable because submit is disabled, but if it
+      // somehow fires, refuse to write rather than silently overwrite.
+      setSubmitError(prefillError);
+      return;
+    }
     setSubmitError(null);
     const action = resolveOnboardingSubmit(values, {
       uid: currentUser.uid,
@@ -139,6 +155,11 @@ export default function OnboardingPage() {
       upcomingCohort: upcomingBoard?.cohort ?? null,
     });
     try {
+      // Write order is deliberate: profile fields first WITHOUT onboardingComplete,
+      // then waitlist (if any), then a final flip of onboardingComplete=true.
+      // If the process crashes between steps, the user lands back on /join/onboarding
+      // (because the flag is still false) and re-submitting is idempotent for both
+      // the profile update and the waitlist upsert.
       await createUserIfNotExists(currentUser);
       await updateUser(action.uid, {
         realName: action.profilePayload.real_name ?? null,
@@ -146,16 +167,23 @@ export default function OnboardingPage() {
         phoneNumber: action.profilePayload.phone_number ?? null,
         kakaoId: action.profilePayload.kakao_id ?? null,
         referrer: action.profilePayload.referrer ?? null,
-        onboardingComplete: true,
       });
       if (action.kind === 'updateThenWaitlist') {
         const ok = await addUserToBoardWaitingList(action.boardId, action.uid);
         if (!ok) throw new Error('대기자 명단에 추가하는 중 오류가 발생했습니다.');
+      }
+      // Only after profile + waitlist succeed do we flip the flag. If this final
+      // updateUser fails, the next routing pass sends the user back here and
+      // re-submitting completes the flip; no orphaned `onboarding_complete=true`
+      // row can exist without the corresponding waitlist signal.
+      await updateUser(action.uid, { onboardingComplete: true });
+      if (action.kind === 'updateThenWaitlist') {
         navigate(action.navigateTo.path, { state: action.navigateTo.state });
       } else {
         navigate(action.navigateTo.path);
       }
     } catch (err) {
+      console.error('OnboardingPage submit error', err);
       const message = err instanceof Error ? err.message : '신청에 실패했습니다. 잠시 후 다시 시도해주세요.';
       setSubmitError(message);
     }
@@ -301,6 +329,9 @@ export default function OnboardingPage() {
                 </div>
               )}
 
+              {prefillError && (
+                <p className="text-sm text-destructive" role="alert">{prefillError}</p>
+              )}
               {submitError && <p className="text-sm text-destructive">{submitError}</p>}
             </form>
           </CardContent>
@@ -315,7 +346,7 @@ export default function OnboardingPage() {
             form="onboarding-form"
             className="w-full"
             size="lg"
-            disabled={formState.isSubmitting}
+            disabled={formState.isSubmitting || prefillError !== null}
           >
             {formState.isSubmitting ? '신청 중...' : upcomingBoard?.cohort ? '신청하기' : '저장하기'}
           </Button>
