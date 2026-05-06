@@ -8,6 +8,7 @@ import { ROUTES } from '@/login/constants';
 import { useEmailLogin } from '@/login/hooks/useEmailLogin';
 import { useGoogleLoginWithRedirect } from '@/login/hooks/useGoogleLoginWithRedirect';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { isSafeReturnTo } from '@/shared/utils/routingDecisions';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
 import FormField from './JoinFormField';
@@ -38,7 +39,8 @@ export default function LoginPage() {
     if (loading || !currentUser) return;
     const returnTo = sessionStorage.getItem('returnTo');
     if (returnTo) sessionStorage.removeItem('returnTo');
-    navigate(returnTo || ROUTES.BOARDS, { replace: true });
+    const target = isSafeReturnTo(returnTo) ? returnTo! : ROUTES.BOARDS;
+    navigate(target, { replace: true });
   }, [currentUser, loading, navigate]);
 
   const {
