@@ -34,16 +34,19 @@ const onboardingSchema = z
     referrer: z.string(),
     activeContactTab: z.enum(['phone', 'kakao']),
   })
-  .refine(
-    (v) =>
+  .superRefine((v, ctx) => {
+    const ok =
       v.activeContactTab === 'phone'
         ? validatePhone(v.phone) !== null
-        : validateKakaoId(v.kakaoId) !== null,
-    {
+        : validateKakaoId(v.kakaoId) !== null;
+    if (ok) return;
+    ctx.addIssue({
+      code: 'custom',
       message: '연락처를 입력해주세요.',
-      path: ['phone'],
-    },
-  );
+      // Error attaches to the visible field so the user actually sees it.
+      path: [v.activeContactTab === 'phone' ? 'phone' : 'kakaoId'],
+    });
+  });
 
 type OnboardingFormSchema = z.infer<typeof onboardingSchema>;
 

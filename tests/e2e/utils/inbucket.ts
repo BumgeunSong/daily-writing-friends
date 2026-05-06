@@ -2,9 +2,11 @@
  * Local-Supabase email helper.
  *
  * Note: the local stack ships Mailpit (the modern Inbucket replacement) at
- * port 54324, not classic Inbucket. The path stays under `tests/e2e/utils/inbucket.ts`
- * so callers reading the design docs find it, but the implementation hits Mailpit's
- * `/api/v1/messages` and `/api/v1/message/<id>` endpoints.
+ * port 54324, not classic Inbucket. The file path stays under
+ * `tests/e2e/utils/inbucket.ts` so callers reading the design docs find it,
+ * but the implementation hits Mailpit's `/api/v1/search?query=to:<email>` for
+ * listing and `/api/v1/message/<id>` for the message body. The legacy Inbucket
+ * `/api/v1/mailbox/<email>/messages` endpoint does not exist on Mailpit.
  */
 
 const MAILPIT_BASE = process.env.MAILPIT_URL ?? 'http://127.0.0.1:54324';

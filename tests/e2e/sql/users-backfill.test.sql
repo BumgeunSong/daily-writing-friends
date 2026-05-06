@@ -58,12 +58,18 @@ UPDATE public.users
    'b0000000-0000-0000-0000-000000000004'::uuid
  );
 
--- Re-apply the same backfill UPDATE used by the migration.
+-- Re-apply the same backfill UPDATE used by the migration. The defensive
+-- `AND (phone_number IS NOT NULL OR kakao_id IS NOT NULL)` clause is part of the
+-- migration's safety contract; if this test omits it, regressions to the migration
+-- can pass here unnoticed.
 UPDATE public.users SET onboarding_complete = true
 WHERE
-  id IN (SELECT DISTINCT user_id FROM public.user_board_permissions)
-  OR id IN (SELECT DISTINCT user_id FROM public.board_waiting_users)
-  OR phone_number IS NOT NULL;
+  (
+    id IN (SELECT DISTINCT user_id FROM public.user_board_permissions)
+    OR id IN (SELECT DISTINCT user_id FROM public.board_waiting_users)
+    OR phone_number IS NOT NULL
+  )
+  AND (phone_number IS NOT NULL OR kakao_id IS NOT NULL);
 
 DO $$
 DECLARE

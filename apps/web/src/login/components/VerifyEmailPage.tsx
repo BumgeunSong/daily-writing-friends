@@ -122,7 +122,10 @@ export default function VerifyEmailPage() {
               inputMode='numeric'
               autoComplete='one-time-code'
               maxLength={6}
-              pattern='\d{6}'
+              // pattern dropped on purpose: in a JSX attribute the string is
+              // a JS literal, so `'\d{6}'` evaluates to `'d{6}'` and the HTML5
+              // validator would reject every numeric code. The onChange digit
+              // filter below already enforces the actual constraint.
               placeholder='6자리 코드'
               value={token}
               onChange={(e) => setToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
