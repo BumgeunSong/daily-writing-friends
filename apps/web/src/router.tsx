@@ -15,10 +15,11 @@ import RecentBoard from '@/board/components/RecentBoard';
 // Loaders and actions from feature hooks
 import { boardLoader } from '@/board/hooks/useBoardLoader';
 import { boardsLoader } from '@/board/hooks/useBoardsLoader';
-import { JoinFormPageForActiveOrNewUser } from '@/login/components/JoinFormPageForActiveOrNewUser';
+import { JoinDispatcher } from '@/login/components/JoinDispatcher';
+import JoinCompletePage from '@/login/components/JoinCompletePage';
 import JoinFormPageForActiveUser from '@/login/components/JoinFormPageForActiveUser';
-import JoinFormPageForNewUser from '@/login/components/JoinFormPageForNewUser';
 import JoinIntroPage from '@/login/components/JoinIntroPage';
+import OnboardingPage from '@/login/components/OnboardingPage';
 import LoginPage from '@/login/components/LoginPage';
 import SignupPage from '@/login/components/SignupPage';
 import VerifyEmailPage from '@/login/components/VerifyEmailPage';
@@ -150,9 +151,10 @@ const privateRoutesWithoutNav = {
       loader: postDetailLoader,
       errorElement: <PermissionErrorBoundary />,
     },
-    { path: 'join/form', element: <JoinFormPageForActiveOrNewUser /> },
-    { path: 'join/form/new-user', element: <JoinFormPageForNewUser /> },
+    { path: 'join/form', element: <JoinDispatcher /> },
     { path: 'join/form/active-user', element: <JoinFormPageForActiveUser /> },
+    { path: 'join/onboarding', element: <OnboardingPage /> },
+    { path: 'join/complete', element: <JoinCompletePage /> },
     { path: 'settings/add-login-method', element: <AddLoginMethodPage /> },
     { path: 'settings/change-password', element: <ChangePasswordPage /> },
     { path: 'debug-info', element: <DebugInfo /> },
