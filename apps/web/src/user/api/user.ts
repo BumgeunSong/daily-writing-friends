@@ -28,7 +28,9 @@ export async function createUser(data: User): Promise<void> {
         profile_photo_url: data.profilePhotoURL || null,
         bio: data.bio || null,
         phone_number: data.phoneNumber || null,
+        kakao_id: data.kakaoId || null,
         referrer: data.referrer || null,
+        onboarding_complete: data.onboardingComplete ?? false,
     }, { onConflict: 'id', ignoreDuplicates: true }));
 
     // Sync boardPermissions to user_board_permissions table
@@ -98,11 +100,13 @@ export async function createUserIfNotExists(user: AuthUser): Promise<void> {
             nickname: user.displayName,
             email: user.email,
             profilePhotoURL: user.photoURL,
+            onboardingComplete: false,
         }
 
         const defaultUserFields: UserOptionalFields = {
             bio: null,
             phoneNumber: null,
+            kakaoId: null,
             referrer: null,
             boardPermissions: {
                 'rW3Y3E2aEbpB0KqGiigd': 'read', // 기본 보드 ID
