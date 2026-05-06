@@ -9,9 +9,7 @@ describe('resolveRootRedirect', () => {
     isLoading: false,
     isCurrentUserActive: false,
     isInWaitingList: false,
-    isNicknameLoading: false,
-    nickname: null,
-    cohort: 0,
+    onboardingComplete: false,
     returnTo: null,
   };
 
@@ -25,69 +23,49 @@ describe('resolveRootRedirect', () => {
       .toEqual({ type: 'navigate', to: '/join' });
   });
 
-  it('redirects to returnTo path when present (시작하기 → /join)', () => {
-    expect(resolveRootRedirect({ ...defaults, returnTo: '/join' }))
-      .toEqual({ type: 'navigate', to: '/join' });
-  });
-
-  it('redirects to returnTo path when present (게시판 들어가기 → /boards)', () => {
-    expect(resolveRootRedirect({ ...defaults, returnTo: '/boards' }))
-      .toEqual({ type: 'navigate', to: '/boards' });
-  });
-
-  it('redirects to returnTo deep link after login', () => {
+  it('redirects to returnTo path when present', () => {
     expect(resolveRootRedirect({ ...defaults, returnTo: '/board/abc-123' }))
       .toEqual({ type: 'navigate', to: '/board/abc-123' });
   });
 
-  it('returnTo takes priority over active user redirect', () => {
+  it('returnTo takes priority over active-user redirect', () => {
     expect(resolveRootRedirect({ ...defaults, isCurrentUserActive: true, returnTo: '/join' }))
       .toEqual({ type: 'navigate', to: '/join' });
   });
 
   it('redirects active user to /boards when no returnTo', () => {
-    expect(resolveRootRedirect({ ...defaults, isCurrentUserActive: true }))
+    expect(resolveRootRedirect({ ...defaults, isCurrentUserActive: true, onboardingComplete: true }))
       .toEqual({ type: 'navigate', to: '/boards' });
   });
 
-  it('shows join complete for waiting list user', () => {
-    expect(resolveRootRedirect({ ...defaults, isInWaitingList: true, cohort: 11 }))
-      .toEqual({ type: 'joinComplete', userName: '홍길동', cohort: 11 });
+  it('redirects waiting-list user to /boards (no inline JoinComplete)', () => {
+    expect(resolveRootRedirect({ ...defaults, isInWaitingList: true, onboardingComplete: true }))
+      .toEqual({ type: 'navigate', to: '/boards' });
   });
 
-  it('uses nickname over displayName for waiting list', () => {
-    expect(resolveRootRedirect({ ...defaults, isInWaitingList: true, nickname: '글쓴이', cohort: 11 }))
-      .toEqual({ type: 'joinComplete', userName: '글쓴이', cohort: 11 });
+  it('routes not-onboarded user to /join/onboarding regardless of provider', () => {
+    expect(resolveRootRedirect({ ...defaults, onboardingComplete: false }))
+      .toEqual({ type: 'navigate', to: '/join/onboarding' });
   });
 
-  it('returns loading while nickname is loading for waiting list user', () => {
-    expect(resolveRootRedirect({ ...defaults, isInWaitingList: true, isNicknameLoading: true }))
-      .toEqual({ type: 'loading' });
-  });
-
-  it('falls back to /join for logged-in user who is neither active nor waiting', () => {
-    expect(resolveRootRedirect({ ...defaults }))
+  it('routes onboarded but inactive non-waitlist user to /join', () => {
+    expect(resolveRootRedirect({ ...defaults, onboardingComplete: true }))
       .toEqual({ type: 'navigate', to: '/join' });
   });
 
   it('rejects absolute URL as returnTo (open redirect prevention)', () => {
-    expect(resolveRootRedirect({ ...defaults, isCurrentUserActive: true, returnTo: 'https://evil.com' }))
+    expect(resolveRootRedirect({ ...defaults, isCurrentUserActive: true, returnTo: 'https://evil.com', onboardingComplete: true }))
       .toEqual({ type: 'navigate', to: '/boards' });
   });
 
   it('rejects protocol-relative URL as returnTo', () => {
-    expect(resolveRootRedirect({ ...defaults, isCurrentUserActive: true, returnTo: '//evil.com' }))
+    expect(resolveRootRedirect({ ...defaults, isCurrentUserActive: true, returnTo: '//evil.com', onboardingComplete: true }))
       .toEqual({ type: 'navigate', to: '/boards' });
   });
 
   it('ignores stale returnTo for unauthenticated user', () => {
     expect(resolveRootRedirect({ ...defaults, currentUser: null, returnTo: '/boards' }))
       .toEqual({ type: 'navigate', to: '/join' });
-  });
-
-  it('falls back to empty string when both displayName and nickname are null', () => {
-    expect(resolveRootRedirect({ ...defaults, currentUser: { displayName: null }, isInWaitingList: true, cohort: 11 }))
-      .toEqual({ type: 'joinComplete', userName: '', cohort: 11 });
   });
 });
 

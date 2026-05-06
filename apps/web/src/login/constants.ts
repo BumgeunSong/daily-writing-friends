@@ -22,6 +22,10 @@ export const ROUTES = {
   JOIN: '/join',
   /** 가입 폼 페이지 */
   JOIN_FORM: '/join/form',
+  /** 통합 온보딩 페이지 (프로필 + 기수 신청) */
+  ONBOARDING: '/join/onboarding',
+  /** 신청 완료 페이지 */
+  JOIN_COMPLETE: '/join/complete',
   /** 통합 로그인 페이지 (Google + 이메일) */
   LOGIN: '/login',
   /** 이메일 회원가입 페이지 */
