@@ -21,7 +21,13 @@ export function useOnboardingComplete(uid: string | null | undefined): {
         .select('onboarding_complete')
         .eq('id', uid)
         .maybeSingle();
-      if (error || !row) return false;
+      if (error) {
+        // Default to false to route the user through onboarding (safer than landing on /boards
+        // with an empty profile), but log so a transient Supabase outage is visible in Sentry.
+        console.error('useOnboardingComplete fetch error', { uid, error });
+        return false;
+      }
+      if (!row) return false;
       return Boolean(row.onboarding_complete);
     },
     enabled: !!uid,

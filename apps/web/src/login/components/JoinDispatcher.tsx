@@ -30,10 +30,13 @@ export function JoinDispatcher() {
       navigate(ROUTES.BOARDS, { replace: true });
       return;
     }
-    if (!onboardingComplete) {
-      navigate(ROUTES.ONBOARDING, { replace: true });
-      return;
-    }
+    // Two semantic predicates collapse to one destination per design D8:
+    //   - Not yet onboarded → onboarding form (first-time flow).
+    //   - Onboarded but not in any cohort → onboarding form is also their
+    //     re-apply surface (profile fields pre-fill, cohort card is shown).
+    // The unused `onboardingComplete` flag is referenced here so future readers
+    // see the intentional collapse instead of assuming a missing branch.
+    void onboardingComplete;
     navigate(ROUTES.ONBOARDING, { replace: true });
   }, [currentUser, isLoading, isCurrentUserActive, isInWaitingList, onboardingComplete, navigate]);
 

@@ -62,7 +62,8 @@ export default function VerifyEmailPage() {
       setIsVerifying(true);
       const outcome = await verifyOtpForSignup(email, token);
       setState(decideVerifySuccessState(outcome));
-    } catch {
+    } catch (err) {
+      console.error('VerifyEmailPage handleVerify unexpected error', err);
       setState({
         kind: 'error-inline',
         message: '인증에 실패했습니다. 잠시 후 다시 시도해주세요.',
@@ -81,7 +82,8 @@ export default function VerifyEmailPage() {
       setCooldown(RESEND_COOLDOWN_SECONDS);
       setToken('');
       setState({ kind: 'entry' });
-    } catch {
+    } catch (err) {
+      console.error('VerifyEmailPage handleResend error', err);
       toast.error('재발송에 실패했습니다. 잠시 후 다시 시도해주세요.', {
         position: 'bottom-center',
       });
