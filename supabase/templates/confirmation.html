@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>매일 글쓰기 프렌즈 인증 코드</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f7f7f5; padding: 24px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 12px; padding: 32px;">
+    <tr>
+      <td>
+        <h1 style="font-size: 20px; color: #111827; margin: 0 0 16px 0;">매일 글쓰기 프렌즈</h1>
+        <p style="font-size: 16px; color: #1f2937; line-height: 1.6; margin: 0 0 24px 0;">
+          아래 6자리 인증 코드를 입력해 회원가입을 완료해주세요.
+        </p>
+        <div style="font-size: 32px; letter-spacing: 8px; font-weight: 700; color: #111827; text-align: center; padding: 20px; background: #f3f4f6; border-radius: 8px; margin: 0 0 24px 0;">
+          {{ .Token }}
+        </div>
+        <p style="font-size: 14px; color: #6b7280; line-height: 1.6; margin: 0 0 8px 0;">
+          이 코드는 1시간 동안만 유효합니다.
+        </p>
+        <p style="font-size: 14px; color: #6b7280; line-height: 1.6; margin: 0;">
+          본인이 요청하지 않았다면 이 메일을 무시해도 됩니다.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
