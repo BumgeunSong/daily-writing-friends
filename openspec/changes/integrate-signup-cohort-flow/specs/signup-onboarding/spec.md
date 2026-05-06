@@ -146,20 +146,26 @@ The database SHALL enforce that any row with `onboarding_complete = true` has at
 
 The migration SHALL set `onboarding_complete = true` for users who, prior to the migration, demonstrated they had completed onboarding by having board permission, an existing waiting-list row, or a populated phone number.
 
-#### Scenario: User with board permission is marked complete
+#### Scenario: User with board permission and contact info is marked complete
 
-- **WHEN** the backfill runs and a user has at least one row in `user_board_permissions`
+- **WHEN** the backfill runs, a user has at least one row in `user_board_permissions`, AND has at least one of `phone_number` or `kakao_id` populated
 - **THEN** that user's `onboarding_complete` SHALL be `true` after the migration
 
-#### Scenario: User in any waiting list is marked complete
+#### Scenario: User in waiting list and contact info is marked complete
 
-- **WHEN** the backfill runs and a user has at least one row in `board_waiting_users`
+- **WHEN** the backfill runs, a user has at least one row in `board_waiting_users`, AND has at least one of `phone_number` or `kakao_id` populated
 - **THEN** that user's `onboarding_complete` SHALL be `true` after the migration
 
 #### Scenario: User with phone_number is marked complete
 
 - **WHEN** the backfill runs and a user has `phone_number IS NOT NULL`
 - **THEN** that user's `onboarding_complete` SHALL be `true` after the migration
+
+#### Scenario: Permission/waitlist user without any contact info stays incomplete
+
+- **WHEN** the backfill runs, a user has a permission or waitlist row, but both `phone_number` and `kakao_id` are NULL
+- **THEN** that user's `onboarding_complete` SHALL remain `false` after the migration
+- **AND** the migration's `VALIDATE CONSTRAINT users_contact_required_when_onboarded` step SHALL still succeed
 
 #### Scenario: User with no signal stays incomplete
 
