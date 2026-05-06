@@ -1,5 +1,7 @@
 import { Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { DonatorBadge } from '@/donator/components/DonatorBadge';
+import { useDonatorStatus } from '@/donator/hooks/useDonatorStatus';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
@@ -13,6 +15,7 @@ interface UserProfileProps {
 
 export default function UserProfile({ uid }: UserProfileProps) {
   const { userData, isLoading } = useUser(uid);
+  const { isDonator } = useDonatorStatus(uid);
 
   if (isLoading) {
     return (
@@ -48,8 +51,9 @@ export default function UserProfile({ uid }: UserProfileProps) {
       </Avatar>
       <div className='min-w-0 flex-1'>
         <div className='flex items-center justify-between'>
-          <h2 className='text-lg font-semibold tracking-tight text-foreground md:text-xl'>
-            {getUserDisplayName(userData)}
+          <h2 className='flex items-center gap-1.5 text-lg font-semibold tracking-tight text-foreground md:text-xl'>
+            <span>{getUserDisplayName(userData)}</span>
+            {isDonator && <DonatorBadge className='size-4' />}
           </h2>
           <UserProfileSettingsButton uid={uid} />
         </div>
