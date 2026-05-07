@@ -85,7 +85,16 @@ Each fix was replied to in its inline thread (`r3198260898`–`r3198261133`). Th
 
 ### Round 3 — CI on `4269a527`
 
-(Pending — monitor armed.)
+| Check | Status |
+|---|---|
+| `Analyze (actions)` | SUCCESS |
+| `Analyze (javascript-typescript)` | SUCCESS |
+| `CodeQL` | SUCCESS |
+| `check-tests` | SUCCESS |
+| `test (20.x)` | SUCCESS |
+| `e2e` | SUCCESS |
+| `GitGuardian Security Checks` | SUCCESS |
+| `Vercel Preview Comments` | SUCCESS |
 
 ## Final Status
 
@@ -93,6 +102,6 @@ Each fix was replied to in its inline thread (`r3198260898`–`r3198261133`). Th
 - [x] Branch synced with `origin/main` (Round 1 fix)
 - [x] Copilot review round 1 addressed (5/5, commit `72c65585`)
 - [x] Copilot review round 2 addressed (6/6, commit `4269a527`)
-- [ ] CI green on latest commit (round 3)
+- [x] CI green on latest commit (round 3)
 - [ ] Awaiting human review approval
 - [ ] Section 15 manual deploy checklist (run by merge author at deploy time)
