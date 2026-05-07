@@ -19,6 +19,14 @@
 | Submit completion page is its own route | Aligned | No changes |
 | Verification spike precedes implementation | Aligned | No changes |
 
+## Round 2 (post-Copilot review fix in `72c65585`)
+
+Re-checked alignment after addressing five Copilot inline comments:
+
+- **Contact info accepts phone OR Kakao ID** — still aligned. The Zod schema change (`refine` → `superRefine` with dynamic path keyed on `activeContactTab`) is a strict UX improvement: the spec scenario "Phone validation rejects under 10 digits" mentions "the form SHALL block submission with a Korean error message," which is now visible on whichever tab is active.
+- **Cohort-signup dispatcher routes by user state** — still aligned. Removing `useOnboardingComplete` from `JoinDispatcher` does not change the routing decisions; both pre-fix and post-fix code routes onboarded-but-inactive users to `/join/onboarding` (per spec scenario "Onboarded but inactive non-waitlist user uses dispatcher").
+- All other requirements are unaffected (no changes to migrations, models, mappers, or auth helpers between rounds).
+
 ## Drifted Requirements
 
 None.
