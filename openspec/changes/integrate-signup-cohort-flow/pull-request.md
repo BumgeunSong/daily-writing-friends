@@ -68,11 +68,31 @@ Each fix was replied to in its inline thread (`r3198196979`–`r3198197386`).
 
 All 8 active checks green; `claude` intentionally skipped.
 
+### Round 2.5 — Copilot inline review on `72c65585` (round 2)
+
+Copilot re-ran on the previous fix and surfaced six new findings, all addressed in commit `4269a527`:
+
+| # | File | Finding | Resolution |
+|---|---|---|---|
+| 1 | `scripts/canary-verify-otp-template.ts:73` | Polled inbox's most-recent message without verifying recipient — an unrelated email with a 6-digit substring could pass the canary spuriously | Renamed to `pollMessageBodyForRecipient`; queries `/api/v1/search?query=to:<sentinel>` and double-checks the detail response's `To[]` |
+| 2 | `scripts/canary-verify-otp-template.ts:23` | Header recommended `npm run canary:otp -- --target=production` but the script doesn't parse CLI flags | Updated header to show the env-var-only invocation |
+| 3 | `apps/web/src/login/hooks/useOnboardingComplete.ts:29` | Docstring claimed "visible in Sentry" but only `console.error` ran — React Query global onError doesn't fire when queryFn handles the error | Imported `@sentry/react`; `Sentry.captureException(error, { tags, extra })` now runs alongside the log. Kept the 2-state contract; 3-state revisit tracked in retro |
+| 4 | `apps/web/src/user/api/user.ts:24` | Concurrency comment said `INSERT ... ON CONFLICT DO NOTHING` but code uses `upsert(..., { ignoreDuplicates: true })` | Comment now names the real API call (`upsert` with `Prefer: resolution=ignore-duplicates`) and notes the semantic equivalence |
+| 5 | `tests/e2e/sql/users-onboarding-constraints.test.sql:48` | DO block accepted any `check_violation`, hiding mismatched constraints | `GET STACKED DIAGNOSTICS v_constraint = CONSTRAINT_NAME` + assertion against `users_contact_required_when_onboarded` |
+| 6 | `tests/e2e/sql/users-onboarding-constraints.test.sql:67` | Same pattern in the kakao-format block | Same fix asserting `users_kakao_id_format` |
+
+Each fix was replied to in its inline thread (`r3198260898`–`r3198261133`). The canary script was smoke-tested live against local Supabase + Mailpit; recipient filtering verified.
+
+### Round 3 — CI on `4269a527`
+
+(Pending — monitor armed.)
+
 ## Final Status
 
-- [x] All CI checks pass on latest commit (`72c65585`)
-- [x] Spec alignment verified (`spec-alignment.md`)
+- [x] Spec alignment verified (`spec-alignment.md`, `final-spec-alignment.md`)
 - [x] Branch synced with `origin/main` (Round 1 fix)
-- [x] Copilot review feedback addressed (5/5)
+- [x] Copilot review round 1 addressed (5/5, commit `72c65585`)
+- [x] Copilot review round 2 addressed (6/6, commit `4269a527`)
+- [ ] CI green on latest commit (round 3)
 - [ ] Awaiting human review approval
 - [ ] Section 15 manual deploy checklist (run by merge author at deploy time)
