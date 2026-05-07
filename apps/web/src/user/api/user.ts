@@ -17,7 +17,10 @@ export async function fetchUser(uid: string): Promise<User | null> {
 
 // Supabase에 User 데이터 생성
 // 동시성 안전: createUserIfNotExists 가 두 곳(useAuth + JoinForm)에서 동시에 호출될 수 있어
-// users_pkey 충돌이 나는 TOCTOU 레이스를 방지하기 위해 INSERT ... ON CONFLICT DO NOTHING 으로 idempotent 하게 작성한다.
+// users_pkey 충돌이 나는 TOCTOU 레이스를 방지하기 위해
+// supabase-js 의 upsert(..., { onConflict: 'id', ignoreDuplicates: true }) 로 idempotent 하게 작성한다.
+// 내부적으로 PostgREST 의 Prefer: resolution=ignore-duplicates 를 사용하므로 의미상
+// INSERT ... ON CONFLICT DO NOTHING 과 동일하지만, 실제 호출은 upsert API 임을 분명히 한다.
 export async function createUser(data: User): Promise<void> {
     const supabase = getSupabaseClient();
     throwOnError(await supabase.from('users').upsert({

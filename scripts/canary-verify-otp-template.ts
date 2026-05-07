@@ -12,14 +12,19 @@
  *      (must use {{ .Token }}, must not use {{ .ConfirmationURL }})
  *   4. Save
  *
- * Then:
- *   npm run canary:otp -- --target=production
+ * Then run with the env vars below set (the script does NOT parse CLI flags;
+ * `--target=production` and similar belong in the env, not on argv):
+ *   CANARY_SUPABASE_URL=…    \
+ *   CANARY_ANON_KEY=…        \
+ *   CANARY_TARGET_INBOX_API=…\
+ *   CANARY_EMAIL_DOMAIN=…    \
+ *   npm run canary:otp
  *
  * Env vars required:
  *   CANARY_SUPABASE_URL       — production project URL
  *   CANARY_ANON_KEY           — production anon (publishable) key
  *   CANARY_TARGET_INBOX_API   — URL of an inbox the engineer controls
- *                               (Mailpit/Inbucket-style /api/v1/messages endpoint)
+ *                               (Mailpit-style /api/v1/messages endpoint)
  *   CANARY_EMAIL_DOMAIN       — allow-listed domain for the sentinel address
  */
 
@@ -34,14 +39,21 @@ interface RunOptions {
   timeoutMs: number;
 }
 
+interface MailListItem {
+  ID: string;
+  Created: string;
+  To?: Array<{ Address?: string }>;
+}
+
 interface MailListResponse {
-  messages: Array<{ ID: string; Created: string }>;
+  messages: MailListItem[];
 }
 
 interface MailDetailResponse {
   Subject?: string;
   Text?: string;
   HTML?: string;
+  To?: Array<{ Address?: string }>;
 }
 
 async function signUpSentinel(opts: RunOptions, email: string): Promise<void> {
@@ -55,26 +67,47 @@ async function signUpSentinel(opts: RunOptions, email: string): Promise<void> {
   }
 }
 
-async function pollLatestMessageBody(opts: RunOptions): Promise<{ id: string; body: string }> {
+async function pollMessageBodyForRecipient(
+  opts: RunOptions,
+  recipient: string,
+): Promise<{ id: string; body: string }> {
+  // Fetching the most recent message blindly would let an unrelated email (a
+  // password-reset, a previous canary run, anything with a 6-digit substring)
+  // satisfy the assertion. Filter by recipient so the only message we accept
+  // is the one this run just produced.
+  const recipientLower = recipient.toLowerCase();
+  const apiBase = opts.inboxApi.replace(/\/messages.*/, '');
   const deadline = Date.now() + opts.timeoutMs;
   while (Date.now() < deadline) {
-    const listRes = await fetch(`${opts.inboxApi}?limit=1`);
+    const listRes = await fetch(
+      `${apiBase}/search?query=${encodeURIComponent(`to:${recipient}`)}&limit=5`,
+    );
     if (!listRes.ok) {
       await sleep(500);
       continue;
     }
     const list = (await listRes.json()) as MailListResponse;
-    if (list.messages.length > 0) {
-      const id = list.messages[0].ID;
-      const detailRes = await fetch(`${opts.inboxApi.replace(/\/messages.*/, '')}/message/${id}`);
+    const match = list.messages.find((m) =>
+      (m.To ?? []).some((to) => (to.Address ?? '').toLowerCase() === recipientLower),
+    );
+    if (match) {
+      const detailRes = await fetch(`${apiBase}/message/${match.ID}`);
       if (detailRes.ok) {
         const detail = (await detailRes.json()) as MailDetailResponse;
-        return { id, body: `${detail.Text ?? ''}\n${detail.HTML ?? ''}` };
+        const detailRecipientOk = (detail.To ?? []).some(
+          (to) => (to.Address ?? '').toLowerCase() === recipientLower,
+        );
+        if (!detailRecipientOk) {
+          // Defensive: search said yes but the detail body disagrees; skip and retry.
+          await sleep(500);
+          continue;
+        }
+        return { id: match.ID, body: `${detail.Text ?? ''}\n${detail.HTML ?? ''}` };
       }
     }
     await sleep(500);
   }
-  throw new Error('No mail received within timeout');
+  throw new Error(`No mail received for ${recipient} within ${opts.timeoutMs}ms`);
 }
 
 function sleep(ms: number): Promise<void> {
@@ -103,7 +136,7 @@ async function main(): Promise<void> {
   const sentinelEmail = `dwf-canary+${Date.now()}@${opts.emailDomain}`;
   console.log(`canary signing up: ${sentinelEmail}`);
   await signUpSentinel(opts, sentinelEmail);
-  const { body } = await pollLatestMessageBody(opts);
+  const { body } = await pollMessageBodyForRecipient(opts, sentinelEmail);
   assertOtpBody(body);
 }
 

@@ -35,7 +35,11 @@ VALUES
   ('a0000000-0000-0000-0000-000000000004'::uuid, 'No Signal Person');
 
 -- T.10: CHECK constraint rejects onboarded row without contact info.
+-- Capture the constraint name so this test fails if the violation is masked by
+-- some unrelated CHECK that gets added later.
 DO $$
+DECLARE
+  v_constraint TEXT;
 BEGIN
   BEGIN
     UPDATE public.users
@@ -43,8 +47,10 @@ BEGIN
      WHERE id = 'a0000000-0000-0000-0000-000000000004'::uuid;
     RAISE EXCEPTION 'expected users_contact_required_when_onboarded violation but UPDATE succeeded';
   EXCEPTION WHEN check_violation THEN
-    -- expected
-    NULL;
+    GET STACKED DIAGNOSTICS v_constraint = CONSTRAINT_NAME;
+    IF v_constraint <> 'users_contact_required_when_onboarded' THEN
+      RAISE EXCEPTION 'expected users_contact_required_when_onboarded but got %', v_constraint;
+    END IF;
   END;
 END $$;
 
@@ -55,6 +61,8 @@ UPDATE public.users
 
 -- T.12: kakao_id format CHECK rejects forbidden chars.
 DO $$
+DECLARE
+  v_constraint TEXT;
 BEGIN
   BEGIN
     UPDATE public.users
@@ -62,7 +70,10 @@ BEGIN
      WHERE id = 'a0000000-0000-0000-0000-000000000004'::uuid;
     RAISE EXCEPTION 'expected users_kakao_id_format violation';
   EXCEPTION WHEN check_violation THEN
-    NULL;
+    GET STACKED DIAGNOSTICS v_constraint = CONSTRAINT_NAME;
+    IF v_constraint <> 'users_kakao_id_format' THEN
+      RAISE EXCEPTION 'expected users_kakao_id_format but got %', v_constraint;
+    END IF;
   END;
 END $$;
 
