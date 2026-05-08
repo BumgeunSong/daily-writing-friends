@@ -5,6 +5,12 @@ import type { FieldError, FieldValues, UseFormRegister } from "react-hook-form"
 interface FormFieldProps {
   id: string
   label: string
+  /**
+   * When set to "sr-only", the label is rendered for screen readers only.
+   * Use this when the visible UI already names the field (e.g. a segmented
+   * control above the input) but the input still needs an accessible name.
+   */
+  labelClassName?: string
   type: string
   inputMode: "text" | "numeric" | "tel" | "email" | "url" | "search" | "none"
   placeholder: string
@@ -16,6 +22,7 @@ interface FormFieldProps {
 export default function FormField({
   id,
   label,
+  labelClassName,
   type,
   inputMode,
   placeholder,
@@ -26,7 +33,10 @@ export default function FormField({
   return (
     <div className="space-y-2">
       {label && (
-        <label htmlFor={id} className="block text-sm font-medium lg:text-base">
+        <label
+          htmlFor={id}
+          className={labelClassName ?? "block text-sm font-medium lg:text-base"}
+        >
           {label} {optional && <span className="text-sm text-muted-foreground">(선택)</span>}
         </label>
       )}

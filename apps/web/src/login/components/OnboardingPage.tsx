@@ -291,7 +291,8 @@ export default function OnboardingPage() {
                 {tab === 'phone' ? (
                   <FormField
                     id="phone"
-                    label=""
+                    label="전화번호"
+                    labelClassName="sr-only"
                     type="tel"
                     inputMode="numeric"
                     placeholder="ex. 01012345678"
@@ -301,7 +302,8 @@ export default function OnboardingPage() {
                 ) : (
                   <FormField
                     id="kakaoId"
-                    label=""
+                    label="카카오 ID"
+                    labelClassName="sr-only"
                     type="text"
                     inputMode="text"
                     placeholder="카카오톡 ID"

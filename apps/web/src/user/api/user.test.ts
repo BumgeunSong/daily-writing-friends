@@ -87,17 +87,26 @@ describe('createUserIfNotExists', () => {
   });
 
   it('does not throw when a concurrent caller has already inserted the row (TOCTOU race)', async () => {
-    // Simulates the production race in Sentry issue 7460374739:
-    //   - fetchUser sees no row (race partner has not committed yet from this read's view)
-    //   - the actual write hits a row that exists by then
-    // With ON CONFLICT DO NOTHING the server returns no error.
-    // Without it, the server returns 23505 and we crash.
+    // Simulates the production race from Sentry issue 7460374739:
+    //   - fetchUser sees no row (race partner has not committed yet)
+    //   - by the time we write, a concurrent createUserIfNotExists has finished
+    //
+    // The current code calls `upsert(..., { onConflict: 'id', ignoreDuplicates: true })`
+    // which translates to a server-side `Prefer: resolution=ignore-duplicates` and is
+    // semantically `INSERT ... ON CONFLICT DO NOTHING` — so the conflict simply
+    // returns an empty result with `error: null`. We mock that exact shape (no error,
+    // no data) and assert: (a) no throw, (b) upsert was called with the
+    // race-safe options. If anyone later swaps upsert back to `.insert(...)`,
+    // the assertion on the upsert call shape will fail before runtime regression
+    // hits prod.
     mockFetchUserFromSupabase.mockResolvedValue(null);
-    mockUsersInsert.mockResolvedValue({
-      error: { message: 'duplicate key value violates unique constraint "users_pkey"', code: '23505', details: null, hint: '' },
-    });
-    mockUsersUpsert.mockResolvedValue({ error: null });
+    mockUsersUpsert.mockResolvedValue({ data: null, error: null });
 
     await expect(createUserIfNotExists(authUser)).resolves.toBeUndefined();
+    expect(mockUsersUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'test-uid' }),
+      expect.objectContaining({ onConflict: 'id', ignoreDuplicates: true }),
+    );
+    expect(mockUsersInsert).not.toHaveBeenCalled();
   });
 });

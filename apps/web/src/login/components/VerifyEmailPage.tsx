@@ -32,6 +32,15 @@ export default function VerifyEmailPage() {
     return sessionStorage.getItem(PENDING_EMAIL_KEY) ?? '';
   });
 
+  // /verify-email is a public route, so a user can land here directly with no
+  // pending email in sessionStorage and no router state. Without this guard the
+  // OTP form would silently no-op on submit (handleVerify early-returns when
+  // `email` is empty) AND the resend button stays disabled — a dead-end UI.
+  // Send them back to /signup so they can retry from a sensible starting point.
+  useEffect(() => {
+    if (!email) navigate(ROUTES.SIGNUP, { replace: true });
+  }, [email, navigate]);
+
   const [state, setState] = useState<VerifyState>({ kind: 'entry' });
   const [token, setToken] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
