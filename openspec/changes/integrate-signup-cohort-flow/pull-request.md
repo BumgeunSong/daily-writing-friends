@@ -85,16 +85,23 @@ Each fix was replied to in its inline thread (`r3198260898`–`r3198261133`). Th
 
 ### Round 3 — CI on `4269a527`
 
-| Check | Status |
-|---|---|
-| `Analyze (actions)` | SUCCESS |
-| `Analyze (javascript-typescript)` | SUCCESS |
-| `CodeQL` | SUCCESS |
-| `check-tests` | SUCCESS |
-| `test (20.x)` | SUCCESS |
-| `e2e` | SUCCESS |
-| `GitGuardian Security Checks` | SUCCESS |
-| `Vercel Preview Comments` | SUCCESS |
+All 8 active checks green; `claude` skipped.
+
+### Round 3.5 — Copilot inline review on `4269a527` (round 3)
+
+Copilot raised three new findings, all addressed in commit `cbc7d2b5`:
+
+| # | File | Finding | Resolution |
+|---|---|---|---|
+| 1 | `VerifyEmailPage.tsx:61` | Public route + missing `email` (no router state, no sessionStorage) → OTP submit silently no-ops AND resend disabled = dead-end UI | `useEffect` redirects to `/signup` when `email` is empty after the initial state read |
+| 2 | `OnboardingPage.tsx:310` | Active phone/kakao input rendered with `label=""`, suppressing the `<label>` and leaving inputs without an accessible name | Added `labelClassName` prop to `FormField`; phone/kakao inputs now ship Korean labels with `sr-only` styling — visual unchanged, screen readers always read the field name |
+| 3 | `user/api/user.test.ts:101` | "TOCTOU race" test mocked `mockUsersInsert` 23505, but production code calls `upsert(..., { ignoreDuplicates: true })` — test passed vacuously | Rewrote to mock `mockUsersUpsert`, assert call args (`onConflict: 'id'`, `ignoreDuplicates: true`), and assert `insert` is NOT called — catches any future regression |
+
+Each fix replied to in its inline thread (`r3207311004`, `r3207311103`, `r3207311244`).
+
+### Round 4 — CI on `cbc7d2b5`
+
+All 8 active checks green; `claude` skipped.
 
 ## Final Status
 
@@ -102,6 +109,7 @@ Each fix was replied to in its inline thread (`r3198260898`–`r3198261133`). Th
 - [x] Branch synced with `origin/main` (Round 1 fix)
 - [x] Copilot review round 1 addressed (5/5, commit `72c65585`)
 - [x] Copilot review round 2 addressed (6/6, commit `4269a527`)
-- [x] CI green on latest commit (round 3)
+- [x] Copilot review round 3 addressed (3/3, commit `cbc7d2b5`)
+- [x] CI green on latest commit (round 4)
 - [ ] Awaiting human review approval
 - [ ] Section 15 manual deploy checklist (run by merge author at deploy time)
