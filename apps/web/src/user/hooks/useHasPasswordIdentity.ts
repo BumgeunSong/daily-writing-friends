@@ -7,6 +7,11 @@ interface SupabaseIdentity {
   identity_data?: Record<string, unknown> | null;
 }
 
+interface SupabaseUserLike {
+  email_confirmed_at?: string | null;
+  identities?: SupabaseIdentity[] | null;
+}
+
 export type EmailIdentityStatus = 'verified' | 'unverified' | 'none';
 
 /**
@@ -18,24 +23,33 @@ export type EmailIdentityStatus = 'verified' | 'unverified' | 'none';
  * (`signInWithPassword` returns "Email not confirmed"), so for UX purposes
  * the user does NOT yet have a usable password.
  */
-export function hasUsablePasswordIdentity(identities: SupabaseIdentity[]): boolean {
-  return getEmailIdentityStatus(identities) === 'verified';
+export function hasUsablePasswordIdentity(user: SupabaseUserLike | null): boolean {
+  return getEmailIdentityStatus(user) === 'verified';
 }
 
 /**
  * Pure status of the user's email/password identity.
  * - `'none'` — no email identity at all (Google-only or never tried email)
- * - `'unverified'` — email identity exists but `email_verified !== true`
- *   (signup attempt with no verification, OR password set on an unverified user)
- * - `'verified'` — email identity exists with `email_verified === true`
- *   (only this state allows signInWithPassword to succeed)
+ * - `'unverified'` — email identity exists but the email is not confirmed
+ *   anywhere (no `identity_data.email_verified` and no user-level
+ *   `email_confirmed_at` — i.e. a dangling `signUp` attempt that never
+ *   completed OTP)
+ * - `'verified'` — email identity exists and either the per-identity flag
+ *   `email_verified === true` (set by `verifyOtp({type:'signup'})`) OR the
+ *   user-level `email_confirmed_at` is populated. The user-level timestamp
+ *   is the canonical signal `signInWithPassword` checks; an OAuth-linked
+ *   user who added a password and then went through `resetPasswordForEmail`
+ *   keeps `identity_data.email_verified: false` but has a usable password
+ *   because `email_confirmed_at` is set.
  */
 export function getEmailIdentityStatus(
-  identities: SupabaseIdentity[],
+  user: SupabaseUserLike | null,
 ): EmailIdentityStatus {
+  const identities = user?.identities ?? [];
   const emailIdentity = identities.find((i) => i.provider === 'email');
   if (!emailIdentity) return 'none';
   if (emailIdentity.identity_data?.email_verified === true) return 'verified';
+  if (user?.email_confirmed_at) return 'verified';
   return 'unverified';
 }
 
@@ -57,7 +71,7 @@ export function useEmailIdentityStatus(): EmailIdentityStatus | null {
       .auth.getUser()
       .then(({ data }) => {
         if (cancelled) return;
-        setStatus(getEmailIdentityStatus(data.user?.identities ?? []));
+        setStatus(getEmailIdentityStatus(data.user ?? null));
       })
       .catch(() => {
         if (!cancelled) setStatus(null);
