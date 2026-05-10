@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapRowToPost } from './supabaseReads';
+import { mapRowToPost } from '../post';
 import { PostVisibility } from '@/post/model/Post';
 
 // Helper: minimal PostRowWithEmbeds shape for mapRowToPost

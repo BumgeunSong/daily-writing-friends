@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import type { Post } from '@/post/model/Post';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
-import { mapRowToPost, FEED_POST_SELECT } from '@/shared/api/supabaseReads';
+import { mapRowToPost, FEED_POST_SELECT } from '@/post/api/post';
 
 const LIMIT_COUNT = 10;
 
