@@ -42,7 +42,7 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
   } = useRecentPosts(boardId, limitCount);
 
   const allPosts = postPages?.pages.flat() || [];
-  const { data: batchData } = useBatchPostCardData(allPosts);
+  const { data: batchData, isError: isBatchError } = useBatchPostCardData(allPosts);
 
   const { saveScrollPosition, restoreScrollPosition } = useScrollRestoration(`${boardId}-posts`);
 
@@ -120,7 +120,7 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
           onClick={() => handlePostClick(post.id)}
           onClickProfile={onClickProfile}
           prefetchedData={batchData?.get(post.authorId)}
-          isBatchMode={batchData?.has(post.authorId) === true}
+          isBatchMode={allPosts.length > 0 && !isBatchError}
         />
       ))}
       <div ref={inViewRef} />
