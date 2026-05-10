@@ -44,13 +44,13 @@ describe('VerifyEmailPage state machine', () => {
   it('renders entry state with the email visible', () => {
     renderPage();
     expect(screen.getByText('verify@example.com')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('6자리 코드')).toBeInTheDocument();
+    expect(screen.getByLabelText('인증 코드')).toBeInTheDocument();
   });
 
   it('shows inline error for invalid_or_expired', async () => {
     mockedVerify.mockResolvedValueOnce({ ok: false, errorCode: 'invalid_or_expired' });
     renderPage();
-    fireEvent.change(screen.getByPlaceholderText('6자리 코드'), { target: { value: '123456' } });
+    fireEvent.change(screen.getByLabelText('인증 코드'), { target: { value: '123456' } });
     fireEvent.click(screen.getByRole('button', { name: '인증 확인' }));
     await waitFor(() => {
       expect(screen.getByText(/올바르지 않거나 만료/)).toBeInTheDocument();
@@ -60,7 +60,7 @@ describe('VerifyEmailPage state machine', () => {
   it('locks the form on rate_limit', async () => {
     mockedVerify.mockResolvedValueOnce({ ok: false, errorCode: 'rate_limit' });
     renderPage();
-    fireEvent.change(screen.getByPlaceholderText('6자리 코드'), { target: { value: '999999' } });
+    fireEvent.change(screen.getByLabelText('인증 코드'), { target: { value: '999999' } });
     fireEvent.click(screen.getByRole('button', { name: '인증 확인' }));
     await waitFor(() => {
       expect(screen.getByText(/인증 시도가 너무 많습니다/)).toBeInTheDocument();
@@ -72,7 +72,7 @@ describe('VerifyEmailPage state machine', () => {
   it('navigates to /join/onboarding on success', async () => {
     mockedVerify.mockResolvedValueOnce({ ok: true, providers: ['email'] });
     renderPage();
-    fireEvent.change(screen.getByPlaceholderText('6자리 코드'), { target: { value: '111111' } });
+    fireEvent.change(screen.getByLabelText('인증 코드'), { target: { value: '111111' } });
     fireEvent.click(screen.getByRole('button', { name: '인증 확인' }));
     await waitFor(() => {
       expect(screen.getByText('onboarding-stub')).toBeInTheDocument();
@@ -89,9 +89,9 @@ describe('VerifyEmailPage state machine', () => {
     renderPage();
     const button = screen.getByRole('button', { name: '인증 확인' });
     expect(button).toBeDisabled();
-    fireEvent.change(screen.getByPlaceholderText('6자리 코드'), { target: { value: '12345' } });
+    fireEvent.change(screen.getByLabelText('인증 코드'), { target: { value: '12345' } });
     expect(button).toBeDisabled();
-    fireEvent.change(screen.getByPlaceholderText('6자리 코드'), { target: { value: '123456' } });
+    fireEvent.change(screen.getByLabelText('인증 코드'), { target: { value: '123456' } });
     expect(button).not.toBeDisabled();
   });
 });

@@ -135,7 +135,7 @@ export default function VerifyEmailPage() {
               // a JS literal, so `'\d{6}'` evaluates to `'d{6}'` and the HTML5
               // validator would reject every numeric code. The onChange digit
               // filter below already enforces the actual constraint.
-              placeholder='6자리 코드'
+              aria-label='인증 코드'
               value={token}
               onChange={(e) => setToken(e.target.value.replace(/\D/g, '').slice(0, 6))}
               className='h-12 text-center text-2xl tracking-[0.5em]'

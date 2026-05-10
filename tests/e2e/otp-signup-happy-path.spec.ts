@@ -34,7 +34,7 @@ test.describe('OTP signup happy path', () => {
     expect(code).toMatch(/^\d{6}$/);
 
     // Enter the OTP.
-    await page.getByPlaceholder('6자리 코드').fill(code);
+    await page.getByLabel('인증 코드').fill(code);
     await page.getByRole('button', { name: '인증 확인' }).click();
 
     // Land on /join/onboarding.
