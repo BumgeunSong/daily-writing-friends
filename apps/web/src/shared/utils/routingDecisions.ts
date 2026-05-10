@@ -11,17 +11,14 @@ export function isSafeReturnTo(value: string | null): boolean {
 
 export type RootRedirectResult =
   | { type: 'loading' }
-  | { type: 'navigate'; to: string }
-  | { type: 'joinComplete'; userName: string; cohort: number };
+  | { type: 'navigate'; to: string };
 
 interface RootRedirectInput {
   currentUser: { displayName: string | null } | null;
   isLoading: boolean;
   isCurrentUserActive: boolean;
   isInWaitingList: boolean;
-  isNicknameLoading: boolean;
-  nickname: string | null;
-  cohort: number;
+  onboardingComplete: boolean;
   returnTo: string | null;
 }
 
@@ -34,11 +31,9 @@ export function resolveRootRedirect(input: RootRedirectInput): RootRedirectResul
 
   if (input.isCurrentUserActive) return { type: 'navigate', to: '/boards' };
 
-  if (input.isInWaitingList) {
-    if (input.isNicknameLoading) return { type: 'loading' };
-    const userName = input.nickname || input.currentUser.displayName || '';
-    return { type: 'joinComplete', userName, cohort: input.cohort };
-  }
+  if (input.isInWaitingList) return { type: 'navigate', to: '/boards' };
+
+  if (!input.onboardingComplete) return { type: 'navigate', to: '/join/onboarding' };
 
   return { type: 'navigate', to: '/join' };
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapToAuthUser } from './supabaseAuth';
+import { classifySupabaseAuthError, mapToAuthUser } from './supabaseAuth';
 
 describe('mapToAuthUser', () => {
   it('maps standard Supabase user to AuthUser', () => {
@@ -81,5 +81,41 @@ describe('mapToAuthUser', () => {
   it('returns null for empty-string full_name (treated as missing)', () => {
     const user = { id: 'abc-123', user_metadata: { full_name: '' } };
     expect(mapToAuthUser(user).displayName).toBeNull();
+  });
+});
+
+describe('classifySupabaseAuthError', () => {
+  it('classifies HTTP 429 as rate_limit', () => {
+    expect(classifySupabaseAuthError({ status: 429, message: 'too many requests' })).toBe('rate_limit');
+  });
+
+  it('classifies over_email_send_rate_limit code as rate_limit', () => {
+    expect(classifySupabaseAuthError({ status: 400, code: 'over_email_send_rate_limit', message: 'limit' })).toBe('rate_limit');
+  });
+
+  it('classifies over_request_rate_limit code as rate_limit', () => {
+    expect(classifySupabaseAuthError({ status: 429, code: 'over_request_rate_limit' })).toBe('rate_limit');
+  });
+
+  it('classifies otp_expired code as invalid_or_expired (Supabase merges expired and invalid)', () => {
+    expect(classifySupabaseAuthError({ status: 403, code: 'otp_expired', message: 'Token has expired or is invalid' })).toBe('invalid_or_expired');
+  });
+
+  it('classifies 403 + token-expired message as invalid_or_expired', () => {
+    expect(classifySupabaseAuthError({ status: 403, message: 'Token has expired or is invalid' })).toBe('invalid_or_expired');
+  });
+
+  it('classifies 403 + token-invalid message as invalid_or_expired', () => {
+    expect(classifySupabaseAuthError({ status: 403, message: 'Token is invalid' })).toBe('invalid_or_expired');
+  });
+
+  it('does NOT misclassify "Invalid login credentials" (signInWithPassword) as invalid_or_expired', () => {
+    expect(classifySupabaseAuthError({ status: 400, message: 'Invalid login credentials' })).toBe('unknown');
+  });
+
+  it('falls back to unknown for everything else', () => {
+    expect(classifySupabaseAuthError({ status: 500, message: 'server error' })).toBe('unknown');
+    expect(classifySupabaseAuthError({})).toBe('unknown');
+    expect(classifySupabaseAuthError(null)).toBe('unknown');
   });
 });

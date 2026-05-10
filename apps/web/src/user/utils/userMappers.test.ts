@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { mapUserToSupabaseUpdate, mapBoardPermissionsToRows } from './userMappers';
 
-describe('mapUserToSupabaseUpdate', () => {
+describe('mapUserToSupabaseUpdate — full mapping', () => {
   it('maps all user fields to snake_case columns', () => {
     const result = mapUserToSupabaseUpdate({
       realName: 'John',
@@ -10,9 +10,10 @@ describe('mapUserToSupabaseUpdate', () => {
       profilePhotoURL: 'https://example.com/photo.jpg',
       bio: 'Hello',
       phoneNumber: '010-1234-5678',
+      kakaoId: 'johnny_kakao',
       referrer: 'friend',
+      onboardingComplete: true,
     });
-
     expect(result).toEqual({
       real_name: 'John',
       nickname: 'johnny',
@@ -20,10 +21,14 @@ describe('mapUserToSupabaseUpdate', () => {
       profile_photo_url: 'https://example.com/photo.jpg',
       bio: 'Hello',
       phone_number: '010-1234-5678',
+      kakao_id: 'johnny_kakao',
       referrer: 'friend',
+      onboarding_complete: true,
     });
   });
+});
 
+describe('mapUserToSupabaseUpdate — partial / negative cases', () => {
   it('returns empty object when no mappable fields provided', () => {
     expect(mapUserToSupabaseUpdate({})).toEqual({});
   });
@@ -58,7 +63,21 @@ describe('mapUserToSupabaseUpdate', () => {
   it('does not allow arbitrary keys on the return type', () => {
     const result = mapUserToSupabaseUpdate({ nickname: 'test' });
     // @ts-expect-error - typo_column should not exist on SupabaseUserUpdate
-    result.typo_column;
+    void result.typo_column;
+  });
+});
+
+describe('mapUserToSupabaseUpdate — new fields (integrate-signup-cohort-flow)', () => {
+  it('maps kakaoId → kakao_id', () => {
+    expect(mapUserToSupabaseUpdate({ kakaoId: 'only_kakao' })).toEqual({ kakao_id: 'only_kakao' });
+  });
+
+  it('maps onboardingComplete → onboarding_complete (false case)', () => {
+    expect(mapUserToSupabaseUpdate({ onboardingComplete: false })).toEqual({ onboarding_complete: false });
+  });
+
+  it('preserves explicit null kakao_id (clearing the field)', () => {
+    expect(mapUserToSupabaseUpdate({ kakaoId: null })).toEqual({ kakao_id: null });
   });
 });
 

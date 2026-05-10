@@ -16,9 +16,14 @@ export async function fetchUser(uid: string): Promise<User | null> {
 }
 
 // Supabase에 User 데이터 생성
+// 동시성 안전: createUserIfNotExists 가 두 곳(useAuth + JoinForm)에서 동시에 호출될 수 있어
+// users_pkey 충돌이 나는 TOCTOU 레이스를 방지하기 위해
+// supabase-js 의 upsert(..., { onConflict: 'id', ignoreDuplicates: true }) 로 idempotent 하게 작성한다.
+// 내부적으로 PostgREST 의 Prefer: resolution=ignore-duplicates 를 사용하므로 의미상
+// INSERT ... ON CONFLICT DO NOTHING 과 동일하지만, 실제 호출은 upsert API 임을 분명히 한다.
 export async function createUser(data: User): Promise<void> {
     const supabase = getSupabaseClient();
-    throwOnError(await supabase.from('users').insert({
+    throwOnError(await supabase.from('users').upsert({
         id: data.uid,
         real_name: data.realName || null,
         nickname: data.nickname || null,
@@ -26,8 +31,10 @@ export async function createUser(data: User): Promise<void> {
         profile_photo_url: data.profilePhotoURL || null,
         bio: data.bio || null,
         phone_number: data.phoneNumber || null,
+        kakao_id: data.kakaoId || null,
         referrer: data.referrer || null,
-    }));
+        onboarding_complete: data.onboardingComplete ?? false,
+    }, { onConflict: 'id', ignoreDuplicates: true }));
 
     // Sync boardPermissions to user_board_permissions table
     if (data.boardPermissions) {
@@ -96,11 +103,13 @@ export async function createUserIfNotExists(user: AuthUser): Promise<void> {
             nickname: user.displayName,
             email: user.email,
             profilePhotoURL: user.photoURL,
+            onboardingComplete: false,
         }
 
         const defaultUserFields: UserOptionalFields = {
             bio: null,
             phoneNumber: null,
+            kakaoId: null,
             referrer: null,
             boardPermissions: {
                 'rW3Y3E2aEbpB0KqGiigd': 'read', // 기본 보드 ID

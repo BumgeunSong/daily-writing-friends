@@ -27,6 +27,7 @@
     "e2e:ui": "cross-env NODE_ENV=test playwright test --ui",
     "e2e:debug": "cross-env NODE_ENV=test playwright test --debug",
     "e2e:headed": "cross-env NODE_ENV=test playwright test --headed",
+    "canary:otp": "npx tsx ../../scripts/canary-verify-otp-template.ts",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:reset": "supabase db reset",

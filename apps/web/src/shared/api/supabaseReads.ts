@@ -237,7 +237,9 @@ interface UserJoinRow {
   profile_photo_url: string | null;
   bio: string | null;
   phone_number: string | null;
+  kakao_id: string | null;
   referrer: string | null;
+  onboarding_complete: boolean;
   timezone: string | null;
 }
 
@@ -693,7 +695,7 @@ export async function fetchUserFromSupabase(uid: string): Promise<User | null> {
 
   const { data, error } = await supabase
     .from('users')
-    .select('id, real_name, nickname, email, profile_photo_url, bio, phone_number, referrer, timezone, known_buddy_uid')
+    .select('id, real_name, nickname, email, profile_photo_url, bio, phone_number, kakao_id, referrer, onboarding_complete, timezone, known_buddy_uid')
     .eq('id', uid)
     .single();
 
@@ -758,7 +760,9 @@ export async function fetchUserFromSupabase(uid: string): Promise<User | null> {
     profilePhotoURL: data.profile_photo_url,
     bio: data.bio,
     phoneNumber: data.phone_number,
+    kakaoId: data.kakao_id,
     referrer: data.referrer,
+    onboardingComplete: data.onboarding_complete ?? false,
     boardPermissions,
     updatedAt: null,
     knownBuddy,
@@ -775,7 +779,7 @@ export async function fetchAllUsersFromSupabase(): Promise<User[]> {
 
   const { data, error } = await supabase
     .from('users')
-    .select('id, real_name, nickname, email, profile_photo_url, bio, phone_number, referrer, timezone');
+    .select('id, real_name, nickname, email, profile_photo_url, bio, phone_number, kakao_id, referrer, onboarding_complete, timezone');
 
   if (error) {
     console.error('Supabase fetchAllUsers error:', error);
@@ -790,7 +794,9 @@ export async function fetchAllUsersFromSupabase(): Promise<User[]> {
     profilePhotoURL: row.profile_photo_url,
     bio: row.bio,
     phoneNumber: row.phone_number,
+    kakaoId: row.kakao_id,
     referrer: row.referrer,
+    onboardingComplete: row.onboarding_complete ?? false,
     boardPermissions: {},
     updatedAt: null,
   }));
@@ -822,7 +828,9 @@ export async function fetchUsersWithBoardPermissionFromSupabase(
         profile_photo_url,
         bio,
         phone_number,
+        kakao_id,
         referrer,
+        onboarding_complete,
         timezone
       )
     `)
@@ -847,7 +855,9 @@ export async function fetchUsersWithBoardPermissionFromSupabase(
         profilePhotoURL: u.profile_photo_url,
         bio: u.bio,
         phoneNumber: u.phone_number,
+        kakaoId: u.kakao_id,
         referrer: u.referrer,
+        onboardingComplete: u.onboarding_complete ?? false,
         boardPermissions: {},
         updatedAt: null,
         profile: u.timezone ? { timezone: u.timezone } : undefined,

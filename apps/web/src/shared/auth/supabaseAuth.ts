@@ -1,6 +1,7 @@
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { ROUTES } from '@/login/constants';
 import type { AuthUser } from '@/shared/hooks/useAuth';
+import type { VerifyOtpOutcome } from '@/login/utils/verifyEmailState';
 
 /**
  * Sign in with Google OAuth via Supabase (redirect flow).
@@ -62,17 +63,62 @@ export async function updateAuthUserMetadata(metadata: {
 }
 
 /**
- * Sign up with email + password. Triggers Supabase verification email.
- * Auto-links to existing identity if email matches a verified user.
+ * Sign up with email + password. Triggers Supabase OTP confirmation email.
+ * Spike 2026-05-05: emailRedirectTo dropped — the OTP flow does not use a callback URL.
  */
 export async function signUpWithEmail(email: string, password: string): Promise<void> {
   const supabase = getSupabaseClient();
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { emailRedirectTo: `${window.location.origin}${ROUTES.LOGIN}` },
-  });
+  const { error } = await supabase.auth.signUp({ email, password });
   if (error) throw error;
+}
+
+/**
+ * Verify a 6-digit OTP for an email/password signup. Wrapper only — no decision logic.
+ * The classification of auth errors uses the canonical mapping from spike report 2026-05-05.
+ */
+export async function verifyOtpForSignup(email: string, token: string): Promise<VerifyOtpOutcome> {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'signup' });
+  if (error) {
+    return { ok: false, errorCode: classifySupabaseAuthError(error) };
+  }
+  const providers = (data.user?.identities ?? [])
+    .map((i) => i.provider)
+    .filter((p): p is string => typeof p === 'string' && p.length > 0);
+  return { ok: true, providers };
+}
+
+/**
+ * Map a Supabase auth error to the canonical errorCode used by `decideVerifySuccessState`.
+ * Per spike report (docs/plans/2026-05-05-otp-spike-report.md) Supabase merges expired and
+ * invalid into a single `otp_expired` (HTTP 403) code; we collapse them to `invalid_or_expired`.
+ */
+export function classifySupabaseAuthError(
+  err: unknown,
+): Extract<VerifyOtpOutcome, { ok: false }>['errorCode'] {
+  const e = err as { status?: number; code?: string; message?: string } | null;
+  const status = e?.status;
+  const code = e?.code ?? '';
+  const message = String(e?.message ?? '');
+  if (
+    status === 429 ||
+    code === 'over_email_send_rate_limit' ||
+    code === 'over_request_rate_limit' ||
+    /rate.*limit/i.test(message)
+  ) {
+    return 'rate_limit';
+  }
+  // The OTP-merged code is the primary signal. Only fall back to message-string
+  // matching when status confirms a 4xx auth failure, so unrelated errors like
+  // "Invalid login credentials" (signInWithPassword) don't get misclassified.
+  if (code === 'otp_expired') return 'invalid_or_expired';
+  if (status === 403 && /token.*(expired|invalid)|otp/i.test(message)) {
+    return 'invalid_or_expired';
+  }
+  if (typeof code === 'string' && code !== '') {
+    console.warn('classifySupabaseAuthError: unmapped Supabase code', { code, status, message });
+  }
+  return 'unknown';
 }
 
 /**

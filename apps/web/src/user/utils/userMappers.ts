@@ -7,7 +7,9 @@ export interface SupabaseUserUpdate {
   profile_photo_url?: string | null;
   bio?: string | null;
   phone_number?: string | null;
+  kakao_id?: string | null;
   referrer?: string | null;
+  onboarding_complete?: boolean;
 }
 
 /**
@@ -21,7 +23,9 @@ export function mapUserToSupabaseUpdate(data: Partial<User>): SupabaseUserUpdate
   if (data.profilePhotoURL !== undefined) updateData.profile_photo_url = data.profilePhotoURL;
   if (data.bio !== undefined) updateData.bio = data.bio;
   if (data.phoneNumber !== undefined) updateData.phone_number = data.phoneNumber;
+  if (data.kakaoId !== undefined) updateData.kakao_id = data.kakaoId;
   if (data.referrer !== undefined) updateData.referrer = data.referrer;
+  if (data.onboardingComplete !== undefined) updateData.onboarding_complete = data.onboardingComplete;
   return updateData;
 }
 

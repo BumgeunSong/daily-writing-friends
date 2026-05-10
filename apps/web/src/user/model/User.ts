@@ -9,7 +9,9 @@ export interface User {
   profilePhotoURL: string | null;
   bio: string | null;
   phoneNumber: string | null;
+  kakaoId: string | null;
   referrer: string | null;
+  onboardingComplete: boolean;
   boardPermissions: {
     [boardId: string]: 'read' | 'write'; // Permissions for each board
   };
@@ -35,11 +37,13 @@ export interface UserRequiredFields {
   nickname: string | null;
   profilePhotoURL: string | null;
   email: string | null;
+  onboardingComplete: boolean;
 }
 
 export interface UserOptionalFields {
   bio: string | null;
   phoneNumber: string | null;
+  kakaoId: string | null;
   referrer: string | null;
   boardPermissions: {
     [boardId: string]: 'read' | 'write'; // Permissions for each board

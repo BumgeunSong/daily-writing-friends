@@ -1,6 +1,8 @@
-import { useState } from "react"
+import { useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import type { Board } from "@/board/model/Board"
+import { ROUTES } from "@/login/constants"
 import { showErrorToast } from "@/login/components/showErrorToast"
 import { useIsUserInWaitingList } from "@/login/hooks/useIsUserInWaitingList"
 import { useUpcomingBoard } from "@/login/hooks/useUpcomingBoard"
@@ -9,7 +11,6 @@ import { useAuth } from '@/shared/hooks/useAuth'
 import { addUserToBoardWaitingList } from "@/board/utils/boardUtils"
 import { addReviewToBoard } from "@/shared/utils/reviewUtils"
 import { useUserNickname } from "@/user/hooks/useUserNickname"
-import JoinCompletePage from "./JoinCompletePage"
 import JoinFormCardForActiveUser from "./JoinFormCardForActiveUser"
 import FormHeader from "./JoinFormHeader"
 
@@ -17,17 +18,21 @@ import FormHeader from "./JoinFormHeader"
  * 기존 사용자를 위한 매글프 신청 폼 페이지 컴포넌트
  */
 export default function JoinFormPageForActiveUser() {
+    const navigate = useNavigate()
     const { currentUser } = useAuth()
-    const { nickname: userNickname, isLoading: isNicknameLoading } = useUserNickname(currentUser?.uid ?? null)
+    const { nickname: userNickname } = useUserNickname(currentUser?.uid ?? null)
     const { data: upcomingBoard, isLoading: isBoardLoading } = useUpcomingBoard()
     const { isInWaitingList, isLoading: isCheckingWaitingList } = useIsUserInWaitingList()
-    const [isComplete, setIsComplete] = useState(false)
-    const [completeInfo, setCompleteInfo] = useState<{name: string, cohort: number} | null>(null)
     const { title, subtitle } = titleAndSubtitle(upcomingBoard)
 
-    /**
-     * 폼 제출 핸들러
-     */
+    // Already on the waiting list — short-circuit to /boards. The dispatcher should
+    // normally catch this first, but a direct deep-link still needs the guard.
+    useEffect(() => {
+      if (!isCheckingWaitingList && isInWaitingList) {
+        navigate(ROUTES.BOARDS, { replace: true });
+      }
+    }, [isCheckingWaitingList, isInWaitingList, navigate]);
+
     const handleSubmit = async (data: JoinFormDataForActiveUser) => {
       if (!currentUser?.uid) {
         toast.error("로그인 상태가 만료되었습니다. 다시 로그인해주세요.");
@@ -46,17 +51,15 @@ export default function JoinFormPageForActiveUser() {
       });
 
       if (result.success) {
-        setCompleteInfo({
-          name: result.name,
-          cohort: result.cohort
+        navigate(ROUTES.JOIN_COMPLETE, {
+          state: { name: result.name, cohort: result.cohort },
         });
-        setIsComplete(true);
       } else {
         showErrorToast(toast, result.error);
       }
     }
 
-    const isLoading = isBoardLoading || isCheckingWaitingList || (isInWaitingList && isNicknameLoading);
+    const isLoading = isBoardLoading || isCheckingWaitingList;
 
     if (isLoading) {
       return null;
@@ -70,14 +73,6 @@ export default function JoinFormPageForActiveUser() {
           </div>
         </div>
       );
-    }
-
-    const shouldShowCompletePage = (isComplete && completeInfo) || isInWaitingList;
-
-    if (shouldShowCompletePage) {
-      const userNameForCompletePage = completeInfo?.name || userNickname || "";
-      const cohortForCompletePage = completeInfo?.cohort || upcomingBoard?.cohort || 0;
-      return <JoinCompletePage name={userNameForCompletePage} cohort={cohortForCompletePage} />
     }
 
     return (

@@ -1,11 +1,9 @@
 import { Navigate } from 'react-router-dom';
-import JoinCompletePage from '@/login/components/JoinCompletePage';
 import { useIsCurrentUserActive } from '@/login/hooks/useIsCurrentUserActive';
 import { useIsUserInWaitingList } from '@/login/hooks/useIsUserInWaitingList';
-import { useUpcomingBoard } from '@/login/hooks/useUpcomingBoard';
+import { useOnboardingComplete } from '@/login/hooks/useOnboardingComplete';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { resolveRootRedirect } from '@/shared/utils/routingDecisions';
-import { useUserNickname } from '@/user/hooks/useUserNickname';
 
 /**
  * Root redirect component — thin shell over resolveRootRedirect.
@@ -15,30 +13,22 @@ export function RootRedirect() {
   const { currentUser, loading: authLoading } = useAuth();
   const { isCurrentUserActive, isLoading: activeUserLoading } = useIsCurrentUserActive();
   const { isInWaitingList, isLoading: waitingListLoading } = useIsUserInWaitingList();
-  const { nickname, isLoading: nicknameLoading } = useUserNickname(currentUser?.uid);
-  const { data: upcomingBoard, isLoading: isBoardLoading } = useUpcomingBoard();
+  const { onboardingComplete, isLoading: onboardingLoading } = useOnboardingComplete(currentUser?.uid);
 
   const returnTo = sessionStorage.getItem('returnTo');
 
   const result = resolveRootRedirect({
     currentUser,
-    isLoading: authLoading || activeUserLoading || waitingListLoading || isBoardLoading,
+    isLoading: authLoading || activeUserLoading || waitingListLoading || onboardingLoading,
     isCurrentUserActive,
-    isInWaitingList,
-    isNicknameLoading: nicknameLoading,
-    nickname: nickname ?? null,
-    cohort: upcomingBoard?.cohort || 0,
+    isInWaitingList: Boolean(isInWaitingList),
+    onboardingComplete,
     returnTo,
   });
 
   if (result.type === 'loading') return null;
 
-  // Clear returnTo unconditionally once routing decision is made
   if (returnTo) sessionStorage.removeItem('returnTo');
 
-  if (result.type === 'navigate') {
-    return <Navigate to={result.to} replace />;
-  }
-
-  return <JoinCompletePage name={result.userName} cohort={result.cohort} />;
+  return <Navigate to={result.to} replace />;
 }
