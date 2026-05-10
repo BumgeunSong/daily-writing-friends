@@ -34,7 +34,7 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
     isFetchingNextPage,
   } = useBestPosts(boardId, BEST_POSTS_TARGET);
 
-  const { data: batchData } = useBatchPostCardData(recentPosts);
+  const { data: batchData, isError: isBatchError } = useBatchPostCardData(recentPosts);
 
   const { saveScrollPosition, restoreScrollPosition } = useScrollRestoration(`${boardId}-best-posts`);
 
@@ -95,7 +95,7 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
           onClick={() => handlePostClick(post.id)}
           onClickProfile={onClickProfile}
           prefetchedData={batchData?.get(post.authorId)}
-          isBatchMode={!!batchData}
+          isBatchMode={recentPosts.length > 0 && !isBatchError}
         />
       ))}
       {isFetchingNextPage && (
