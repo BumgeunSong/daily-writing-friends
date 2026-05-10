@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FieldValues, UseFormRegister } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +16,7 @@ import { Button } from '@/shared/ui/button';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { fetchUser, updateUser, createUserIfNotExists } from '@/user/api/user';
+import CohortConfirmCard from './CohortConfirmCard';
 import FormField from './JoinFormField';
 import FormHeader from './JoinFormHeader';
 
@@ -60,6 +61,7 @@ export default function OnboardingPage() {
   const [isPrefilling, setIsPrefilling] = useState(true);
   const [prefillError, setPrefillError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [hasAgreedToCohort, setHasAgreedToCohort] = useState(false);
 
   const form = useForm<OnboardingFormSchema>({
     resolver: zodResolver(onboardingSchema),
@@ -128,17 +130,7 @@ export default function OnboardingPage() {
   }, [isInWaitingList, isWaitingLoading, navigate]);
 
   const isLoading = authLoading || isBoardLoading || isWaitingLoading || isPrefilling;
-
-  const cohortLabel = useMemo(() => {
-    if (!upcomingBoard?.cohort) return null;
-    const firstDay = upcomingBoard.firstDay?.toDate();
-    const startCopy = firstDay
-      ? firstDay.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
-      : null;
-    return startCopy
-      ? `${upcomingBoard.cohort}기 — ${startCopy}에 시작합니다.`
-      : `${upcomingBoard.cohort}기에 자동으로 신청돼요.`;
-  }, [upcomingBoard?.cohort, upcomingBoard?.firstDay]);
+  const requiresCohortAgreement = Boolean(upcomingBoard?.cohort);
 
   const onSubmit = async (values: OnboardingFormSchema) => {
     if (!currentUser?.uid) {
@@ -228,6 +220,16 @@ export default function OnboardingPage() {
       <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 lg:max-w-4xl">
         <FormHeader title={headerTitle} subtitle={headerSubtitle} />
 
+        {requiresCohortAgreement && upcomingBoard && (
+          <div className="mb-4">
+            <CohortConfirmCard
+              upcomingBoard={upcomingBoard}
+              agreed={hasAgreedToCohort}
+              onAgreedChange={setHasAgreedToCohort}
+            />
+          </div>
+        )}
+
         <Card className="bg-card">
           <CardContent className="p-6">
             <form id="onboarding-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -312,7 +314,7 @@ export default function OnboardingPage() {
                   />
                 )}
                 <p className="text-xs text-muted-foreground">
-                  하나만 입력해주세요. 시작 하루 전 안내에 사용해요.
+                  매글프 단체 카톡방이 만들어져요. 카톡방에 초대하기 위해 필요한 정보예요.
                 </p>
               </div>
 
@@ -326,13 +328,6 @@ export default function OnboardingPage() {
                 error={formState.errors.referrer}
                 optional
               />
-
-              {cohortLabel && (
-                <div className="rounded-md border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-                  <p className="font-medium text-foreground">기수 신청</p>
-                  <p className="mt-1">{cohortLabel}</p>
-                </div>
-              )}
 
               {prefillError && (
                 <p className="text-sm text-destructive" role="alert">{prefillError}</p>
@@ -351,7 +346,11 @@ export default function OnboardingPage() {
             form="onboarding-form"
             className="w-full"
             size="lg"
-            disabled={formState.isSubmitting || prefillError !== null}
+            disabled={
+              formState.isSubmitting ||
+              prefillError !== null ||
+              (requiresCohortAgreement && !hasAgreedToCohort)
+            }
           >
             {formState.isSubmitting ? '신청 중...' : upcomingBoard?.cohort ? '신청하기' : '저장하기'}
           </Button>
