@@ -10,7 +10,6 @@
 
 import { getSupabaseClient, isNetworkError, SupabaseNetworkError } from './supabaseClient';
 import type { Board } from '@/board/model/Board';
-import type { Comment } from '@/comment/model/Comment';
 import type { User } from '@/user/model/User';
 import { createTimestamp } from '@/shared/model/Timestamp';
 
@@ -423,82 +422,6 @@ export async function fetchBoardTitleFromSupabase(boardId: string): Promise<stri
   }
 
   return data.title;
-}
-
-// --- Comments ---
-
-/**
- * Fetch all comments for a post.
- * Replaces: fetchCommentsOnce in comment.ts
- * Uses index: idx_comments_post_created
- */
-export async function fetchCommentsFromSupabase(
-  postId: string,
-  blockedByUsers: string[] = [],
-): Promise<Comment[]> {
-  const supabase = getSupabaseClient();
-
-  let q = supabase
-    .from('comments')
-    .select('id, content, user_id, user_name, user_profile_image, created_at')
-    .eq('post_id', postId)
-    .order('created_at', { ascending: true });
-
-  if (blockedByUsers.length > 0) {
-    q = q.not('user_id', 'in', formatInFilter(blockedByUsers));
-  }
-
-  const { data, error } = await q;
-
-  if (error) {
-    console.error('Supabase fetchComments error:', error);
-    throw error;
-  }
-
-  return (data || []).map(mapRowToComment);
-}
-
-/**
- * Fetch a single comment by ID.
- * Replaces: fetchCommentById in comment.ts
- */
-export async function fetchCommentByIdFromSupabase(
-  commentId: string,
-): Promise<Comment | null> {
-  const supabase = getSupabaseClient();
-
-  const { data, error } = await supabase
-    .from('comments')
-    .select('id, content, user_id, user_name, user_profile_image, created_at')
-    .eq('id', commentId)
-    .single();
-
-  if (error || !data) {
-    if (error?.code !== 'PGRST116') {
-      console.error('Supabase fetchCommentById error:', error);
-    }
-    return null;
-  }
-
-  return mapRowToComment(data);
-}
-
-function mapRowToComment(row: {
-  id: string;
-  content: string;
-  user_id: string;
-  user_name: string;
-  user_profile_image: string | null;
-  created_at: string;
-}): Comment {
-  return {
-    id: row.id,
-    content: row.content,
-    userId: row.user_id,
-    userName: row.user_name,
-    userProfileImage: row.user_profile_image || '',
-    createdAt: createTimestamp(new Date(row.created_at)),
-  };
 }
 
 // --- Users ---
