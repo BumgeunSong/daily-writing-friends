@@ -10,7 +10,7 @@ export default {
     messages: {
       featureFetchInShared:
         "'{{name}}' must live in <feature>/api/, not shared/api/. " +
-        'shared/api/ is reserved for cross-feature infrastructure (supabaseClient, httpClient).',
+        'shared/api/ is reserved for cross-feature infrastructure (e.g., supabaseClient, httpClient, postgrestFilters).',
     },
     schema: [],
   },
