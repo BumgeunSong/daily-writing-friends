@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { buildPostCardDataMap, deduplicateAuthorIds } from '@/post/utils/batchPostCardDataUtils';
 import type { Post } from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
-import type { BasicUserRow, UserIdRow, PostDateRow } from '@/shared/api/supabaseReads';
+import type { BasicUserRow } from '@/user/api/userReads';
+import type { UserIdRow, PostDateRow } from '@/shared/api/supabaseReads';
 
 const makePost = (overrides: Partial<Post> = {}): Post => ({
   id: 'post-1',

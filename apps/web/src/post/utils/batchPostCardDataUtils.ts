@@ -1,5 +1,6 @@
 import type { PostAuthorData } from '@/post/components/PostUserProfile';
-import type { BasicUserRow, UserIdRow, PostDateRow } from '@/shared/api/supabaseReads';
+import type { BasicUserRow } from '@/user/api/userReads';
+import type { UserIdRow, PostDateRow } from '@/shared/api/supabaseReads';
 import { getDateKey } from '@/shared/utils/dateUtils';
 import { calculateCommentTemperature } from '@/stats/utils/commentTemperature';
 import type { WritingBadge } from '@/stats/model/WritingStats';

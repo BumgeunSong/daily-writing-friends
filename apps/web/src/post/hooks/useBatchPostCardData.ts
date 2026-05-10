@@ -7,8 +7,8 @@ import {
   deduplicateAuthorIds,
   type PostCardPrefetchedData,
 } from '@/post/utils/batchPostCardDataUtils';
+import { fetchBatchUsersBasic } from '@/user/api/userReads';
 import {
-  fetchBatchUsersBasic,
   fetchBatchCommentUserIdsByDateRange,
   fetchBatchReplyUserIdsByDateRange,
   fetchBatchPostDatesByDateRange,

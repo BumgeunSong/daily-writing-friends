@@ -25,7 +25,7 @@ vi.mock('@/shared/api/supabaseClient', async () => {
   };
 });
 
-vi.mock('@/shared/api/supabaseReads', () => ({
+vi.mock('./userReads', () => ({
   fetchUserFromSupabase: (...args: unknown[]) => mockFetchUserFromSupabase(...args),
   fetchAllUsersFromSupabase: vi.fn(),
   fetchUsersWithBoardPermissionFromSupabase: vi.fn(),
