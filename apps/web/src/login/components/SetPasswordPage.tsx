@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { ROUTES } from '@/login/constants';
 import { validatePassword } from '@/login/utils/passwordValidation';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { mapSetPasswordErrorToKorean } from '@/shared/auth/authErrors';
 import { setPasswordForCurrentUser } from '@/shared/auth/supabaseAuth';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
@@ -111,8 +112,8 @@ export default function SetPasswordPage() {
           : null;
       if (safeReturnTo) sessionStorage.removeItem('returnTo');
       navigate(safeReturnTo ?? ROUTES.BOARDS);
-    } catch {
-      setSubmitError('비밀번호 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    } catch (err) {
+      setSubmitError(mapSetPasswordErrorToKorean(err));
     } finally {
       setIsSubmitting(false);
     }
