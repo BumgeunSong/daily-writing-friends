@@ -1,7 +1,7 @@
 import type { Post } from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
-import { formatInFilter } from '@/shared/api/supabaseReads';
+import { formatInFilter } from '@/shared/api/postgrestFilters';
 import { createTimestamp } from '@/shared/model/Timestamp';
 import { computeWeekDaysFromFirstDay } from '@/post/utils/weekDays';
 
