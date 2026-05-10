@@ -7,7 +7,7 @@ import type { User } from '@/user/model/User';
 import {
   fetchPostingsFromSupabase,
   fetchPostingsByDateRangeFromSupabase
-} from '@/shared/api/supabaseReads';
+} from '@/user/api/posting';
 
 // Re-export for backward compatibility
 export { createUserInfo };
