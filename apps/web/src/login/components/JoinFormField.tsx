@@ -14,6 +14,7 @@ interface FormFieldProps {
   type: string
   inputMode: "text" | "numeric" | "tel" | "email" | "url" | "search" | "none"
   placeholder: string
+  autoComplete?: string
   register: UseFormRegister<FieldValues>
   error?: FieldError
   optional?: boolean
@@ -26,6 +27,7 @@ export default function FormField({
   type,
   inputMode,
   placeholder,
+  autoComplete,
   register,
   error,
   optional,
@@ -52,6 +54,7 @@ export default function FormField({
           id={id}
           type={type}
           inputMode={inputMode}
+          autoComplete={autoComplete}
           {...register(id)}
           placeholder={placeholder}
           className="h-12 rounded-md text-base transition-shadow focus-visible:ring-slate-400 lg:h-14"

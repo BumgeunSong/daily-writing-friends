@@ -90,6 +90,7 @@ export default function SignupPage() {
               label='이메일'
               type='email'
               inputMode='email'
+              autoComplete='email'
               placeholder='you@example.com'
               register={register}
               error={errors.email}
@@ -101,6 +102,7 @@ export default function SignupPage() {
                 label='비밀번호'
                 type='password'
                 inputMode='text'
+                autoComplete='new-password'
                 placeholder='비밀번호'
                 register={register}
                 error={errors.password}
@@ -113,6 +115,7 @@ export default function SignupPage() {
               label='비밀번호 확인'
               type='password'
               inputMode='text'
+              autoComplete='new-password'
               placeholder='비밀번호를 한 번 더 입력해주세요'
               register={register}
               error={errors.passwordConfirm}

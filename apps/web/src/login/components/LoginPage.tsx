@@ -120,6 +120,7 @@ export default function LoginPage() {
               label='이메일'
               type='email'
               inputMode='email'
+              autoComplete='email'
               placeholder='you@example.com'
               register={register}
               error={errors.email}
@@ -129,6 +130,7 @@ export default function LoginPage() {
               label='비밀번호'
               type='password'
               inputMode='text'
+              autoComplete='current-password'
               placeholder='비밀번호를 입력해주세요'
               register={register}
               error={errors.password}
