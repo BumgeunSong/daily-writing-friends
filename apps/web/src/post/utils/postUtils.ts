@@ -4,7 +4,7 @@ import { createTimestamp } from '@/shared/model/Timestamp';
 import type { Post, ProseMirrorDoc } from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
-import { mapRowToPost } from '@/shared/api/supabaseReads';
+import { mapRowToPost } from '@/post/api/post';
 
 export const fetchPost = async (boardId: string, postId: string): Promise<Post | null> => {
   const supabase = getSupabaseClient();

@@ -7,14 +7,14 @@ import {
   deduplicateAuthorIds,
   type PostCardPrefetchedData,
 } from '@/post/utils/batchPostCardDataUtils';
+import { fetchBatchUsersBasic } from '@/user/api/userReads';
+import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import {
-  fetchBatchUsersBasic,
+  getDateRange,
   fetchBatchCommentUserIdsByDateRange,
   fetchBatchReplyUserIdsByDateRange,
   fetchBatchPostDatesByDateRange,
-} from '@/shared/api/supabaseReads';
-import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
-import { getDateRange } from '@/stats/api/stats';
+} from '@/stats/api/stats';
 import {
   STREAK_WINDOW_WORKING_DAYS,
   TEMPERATURE_WINDOW_WORKING_DAYS,

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PostVisibility } from './Post';
-import { mapRowToPost } from '@/shared/api/supabaseReads';
+import { mapRowToPost } from '@/post/api/post';
 
 const baseRow = {
   id: 'p1', board_id: 'b1', author_id: 'u1', author_name: 'Test',

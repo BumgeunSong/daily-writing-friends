@@ -5,7 +5,7 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/firebase';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
-import { fetchUserFromSupabase, fetchAllUsersFromSupabase, fetchUsersWithBoardPermissionFromSupabase } from '@/shared/api/supabaseReads';
+import { fetchUserFromSupabase, fetchAllUsersFromSupabase, fetchUsersWithBoardPermissionFromSupabase } from './userReads';
 import type { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
 import type { AuthUser } from '@/shared/hooks/useAuth';
 import { mapUserToSupabaseUpdate, mapBoardPermissionsToRows } from '@/user/utils/userMappers';

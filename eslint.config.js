@@ -5,6 +5,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import prettier from 'eslint-config-prettier';
 import requireSortCompare from './eslint-local-rules/require-sort-compare.js';
+import noNewSharedSupabaseFetch from './eslint-local-rules/no-new-shared-supabase-fetch.js';
 
 export default tseslint.config(
   // Global ignores
@@ -65,6 +66,7 @@ export default tseslint.config(
       local: {
         rules: {
           'require-sort-compare': requireSortCompare,
+          'no-new-shared-supabase-fetch': noNewSharedSupabaseFetch,
         },
       },
     },
@@ -129,6 +131,7 @@ export default tseslint.config(
 
       // Tier 3: Sorting safety
       'local/require-sort-compare': 'warn',
+      'local/no-new-shared-supabase-fetch': 'error',
     },
   },
 );
