@@ -56,7 +56,7 @@ async function startEmulatorsWithTestRules() {
   // Build the firebase emulators command with test rules
   const args = [
     'emulators:start',
-    '--only', 'auth,firestore,storage,functions',
+    '--only', 'auth,firestore,storage',
     '--rules', firestoreTestRules,
     '--rules', storageTestRules,
     '--project', 'demo-project'
