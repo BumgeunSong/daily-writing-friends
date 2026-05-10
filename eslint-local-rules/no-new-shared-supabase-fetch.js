@@ -47,6 +47,13 @@ export default {
           }
         }
       },
+      ExportDefaultDeclaration(node) {
+        const decl = node.declaration;
+        if (!decl) return;
+        if (decl.type === 'FunctionDeclaration' && decl.id) {
+          checkName(node, decl.id.name);
+        }
+      },
     };
   },
 };
