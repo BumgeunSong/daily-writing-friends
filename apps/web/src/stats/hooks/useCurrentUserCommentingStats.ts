@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { getDateKey, getRecentWorkingDays } from '@/shared/utils/dateUtils';
-import { getDateRange } from '@/stats/api/stats';
-import { createUserInfo } from '@/stats/utils/userInfoUtils';
 import {
+  getDateRange,
   fetchBatchCommentCountsByDateRange,
   fetchBatchReplyCountsByDateRange,
-} from '@/shared/api/supabaseReads';
+} from '@/stats/api/stats';
+import { createUserInfo } from '@/stats/utils/userInfoUtils';
 import type { User } from '@/user/model/User';
 import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 import type { UserCommentingStats } from './useCommentingStats';

@@ -3,7 +3,7 @@ import { buildPostCardDataMap, deduplicateAuthorIds } from '@/post/utils/batchPo
 import type { Post } from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
 import type { BasicUserRow } from '@/user/api/userReads';
-import type { UserIdRow, PostDateRow } from '@/shared/api/supabaseReads';
+import type { UserIdRow, PostDateRow } from '@/stats/api/stats';
 
 const makePost = (overrides: Partial<Post> = {}): Post => ({
   id: 'post-1',
