@@ -1,3 +1,4 @@
+/* eslint-disable local/no-new-shared-supabase-fetch -- file scheduled for removal; existing exports are being moved out per docs/plans/2026-05-10-supabasereads-feature-split.md */
 /**
  * Supabase Read Functions
  *
