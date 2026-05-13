@@ -41,7 +41,7 @@ export default function UserPostsList({ userId }: UserPostsListProps) {
   if (allPosts.length === 0) {
     return (
       <div className="py-10 text-center">
-        <p className="text-muted-foreground">No posts found</p>
+        <p className="text-muted-foreground">아직 작성한 글이 없습니다.</p>
       </div>
     )
   }

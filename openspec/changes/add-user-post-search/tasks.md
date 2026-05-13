@@ -33,7 +33,7 @@
 
 ## 6. Copy cleanup
 
-- [ ] 6.1 In `apps/web/src/user/components/UserPostList.tsx` change the empty-state copy "No posts found" to "아직 작성한 글이 없습니다." for app-wide Korean consistency (called out in proposal review).
+- [x] 6.1 In `apps/web/src/user/components/UserPostList.tsx` change the empty-state copy "No posts found" to "아직 작성한 글이 없습니다." for app-wide Korean consistency (called out in proposal review).
 
 ## 7. Sanity checks before opening the PR
 
