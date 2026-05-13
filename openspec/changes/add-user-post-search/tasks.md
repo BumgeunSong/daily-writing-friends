@@ -12,9 +12,9 @@
 
 ## 3. React Query hook
 
-- [ ] 3.1 Create `apps/web/src/user/hooks/useUserPostSearch.ts` exporting `useUserPostSearch(userId: string, query: string)`. Add the JSDoc `@see useUserSearch` cross-reference at the top of the file (design D11).
-- [ ] 3.2 Configure `useQuery` with `queryKey: ['userPostSearch', userId, query]`, `enabled: query.length >= 2`, `staleTime: 30_000`, `cacheTime: 5 * 60_000`, `keepPreviousData: true`, `onError: (e) => Sentry.captureException(e)` — *no* `extra` payload (design D3).
-- [ ] 3.3 Caller (the view component) is responsible for `.trim()` before passing `query` in. Document this expectation in the hook's JSDoc.
+- [x] 3.1 Create `apps/web/src/user/hooks/useUserPostSearch.ts` exporting `useUserPostSearch(userId: string, query: string)`. Add the JSDoc `@see useUserSearch` cross-reference at the top of the file (design D11).
+- [x] 3.2 Configure `useQuery` with `queryKey: ['userPostSearch', userId, query]`, `enabled: query.length >= 2`, `staleTime: 30_000`, `cacheTime: 5 * 60_000`, `keepPreviousData: true`, `onError: (e) => Sentry.captureException(e)` — *no* `extra` payload (design D3).
+- [x] 3.3 Caller (the view component) is responsible for `.trim()` before passing `query` in. Document this expectation in the hook's JSDoc.
 
 ## 4. View components
 
