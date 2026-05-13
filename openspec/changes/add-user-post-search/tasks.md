@@ -5,10 +5,10 @@
 
 ## 2. Data layer
 
-- [ ] 2.1 Create `apps/web/src/user/api/searchUserPosts.ts` exporting `async function searchOwnPosts(userId: string, query: string, limit?: number): Promise<Post[]>`. Default `limit = 50`. Reuses `FEED_POST_SELECT` and `mapRowToPost` from `apps/web/src/post/api/post.ts`.
-- [ ] 2.2 Implement the Supabase query: `.from('posts').select(\`${FEED_POST_SELECT}, boards(first_day)\`).eq('author_id', userId).or(...).order('created_at', { ascending: false }).limit(limit)`. The `.or(...)` argument is built from the escaped + wildcard-wrapped query: `title.ilike.%kw%,content.ilike.%kw%`.
-- [ ] 2.3 On Supabase error, `console.error` and **`throw error`** (per design D3a). Do not catch and return `[]`.
-- [ ] 2.4 Add a top-of-file JSDoc on `searchUserPosts.ts` explaining: scope (own posts only), why `content` is in WHERE but only `content_preview` in SELECT, and the 50-row cap.
+- [x] 2.1 Create `apps/web/src/user/api/searchUserPosts.ts` exporting `async function searchOwnPosts(userId: string, query: string, limit?: number): Promise<Post[]>`. Default `limit = 50`. Reuses `FEED_POST_SELECT` and `mapRowToPost` from `apps/web/src/post/api/post.ts`.
+- [x] 2.2 Implement the Supabase query: `.from('posts').select(\`${FEED_POST_SELECT}, boards(first_day)\`).eq('author_id', userId).or(...).order('created_at', { ascending: false }).limit(limit)`. The `.or(...)` argument is built from the escaped + wildcard-wrapped query: `title.ilike.%kw%,content.ilike.%kw%`.
+- [x] 2.3 On Supabase error, `console.error` and **`throw error`** (per design D3a). Do not catch and return `[]`.
+- [x] 2.4 Add a top-of-file JSDoc on `searchUserPosts.ts` explaining: scope (own posts only), why `content` is in WHERE but only `content_preview` in SELECT, and the 50-row cap.
 
 ## 3. React Query hook
 
