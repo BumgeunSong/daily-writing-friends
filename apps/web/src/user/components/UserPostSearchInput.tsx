@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { useDebouncedValue } from '@/shared/hooks/useDebouncedValue';
 import { cn } from '@/shared/utils/cn';
 
 const DEBOUNCE_MS = 300;
@@ -7,38 +6,52 @@ const DEBOUNCE_MS = 300;
 interface UserPostSearchInputProps {
   onDebouncedChange: (debounced: string) => void;
   onEscape?: () => void;
+  initialValue?: string;
   className?: string;
 }
 
 export function UserPostSearchInput({
   onDebouncedChange,
   onEscape,
+  initialValue = '',
   className,
 }: UserPostSearchInputProps) {
-  const [value, setValue] = useState('');
-  const debounced = useDebouncedValue(value, DEBOUNCE_MS);
+  const [value, setValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    onDebouncedChange(debounced);
-  }, [debounced, onDebouncedChange]);
-
+  // Mount-only: autofocus + cleanup of any pending debounce timer on unmount.
   useEffect(() => {
     inputRef.current?.focus();
+    return () => {
+      if (timerRef.current !== null) clearTimeout(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only setup
   }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.value;
+    setValue(next);
+    if (timerRef.current !== null) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      onDebouncedChange(next);
+    }, DEBOUNCE_MS);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onEscape?.();
+    }
+  };
 
   return (
     <input
       ref={inputRef}
       type="search"
       value={value}
-      onChange={(e) => setValue(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') {
-          e.preventDefault();
-          onEscape?.();
-        }
-      }}
+      onChange={handleChange}
+      onKeyDown={handleKeyDown}
       maxLength={100}
       inputMode="search"
       enterKeyHint="search"

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { X } from 'lucide-react';
 import { useUserPostSearch } from '@/user/hooks/useUserPostSearch';
 import { PostItem, PostItemSkeleton } from '@/user/components/UserPostItem';
@@ -10,19 +10,33 @@ const LOADING_SKELETONS = 5;
 
 interface UserPostSearchViewProps {
   userId: string;
+  initialQuery?: string;
+  onQueryChange?: (debounced: string) => void;
   onExitSearch: () => void;
 }
 
-export function UserPostSearchView({ userId, onExitSearch }: UserPostSearchViewProps) {
-  const [debouncedValue, setDebouncedValue] = useState('');
+export function UserPostSearchView({
+  userId,
+  initialQuery = '',
+  onQueryChange,
+  onExitSearch,
+}: UserPostSearchViewProps) {
+  const [debouncedValue, setDebouncedValue] = useState(initialQuery);
   const trimmedQuery = debouncedValue.trim();
   const result = useUserPostSearch(userId, trimmedQuery);
-
   const state = deriveSearchState(trimmedQuery, {
     isFetching: result.isFetching,
     isError: result.isError,
     data: result.data,
   });
+
+  const handleDebouncedChange = useCallback(
+    (d: string) => {
+      setDebouncedValue(d);
+      onQueryChange?.(d);
+    },
+    [onQueryChange],
+  );
 
   return (
     <>
@@ -38,7 +52,8 @@ export function UserPostSearchView({ userId, onExitSearch }: UserPostSearchViewP
           </button>
           <div className="flex-1">
             <UserPostSearchInput
-              onDebouncedChange={setDebouncedValue}
+              initialValue={initialQuery}
+              onDebouncedChange={handleDebouncedChange}
               onEscape={onExitSearch}
             />
           </div>
@@ -46,10 +61,9 @@ export function UserPostSearchView({ userId, onExitSearch }: UserPostSearchViewP
       </header>
 
       <main className="container mx-auto px-3 py-2 pb-16 md:px-4">
-        {state === 'idle' && (
+        {state === 'idle' && trimmedQuery.length === 1 && (
           <div className="py-10 text-center">
-            <p className="text-base text-foreground">내가 쓴 글에서 제목 또는 내용으로 검색하세요</p>
-            <p className="mt-2 text-sm text-muted-foreground">제목과 본문에서 일치하는 글을 찾습니다.</p>
+            <p className="text-sm text-muted-foreground">2글자 이상 입력해주세요.</p>
           </div>
         )}
 
