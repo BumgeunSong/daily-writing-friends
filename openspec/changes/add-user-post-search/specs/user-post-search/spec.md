@@ -47,11 +47,40 @@ Tapping the search icon SHALL toggle the user page into "search mode", in which 
 - **WHEN** the user presses the Escape key while the search input has focus
 - **THEN** the page exits search mode with the same outcome as clicking the close button
 
-#### Scenario: Search mode is local state, not URL state
+#### Scenario: Search mode does not appear in the URL
 
-- **WHEN** the user enters search mode, types a query, and then reloads the page
-- **THEN** the page renders in its default (non-search) state with the regular post list
-- **AND** the URL is unchanged from before search mode was entered
+- **WHEN** the user enters search mode and types a query
+- **THEN** the URL is unchanged from before search mode was entered
+- **AND** sharing the URL does not encode the search state
+
+### Requirement: Search Mode Persists Across In-App Navigation
+
+The page SHALL restore the previous search mode and last debounced query when the user returns to it via in-app navigation (browser back/forward). The persisted state SHALL be scoped to the signed-in user and the browser session via `sessionStorage` under the key `userPostSearch:<userId>`.
+
+#### Scenario: Restore after navigating to a result and back
+
+- **WHEN** the user is in search mode with a non-empty trimmed query
+- **AND** clicks a result, navigates to the post detail page, and presses browser back
+- **THEN** the user page mounts in search mode with the previous query pre-filled in the input
+- **AND** the same search request fires immediately, without manual re-typing
+
+#### Scenario: Explicit exit clears the persisted state
+
+- **WHEN** the user exits search mode via the close button or the Escape key
+- **THEN** the `sessionStorage` entry for the current user is removed
+- **AND** the next entry into search mode starts with an empty input
+
+#### Scenario: Persistence is scoped to the profile owner
+
+- **WHEN** a signed-in user navigates to another user's profile
+- **THEN** the other user's profile renders without any search affordance (per "Search Affordance on Own User Page")
+- **AND** the signed-in user's own persisted search state is neither read nor written on the other profile
+
+#### Scenario: Sign-out invalidates a different user's persisted state
+
+- **WHEN** a user signs out and a different account signs in on the same browser session
+- **THEN** the new user does not see the previous user's persisted search state
+- **(Enforced by keying the entry on `userId`.)**
 
 ### Requirement: Search Input Behavior
 
@@ -90,11 +119,17 @@ The search input SHALL accept up to 100 characters, debounce queries by 300 ms, 
 
 The search view SHALL render exactly one of five states — idle, loading, results, empty, error — derived from the trimmed query length and the underlying React Query result.
 
-#### Scenario: Idle state on entering search mode
+#### Scenario: Empty input on entering search mode
 
-- **WHEN** the user has just entered search mode and the input is empty
-- **THEN** the view renders the idle state with the prompt "내가 쓴 글에서 제목 또는 내용으로 검색하세요" and helper text "제목과 본문에서 일치하는 글을 찾습니다."
-- **AND** no skeleton, no cards, and no error UI is rendered
+- **WHEN** the user has just entered search mode and the input is empty (or trims to empty)
+- **THEN** the view renders no body content — the input's placeholder is the only cue
+- **AND** no skeleton, no cards, no hint, and no error UI is rendered
+
+#### Scenario: Short query feedback (one code unit)
+
+- **WHEN** the trimmed input has exactly one JS `String.length` code unit (e.g. "a", "글")
+- **THEN** the view renders the hint "2글자 이상 입력해주세요." centered in muted text
+- **AND** no search request fires
 
 #### Scenario: Loading state during first query
 
@@ -109,8 +144,9 @@ The search view SHALL render exactly one of five states — idle, loading, resul
 
 #### Scenario: 50-result cap notice
 
-- **WHEN** the search returns exactly 50 results
-- **THEN** the results list footer renders "최근 50개까지만 표시됩니다. 검색어를 더 구체적으로 입력해보세요."
+- **WHEN** the user's post set contains more than 50 matches for the query
+- **THEN** the view renders exactly 50 cards (the most recent) and a footer reads "최근 50개까지만 표시됩니다. 검색어를 더 구체적으로 입력해보세요."
+- **AND** the footer does NOT render when exactly 50 matches exist (no further results to suggest narrowing for)
 
 #### Scenario: Empty state when no matches
 
