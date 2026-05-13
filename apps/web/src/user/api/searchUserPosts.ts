@@ -13,6 +13,7 @@
  *
  * Cap: at most 50 most-recent matches. No pagination in v1.
  */
+import * as Sentry from '@sentry/react';
 import type { Post } from '@/post/model/Post';
 import { FEED_POST_SELECT, mapRowToPost } from '@/post/api/post';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
@@ -20,6 +21,11 @@ import { escapeForOrFilter } from '@/shared/api/postgrestFilters';
 
 const DEFAULT_LIMIT = 50;
 
+/**
+ * Returns up to `limit + 1` rows so the caller can distinguish "exactly `limit`
+ * matches exist" from "more matches exist, truncated at the cap" — important
+ * for the cap notice in the UI. View is expected to slice to `limit`.
+ */
 export async function searchOwnPosts(
   userId: string,
   query: string,
@@ -37,10 +43,14 @@ export async function searchOwnPosts(
     .eq('author_id', userId)
     .or(orFilter)
     .order('created_at', { ascending: false })
-    .limit(limit);
+    .limit(limit + 1);
 
   if (error) {
-    console.error('Supabase searchOwnPosts error:', error);
+    // Avoid console.error here: the Supabase PostgrestError's `details` field
+    // can echo the filter string (containing the user's raw query) and would
+    // leak to any console-scraping log collector. The hook's Sentry.captureException
+    // (no `extra`) is the sanctioned telemetry path.
+    Sentry.captureException(error, { tags: { feature: 'user-post-search' } });
     throw error;
   }
 
