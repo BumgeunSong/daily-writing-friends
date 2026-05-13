@@ -28,7 +28,7 @@ export function escapeForOrFilter(input: string): string {
     .replace(/_/g, '\\_');
 
   return ilikeEscaped.replace(/[,()*":.\s]/g, (ch) => {
-    const code = ch.charCodeAt(0);
-    return '%' + code.toString(16).toUpperCase().padStart(2, '0');
+    const code = ch.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0');
+    return `%${code}`;
   });
 }
