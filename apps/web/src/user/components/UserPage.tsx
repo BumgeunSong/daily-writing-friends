@@ -1,9 +1,10 @@
-import { useCallback } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useParams } from "react-router-dom"
 import StatusMessage from "@/shared/components/StatusMessage"
 import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
 import { useAuth } from "@/shared/hooks/useAuth"
 import { UserPageHeader } from "@/user/components/UserPageHeader"
+import { UserPostSearchView } from "@/user/components/UserPostSearchView"
 import UserPostsList from "@/user/components/UserPostList"
 import UserProfile from "@/user/components/UserProfile"
 
@@ -11,8 +12,18 @@ export default function UserPage() {
   const { userId: paramUserId } = useParams()
   const { currentUser } = useAuth()
   const userId = paramUserId || currentUser?.uid
+  const [isSearchMode, setIsSearchMode] = useState(false)
+  const searchIconRef = useRef<HTMLButtonElement>(null)
+  const wasInSearchMode = useRef(false)
 
   useRegisterTabHandler('User', useCallback(() => window.scrollTo({ top: 0, behavior: 'smooth' }), []));
+
+  useEffect(() => {
+    if (wasInSearchMode.current && !isSearchMode) {
+      searchIconRef.current?.focus()
+    }
+    wasInSearchMode.current = isSearchMode
+  }, [isSearchMode])
 
   if (!userId) {
     return <StatusMessage errorMessage="유저 정보를 찾을 수 없습니다." />
@@ -22,17 +33,24 @@ export default function UserPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <UserPageHeader isMyPage={isMyPage} />
-      
-      <main className="container mx-auto px-3 py-2 pb-16 md:px-4">
-        {/* User profile section */}
-        <div className="mb-2">
-          <UserProfile uid={userId} />
-        </div>
-
-        {/* Posts content */}
-        <UserPostsList userId={userId} />
-      </main>
+      {isSearchMode && isMyPage ? (
+        <UserPostSearchView userId={userId} onExitSearch={() => setIsSearchMode(false)} />
+      ) : (
+        <>
+          <UserPageHeader
+            ref={searchIconRef}
+            isMyPage={isMyPage}
+            isSearchMode={isSearchMode}
+            onToggleSearch={() => setIsSearchMode((v) => !v)}
+          />
+          <main className="container mx-auto px-3 py-2 pb-16 md:px-4">
+            <div className="mb-2">
+              <UserProfile uid={userId} />
+            </div>
+            <UserPostsList userId={userId} />
+          </main>
+        </>
+      )}
     </div>
   )
 }

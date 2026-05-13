@@ -25,11 +25,11 @@
 
 ## 5. Page and header wiring
 
-- [ ] 5.1 Update `apps/web/src/user/components/UserPage.tsx`: add `const [isSearchMode, setIsSearchMode] = useState(false)`. Pass `isSearchMode` + `onToggleSearch={() => setIsSearchMode(v => !v)}` to `UserPageHeader`. When `isSearchMode`, render `<UserPostSearchView userId={userId} onExitSearch={() => setIsSearchMode(false)} />` instead of `<UserProfile>` + `<UserPostsList>`.
-- [ ] 5.2 Update `apps/web/src/user/components/UserPageHeader.tsx`: extend the props with `isMyPage`, `isSearchMode`, `onToggleSearch`. When `isMyPage && !isSearchMode`, render an additional search icon button (lucide-react `Search`) with `aria-label="내 글 검색"` and `aria-pressed={isSearchMode}` to the right of the existing title / left of settings icon.
-- [ ] 5.3 When `isMyPage && isSearchMode`, swap the header content for: back/close button (lucide-react `X` or `ChevronLeft`, `aria-label="검색 닫기"`) + the `UserPostSearchView`'s input. Apply `sticky top-0 z-10 bg-background` only in search mode.
-- [ ] 5.4 Other users' pages (`!isMyPage`) keep returning `null` from the header — unchanged.
-- [ ] 5.5 On exit (close button or Escape), call `onToggleSearch` from the header, and move focus back to the search icon button (`useRef` + `.focus()` after the state update).
+- [x] 5.1 Update `apps/web/src/user/components/UserPage.tsx`: add `const [isSearchMode, setIsSearchMode] = useState(false)`. Pass `isSearchMode` + `onToggleSearch={() => setIsSearchMode(v => !v)}` to `UserPageHeader`. When `isSearchMode`, render `<UserPostSearchView userId={userId} onExitSearch={() => setIsSearchMode(false)} />` instead of `<UserProfile>` + `<UserPostsList>`.
+- [x] 5.2 Update `apps/web/src/user/components/UserPageHeader.tsx`: extend the props with `isMyPage`, `isSearchMode`, `onToggleSearch`. When `isMyPage && !isSearchMode`, render an additional search icon button (lucide-react `Search`) with `aria-label="내 글 검색"` and `aria-pressed={isSearchMode}` to the right of the existing title / left of settings icon.
+- [x] 5.3 When `isMyPage && isSearchMode`, swap the header content for: back/close button (lucide-react `X` or `ChevronLeft`, `aria-label="검색 닫기"`) + the `UserPostSearchView`'s input. Apply `sticky top-0 z-10 bg-background` only in search mode. *(Implementation: UserPageHeader returns null while in search mode; UserPostSearchView renders its own sticky chrome with the close button and input, achieving the same user-visible swap.)*
+- [x] 5.4 Other users' pages (`!isMyPage`) keep returning `null` from the header — unchanged.
+- [x] 5.5 On exit (close button or Escape), call `onToggleSearch` from the header, and move focus back to the search icon button (`useRef` + `.focus()` after the state update).
 
 ## 6. Copy cleanup
 
