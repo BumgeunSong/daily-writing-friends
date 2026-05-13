@@ -18,10 +18,10 @@
 
 ## 4. View components
 
-- [ ] 4.1 Create `apps/web/src/user/components/UserPostSearchInput.tsx`. Controlled `<input>` with `maxLength={100}`, `inputMode="search"`, `enterKeyHint="search"`, `aria-label="내 글 검색어"`. Auto-focuses on mount. Local immediate state; uses `useDebouncedValue` to compute a debounced value (300 ms); emits `onDebouncedChange(debounced)` to the parent.
-- [ ] 4.2 Create the pure helper `deriveSearchState(query: string, result: { isFetching: boolean; isError: boolean; data?: Post[] }): 'idle' | 'loading' | 'empty' | 'results' | 'error'`. The second arg is a **plain shape**, not the React Query `UseQueryResult` type — keeps the helper unit-testable as pure input/output. The view callsite reads the React Query result and forwards only those three fields. Evaluation order per design D7. Export from the same file as the view, or sibling util.
-- [ ] 4.3 Create `apps/web/src/user/components/UserPostSearchView.tsx`. Owns the input value, debounced value, and the trimmed query passed to the hook. Renders the input plus the five-state body. Reuses `PostItem` and `PostItemSkeleton` from `UserPostItem` for results/loading; renders the exact Korean copy specified in the spec for idle / empty / error / cap notice.
-- [ ] 4.4 Wire keyboard handling: Escape on the input invokes the parent's `onExitSearch` callback (provided by `UserPage`).
+- [x] 4.1 Create `apps/web/src/user/components/UserPostSearchInput.tsx`. Controlled `<input>` with `maxLength={100}`, `inputMode="search"`, `enterKeyHint="search"`, `aria-label="내 글 검색어"`. Auto-focuses on mount. Local immediate state; uses `useDebouncedValue` to compute a debounced value (300 ms); emits `onDebouncedChange(debounced)` to the parent.
+- [x] 4.2 Create the pure helper `deriveSearchState(query: string, result: { isFetching: boolean; isError: boolean; data?: Post[] }): 'idle' | 'loading' | 'empty' | 'results' | 'error'`. The second arg is a **plain shape**, not the React Query `UseQueryResult` type — keeps the helper unit-testable as pure input/output. The view callsite reads the React Query result and forwards only those three fields. Evaluation order per design D7. Export from the same file as the view, or sibling util.
+- [x] 4.3 Create `apps/web/src/user/components/UserPostSearchView.tsx`. Owns the input value, debounced value, and the trimmed query passed to the hook. Renders the input plus the five-state body. Reuses `PostItem` and `PostItemSkeleton` from `UserPostItem` for results/loading; renders the exact Korean copy specified in the spec for idle / empty / error / cap notice.
+- [x] 4.4 Wire keyboard handling: Escape on the input invokes the parent's `onExitSearch` callback (provided by `UserPage`).
 
 ## 5. Page and header wiring
 
