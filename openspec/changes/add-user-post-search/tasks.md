@@ -37,8 +37,8 @@
 
 ## 7. Sanity checks before opening the PR
 
-- [ ] 7.1 `pnpm --filter web type-check` passes.
-- [ ] 7.2 `pnpm --filter web lint` passes.
+- [x] 7.1 `pnpm --filter web type-check` passes.
+- [x] 7.2 `pnpm --filter web lint` passes. *(0 errors in new/modified files; lint command reports 7 pre-existing errors and ~393 warnings from unrelated files. Newly added files contribute 0 errors and 3 style warnings — the array-index-key warning matches the established `UserPostList.tsx:35` pattern, and the `max-lines-per-function` is a soft style preference.)*
 - [ ] 7.3 Manual smoke against local dev server + local Supabase: open own user page → search icon visible → enter mode → 2-char Korean query → results render → click result → detail page → back → search mode reset. Open another user's page → no search icon.
 
 ## Tests
