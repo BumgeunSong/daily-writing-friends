@@ -75,10 +75,10 @@ export function UserPostSearchView({ userId, onExitSearch }: UserPostSearchViewP
 
         {state === 'results' && result.data && (
           <div className="space-y-2">
-            {result.data.map((post) => (
+            {result.data.slice(0, RESULTS_CAP).map((post) => (
               <PostItem key={post.id} post={post} />
             ))}
-            {result.data.length >= RESULTS_CAP && (
+            {result.data.length > RESULTS_CAP && (
               <div className="py-4 text-center">
                 <p className="text-sm text-muted-foreground">최근 50개까지만 표시됩니다. 검색어를 더 구체적으로 입력해보세요.</p>
               </div>
