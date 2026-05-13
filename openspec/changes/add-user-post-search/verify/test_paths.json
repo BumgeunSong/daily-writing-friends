@@ -1,0 +1,115 @@
+{
+  "$comment": "Each path corresponds to a task in tasks.md (T.3-T.11). Together they cover every transition in state_model.json (Transition Coverage). Paths are executed by agent-browser against pnpm --filter web dev:local + local Supabase Docker, signed-in with the user-auth client.",
+  "paths": [
+    {
+      "id": "T.3",
+      "name": "Happy path on own page (desktop viewport)",
+      "auth": "user A",
+      "viewport": "desktop",
+      "steps": [
+        "OWN_PAGE_NORMAL: navigate to /user; assert search icon visible",
+        "T_OPEN_SEARCH: click search icon",
+        "SEARCH_MODE_IDLE: assert sticky header, input focused, settings icon hidden",
+        "T_TYPE_TWO_CHARS: type '오늘' (2 Hangul syllables)",
+        "SEARCH_MODE_LOADING: brief skeleton render (~300ms debounce)",
+        "T_LOAD_TO_RESULTS: assert '오늘의 작성' post is among results",
+        "T_RESULTS_TO_DETAIL: click '오늘의 작성' card",
+        "POST_DETAIL: assert URL /board/<bid>/post/<pid>",
+        "T_DETAIL_BACK_TO_NORMAL: browser back",
+        "OWN_PAGE_NORMAL: assert profile + posts list re-rendered, no search input visible"
+      ],
+      "transitionsCovered": ["T_OPEN_SEARCH", "T_TYPE_TWO_CHARS", "T_LOAD_TO_RESULTS", "T_RESULTS_TO_DETAIL", "T_DETAIL_BACK_TO_NORMAL"]
+    },
+    {
+      "id": "T.4",
+      "name": "Match past 500-char preview boundary",
+      "auth": "user A",
+      "viewport": "desktop",
+      "steps": [
+        "OWN_PAGE_NORMAL → SEARCH_MODE_IDLE → type 'BODYNEEDLE'",
+        "SEARCH_MODE_RESULTS: assert the 1500-char-body post (BODYNEEDLE at offset 1000) is present"
+      ],
+      "transitionsCovered": ["T_LOAD_TO_RESULTS"],
+      "rationale": "Verifies API uses full content (not content_preview) in WHERE"
+    },
+    {
+      "id": "T.5",
+      "name": "50-result cap with newest-first ordering",
+      "auth": "user A",
+      "viewport": "desktop",
+      "steps": [
+        "OWN_PAGE_NORMAL → SEARCH_MODE_IDLE → type 'LIMITNEEDLE'",
+        "SEARCH_MODE_RESULTS_CAPPED: assert exactly 50 cards, cap-notice visible, created_at non-increasing top→bottom, oldest 10 absent"
+      ],
+      "transitionsCovered": ["T_LOAD_TO_RESULTS_CAPPED"]
+    },
+    {
+      "id": "T.6",
+      "name": "Cross-user isolation (no leak from search)",
+      "auth": "user A",
+      "viewport": "desktop",
+      "steps": [
+        "OWN_PAGE_NORMAL → SEARCH_MODE_IDLE → type 'ALPHA_ONLY' (user B's unique phrase)",
+        "SEARCH_MODE_EMPTY: assert zero result cards"
+      ],
+      "transitionsCovered": ["T_LOAD_TO_EMPTY"],
+      "rationale": "Confirms .eq('author_id', userA) + RLS prevent cross-user matches"
+    },
+    {
+      "id": "T.7",
+      "name": "Mobile viewport keyboard",
+      "auth": "user A",
+      "viewport": "iPhone (390x844, virtual keyboard)",
+      "steps": [
+        "OWN_PAGE_NORMAL → SEARCH_MODE_IDLE → focus input → show keyboard",
+        "Assert input still in visible viewport bottom region"
+      ],
+      "transitionsCovered": ["T_OPEN_SEARCH"]
+    },
+    {
+      "id": "T.8",
+      "name": "Empty state",
+      "auth": "user A",
+      "viewport": "desktop",
+      "steps": [
+        "OWN_PAGE_NORMAL → SEARCH_MODE_IDLE → type a string that matches no posts",
+        "SEARCH_MODE_EMPTY: assert '<query>'에 일치하는 글이 없습니다.' rendered"
+      ],
+      "transitionsCovered": ["T_LOAD_TO_EMPTY"]
+    },
+    {
+      "id": "T.9",
+      "name": "Escape-to-exit",
+      "auth": "user A",
+      "viewport": "desktop",
+      "steps": [
+        "OWN_PAGE_NORMAL → SEARCH_MODE_IDLE → press Escape on input",
+        "OWN_PAGE_NORMAL: assert search closed; document.activeElement === search icon button"
+      ],
+      "transitionsCovered": ["T_OPEN_SEARCH", "T_ESCAPE"]
+    },
+    {
+      "id": "T.10",
+      "name": "Other user's page",
+      "auth": "user A",
+      "viewport": "desktop",
+      "steps": [
+        "OTHER_USER_PAGE: navigate to /user/<user-B-id>",
+        "Assert no search icon, no input, header is null"
+      ],
+      "transitionsCovered": []
+    },
+    {
+      "id": "T.11",
+      "name": "RLS defense-in-depth (Layer 4 security contract)",
+      "auth": "user A (user-auth client, NOT service-role)",
+      "viewport": "desktop",
+      "steps": [
+        "From browser console (or a small test hook), invoke searchOwnPosts(<user-B-id>, 'ALPHA_ONLY')",
+        "Assert result is either [] or only B's visibility='public' posts; never B's private posts"
+      ],
+      "transitionsCovered": [],
+      "rationale": "Load-bearing security check; the search-my-posts-only invariant"
+    }
+  ]
+}

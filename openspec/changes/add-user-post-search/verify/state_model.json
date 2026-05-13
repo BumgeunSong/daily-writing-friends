@@ -1,0 +1,117 @@
+{
+  "$comment": "Extracted from specs/user-post-search/spec.md. Each state names a distinct UI condition reachable on /user; each transition names a user action or system event that moves the UI between states.",
+  "states": [
+    {
+      "id": "OWN_PAGE_NORMAL",
+      "description": "Signed-in user on their own user page. Header shows '내 프로필' + search icon + settings icon. Body shows UserProfile + UserPostsList (infinite scroll).",
+      "guard": "isMyPage && !isSearchMode"
+    },
+    {
+      "id": "OTHER_USER_PAGE",
+      "description": "Signed-in user on another user's page. Header returns null (no search icon, no settings).",
+      "guard": "!isMyPage"
+    },
+    {
+      "id": "SEARCH_MODE_IDLE",
+      "description": "Search mode active, trimmed query length < 2. Sticky header with close button + input; body shows the idle prompt + helper text.",
+      "guard": "isSearchMode && trimmedQuery.length < 2"
+    },
+    {
+      "id": "SEARCH_MODE_LOADING",
+      "description": "Search mode active, trimmed query >= 2, request in flight, no prior data in cache for this (userId, query).",
+      "guard": "isSearchMode && trimmedQuery.length >= 2 && isFetching && !data"
+    },
+    {
+      "id": "SEARCH_MODE_RESULTS",
+      "description": "Search mode active, results returned with 1..49 posts; PostItem list rendered, no cap notice.",
+      "guard": "isSearchMode && data && data.length > 0 && data.length < 50"
+    },
+    {
+      "id": "SEARCH_MODE_RESULTS_CAPPED",
+      "description": "Search mode active, results count == 50; PostItem list rendered + cap notice '최근 50개까지만 표시됩니다…'.",
+      "guard": "isSearchMode && data && data.length === 50"
+    },
+    {
+      "id": "SEARCH_MODE_EMPTY",
+      "description": "Search mode active, response returned []; empty message rendered.",
+      "guard": "isSearchMode && data && data.length === 0"
+    },
+    {
+      "id": "SEARCH_MODE_ERROR",
+      "description": "Search mode active, API errored; '검색 중 문제가 발생했습니다…' rendered; Sentry.captureException invoked.",
+      "guard": "isSearchMode && isError"
+    },
+    {
+      "id": "POST_DETAIL",
+      "description": "Navigated away from /user to /board/<bid>/post/<pid> via clicking a result card."
+    }
+  ],
+  "transitions": [
+    {
+      "id": "T_OPEN_SEARCH",
+      "from": "OWN_PAGE_NORMAL",
+      "to": "SEARCH_MODE_IDLE",
+      "trigger": "click search icon (aria-label='내 글 검색') OR Enter/Space on it"
+    },
+    {
+      "id": "T_TYPE_TWO_CHARS",
+      "from": "SEARCH_MODE_IDLE",
+      "to": "SEARCH_MODE_LOADING",
+      "trigger": "type a >=2 code-unit substring; wait ~300ms debounce"
+    },
+    {
+      "id": "T_LOAD_TO_RESULTS",
+      "from": "SEARCH_MODE_LOADING",
+      "to": "SEARCH_MODE_RESULTS",
+      "trigger": "API returns 1..49 matching posts"
+    },
+    {
+      "id": "T_LOAD_TO_RESULTS_CAPPED",
+      "from": "SEARCH_MODE_LOADING",
+      "to": "SEARCH_MODE_RESULTS_CAPPED",
+      "trigger": "API returns exactly 50 matching posts"
+    },
+    {
+      "id": "T_LOAD_TO_EMPTY",
+      "from": "SEARCH_MODE_LOADING",
+      "to": "SEARCH_MODE_EMPTY",
+      "trigger": "API returns []"
+    },
+    {
+      "id": "T_LOAD_TO_ERROR",
+      "from": "SEARCH_MODE_LOADING",
+      "to": "SEARCH_MODE_ERROR",
+      "trigger": "API throws (Supabase error)"
+    },
+    {
+      "id": "T_RESULTS_TO_DETAIL",
+      "from": "SEARCH_MODE_RESULTS",
+      "to": "POST_DETAIL",
+      "trigger": "click a result card"
+    },
+    {
+      "id": "T_DETAIL_BACK_TO_NORMAL",
+      "from": "POST_DETAIL",
+      "to": "OWN_PAGE_NORMAL",
+      "trigger": "browser back"
+    },
+    {
+      "id": "T_CLEAR_TO_IDLE",
+      "from": "SEARCH_MODE_RESULTS",
+      "to": "SEARCH_MODE_IDLE",
+      "trigger": "clear input below 2 code units (keepPreviousData regression guard)"
+    },
+    {
+      "id": "T_CLOSE_BTN",
+      "from": "SEARCH_MODE_IDLE",
+      "to": "OWN_PAGE_NORMAL",
+      "trigger": "click close button (aria-label='검색 닫기'); focus returns to search icon"
+    },
+    {
+      "id": "T_ESCAPE",
+      "from": "SEARCH_MODE_IDLE",
+      "to": "OWN_PAGE_NORMAL",
+      "trigger": "press Escape while input has focus; focus returns to search icon"
+    }
+  ]
+}
