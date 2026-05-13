@@ -83,7 +83,7 @@ Tests:
 
 ## 8. Out of scope (do NOT implement in this change)
 
-- [ ] 8.1 Do not add a `pg_trgm` migration or any new database object.
-- [ ] 8.2 Do not add term highlighting, recent-searches history, date filters, or pagination beyond 50 results.
-- [ ] 8.3 Do not refactor `useUserSearch` to `useUserLookup` in this PR.
-- [ ] 8.4 Do not add `['userPostSearch', ...]` invalidation to `postCacheUtils` in this PR.
+- [x] 8.1 Do not add a `pg_trgm` migration or any new database object.
+- [x] 8.2 Do not add term highlighting, recent-searches history, date filters, or pagination beyond 50 results.
+- [x] 8.3 Do not refactor `useUserSearch` to `useUserLookup` in this PR.
+- [x] 8.4 Do not add `['userPostSearch', ...]` invalidation to `postCacheUtils` in this PR.
