@@ -1,7 +1,7 @@
 ## 1. Shared utilities
 
-- [ ] 1.1 Add `escapeForOrFilter(input: string): string` to `apps/web/src/shared/api/postgrestFilters.ts` next to the existing `formatInFilter` (per design D8). Pure function; no exports beyond the function itself.
-- [ ] 1.2 Add `useDebouncedValue<T>(value: T, delayMs: number): T` to `apps/web/src/shared/hooks/useDebouncedValue.ts`. Uses `useState` + `useEffect` with `setTimeout` and a cleanup that clears the pending timer on dependency change or unmount.
+- [x] 1.1 Add `escapeForOrFilter(input: string): string` to `apps/web/src/shared/api/postgrestFilters.ts` next to the existing `formatInFilter` (per design D8). Pure function; no exports beyond the function itself.
+- [x] 1.2 Add `useDebouncedValue<T>(value: T, delayMs: number): T` to `apps/web/src/shared/hooks/useDebouncedValue.ts`. Uses `useState` + `useEffect` with `setTimeout` and a cleanup that clears the pending timer on dependency change or unmount.
 
 ## 2. Data layer
 
