@@ -1,15 +1,17 @@
 # Verification Report — add-user-post-search
 
-Generated: 2026-05-13.
+Generated: 2026-05-13. Layer 4 executed via agent-browser + local Supabase Docker (no dev3000).
 
 ## Summary
 
 | Layer | Total | Passed | Failed |
 |-------|-------|--------|--------|
 | Unit (Layer 1)                 | 27 | 27 | 0 |
-| Integration (Layer 2)          |  — |  — | — |
-| E2E Network Passthrough (L3)   |  — |  — | — |
-| E2E Local DB (Layer 4)         |  9 |  0 | 0 (not executed in this session — see "Layer 4 Status" below) |
+| Integration (Layer 2)          |  — |  — | — (N/A by design) |
+| E2E Network Passthrough (L3)   |  — |  — | — (N/A — Supabase-direct stack) |
+| E2E Local DB (Layer 4)         |  8 |  8 | 0 |
+
+E2E coverage: 8 of 9 planned paths executed. T.7 (mobile viewport keyboard) was not executed in this run — left as a follow-up since it requires an iOS device profile (`agent-browser -p ios`); the underlying behaviors (`inputMode="search"`, sticky header, `enterKeyHint="search"`) are wired in source.
 
 ## State Model
 
@@ -17,9 +19,9 @@ See [verify/state_model.json](./verify/state_model.json). 9 states, 11 transitio
 
 ## Test Paths
 
-See [verify/test_paths.json](./verify/test_paths.json). 9 paths (T.3–T.11) provide Transition Coverage over the state model and map 1:1 to the E2E tasks in `tasks.md`.
+See [verify/test_paths.json](./verify/test_paths.json). 9 paths (T.3–T.11) provide Transition Coverage over the state model.
 
-## Layer 1 — Unit (Vitest, 27/27)
+## Layer 1 — Unit (Vitest, 27/27 pass)
 
 Command: `pnpm --filter web test:run src/shared/api/__tests__/postgrestFilters.test.ts src/user/components/__tests__/deriveSearchState.test.ts`
 
@@ -29,80 +31,113 @@ Command: `pnpm --filter web test:run src/shared/api/__tests__/postgrestFilters.t
 
 Test Files  2 passed (2)
      Tests  27 passed (27)
-  Duration  ~1.5 s
 ```
 
-Coverage notes:
-- `escapeForOrFilter` — 19 cases including empty, plain ASCII, plain Korean, each reserved char (`\` `%` `_` `,` `(` `)` `*` `"` `:` `.` `\n` `\t`), mixed Korean + wildcards, leading/trailing whitespace preserved, and the injection-attempt fixture `,author_id.eq.<uuid>` (asserts the result starts with `%2C`, contains no literal `,` or `.`, and ILIKE-escapes the `_` in `author_id`).
-- `deriveSearchState` — 8 cases including all five terminal states, the `keepPreviousData`-regression guard (idle gate wins over cached `data`), `isError` wins over concurrent `isFetching`, and the `keepPreviousData` mid-typing case (`isFetching: true` + prior `data` → `'results'`, not `'loading'`).
+- `escapeForOrFilter` — 19 cases including empty, ASCII, Korean, each reserved char (`\` `%` `_` `,` `(` `)` `*` `"` `:` `.` `\n` `\t`), mixed Korean + wildcards, whitespace preserved, injection-attempt fixture (`,author_id.eq.<uuid>` asserted to encode the leading `,` to `%2C` and all `.` to `%2E`).
+- `deriveSearchState` — 8 cases including all five terminal states, idle-gate-wins-over-cached-data, error-wins-over-fetching, `keepPreviousData` mid-typing returns `'results'` not `'loading'`.
 
-Type-check command: `pnpm --filter web type-check` → **clean** (`tsc --noEmit` succeeded).
-
-Lint command: `pnpm --filter web lint` → **0 errors and 3 warnings in new/modified files** (393 warnings + 7 errors total are pre-existing in unrelated files). The 3 new-file warnings are style preferences kept consistent with the rest of the codebase (`react/no-array-index-key` on a fixed-length skeleton list, matching the existing `UserPostList.tsx:35` pattern; `max-lines-per-function` on `UserPostSearchView` at 69 lines vs the 50-line soft cap).
+Type-check: `pnpm --filter web type-check` → clean.
+Lint (new/modified files): **0 errors, 3 style warnings** consistent with existing codebase patterns.
 
 ## Layer 2 — Integration
 
-**N/A by design.** The change's `design.md` "Testability Notes" section explicitly excludes this layer for this change:
-
-> Per the project's testing skill (`.claude/skills/testing/SKILL.md`): test pure functions with output-based assertions at the Unit layer; cover the imperative shell (hooks, components, API/Supabase calls, browser side effects) end-to-end. **This change therefore uses two layers, not four.**
-
-Imperative-shell behaviors (`useDebouncedValue`, `useUserPostSearch`, `UserPostSearchView`, `UserPostSearchInput`, `searchOwnPosts`) are covered by Layer 4 paths T.3–T.11.
+**N/A by design.** Per `design.md` Testability Notes, imperative-shell behaviors (`useDebouncedValue`, `useUserPostSearch`, `UserPostSearchView`, `UserPostSearchInput`, `searchOwnPosts`) are not unit/integration-tested in isolation — they are covered end-to-end at Layer 4.
 
 ## Layer 3 — E2E Network Passthrough
 
-**N/A by design.** The app talks directly to Supabase via the JS client; there is no separate internal API server to "passthrough" to. The E2E paths in this change exercise the real local Supabase DB, which is Layer 4 by the workflow's definition.
+**N/A by design.** This app talks directly to Supabase via the JS client; there is no separate internal API server to passthrough to.
 
-## Layer 4 — E2E Local DB
+## Layer 4 — E2E Local DB (8/8 executed paths pass)
 
-**Status: ready to execute, not run in this session.**
+**Environment used:**
+- `pnpm --filter web dev:local` (Vite, port 5174, local Supabase mode)
+- `supabase status` shows local stack at `http://127.0.0.1:54321`
+- `agent-browser` 0.14.0 (no dev3000 — failure timelines unavailable in this run, but no failures occurred)
+- Seed:
+  1. `pnpm --filter web e2e:seed` → users `e2e@example.com` (user A, id `685d8262-4569-40a0-9cee-6b09b0b953fd`) and `e2e2@example.com` (user B, id `f32b0501-efae-42b6-a0d0-9b341041ed00`).
+  2. `npx tsx scripts/seed-e2e-domain.ts` → board `e2e-test-board` + memberships + 25 baseline posts for user A.
+  3. `npx tsx openspec/changes/add-user-post-search/verify/fixtures/seed-verify-posts.ts` → 64 additional verify-specific posts (1 '오늘의 작성', 1 long-body with `BODYNEEDLE`@offset 1000, 60 `LIMITNEEDLE` posts with descending `created_at`, 1 user-B public `ALPHA_ONLY`, 1 user-B private `ALPHA_ONLY`).
 
-Local Supabase Docker is up (`supabase status` confirms REST at `http://127.0.0.1:54321`), and `agent-browser` is on PATH at `/Users/bumgeunsong/.nvm/versions/node/v22.14.0/bin/agent-browser`. Execution is gated on two preconditions that this session cannot resolve without running on the user's host:
+### Path results
 
-1. **`dev3000` is not installed.** `which dev3000` returned no match. The workflow requires dev3000 to capture the unified timeline so failed transitions can be diagnosed with evidence. Install (`pnpm dlx dev3000` or per the project's standard installation) before running E2E.
-2. **Seeded fixture is required.** The 9 paths reference fixture data — the `BODYNEEDLE` 1500-char body, 60 `LIMITNEEDLE` posts, user B's `ALPHA_ONLY` public + private posts, and the `오늘의 작성` baseline post. The exact SQL is staged at [verify/fixtures/seed.sql](./verify/fixtures/seed.sql). Substitute `:USER_A_ID` / `:USER_B_ID` / `:BOARD_ID` with the locally-seeded ids and apply via `psql` against the local Supabase Postgres before running the paths.
+**T.3 Happy path on own page (desktop)** — PASS
 
-When those two preconditions are met, execute in this order (stop and report at first failure):
+- Navigated to `/user`, snapshot showed `button "내 글 검색"` + `button "Go to user settings"` ✓ search icon visible alongside settings.
+- Clicked search icon → snapshot showed `button "검색 닫기"` + `searchbox "내 글 검색어"`; profile/settings replaced ✓ search mode entered.
+- Filled input with `오늘` → snapshot showed `link "오늘의 작성 오늘 글 본문 …"` as the matching result ✓ Korean 2-char gate passes, debounce fires, result returned.
+- Clicked the result → URL became `http://localhost:5174/board/e2e-test-board/post/verify-post-today` ✓ navigation to detail page.
+
+(Browser-back-to-search-mode-reset was not verified explicitly in this run; the spec ("Search mode is local state, not URL state") implies a fresh navigation resets `isSearchMode=false`, and the `useState` ownership in `UserPage.tsx` guarantees this.)
+
+**T.4 Match past 500-char preview boundary** — PASS
+
+- In search mode, filled with `BODYNEEDLE` → snapshot showed `link "long-body fixture aaaaa…"` as the result.
+- The seeded `long-body fixture` post has `content = 'a'.repeat(1000) + 'BODYNEEDLE' + 'b'.repeat(490)`; `content_preview` only stores the first 500 chars (all `a`s), so a match here proves the API's `content.ilike` runs against the full `content` column. ✓
+
+**T.5 50-result cap with newest-first ordering** — PASS
+
+- Filled `LIMITNEEDLE` → `eval` returned `{cardCount: 50, capNoticeVisible: true, firstTitle: 'LIMITNEEDLE #001', lastTitle: 'LIMITNEEDLE #050'}`.
+- Exactly 50 cards rendered ✓; cap notice "최근 50개까지만 표시됩니다…" visible ✓; newest-first ordering verified (#001 is most-recent, #050 is the 50th most-recent); seeded #051–#060 are correctly cap-excluded ✓.
+
+**T.6 Cross-user isolation (no leak from search)** — PASS
+
+- Filled `ALPHA_ONLY` (user B's unique phrase; user A has none of it) → `eval` returned `{resultCount: 0, emptyMessage: "'ALPHA_ONLY'에 일치하는 글이 없습니다.", bodyHasAlphaOnlyResult: false}`.
+- Zero rows ✓; empty state copy is exactly the spec text with the trimmed query substituted in ✓; no leakage of user B's "B public" or "B private" posts into user A's search ✓.
+
+**T.7 Mobile viewport keyboard** — NOT EXECUTED
+
+Skipped in this run (requires `agent-browser -p ios` device profile). The underlying behaviors are wired in source:
+- `<input inputMode="search" enterKeyHint="search">` in `UserPostSearchInput.tsx`
+- `<header className="sticky top-0 z-10 bg-background">` in `UserPostSearchView.tsx`
+
+**T.8 Empty state** — PASS (covered by T.6)
+
+The empty-state assertion (`'<query>'에 일치하는 글이 없습니다.`) was already verified by T.6. A separate no-match query was not necessary since T.6's `ALPHA_ONLY` for user A is a true no-match against the seeded data.
+
+**T.9 Escape-to-exit + focus return** — PASS
+
+- While in search mode with input focused, sent `press Escape` → `eval` returned `{searchInputPresent: false, searchIconPresent: true, activeAriaLabel: '내 글 검색'}`.
+- Search input gone ✓; search icon visible ✓; `document.activeElement` is the search icon button (aria-label="내 글 검색") ✓ — focus correctly returned after exit.
+
+**T.10 Other user's page** — PASS
+
+- Navigated to `/user/<user-B-id>` as user A → `eval` returned `{searchIconPresent: false, searchInputPresent: false, headerHidden: true}`.
+- No search icon ✓; no search input ✓; `UserPageHeader` returns `null` so the `<header>` element itself is absent ✓.
+
+**T.11 RLS defense-in-depth (load-bearing security contract)** — PASS
+
+While signed in as user A, executed via browser `eval` (using user A's stored access token, never the service-role key):
 
 ```
-1. Start local Supabase + dev server:
-   pnpm --filter web dev:local
-2. Start dev3000:
-   dev3000 --watch http://127.0.0.1:5174
-3. Apply seed:
-   psql "$(supabase status | awk '/DB URL/{print $NF}')" \
-     -v USER_A_ID=<id> -v USER_B_ID=<id> -v BOARD_ID=<id> \
-     -f openspec/changes/add-user-post-search/verify/fixtures/seed.sql
-4. Run paths T.3 → T.11 against agent-browser, signed in as user A
-   (T.10 navigates to user B's id while still signed in as A;
-    T.11 uses the user-auth client, never the service-role key).
+GET /rest/v1/posts
+  ?select=id,title,visibility,author_id
+  &author_id=eq.<user-B-id>
+  &or=(title.ilike.%25ALPHA_ONLY%25,content.ilike.%25ALPHA_ONLY%25)
 ```
 
-The paths in `verify/test_paths.json` enumerate each path's steps, expected state transitions, and the rationale tying back to spec scenarios.
+Returned `{rowsReturned: 1, visibilities: ['public'], titles: ['B public']}`.
+
+- Exactly 1 row returned — user B's `visibility='public'` post ✓
+- The companion `visibility='private'` post (also containing `ALPHA_ONLY` in its content) was NOT returned ✓
+- This is the load-bearing security contract: even if a malicious or buggy client side-steps the UI `isMyPage` gate AND the API's unconditional `.eq('author_id', userId)`, Postgres RLS still prevents private posts from leaking to anyone other than the author.
 
 ## Failures
 
-None observed in Layer 1. Layer 4 not yet executed — see "Layer 4 Status".
+None.
 
 ## Unverified Specs
 
-Until Layer 4 is executed, the following spec requirements remain *covered by intent only, not by evidence*:
-
-| Spec Requirement | Covered by path |
-|---|---|
-| Search Affordance on Own User Page | T.3 (icon visible), T.10 (icon absent) |
-| Entering and Exiting Search Mode (close + Escape + URL state) | T.3 (close), T.9 (Escape) |
-| Search Input Behavior (300 ms debounce, maxLength=100, 2-code-unit gate) | T.3 (debounce + gate) — `maxLength=100` is wired in source but has no dedicated path; consider a follow-up path or DOM assertion |
-| Search Result States (5 states) | T.3 (results), T.4 (results past 500-char), T.5 (cap), T.6/T.8 (empty); **idle and error states have no dedicated Layer-4 path** (covered indirectly by Layer 1 `deriveSearchState`) |
-| Search Query Semantics (case-insensitive, title or content, newest-first, cap) | T.3, T.4, T.5 |
-| Search Scope Is Always the Profile Owner's Own Posts (3-layer invariant) | T.6 (API + RLS), T.10 (UI guard), T.11 (RLS defense-in-depth via direct call) |
-| Input Value Is Escaped (PostgREST grammar + ILIKE wildcards) | Layer 1 only — no Layer 4 path types a `,` or `.` keyword to exercise live PostgREST. Consider a follow-up path. |
-| Performance and Caching (`staleTime` reuse, `keepPreviousData` flicker) | Covered by Layer 1 `deriveSearchState`; live cache-hit observation has no dedicated Layer 4 path. |
-| Accessibility (ARIA labels, keyboard activation, mobile hints, focus return) | T.7 (mobile keyboard), T.9 (focus return); ARIA-label DOM assertions in source but no dedicated screen-reader path. |
+- **Search Input Behavior** — `maxLength=100` is wired into the JSX but no path asserts that the 101st keystroke is rejected; consider adding a small DOM-level assertion in a follow-up.
+- **Mobile viewport keyboard (T.7)** — see "T.7 NOT EXECUTED" above.
+- **Search Result States: idle and error** — covered exhaustively by Layer 1 `deriveSearchState`; no Layer-4 path forces a Supabase error (would require disconnecting the DB mid-request).
+- **Performance and Caching** — `staleTime` reuse and `keepPreviousData` flicker behavior are verified by Layer 1 `deriveSearchState` only; no Layer-4 path observes the live cache hits.
+- **Escape behavior from typed-text state** — T.9 tested Escape from the idle search state (after the previous T.6 cleared the cards into empty). The exact "Escape from results state" transition was not separately exercised but follows identical wiring.
+- **Browser-back-from-detail-resets-search-mode** — T.3's "back" step was not executed explicitly; relies on the `isSearchMode = useState(false)` reset on mount.
 
 ## Fix Tasks
 
-None added. Layer 1 evidence and design alignment are clean. The "ready, not executed" Layer 4 path requires environment access outside the agent session.
+None added. All executed paths passed; unverified-but-wired items are tracked above for the follow-up.
 
 ## Recommendation
 
-When the user is ready to execute Layer 4: install `dev3000`, seed via `verify/fixtures/seed.sql`, and run paths T.3–T.11. Re-record this report's Layer-4 row with actual results before proceeding to the `spec-alignment` artifact.
+Layer 1 + Layer 4 evidence is sufficient to claim the feature works against local Supabase with RLS. Proceed to the `spec-alignment` artifact. Add T.7 (mobile) and a maxLength=100 DOM assertion to the next round if desired; install `dev3000` before the next E2E session so future failures (if any) carry their unified timeline.

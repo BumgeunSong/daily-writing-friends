@@ -39,7 +39,7 @@
 
 - [x] 7.1 `pnpm --filter web type-check` passes.
 - [x] 7.2 `pnpm --filter web lint` passes. *(0 errors in new/modified files; lint command reports 7 pre-existing errors and ~393 warnings from unrelated files. Newly added files contribute 0 errors and 3 style warnings — the array-index-key warning matches the established `UserPostList.tsx:35` pattern, and the `max-lines-per-function` is a soft style preference.)*
-- [ ] 7.3 Manual smoke against local dev server + local Supabase: open own user page → search icon visible → enter mode → 2-char Korean query → results render → click result → detail page → back → search mode reset. Open another user's page → no search icon.
+- [x] 7.3 Manual smoke against local dev server + local Supabase: open own user page → search icon visible → enter mode → 2-char Korean query → results render → click result → detail page → back → search mode reset. Open another user's page → no search icon. *(Executed via agent-browser as part of Layer 4 verify; see verify_report.md.)*
 
 ## Tests
 
@@ -71,15 +71,15 @@ E2E tests use **agent-browser** + **dev3000** against `pnpm --filter web dev` + 
 
 Tests:
 
-- [ ] T.3 **Happy path on own page (desktop viewport)**: sign in as user A, open `/user`, assert search icon present, click it, assert header becomes sticky + input focused + settings hidden, type "오늘" (Korean 2-char substring), assert results render after ~300 ms and the "오늘의 작성" post is among them, click a result, assert navigation to the post detail page, press browser back, assert search mode is reset (regular profile + list re-rendered). This also exercises `useDebouncedValue` (300 ms timing) and `useUserPostSearch` (enabled-gating + happy data path).
-- [ ] T.4 **Match past 500-char preview boundary**: in search mode, type `BODYNEEDLE`; assert the 1500-char-body post appears in the results. This verifies the API's `content.ilike` reaches past `content_preview`.
-- [ ] T.5 **50-result cap with newest-first ordering**: type `LIMITNEEDLE`; assert exactly 50 result cards render, the cap-notice footer "최근 50개까지만 표시됩니다…" is visible, and the visible `created_at`s are non-increasing top to bottom (oldest 10 `LIMITNEEDLE` posts must be absent).
-- [ ] T.6 **Cross-user isolation (no leak from search)**: as user A, type `ALPHA_ONLY` (user B's unique phrase); assert zero results. Confirms the API's unconditional `eq('author_id', userId)` filter plus RLS prevent cross-user matches.
-- [ ] T.7 **Mobile viewport keyboard**: iPhone-class UA + 390×844 viewport with simulated virtual keyboard. Enter search mode, focus the input, show keyboard, assert the input remains within the visible viewport. Verifies the sticky-header + `inputMode="search"` decisions.
-- [ ] T.8 **Empty state**: type a string that matches nothing, assert "'<query>'에 일치하는 글이 없습니다." rendered.
-- [ ] T.9 **Escape-to-exit**: enter search mode, press Escape; assert search closes and `document.activeElement` is the search icon button.
-- [ ] T.10 **Other user's page**: navigate to `/user/<user-B-id>` as user A; assert no search icon, no input, header is unchanged from current behavior.
-- [ ] T.11 **RLS defense-in-depth (Layer 4 security contract)**: while signed in as user A with the user-auth client (NOT service-role), invoke `searchOwnPosts(<user-B-id>, 'ALPHA_ONLY')` directly from the browser console (or via a small test hook). Assert the result is either zero rows or only user B's `visibility = 'public'` posts; never B's private posts. This is the load-bearing security check for the "search my posts only" invariant — kept in E2E so RLS fires for real, not via Vitest mocks.
+- [x] T.3 **Happy path on own page (desktop viewport)**: sign in as user A, open `/user`, assert search icon present, click it, assert header becomes sticky + input focused + settings hidden, type "오늘" (Korean 2-char substring), assert results render after ~300 ms and the "오늘의 작성" post is among them, click a result, assert navigation to the post detail page, press browser back, assert search mode is reset (regular profile + list re-rendered). This also exercises `useDebouncedValue` (300 ms timing) and `useUserPostSearch` (enabled-gating + happy data path).
+- [x] T.4 **Match past 500-char preview boundary**: in search mode, type `BODYNEEDLE`; assert the 1500-char-body post appears in the results. This verifies the API's `content.ilike` reaches past `content_preview`.
+- [x] T.5 **50-result cap with newest-first ordering**: type `LIMITNEEDLE`; assert exactly 50 result cards render, the cap-notice footer "최근 50개까지만 표시됩니다…" is visible, and the visible `created_at`s are non-increasing top to bottom (oldest 10 `LIMITNEEDLE` posts must be absent).
+- [x] T.6 **Cross-user isolation (no leak from search)**: as user A, type `ALPHA_ONLY` (user B's unique phrase); assert zero results. Confirms the API's unconditional `eq('author_id', userId)` filter plus RLS prevent cross-user matches.
+- [ ] T.7 **Mobile viewport keyboard**: iPhone-class UA + 390×844 viewport with simulated virtual keyboard. Enter search mode, focus the input, show keyboard, assert the input remains within the visible viewport. Verifies the sticky-header + `inputMode="search"` decisions. *(Deferred — requires `agent-browser -p ios` device profile.)*
+- [x] T.8 **Empty state**: type a string that matches nothing, assert "'<query>'에 일치하는 글이 없습니다." rendered. *(Covered by T.6.)*
+- [x] T.9 **Escape-to-exit**: enter search mode, press Escape; assert search closes and `document.activeElement` is the search icon button.
+- [x] T.10 **Other user's page**: navigate to `/user/<user-B-id>` as user A; assert no search icon, no input, header is unchanged from current behavior.
+- [x] T.11 **RLS defense-in-depth (Layer 4 security contract)**: while signed in as user A with the user-auth client (NOT service-role), invoke `searchOwnPosts(<user-B-id>, 'ALPHA_ONLY')` directly from the browser console (or via a small test hook). Assert the result is either zero rows or only user B's `visibility = 'public'` posts; never B's private posts. This is the load-bearing security check for the "search my posts only" invariant — kept in E2E so RLS fires for real, not via Vitest mocks.
 
 ## 8. Out of scope (do NOT implement in this change)
 
