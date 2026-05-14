@@ -13,7 +13,6 @@
  *
  * Cap: at most 50 most-recent matches. No pagination in v1.
  */
-import * as Sentry from '@sentry/react';
 import type { Post } from '@/post/model/Post';
 import { FEED_POST_SELECT, mapRowToPost } from '@/post/api/post';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
@@ -46,11 +45,12 @@ export async function searchOwnPosts(
     .limit(limit + 1);
 
   if (error) {
-    // Avoid console.error here: the Supabase PostgrestError's `details` field
-    // can echo the filter string (containing the user's raw query) and would
-    // leak to any console-scraping log collector. The hook's Sentry.captureException
-    // (no `extra`) is the sanctioned telemetry path.
-    Sentry.captureException(error, { tags: { feature: 'user-post-search' } });
+    // Avoid console.error and direct Sentry capture here: PostgrestError's
+    // `details` field can echo the filter string (containing the user's raw
+    // query). Throwing the error lets the global QueryCache.onError tracker
+    // (src/shared/lib/queryClient.ts → trackQueryError) report it after
+    // wrapping via `getErrorMessage`, which propagates only `.message` and
+    // drops `.details` / `.hint`.
     throw error;
   }
 

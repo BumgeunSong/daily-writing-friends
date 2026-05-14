@@ -13,7 +13,7 @@
     },
     {
       "id": "SEARCH_MODE_IDLE",
-      "description": "Search mode active, trimmed query length < 2. Sticky header with close button + input; body shows the idle prompt + helper text.",
+      "description": "Search mode active, trimmed query length < 2. Sticky header with close button + input. Body content depends on the substate: when trimmedQuery.length === 0 the body renders NO content (input placeholder is the only cue); when trimmedQuery.length === 1 the body renders the hint '2글자 이상 입력해주세요.' centered in muted text. No search request fires in either substate.",
       "guard": "isSearchMode && trimmedQuery.length < 2"
     },
     {

@@ -41,6 +41,17 @@ describe('escapeForOrFilter', () => {
     expect(escapeForOrFilter(input)).toBe(expected);
   });
 
+  // Non-ASCII whitespace matched by \s must be UTF-8 percent-encoded, not byte-encoded.
+  // NBSP U+00A0 → UTF-8 0xC2 0xA0. Previous implementation emitted invalid `%A0`.
+  // U+2028 LINE SEPARATOR → UTF-8 0xE2 0x80 0xA8. Previous implementation emitted invalid `%2028`.
+  it.each([
+    ['\u00A0', '%C2%A0'],
+    ['\u2028', '%E2%80%A8'],
+    ['\u3000', '%E3%80%80'],
+  ])('UTF-8 percent-encodes non-ASCII whitespace %j as %j', (input, expected) => {
+    expect(escapeForOrFilter(input)).toBe(expected);
+  });
+
   it('mixes Korean and wildcards correctly', () => {
     expect(escapeForOrFilter('안녕%_하세요')).toBe('안녕\\%\\_하세요');
   });
