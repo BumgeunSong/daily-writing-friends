@@ -11,9 +11,37 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const SUPABASE_URL = 'http://127.0.0.1:54321';
-const SERVICE_ROLE =
+const SUPABASE_URL = process.env.SUPABASE_URL ?? 'http://127.0.0.1:54321';
+
+// Hard guard: this script is only intended for the local Supabase Docker stack.
+// Refuse to run against anything else even if the caller supplies a service-role
+// key — running it against a staging or shared instance would create test data
+// and (worse) accept the well-known local default JWT against a misconfigured
+// non-local instance.
+function isLocalSupabaseUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    return host === '127.0.0.1' || host === 'localhost' || host === '::1';
+  } catch {
+    return false;
+  }
+}
+
+if (!isLocalSupabaseUrl(SUPABASE_URL)) {
+  throw new Error(
+    `seed-verify-posts refuses to run against non-local SUPABASE_URL: ${SUPABASE_URL}`,
+  );
+}
+
+// Prefer SUPABASE_SERVICE_ROLE_KEY from the environment (the Supabase CLI sets
+// this via `supabase start`). Fall back to the public well-known local default
+// JWT only when no env value is provided — this default ONLY works against a
+// fresh local Supabase Docker stack and is documented as such in the Supabase
+// CLI release notes.
+const LOCAL_DEFAULT_SERVICE_ROLE =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
+const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY ?? LOCAL_DEFAULT_SERVICE_ROLE;
+
 const BOARD_ID = 'e2e-test-board';
 
 async function loadUserIds(): Promise<Record<string, string>> {
