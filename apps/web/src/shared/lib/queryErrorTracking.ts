@@ -2,7 +2,10 @@ import * as Sentry from '@sentry/react';
 import type { Query, Mutation } from '@tanstack/react-query';
 import { FirebaseError } from 'firebase/app';
 import { addSentryBreadcrumb, setSentryContext, setSentryTags } from '@/sentry';
-import { trackFirebasePermissionError, getPermissionErrorHints } from '@/shared/utils/firebaseErrorTracking';
+import {
+  trackFirebasePermissionError,
+  getPermissionErrorHints,
+} from '@/shared/utils/firebaseErrorTracking';
 import { getCurrentUserIdFromStorage } from '@/shared/utils/getCurrentUserId';
 
 // Performance tracking constants
@@ -62,7 +65,7 @@ export function isIndexedDbConnectionError(error: unknown): boolean {
 function handleIndexedDbConnectionError(
   _error: unknown,
   queryKey: unknown[],
-  retryCount: number
+  retryCount: number,
 ): void {
   const queryDescription = getQueryKeyDescription(queryKey);
 
@@ -71,7 +74,7 @@ function handleIndexedDbConnectionError(
     `IndexedDB connection lost (retry ${retryCount}/3): ${queryDescription}`,
     'indexeddb',
     { queryKey, retryCount },
-    'warning'
+    'warning',
   );
 
   // Only report to Sentry after all retries have been exhausted
@@ -94,7 +97,7 @@ function handleIndexedDbConnectionError(
       });
       Sentry.captureMessage(
         `IndexedDB connection lost after ${retryCount} retries: ${queryDescription}`,
-        'warning'
+        'warning',
       );
     });
   }
@@ -102,9 +105,15 @@ function handleIndexedDbConnectionError(
 
 // Query key to Firebase path mappings
 const QUERY_KEY_PATTERNS = {
-  posts: (queryKey: unknown[]) => ({ operation: 'read' as const, path: `boards/${queryKey[1]}/posts` }),
+  posts: (queryKey: unknown[]) => ({
+    operation: 'read' as const,
+    path: `boards/${queryKey[1]}/posts`,
+  }),
   user: (queryKey: unknown[]) => ({ operation: 'read' as const, path: `users/${queryKey[1]}` }),
-  comments: (queryKey: unknown[]) => ({ operation: 'read' as const, path: `boards/${queryKey[1]}/posts/${queryKey[2]}/comments` }),
+  comments: (queryKey: unknown[]) => ({
+    operation: 'read' as const,
+    path: `boards/${queryKey[1]}/posts/${queryKey[2]}/comments`,
+  }),
   boards: () => ({ operation: 'read' as const, path: 'boards' }),
 } as const;
 
@@ -134,7 +143,7 @@ export function trackQueryStart(queryKey: unknown[]) {
     `Query started: ${getQueryKeyDescription(queryKey)}`,
     'query',
     { queryKey },
-    'info'
+    'info',
   );
 }
 
@@ -151,7 +160,7 @@ export function trackQuerySuccess(queryKey: unknown[], duration?: number) {
       `Slow query detected: ${getQueryKeyDescription(queryKey)}`,
       'performance',
       { queryKey, duration: actualDuration },
-      'warning'
+      'warning',
     );
   }
 
@@ -159,13 +168,39 @@ export function trackQuerySuccess(queryKey: unknown[], duration?: number) {
 }
 
 /**
+ * Strip PII from query keys before they are recorded into Sentry.
+ *
+ * Some React Query keys embed user-supplied strings (e.g. the user post
+ * search keyword). Those values must never reach Sentry context, breadcrumbs,
+ * tags, or fingerprints. This helper runs once at the top of `trackQueryError`
+ * so every downstream tracker sees the redacted key.
+ *
+ * Add new entries here as new PII-bearing queries are introduced.
+ */
+const REDACTED_QUERY_KEY_PREFIXES: ReadonlySet<string> = new Set(['userPostSearch']);
+
+function redactQueryKey(queryKey: readonly unknown[]): unknown[] {
+  if (typeof queryKey[0] !== 'string' || !REDACTED_QUERY_KEY_PREFIXES.has(queryKey[0])) {
+    return [...queryKey];
+  }
+  // Keep the prefix and the scoping id (e.g. userId at index 1); replace any
+  // user-supplied values at index >= 2 with a constant marker.
+  return queryKey.map((part, i) => (i >= 2 ? '[redacted]' : part));
+}
+
+/**
  * Enhanced error tracking for React Query operations
  */
 export function trackQueryError(
   error: unknown,
-  query: Query<unknown, unknown, unknown, unknown[]>
+  query: Query<unknown, unknown, unknown, unknown[]>,
 ) {
-  const { queryKey, state: { fetchFailureCount = 0 }, queryHash } = query;
+  const {
+    queryKey: rawQueryKey,
+    state: { fetchFailureCount = 0 },
+    queryHash,
+  } = query;
+  const queryKey = redactQueryKey(rawQueryKey);
   const queryDescription = getQueryKeyDescription(queryKey);
 
   // Handle iOS IndexedDB connection errors gracefully
@@ -198,10 +233,15 @@ export function trackQueryError(
  */
 export function trackMutationError(
   error: unknown,
-  mutation: Mutation<unknown, unknown, unknown, unknown>
+  mutation: Mutation<unknown, unknown, unknown, unknown>,
 ) {
-  const { options: { mutationKey }, state: { variables } } = mutation;
-  const mutationDescription = mutationKey ? getQueryKeyDescription(mutationKey) : 'Unknown mutation';
+  const {
+    options: { mutationKey },
+    state: { variables },
+  } = mutation;
+  const mutationDescription = mutationKey
+    ? getQueryKeyDescription(mutationKey)
+    : 'Unknown mutation';
 
   // Add error context and breadcrumb
   addErrorContext({
@@ -251,7 +291,7 @@ function addErrorContext(params: {
       ...(variables !== undefined && { variables: variables ? '[Variables present]' : undefined }),
       errorMessage: getErrorMessage(error),
     },
-    'error'
+    'error',
   );
 
   // Set context
@@ -315,7 +355,11 @@ function handleFirebaseQueryError(error: FirebaseError, queryKey: unknown[]) {
 /**
  * Handle Firebase-specific mutation errors
  */
-function handleFirebaseMutationError(error: FirebaseError, mutationKey: unknown[] | undefined, variables: unknown) {
+function handleFirebaseMutationError(
+  error: FirebaseError,
+  mutationKey: unknown[] | undefined,
+  variables: unknown,
+) {
   const { operation, path } = mutationKey
     ? parseQueryKeyForFirebase(mutationKey)
     : { operation: 'write' as const, path: 'unknown' };
@@ -362,11 +406,18 @@ function captureQueryError(error: unknown, queryKey: unknown[], retryCount: numb
 /**
  * Capture non-Firebase mutation errors
  */
-function captureMutationError(error: unknown, mutationKey: unknown[] | undefined, variables: unknown) {
+function captureMutationError(
+  error: unknown,
+  mutationKey: unknown[] | undefined,
+  variables: unknown,
+) {
   const enhancedError = error instanceof Error ? error : new Error(getErrorMessage(error));
 
   Sentry.withScope((scope) => {
-    scope.setFingerprint(['mutation-error', mutationKey ? getQueryKeyDescription(mutationKey) : 'unknown']);
+    scope.setFingerprint([
+      'mutation-error',
+      mutationKey ? getQueryKeyDescription(mutationKey) : 'unknown',
+    ]);
     scope.setLevel('error');
     scope.setContext('mutation', {
       mutationKey,
@@ -380,7 +431,10 @@ function captureMutationError(error: unknown, mutationKey: unknown[] | undefined
 /**
  * Parse query key to determine Firebase operation and path
  */
-function parseQueryKeyForFirebase(queryKey: unknown[]): { operation: 'read' | 'write', path: string } {
+function parseQueryKeyForFirebase(queryKey: unknown[]): {
+  operation: 'read' | 'write';
+  path: string;
+} {
   const firstKey = queryKey[0] as keyof typeof QUERY_KEY_PATTERNS;
   const pattern = QUERY_KEY_PATTERNS[firstKey];
 
@@ -408,7 +462,7 @@ function getQueryKeyDescription(queryKey: unknown[]): string {
   }
 
   // Default: join with dots
-  return queryKey.map(k => String(k)).join('.');
+  return queryKey.map((k) => String(k)).join('.');
 }
 
 /**

@@ -15,25 +15,16 @@ const MIN_QUERY_LENGTH = 2;
 const STALE_TIME_MS = 30_000;
 const CACHE_TIME_MS = 5 * 60_000;
 
-/**
- * Opaque FNV-1a 32-bit hash of the search query. Used in place of the raw
- * query inside the React Query key so the global Sentry error tracker
- * (which records `queryKey` into Sentry context for every failed query)
- * never sees the user's keyword. Cache scoping still works because identical
- * queries hash identically.
- */
-function hashQuery(query: string): string {
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < query.length; i++) {
-    hash ^= query.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return (hash >>> 0).toString(16).padStart(8, '0');
-}
+export const USER_POST_SEARCH_QUERY_KEY = 'userPostSearch';
 
 export function useUserPostSearch(userId: string, query: string) {
   return useQuery<Post[]>({
-    queryKey: ['userPostSearch', userId, hashQuery(query)],
+    // The raw query is kept in the key so React Query's cache scopes correctly
+    // (a non-collision-free hash would risk returning posts for the wrong
+    // keyword). PII redaction for this key happens centrally in
+    // `src/shared/lib/queryErrorTracking.ts → redactQueryKey`, which strips
+    // the third element before any Sentry context/breadcrumb is recorded.
+    queryKey: [USER_POST_SEARCH_QUERY_KEY, userId, query],
     queryFn: () => searchOwnPosts(userId, query),
     enabled: query.length >= MIN_QUERY_LENGTH,
     staleTime: STALE_TIME_MS,
@@ -42,6 +33,6 @@ export function useUserPostSearch(userId: string, query: string) {
     // Sentry reporting is delegated to the global QueryCache.onError tracker
     // (src/shared/lib/queryClient.ts → trackQueryError). It wraps the error
     // via `getErrorMessage` so PostgrestError.details (which may echo the
-    // filter string) is not propagated, and the queryKey above is hashed.
+    // filter string) is not propagated.
   });
 }
