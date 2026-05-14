@@ -102,6 +102,10 @@ export default function UserPage() {
     if (!userId) return;
     shouldRestoreFocus.current = true;
     setIsSearchMode(false);
+    // Spec "Explicit exit clears the persisted state": sessionStorage AND the
+    // in-memory query must both be cleared so the next entry into search mode
+    // starts with an empty input.
+    setPersistedQuery('');
     clearSearchSession(userId);
   }, [userId]);
 
