@@ -1,6 +1,5 @@
 import type { Post } from '@/post/model/Post';
-
-const MIN_QUERY_LENGTH = 2;
+import { MIN_QUERY_LENGTH } from '@/user/search/constants';
 
 export type SearchState = 'idle' | 'loading' | 'empty' | 'results' | 'error';
 
