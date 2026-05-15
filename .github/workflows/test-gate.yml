@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
+      issues: write
 
     steps:
       - uses: actions/checkout@v4
@@ -46,7 +47,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: gh pr edit "$PR_NUMBER" --add-label "missing-tests"
+        run: |
+          gh label create "missing-tests" --color "e11d48" --description "PR is missing unit tests" --force
+          gh pr edit "$PR_NUMBER" --add-label "missing-tests"
 
       - name: Remove missing-tests label
         if: steps.check.outputs.missing == 'false' && steps.check.outputs.skip != 'true'
