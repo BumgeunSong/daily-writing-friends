@@ -4,8 +4,8 @@ import { useUserPostSearch } from '@/user/hooks/useUserPostSearch';
 import { PostItem, PostItemSkeleton } from '@/user/components/UserPostItem';
 import { UserPostSearchInput } from '@/user/components/UserPostSearchInput';
 import { deriveSearchState } from '@/user/components/deriveSearchState';
+import { SEARCH_RESULTS_CAP } from '@/user/search/constants';
 
-const RESULTS_CAP = 50;
 const LOADING_SKELETONS = 5;
 
 interface UserPostSearchViewProps {
@@ -89,12 +89,12 @@ export function UserPostSearchView({
 
         {state === 'results' && result.data && (
           <div className="space-y-2">
-            {result.data.slice(0, RESULTS_CAP).map((post) => (
+            {result.data.slice(0, SEARCH_RESULTS_CAP).map((post) => (
               <PostItem key={post.id} post={post} />
             ))}
-            {result.data.length > RESULTS_CAP && (
+            {result.data.length > SEARCH_RESULTS_CAP && (
               <div className="py-4 text-center">
-                <p className="text-sm text-muted-foreground">최근 50개까지만 표시됩니다. 검색어를 더 구체적으로 입력해보세요.</p>
+                <p className="text-sm text-muted-foreground">{`최근 ${SEARCH_RESULTS_CAP}개까지만 표시됩니다. 검색어를 더 구체적으로 입력해보세요.`}</p>
               </div>
             )}
           </div>
