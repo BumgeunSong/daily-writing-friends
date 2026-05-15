@@ -1,10 +1,7 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { adminQueryKeys, getBoards, getMe, getUsers } from '@/apis/admin-api'
-import { useAuth } from '@/hooks/useAuth'
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { adminQueryKeys, getBoards, getUsers } from '@/apis/admin-api'
 import {
   Card,
   CardContent,
@@ -15,91 +12,25 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useRouter } from 'next/navigation'
 import { User, Users, Newspaper, Clock, MessageSquare } from "lucide-react"
 
 export default function AdminPage() {
-  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
 
-  const isSignedIn = !authLoading && !!user
-
-  // Server-side admin check. Replaces the previously-hardcoded email Set
-  // that leaked admin identities to the client bundle. Allowlist lives in
-  // ADMIN_EMAILS on the server only.
-  const {
-    data: meData,
-    isLoading: meLoading,
-    isError: meErrored,
-  } = useQuery({
-    queryKey: adminQueryKeys.me,
-    queryFn: getMe,
-    enabled: isSignedIn,
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  })
-
-  const isAdmin = meData?.isAdmin === true
-
+  // Auth and admin checks are handled by the parent layout (admin/layout.tsx).
+  // By the time this component renders, the viewer is guaranteed to be an
+  // authenticated admin. These queries are enabled unconditionally.
   const { data: users, isLoading: usersLoading, error: dataError } = useQuery({
     queryKey: adminQueryKeys.users,
     queryFn: getUsers,
-    enabled: isAdmin,
   })
 
   const { data: boards, isLoading: boardsLoading } = useQuery({
     queryKey: adminQueryKeys.boards,
     queryFn: getBoards,
     staleTime: 5 * 60 * 1000,
-    enabled: isAdmin,
   })
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login')
-    }
-  }, [user, authLoading, router])
-
-  // Loading skeleton: shown while we don't yet know if the viewer is admin.
-  // Critical: never render dashboard content (or even reveal page structure
-  // beyond a generic skeleton) while isAdmin is undefined — otherwise a
-  // non-admin would see a flash of the admin shell.
-  if (authLoading || (isSignedIn && meLoading)) {
-    return (
-      <div className="space-y-4">
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-8 w-1/3" />
-            <Skeleton className="h-4 w-1/2" />
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-20 w-full" />
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  if (!isAdmin) {
-    return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="text-red-500">접근 제한됨</CardTitle>
-          <CardDescription>
-            {meErrored
-              ? '관리자 권한 확인 중 오류가 발생했습니다. 다시 로그인해 주세요.'
-              : '이 페이지에 접근할 수 있는 권한이 없습니다.'}
-          </CardDescription>
-        </CardHeader>
-        <CardFooter>
-          <Button variant="outline" onClick={() => router.push('/')}>
-            홈으로 돌아가기
-          </Button>
-        </CardFooter>
-      </Card>
-    )
-  }
 
   if (usersLoading || boardsLoading) {
     return (
