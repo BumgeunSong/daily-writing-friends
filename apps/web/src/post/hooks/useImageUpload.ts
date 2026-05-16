@@ -11,6 +11,10 @@ import {
   aggregateResults,
   getValidationMessage,
 } from '@/post/utils/ImageValidation';
+import {
+  captureProcessingFailure,
+  HEIC_FAILURE_MESSAGE,
+} from '@/post/utils/imageUploadTelemetry';
 import { sanitizeStorageFileName } from '@/post/utils/storageFileName';
 
 interface UseImageUploadProps {
@@ -46,7 +50,14 @@ export function useImageUpload({ insertImage, editorRoot, getCursorIndex }: UseI
         return false;
       }
 
-      const processed = await processImageForUpload(file);
+      const processed = await processImageForUpload(file, {
+        onError: captureProcessingFailure,
+      });
+
+      if (processed.wasHeic && processed.heicConversionFailed) {
+        toast.error(HEIC_FAILURE_MESSAGE, { position: 'bottom-center' });
+        return false;
+      }
 
       const processedSizeResult = validateProcessedFileSize(processed.file);
       if (!processedSizeResult.valid) {
@@ -289,6 +300,8 @@ const logUploadSuccess = (processed: {
   processedSize: number;
   wasHeic: boolean;
   didResize: boolean;
+  heicConversionFailed: boolean;
+  resizeFailed: boolean;
 }) => {
   const compressionRatio =
     processed.rawSize > 0 ? processed.processedSize / processed.rawSize : 1;
@@ -302,6 +315,8 @@ const logUploadSuccess = (processed: {
       compression_ratio: Number(compressionRatio.toFixed(3)),
       was_heic: processed.wasHeic,
       did_resize: processed.didResize,
+      heic_conversion_failed: processed.heicConversionFailed,
+      resize_failed: processed.resizeFailed,
     },
   });
 };

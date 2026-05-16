@@ -10,6 +10,10 @@ import {
   validateFileType,
   getValidationMessage,
 } from '@/post/utils/ImageValidation';
+import {
+  captureProcessingFailure,
+  HEIC_FAILURE_MESSAGE,
+} from '@/post/utils/imageUploadTelemetry';
 import { formatDate } from '@/post/utils/sanitizeHtml';
 import { sanitizeStorageFileName } from '@/post/utils/storageFileName';
 import { uploadFileWithProgress } from '@/post/utils/uploadWithProgress';
@@ -44,7 +48,14 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
       throw new Error(getValidationMessage(rawSizeResult.reason));
     }
 
-    const processed = await processImageForUpload(file, { onStage: setStage });
+    const processed = await processImageForUpload(file, {
+      onStage: setStage,
+      onError: captureProcessingFailure,
+    });
+
+    if (processed.wasHeic && processed.heicConversionFailed) {
+      throw new Error(HEIC_FAILURE_MESSAGE);
+    }
 
     const processedResult = validateProcessedFileSize(processed.file);
     if (!processedResult.valid) {
@@ -214,6 +225,8 @@ const logUploadSuccess = (processed: {
   processedSize: number;
   wasHeic: boolean;
   didResize: boolean;
+  heicConversionFailed: boolean;
+  resizeFailed: boolean;
 }) => {
   const compressionRatio =
     processed.rawSize > 0 ? processed.processedSize / processed.rawSize : 1;
@@ -227,6 +240,8 @@ const logUploadSuccess = (processed: {
       compression_ratio: Number(compressionRatio.toFixed(3)),
       was_heic: processed.wasHeic,
       did_resize: processed.didResize,
+      heic_conversion_failed: processed.heicConversionFailed,
+      resize_failed: processed.resizeFailed,
     },
   });
 };

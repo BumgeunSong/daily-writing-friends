@@ -6,9 +6,11 @@ const HEIC_CONVERSION_QUALITY = 0.8;
 const PROFILE_PHOTO_SIZE = 96;
 
 type ProcessingStage = 'converting' | 'resizing';
+type ProcessingFailure = 'heic_convert' | 'resize';
 
 interface ProcessImageOptions {
     onStage?: (stage: ProcessingStage) => void;
+    onError?: (failure: ProcessingFailure, error: unknown) => void;
 }
 
 interface ProcessedImage {
@@ -17,6 +19,8 @@ interface ProcessedImage {
     processedSize: number;
     wasHeic: boolean;
     didResize: boolean;
+    heicConversionFailed: boolean;
+    resizeFailed: boolean;
 }
 
 const cropAndResizeImage = async (file: File, callback: (resizedFile: File) => void) => {
@@ -43,13 +47,16 @@ const processImageForUpload = async (
     await yieldToBrowser();
 
     let processedFile = file;
+    let heicConversionFailed = false;
+    let resizeFailed = false;
 
     if (wasHeic) {
         options.onStage?.('converting');
         try {
             processedFile = await convertHeicToJpeg(file);
         } catch (error) {
-            console.warn('HEIC conversion failed, using original file:', error);
+            heicConversionFailed = true;
+            options.onError?.('heic_convert', error);
         }
         await yieldToBrowser();
     }
@@ -61,7 +68,8 @@ const processImageForUpload = async (
         processedFile = resizeResult.file;
         didResize = resizeResult.didResize;
     } catch (error) {
-        console.warn('Image resize failed, using file as-is:', error);
+        resizeFailed = true;
+        options.onError?.('resize', error);
     }
 
     return {
@@ -70,6 +78,8 @@ const processImageForUpload = async (
         processedSize: processedFile.size,
         wasHeic,
         didResize,
+        heicConversionFailed,
+        resizeFailed,
     };
 };
 
@@ -245,4 +255,4 @@ const blobToFile = (blob: Blob, fileName: string, fileType: string): File => {
 };
 
 export { cropAndResizeImage, processImageForUpload };
-export type { ProcessedImage, ProcessImageOptions, ProcessingStage };
+export type { ProcessedImage, ProcessImageOptions, ProcessingFailure, ProcessingStage };

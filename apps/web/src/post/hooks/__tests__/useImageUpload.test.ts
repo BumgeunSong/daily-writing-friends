@@ -35,6 +35,8 @@ vi.mock('@/post/utils/ImageUtils', () => ({
       processedSize: file.size,
       wasHeic: false,
       didResize: false,
+      heicConversionFailed: false,
+      resizeFailed: false,
     }),
   ),
 }));
@@ -83,6 +85,8 @@ describe('useImageUpload', () => {
         processedSize: file.size,
         wasHeic: false,
         didResize: false,
+        heicConversionFailed: false,
+        resizeFailed: false,
       }),
     );
   });
@@ -101,7 +105,7 @@ describe('useImageUpload', () => {
         await new Promise((r) => setTimeout(r, 10));
       });
 
-      expect(processImageForUpload).toHaveBeenCalledWith(file);
+      expect(processImageForUpload).toHaveBeenCalledWith(file, expect.any(Object));
       expect(uploadBytes).toHaveBeenCalled();
       expect(getDownloadURL).toHaveBeenCalled();
       expect(insertImage).toHaveBeenCalledWith('https://storage.example.com/image.jpg', 5);
