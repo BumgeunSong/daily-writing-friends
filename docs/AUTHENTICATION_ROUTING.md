@@ -8,7 +8,7 @@ The app uses **React Router v6.4 Data API** with custom authentication guards to
 
 ## AuthUser Type
 
-**Location**: `src/shared/hooks/useAuth.tsx`
+**Location**: `apps/web/src/shared/hooks/useAuth.tsx`
 
 `AuthUser` is a project-local interface that wraps Supabase's `User` type. It maps Supabase fields to a stable interface so consumer components can use `currentUser.uid` without depending on Supabase internals.
 
@@ -21,7 +21,7 @@ export interface AuthUser {
 }
 ```
 
-`mapToAuthUser(user)` (in `src/shared/auth/supabaseAuth.ts`) converts a Supabase `User` to `AuthUser`.
+`mapToAuthUser(user)` (in `apps/web/src/shared/auth/supabaseAuth.ts`) converts a Supabase `User` to `AuthUser`.
 
 ## Authentication Flow
 
@@ -49,7 +49,7 @@ graph TD
 
 The app uses `sessionStorage['returnTo']` (not a React state field) to remember where a user was trying to go before being redirected to `/login`.
 
-1. `PrivateRoutes` calls `resolvePrivateRoute` (pure fn in `src/shared/utils/routingDecisions.ts`). On redirect, it writes `sessionStorage.setItem('returnTo', pathname)`.
+1. `PrivateRoutes` calls `resolvePrivateRoute` (pure fn in `apps/web/src/shared/utils/routingDecisions.ts`). On redirect, it writes `sessionStorage.setItem('returnTo', pathname)`.
 2. After login, `RootRedirect` reads `sessionStorage.getItem('returnTo')` and navigates there, then clears the key.
 3. `useGoogleLoginWithRedirect` can also write `sessionStorage['returnTo']` before triggering the OAuth redirect.
 
@@ -72,7 +72,7 @@ graph TD
 
 ## Supabase Auth Functions
 
-**Location**: `src/shared/auth/supabaseAuth.ts`
+**Location**: `apps/web/src/shared/auth/supabaseAuth.ts`
 
 | Function | Description |
 |---|---|
@@ -87,7 +87,7 @@ graph TD
 
 ## Authentication Components
 
-### 1. AuthProvider (`src/shared/hooks/useAuth.tsx`)
+### 1. AuthProvider (`apps/web/src/shared/hooks/useAuth.tsx`)
 
 **Purpose**: Manages global authentication state using Supabase Auth.
 
@@ -112,11 +112,11 @@ interface AuthContextType {
 const { currentUser, loading } = useAuth();
 ```
 
-### 2. PrivateRoutes (`src/shared/components/auth/RouteGuards.tsx`)
+### 2. PrivateRoutes (`apps/web/src/shared/components/auth/RouteGuards.tsx`)
 
 **Purpose**: Protects routes that require authentication.
 
-**Logic** (delegated to `resolvePrivateRoute` in `src/shared/utils/routingDecisions.ts`):
+**Logic** (delegated to `resolvePrivateRoute` in `apps/web/src/shared/utils/routingDecisions.ts`):
 1. If auth is still loading → render `null` (prevents flash)
 2. If auth loaded and no user → write `sessionStorage['returnTo']` and `<Navigate to="/login" replace />`
 3. If auth loaded and user exists → render `<Outlet />`
@@ -134,7 +134,7 @@ const { currentUser, loading } = useAuth();
 }
 ```
 
-### 3. PublicRoutes (`src/shared/components/auth/RouteGuards.tsx`)
+### 3. PublicRoutes (`apps/web/src/shared/components/auth/RouteGuards.tsx`)
 
 **Purpose**: Passes through to public routes without any auth checks.
 
@@ -142,11 +142,11 @@ const { currentUser, loading } = useAuth();
 
 **Usage**: Wrap routes like `/login`, `/join` that should be accessible to everyone.
 
-### 4. RootRedirect (`src/shared/components/auth/RootRedirect.tsx`)
+### 4. RootRedirect (`apps/web/src/shared/components/auth/RootRedirect.tsx`)
 
 **Purpose**: Handles the root path (`/`) redirection.
 
-**Logic** (delegated to `resolveRootRedirect` in `src/shared/utils/routingDecisions.ts`):
+**Logic** (delegated to `resolveRootRedirect` in `apps/web/src/shared/utils/routingDecisions.ts`):
 - While any loading flag is true → render `null`
 - Not authenticated → `/join`
 - Has a valid `sessionStorage['returnTo']` path → navigate there (then clear the key)
@@ -165,7 +165,7 @@ The app uses a **hybrid approach**:
 - **When**: Initial page data that's essential for rendering
 - **Examples**: `boardsLoader`, `postDetailLoader`
 - **Benefits**: Automatic revalidation after actions, integrated with routing
-- **Auth Handling**: Use `getCurrentUser()` from `src/shared/utils/authUtils.ts`
+- **Auth Handling**: Use `getCurrentUser()` from `apps/web/src/shared/utils/authUtils.ts`
 
 ```typescript
 export async function boardsLoader() {
@@ -211,7 +211,7 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
 
 **Purpose**: Initiates Google OAuth sign-in, optionally storing a `returnTo` path.
 
-**Location**: `src/login/hooks/useGoogleLoginWithRedirect.ts`
+**Location**: `apps/web/src/login/hooks/useGoogleLoginWithRedirect.ts`
 
 **Signature**:
 
@@ -232,7 +232,7 @@ function useGoogleLoginWithRedirect(): {
 
 **Purpose**: Checks if the current user has access to the active cohort's board.
 
-**Location**: `src/login/hooks/useIsCurrentUserActive.ts`
+**Location**: `apps/web/src/login/hooks/useIsCurrentUserActive.ts`
 
 **Returns**: `{ isCurrentUserActive: boolean; isLoading: boolean }`
 
@@ -311,7 +311,7 @@ export default function NewPageWithForm() {
 ## Best Practices
 
 ### 1. Authentication in Loaders
-- Always use `getCurrentUser()` (from `src/shared/utils/authUtils.ts`) which resolves the Supabase session asynchronously.
+- Always use `getCurrentUser()` (from `apps/web/src/shared/utils/authUtils.ts`) which resolves the Supabase session asynchronously.
 - Return empty/default data instead of throwing auth errors from loaders.
 - Let route guards (`PrivateRoutes`) handle authentication redirects.
 
