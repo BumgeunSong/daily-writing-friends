@@ -11,6 +11,7 @@ import {
   aggregateResults,
   getValidationMessage,
 } from '@/post/utils/ImageValidation';
+import { sanitizeStorageFileName } from '@/post/utils/storageFileName';
 
 interface UseImageUploadProps {
   insertImage: (url: string, index?: number) => void;
@@ -63,7 +64,7 @@ export function useImageUpload({ insertImage, editorRoot, getCursorIndex }: UseI
 
       const now = new Date();
       const { dateFolder, timePrefix } = formatDate(now);
-      const fileName = `${timePrefix}_${processed.file.name}`;
+      const fileName = `${timePrefix}_${sanitizeStorageFileName(processed.file.name)}`;
       const storageRef = ref(storage, `postImages/${dateFolder}/${fileName}`);
 
       const snapshot = await uploadBytes(storageRef, processed.file, {

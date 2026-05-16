@@ -8,6 +8,7 @@ import {
   validateFileType,
   getValidationMessage,
 } from '@/post/utils/ImageValidation';
+import { sanitizeStorageFileName } from '@/post/utils/storageFileName';
 
 interface UploadResult {
   success: boolean;
@@ -71,5 +72,5 @@ const buildFeedbackScreenshotPath = (fileName: string): string => {
 
   const dateFolder = `${year}${month}${day}`;
   const timePrefix = `${hours}${minutes}${seconds}`;
-  return `feedbackScreenshots/${dateFolder}/${timePrefix}_${fileName}`;
+  return `feedbackScreenshots/${dateFolder}/${timePrefix}_${sanitizeStorageFileName(fileName)}`;
 };

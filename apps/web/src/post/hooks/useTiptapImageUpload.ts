@@ -11,6 +11,7 @@ import {
   getValidationMessage,
 } from '@/post/utils/ImageValidation';
 import { formatDate } from '@/post/utils/sanitizeHtml';
+import { sanitizeStorageFileName } from '@/post/utils/storageFileName';
 import { uploadFileWithProgress } from '@/post/utils/uploadWithProgress';
 import type { Editor } from '@tiptap/react';
 
@@ -61,7 +62,7 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
 
     const now = new Date();
     const { dateFolder, timePrefix } = formatDate(now);
-    const fileName = `${timePrefix}_${processed.file.name}`;
+    const fileName = `${timePrefix}_${sanitizeStorageFileName(processed.file.name)}`;
     const storageRef = ref(storage, `postImages/${dateFolder}/${fileName}`);
 
     const downloadURL = await uploadFileWithProgress(storageRef, processed.file, {
