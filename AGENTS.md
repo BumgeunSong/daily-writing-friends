@@ -111,7 +111,7 @@ All commands run from repository root.
 
 ## Skills
 
-`.claude/skills/` contains project-specific coding conventions. Each skill auto-loads via its frontmatter trigger.
+`.claude/skills/` contains project-specific coding conventions.
 
 | Skill | Domain |
 |-------|--------|

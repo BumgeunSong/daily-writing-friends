@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { PostAuthorData } from '@/post/components/PostUserProfile';
 import type { PostCardPrefetchedData } from '@/post/hooks/useBatchPostCardData';
 import { type Post, PostVisibility } from '@/post/model/Post';
 import { renderPostPreviewHtml } from '@/post/utils/contentUtils';
+import { devLog } from '@/shared/utils/devLog';
 import { usePostingStreak } from '@/stats/hooks/usePostingStreak';
 import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';
 import type { WritingBadge } from '@/stats/model/WritingStats';
@@ -56,6 +57,21 @@ export const usePostCard = (
       profileImageURL: userData?.profilePhotoURL || post.authorProfileImageURL || '',
     };
   }, [prefetched, post.authorId, userData, post.authorName, post.authorProfileImageURL]);
+
+  // Diagnostic: batch mode active but no prefetched data for this author.
+  // Fires during initial load (transient) AND on persistent map-misses (real bug).
+  // Production no-op via devLog. Accept dev-mode noise as the tradeoff for catching
+  // silent regressions where a fetcher gets dropped from the Promise.all.
+  useEffect(() => {
+    if (isBatchMode && !prefetched && post.authorId) {
+      devLog({
+        category: 'usePostCard',
+        event: 'batch-data-miss',
+        level: 'warn',
+        data: { authorId: post.authorId },
+      });
+    }
+  }, [isBatchMode, prefetched, post.authorId]);
 
   return {
     authorData,
