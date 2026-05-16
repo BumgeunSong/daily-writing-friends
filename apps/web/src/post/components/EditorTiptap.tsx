@@ -36,7 +36,7 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
     });
 
     // Image upload functionality
-    const { openFilePicker, handlePaste, handleDrop, isUploading, uploadProgress } = useTiptapImageUpload({
+    const { openFilePicker, handlePaste, handleDrop, isUploading, stage, uploadProgress } = useTiptapImageUpload({
       editor,
     });
 
@@ -124,7 +124,7 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
           <EditorContentArea editor={editor} isMobile={isMobile} />
 
           {/* Upload progress overlay */}
-          <UploadProgress isUploading={isUploading} uploadProgress={uploadProgress} />
+          <UploadProgress stage={stage} uploadProgress={uploadProgress} />
 
           {/* Mobile toolbar at bottom */}
           <div className='md:hidden'>

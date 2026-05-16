@@ -1,57 +1,94 @@
 import * as Sentry from '@sentry/react';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref } from 'firebase/storage';
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { storage } from '@/firebase';
-import { processImageForUpload } from '@/post/utils/ImageUtils';
+import { processImageForUpload, type ProcessingStage } from '@/post/utils/ImageUtils';
+import {
+  validateFileSize,
+  validateProcessedFileSize,
+  validateFileType,
+  getValidationMessage,
+} from '@/post/utils/ImageValidation';
 import { formatDate } from '@/post/utils/sanitizeHtml';
+import { uploadFileWithProgress } from '@/post/utils/uploadWithProgress';
 import type { Editor } from '@tiptap/react';
+
+type UploadStage = 'idle' | ProcessingStage | 'uploading';
+
+const STAGE_RESET_DELAY_MS = 500;
 
 interface UseTiptapImageUploadProps {
   editor: Editor | null;
 }
 
 export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
-  const [isUploading, setIsUploading] = useState(false);
+  const [stage, setStage] = useState<UploadStage>('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  /**
-   * Upload a file to Firebase Storage
-   * Returns the download URL or throws an error
-   */
   const uploadFile = useCallback(async (file: File): Promise<string> => {
-    // File size check (5MB) - check original file before processing
-    if (file.size > 5 * 1024 * 1024) {
-      throw new Error('File size exceeds 5MB limit');
+    if (!storage) {
+      throw new Error('스토리지에 연결할 수 없습니다.');
     }
 
-    // File type check (allow HEIC by extension since some browsers don't set MIME type)
-    const isHeicByExtension = /\.(heic|heif)$/i.test(file.name);
-    if (!file.type.startsWith('image/') && !isHeicByExtension) {
-      throw new Error('Only image files are allowed');
+    const typeResult = validateFileType(file);
+    if (!typeResult.valid) {
+      logValidationRejection(typeResult.reason, file.size, false);
+      throw new Error(getValidationMessage(typeResult.reason));
     }
 
-    // Process image (HEIC conversion + resize)
-    const { file: processedFile } = await processImageForUpload(file);
+    const rawSizeResult = validateFileSize(file);
+    if (!rawSizeResult.valid) {
+      logValidationRejection(rawSizeResult.reason, file.size, false);
+      throw new Error(getValidationMessage(rawSizeResult.reason));
+    }
 
-    // Generate storage path
+    const processed = await processImageForUpload(file, { onStage: setStage });
+
+    const processedResult = validateProcessedFileSize(processed.file);
+    if (!processedResult.valid) {
+      logValidationRejection(
+        processedResult.reason,
+        processed.rawSize,
+        processed.wasHeic,
+        processed.processedSize,
+      );
+      throw new Error(getValidationMessage(processedResult.reason));
+    }
+
+    setStage('uploading');
+    setUploadProgress(0);
+
     const now = new Date();
     const { dateFolder, timePrefix } = formatDate(now);
-    const fileName = `${timePrefix}_${processedFile.name}`;
+    const fileName = `${timePrefix}_${processed.file.name}`;
     const storageRef = ref(storage, `postImages/${dateFolder}/${fileName}`);
 
-    // Upload file
-    const snapshot = await uploadBytes(storageRef, processedFile);
+    const downloadURL = await uploadFileWithProgress(storageRef, processed.file, {
+      metadata: { contentType: processed.file.type || 'image/jpeg' },
+      onProgress: setUploadProgress,
+    });
 
-    // Get download URL
-    const downloadURL = await getDownloadURL(snapshot.ref);
+    logUploadSuccess(processed);
 
     return downloadURL;
   }, []);
 
-  /**
-   * Open file picker and handle image upload
-   */
+  const resetStageAfterDelay = useCallback(() => {
+    setTimeout(() => {
+      setStage('idle');
+      setUploadProgress(0);
+    }, STAGE_RESET_DELAY_MS);
+  }, []);
+
+  const insertImageIntoEditor = useCallback(
+    (downloadURL: string, alt: string) => {
+      if (!editor) return;
+      editor.chain().focus().setImage({ src: downloadURL, alt }).run();
+    },
+    [editor],
+  );
+
   const openFilePicker = useCallback(async () => {
     const input = document.createElement('input');
     input.setAttribute('type', 'file');
@@ -63,61 +100,24 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
       if (!file) return;
 
       try {
-        setIsUploading(true);
-        setUploadProgress(0);
-
-        // Simulate progress updates
-        setUploadProgress(20);
-        
         const downloadURL = await uploadFile(file);
-        
-        setUploadProgress(70);
-
-        // Insert image into editor
-        if (editor) {
-          editor
-            .chain()
-            .focus()
-            .setImage({ src: downloadURL, alt: file.name })
-            .run();
-        }
-
-        setUploadProgress(100);
-        toast.success('이미지가 업로드되었습니다.', {
-          position: 'bottom-center',
-        });
-
+        insertImageIntoEditor(downloadURL, file.name);
+        toast.success('이미지가 업로드되었습니다.', { position: 'bottom-center' });
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : '이미지 업로드에 실패했습니다.';
-        
-        Sentry.captureException(error, {
-          tags: { feature: 'image_upload', operation: 'upload_process' },
-          extra: { fileName: file?.name, fileSize: file?.size, fileType: file?.type }
-        });
-        
-        toast.error(errorMessage, {
-          position: 'bottom-center',
-        });
+        handleUploadError(error, 'file_picker', file);
       } finally {
-        // Reset loading state with slight delay for UX
-        setTimeout(() => {
-          setIsUploading(false);
-          setUploadProgress(0);
-        }, 500);
+        resetStageAfterDelay();
       }
     };
-  }, [editor, uploadFile]);
+  }, [insertImageIntoEditor, resetStageAfterDelay, uploadFile]);
 
-  /**
-   * Handle paste event for image upload
-   * Can be used directly in TipTap's paste handler
-   */
-  const handlePaste = useCallback(async (event: ClipboardEvent): Promise<boolean> => {
-    const items = event.clipboardData?.items;
-    if (!items) return false;
+  const handlePaste = useCallback(
+    async (event: ClipboardEvent): Promise<boolean> => {
+      const items = event.clipboardData?.items;
+      if (!items) return false;
 
-    for (const item of Array.from(items)) {
-      if (item.type.startsWith('image/')) {
+      for (const item of Array.from(items)) {
+        if (!item.type.startsWith('image/')) continue;
         event.preventDefault();
         event.stopPropagation();
 
@@ -125,124 +125,107 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
         if (!file) continue;
 
         try {
-          setIsUploading(true);
-          setUploadProgress(0);
-
-          // Simulate progress
-          setUploadProgress(20);
-
           const downloadURL = await uploadFile(file);
-
-          setUploadProgress(70);
-
-          // Insert image into editor
-          if (editor) {
-            editor
-              .chain()
-              .focus()
-              .setImage({ src: downloadURL, alt: 'Pasted image' })
-              .run();
-          }
-
-          setUploadProgress(100);
-          toast.success('이미지가 업로드되었습니다.', {
-            position: 'bottom-center',
-          });
-
-          return true; // Handled the paste
-
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : '이미지 업로드에 실패했습니다.';
-          
-          Sentry.captureException(error, {
-            tags: { feature: 'image_upload', operation: 'paste_upload' },
-            extra: { fileSize: file?.size, fileType: file?.type }
-          });
-          
-          toast.error(errorMessage, {
-            position: 'bottom-center',
-          });
-        } finally {
-          setTimeout(() => {
-            setIsUploading(false);
-            setUploadProgress(0);
-          }, 500);
-        }
-      }
-    }
-
-    return false; // Not handled
-  }, [editor, uploadFile]);
-
-  /**
-   * Handle drop event for image upload
-   */
-  const handleDrop = useCallback(async (event: DragEvent): Promise<boolean> => {
-    const items = event.dataTransfer?.items;
-    if (!items) return false;
-
-    for (const item of Array.from(items)) {
-      if (item.kind === 'file' && item.type.startsWith('image/')) {
-        event.preventDefault();
-        event.stopPropagation();
-
-        const file = item.getAsFile();
-        if (!file) continue;
-
-        try {
-          setIsUploading(true);
-          setUploadProgress(0);
-
-          setUploadProgress(20);
-
-          const downloadURL = await uploadFile(file);
-
-          setUploadProgress(70);
-
-          if (editor) {
-            editor
-              .chain()
-              .focus()
-              .setImage({ src: downloadURL, alt: file.name })
-              .run();
-          }
-
-          setUploadProgress(100);
-          toast.success('이미지가 업로드되었습니다.', {
-            position: 'bottom-center',
-          });
-
+          insertImageIntoEditor(downloadURL, 'Pasted image');
+          toast.success('이미지가 업로드되었습니다.', { position: 'bottom-center' });
           return true;
-
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : '이미지 업로드에 실패했습니다.';
-
-          Sentry.captureException(error, {
-            tags: { feature: 'image_upload', operation: 'drop_upload' },
-            extra: { fileSize: file?.size, fileType: file?.type }
-          });
-
-          toast.error(errorMessage, {
-            position: 'bottom-center',
-          });
+          handleUploadError(error, 'paste_upload', file);
         } finally {
-          setTimeout(() => {
-            setIsUploading(false);
-            setUploadProgress(0);
-          }, 500);
+          resetStageAfterDelay();
         }
       }
-    }
 
-    return false;
-  }, [editor, uploadFile]);
+      return false;
+    },
+    [insertImageIntoEditor, resetStageAfterDelay, uploadFile],
+  );
+
+  const handleDrop = useCallback(
+    async (event: DragEvent): Promise<boolean> => {
+      const items = event.dataTransfer?.items;
+      if (!items) return false;
+
+      for (const item of Array.from(items)) {
+        if (item.kind !== 'file' || !item.type.startsWith('image/')) continue;
+        event.preventDefault();
+        event.stopPropagation();
+
+        const file = item.getAsFile();
+        if (!file) continue;
+
+        try {
+          const downloadURL = await uploadFile(file);
+          insertImageIntoEditor(downloadURL, file.name);
+          toast.success('이미지가 업로드되었습니다.', { position: 'bottom-center' });
+          return true;
+        } catch (error) {
+          handleUploadError(error, 'drop_upload', file);
+        } finally {
+          resetStageAfterDelay();
+        }
+      }
+
+      return false;
+    },
+    [insertImageIntoEditor, resetStageAfterDelay, uploadFile],
+  );
 
   return {
     openFilePicker,
     uploadFile,
     handlePaste,
     handleDrop,
-    isUploading,
+    isUploading: stage !== 'idle',
+    stage,
     uploadProgress,
   };
 }
+
+const handleUploadError = (error: unknown, operation: string, file: File) => {
+  const errorMessage =
+    error instanceof Error ? error.message : '이미지 업로드에 실패했습니다.';
+
+  Sentry.captureException(error, {
+    tags: { feature: 'image_upload', operation },
+    extra: { fileName: file?.name, fileSize: file?.size, fileType: file?.type },
+  });
+
+  toast.error(errorMessage, { position: 'bottom-center' });
+};
+
+const logValidationRejection = (
+  reason: string,
+  rawSize: number,
+  wasHeic: boolean,
+  processedSize?: number,
+) => {
+  Sentry.addBreadcrumb({
+    category: 'image_upload',
+    message: 'validation_reject',
+    level: 'warning',
+    data: { reason, raw_size: rawSize, processed_size: processedSize, was_heic: wasHeic },
+  });
+};
+
+const logUploadSuccess = (processed: {
+  rawSize: number;
+  processedSize: number;
+  wasHeic: boolean;
+  didResize: boolean;
+}) => {
+  const compressionRatio =
+    processed.rawSize > 0 ? processed.processedSize / processed.rawSize : 1;
+  Sentry.addBreadcrumb({
+    category: 'image_upload',
+    message: 'upload_success',
+    level: 'info',
+    data: {
+      raw_size: processed.rawSize,
+      processed_size: processed.processedSize,
+      compression_ratio: Number(compressionRatio.toFixed(3)),
+      was_heic: processed.wasHeic,
+      did_resize: processed.didResize,
+    },
+  });
+};
