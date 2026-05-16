@@ -25,7 +25,7 @@ import {
   UserCheck
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { adminQueryKeys, getMe } from '@/apis/admin-api'
 
 interface NavItem {
@@ -74,18 +74,29 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const { user, loading: authLoading, logout } = useAuth()
 
   const isSignedIn = !authLoading && !!user
 
+  // Clear all cached admin data whenever the signed-in user changes. This
+  // prevents a previous admin's cached { isAdmin: true } from being served
+  // to a different user after logout/login within the same browser session.
+  useEffect(() => {
+    queryClient.removeQueries({ queryKey: ['admin'] })
+  }, [user?.uid, queryClient])
+
   // Verify admin status server-side. The ADMIN_EMAILS allowlist lives only on
   // the server — this query is the authoritative check for all admin sub-pages.
+  // Scoped to user.uid so cached results never cross user sessions.
   const {
     data: meData,
     isLoading: meLoading,
+    isError: meError,
+    refetch: refetchMe,
   } = useQuery({
-    queryKey: adminQueryKeys.me,
+    queryKey: adminQueryKeys.me(user?.uid ?? ''),
     queryFn: getMe,
     enabled: isSignedIn,
     staleTime: 5 * 60 * 1000,
@@ -122,6 +133,31 @@ export default function AdminLayout({
   // Not authenticated — redirect handled by the useEffect above.
   if (!user) {
     return null
+  }
+
+  // Admin check failed due to a network or server error. Show a distinct error
+  // state with a retry button so legitimate admins aren't locked out.
+  if (meError) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-red-500">오류가 발생했습니다</CardTitle>
+            <CardDescription>
+              관리자 권한을 확인하는 중 오류가 발생했습니다. 다시 시도해 주세요.
+            </CardDescription>
+          </CardHeader>
+          <CardFooter className="gap-2">
+            <Button onClick={() => refetchMe()}>
+              다시 시도
+            </Button>
+            <Button variant="outline" onClick={() => router.push('/')}>
+              홈으로 돌아가기
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    )
   }
 
   // Authenticated but not in the admin allowlist.

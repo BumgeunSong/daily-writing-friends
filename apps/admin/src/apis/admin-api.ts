@@ -29,7 +29,7 @@ import type {
 // =============================================================================
 
 export const adminQueryKeys = {
-  me: ['admin', 'me'] as const,
+  me: (uid: string) => ['admin', 'me', uid] as const,
   boards: ['admin', 'boards'] as const,
   board: (id: string) => ['admin', 'board', id] as const,
   boardLast: ['admin', 'board', 'last'] as const,
