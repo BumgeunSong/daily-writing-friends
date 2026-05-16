@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { ref } from 'firebase/storage';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { storage } from '@/firebase';
 import { processImageForUpload, type ProcessingStage } from '@/post/utils/ImageUtils';
@@ -22,6 +22,7 @@ import type { Editor } from '@tiptap/react';
 type UploadStage = 'idle' | ProcessingStage | 'uploading';
 
 const STAGE_RESET_DELAY_MS = 500;
+const UPLOAD_IN_PROGRESS_MESSAGE = '이미 업로드가 진행 중입니다. 잠시 후 다시 시도해주세요.';
 
 interface UseTiptapImageUploadProps {
   editor: Editor | null;
@@ -30,66 +31,84 @@ interface UseTiptapImageUploadProps {
 export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
   const [stage, setStage] = useState<UploadStage>('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
+  const isUploadingRef = useRef(false);
+  const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const uploadFile = useCallback(async (file: File): Promise<string> => {
-    if (!storage) {
-      throw new Error('스토리지에 연결할 수 없습니다.');
+    if (isUploadingRef.current) {
+      throw new Error(UPLOAD_IN_PROGRESS_MESSAGE);
     }
-
-    const typeResult = validateFileType(file);
-    if (!typeResult.valid) {
-      logValidationRejection(typeResult.reason, file.size, false);
-      throw new Error(getValidationMessage(typeResult.reason));
+    if (resetTimeoutRef.current) {
+      clearTimeout(resetTimeoutRef.current);
+      resetTimeoutRef.current = null;
     }
+    isUploadingRef.current = true;
 
-    const rawSizeResult = validateFileSize(file);
-    if (!rawSizeResult.valid) {
-      logValidationRejection(rawSizeResult.reason, file.size, false);
-      throw new Error(getValidationMessage(rawSizeResult.reason));
+    try {
+      if (!storage) {
+        throw new Error('스토리지에 연결할 수 없습니다.');
+      }
+
+      const typeResult = validateFileType(file);
+      if (!typeResult.valid) {
+        logValidationRejection(typeResult.reason, file.size, false);
+        throw new Error(getValidationMessage(typeResult.reason));
+      }
+
+      const rawSizeResult = validateFileSize(file);
+      if (!rawSizeResult.valid) {
+        logValidationRejection(rawSizeResult.reason, file.size, false);
+        throw new Error(getValidationMessage(rawSizeResult.reason));
+      }
+
+      const processed = await processImageForUpload(file, {
+        onStage: setStage,
+        onError: captureProcessingFailure,
+      });
+
+      if (processed.wasHeic && processed.heicConversionFailed) {
+        throw new Error(HEIC_FAILURE_MESSAGE);
+      }
+
+      const processedResult = validateProcessedFileSize(processed.file);
+      if (!processedResult.valid) {
+        logValidationRejection(
+          processedResult.reason,
+          processed.rawSize,
+          processed.wasHeic,
+          processed.processedSize,
+        );
+        throw new Error(getValidationMessage(processedResult.reason));
+      }
+
+      setStage('uploading');
+      setUploadProgress(0);
+
+      const now = new Date();
+      const { dateFolder, timePrefix } = formatDate(now);
+      const fileName = `${timePrefix}_${sanitizeStorageFileName(processed.file.name)}`;
+      const storageRef = ref(storage, `postImages/${dateFolder}/${fileName}`);
+
+      const downloadURL = await uploadFileWithProgress(storageRef, processed.file, {
+        metadata: { contentType: processed.file.type || 'image/jpeg' },
+        onProgress: setUploadProgress,
+      });
+
+      logUploadSuccess(processed);
+      return downloadURL;
+    } finally {
+      isUploadingRef.current = false;
     }
-
-    const processed = await processImageForUpload(file, {
-      onStage: setStage,
-      onError: captureProcessingFailure,
-    });
-
-    if (processed.wasHeic && processed.heicConversionFailed) {
-      throw new Error(HEIC_FAILURE_MESSAGE);
-    }
-
-    const processedResult = validateProcessedFileSize(processed.file);
-    if (!processedResult.valid) {
-      logValidationRejection(
-        processedResult.reason,
-        processed.rawSize,
-        processed.wasHeic,
-        processed.processedSize,
-      );
-      throw new Error(getValidationMessage(processedResult.reason));
-    }
-
-    setStage('uploading');
-    setUploadProgress(0);
-
-    const now = new Date();
-    const { dateFolder, timePrefix } = formatDate(now);
-    const fileName = `${timePrefix}_${sanitizeStorageFileName(processed.file.name)}`;
-    const storageRef = ref(storage, `postImages/${dateFolder}/${fileName}`);
-
-    const downloadURL = await uploadFileWithProgress(storageRef, processed.file, {
-      metadata: { contentType: processed.file.type || 'image/jpeg' },
-      onProgress: setUploadProgress,
-    });
-
-    logUploadSuccess(processed);
-
-    return downloadURL;
   }, []);
 
   const resetStageAfterDelay = useCallback(() => {
-    setTimeout(() => {
+    if (resetTimeoutRef.current) {
+      clearTimeout(resetTimeoutRef.current);
+    }
+    resetTimeoutRef.current = setTimeout(() => {
       setStage('idle');
       setUploadProgress(0);
+      resetTimeoutRef.current = null;
     }, STAGE_RESET_DELAY_MS);
   }, []);
 
