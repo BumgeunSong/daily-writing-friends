@@ -253,5 +253,42 @@ describe('buildPostCardDataMap', () => {
       expect(result.get('user-1')!.isDonator).toBe(true);
       expect(result.get('user-2')!.isDonator).toBe(false);
     });
+
+    it('returns isDonator=false for every author when donatorIds is empty', () => {
+      const users: BasicUserRow[] = [
+        { id: 'user-1', nickname: 'Alice', real_name: null, profile_photo_url: null },
+        { id: 'user-2', nickname: 'Bob', real_name: null, profile_photo_url: null },
+      ];
+
+      const result = buildPostCardDataMap({
+        authorIds: ['user-1', 'user-2'],
+        users,
+        commentRows: [],
+        replyRows: [],
+        postRows: [],
+        streakWorkingDays: workingDays,
+        donatorIds: new Set(),
+      });
+
+      expect(result.get('user-1')!.isDonator).toBe(false);
+      expect(result.get('user-2')!.isDonator).toBe(false);
+    });
+
+    it('marks author as donator even when their user row is missing', () => {
+      // Donator status comes from a separate table; missing user data
+      // should not suppress the donator flag.
+      const result = buildPostCardDataMap({
+        authorIds: ['unknown-user'],
+        users: [],
+        commentRows: [],
+        replyRows: [],
+        postRows: [],
+        streakWorkingDays: workingDays,
+        donatorIds: new Set(['unknown-user']),
+      });
+
+      expect(result.get('unknown-user')!.isDonator).toBe(true);
+      expect(result.get('unknown-user')!.authorData.displayName).toBe('??');
+    });
   });
 });

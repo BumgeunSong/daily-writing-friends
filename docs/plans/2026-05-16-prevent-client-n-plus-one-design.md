@@ -42,7 +42,7 @@ The TODO at line 8–11 of the same file already named the problem: "a feed of N
 | TanStack Query `useQueries` | Parallelizes; does not batch network calls (maintainer points users to third-party `batshit`) | Wrong tool |
 | tRPC `httpBatchLink` | Standard inside tRPC only; tightly coupled to its protocol | Out of scope |
 | React Server Components + `React.cache()` | Dedupes identical requests; does not batch N distinct keys; our page is client-rendered | Wrong layer |
-| ESLint rules | No off-the-shelf rule catches `.map(x => useHook(x.id))` | Custom only |
+| ESLint rules | No off-the-shelf rule we found catches `.map(x => useHook(x.id))`; `no-await-in-loop` does not match this shape | Custom only |
 | Supabase `.in()` + one `useQuery` | Documented standard; our endpoint already supports it | Adopt |
 
 The community standard is structural, not exotic: one fetcher takes `ids: string[]` and uses `.in()`. React itself ships no built-in coalescer because none is required when the data layer exposes the right shape.
