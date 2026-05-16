@@ -78,6 +78,41 @@ const mutation = useMutation({
 });
 ```
 
+## N+1 Prevention: Batch-First Hook Convention
+
+### Rule
+
+Expose list-context data fetchers as one batch hook taking `ids: string[]` and returning `Set<id>` or `Map<id, T>`. Do not create a singular wrapper that delegates to the batch hook with a single-element array.
+
+### Anti-pattern
+
+```ts
+// N+1 vector — unique queryKey per id, React Query cannot dedupe
+export function useDonatorStatus(userId: string) {
+  const { activeUserIds } = useDonatorStatusBatch([userId]);
+  return activeUserIds.has(userId);
+}
+```
+
+A row component calling this passes review. Mount 100 rows and you get 100 HTTP calls.
+
+### Correct shape
+
+```ts
+// Only the batch hook is exposed.
+// The list parent fetches once; rows read from props.
+const { activeUserIds } = useDonatorStatusBatch(authors.map(a => a.id));
+// Pass isDonator={activeUserIds.has(author.id)} to each row.
+```
+
+### Single-id contexts (profile page, etc.)
+
+Call the raw fetcher (`fetchActiveDonatorIds([id])`) inline within a page-local hook. Do not export a shared singular hook — a future list will reuse it and reopen the trap.
+
+### Why
+
+A singular wrapper passes code review because each row uses one hook in isolation. N+1 emerges only when many rows mount together. Removing the wrapper removes the trap at the source.
+
 ## Quick Reference
 
 | Pattern | When |
