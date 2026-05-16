@@ -24,10 +24,19 @@ vi.mock('sonner', () => ({
 
 vi.mock('@sentry/react', () => ({
   captureException: vi.fn(),
+  addBreadcrumb: vi.fn(),
 }));
 
 vi.mock('@/post/utils/ImageUtils', () => ({
-  processImageForUpload: vi.fn((file: File) => Promise.resolve(file)),
+  processImageForUpload: vi.fn((file: File) =>
+    Promise.resolve({
+      file,
+      rawSize: file.size,
+      processedSize: file.size,
+      wasHeic: false,
+      didResize: false,
+    }),
+  ),
 }));
 
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -67,7 +76,15 @@ describe('useImageUpload', () => {
     vi.mocked(ref).mockReturnValue({} as ReturnType<typeof ref>);
     vi.mocked(uploadBytes).mockResolvedValue({ ref: {} } as Awaited<ReturnType<typeof uploadBytes>>);
     vi.mocked(getDownloadURL).mockResolvedValue('https://storage.example.com/image.jpg');
-    vi.mocked(processImageForUpload).mockImplementation((file) => Promise.resolve(file));
+    vi.mocked(processImageForUpload).mockImplementation((file) =>
+      Promise.resolve({
+        file,
+        rawSize: file.size,
+        processedSize: file.size,
+        wasHeic: false,
+        didResize: false,
+      }),
+    );
   });
 
   describe('single file upload flow', () => {
