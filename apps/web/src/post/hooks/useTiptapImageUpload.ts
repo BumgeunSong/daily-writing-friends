@@ -43,6 +43,20 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
     };
   }, []);
 
+  // Schedules an idle reset only on behalf of the call that actually owned the upload.
+  // Kept out of the entry-point catch blocks so a synchronous "already in progress" guard
+  // throw from a second caller never clobbers the first upload's stage mid-flight.
+  const scheduleStageReset = useCallback(() => {
+    if (resetTimeoutRef.current) {
+      clearTimeout(resetTimeoutRef.current);
+    }
+    resetTimeoutRef.current = setTimeout(() => {
+      setStage('idle');
+      setUploadProgress(0);
+      resetTimeoutRef.current = null;
+    }, STAGE_RESET_DELAY_MS);
+  }, []);
+
   const uploadFile = useCallback(async (file: File): Promise<string> => {
     if (isUploadingRef.current) {
       throw new Error(UPLOAD_IN_PROGRESS_MESSAGE);
@@ -107,19 +121,9 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
       return downloadURL;
     } finally {
       isUploadingRef.current = false;
+      scheduleStageReset();
     }
-  }, []);
-
-  const resetStageAfterDelay = useCallback(() => {
-    if (resetTimeoutRef.current) {
-      clearTimeout(resetTimeoutRef.current);
-    }
-    resetTimeoutRef.current = setTimeout(() => {
-      setStage('idle');
-      setUploadProgress(0);
-      resetTimeoutRef.current = null;
-    }, STAGE_RESET_DELAY_MS);
-  }, []);
+  }, [scheduleStageReset]);
 
   const insertImageIntoEditor = useCallback(
     (downloadURL: string, alt: string) => {
@@ -145,11 +149,9 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
         toast.success('이미지가 업로드되었습니다.', { position: 'bottom-center' });
       } catch (error) {
         handleUploadError(error, 'file_picker', file);
-      } finally {
-        resetStageAfterDelay();
       }
     };
-  }, [insertImageIntoEditor, resetStageAfterDelay, uploadFile]);
+  }, [insertImageIntoEditor, uploadFile]);
 
   const handlePaste = useCallback(
     async (event: ClipboardEvent): Promise<boolean> => {
@@ -171,14 +173,12 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
           return true;
         } catch (error) {
           handleUploadError(error, 'paste_upload', file);
-        } finally {
-          resetStageAfterDelay();
         }
       }
 
       return false;
     },
-    [insertImageIntoEditor, resetStageAfterDelay, uploadFile],
+    [insertImageIntoEditor, uploadFile],
   );
 
   const handleDrop = useCallback(
@@ -201,14 +201,12 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
           return true;
         } catch (error) {
           handleUploadError(error, 'drop_upload', file);
-        } finally {
-          resetStageAfterDelay();
         }
       }
 
       return false;
     },
-    [insertImageIntoEditor, resetStageAfterDelay, uploadFile],
+    [insertImageIntoEditor, uploadFile],
   );
 
   return {
