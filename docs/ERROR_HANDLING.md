@@ -9,18 +9,18 @@ Comprehensive error handling strategy for the application, including error bound
 ```
 User action
   └── React Query mutation / Router loader
-        └── executeTrackedWrite / throwOnError   (src/shared/api/supabaseClient.ts)
+        └── executeTrackedWrite / throwOnError   (apps/web/src/shared/api/supabaseClient.ts)
               ├── SupabaseNetworkError  →  Sentry breadcrumb (warning)
               └── SupabaseWriteError   →  Sentry breadcrumb + captureException
                     └── Postgres code 42501 → special fingerprint "permission-denied"
 
 React Query global cache
-  └── QueryCache.onError → trackQueryError   (src/shared/lib/queryErrorTracking.ts)
+  └── QueryCache.onError → trackQueryError   (apps/web/src/shared/lib/queryErrorTracking.ts)
   └── MutationCache.onError → trackMutationError
 
 Component tree errors
-  └── ErrorBoundary   (src/shared/components/ErrorBoundary.tsx)   — class-based
-  └── PermissionErrorBoundary (src/shared/components/PermissionErrorBoundary.tsx)
+  └── ErrorBoundary   (apps/web/src/shared/components/ErrorBoundary.tsx)   — class-based
+  └── PermissionErrorBoundary (apps/web/src/shared/components/PermissionErrorBoundary.tsx)
         — router error element, handles 403 / 503 / generic route errors
 ```
 
@@ -28,7 +28,7 @@ Component tree errors
 
 ## Supabase Write Error Chain
 
-**Location**: `src/shared/api/supabaseClient.ts`
+**Location**: `apps/web/src/shared/api/supabaseClient.ts`
 
 ### Error Classes
 
@@ -96,8 +96,8 @@ await executeTrackedWrite('insertLike', () =>
 
 ## React Query Global Error Tracking
 
-**Location**: `src/shared/lib/queryErrorTracking.ts`  
-**Wired in**: `src/shared/lib/queryClient.ts`
+**Location**: `apps/web/src/shared/lib/queryErrorTracking.ts`  
+**Wired in**: `apps/web/src/shared/lib/queryClient.ts`
 
 The `QueryClient` is created with `QueryCache` and `MutationCache` callbacks that automatically call `trackQueryError` / `trackMutationError` for every failed query or mutation — no per-query `onError` needed.
 
@@ -159,7 +159,7 @@ setSentryTags({
 
 ## Error Boundaries
 
-### ErrorBoundary (`src/shared/components/ErrorBoundary.tsx`)
+### ErrorBoundary (`apps/web/src/shared/components/ErrorBoundary.tsx`)
 
 A class-based React error boundary that catches **component tree** JavaScript errors.
 
@@ -183,7 +183,7 @@ interface ErrorBoundaryProps {
 </ErrorBoundary>
 ```
 
-### PermissionErrorBoundary (`src/shared/components/PermissionErrorBoundary.tsx`)
+### PermissionErrorBoundary (`apps/web/src/shared/components/PermissionErrorBoundary.tsx`)
 
 A **React Router error element** (uses `useRouteError()`) — not a class-based boundary. Attach it to a route's `errorElement` prop.
 
@@ -201,14 +201,14 @@ Loaders should `throw new Response(message, { status: 403 })` or `throw new Resp
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| `CopyErrorBoundary` | `src/post/components/CopyErrorBoundary.tsx` | Handles copy-to-clipboard failures |
-| `NotificationsErrorBoundary` | `src/notification/components/NotificationsErrorBoundary.tsx` | Isolates notification errors |
+| `CopyErrorBoundary` | `apps/web/src/post/components/CopyErrorBoundary.tsx` | Handles copy-to-clipboard failures |
+| `NotificationsErrorBoundary` | `apps/web/src/notification/components/NotificationsErrorBoundary.tsx` | Isolates notification errors |
 
 ---
 
 ## Sentry User Identification
 
-**Location**: `src/sentry.ts`, `src/shared/hooks/useAuth.tsx`
+**Location**: `apps/web/src/sentry.ts`, `apps/web/src/shared/hooks/useAuth.tsx`
 
 `AuthProvider` calls `setSentryUser` on every auth state change via `syncUserState`:
 
@@ -331,8 +331,8 @@ Debugging steps:
 
 | Class | Location | When thrown |
 |-------|----------|-------------|
-| `SupabaseWriteError` | `src/shared/api/supabaseClient.ts` | Any Postgres error with a non-empty code |
-| `SupabaseNetworkError` | `src/shared/api/supabaseClient.ts` | Network/connectivity failures (empty code) |
+| `SupabaseWriteError` | `apps/web/src/shared/api/supabaseClient.ts` | Any Postgres error with a non-empty code |
+| `SupabaseNetworkError` | `apps/web/src/shared/api/supabaseClient.ts` | Network/connectivity failures (empty code) |
 
 ### Error Severity Levels
 
