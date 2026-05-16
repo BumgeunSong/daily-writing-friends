@@ -31,11 +31,11 @@ The web app SHALL remove the `react-quill-new` dependency and all Quill-specific
 
 ### Requirement: Preserve Tiptap Image-Paste Pipeline
 
-The change SHALL leave Tiptap's image-paste and image-drop pipeline untouched, so that pasting or dropping an image into a Tiptap post continues to route the file through Supabase Storage upload instead of inlining base64 into the post HTML.
+The change SHALL leave Tiptap's image-paste and image-drop pipeline untouched, so that pasting or dropping an image into a Tiptap post continues to route the file through Firebase Storage upload instead of inlining base64 into the post HTML.
 
-#### Scenario: Tiptap image-paste continues to upload to Supabase Storage
+#### Scenario: Tiptap image-paste continues to upload to Firebase Storage
 - **WHEN** an image is pasted into a Tiptap-mounted `<PostEditor>`
-- **THEN** `EditorTiptap`'s capture-phase paste handler (wired through `useTiptapImageUpload`) MUST intercept the clipboard data, upload the file to Supabase Storage, and insert the resulting URL into the editor
+- **THEN** `EditorTiptap`'s capture-phase paste handler (wired through `useTiptapImageUpload`) MUST intercept the clipboard data, upload the file to Firebase Storage, and insert the resulting URL into the editor
 - **AND** the post HTML MUST NOT contain a base64 data URL
 
 #### Scenario: useTiptapImageUpload and EditorTiptap untouched

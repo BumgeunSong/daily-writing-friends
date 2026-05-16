@@ -30,7 +30,7 @@
 - [ ] 4.1 Start the dev server against local Supabase and create a new post; confirm the editor mounts as Tiptap, accepts text input, and publishes successfully
 - [ ] 4.2 Edit the post created in 4.1; confirm the existing content loads into Tiptap and edits persist
 - [ ] 4.3 View a legacy Quill post (seeded via the fixture introduced in T.3.1); confirm bullet lists render as semantic `<ul>` with inline formatting preserved
-- [ ] 4.4 Paste an image from the clipboard into a Tiptap post; confirm the image is uploaded to Supabase Storage rather than inlined as base64
+- [ ] 4.4 Paste an image from the clipboard into a Tiptap post; confirm the image is uploaded to Firebase Storage (via `useTiptapImageUpload`) rather than inlined as base64
 
 ## 5. PR2 — Lazy Routes
 
