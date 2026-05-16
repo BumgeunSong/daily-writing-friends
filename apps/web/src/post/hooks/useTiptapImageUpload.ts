@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { ref } from 'firebase/storage';
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { storage } from '@/firebase';
 import { processImageForUpload, type ProcessingStage } from '@/post/utils/ImageUtils';
@@ -33,6 +33,15 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const isUploadingRef = useRef(false);
   const resetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (resetTimeoutRef.current) {
+        clearTimeout(resetTimeoutRef.current);
+        resetTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const uploadFile = useCallback(async (file: File): Promise<string> => {
     if (isUploadingRef.current) {
