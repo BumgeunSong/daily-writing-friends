@@ -1,59 +1,19 @@
-import { redirect, ScrollRestoration } from 'react-router-dom';
+import { redirect, ScrollRestoration, type LoaderFunctionArgs } from 'react-router-dom';
 import { sentryCreateBrowserRouter } from './sentry';
 import './index.css';
 import { Toaster } from '@/shared/ui/sonner';
 
-// Providers that need router context
-
-// Layouts
-
-// Pages
-import BoardListPage from '@/board/components/BoardListPage';
-import BoardPage from '@/board/components/BoardPage';
-import RecentBoard from '@/board/components/RecentBoard';
-
-// Loaders and actions from feature hooks
-import { boardLoader } from '@/board/hooks/useBoardLoader';
-import { boardsLoader } from '@/board/hooks/useBoardsLoader';
-import { JoinDispatcher } from '@/login/components/JoinDispatcher';
-import JoinCompletePage from '@/login/components/JoinCompletePage';
-import JoinFormPageForActiveUser from '@/login/components/JoinFormPageForActiveUser';
-import JoinIntroPage from '@/login/components/JoinIntroPage';
-import OnboardingPage from '@/login/components/OnboardingPage';
+// Critical-path eager imports (always rendered on first paint or referenced
+// by errorElement / RouterProvider — adding a dynamic-import round trip would
+// pay zero bundle savings). See design.md Decision 3.
 import LoginPage from '@/login/components/LoginPage';
-import SignupPage from '@/login/components/SignupPage';
-import VerifyEmailPage from '@/login/components/VerifyEmailPage';
-import ForgotPasswordPage from '@/login/components/ForgotPasswordPage';
-import SetPasswordPage from '@/login/components/SetPasswordPage';
-import NotificationsPage from '@/notification/components/NotificationsPage';
-import PostCompletionPage from '@/post/components/PostCompletionPage';
-import PostCreationPage from '@/post/components/PostCreationPage';
-import PostDetailPage from '@/post/components/PostDetailPage';
-import PostEditPage from '@/post/components/PostEditPage';
-import PostFreewritingIntro from '@/post/components/PostFreewritingIntro';
-import PostFreewritingPage from '@/post/components/PostFreewritingPage';
-import PostFreewritingTutorial from '@/post/components/PostFreewritingTutorial';
-import { createPostAction } from '@/post/hooks/useCreatePostAction';
-import { postDetailLoader } from '@/post/hooks/usePostDetailLoader';
-
-// Auth guards and components
-
-// Error boundary
 import { AppWithTracking } from '@/shared/components/AppWithTracking';
 import { RootRedirect } from '@/shared/components/auth/RootRedirect';
 import { PrivateRoutes, PublicRoutes } from '@/shared/components/auth/RouteGuards';
 import { BottomNavigatorLayout } from '@/shared/components/BottomNavigatorLayout';
-import { DebugInfo } from '@/shared/components/DebugInfo';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { PermissionErrorBoundary } from '@/shared/components/PermissionErrorBoundary';
 import StatusMessage from '@/shared/components/StatusMessage';
-import StatsPage from '@/stats/components/StatsPage';
-import BlockedUsersPage from '@/user/components/BlockedUsersPage';
-import AddLoginMethodPage from '@/user/components/AddLoginMethodPage';
-import ChangePasswordPage from '@/user/components/ChangePasswordPage';
-import EditAccountPage from '@/user/components/EditAccountPage';
-import UserPage from '@/user/components/UserPage';
-import UserSettingPage from '@/user/components/UserSettingPage';
 import { BottomTabHandlerProvider } from './shared/contexts/BottomTabHandlerContext';
 import { NavigationProvider } from './shared/contexts/NavigationContext';
 
@@ -84,22 +44,65 @@ const catchAllRedirectRoute = {
   loader: () => redirect('/'),
 };
 
-// Public routes
+// Public routes — LoginPage stays eager (most cold visits land here);
+// everything else is co-lazy.
 const publicRoutes = {
   path: '',
   element: <PublicRoutes />,
   children: [
     { path: 'login', element: <LoginPage /> },
-    { path: 'signup', element: <SignupPage /> },
-    { path: 'verify-email', element: <VerifyEmailPage /> },
-    { path: 'forgot-password', element: <ForgotPasswordPage /> },
-    { path: 'set-password', element: <SetPasswordPage /> },
-    { path: 'join', element: <JoinIntroPage /> },
-    { path: 'free-writing/tutorial', element: <PostFreewritingTutorial /> },
+    {
+      path: 'signup',
+      lazy: async () => {
+        const { default: SignupPage } = await import('@/login/components/SignupPage');
+        return { Component: SignupPage };
+      },
+    },
+    {
+      path: 'verify-email',
+      lazy: async () => {
+        const { default: VerifyEmailPage } = await import('@/login/components/VerifyEmailPage');
+        return { Component: VerifyEmailPage };
+      },
+    },
+    {
+      path: 'forgot-password',
+      lazy: async () => {
+        const { default: ForgotPasswordPage } = await import('@/login/components/ForgotPasswordPage');
+        return { Component: ForgotPasswordPage };
+      },
+    },
+    {
+      path: 'set-password',
+      lazy: async () => {
+        const { default: SetPasswordPage } = await import('@/login/components/SetPasswordPage');
+        return { Component: SetPasswordPage };
+      },
+    },
+    {
+      path: 'join',
+      lazy: async () => {
+        const { default: JoinIntroPage } = await import('@/login/components/JoinIntroPage');
+        return { Component: JoinIntroPage };
+      },
+    },
+    {
+      path: 'free-writing/tutorial',
+      lazy: async () => {
+        const { default: PostFreewritingTutorial } = await import(
+          '@/post/components/PostFreewritingTutorial'
+        );
+        return { Component: PostFreewritingTutorial };
+      },
+    },
   ],
 };
 
-// Private routes with bottom navigation
+// Private routes with bottom navigation.
+// `board/:boardId` and `board/:boardId/post/:postId` use the "true parallel" pattern
+// (static loader + Component-only lazy) so RR fires the loader and the chunk fetch
+// in parallel on route match — eliminates the waterfall on the hottest routes.
+// See design.md Decision 2.
 const privateRoutesWithNav = {
   path: '',
   element: <PrivateRoutes />,
@@ -108,56 +111,214 @@ const privateRoutesWithNav = {
       path: '',
       element: <BottomNavigatorLayout />,
       children: [
-        { path: 'boards', element: <RecentBoard /> },
-        { path: 'boards/list', element: <BoardListPage />, loader: boardsLoader },
+        {
+          path: 'boards',
+          lazy: async () => {
+            const { default: RecentBoard } = await import('@/board/components/RecentBoard');
+            return { Component: RecentBoard };
+          },
+        },
+        {
+          path: 'boards/list',
+          loader: async () => {
+            const { boardsLoader } = await import('@/board/hooks/useBoardsLoader');
+            return boardsLoader();
+          },
+          lazy: async () => {
+            const { default: BoardListPage } = await import('@/board/components/BoardListPage');
+            return { Component: BoardListPage };
+          },
+        },
         {
           path: 'board/:boardId',
-          element: <BoardPage />,
-          loader: boardLoader,
-          errorElement: <PermissionErrorBoundary />,
+          loader: async (args: LoaderFunctionArgs) => {
+            const { boardLoader } = await import('@/board/hooks/useBoardLoader');
+            return boardLoader(args);
+          },
+          lazy: async () => {
+            const { default: BoardPage } = await import('@/board/components/BoardPage');
+            return { Component: BoardPage, errorElement: <PermissionErrorBoundary /> };
+          },
         },
-
-        { path: 'create/:boardId/completion', element: <PostCompletionPage /> },
+        {
+          path: 'create/:boardId/completion',
+          lazy: async () => {
+            const { default: PostCompletionPage } = await import(
+              '@/post/components/PostCompletionPage'
+            );
+            return { Component: PostCompletionPage };
+          },
+        },
         {
           path: 'board/:boardId/post/:postId',
-          element: <PostDetailPage />,
-          loader: postDetailLoader,
-          errorElement: <PermissionErrorBoundary />,
+          loader: async (args: LoaderFunctionArgs) => {
+            const { postDetailLoader } = await import('@/post/hooks/usePostDetailLoader');
+            return postDetailLoader(args);
+          },
+          lazy: async () => {
+            const { default: PostDetailPage } = await import('@/post/components/PostDetailPage');
+            return { Component: PostDetailPage, errorElement: <PermissionErrorBoundary /> };
+          },
         },
-
-        { path: 'notifications', element: <NotificationsPage /> },
-        { path: 'account/edit/:userId', element: <EditAccountPage /> },
-        { path: 'stats', element: <StatsPage /> },
-        { path: 'user', element: <UserPage /> },
-        { path: 'user/:userId', element: <UserPage /> },
-        { path: 'user/settings', element: <UserSettingPage /> },
-        { path: 'user/blocked-users', element: <BlockedUsersPage /> },
+        {
+          path: 'notifications',
+          lazy: async () => {
+            const { default: NotificationsPage } = await import(
+              '@/notification/components/NotificationsPage'
+            );
+            return { Component: NotificationsPage };
+          },
+        },
+        {
+          path: 'account/edit/:userId',
+          lazy: async () => {
+            const { default: EditAccountPage } = await import('@/user/components/EditAccountPage');
+            return { Component: EditAccountPage };
+          },
+        },
+        {
+          path: 'stats',
+          lazy: async () => {
+            const { default: StatsPage } = await import('@/stats/components/StatsPage');
+            return { Component: StatsPage };
+          },
+        },
+        {
+          path: 'user',
+          lazy: async () => {
+            const { default: UserPage } = await import('@/user/components/UserPage');
+            return { Component: UserPage };
+          },
+        },
+        {
+          path: 'user/:userId',
+          lazy: async () => {
+            const { default: UserPage } = await import('@/user/components/UserPage');
+            return { Component: UserPage };
+          },
+        },
+        {
+          path: 'user/settings',
+          lazy: async () => {
+            const { default: UserSettingPage } = await import('@/user/components/UserSettingPage');
+            return { Component: UserSettingPage };
+          },
+        },
+        {
+          path: 'user/blocked-users',
+          lazy: async () => {
+            const { default: BlockedUsersPage } = await import(
+              '@/user/components/BlockedUsersPage'
+            );
+            return { Component: BlockedUsersPage };
+          },
+        },
       ],
     },
   ],
 };
 
-// Private routes without bottom navigation
+// Private routes without bottom navigation.
+// `board/:boardId/edit/:postId` shares postDetailLoader with the detail route,
+// also using the true-parallel pattern.
 const privateRoutesWithoutNav = {
   path: '',
   element: <PrivateRoutes />,
   children: [
-    { path: 'board/:boardId/free-writing/intro', element: <PostFreewritingIntro /> },
-    { path: 'create/:boardId/free-writing', element: <PostFreewritingPage /> },
-    { path: 'create/:boardId', element: <PostCreationPage />, action: createPostAction },
+    {
+      path: 'board/:boardId/free-writing/intro',
+      lazy: async () => {
+        const { default: PostFreewritingIntro } = await import(
+          '@/post/components/PostFreewritingIntro'
+        );
+        return { Component: PostFreewritingIntro };
+      },
+    },
+    {
+      path: 'create/:boardId/free-writing',
+      lazy: async () => {
+        const { default: PostFreewritingPage } = await import(
+          '@/post/components/PostFreewritingPage'
+        );
+        return { Component: PostFreewritingPage };
+      },
+    },
+    {
+      path: 'create/:boardId',
+      lazy: async () => {
+        const [{ default: PostCreationPage }, { createPostAction }] = await Promise.all([
+          import('@/post/components/PostCreationPage'),
+          import('@/post/hooks/useCreatePostAction'),
+        ]);
+        return { Component: PostCreationPage, action: createPostAction };
+      },
+    },
     {
       path: 'board/:boardId/edit/:postId',
-      element: <PostEditPage />,
-      loader: postDetailLoader,
-      errorElement: <PermissionErrorBoundary />,
+      loader: async (args: LoaderFunctionArgs) => {
+        const { postDetailLoader } = await import('@/post/hooks/usePostDetailLoader');
+        return postDetailLoader(args);
+      },
+      lazy: async () => {
+        const { default: PostEditPage } = await import('@/post/components/PostEditPage');
+        return { Component: PostEditPage, errorElement: <PermissionErrorBoundary /> };
+      },
     },
-    { path: 'join/form', element: <JoinDispatcher /> },
-    { path: 'join/form/active-user', element: <JoinFormPageForActiveUser /> },
-    { path: 'join/onboarding', element: <OnboardingPage /> },
-    { path: 'join/complete', element: <JoinCompletePage /> },
-    { path: 'settings/add-login-method', element: <AddLoginMethodPage /> },
-    { path: 'settings/change-password', element: <ChangePasswordPage /> },
-    { path: 'debug-info', element: <DebugInfo /> },
+    {
+      path: 'join/form',
+      lazy: async () => {
+        const { JoinDispatcher } = await import('@/login/components/JoinDispatcher');
+        return { Component: JoinDispatcher };
+      },
+    },
+    {
+      path: 'join/form/active-user',
+      lazy: async () => {
+        const { default: JoinFormPageForActiveUser } = await import(
+          '@/login/components/JoinFormPageForActiveUser'
+        );
+        return { Component: JoinFormPageForActiveUser };
+      },
+    },
+    {
+      path: 'join/onboarding',
+      lazy: async () => {
+        const { default: OnboardingPage } = await import('@/login/components/OnboardingPage');
+        return { Component: OnboardingPage };
+      },
+    },
+    {
+      path: 'join/complete',
+      lazy: async () => {
+        const { default: JoinCompletePage } = await import('@/login/components/JoinCompletePage');
+        return { Component: JoinCompletePage };
+      },
+    },
+    {
+      path: 'settings/add-login-method',
+      lazy: async () => {
+        const { default: AddLoginMethodPage } = await import(
+          '@/user/components/AddLoginMethodPage'
+        );
+        return { Component: AddLoginMethodPage };
+      },
+    },
+    {
+      path: 'settings/change-password',
+      lazy: async () => {
+        const { default: ChangePasswordPage } = await import(
+          '@/user/components/ChangePasswordPage'
+        );
+        return { Component: ChangePasswordPage };
+      },
+    },
+    {
+      path: 'debug-info',
+      lazy: async () => {
+        const { DebugInfo } = await import('@/shared/components/DebugInfo');
+        return { Component: DebugInfo };
+      },
+    },
   ],
 };
 

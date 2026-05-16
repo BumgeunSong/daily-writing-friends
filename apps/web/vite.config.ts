@@ -76,11 +76,13 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: {
             'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-            'firebase-vendor': ['firebase/app', 'firebase/firestore'],
+            'firebase-vendor': ['firebase/app'],
+            'sentry-vendor': ['@sentry/react'],
+            'supabase-vendor': ['@supabase/supabase-js'],
           }
         }
       },
-      chunkSizeWarningLimit: 1000,
+      chunkSizeWarningLimit: 500,
       target: 'es2020'
     },
     test: {
