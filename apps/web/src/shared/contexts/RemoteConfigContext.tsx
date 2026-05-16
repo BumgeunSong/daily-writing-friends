@@ -26,7 +26,7 @@ export const REMOTE_CONFIG_DEFAULTS: RemoteConfigValueTypes = {
   upcoming_board_id: 'rW3Y3E2aEbpB0KqGiigd',
   stats_notice_banner_text: '',
   block_user_feature_enabled: false,
-  tiptap_editor_enabled: false,
+  tiptap_editor_enabled: true,
 };
 
 /**
