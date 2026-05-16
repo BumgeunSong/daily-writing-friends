@@ -23,8 +23,8 @@ test.describe('Post Write Flow', () => {
     await expect(titleInput).toBeVisible({ timeout: 30000 });
     await titleInput.fill(POST_TITLE);
 
-    // Type content in the editor area (Quill editor)
-    const editorArea = page.locator('.ql-editor');
+    // Type content in the editor area (TipTap ProseMirror)
+    const editorArea = page.locator('.ProseMirror');
     await editorArea.click();
     await editorArea.pressSequentially('This is a test post created by E2E tests.');
 
