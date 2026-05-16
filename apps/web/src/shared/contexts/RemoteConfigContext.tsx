@@ -9,8 +9,7 @@ export type RemoteConfigKey =
   | 'active_board_id'
   | 'upcoming_board_id'
   | 'stats_notice_banner_text'
-  | 'block_user_feature_enabled'
-  | 'tiptap_editor_enabled';
+  | 'block_user_feature_enabled';
 
 // 각 key별 타입 정의
 interface RemoteConfigValueTypes {
@@ -18,7 +17,6 @@ interface RemoteConfigValueTypes {
   upcoming_board_id: string;
   stats_notice_banner_text: string;
   block_user_feature_enabled: boolean;
-  tiptap_editor_enabled: boolean;
 }
 
 export const REMOTE_CONFIG_DEFAULTS: RemoteConfigValueTypes = {
@@ -26,7 +24,6 @@ export const REMOTE_CONFIG_DEFAULTS: RemoteConfigValueTypes = {
   upcoming_board_id: 'rW3Y3E2aEbpB0KqGiigd',
   stats_notice_banner_text: '',
   block_user_feature_enabled: false,
-  tiptap_editor_enabled: true,
 };
 
 /**
@@ -94,10 +91,6 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
             remoteConfig,
             'block_user_feature_enabled',
           ).asBoolean(),
-          tiptap_editor_enabled: getValue(
-            remoteConfig,
-            'tiptap_editor_enabled',
-          ).asBoolean(),
         }))
       : Promise.resolve(null);
 
@@ -112,8 +105,6 @@ export function RemoteConfigProvider({ children }: { children: React.ReactNode }
             firebaseConfig?.stats_notice_banner_text || REMOTE_CONFIG_DEFAULTS.stats_notice_banner_text,
           block_user_feature_enabled:
             firebaseConfig?.block_user_feature_enabled ?? REMOTE_CONFIG_DEFAULTS.block_user_feature_enabled,
-          tiptap_editor_enabled:
-            firebaseConfig?.tiptap_editor_enabled ?? REMOTE_CONFIG_DEFAULTS.tiptap_editor_enabled,
         });
       })
       .catch((err) => {

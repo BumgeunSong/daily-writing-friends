@@ -1,8 +1,5 @@
-import { useRef } from 'react';
 import type { ProseMirrorDoc } from '@/post/model/Post';
-import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { EditorTiptap } from './EditorTiptap';
-import { PostTextEditor } from './PostTextEditor';
 
 interface PostEditorProps {
   value: string;
@@ -10,7 +7,6 @@ interface PostEditorProps {
   placeholder?: string;
   onUploadingChange?: (isUploading: boolean) => void;
   onContentJsonChange?: (json: ProseMirrorDoc) => void;
-  forceEditor?: 'tiptap' | 'quill';
 }
 
 export function PostEditor({
@@ -19,36 +15,14 @@ export function PostEditor({
   placeholder,
   onUploadingChange,
   onContentJsonChange,
-  forceEditor,
 }: PostEditorProps) {
-  const { value: flagEnabled, isLoading } = useRemoteConfig('tiptap_editor_enabled');
-
-  // Lock in the editor choice on first resolved render to prevent mid-session remounts.
-  // TipTap is the default; the flag is now a kill switch for falling back to Quill.
-  const lockedEditorRef = useRef<'tiptap' | 'quill' | null>(null);
-  if (!isLoading && lockedEditorRef.current === null) {
-    lockedEditorRef.current = flagEnabled ? 'tiptap' : 'quill';
-  }
-  const editorChoice = forceEditor ?? lockedEditorRef.current ?? 'tiptap';
-
-  if (editorChoice === 'tiptap') {
-    return (
-      <EditorTiptap
-        initialHtml={value}
-        onChange={({ html, json }) => {
-          onChange(html);
-          onContentJsonChange?.(json);
-        }}
-        placeholder={placeholder}
-        onUploadingChange={onUploadingChange}
-      />
-    );
-  }
-
   return (
-    <PostTextEditor
-      value={value}
-      onChange={onChange}
+    <EditorTiptap
+      initialHtml={value}
+      onChange={({ html, json }) => {
+        onChange(html);
+        onContentJsonChange?.(json);
+      }}
       placeholder={placeholder}
       onUploadingChange={onUploadingChange}
     />

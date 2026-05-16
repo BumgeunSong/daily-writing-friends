@@ -100,12 +100,13 @@ The web app at `apps/web` is a Vite + React 18 SPA on React Router v6 data-route
 - Tab-close before idle callback fires → no Replay captured for that session. Acceptable.
 - Alternative considered: drop Replay entirely. Rejected — debugging value outweighs the load cost once deferred.
 
-**6. Quill removal preserves both legacy-content readers and the editor-agnostic paste handler.**
+**6. Quill removal preserves legacy-content readers; `useImageUpload` is deleted entirely.**
 - **`convertQuillBulletLists` + DOMPurify pipeline in `contentUtils.ts`:** posts created before the Tiptap rollout are stored as Quill HTML in the DB. The converter is editor-independent — it normalizes `<ol data-list="bullet">` into semantic `<ul>` for display. Tests in `contentUtils.test.ts` stay green and canonical.
-- **Paste handler in `useImageUpload.ts` (lines 230-258):** the handler attaches a capture-phase `paste` listener on `editorRoot` to intercept image clipboard data and route it through Supabase upload instead of letting the editor inline base64. The comment names Quill, but the **mechanism is editor-agnostic** — Tiptap benefits identically (base64 inlining bloats post HTML and skips our Storage pipeline). **Keep the handler.** Action items:
-  - Strip the "before Quill's handler" comment; reframe as "intercept image clipboard data before the editor's default paste handler"
-  - Rename the test from "calls preventDefault and stopPropagation to block Quill default paste" to "intercepts image paste before editor default handler"
-  - Remove the `imageHandler` ref-stability test (line 203-223) only if `imageHandler` is no longer returned (Quill toolbar callback). Tiptap uses its own image insertion path — confirm in PR1 whether `imageHandler` is still consumed by `PostEditor`; if not, delete with its test.
+- **`useImageUpload.ts` is Quill-only, not editor-agnostic.** Initial design-review claimed Tiptap benefited from the paste handler in `useImageUpload.ts:230-258`. Implementation discovery (grep across `apps/web/`) showed:
+  - The only consumer of `useImageUpload` is `PostTextEditor.tsx` (Quill).
+  - Tiptap uses its own hook `useTiptapImageUpload`, and `EditorTiptap.tsx` (lines 55-95) wires its own capture-phase `paste` / `drop` / `dragover` handlers against `editor.view.dom`. Tiptap never invokes the `useImageUpload` paste handler.
+  - The string "Reuses existing pattern from useImageUpload" in `sanitizeHtml.ts` is a comment only; no runtime dependency.
+- **Action:** delete `apps/web/src/post/hooks/useImageUpload.ts` and `apps/web/src/post/hooks/__tests__/useImageUpload.test.ts` together with `PostTextEditor.tsx`. Update the stale comment in `sanitizeHtml.ts:61-64` so it no longer points to a deleted file.
 
 **7. `tiptap_editor_enabled` flag deletion path:**
 - (a) Verify in Firebase Remote Config console that the flag is at 100% true with no remaining variations / experiments.
@@ -137,7 +138,7 @@ The web app at `apps/web` is a Vite + React 18 SPA on React Router v6 data-route
 2. Delete `react-quill-new` from `package.json`
 3. Delete `apps/web/src/post/components/PostTextEditor.tsx`
 4. Simplify `PostEditor.tsx` to render Tiptap directly
-5. Delete Quill paths in `useImageUpload.ts` and remove the matching tests in `useImageUpload.test.ts`
+5. Delete `useImageUpload.ts` and `useImageUpload.test.ts` entirely (no remaining consumers — Tiptap uses `useTiptapImageUpload`). Update the stale comment in `sanitizeHtml.ts:61-64`.
 6. Strip Quill testing branches from `EditorTestPage.tsx`
 7. Remove `tiptap_editor_enabled` entries from `RemoteConfigContext.tsx`
 8. Verify `convertQuillBulletLists` and its tests remain untouched
@@ -166,7 +167,7 @@ Tooling per `openspec/VERIFICATION_CONFIG.md`: Vitest for unit/integration, agen
 ### Unit (Layer 1) — Vitest
 
 - `contentUtils.test.ts` (existing): all Quill-bullet-conversion cases must stay green. Pure string-in/string-out — the highest-leverage guard for legacy-content rendering.
-- `useImageUpload.test.ts`: **rename** the "Quill default paste" case to "intercepts image paste before editor default handler"; keep the `preventDefault`/`stopPropagation` and Supabase-upload assertions (mechanism is editor-agnostic per Decision 6). **Delete** the `imageHandler` ref-stability case only if PR1 confirms `imageHandler` is no longer consumed.
+- `useImageUpload.test.ts`: **deleted with the hook.** Per Decision 6, `useImageUpload` has no consumers after `PostTextEditor` is removed; Tiptap uses its own `useTiptapImageUpload`. The renamed-paste-handler proposal from the original review no longer applies.
 - New: a render test for `PostEditor` (Tiptap path only) asserting it mounts without the `forceEditor` prop and without errors.
 
 ### Integration (Layer 2) — Vitest + RTL
