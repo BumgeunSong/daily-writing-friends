@@ -21,6 +21,10 @@ export interface UsePostCardReturn {
   contentPreview: string | null;
 }
 
+// Grace period that gives the parent batch query time to resolve before we
+// treat an undefined prefetched entry as a persistent map miss.
+const BATCH_DATA_MISS_GRACE_MS = 1500;
+
 /**
  * @param post - Post data
  * @param prefetched - Batch-fetched data (when available)
@@ -59,18 +63,21 @@ export const usePostCard = (
   }, [prefetched, post.authorId, userData, post.authorName, post.authorProfileImageURL]);
 
   // Diagnostic: batch mode active but no prefetched data for this author.
-  // Fires during initial load (transient) AND on persistent map-misses (real bug).
-  // Production no-op via devLog. Accept dev-mode noise as the tradeoff for catching
-  // silent regressions where a fetcher gets dropped from the Promise.all.
+  // The grace period suppresses transient loading-phase misses — if prefetched
+  // arrives within BATCH_DATA_MISS_GRACE_MS, the cleanup cancels the log.
+  // A persistent miss (fetcher dropped from Promise.all, author missing from map)
+  // still fires after the grace period. Production no-op via devLog.
   useEffect(() => {
-    if (isBatchMode && !prefetched && post.authorId) {
+    if (!isBatchMode || prefetched || !post.authorId) return;
+    const timer = setTimeout(() => {
       devLog({
         category: 'usePostCard',
         event: 'batch-data-miss',
         level: 'warn',
         data: { authorId: post.authorId },
       });
-    }
+    }, BATCH_DATA_MISS_GRACE_MS);
+    return () => clearTimeout(timer);
   }, [isBatchMode, prefetched, post.authorId]);
 
   return {
