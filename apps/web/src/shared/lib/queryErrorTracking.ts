@@ -1,11 +1,6 @@
 import * as Sentry from '@sentry/react';
 import type { Query, Mutation } from '@tanstack/react-query';
-import { FirebaseError } from 'firebase/app';
 import { addSentryBreadcrumb, setSentryContext, setSentryTags } from '@/sentry';
-import {
-  trackFirebasePermissionError,
-  getPermissionErrorHints,
-} from '@/shared/utils/firebaseErrorTracking';
 import { getCurrentUserIdFromStorage } from '@/shared/utils/getCurrentUserId';
 
 // Performance tracking constants
@@ -102,20 +97,6 @@ function handleIndexedDbConnectionError(
     });
   }
 }
-
-// Query key to Firebase path mappings
-const QUERY_KEY_PATTERNS = {
-  posts: (queryKey: unknown[]) => ({
-    operation: 'read' as const,
-    path: `boards/${queryKey[1]}/posts`,
-  }),
-  user: (queryKey: unknown[]) => ({ operation: 'read' as const, path: `users/${queryKey[1]}` }),
-  comments: (queryKey: unknown[]) => ({
-    operation: 'read' as const,
-    path: `boards/${queryKey[1]}/posts/${queryKey[2]}/comments`,
-  }),
-  boards: () => ({ operation: 'read' as const, path: 'boards' }),
-} as const;
 
 // Query key description mappings
 const QUERY_DESCRIPTIONS = {
@@ -220,12 +201,7 @@ export function trackQueryError(
     error,
   });
 
-  // Route to appropriate error handler
-  if (isFirebaseError(error)) {
-    handleFirebaseQueryError(error as FirebaseError, queryKey);
-  } else {
-    captureQueryError(error, queryKey, fetchFailureCount);
-  }
+  captureQueryError(error, queryKey, fetchFailureCount);
 }
 
 /**
@@ -252,19 +228,7 @@ export function trackMutationError(
     error,
   });
 
-  // Route to appropriate error handler
-  if (error instanceof FirebaseError) {
-    handleFirebaseMutationError(error, mutationKey, variables);
-  } else {
-    captureMutationError(error, mutationKey, variables);
-  }
-}
-
-/**
- * Check if error is Firebase-related
- */
-function isFirebaseError(error: unknown): boolean {
-  return error instanceof FirebaseError;
+  captureMutationError(error, mutationKey, variables);
 }
 
 /**
@@ -314,78 +278,6 @@ function addErrorContext(params: {
 }
 
 /**
- * Handle Firebase-specific query errors
- */
-function handleFirebaseQueryError(error: FirebaseError, queryKey: unknown[]) {
-  // Determine the operation and path from query key
-  const { operation, path } = parseQueryKeyForFirebase(queryKey);
-
-  if (error.code === 'permission-denied') {
-    trackFirebasePermissionError(error, {
-      operation,
-      path,
-      userId: getCurrentUserIdFromStorage(),
-      additionalInfo: {
-        source: 'react-query',
-        queryKey,
-      },
-    });
-
-    // Get and log permission hints
-    const collection = path.split('/')[0];
-    const hints = getPermissionErrorHints(collection, operation);
-    if (hints) {
-      console.error('Permission Error Debug Info:', {
-        queryKey,
-        ...hints,
-      });
-    }
-  } else {
-    // Other Firebase errors
-    Sentry.withScope((scope) => {
-      scope.setFingerprint(['firebase-error', error.code, getQueryKeyDescription(queryKey)]);
-      scope.setLevel('error');
-      scope.setTag('firebase.code', error.code);
-      scope.setTag('firebase.service', getFirebaseServiceFromError(error));
-      Sentry.captureException(error);
-    });
-  }
-}
-
-/**
- * Handle Firebase-specific mutation errors
- */
-function handleFirebaseMutationError(
-  error: FirebaseError,
-  mutationKey: unknown[] | undefined,
-  variables: unknown,
-) {
-  const { operation, path } = mutationKey
-    ? parseQueryKeyForFirebase(mutationKey)
-    : { operation: 'write' as const, path: 'unknown' };
-
-  if (error.code === 'permission-denied') {
-    trackFirebasePermissionError(error, {
-      operation,
-      path,
-      userId: getCurrentUserIdFromStorage(),
-      additionalInfo: {
-        source: 'react-query-mutation',
-        mutationKey,
-        variables: variables ? '[Variables present]' : undefined,
-      },
-    });
-  } else {
-    Sentry.withScope((scope) => {
-      scope.setFingerprint(['firebase-mutation-error', error.code]);
-      scope.setLevel('error');
-      scope.setTag('firebase.code', error.code);
-      Sentry.captureException(error);
-    });
-  }
-}
-
-/**
  * Capture non-Firebase query errors
  */
 function captureQueryError(error: unknown, queryKey: unknown[], retryCount: number) {
@@ -429,24 +321,6 @@ function captureMutationError(
 }
 
 /**
- * Parse query key to determine Firebase operation and path
- */
-function parseQueryKeyForFirebase(queryKey: unknown[]): {
-  operation: 'read' | 'write';
-  path: string;
-} {
-  const firstKey = queryKey[0] as keyof typeof QUERY_KEY_PATTERNS;
-  const pattern = QUERY_KEY_PATTERNS[firstKey];
-
-  if (pattern) {
-    return pattern(queryKey);
-  }
-
-  // Default fallback
-  return { operation: 'read', path: queryKey.join('/') };
-}
-
-/**
  * Get human-readable description of query key
  */
 function getQueryKeyDescription(queryKey: unknown[]): string {
@@ -463,17 +337,6 @@ function getQueryKeyDescription(queryKey: unknown[]): string {
 
   // Default: join with dots
   return queryKey.map((k) => String(k)).join('.');
-}
-
-/**
- * Determine Firebase service from error
- */
-function getFirebaseServiceFromError(error: FirebaseError): string {
-  if (error.code?.includes('auth')) return 'Authentication';
-  if (error.code?.includes('firestore')) return 'Firestore';
-  if (error.code?.includes('storage')) return 'Storage';
-  if (error.code?.includes('functions')) return 'Functions';
-  return 'Unknown Firebase Service';
 }
 
 /**
