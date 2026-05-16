@@ -2,10 +2,26 @@ import heic2any from 'heic2any';
 
 const MAX_IMAGE_DIMENSION_FOR_UPLOAD = 1200;
 const JPEG_QUALITY_FOR_UPLOAD = 0.85;
+const HEIC_CONVERSION_QUALITY = 0.8;
+const PROFILE_PHOTO_SIZE = 96;
+
+type ProcessingStage = 'converting' | 'resizing';
+
+interface ProcessImageOptions {
+    onStage?: (stage: ProcessingStage) => void;
+}
+
+interface ProcessedImage {
+    file: File;
+    rawSize: number;
+    processedSize: number;
+    wasHeic: boolean;
+    didResize: boolean;
+}
 
 const cropAndResizeImage = async (file: File, callback: (resizedFile: File) => void) => {
     try {
-        const resizedFile = await resizeImage(file, 96);
+        const resizedFile = await resizeImage(file, PROFILE_PHOTO_SIZE);
         callback(resizedFile);
     } catch (error) {
         console.error('Error processing image:', error);
@@ -13,17 +29,23 @@ const cropAndResizeImage = async (file: File, callback: (resizedFile: File) => v
 };
 
 /**
- * Process image for upload: handles HEIC conversion and resizing.
+ * Process image for upload: HEIC conversion + resize to MAX_IMAGE_DIMENSION_FOR_UPLOAD.
  * Yields to browser before heavy operations to keep UI responsive.
+ * Returns metadata about what happened so callers can log compression ratios.
  */
-const processImageForUpload = async (file: File): Promise<File> => {
-    // Yield to browser to allow loading UI to render
+const processImageForUpload = async (
+    file: File,
+    options: ProcessImageOptions = {},
+): Promise<ProcessedImage> => {
+    const rawSize = file.size;
+    const wasHeic = isHeicFile(file);
+
     await yieldToBrowser();
 
     let processedFile = file;
 
-    // Convert HEIC/HEIF to JPEG (fallback to original on failure)
-    if (isHeicFile(file)) {
+    if (wasHeic) {
+        options.onStage?.('converting');
         try {
             processedFile = await convertHeicToJpeg(file);
         } catch (error) {
@@ -32,14 +54,23 @@ const processImageForUpload = async (file: File): Promise<File> => {
         await yieldToBrowser();
     }
 
-    // Resize if image is too large (fallback to original on OOM)
+    options.onStage?.('resizing');
+    let didResize = false;
     try {
-        processedFile = await resizeImageForUpload(processedFile);
+        const resizeResult = await resizeImageForUpload(processedFile);
+        processedFile = resizeResult.file;
+        didResize = resizeResult.didResize;
     } catch (error) {
         console.warn('Image resize failed, using file as-is:', error);
     }
 
-    return processedFile;
+    return {
+        file: processedFile,
+        rawSize,
+        processedSize: processedFile.size,
+        wasHeic,
+        didResize,
+    };
 };
 
 const isHeicFile = (file: File): boolean => {
@@ -56,7 +87,7 @@ const convertHeicToJpeg = async (file: File): Promise<File> => {
     const convertedBlob = (await heic2any({
         blob: file,
         toType: 'image/jpeg',
-        quality: 0.8,
+        quality: HEIC_CONVERSION_QUALITY,
     })) as Blob;
 
     const convertedFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
@@ -66,39 +97,83 @@ const convertHeicToJpeg = async (file: File): Promise<File> => {
     });
 };
 
-const resizeImageForUpload = async (file: File): Promise<File> => {
-    const dataURL = await readFileAsDataURL(file);
-    const img = await loadImage(dataURL);
+interface ResizeResult {
+    file: File;
+    didResize: boolean;
+}
 
-    const needsResize = img.width > MAX_IMAGE_DIMENSION_FOR_UPLOAD || img.height > MAX_IMAGE_DIMENSION_FOR_UPLOAD;
+const resizeImageForUpload = async (file: File): Promise<ResizeResult> => {
+    const dimensions = await loadImageDimensions(file);
+    const needsResize =
+        dimensions.width > MAX_IMAGE_DIMENSION_FOR_UPLOAD ||
+        dimensions.height > MAX_IMAGE_DIMENSION_FOR_UPLOAD;
+
     if (!needsResize) {
-        return file;
+        return { file, didResize: false };
     }
 
-    const canvas = drawImageScaled(img, MAX_IMAGE_DIMENSION_FOR_UPLOAD);
+    const canvas = await drawImageScaled(file, dimensions, MAX_IMAGE_DIMENSION_FOR_UPLOAD);
     const blob = await canvasToBlob(canvas, 'image/jpeg', JPEG_QUALITY_FOR_UPLOAD);
     const resizedFileName = file.name.replace(/\.[^.]+$/, '.jpg');
-    return blobToFile(blob, resizedFileName, 'image/jpeg');
+    return { file: blobToFile(blob, resizedFileName, 'image/jpeg'), didResize: true };
 };
 
-const drawImageScaled = (img: HTMLImageElement, maxSize: number): HTMLCanvasElement => {
-    const canvas = document.createElement('canvas');
-    let { width, height } = img;
+interface ImageDimensions {
+    width: number;
+    height: number;
+}
 
-    if (width > height && width > maxSize) {
-        height = Math.round((height * maxSize) / width);
-        width = maxSize;
-    } else if (height > maxSize) {
-        width = Math.round((width * maxSize) / height);
-        height = maxSize;
+const loadImageDimensions = async (file: File): Promise<ImageDimensions> => {
+    if (typeof createImageBitmap === 'function') {
+        const bitmap = await createImageBitmap(file);
+        const dimensions = { width: bitmap.width, height: bitmap.height };
+        bitmap.close?.();
+        return dimensions;
+    }
+    const dataURL = await readFileAsDataURL(file);
+    const img = await loadImage(dataURL);
+    return { width: img.width, height: img.height };
+};
+
+const drawImageScaled = async (
+    file: File,
+    dimensions: ImageDimensions,
+    maxSize: number,
+): Promise<HTMLCanvasElement> => {
+    const { width: scaledWidth, height: scaledHeight } = computeScaledDimensions(dimensions, maxSize);
+    const canvas = document.createElement('canvas');
+    canvas.width = scaledWidth;
+    canvas.height = scaledHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas 2D context unavailable');
+
+    if (typeof createImageBitmap === 'function') {
+        const bitmap = await createImageBitmap(file);
+        ctx.drawImage(bitmap, 0, 0, scaledWidth, scaledHeight);
+        bitmap.close?.();
+        return canvas;
     }
 
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    ctx?.drawImage(img, 0, 0, width, height);
-
+    const dataURL = await readFileAsDataURL(file);
+    const img = await loadImage(dataURL);
+    ctx.drawImage(img, 0, 0, scaledWidth, scaledHeight);
     return canvas;
+};
+
+const computeScaledDimensions = (
+    dimensions: ImageDimensions,
+    maxSize: number,
+): ImageDimensions => {
+    const { width, height } = dimensions;
+    const isWiderThanTall = width > height;
+
+    if (isWiderThanTall && width > maxSize) {
+        return { width: maxSize, height: Math.round((height * maxSize) / width) };
+    }
+    if (!isWiderThanTall && height > maxSize) {
+        return { width: Math.round((width * maxSize) / height), height: maxSize };
+    }
+    return dimensions;
 };
 
 const yieldToBrowser = (): Promise<void> => {
@@ -108,7 +183,7 @@ const yieldToBrowser = (): Promise<void> => {
 const resizeImage = async (file: File, maxSize: number): Promise<File> => {
     const dataURL = await readFileAsDataURL(file);
     const img = await loadImage(dataURL);
-    const canvas = drawImageOnCanvas(img, maxSize);
+    const canvas = drawImageCenterCropped(img, maxSize);
     const blob = await canvasToBlob(canvas, file.type);
     return blobToFile(blob, file.name, file.type);
 };
@@ -131,7 +206,7 @@ const loadImage = (src: string): Promise<HTMLImageElement> => {
     });
 };
 
-const drawImageOnCanvas = (img: HTMLImageElement, maxSize: number): HTMLCanvasElement => {
+const drawImageCenterCropped = (img: HTMLImageElement, maxSize: number): HTMLCanvasElement => {
     const canvas = document.createElement('canvas');
     const size = Math.min(img.width, img.height);
     const offsetX = (img.width - size) / 2;
@@ -145,15 +220,23 @@ const drawImageOnCanvas = (img: HTMLImageElement, maxSize: number): HTMLCanvasEl
     return canvas;
 };
 
-const canvasToBlob = (canvas: HTMLCanvasElement, fileType: string, quality?: number): Promise<Blob> => {
+const canvasToBlob = (
+    canvas: HTMLCanvasElement,
+    fileType: string,
+    quality?: number,
+): Promise<Blob> => {
     return new Promise((resolve, reject) => {
-        canvas.toBlob((blob) => {
-            if (blob) {
-                resolve(blob);
-            } else {
-                reject(new Error('Canvas to Blob conversion failed.'));
-            }
-        }, fileType, quality);
+        canvas.toBlob(
+            (blob) => {
+                if (blob) {
+                    resolve(blob);
+                } else {
+                    reject(new Error('Canvas to Blob conversion failed.'));
+                }
+            },
+            fileType,
+            quality,
+        );
     });
 };
 
@@ -161,4 +244,5 @@ const blobToFile = (blob: Blob, fileName: string, fileType: string): File => {
     return new File([blob], fileName, { type: fileType });
 };
 
-export { cropAndResizeImage, processImageForUpload }
+export { cropAndResizeImage, processImageForUpload };
+export type { ProcessedImage, ProcessImageOptions, ProcessingStage };

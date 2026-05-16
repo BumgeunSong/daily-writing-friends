@@ -32,7 +32,7 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
     }
 
     // Process image (HEIC conversion + resize)
-    const processedFile = await processImageForUpload(file);
+    const { file: processedFile } = await processImageForUpload(file);
 
     // Generate storage path
     const now = new Date();

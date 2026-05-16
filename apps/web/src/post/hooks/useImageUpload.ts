@@ -26,45 +26,53 @@ export function useImageUpload({ insertImage, editorRoot, getCursorIndex }: UseI
 
   const uploadAndInsertFile = useCallback(
     async (file: File, insertIndex?: number): Promise<boolean> => {
-      // Validate file type
+      if (!storage) {
+        toast.error('스토리지에 연결할 수 없습니다.', { position: 'bottom-center' });
+        return false;
+      }
+
       const typeResult = validateFileType(file);
       if (!typeResult.valid) {
+        logValidationRejection(typeResult.reason, file.size, false);
         toast.error(getValidationMessage(typeResult.reason), { position: 'bottom-center' });
         return false;
       }
 
-      // Validate raw file size (20MB)
       const sizeResult = validateFileSize(file);
       if (!sizeResult.valid) {
+        logValidationRejection(sizeResult.reason, file.size, false);
         toast.error(getValidationMessage(sizeResult.reason), { position: 'bottom-center' });
         return false;
       }
 
-      // Process image (HEIC conversion + resize)
-      const processedFile = await processImageForUpload(file);
+      const processed = await processImageForUpload(file);
 
-      // Validate processed file size (5MB)
-      const processedSizeResult = validateProcessedFileSize(processedFile);
+      const processedSizeResult = validateProcessedFileSize(processed.file);
       if (!processedSizeResult.valid) {
+        logValidationRejection(
+          processedSizeResult.reason,
+          processed.rawSize,
+          processed.wasHeic,
+          processed.processedSize,
+        );
         toast.error(getValidationMessage(processedSizeResult.reason), {
           position: 'bottom-center',
         });
         return false;
       }
 
-      // Generate storage path
       const now = new Date();
       const { dateFolder, timePrefix } = formatDate(now);
-      const fileName = `${timePrefix}_${processedFile.name}`;
+      const fileName = `${timePrefix}_${processed.file.name}`;
       const storageRef = ref(storage, `postImages/${dateFolder}/${fileName}`);
 
-      // Upload file with explicit contentType metadata
-      const snapshot = await uploadBytes(storageRef, processedFile, {
-        contentType: processedFile.type || 'image/jpeg',
+      const snapshot = await uploadBytes(storageRef, processed.file, {
+        contentType: processed.file.type || 'image/jpeg',
       });
       const downloadURL = await getDownloadURL(snapshot.ref);
 
-      // Insert image into editor
+      logUploadSuccess(processed);
+
       insertImage(downloadURL, insertIndex);
       return true;
     },
@@ -260,6 +268,42 @@ export function useImageUpload({ insertImage, editorRoot, getCursorIndex }: UseI
 
   return { imageHandler, isUploading, isDragOver };
 }
+
+const logValidationRejection = (
+  reason: string,
+  rawSize: number,
+  wasHeic: boolean,
+  processedSize?: number,
+) => {
+  Sentry.addBreadcrumb({
+    category: 'image_upload',
+    message: 'validation_reject',
+    level: 'warning',
+    data: { reason, raw_size: rawSize, processed_size: processedSize, was_heic: wasHeic },
+  });
+};
+
+const logUploadSuccess = (processed: {
+  rawSize: number;
+  processedSize: number;
+  wasHeic: boolean;
+  didResize: boolean;
+}) => {
+  const compressionRatio =
+    processed.rawSize > 0 ? processed.processedSize / processed.rawSize : 1;
+  Sentry.addBreadcrumb({
+    category: 'image_upload',
+    message: 'upload_success',
+    level: 'info',
+    data: {
+      raw_size: processed.rawSize,
+      processed_size: processed.processedSize,
+      compression_ratio: Number(compressionRatio.toFixed(3)),
+      was_heic: processed.wasHeic,
+      did_resize: processed.didResize,
+    },
+  });
+};
 
 const formatDate = (date: Date) => {
   const year = date.getFullYear();
