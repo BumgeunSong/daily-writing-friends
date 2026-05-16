@@ -1,9 +1,9 @@
 ## 1. Phase 0 — Discovery (no code change)
 
-- [ ] 1.1 Run `pnpx vite-bundle-visualizer` against the production build of `apps/web`; save the HTML report to `/tmp` and capture screenshots of the top 10 chunks
-- [ ] 1.2 Run Lighthouse on `/` from a clean profile with Chrome DevTools throttling set to "Slow 4G + 4× CPU slowdown"; record the median FCP/LCP across 3 runs and screenshot the Performance + Diagnostics panels
-- [ ] 1.3 Append a "Phase 0 Baseline" section to `openspec/changes/improve-perceived-page-performance/verify_report.md` containing: total bundle size, main entry chunk size, chunk count, top 5 chunks by size, FCP p75 median, LCP p75 median
-- [ ] 1.4 Decide whether Phase 0 surfaces unexpected heavy deps (e.g., `framer-motion`, `embla-carousel`) that should also get explicit `manualChunks` entries in PR2
+- [x] 1.1 Ran `pnpx vite-bundle-visualizer -t raw-data -o /tmp/bundle-baseline.json` and `-t treemap -o /tmp/bundle-baseline.html` against the production build of `apps/web`; baseline JSON + treemap captured (SENTRY_AUTH_TOKEN cleared for local run since the Sentry vite plugin is gated to CI)
+- [ ] 1.2 Run Lighthouse on `/` from a clean profile with Chrome DevTools throttling set to "Slow 4G + 4× CPU slowdown"; record the median FCP/LCP across 3 runs and screenshot the Performance + Diagnostics panels (USER ACTION — needs interactive Chrome session)
+- [x] 1.3 Wrote a "Phase 0 Baseline" section to `openspec/changes/improve-perceived-page-performance/verify_report.md` containing on-disk + rendered chunk sizes, chunk count (4), top 15 deps in main `index-*.js`. FCP/LCP fields stubbed pending task 1.2.
+- [x] 1.4 Heavy-dep decisions for PR2 `manualChunks` — design's "likely" list (`@sentry/react/replay`, `recharts`, `react-markdown`) did not match reality. Replaced with: keep `react-vendor`; drop stale `firebase/firestore`; add `sentry-vendor` and `supabase-vendor`. `heic2any` (1.3 MB!) stays statically imported by `post/utils/ImageUtils.ts` and moves out of `index` naturally once post routes go lazy. Sentry Replay (313 KB) is handled by Decision 5's dynamic-import deferral, not by manualChunks.
 
 ## 2. PR1 — Quill Removal Pre-deployment Gates
 
@@ -34,32 +34,35 @@
 
 ## 5. PR2 — Lazy Routes
 
-- [ ] 5.1 In `apps/web/src/router.tsx`, convert every non-critical-path route to a `lazy: async () => { … }` block per Decision 2 (default co-lazy pattern)
-- [ ] 5.2 Keep these symbols as top-level static imports in `router.tsx`: `RootLayout`, `RootRedirect`, `BottomNavigatorLayout`, `ErrorBoundary`, `PermissionErrorBoundary`, `StatusMessage`, `LoginPage`, `PrivateRoutes`, `PublicRoutes`
-- [ ] 5.3 For the `board/:boardId` route, apply the "true parallel" pattern: static `loader:` that dynamically imports `boardLoader` and forwards the call; `lazy:` returns `{ Component, errorElement: <PermissionErrorBoundary /> }` only
-- [ ] 5.4 For the post-detail route, apply the same true-parallel pattern with `postDetailLoader`
-- [ ] 5.5 Confirm no eager imports of page components remain in `router.tsx` for non-critical-path routes
+- [x] 5.1 `apps/web/src/router.tsx` rewritten: every non-critical-path route now uses `lazy: async () => { ... return { Component: ... } }` (co-lazy default per Decision 2)
+- [x] 5.2 Critical-path eager imports retained: `RootLayout`, `RootRedirect`, `BottomNavigatorLayout`, `ErrorBoundary`, `PermissionErrorBoundary`, `StatusMessage`, `LoginPage`, `PrivateRoutes`, `PublicRoutes`. `AppWithTracking`, `NavigationProvider`, `BottomTabHandlerProvider`, `Toaster` also stay eager (all referenced by `RootLayout` on every cold start).
+- [x] 5.3 `board/:boardId` uses the "true parallel" pattern — static `loader: async (args: LoaderFunctionArgs) => { const { boardLoader } = await import(...); return boardLoader(args); }` paired with a Component-only `lazy:` returning `{ Component, errorElement: <PermissionErrorBoundary /> }`
+- [x] 5.4 `board/:boardId/post/:postId` (post detail) AND `board/:boardId/edit/:postId` (post edit) both use the same true-parallel pattern with `postDetailLoader`. `boards/list` also gets the parallel pattern with `boardsLoader()` (no-arg)
+- [x] 5.5 Verified — `router.tsx` no longer eagerly imports any page component except `LoginPage` (per design Decision 3). `pnpm --filter web type-check` exit 0. Build output confirms per-page chunks: `BoardListPage-*.js`, `BoardPage-*.js`, `NotificationsPage-*.js`, `PostDetailPage-*.js`, `PostEditor-*.js`, `StatsPage-*.js`, `UserPage-*.js`, all join/onboarding pages, etc.
 
 ## 6. PR2 — Vite Chunk Configuration
 
-- [ ] 6.1 In `apps/web/vite.config.ts`, remove the stale `firebase/firestore` entry from `manualChunks`
-- [ ] 6.2 Keep `react-vendor` chunk for `react`, `react-dom`, `react-router-dom`
-- [ ] 6.3 Add explicit `manualChunks` entries for the heavy deps surfaced by Phase 0 (likely `@sentry/react/replay`, `recharts`, `react-markdown` — finalize from the actual visualizer report)
-- [ ] 6.4 Lower `build.chunkSizeWarningLimit` from `1000` to `500`
-- [ ] 6.5 Run `pnpm --filter web build` and confirm the build succeeds (warnings allowed)
+- [x] 6.1 Removed stale `firebase/firestore` from `manualChunks` — now `firebase-vendor: ['firebase/app']`
+- [x] 6.2 Kept `react-vendor` chunk for `react`, `react-dom`, `react-router-dom`
+- [x] 6.3 Added explicit `manualChunks` entries informed by the actual Phase 0 report (NOT the design's "likely" list). Added: `sentry-vendor: ['@sentry/react']` and `supabase-vendor: ['@supabase/supabase-js']`. `recharts` and `react-markdown` were not in top 30 deps — skipped. `@sentry/react/replay` is now moot since Replay was removed entirely (see task 7).
+- [x] 6.4 Lowered `build.chunkSizeWarningLimit` from `1000` to `500`
+- [x] 6.5 `SENTRY_AUTH_TOKEN= pnpm --filter web build` exit 0 — built in 11.13s. One warning, on `ImageUtils-*.js` (1323 KB) driven by `heic2any`; **chunk is off the critical path** (loaded only on post create/edit routes). Documented as accepted in `verify_report.md` T.B.2.
 
-## 7. PR2 — Sentry Replay Deferral
+## 7. PR2 — Sentry Replay Removal (scope change: deferral → removal)
 
-- [ ] 7.1 In `apps/web/src/sentry.ts`, remove `Sentry.replayIntegration()` from the `integrations` array passed to `Sentry.init({...})` and remove the top-level `replaysSessionSampleRate` / `replaysOnErrorSampleRate` options
-- [ ] 7.2 Confirm `SENTRY_CONFIG.REPLAY_SAMPLE_RATE` and `SENTRY_CONFIG.REPLAY_ON_ERROR_RATE` remain exported from `sentry.ts`
-- [ ] 7.3 Create `apps/web/src/sentryReplay.ts` exporting `enableReplay()` that calls `Sentry.addIntegration(Sentry.replayIntegration({ sessionSampleRate, errorSampleRate }))` using the rates from `SENTRY_CONFIG`
-- [ ] 7.4 In `apps/web/src/main.tsx`, after `initSentry()`, schedule `import('./sentryReplay').then(m => m.enableReplay())` via `requestIdleCallback(loadReplay, { timeout: 4000 })` with a `setTimeout(loadReplay, 2000)` fallback when `requestIdleCallback` is unavailable
+**Scope change rationale (2026-05-16):** user confirmed Replay is not consulted in practice; only error reports + breadcrumbs are reviewed. Deferring would still pay ~313 KB of post-FCP fetches and add `requestIdleCallback` plumbing. Removing entirely is strictly better — same bundle savings, zero complexity, and easy to re-add if Replay becomes useful later. Decision 5 in `design.md` revised to match.
+
+- [x] 7.1 `apps/web/src/sentry.ts`: removed `Sentry.replayIntegration()` from the `Sentry.init` integrations array, removed the orphaned `replaysSessionSampleRate` / `replaysOnErrorSampleRate` top-level options, removed `REPLAY_SAMPLE_RATE` and `REPLAY_ON_ERROR_RATE` from `SENTRY_CONFIG`
+- [~] 7.2 Superseded by 7.1 — `REPLAY_SAMPLE_RATE` / `REPLAY_ON_ERROR_RATE` are no longer needed once Replay is removed entirely
+- [~] 7.3 Superseded by removal — no `sentryReplay.ts` is created; the file was briefly created during the deferral attempt and then deleted
+- [~] 7.4 Superseded by removal — `main.tsx` stays untouched (no `requestIdleCallback` plumbing)
+- [x] 7.5 SDK API correction (newly surfaced during 7.1): SDK 8.55 reads `replaysSessionSampleRate` / `replaysOnErrorSampleRate` from `client.getOptions()` inside the integration's `_setup` via `loadReplayOptionsFromClient` (see `@sentry-internal/replay/build/npm/esm/index.js:9707`). So the design.md claim that rates would be "orphaned" if Replay is added later via `addIntegration` is incorrect for this SDK version — they are NOT orphaned. This nuance becomes moot now that Replay is removed entirely, but it's recorded here for accuracy.
 
 ## 8. PR2 — Build-Output Verification
 
-- [ ] 8.1 After PR2's `pnpm --filter web build`, run a script that parses `apps/web/dist/assets/*.js` and writes total bundle size, main entry chunk size, chunk count, and top 5 chunks by size to `verify_report.md` under a "Post-PR2 Build Report" section
-- [ ] 8.2 Append a side-by-side comparison of the Phase 0 baseline vs. post-PR2 metrics in `verify_report.md`
-- [ ] 8.3 Run `pnpm --filter web validate` and resolve any failures
+- [x] 8.1 Parsed `apps/web/dist/assets/*.js` post-PR2: chunk count 99, total JS 3299 KB, main `index-*.js` 440 KB (vs 3.2 MB baseline = 86% reduction), top 10 chunks captured in `verify_report.md` "Post-PR2 Build Report"
+- [x] 8.2 Side-by-side baseline vs post-PR2 table appended to `verify_report.md` — critical-path initial JS dropped ~3530 KB → ~1011 KB (≈72% reduction). Sentry Replay weight on first paint went from 313 KB → 0 KB.
+- [ ] 8.3 `pnpm --filter web validate` — partial: `type-check` exit 0; `test:run` 765/765 pass exit 0; full `validate` (which adds `lint`) not yet run separately (lint warnings on pre-existing files are out of scope per PR1's baseline; will run before final commit)
 
 ## 9. PR2 — Manual Smoke
 
@@ -82,8 +85,8 @@
 
 ### Build-Output (no test layer)
 
-- [ ] T.B.1 After `pnpm --filter web build`, parse `apps/web/dist/assets/*.js` and emit total bundle size, main entry size, chunk count, and top 5 chunks; append to `verify_report.md` alongside the Phase 0 baseline (informational, not gating)
-- [ ] T.B.2 Confirm the lowered `chunkSizeWarningLimit: 500` in `vite.config.ts` produces Rollup warnings only for chunks that legitimately exceed 500KB; document any expected warnings in the PR description
+- [x] T.B.1 Parsed `apps/web/dist/assets/*.js` post-PR2 and appended to `verify_report.md` alongside Phase 0 baseline. Total: 3299 KB, main entry: 440 KB, chunk count: 99, top 10 chunks captured.
+- [x] T.B.2 `chunkSizeWarningLimit: 500` fired exactly once — on `ImageUtils-*.js` (1323 KB), driven entirely by `heic2any@0.0.4`. Documented in `verify_report.md` as accepted because the chunk is loaded only on post create/edit routes (off the first-paint critical path). A follow-up could defer `heic2any` inside a HEIC-only code path.
 
 ### E2E (agent-browser + dev3000)
 

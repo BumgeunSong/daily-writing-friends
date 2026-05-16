@@ -7,8 +7,6 @@ import { isIndexedDbConnectionError } from '@/shared/lib/queryErrorTracking';
 const SENTRY_CONFIG = {
   DSN: 'https://8909fb2b0ca421e67d747c29dc427694@o4508460976635904.ingest.us.sentry.io/4508460981747712',
   TRACE_SAMPLE_RATE: Number(import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE) || 1.0,
-  REPLAY_SAMPLE_RATE: 0.1,
-  REPLAY_ON_ERROR_RATE: 1.0,
 } as const;
 
 const IGNORED_ERRORS = [
@@ -107,7 +105,6 @@ export const initSentry = (): void => {
         createRoutesFromChildren,
         matchRoutes,
       }),
-      Sentry.replayIntegration(),
     ],
     tracesSampleRate: SENTRY_CONFIG.TRACE_SAMPLE_RATE,
     tracePropagationTargets: [
@@ -115,8 +112,6 @@ export const initSentry = (): void => {
       /^https:\/\/daily-writing-friends\.com\/api/,
       import.meta.env.VITE_SUPABASE_URL,
     ],
-    replaysSessionSampleRate: isDevelopment ? 0 : SENTRY_CONFIG.REPLAY_SAMPLE_RATE,
-    replaysOnErrorSampleRate: SENTRY_CONFIG.REPLAY_ON_ERROR_RATE,
     ignoreErrors: [...IGNORED_ERRORS],
 
     beforeSend(event, hint) {

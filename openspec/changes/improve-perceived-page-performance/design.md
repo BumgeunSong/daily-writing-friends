@@ -65,7 +65,9 @@ The web app at `apps/web` is a Vite + React 18 SPA on React Router v6 data-route
 - After Phase 0 confirms the heavy deps, add explicit chunks for the top 3 (likely `@sentry/react/replay`, `recharts` if surfaced by Stats, `react-markdown`).
 - Lower `chunkSizeWarningLimit` from 1000 to 500 to catch regressions in CI.
 
-**5. Sentry Replay deferred via `requestIdleCallback` + dynamic `import()`.**
+**5. Sentry Replay removed entirely** *(2026-05-16 scope change: was "deferred"; switched to removal during PR2 implementation. User confirmed they only consult error reports + breadcrumbs in Sentry, not Replay sessions. Deferring would still pay the post-FCP fetch and add `requestIdleCallback` plumbing for a feature that goes unused — removal is strictly better: same bundle savings, zero complexity, easy to re-add later by reinstalling the integration in `Sentry.init`.)*
+
+**5. (historical, superseded) Sentry Replay deferred via `requestIdleCallback` + dynamic `import()`.**
 - Why: Replay is ~50–70KB gzipped and is non-critical for first paint. Errors before Replay loads still get captured by the base SDK; only session-replay frames before the deferred init are missed.
 - **Important SDK v8 detail:** `Sentry.replayIntegration()` accepts sample-rate options as integration props (`sessionSampleRate`, `errorSampleRate`). Top-level `replaysSessionSampleRate` / `replaysOnErrorSampleRate` passed to `Sentry.init({...})` are consumed *at init time*. If Replay is added later via `Sentry.addIntegration()`, those top-level rates are orphaned — they will not retroactively apply, and Replay silently records nothing. **The deferred integration MUST receive the rates explicitly.**
 - Changes to `apps/web/src/sentry.ts`:
