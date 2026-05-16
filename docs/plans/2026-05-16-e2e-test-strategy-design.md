@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-16
 **Owner:** @BumgeunSong
-**Status:** Design — ready to implement
+**Status:** Design — ready to implement (v2, revised after parallel review by critic / test-engineer / architect agents — see Section 7)
 
 ## Goals
 
@@ -43,12 +43,14 @@ Other problems:
 
 Two workflows, not one job with conditions.
 
-- `.github/workflows/e2e-pr.yml` — PR-blocking. Triggers on `pull_request` to `main` and on `merge_group`. Path filter skips docs-only PRs. Budget: ≤4 minutes.
+- `.github/workflows/e2e-pr.yml` — PR-blocking. Triggers on `pull_request` to `main`. Path filter skips docs-only PRs. Budget: ≤4 minutes. (Add `merge_group` trigger only after merge queue is enabled in branch protection — left out for now to avoid dead config.)
 - `.github/workflows/e2e-nightly.yml` — broader sweep. Triggers on `schedule` (03:00 KST), on `workflow_dispatch`, and on PR label `run-nightly-e2e`. Three browsers. Failure opens a tracking issue rather than blocking a PR.
 
 Why two workflows, not jobs: different failure semantics, different timeouts, and easier hotfix bypass.
 
 ## Section 2 — `e2e-pr.yml`
+
+Revised after review: single runner, no sharding, no merge-reports job. Sharding costs 33% more runner-minutes for a marginal wall-clock gain at 6 specs; add it when spec count exceeds ~12 or test time exceeds setup time. Reuse existing project names so Phase 0 ships independently of the suite-restructure work.
 
 ```yaml
 name: E2E (PR)
@@ -57,7 +59,6 @@ on:
   pull_request:
     branches: [main]
     paths-ignore: ['**/*.md', 'openspec/**', 'docs/**', '.github/ISSUE_TEMPLATE/**']
-  merge_group:
 
 concurrency:
   group: e2e-pr-${{ github.ref }}
@@ -67,10 +68,6 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2]
     steps:
       - uses: actions/checkout@v5
 
@@ -90,17 +87,16 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
 
       - uses: supabase/setup-cli@v1
-        with: { version: latest }
+        with: { version: 1.220.4 }   # pin, not `latest`, so the cache key is stable
 
       - name: Start Supabase (minimal)
-        run: supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector
+        run: supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector,realtime
 
       - name: Write .env.local
         run: cp tests/fixtures/.env.e2e.ci .env.local
 
-      - name: Run Playwright (shard ${{ matrix.shard }}/2)
-        run: pnpm exec playwright test --project=pr-blocking
-             --shard=${{ matrix.shard }}/2
+      - name: Run Playwright
+        run: pnpm exec playwright test --project=chromium-data-flows --project=chromium-non-member
         env:
           CI: true
           E2E_PORT: 5173
@@ -108,23 +104,14 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report-shard-${{ matrix.shard }}
+          name: playwright-report
           path: |
             test-results/
             playwright-report/
           retention-days: 7
-
-  merge-reports:
-    if: always()
-    needs: [e2e]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/download-artifact@v4
-        with: { path: all-blobs, pattern: blob-report-* }
-      - run: npx playwright merge-reports --reporter=html all-blobs
-      - uses: actions/upload-artifact@v4
-        with: { name: playwright-report-merged, path: playwright-report }
 ```
+
+Phase 0 uses the **existing project names** (`chromium-data-flows`, `chromium-non-member`). The `pr-blocking` project name proposed earlier requires a config change and belongs to Phase 1–2, when specs actually move into `tests/e2e/pr-blocking/`.
 
 Key choices:
 
@@ -132,14 +119,19 @@ Key choices:
 |---|---|
 | Node 22 | Avoid June 2026 Node 20 deprecation |
 | pnpm cache + Playwright browser cache | Saves ~30s per run after first hit |
-| `supabase start --exclude` | Drops 5 unused images; keeps Mailpit, Auth, Storage, Postgres, Kong |
-| Matrix shard 1/2 | Splits 6 specs across two runners |
+| Pinned Supabase CLI version | `latest` would invalidate any future image cache key |
+| `supabase start --exclude` (incl. `realtime`) | Drops 6 unused images; codebase has zero Realtime channel usage (grep-verified) |
+| **Single runner, no sharding** | At 6 specs, sharding burns ~33% extra runner-minutes for marginal wall-clock gain. Revisit when spec count ≥ 12 |
+| `workers: 2` in `playwright.config.ts` | Parallelism inside a single runner is cheaper than across runners |
 | `concurrency: cancel-in-progress` | Force-pushes don't pile up |
-| `merge_group` trigger | Catches conflicts in merge queue if enabled |
 | `paths-ignore` | Docs-only PRs skip the e2e tax |
-| `merge-reports` job | One unified HTML report instead of two disjoint shard reports |
+| **No `merge_group` trigger yet** | Repo has no merge queue configured; add when enabled |
 
-Expected wall time: ~2:00 (cached setup ~1:00 + tests ~25s + post-job ~35s).
+Expected wall time:
+- Cold cache (first run after dependency change): **~3:00–3:30**
+- Warm cache (typical PR): **~2:00–2:30**
+
+Both stay inside the 4-minute budget.
 
 ## Section 3 — Suite structure & selector contract
 
@@ -203,11 +195,13 @@ Draft spec contract:
 test('draft is preserved across reload', async ({ page }) => {
   const editor = await PostEditorPage.open(page, BOARD_ID);
   await editor.typeContent('half-written content');
-  await editor.waitForAutosave();   // waits on DraftStatusIndicator
+  await editor.waitForAutosave();   // waits on data-testid="draft-status-saved"
   await page.reload();
   await expect(editor.contentLocator()).toContainText('half-written content');
 });
 ```
+
+The `waitForAutosave` helper waits on `data-testid="draft-status-saved"`, which the `DraftStatusIndicator` component renders only when `!isSaving && lastSavedAt !== null && !savingError`. Waiting on the indicator's text would be unreliable — it shows a relative-time string ("마지막 저장: N초 전") that changes every render and depends on the system clock.
 
 ## Section 4 — Data strategy
 
@@ -252,7 +246,7 @@ No shared `e2e-post-000`. No bespoke cleanup helpers.
 | `expect.timeout` | `15_000` on CI (was 20_000) | Same |
 | `reporter` | `['html', 'github', ['blob']]` | `github` annotates PR diff at failure line; `blob` enables shard merge |
 
-Flaky-test detection: a small post-step parses the JSON report. A test that passes only after retry does not fail the PR. It opens a tracking issue labeled `flaky-test`. After three flags in a week, it leaves the PR-blocking tier.
+Flaky-test detection: a small post-step parses the JSON report. A test that passes only after retry does not fail the PR. It opens a tracking issue labeled `flaky-test` — **only if the same test has retry-passed in at least two separate runs within a 7-day window**. A single retry-pass on infra blip (DNS, container startup) does not generate noise. After three flags in a week, the test is marked `test.skip` (not deleted) with a comment linking the tracking issue; the body and failure evidence stay in the tree.
 
 On-PR feedback:
 - Pass: silent.
@@ -275,26 +269,28 @@ Audit:
 | `apps/web/playwright.config.ts` | Delete — duplicate of root |
 | `playwright.config.prod.ts` | Keep — production smoke is separate |
 
-Source-code edits: add five `data-testid` attributes.
+Source-code edits: add **seven** `data-testid` attributes (revised up from five after review).
 
-| Component | Testid |
-|---|---|
-| `PostEditor` (TipTap wrapper) | `post-editor` |
-| `PostCard` | `post-card` |
-| Comment list container | `comment-list` |
-| `DraftStatusIndicator` | `draft-status` |
-| Post list scroll container | `post-list` |
+| Component | Testid | Notes |
+|---|---|---|
+| `PostEditor` (TipTap wrapper) | `post-editor` | replaces `.ProseMirror` raw class |
+| `PostCard` | `post-card` | replaces `[role="button"][aria-label="게시글 상세로 이동"]` chain |
+| Comment list container | `comment-list` | assertion target |
+| Comment submit button | `comment-submit` (or `aria-label="댓글 제출"`) | **new** — fixes the banned `.locator('..').locator('button')` traversal in `comment.spec.ts` |
+| `DraftStatusIndicator` (container) | `draft-status` | structural anchor |
+| `DraftStatusIndicator` ("saved" state) | `draft-status-saved` | **new** — appears only when `!isSaving && lastSavedAt !== null && !savingError`. The draft spec waits on this; without it the spec races on text content |
+| Post list scroll container | `post-list` | structural anchor |
 
 Phased rollout (one PR each):
 
 | Phase | Scope | Net effect |
 |---|---|---|
-| 0 | New `e2e-pr.yml` with caching and `--exclude` Supabase services; specs untouched | CI: 3:00 → ~1:30 |
-| 1 | Add `_fixtures/`; migrate `non-member` + `scroll` (read-only) to new layout | No coverage change |
-| 2 | Rewrite `write-post` + `comment` against factories; add five `data-testid`s | Removes DOM traversal; removes `e2e-post-000` dependency |
-| 3 | Add `login.spec.ts` and `draft-persistence.spec.ts` | Coverage: +2 critical paths |
-| 4 | Add `e2e-nightly.yml` cron + `notification.spec.ts` | Nightly safety net live |
-| 5 | Delete `tests/example*`, `tests/editor-*`, duplicate config, `_legacy/` | Dead code gone |
+| 0 | New `e2e-pr.yml` using **existing project names**, caching, `--exclude` (incl. `realtime`), single runner, `workers: 2` | CI: 3:00 → ~2:00 (warm) |
+| 1 | Add `_fixtures/`; introduce `tests/e2e/pr-blocking/` project in `playwright.config.ts`; migrate `non-member` + simplified `scroll` (initial-load assertion only) to new layout | No coverage change; detailed pagination test moves to nightly |
+| 2 | Add six `data-testid`s to source (`post-editor`, `post-card`, `comment-list`, `comment-submit`, `draft-status`, `post-list`); rewrite `write-post` + `comment` against factories | Removes DOM traversal; removes `e2e-post-000` dependency |
+| 3 | Add `draft-status-saved` testid to source; add `login.spec.ts` and `draft-persistence.spec.ts` | Coverage: +2 critical paths |
+| 4 | Add `e2e-nightly.yml` cron + `notification.spec.ts`; move detailed scroll test, stats, OTP signup, image upload to nightly | Nightly safety net live |
+| 5 | Delete `tests/example*`, `tests/editor-*` (Quill removed in `22384d73`), `apps/web/playwright.config.ts` (no scripts reference it), `_legacy/` | Dead code gone |
 
 Risks and mitigations:
 
@@ -312,3 +308,31 @@ Estimate: Phases 0-3 are about one to two days of work. Phases 4-5 are about ano
 - Should production smoke (`playwright.config.prod.ts`) run on a separate cron, daily?
 - Should we add a Lighthouse perf gate to the same workflow, or keep performance in `image-perf` only?
 - For draft persistence: where is the draft stored — Supabase row, localStorage, or IndexedDB? The spec design assumes the existing `DraftStatusIndicator` is the source of truth for "saved" state regardless of backing store.
+
+## Section 7 — Review feedback applied
+
+This section documents the changes between v1 and v2 of the design. Three reviewers in parallel — a hostile critic, a test-engineering specialist, and a CI-architecture specialist — examined v1. The findings flagged by multiple reviewers became the v2 changes below.
+
+| Reviewer finding | v1 claim | v2 revision | Severity |
+|---|---|---|---|
+| Phase 0 is not independently shippable — workflow used `--project=pr-blocking` which doesn't exist in `playwright.config.ts` | Phase 0 ships caching only | Phase 0 reuses existing project names; the `pr-blocking` project name moves to Phase 1 | Blocker |
+| `merge-reports` job referenced `blob-report-*` artifacts but the reporter wasn't configured to emit them | `merge-reports` job included | Job removed; single runner; revisit when sharding becomes worthwhile | Blocker |
+| `DraftStatusIndicator` has no deterministic "saved" state to wait on (text shows relative time that changes every render) | `waitForAutosave` waits on the indicator | New `data-testid="draft-status-saved"` flips only when `!isSaving && lastSavedAt !== null && !savingError`; spec waits on the testid, not text | Would flake |
+| Comment submit button still uses banned DOM traversal (`.locator('..').locator('button')`) | Selector contract banned DOM traversal but didn't add a source-side testid | New testid `comment-submit` (or `aria-label="댓글 제출"`) added; testid count 5 → 7 | Contract violation |
+| Sharding burns 33% extra runner-minutes for marginal wall-clock gain at 6 specs | Matrix shard 1/2 | Dropped; revisit at ~12+ specs | Waste |
+| `merge_group` trigger is dead — repo has no merge queue configured | Trigger included | Removed; add when merge queue is enabled in branch protection | Dead config |
+| Wall-time estimate `~2:00` ignored 2× Supabase Docker boot from sharding | `~2:00` flat | `~2:00–2:30` warm, `~3:00–3:30` cold; both inside budget | Optimistic |
+| Scroll spec is the weakest on Khorikov criteria — couples to Supabase REST URL + `waitForTimeout` | All current data-flows in PR-blocking | Phase 1 keeps "initial page load shows posts" in PR-blocking; detailed pagination moves to nightly | Refactor-fragile |
+| `realtime` should be excluded — codebase has zero Realtime channel usage (grep-verified) | Realtime kept in Supabase boot | Added to `--exclude` list; one less container | Small win |
+| Flake auto-issue created on a single retry-pass produces noise from infra blips | Open issue on any retry-pass | Require 2 retry-passes within 7 days before issue; auto-`test.skip` (not delete) at 3 flags | Noise control |
+| Pinned Supabase CLI version makes future image cache key stable | `version: latest` | `version: 1.220.4` pinned | Cache hygiene |
+
+**Findings noted but not applied** (deferred to Phase 1+):
+
+- Cross-user privacy assertion in draft spec ("user B does not see user A's draft") — adds value, but the basic save/load is the PR-blocking smoke. Add as a follow-up test in Phase 3.
+- Auto-`test.skip` mechanism for repeatedly-flaky specs — design is sound but tooling work; tracked separately.
+- Icon-only TipTap toolbar buttons need `aria-label` for the nightly image-upload spec to follow the contract. Not in PR-blocking critical path; address in Phase 4 alongside the image-upload spec move.
+
+**Findings rejected:**
+
+None — every flagged issue had clear merit. Where a reviewer suggested a tradeoff (e.g. "drop sharding entirely now"), this design accepts the suggestion rather than carrying the v1 complexity.
