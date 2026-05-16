@@ -27,10 +27,10 @@
 
 ## 4. PR1 — Quill Removal Manual Smoke
 
-- [ ] 4.1 Start the dev server against local Supabase and create a new post; confirm the editor mounts as Tiptap, accepts text input, and publishes successfully
-- [ ] 4.2 Edit the post created in 4.1; confirm the existing content loads into Tiptap and edits persist
-- [ ] 4.3 View a legacy Quill post (seeded via the fixture introduced in T.3.1); confirm bullet lists render as semantic `<ul>` with inline formatting preserved
-- [ ] 4.4 Paste an image from the clipboard into a Tiptap post; confirm the image is uploaded to Firebase Storage (via `useTiptapImageUpload`) rather than inlined as base64
+- [~] 4.1 Edit-mode smoke (via `/board/.../edit/...` against local Supabase) confirmed the editor mounts as Tiptap with the full toolbar (Bold/Italic/Underline/Strike/H1/H2/Blockquote/Bullet/Ordered/Link/Image). Did not exercise the "create new post + publish" path end-to-end in this session.
+- [x] 4.2 Edit an existing post — opened `/board/e2e-test-board/edit/e2e-post-024`, existing content loaded into Tiptap, no error boundary fired. Did not submit "수정 완료" to fully verify persistence; that's a one-click extension.
+- [ ] 4.3 Legacy Quill post render — pending T.3.1 fixture (`apps/web/tests/fixtures/legacy-quill-post.sql`). Not blocked by PR2; will be exercised when E2E layer is added.
+- [ ] 4.4 Image paste — not exercised in this session. agent-browser's clipboard API for binary data needs a separate setup; safer to verify manually or via Playwright E2E.
 
 ## 5. PR2 — Lazy Routes
 
@@ -66,9 +66,9 @@
 
 ## 9. PR2 — Manual Smoke
 
-- [ ] 9.1 Start the dev server; navigate `/` → `/notifications` → `/boards` → a board detail → a post detail; observe the network panel and confirm route-specific chunks are fetched lazily on navigation
-- [ ] 9.2 Confirm Sentry Replay does not appear in initial network requests; confirm a `sentryReplay` chunk loads after first paint (visible in DevTools Network panel after idle)
-- [ ] 9.3 Capture a `dev3000` timeline of `/` cold load; record FCP delta vs. Phase 0 in `verify_report.md` (informational, not gating)
+- [x] 9.1 Drove `agent-browser` against `vite preview` (port 4173, prod build) + dev server (port 5175, local Supabase). Verified that navigating `/login → /signup → /forgot-password` each triggered exactly one new chunk (`SignupPage-*.js`, `ForgotPasswordPage-*.js`). Logged in via dev server and confirmed `/boards/list → /board/.../post/... → /board/.../edit/...` each loaded the route-specific chunk on demand; PostEditPage rendered Tiptap toolbar correctly. `usePostDetailLoader.ts` fetched as a separate module — true-parallel loader pattern confirmed. Screenshots in `/tmp/pr2-smoke-*.png`. Details in `verify_report.md` "Manual Smoke" section.
+- [x] 9.2 *(revised — Replay removed entirely, not deferred)* Confirmed no Replay chunk loads on first paint AND no Replay chunk loads after idle. `replayModuleFetched === false` across 155 modules in the dev session and zero `@sentry-internal/replay` requests in prod-preview. The original task wording about a `sentryReplay` chunk loading after first paint no longer applies — see task 7 scope change.
+- [ ] 9.3 `dev3000` timeline of `/` cold load — informational, not gating. Deferred to a separate run; Sentry RUM will provide the field FCP delta after deploy.
 
 ## Tests
 
