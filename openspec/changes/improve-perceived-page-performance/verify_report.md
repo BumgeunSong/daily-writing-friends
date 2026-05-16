@@ -35,7 +35,7 @@
 |---|---|---|---|
 | 1 | **heic2any** | **1330.4** | iOS HEIC → JPG conversion. Statically imported by `post/utils/ImageUtils.ts`. Will move to post-route chunks automatically once post routes go lazy in PR2. |
 | 2 | @supabase/auth-js | 359.3 | Always loaded — candidate for `supabase-vendor` chunk. |
-| 3 | **@sentry-internal/replay** | **312.7** | Already addressed in PR2 Decision 5 — moving to deferred `sentryReplay.ts` dynamic chunk. |
+| 3 | **@sentry-internal/replay** | **312.7** | **Removed entirely in PR2** (scope change from Decision 5's original "defer via dynamic chunk" — user confirmed Replay was not consulted in practice). Post-PR2: 0 KB. |
 | 4 | motion-dom | 280.4 | Used by framer-motion. |
 | 5 | @sentry/core | 270.3 | Always loaded — candidate for `sentry-vendor` chunk. |
 | 6 | prosemirror-view | 238.7 | Tiptap dep — moves with post routes. |
@@ -52,14 +52,14 @@
 Combined cohort sizes (rendered):
 - **Supabase SDK** (auth + postgrest + storage + realtime): ~667 KB → propose `supabase-vendor` chunk.
 - **Sentry base SDK** (core + browser + browser-utils + react): ~446 KB → propose `sentry-vendor` chunk.
-- **Sentry Replay**: 313 KB → already split via dynamic import (Decision 5).
+- **Sentry Replay**: 313 KB → **removed entirely in PR2** (scope change from Decision 5's original "defer via dynamic chunk"). No manualChunks entry needed because the import is gone from the source.
 - **Tiptap + ProseMirror**: ~633 KB → moves with lazy post routes; explicit chunk would create a shared post-vendor chunk so it isn't duplicated across `create`/`edit`/`view` routes.
 
 ### Task 1.4 — Heavy-Dep Decisions for PR2 `manualChunks`
 
 The design's "likely" list (`@sentry/react/replay`, `recharts`, `react-markdown`) didn't match reality:
 
-- `@sentry/react/replay`: **handled by the dynamic-import deferral in Decision 5, no manualChunks entry needed** — Rollup splits the dynamic import into its own chunk automatically.
+- `@sentry/react/replay`: **moot — Replay is removed entirely in PR2** (see task 7 scope change). The import is gone from the source, so Rollup tree-shakes it out; no manualChunks entry needed.
 - `recharts`: **not in top 30 by size** — skip.
 - `react-markdown`: **not in top 30 by size** — skip.
 
