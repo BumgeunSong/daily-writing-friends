@@ -53,8 +53,9 @@ TTFB is 170–620ms (fine), so SSR is the wrong tool — it would worsen TTFB an
 - `apps/web/src/main.tsx` — defer Sentry Replay init to post-first-paint
 - `apps/web/src/post/components/PostTextEditor.tsx` — deleted
 - `apps/web/src/post/components/PostEditor.tsx` — switching logic removed; renders Tiptap directly
-- `apps/web/src/post/hooks/useImageUpload.ts` — Quill-specific paths deleted
-- `apps/web/src/post/hooks/__tests__/useImageUpload.test.ts` — Quill test cases removed
+- `apps/web/src/post/hooks/useImageUpload.ts` — deleted entirely (Tiptap uses its own `useTiptapImageUpload`; no other consumers)
+- `apps/web/src/post/hooks/__tests__/useImageUpload.test.ts` — deleted with the hook
+- `apps/web/src/post/utils/sanitizeHtml.ts` — stale comment pointing to `useImageUpload` reframed
 - `apps/web/src/test/EditorTestPage.tsx` — Quill testing branches stripped
 - `apps/web/src/shared/contexts/RemoteConfigContext.tsx` — only `tiptap_editor_enabled` flag entry removed; provider intact
 

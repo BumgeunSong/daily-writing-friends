@@ -59,8 +59,7 @@ export function isValidHttpUrl(url: string): boolean {
 }
 
 /**
- * Format date for Firebase storage path
- * Reuses existing pattern from useImageUpload
+ * Format date for Firebase storage path: YYYYMMDD folder + HHMMSS prefix.
  */
 export function formatDate(date: Date): { dateFolder: string; timePrefix: string } {
   const year = date.getFullYear();
