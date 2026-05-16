@@ -1,130 +1,132 @@
 # Error Handling & Monitoring Guide
 
 ## Overview
-Comprehensive error handling strategy for the application, including error boundaries, monitoring with Sentry, network error tracking, and debugging practices.
+
+Comprehensive error handling strategy for the application, including error boundaries, Supabase write error tracking, React Query error monitoring with Sentry, and debugging practices.
 
 ## Error Handling Architecture
 
-### React Query Global Error Tracking (Primary Approach)
-All network errors are now automatically tracked through React Query's centralized error handling:
+```
+User action
+  └── React Query mutation / Router loader
+        └── executeTrackedWrite / throwOnError   (src/shared/api/supabaseClient.ts)
+              ├── SupabaseNetworkError  →  Sentry breadcrumb (warning)
+              └── SupabaseWriteError   →  Sentry breadcrumb + captureException
+                    └── Postgres code 42501 → special fingerprint "permission-denied"
 
-- **Automatic Error Capture**: All queries and mutations are tracked
-- **Firebase Integration**: Special handling for permission and auth errors
-- **Performance Monitoring**: Slow queries (>3s) are logged
-- **Rich Context**: Query keys, retry counts, and user state included
+React Query global cache
+  └── QueryCache.onError → trackQueryError   (src/shared/lib/queryErrorTracking.ts)
+  └── MutationCache.onError → trackMutationError
 
-#### How It Works
+Component tree errors
+  └── ErrorBoundary   (src/shared/components/ErrorBoundary.tsx)   — class-based
+  └── PermissionErrorBoundary (src/shared/components/PermissionErrorBoundary.tsx)
+        — router error element, handles 403 / 503 / generic route errors
+```
+
+---
+
+## Supabase Write Error Chain
+
+**Location**: `src/shared/api/supabaseClient.ts`
+
+### Error Classes
+
 ```typescript
-// All queries/mutations automatically tracked - no changes needed
-useQuery({
-  queryKey: ['posts', boardId],
-  queryFn: fetchPosts,
-  // Optional: Add meta for extra context
-  meta: {
-    feature: 'board-view',
-    errorContext: 'Loading posts'
-  }
+class SupabaseWriteError extends Error {
+  postgrestError: PostgrestError;  // code, message, details, hint
+}
+
+class SupabaseNetworkError extends Error {
+  postgrestError: PostgrestError;
+}
+```
+
+`SupabaseNetworkError` is thrown when the Postgres error has no `code` and the message matches a network-failure pattern (`'Load failed'`, `'Failed to fetch'`, `'NetworkError'`, etc.).
+
+`SupabaseWriteError` is thrown for all other Postgres errors, including RLS violations (code `42501`).
+
+### throwOnError
+
+```typescript
+throwOnError(result: { error: PostgrestError | null }, operation?: string): void
+```
+
+Called after every Supabase query that should raise on failure.
+
+- No error → returns normally.
+- Network error → adds a Sentry breadcrumb at `warning` level, throws `SupabaseNetworkError`.
+- Other error → adds a Sentry breadcrumb at `error` level, sets Sentry context `supabaseError`, calls `Sentry.captureException`, throws `SupabaseWriteError`.  
+  For Postgres code `42501` (RLS permission denied), sets a custom Sentry fingerprint `['supabase', 'permission-denied', operation]`.
+
+### executeTrackedWrite
+
+```typescript
+executeTrackedWrite(
+  operation: string,
+  fn: () => Promise<{ error: PostgrestError | null }>,
+): Promise<void>
+```
+
+Wraps a single Supabase write with:
+
+1. A Sentry breadcrumb at start (`'Supabase write started: <operation>'`).
+2. Timing — if the write takes ≥ 1 000 ms, adds a `warning` breadcrumb and a `console.warn`.
+3. Delegates to `throwOnError` for error reporting and throwing.
+
+**Usage**:
+
+```typescript
+await executeTrackedWrite('insertLike', () =>
+  supabase.from('likes').insert({ post_id: postId, user_id: userId }),
+);
+```
+
+### Postgres Error Code Reference
+
+| Code | Meaning | Thrown as |
+|------|---------|-----------|
+| `42501` | Insufficient privilege (RLS violation) | `SupabaseWriteError` |
+| `23505` | Unique violation (duplicate key) | `SupabaseWriteError` |
+| `23503` | Foreign key violation | `SupabaseWriteError` |
+| `42P01` | Undefined table | `SupabaseWriteError` |
+| *(empty)* | Network / connectivity failure | `SupabaseNetworkError` |
+
+---
+
+## React Query Global Error Tracking
+
+**Location**: `src/shared/lib/queryErrorTracking.ts`  
+**Wired in**: `src/shared/lib/queryClient.ts`
+
+The `QueryClient` is created with `QueryCache` and `MutationCache` callbacks that automatically call `trackQueryError` / `trackMutationError` for every failed query or mutation — no per-query `onError` needed.
+
+```typescript
+// queryClient.ts (simplified)
+const queryCache = new QueryCache({
+  onError: (error, query) => trackQueryError(error, query),
+});
+const mutationCache = new MutationCache({
+  onError: (error, _vars, _ctx, mutation) => trackMutationError(error, mutation),
 });
 ```
 
-#### What Gets Tracked
-- **Query Key**: Exact query that failed (e.g., `['posts', 'boardId123']`)
-- **Retry Count**: Number of retry attempts
-- **Firebase Errors**: Permission errors with hints
-- **Performance**: Request duration and slow queries
-- **User Context**: User ID and authentication state
+### trackQueryError
 
-## Error Handling Architecture
+For each failing query it:
 
-### Error Boundaries
-React Error Boundaries catch JavaScript errors in component trees:
-- **ErrorBoundary.tsx**: Generic error boundary for all components
-- **CopyErrorBoundary.tsx**: Specialized for copy functionality errors
-- **PermissionErrorBoundary.tsx**: Handles Firebase permission errors
-- **NotificationsErrorBoundary.tsx**: Notification-specific error handling
+1. Redacts PII from query keys that match `REDACTED_QUERY_KEY_PREFIXES` (e.g. `userPostSearch`).
+2. Handles iOS IndexedDB connection errors at `warning` level (breadcrumb only; full Sentry report only after 3 retries).
+3. Adds a Sentry breadcrumb and sets Sentry context and tags with the query key, retry count, and user id.
+4. For `FirebaseError` (legacy path, kept for safety): routes to `handleFirebaseQueryError`.
+5. For all other errors: calls `captureQueryError` which uses `Sentry.captureException` with a fingerprint derived from the query key.
 
-### Error Monitoring with Sentry
+### trackMutationError
 
-#### 1. User Identification
-- **Location**: `src/sentry.ts`, `src/shared/hooks/useAuth.tsx`
-- **Features**:
-  - Automatic user identification on login (userId, email, displayName)
-  - User context cleared on logout
-  - Email addresses partially masked for privacy
+Same structure as `trackQueryError` but for mutations. Uses `mutation.options.mutationKey` for the description.
 
-#### 2. Network Error Tracking
-- **Location**: `src/shared/utils/networkErrorTracking.ts`
-- **Features**:
-  - Global fetch interceptor captures all network requests
-  - Detailed error context including:
-    - URL, method, status codes
-    - Network connectivity status
-    - Connection quality (if available)
-    - Request duration
-    - User agent information
-  - Firebase-specific error handling
-  - Custom fingerprinting for better error grouping
+### Manual Breadcrumbs
 
-#### 3. Navigation & User Action Tracking
-- **Location**: `src/shared/hooks/useNavigationTracking.ts`
-- **Features**:
-  - Automatic breadcrumb trail of user navigation
-  - Click tracking for buttons, links, and forms
-  - Page context in all errors
-  - Last user action before error occurrence
-
-#### 4. Enhanced Error Boundaries
-- **Location**: `src/shared/components/ErrorBoundary.tsx`
-- **Features**:
-  - Sentry integration with component stack traces
-  - Custom context and tags for error location
-  - Different severity levels based on error type
-
-## How Network Errors Are Now Tracked
-
-### Before (Your Problem)
-```
-TypeError: Failed to fetch
-```
-No context about what failed, when, or why.
-
-### After (With Enhanced Tracking)
-```
-Network request failed: POST https://firebaseremoteconfig.googleapis.com/...
-Error: Failed to fetch
-Online: true
-Duration: 5234ms
-
-Context:
-- User ID: abc123
-- Current Page: Board
-- Last Action: User clicked: Button: Save Post
-- Network Status: online
-- Connection Type: 4g
-- Firebase Service: Remote Config
-```
-
-## Error Grouping
-
-Errors are now grouped by:
-1. **Firebase Errors**: Grouped by service (Firestore, Auth, Storage, etc.)
-2. **Network Errors**: Grouped by URL pattern and method
-3. **Permission Errors**: All Firebase permission errors grouped together
-4. **Timeout Errors**: All timeout-related errors grouped
-
-## Finding Root Causes
-
-With the new implementation, you can now:
-
-1. **Check User Context**: See which user experienced the error
-2. **Review Breadcrumbs**: See the exact sequence of actions before the error
-3. **Analyze Network State**: Check if user was offline or had poor connection
-4. **Identify Patterns**: Errors are grouped by type for easier pattern recognition
-5. **Debug Firebase Issues**: Specific context for Firebase service failures
-
-## Usage in Your Code
-
-### Manual Breadcrumb Addition
 ```typescript
 import { addSentryBreadcrumb } from '@/sentry';
 
@@ -132,11 +134,12 @@ addSentryBreadcrumb(
   'User started editing post',
   'user-action',
   { postId, boardId },
-  'info'
+  'info',
 );
 ```
 
-### Manual Context Setting
+### Manual Context / Tags
+
 ```typescript
 import { setSentryContext, setSentryTags } from '@/sentry';
 
@@ -148,31 +151,105 @@ setSentryContext('currentOperation', {
 
 setSentryTags({
   feature: 'post-editor',
-  userRole: 'member'
+  userRole: 'member',
 });
 ```
 
-## Monitoring Dashboard Tips
+---
 
-In your Sentry dashboard, you can now:
-1. Filter by user ID to see all errors for a specific user
-2. Filter by tags (network.url_pattern, network.online, errorType)
-3. View breadcrumb trails to reproduce user journey
-4. See network conditions when errors occurred
-5. Group similar Firebase errors together
+## Error Boundaries
 
-## Error Handling Best Practices
+### ErrorBoundary (`src/shared/components/ErrorBoundary.tsx`)
 
-### 1. Use Error Boundaries
-Wrap feature components with appropriate error boundaries:
+A class-based React error boundary that catches **component tree** JavaScript errors.
+
+**Props**:
+
+```typescript
+interface ErrorBoundaryProps {
+  fallback: ReactNode | ((error: Error) => ReactNode);
+  children: ReactNode;
+  context?: string;  // Optional label added to Sentry tags/context
+}
+```
+
+**Behavior**: On `componentDidCatch`, sets Sentry tags (`errorBoundary`, `errorLocation`), sets context (`errorBoundary.componentStack`), and calls `Sentry.captureException`.
+
+**Usage**:
+
 ```typescript
 <ErrorBoundary context="post-editor" fallback={<ErrorFallback />}>
   <PostEditor />
 </ErrorBoundary>
 ```
 
-### 2. Capture Errors with Context
-Always include context when capturing exceptions:
+### PermissionErrorBoundary (`src/shared/components/PermissionErrorBoundary.tsx`)
+
+A **React Router error element** (uses `useRouteError()`) — not a class-based boundary. Attach it to a route's `errorElement` prop.
+
+It handles three cases:
+
+| HTTP Status | UI shown |
+|-------------|----------|
+| `503` | 네트워크 오류 dialog — retry or go home |
+| `403` | 읽기 권한 없음 dialog — go home |
+| Other / non-Response | Generic error page with back button |
+
+Loaders should `throw new Response(message, { status: 403 })` or `throw new Response(message, { status: 503 })` to trigger the appropriate dialog.
+
+### Other Boundaries
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `CopyErrorBoundary` | `src/post/components/CopyErrorBoundary.tsx` | Handles copy-to-clipboard failures |
+| `NotificationsErrorBoundary` | `src/notification/components/NotificationsErrorBoundary.tsx` | Isolates notification errors |
+
+---
+
+## Sentry User Identification
+
+**Location**: `src/sentry.ts`, `src/shared/hooks/useAuth.tsx`
+
+`AuthProvider` calls `setSentryUser` on every auth state change via `syncUserState`:
+
+- On sign-in: sets `{ uid, email, displayName }`.
+- On sign-out: calls `setSentryUser(null)` to clear user context.
+
+---
+
+## Error Handling Best Practices
+
+### 1. Use executeTrackedWrite for Supabase Writes
+
+Always use `executeTrackedWrite` (or at minimum `throwOnError`) instead of checking `.error` manually:
+
+```typescript
+// Good
+await executeTrackedWrite('deleteComment', () =>
+  supabase.from('comments').delete().eq('id', commentId),
+);
+
+// Avoid
+const { error } = await supabase.from('comments').delete().eq('id', commentId);
+if (error) console.error(error); // no Sentry, no breadcrumb
+```
+
+### 2. Throw Typed Route Errors from Loaders
+
+```typescript
+// In a loader
+const { data, error } = await supabase.from('posts').select('*').eq('board_id', boardId);
+
+if (error?.code === '42501') {
+  throw new Response('이 기수에 참여하지 않아서 글을 읽을 수 없어요.', { status: 403 });
+}
+if (!navigator.onLine || isNetworkError(error)) {
+  throw new Response('네트워크 연결에 문제가 있어요.', { status: 503 });
+}
+```
+
+### 3. Capture Errors with Context
+
 ```typescript
 try {
   await savePost(data);
@@ -186,46 +263,23 @@ try {
 }
 ```
 
-### 3. Handle Async Errors in React Query
-Use onError callbacks in mutations and queries:
+### 4. Handle Async Errors in React Query
+
+React Query errors are captured automatically by the global `QueryCache` / `MutationCache`. Add `meta` for extra Sentry context when needed:
+
 ```typescript
-const mutation = useMutation({
-  mutationFn: createPost,
-  onError: (error) => {
-    Sentry.captureException(error, {
-      tags: { feature: 'post-creation' },
-      context: { boardId, userId }
-    });
-  }
+useQuery({
+  queryKey: ['posts', boardId],
+  queryFn: fetchPosts,
+  meta: {
+    feature: 'board-view',
+    errorContext: 'Loading posts',
+  },
 });
 ```
 
-### 4. Network Error Handling
-Network errors are automatically tracked, but add context for specific operations:
-```typescript
-import { trackUserAction } from '@/shared/utils/networkErrorTracking';
+### 5. Offline / Network Errors
 
-// Before critical operations
-trackUserAction('save', 'Post Draft');
-```
-
-### 5. Firebase Error Patterns
-Common Firebase errors and how to handle them:
-
-#### Permission Errors
-```typescript
-if (error.code === 'permission-denied') {
-  // Show user-friendly message
-  toast.error('You don\'t have permission to perform this action');
-  // Log with context
-  Sentry.captureException(error, {
-    level: 'warning',
-    tags: { errorType: 'firebase-permission' }
-  });
-}
-```
-
-#### Network/Offline Errors
 ```typescript
 if (!navigator.onLine) {
   toast.error('You appear to be offline. Please check your connection.');
@@ -233,88 +287,73 @@ if (!navigator.onLine) {
 }
 ```
 
+---
+
+## Debugging Guide
+
+### Reading Sentry Errors
+
+1. **Check User Context**: Identify affected user (`uid`, `email`)
+2. **Review Breadcrumbs**: Trace the sequence — `supabase.write started`, any slow-write warning, then `supabase.write failed`
+3. **Examine `supabaseError` Context**: `code`, `message`, `details`, `hint`, `operation`
+4. **Check Tags**: `query.key`, `error.source`
+5. **Fingerprint**: `['supabase', 'permission-denied', '<operation>']` groups all RLS errors for one operation
+
+### Common Issues and Solutions
+
+#### "Insufficient privilege" / RLS violation (Postgres code 42501)
+
+This is a Row-Level Security policy failure. In Sentry it appears as `SupabaseWriteError` with `code: '42501'`.
+
+Debugging steps:
+1. Confirm the user is authenticated (`auth.uid()` is set).
+2. Check the relevant RLS policy in `supabase/migrations/` or Supabase Studio.
+3. Verify the user has the required row in `user_board_permissions` or equivalent.
+4. Review the `supabaseError` Sentry context for `operation` to identify which table/mutation failed.
+
+#### "Failed to fetch" / "Load failed" (SupabaseNetworkError)
+
+- Check network context in Sentry (`navigator.onLine` at time of error).
+- Verify Supabase project status.
+- Review request URL and method via breadcrumbs.
+
+#### "TypeError" in components
+
+- Check for null/undefined data (e.g., missing `?.` guards).
+- Verify data schema matches query result shape.
+- Add optional chaining or default values.
+
+---
+
 ## Error Types Reference
 
 ### Application Errors
-- **ValidationError**: Input validation failures
-- **AuthenticationError**: Login/auth failures
-- **PermissionError**: Unauthorized access attempts
-- **NetworkError**: Fetch/API failures
-- **FirebaseError**: Firebase service errors
+
+| Class | Location | When thrown |
+|-------|----------|-------------|
+| `SupabaseWriteError` | `src/shared/api/supabaseClient.ts` | Any Postgres error with a non-empty code |
+| `SupabaseNetworkError` | `src/shared/api/supabaseClient.ts` | Network/connectivity failures (empty code) |
 
 ### Error Severity Levels
+
 - **Fatal**: App crashes, data loss risks
 - **Error**: Feature failures, broken flows
 - **Warning**: Degraded experience, recoverable errors
 - **Info**: Non-critical issues, performance concerns
 
-## Debugging Guide
-
-### Reading Sentry Errors
-1. **Check User Context**: Identify affected user
-2. **Review Breadcrumbs**: Trace user actions
-3. **Examine Tags**: Filter by feature/operation
-4. **Analyze Stack Trace**: Locate error source
-5. **Check Network Context**: Verify connectivity issues
-
-### Common Issues and Solutions
-
-#### "Failed to fetch" / "Load failed"
-- Check network context in Sentry
-- Verify Firebase service status
-- Review request URL and method
-- Check user online status
-
-#### "Missing or insufficient permissions"
-
-**Enhanced Context in Sentry:**
-When permission errors occur, Sentry now captures:
-- **Operation type**: read/write/create/update/delete
-- **Collection & Document**: Exact path being accessed
-- **User state**: Authenticated status and user ID
-- **Permission details**: Current vs required permissions
-- **Debug hints**: Likely causes and solutions
-
-**Common Permission Scenarios:**
-
-1. **Board Access (`boards/{boardId}`)**
-   - **Required**: User authenticated + `boardPermissions[boardId]` = 'read' or 'write'
-   - **Check**: User's `boardPermissions` field in Firestore
-   - **Debug**: Look for `availablePermissions` in Sentry context
-
-2. **Post Reading (`boards/{boardId}/posts/{postId}`)**
-   - **Required**: User authenticated + (post is PUBLIC OR user is author)
-   - **Check**: Post's `visibility` field and `authorId`
-   - **Debug**: Verify post visibility status in Sentry context
-
-3. **User Data (`users/{userId}`)**
-   - **Required**: User can only access their own data
-   - **Check**: `userId` matches authenticated user
-   - **Debug**: Compare `userId` in path with authenticated user ID
-
-**Debugging Steps:**
-1. Check Sentry's `firebasePermission` context for:
-   - Exact operation and path
-   - User authentication state
-   - Additional info with specific reason
-2. Review console logs for detailed debug hints
-3. Verify user's permissions in Firestore console
-4. Check authentication state in browser: `firebase.auth().currentUser`
-
-#### "TypeError" in components
-- Check for null/undefined data
-- Verify data schema matches expectations
-- Add optional chaining or default values
+---
 
 ## Testing Error Handling
 
 ### Manual Testing
-1. Disconnect network to test offline handling
-2. Use browser dev tools to block requests
-3. Modify Firebase rules to test permission errors
-4. Inject errors in development for boundary testing
+
+1. Disconnect network to test offline handling.
+2. Use browser dev tools to block Supabase requests.
+3. Modify RLS policies in Supabase Studio to test 42501 errors.
+4. Inject errors in development for boundary testing.
 
 ### Automated Testing
+
 ```typescript
 // Test error boundary
 it('handles component errors gracefully', () => {
@@ -330,18 +369,10 @@ it('handles component errors gracefully', () => {
 
   expect(screen.getByText('Error occurred')).toBeInTheDocument();
 });
+
+// Test throwOnError
+it('throws SupabaseWriteError for Postgres errors', () => {
+  const error = { message: 'conflict', code: '23505', details: '', hint: '' };
+  expect(() => throwOnError({ error })).toThrow(SupabaseWriteError);
+});
 ```
-
-## Next Steps
-
-### Immediate Improvements
-1. Add custom breadcrumbs in critical user flows
-2. Set context for complex operations
-3. Create alerts for specific error patterns
-4. Add user feedback mechanism for errors
-
-### Long-term Enhancements
-1. Implement error recovery strategies
-2. Add performance monitoring
-3. Create error dashboard for team
-4. Implement error budget tracking
