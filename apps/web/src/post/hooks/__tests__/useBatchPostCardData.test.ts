@@ -62,7 +62,7 @@ describe('buildPostCardDataMap', () => {
         replyRows: [],
         postRows: [],
         streakWorkingDays: workingDays,
-        donatorIds: new Set(),
+        donatorIds: new Set<string>(),
       });
 
       const data = result.get('unknown-user');
@@ -85,7 +85,7 @@ describe('buildPostCardDataMap', () => {
         replyRows: [],
         postRows: [],
         streakWorkingDays: workingDays,
-        donatorIds: new Set(),
+        donatorIds: new Set<string>(),
       });
 
       expect(result.get('user-1')!.authorData.displayName).toBe('Cool Nick');
@@ -106,7 +106,7 @@ describe('buildPostCardDataMap', () => {
         replyRows: [],
         postRows: [],
         streakWorkingDays: workingDays,
-        donatorIds: new Set(),
+        donatorIds: new Set<string>(),
       });
 
       expect(result.get('user-1')!.authorData.displayName).toBe('Real Name');
@@ -127,7 +127,7 @@ describe('buildPostCardDataMap', () => {
         replyRows: [],
         postRows: [],
         streakWorkingDays: workingDays,
-        donatorIds: new Set(),
+        donatorIds: new Set<string>(),
       });
 
       expect(result.get('user-1')!.authorData.displayName).toBe('Real Name');
@@ -147,7 +147,7 @@ describe('buildPostCardDataMap', () => {
         replyRows: [],
         postRows: [],
         streakWorkingDays: workingDays,
-        donatorIds: new Set(),
+        donatorIds: new Set<string>(),
       });
 
       expect(result.size).toBe(2);
@@ -176,7 +176,7 @@ describe('buildPostCardDataMap', () => {
         replyRows,
         postRows: [],
         streakWorkingDays: workingDays,
-        donatorIds: new Set(),
+        donatorIds: new Set<string>(),
       });
 
       expect(result.get('user-1')!.badges.length).toBeGreaterThan(0);
@@ -196,7 +196,7 @@ describe('buildPostCardDataMap', () => {
         replyRows: [],
         postRows: [],
         streakWorkingDays: workingDays,
-        donatorIds: new Set(),
+        donatorIds: new Set<string>(),
       });
 
       expect(result.get('user-1')!.badges).toEqual([]);
@@ -220,7 +220,7 @@ describe('buildPostCardDataMap', () => {
         replyRows: [],
         postRows,
         streakWorkingDays: workingDays,
-        donatorIds: new Set(),
+        donatorIds: new Set<string>(),
       });
 
       const streak = result.get('user-1')!.streak;
@@ -247,7 +247,7 @@ describe('buildPostCardDataMap', () => {
         replyRows: [],
         postRows: [],
         streakWorkingDays: workingDays,
-        donatorIds: new Set(['user-1']),
+        donatorIds: new Set<string>(['user-1']),
       });
 
       expect(result.get('user-1')!.isDonator).toBe(true);
@@ -267,7 +267,7 @@ describe('buildPostCardDataMap', () => {
         replyRows: [],
         postRows: [],
         streakWorkingDays: workingDays,
-        donatorIds: new Set(),
+        donatorIds: new Set<string>(),
       });
 
       expect(result.get('user-1')!.isDonator).toBe(false);
@@ -284,7 +284,7 @@ describe('buildPostCardDataMap', () => {
         replyRows: [],
         postRows: [],
         streakWorkingDays: workingDays,
-        donatorIds: new Set(['unknown-user']),
+        donatorIds: new Set<string>(['unknown-user']),
       });
 
       expect(result.get('unknown-user')!.isDonator).toBe(true);
