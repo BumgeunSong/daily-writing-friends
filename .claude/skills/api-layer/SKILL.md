@@ -1,6 +1,6 @@
 ---
 name: api-layer
-description: Use when creating or modifying API functions in */api/ directories. Enforces Firestore patterns and data fetching conventions.
+description: Use when creating or modifying API functions in */api/ directories or data-fetching hooks. Enforces Firestore patterns, data fetching conventions, and N+1 prevention.
 ---
 
 # API Layer Patterns
