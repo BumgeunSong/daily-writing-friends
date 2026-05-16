@@ -12,6 +12,7 @@ interface PostCardHeaderProps {
   isPrivate: boolean;
   authorData: PostAuthorData;
   isAuthorLoading: boolean;
+  isDonator: boolean;
   badges?: WritingBadge[];
   streak?: boolean[];
   isStreakLoading?: boolean;
@@ -24,6 +25,7 @@ export const PostCardHeader: React.FC<PostCardHeaderProps> = ({
   isPrivate,
   authorData,
   isAuthorLoading,
+  isDonator,
   badges,
   streak,
   isStreakLoading,
@@ -36,6 +38,7 @@ export const PostCardHeader: React.FC<PostCardHeaderProps> = ({
         <PostUserProfile
           authorData={authorData}
           isLoading={isAuthorLoading}
+          isDonator={isDonator}
           onClickProfile={onClickProfile || noopClickHandler}
           badges={badges}
           streak={streak}

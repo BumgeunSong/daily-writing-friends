@@ -1,5 +1,4 @@
 import { DonatorBadge } from '@/donator/components/DonatorBadge';
-import { useDonatorStatus } from '@/donator/hooks/useDonatorStatus';
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { PostingStreakBadge } from '@/stats/components/PostingStreakBadge';
@@ -18,6 +17,7 @@ export interface PostAuthorData {
 interface PostUserProfileProps {
   authorData: PostAuthorData | null;
   isLoading: boolean;
+  isDonator: boolean;
   onClickProfile: (e: React.MouseEvent) => void;
   badges?: WritingBadge[];
   streak?: boolean[];
@@ -27,12 +27,12 @@ interface PostUserProfileProps {
 export const PostUserProfile: React.FC<PostUserProfileProps> = ({
   authorData,
   isLoading,
+  isDonator,
   onClickProfile,
   badges,
   streak,
   isStreakLoading,
 }) => {
-  const { isDonator } = useDonatorStatus(authorData?.id);
   return (
   <div className='flex items-center'>
     {isLoading ? (

@@ -33,6 +33,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, pref
     streak,
     isStreakLoading,
     isPrivate,
+    isDonator,
     contentPreview,
   } = usePostCard(post, prefetchedData, isBatchMode);
 
@@ -63,6 +64,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, pref
           isPrivate={isPrivate}
           authorData={authorData}
           isAuthorLoading={isAuthorLoading}
+          isDonator={isDonator}
           badges={badges}
           streak={streak}
           isStreakLoading={isStreakLoading}
@@ -87,6 +89,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, pref
               isPrivate={isPrivate}
               authorData={authorData}
               isAuthorLoading={isAuthorLoading}
+              isDonator={isDonator}
               badges={badges}
               streak={streak}
               isStreakLoading={isStreakLoading}

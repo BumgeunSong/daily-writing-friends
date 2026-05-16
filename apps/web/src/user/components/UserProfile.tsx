@@ -1,7 +1,7 @@
 import { Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DonatorBadge } from '@/donator/components/DonatorBadge';
-import { useDonatorStatus } from '@/donator/hooks/useDonatorStatus';
+import { useDonatorStatusBatch } from '@/donator/hooks/useDonatorStatus';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
@@ -15,7 +15,8 @@ interface UserProfileProps {
 
 export default function UserProfile({ uid }: UserProfileProps) {
   const { userData, isLoading } = useUser(uid);
-  const { isDonator } = useDonatorStatus(uid);
+  const { activeUserIds } = useDonatorStatusBatch([uid]);
+  const isDonator = activeUserIds.has(uid);
 
   if (isLoading) {
     return (

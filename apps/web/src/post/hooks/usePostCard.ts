@@ -16,6 +16,7 @@ export interface UsePostCardReturn {
   streak?: boolean[];
   isStreakLoading: boolean;
   isPrivate: boolean;
+  isDonator: boolean;
   contentPreview: string | null;
 }
 
@@ -63,6 +64,7 @@ export const usePostCard = (
     streak: prefetched ? prefetched.streak : streakData?.streak,
     isStreakLoading: prefetched ? false : isStreakLoading,
     isPrivate,
+    isDonator: prefetched?.isDonator ?? false,
     contentPreview,
   };
 };
