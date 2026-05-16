@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PostgrestError } from '@supabase/supabase-js';
 import type { AuthUser } from '@/shared/hooks/useAuth';
 import { SupabaseNetworkError } from '@/shared/api/supabaseClient';
@@ -44,6 +44,9 @@ describe('boardLoader basic behavior', () => {
   beforeEach(() => {
     setupBoardLoaderTest();
   });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   it('throws 400 response when boardId is missing', async () => {
     await expect(boardLoader({ params: {} } as never)).rejects.toMatchObject({ status: 400 });
@@ -71,6 +74,9 @@ describe('boardLoader basic behavior', () => {
 describe('boardLoader permission and network handling', () => {
   beforeEach(() => {
     setupBoardLoaderTest();
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('throws 403 response when user has no board permission', async () => {
