@@ -1,7 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import { Edit } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DonatorBadge } from '@/donator/components/DonatorBadge';
-import { useDonatorStatusBatch } from '@/donator/hooks/useDonatorStatus';
+import { fetchActiveDonatorIds } from '@/donator/api/donator';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
@@ -9,14 +10,28 @@ import { Skeleton } from '@/shared/ui/skeleton';
 import { getUserDisplayName } from '@/shared/utils/userUtils';
 import { useUser } from '@/user/hooks/useUser';
 
+const DONATOR_STATUS_STALE_TIME_MS = 5 * 60 * 1000;
+
+// Page-local single-context hook — intentionally not exported.
+// List views must batch through useBatchPostCardData; a shared singular
+// export would reopen the N+1 trap when reused inside a list .map().
+function useDonatorStatusForProfile(uid: string): boolean {
+  const { data } = useQuery({
+    queryKey: ['donator-status-profile', uid],
+    queryFn: () => fetchActiveDonatorIds([uid]),
+    staleTime: DONATOR_STATUS_STALE_TIME_MS,
+    enabled: !!uid,
+  });
+  return data?.includes(uid) ?? false;
+}
+
 interface UserProfileProps {
   uid: string;
 }
 
 export default function UserProfile({ uid }: UserProfileProps) {
   const { userData, isLoading } = useUser(uid);
-  const { activeUserIds } = useDonatorStatusBatch([uid]);
-  const isDonator = activeUserIds.has(uid);
+  const isDonator = useDonatorStatusForProfile(uid);
 
   if (isLoading) {
     return (
