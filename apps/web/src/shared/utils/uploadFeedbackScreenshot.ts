@@ -8,6 +8,10 @@ import {
   validateFileType,
   getValidationMessage,
 } from '@/post/utils/ImageValidation';
+import {
+  captureProcessingFailure,
+  HEIC_FAILURE_MESSAGE,
+} from '@/post/utils/imageUploadTelemetry';
 import { sanitizeStorageFileName } from '@/post/utils/storageFileName';
 
 interface UploadResult {
@@ -36,7 +40,13 @@ export async function uploadFeedbackScreenshot(file: File): Promise<UploadResult
   }
 
   try {
-    const processed = await processImageForUpload(file);
+    const processed = await processImageForUpload(file, {
+      onError: captureProcessingFailure,
+    });
+
+    if (processed.wasHeic && processed.heicConversionFailed) {
+      return { success: false, error: HEIC_FAILURE_MESSAGE };
+    }
 
     const processedSizeResult = validateProcessedFileSize(processed.file);
     if (!processedSizeResult.valid) {

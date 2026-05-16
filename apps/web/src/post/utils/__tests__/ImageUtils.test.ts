@@ -58,6 +58,20 @@ describe('processImageForUpload', () => {
     expect(result.wasHeic).toBe(true);
     expect(result.rawSize).toBe(1024);
     expect(result.didResize).toBe(false);
+    expect(result.heicConversionFailed).toBe(true);
+  });
+
+  it('reports onError when HEIC conversion fails', async () => {
+    const heicFile = createFile('photo.heic', 1024, 'image/heic');
+    const conversionError = new Error('Conversion failed');
+    vi.mocked(heic2any).mockRejectedValueOnce(conversionError);
+    vi.stubGlobal('createImageBitmap', undefined);
+    mockImageAndFileReader();
+
+    const onError = vi.fn();
+    await processImageForUpload(heicFile, { onError });
+
+    expect(onError).toHaveBeenCalledWith('heic_convert', conversionError);
   });
 
   it('converts HEIC file when conversion succeeds', async () => {
