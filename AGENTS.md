@@ -109,6 +109,23 @@ All commands run from repository root.
 | `tailwind.config.js` | Tailwind CSS configuration |
 | `supabase/config.toml` | Supabase local dev config |
 
+## Skills
+
+`.claude/skills/` contains project-specific coding conventions. Each skill auto-loads via its frontmatter trigger.
+
+| Skill | Domain |
+|-------|--------|
+| `api-layer` | Data fetchers, API functions, list-fetching hooks (N+1 prevention) |
+| `react-component` | `.tsx` component structure |
+| `react-hook` | Custom hook patterns, exhaustive-deps |
+| `firebase-functions` | Cloud Functions in `/functions` |
+| `daily-writing-friends-design` | UI / Tailwind conventions |
+| `testing` | TDD, output-based test patterns |
+| `refactoring` | Functional Core / Imperative Shell extraction |
+| `type-system` | Type safety reviews |
+| `verify-runtime` | Verifying data-flow changes via dev logs |
+| `code-style` | Naming and clarity rules |
+
 ## Related Docs
 
 - [Authentication & Routing](./docs/AUTHENTICATION_ROUTING.md)
