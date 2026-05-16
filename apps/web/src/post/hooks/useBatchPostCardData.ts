@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 
+import { fetchActiveDonatorIds } from '@/donator/api/donator';
 import type { Post } from '@/post/model/Post';
 import {
   buildPostCardDataMap,
@@ -53,11 +54,12 @@ async function fetchBatchPostCardData(
   const temperatureDateRange = getDateRange(temperatureWorkingDays);
   const streakDateRange = getDateRange(streakWorkingDays);
 
-  const [users, commentRows, replyRows, postRows] = await Promise.all([
+  const [users, commentRows, replyRows, postRows, donatorIdList] = await Promise.all([
     fetchBatchUsersBasic(authorIds),
     fetchBatchCommentUserIdsByDateRange(authorIds, temperatureDateRange.start, temperatureDateRange.end),
     fetchBatchReplyUserIdsByDateRange(authorIds, temperatureDateRange.start, temperatureDateRange.end),
     fetchBatchPostDatesByDateRange(authorIds, streakDateRange.start, streakDateRange.end),
+    fetchActiveDonatorIds(authorIds),
   ]);
 
   return buildPostCardDataMap({
@@ -67,5 +69,6 @@ async function fetchBatchPostCardData(
     replyRows,
     postRows,
     streakWorkingDays,
+    donatorIds: new Set(donatorIdList),
   });
 }
