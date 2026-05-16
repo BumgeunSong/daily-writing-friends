@@ -140,3 +140,62 @@ No other chunk exceeds the 500 KB threshold. The lowered limit is doing its job 
 
 That ≈72% reduction in critical-path JS is what should translate into the FCP/LCP improvement on `/`. Sentry RUM will confirm the field delta post-deploy.
 
+---
+
+## Manual Smoke (Tasks 4.x + 9.x) — Local Supabase + agent-browser
+
+**Run:** 2026-05-16 against `apps/web` dev server (mode `local-supabase`, port 5175) backed by local `supabase start`, and against `vite preview` of the prod build (port 4173). Driven via `agent-browser`. Screenshots saved to `/tmp/pr2-smoke-*.png`.
+
+### Prod Build (`vite preview`, port 4173)
+
+Verified using `performance.getEntriesByType('resource')` after navigation:
+
+| Route visited | Lazy chunk fetched | Replay chunk fetched | ImageUtils (heic2any) fetched | PostEditor fetched | BoardPage fetched |
+|---|---|---|---|---|---|
+| `/` (→ `/join`) | `JoinIntroPage-*.js` (16 KB gz) | **NO** | **NO** | **NO** | **NO** |
+| `/login` | (LoginPage is eager — no fetch, as designed) | **NO** | **NO** | **NO** | **NO** |
+| `/signup` | `SignupPage-*.js` only | **NO** | **NO** | **NO** | **NO** |
+| `/forgot-password` | `ForgotPasswordPage-*.js` only | **NO** | **NO** | **NO** | **NO** |
+
+First-paint static chunks observed on `/` (gzipped transfer): `index` 125 KB + `react-vendor` 70 KB + `supabase-vendor` 54 KB + `sentry-vendor` 43 KB + `firebase-vendor` 10 KB ≈ **302 KB initial JS gz**.
+
+### Dev Server (`vite dev --mode local-supabase`, port 5175)
+
+Logged in as `e2e@example.com / test1234`:
+
+| Step | Route | Observation |
+|---|---|---|
+| Login submit | `/login` → `/boards` | Auth flow against local Supabase succeeded; redirect to `/boards` (RecentBoard route). |
+| Click into board | `/boards` → `/boards/list` | Lazy BoardListPage modules fetched only on click. |
+| Click "게시글 상세로 이동" | `/boards/list` → `/board/e2e-test-board` | BoardPage lazy chunk + boardLoader module fetched in parallel (true-parallel pattern). |
+| Click "수정" | → `/board/e2e-test-board/edit/e2e-post-024` | **PostEditPage rendered with full Tiptap toolbar (Bold/Italic/Underline/Strike/H1/H2/Blockquote/Bullet/Ordered/Link/Image)**. `usePostDetailLoader.ts` fetched as a separate module — true-parallel loader pattern confirmed working. |
+| Navigate to `/notifications` | `/notifications` | NotificationsPage + 9 related modules fetched only on this navigation; no earlier preload. |
+
+### Tasks 4.x (PR1 carry-over Quill removal smoke) — covered by the post-edit step
+
+Opening `/board/e2e-test-board/edit/e2e-post-024` rendered the editor with the Tiptap toolbar — confirms that:
+- Post editing mounts Tiptap directly (no `forceEditor` switching logic left over from Quill).
+- Existing post content loaded into Tiptap successfully (page rendered without error boundary).
+- `RemoteConfigContext` works without the `tiptap_editor_enabled` flag.
+
+Did not exercise the image-paste path (4.4) or legacy-Quill-render (4.3) in this session — those are best validated with the dedicated SQL fixture (T.3.1) and a paste-capable test session.
+
+### Tasks 9.x (PR2 manual smoke)
+
+- ✅ **9.1** Navigated `/` → `/notifications` → `/boards` → board detail → post detail — every navigation triggered exactly the route-specific chunks (verified via `performance.getEntriesByType('resource')` filtering).
+- ✅ **9.2 (revised: removed instead of deferred)** Confirmed `replayModuleFetched === false` across 155 modules fetched in the dev session, and zero `@sentry-internal/replay` requests in the prod-preview network panel. The original wording ("confirm a `sentryReplay` chunk loads after first paint") no longer applies because Replay is removed entirely.
+- 🔲 **9.3** `dev3000` timeline of `/` cold load — informational, not blocking. Not run in this session; the FCP delta will be visible in Sentry RUM after deploy.
+
+### Screenshots captured (in `/tmp/`)
+
+```
+pr2-smoke-01-join.png            /join landing
+pr2-smoke-02-login.png           /login form
+pr2-smoke-03-forgot.png          /forgot-password
+pr2-smoke-04-boards.png          /boards (logged in)
+pr2-smoke-05-board-detail.png    /boards/list
+pr2-smoke-06-post-detail.png     /board/.../post/...
+pr2-smoke-07-edit.png            /board/.../edit/... with Tiptap toolbar visible
+pr2-smoke-08-notifications.png   /notifications
+```
+
