@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-16
 **Owner:** @BumgeunSong
-**Status:** Design — ready to implement (v2, revised after parallel review by critic / test-engineer / architect agents — see Section 7)
+**Status:** Phase 0 implemented in PR #610 (v2.2). Phases 1–5 are scheduled as follow-up PRs. Design history (v1 → v2 → v2.1 → v2.2) is captured in Section 7.
 
 ## Goals
 
@@ -43,17 +43,19 @@ Other problems:
 
 Two workflows, not one job with conditions.
 
-- `.github/workflows/e2e-pr.yml` — PR-blocking. Triggers on `pull_request` to `main`. Path filter skips docs-only PRs. Budget: ≤4 minutes. (Add `merge_group` trigger only after merge queue is enabled in branch protection — left out for now to avoid dead config.)
+- `.github/workflows/run-playwright.yml` — PR-blocking. Triggers on `pull_request` to `main`. Path filter skips docs-only PRs. Budget: ≤4 minutes. (Add `merge_group` trigger only after merge queue is enabled in branch protection — left out for now to avoid dead config. File rename to `e2e-pr.yml` is deferred to Phase 4 when the nightly workflow lands and the distinction matters; keeping the existing filename now preserves any branch-protection rule referencing the workflow name.)
 - `.github/workflows/e2e-nightly.yml` — broader sweep. Triggers on `schedule` (03:00 KST), on `workflow_dispatch`, and on PR label `run-nightly-e2e`. Three browsers. Failure opens a tracking issue rather than blocking a PR.
 
 Why two workflows, not jobs: different failure semantics, different timeouts, and easier hotfix bypass.
 
-## Section 2 — `e2e-pr.yml`
+## Section 2 — `run-playwright.yml` (PR-blocking workflow)
 
 Revised after review: single runner, no sharding, no merge-reports job. Sharding costs 33% more runner-minutes for a marginal wall-clock gain at 6 specs; add it when spec count exceeds ~12 or test time exceeds setup time. Reuse existing project names so Phase 0 ships independently of the suite-restructure work.
 
+**Phase 0 status:** the workflow content below is what's actually committed in this PR. The file keeps the existing name `run-playwright.yml` so any branch-protection rule continues to match; rename to `e2e-pr.yml` lands with Phase 4.
+
 ```yaml
-name: E2E (PR)
+name: Playwright E2E Tests
 
 on:
   pull_request:
@@ -297,7 +299,7 @@ Phased rollout (one PR each):
 
 | Phase | Scope | Net effect |
 |---|---|---|
-| 0 | New `e2e-pr.yml` using **existing project names**, caching, `--exclude` (incl. `realtime`), single runner, `workers: 2` | CI: 3:00 → ~2:00 (warm) |
+| **0 ✅ this PR** | Modified `run-playwright.yml` (kept filename) — caching, `--exclude` (incl. `realtime`), pinned versions (`pnpm 9.15.4`, `supabase-cli 1.220.4`), single runner. Modified `playwright.config.ts` — `workers: 2`, `retries: 1`, `trace: retain-on-failure`, `timeout: 45s` test / `15s` expect, added `json` reporter. Verified: YAML parses, `playwright test --list` returns 9 tests cleanly | CI: 3:00 → ~2:00 (warm) |
 | 1 | Add `_fixtures/`; introduce `tests/e2e/pr-blocking/` project in `playwright.config.ts`; migrate `non-member` + simplified `scroll` (initial-load assertion only) to new layout | No coverage change; detailed pagination test moves to nightly |
 | 2 | Add six `data-testid`s to source (`post-editor`, `post-card`, `comment-list`, `comment-submit`, `draft-status`, `post-list`); rewrite `write-post` + `comment` against factories | Removes DOM traversal; removes `e2e-post-000` dependency |
 | 3 | Add `draft-status-saved` testid to source; add `login.spec.ts` and `draft-persistence.spec.ts` | Coverage: +2 critical paths |
@@ -361,3 +363,13 @@ None — every flagged issue had clear merit. Where a reviewer suggested a trade
 | Selector contract "Banned: networkidle" row was confusingly worded — read like it banned the alternative | Ambiguous example column | Reworded both banned rows so the ❌ marks the banned pattern and the row text states the replacement |
 
 All six Copilot findings were valid — each one was a consistency or spec-completeness gap. None were rejected.
+
+### v2.2 — Scope change: design-doc PR became Phase 0 implementation PR
+
+PR #610 was originally a doc-only change. User decision: ship Phase 0 in the same PR so the design lands together with the first concrete CI win. This commit:
+
+- Modifies `.github/workflows/run-playwright.yml` (kept name) per the v2.1 design
+- Modifies `playwright.config.ts` with the Section 5 flake-policy values
+- Verified locally before push: `python3 -c "import yaml; yaml.safe_load(...)"` and `SKIP_SEED=1 CI=true pnpm exec playwright test --list --project=chromium-data-flows` both succeed (9 tests listed, no parse errors)
+
+The actual CI behavior change is verified by the workflow running on this PR — see the GitHub Actions check on this PR after push.

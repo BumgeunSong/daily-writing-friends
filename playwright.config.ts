@@ -15,21 +15,23 @@ export default defineConfig({
   testIgnore: ['**/fixtures/**', '**/helpers/**', '**/*.test.ts', '**/data-flows/**'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  retries: process.env.CI ? 1 : 0,
+  workers: process.env.CI ? 2 : undefined,
+  reporter: process.env.CI
+    ? [['html'], ['github'], ['json', { outputFile: 'playwright-report.json' }]]
+    : 'html',
 
   use: {
     baseURL,
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     ignoreHTTPSErrors: true,
   },
 
-  timeout: process.env.CI ? 60 * 1000 : 30 * 1000,
+  timeout: process.env.CI ? 45 * 1000 : 30 * 1000,
   expect: {
-    timeout: process.env.CI ? 20 * 1000 : 10 * 1000,
+    timeout: process.env.CI ? 15 * 1000 : 10 * 1000,
   },
 
   webServer: {
