@@ -131,9 +131,9 @@ not implemented as unit tests by design.
 
 ### E2E (agent-browser / Playwright)
 
-Spec: `apps/web/tests/avatar-resize.spec.ts` (extends the existing
-`tests/image-upload.spec.ts` fixture pattern; runs against the dev server +
-Firebase emulators via `playwright.config.ts`).
+Spec: `tests/avatar-resize.spec.ts` (uses the repo-root Playwright config +
+Supabase auth fixtures; Firebase Storage calls are intercepted via
+`page.route` so no Firebase emulator is required).
 
 - [x] T.20 Upload flow E2E: select fixture → preview swaps to download URL → fetched blob decodes to 256x256 JPEG (spec covers preview-swap + dimension + size; loading-within-50ms is intentionally not asserted because tiny fixtures complete faster than Playwright polling can catch — covered indirectly by preview-swap)
 - [x] T.21 Render flow E2E: every avatar `<img>` on the edit page uses `loading="lazy"` (covered by ComposedAvatar contract — spec asserts this generally; per-avatar transferKB on a long comment thread is deferred until E2E fixtures seed comments)

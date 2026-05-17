@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from "sonner"
+import { toast } from 'sonner';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { updateUser } from '@/user/api/user';
 import { removeCachedUserData } from '@/user/cache/userCache';

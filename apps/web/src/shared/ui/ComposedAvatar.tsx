@@ -12,8 +12,20 @@ interface ComposedAvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   loading?: 'lazy' | 'eager';
 }
 
+// Hostname check (not substring): `url.includes('googleusercontent.com')` would
+// also match attacker-controlled URLs that embed the string anywhere in the path
+// or query (CodeQL: incomplete URL substring sanitization).
+function isGoogleAvatarUrl(rawUrl: string): boolean {
+  try {
+    const { hostname } = new URL(rawUrl);
+    return hostname === 'googleusercontent.com' || hostname.endsWith('.googleusercontent.com');
+  } catch {
+    return false;
+  }
+}
+
 function appendGoogleAvatarSizeParam(url: string, size: number): string {
-  if (url.includes('googleusercontent.com') && !url.includes('=s')) {
+  if (isGoogleAvatarUrl(url) && !url.includes('=s')) {
     return `${url}=s${size}`;
   }
   return url;
@@ -31,15 +43,11 @@ const ComposedAvatar: React.FC<ComposedAvatarProps> = ({
   // Firebase Storage URLs are now served at the correct size (256x256) because
   // the upload pipeline pre-resizes via resizeImageBlob. Google avatar URLs still
   // need the size hint because they come pre-sized from the OAuth provider.
-  const renderSrc = src
-    ? src.includes('googleusercontent.com')
-      ? appendGoogleAvatarSizeParam(src, size)
-      : src
-    : '';
+  const renderSrc = src ? (isGoogleAvatarUrl(src) ? appendGoogleAvatarSizeParam(src, size) : src) : '';
 
   return (
     <Avatar className={cn('ring-1 ring-black/10 dark:ring-white/10', className)} style={{ width: size, height: size }} {...rest}>
-      <AvatarImage src={renderSrc} alt={alt} loading={loading} decoding="async" />
+      {renderSrc && <AvatarImage src={renderSrc} alt={alt} loading={loading} decoding="async" />}
       <AvatarFallback>
         {fallback.length === 1 ? fallback : <UserIcon className="size-3.5" />}
       </AvatarFallback>
