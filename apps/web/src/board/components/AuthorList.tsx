@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useAuthors } from '@/post/hooks/useAuthors';
-import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
+import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import { ScrollArea, ScrollBar } from '@/shared/ui/scroll-area';
 import { Skeleton } from '@/shared/ui/skeleton';
 
@@ -41,10 +41,12 @@ const AuthorList: React.FC<AuthorListProps> = ({ boardId, onAuthorSelect }) => {
             className='flex flex-col items-center space-y-1'
             onClick={() => onAuthorSelect(author.uid)}
           >
-            <Avatar className='size-12'>
-              <AvatarImage src={author.profilePhotoURL || ''} alt={author.nickname || ''} />
-              <AvatarFallback>{author.nickname?.slice(0, 2).toUpperCase() || ''}</AvatarFallback>
-            </Avatar>
+            <ComposedAvatar
+              size={48}
+              src={author.profilePhotoURL || ''}
+              alt={author.nickname || ''}
+              fallback={author.nickname?.[0]?.toUpperCase() || ''}
+            />
             <span className='text-xs font-medium'>{author.nickname}</span>
           </button>
         ))}

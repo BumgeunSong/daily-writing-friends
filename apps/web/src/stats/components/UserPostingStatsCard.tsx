@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
+import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import { Card, CardContent } from '@/shared/ui/card';
 import type { WritingStats } from '@/stats/model/WritingStats';
 import { ContributionGraph } from './ContributionGraph';
@@ -22,14 +22,14 @@ export function UserPostingStatsCard({ stats, onClick, isCurrentUser = false }: 
         tabIndex={onClick ? 0 : undefined}
       >
         <div className='flex flex-1 items-start gap-4'>
-          <Avatar className='size-12 shrink-0'>
-            <AvatarImage
-              src={user.profilePhotoURL || undefined}
-              alt={user.nickname || 'User'}
-              loading={isCurrentUser ? 'eager' : 'lazy'}
-            />
-            <AvatarFallback>{user.nickname?.[0] || user.realname?.[0] || 'U'}</AvatarFallback>
-          </Avatar>
+          <ComposedAvatar
+            className='shrink-0'
+            size={48}
+            src={user.profilePhotoURL || undefined}
+            alt={user.nickname || 'User'}
+            fallback={user.nickname?.[0] || user.realname?.[0] || 'U'}
+            loading={isCurrentUser ? 'eager' : 'lazy'}
+          />
           <div className='flex min-w-0 flex-col gap-1.5'>
             <h3 className='truncate text-base font-semibold text-card-foreground md:text-lg'>
               {user.nickname || user.realname || 'Anonymous'}

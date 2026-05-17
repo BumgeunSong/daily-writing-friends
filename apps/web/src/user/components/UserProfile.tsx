@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { DonatorBadge } from '@/donator/components/DonatorBadge';
 import { fetchActiveDonatorIds } from '@/donator/api/donator';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
+import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import { Button } from '@/shared/ui/button';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { getUserDisplayName } from '@/shared/utils/userUtils';
@@ -55,16 +55,13 @@ export default function UserProfile({ uid }: UserProfileProps) {
 
   return (
     <div className='reading-shadow flex w-full items-start gap-4 rounded-lg border border-border/50 bg-card p-4'>
-      <Avatar className='size-16 shrink-0 md:size-20'>
-        {userData.profilePhotoURL ? (
-          <AvatarImage
-            src={userData.profilePhotoURL || '/placeholder.svg'}
-            alt={`${getUserDisplayName(userData)}'s profile`}
-          />
-        ) : (
-          <AvatarFallback>{getUserDisplayName(userData)?.charAt(0).toUpperCase()}</AvatarFallback>
-        )}
-      </Avatar>
+      <ComposedAvatar
+        className='shrink-0 md:size-20'
+        size={64}
+        src={userData.profilePhotoURL || undefined}
+        alt={`${getUserDisplayName(userData)}'s profile`}
+        fallback={getUserDisplayName(userData)?.charAt(0).toUpperCase()}
+      />
       <div className='min-w-0 flex-1'>
         <div className='flex items-center justify-between'>
           <h2 className='flex items-center gap-1.5 text-lg font-semibold tracking-tight text-foreground md:text-xl'>

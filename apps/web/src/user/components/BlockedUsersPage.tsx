@@ -12,7 +12,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/shared/ui/alert-dialog"
-import { Avatar, AvatarImage, AvatarFallback } from "@/shared/ui/avatar"
+import ComposedAvatar from "@/shared/ui/ComposedAvatar"
 import { Button } from "@/shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Input } from "@/shared/ui/input"
@@ -74,10 +74,13 @@ function SuggestionsDropdown({
             disabled={loading}
             onMouseEnter={() => setSelectedSuggestionIndex(index)}
           >
-            <Avatar className="size-8 shrink-0">
-              <AvatarImage src={user.profilePhotoURL || "/placeholder.svg"} />
-              <AvatarFallback>{user.nickname?.[0] || ''}</AvatarFallback>
-            </Avatar>
+            <ComposedAvatar
+              className="shrink-0"
+              size={32}
+              src={user.profilePhotoURL || undefined}
+              alt={user.nickname || 'User'}
+              fallback={user.nickname?.[0] || ''}
+            />
             <div className="min-w-0 flex-1">
               <div className="truncate font-medium">{user.nickname}</div>
               <div className="truncate text-sm text-muted-foreground">{user.email}</div>
@@ -322,10 +325,13 @@ export default function BlockedUsersPage() {
                 {blockedUsers.map((user, index) => (
                   <div key={user.uid}>
                     <div className="flex items-center gap-3 py-2">
-                      <Avatar className="size-10 shrink-0">
-                        <AvatarImage src={user.profilePhotoURL || "/placeholder.svg"} />
-                        <AvatarFallback>{user.nickname[0]}</AvatarFallback>
-                      </Avatar>
+                      <ComposedAvatar
+                        className="shrink-0"
+                        size={40}
+                        src={user.profilePhotoURL || undefined}
+                        alt={user.nickname || 'User'}
+                        fallback={user.nickname[0]}
+                      />
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-medium">{user.nickname}</div>
                         <div className="truncate text-sm text-muted-foreground">{user.email}</div>
