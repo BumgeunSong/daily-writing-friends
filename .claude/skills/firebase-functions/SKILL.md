@@ -1,80 +1,64 @@
 ---
 name: firebase-functions
-description: Use when creating or modifying Firebase Cloud Functions in /functions directory. Enforces function structure and error handling patterns.
+description: Legacy Firebase Functions skill. Prefer Supabase Edge Functions in /supabase/functions; /functions no longer exists in this repository.
 ---
 
-# Firebase Functions Patterns
+# Edge Function Patterns (Supabase)
+
+## Current State
+
+- Legacy Firebase Cloud Functions directory (`/functions`) is removed.
+- Server-side runtime code lives in `supabase/functions/`.
 
 ## Directory Structure
 
 ```
-functions/
-├── src/
-│   ├── index.ts              # Function exports
-│   ├── admin.ts              # Firebase Admin SDK init
-│   ├── backfill/             # Data migration scripts
-│   ├── commentSuggestion/    # AI comment features
-│   ├── commentings/          # Comment activity tracking
-│   ├── notifications/        # Push notification functions
-│   ├── postings/             # Post activity tracking
-│   ├── replyings/            # Reply activity tracking
-│   └── shared/               # Shared utilities
+supabase/functions/
+├── create-notification/
+│   └── index.ts
+├── fairy-webhook/
+│   ├── index.ts
+│   └── _helpers.ts
+└── _shared/
+    └── notificationMessages.ts
 ```
 
 ## Function Structure
 
 ```typescript
-import { onDocumentCreated } from 'firebase-functions/v2/firestore';
-import admin from '../admin';
-import { Post } from '../types/Post';
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-export const createPosting = onDocumentCreated(
-  'boards/{boardId}/posts/{postId}',
-  async (event) => {
-    const postData = event.data?.data() as Post;
-    const { boardId, postId } = event.params;
+serve(async (req) => {
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  );
 
-    if (!postData) {
-      console.error('No post data found.');
-      return null;
-    }
-
-    try {
-      await admin.firestore()
-        .collection('users')
-        .doc(postData.authorId)
-        .collection('postings')
-        .add(postingData);
-      console.log(`Created posting for user ${postData.authorId}`);
-    } catch (error) {
-      console.error('Error writing posting:', error);
-    }
-
-    return null;
-  }
-);
+  const payload = await req.json();
+  const { error } = await supabase.from('notifications').insert(payload);
+  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  return new Response(JSON.stringify({ status: 'created' }), { status: 200 });
+});
 ```
 
 ## Error Handling
 
-**Don't throw - let function complete gracefully:**
+Return explicit HTTP responses and log details with `console.error`.
 
 ```typescript
 try {
-  await admin.firestore().collection('...').add(data);
-  console.log(`Successfully created ${resourceType}`);
+  // ... work
+  return new Response(JSON.stringify({ status: 'ok' }), { status: 200 });
 } catch (error) {
-  console.error(`Error creating ${resourceType}:`, error);
-  // Don't throw - function should complete
+  console.error('Function failure:', error);
+  return new Response(JSON.stringify({ error: 'internal_error' }), { status: 500 });
 }
-
-return null;
 ```
 
 ## Build & Test
 
 ```bash
-cd functions && npm install   # Install deps
-cd functions && npm run build # Compile TypeScript
-cd functions && npm test      # Run Jest tests
+supabase functions serve create-notification
+deno test supabase/functions/tests
 ```
