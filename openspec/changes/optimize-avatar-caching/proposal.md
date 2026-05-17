@@ -1,3 +1,13 @@
+> **SUPERSEDED by `client-side-avatar-resize` (2026-05-17); not implemented.**
+> See that change for the actual avatar optimization strategy. The premise of this
+> proposal — that the Firebase Resize Images extension was producing `_128x128`
+> variants and the bottleneck was URL resolution + Cache-Control — turned out to
+> be wrong. Direct `gsutil` inspection found zero resized variants in production.
+> Client-side Canvas resize at upload time eliminates the entire server-side pipeline
+> and was chosen as the correct scale of solution for a 46-user community.
+> The Layer A (12-call-site migration to `ComposedAvatar`) work is folded into the
+> superseding change; everything else here is preserved as design history only.
+
 ## Why
 
 User profile photos (avatars) are rendered on nearly every social surface in the app — every comment, notification, author list, and stats card. Today they ship inefficiently along three independent axes:
