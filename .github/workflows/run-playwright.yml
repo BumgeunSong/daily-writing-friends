@@ -47,7 +47,7 @@ jobs:
       - name: Install Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: 1.220.4
+          version: latest
 
       - name: Start Supabase (minimal)
         run: supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector,realtime
