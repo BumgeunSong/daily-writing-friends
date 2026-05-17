@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { useRef, useState, useEffect } from "react"
 import { UI_CONSTANTS } from "@/login/constants"
-import { Avatar, AvatarImage, AvatarFallback } from "@/shared/ui/avatar"
+import ComposedAvatar from "@/shared/ui/ComposedAvatar"
 import { cn } from "@/shared/utils/cn"
 import type { User } from "@/user/model/User"
 
@@ -105,15 +105,13 @@ export default function ActiveUserProfileList({ users, className }: ActiveUserPr
       >
         {users.map((user) => (
           <div key={user.uid} className="flex min-w-[72px] max-w-[80px] flex-col items-center">
-            <Avatar className="mb-1.5 size-12">
-              {user.profilePhotoURL ? (
-                <AvatarImage src={user.profilePhotoURL || "/placeholder.svg"} alt={user.nickname ?? "user"} />
-              ) : (
-                <AvatarFallback className="bg-accent text-accent-foreground">
-                  {user.nickname?.[0] ?? "?"}
-                </AvatarFallback>
-              )}
-            </Avatar>
+            <ComposedAvatar
+              className="mb-1.5"
+              size={48}
+              src={user.profilePhotoURL || undefined}
+              alt={user.nickname ?? "user"}
+              fallback={user.nickname?.[0] ?? "?"}
+            />
             <span className="w-full truncate text-center text-xs font-medium">{user.nickname || "익명"}</span>
           </div>
         ))}

@@ -1,3 +1,16 @@
+// URL-derivation contract:
+//   This module encodes the Firebase Resize Images extension's filename convention
+//   `{base}_{width}x{height}.{ext}` (e.g., `photo.jpg` → `photo_600x338.jpg`).
+//
+//   Avatar rendering no longer uses this helper: the upload pipeline pre-resizes
+//   profile photos to 256x256 JPEG via `resizeImageBlob`, so the file at the
+//   download URL is already correctly sized. Avatars render `src` directly.
+//
+//   This helper remains for post-image use cases (PostCardThumbnail, PostCardContent).
+//   Any future server-side resize pipeline that wants to feed URLs through
+//   `useThumbnailUrl` MUST emit filenames matching the `{base}_{width}x{height}.{ext}`
+//   pattern, or `deriveThumbPath` will need to be refactored.
+
 import { ref, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/firebase';
 

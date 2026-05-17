@@ -1,5 +1,5 @@
 import { getRelativeTime } from '@/shared/utils/dateUtils';
-import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
+import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import { getUserDisplayName } from '@/shared/utils/userUtils';
 import { WritingBadgeComponent } from '@/stats/components/WritingBadgeComponent';
 import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';
@@ -17,16 +17,12 @@ export function CommentHeader({ userId, createdAt }: CommentHeaderProps) {
 
   return (
     <div className='flex items-center space-x-3'>
-      <Avatar className='size-6'>
-        <AvatarImage
-          src={userProfile?.profilePhotoURL || undefined}
-          alt={getUserDisplayName(userProfile) || 'User'}
-          className='object-cover'
-        />
-        <AvatarFallback className='text-sm'>
-          {getUserDisplayName(userProfile)?.[0] || '?'}
-        </AvatarFallback>
-      </Avatar>
+      <ComposedAvatar
+        size={24}
+        src={userProfile?.profilePhotoURL || undefined}
+        alt={getUserDisplayName(userProfile) || 'User'}
+        fallback={getUserDisplayName(userProfile)?.[0] || '?'}
+      />
       <div className='flex items-baseline gap-1.5'>
         <span className='text-sm font-bold leading-none'>
           {getUserDisplayName(userProfile)}

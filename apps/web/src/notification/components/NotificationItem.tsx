@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Notification } from '@/notification/model/Notification';
-import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
+import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 
 interface NotificationItemProps {
   notification: Notification;
@@ -20,10 +20,13 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
           !notification.read ? 'bg-card' : ''}`
         }
       >
-        <Avatar className='size-10 shrink-0'>
-          <AvatarImage src={notification.fromUserProfileImage} alt='User Avatar' />
-          <AvatarFallback>{notification.fromUserId.slice(0, 2).toUpperCase()}</AvatarFallback>
-        </Avatar>
+        <ComposedAvatar
+          className='shrink-0'
+          size={40}
+          src={notification.fromUserProfileImage}
+          alt='User Avatar'
+          fallback={notification.fromUserId[0]?.toUpperCase() || 'U'}
+        />
         <div className='min-w-0 flex-1 space-y-1.5'>
           <p className='text-reading text-sm font-medium text-foreground'>{message}</p>
           <span className='text-xs text-muted-foreground'>

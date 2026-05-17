@@ -1,5 +1,5 @@
 import { Trash2 } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar"
+import ComposedAvatar from "@/shared/ui/ComposedAvatar"
 import { Button } from "@/shared/ui/button"
 import { Drawer, DrawerContent } from "@/shared/ui/drawer"
 import type React from "react"
@@ -33,10 +33,13 @@ export const ReactionUserDrawer: React.FC<ReactionUserDrawerProps> = ({
         <div className="overflow-y-auto p-4">
           {users.map((user) => (
             <div key={user.userId} className="flex items-center gap-3 border-b py-3 last:border-0">
-              <Avatar className="size-9 border border-border/30">
-                <AvatarImage src={user.userProfileImage} alt={user.userName} />
-                <AvatarFallback>{user.userName[0]}</AvatarFallback>
-              </Avatar>
+              <ComposedAvatar
+                className="border border-border/30"
+                size={36}
+                src={user.userProfileImage}
+                alt={user.userName}
+                fallback={user.userName[0]}
+              />
               <span className="flex-1 font-medium">{user.userName}</span>
               {user.userId === currentUserId && (
                 <Button

@@ -25,6 +25,9 @@ export default function MockCommentRow() {
   return (
     <div className='flex flex-col space-y-3 py-4'>
       <div className='flex items-center space-x-3'>
+        {/* Intentionally not migrated to ComposedAvatar: this is static fixture
+            data for the login/onboarding skeleton, not a user-uploaded avatar,
+            so the resize pipeline (256x256 JPEG) does not apply. */}
         <Avatar className='size-6'>
           <AvatarImage
             src={mockUserProfile.profilePhotoURL || undefined}

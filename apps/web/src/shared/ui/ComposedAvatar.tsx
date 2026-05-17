@@ -1,7 +1,5 @@
 import { User as UserIcon } from 'lucide-react';
 import type React from 'react';
-import { useThumbnailUrl } from '@/shared/hooks/useThumbnailUrl';
-import { isFirebaseStorageUrl, THUMB_SIZES } from '@/shared/utils/thumbnailUrl';
 import { cn } from '@/shared/utils/cn';
 import { Avatar, AvatarImage, AvatarFallback } from './avatar';
 
@@ -11,6 +9,7 @@ interface ComposedAvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   fallback?: string;
   size?: number; // px 단위, Tailwind size-9=36px
   className?: string;
+  loading?: 'lazy' | 'eager';
 }
 
 function appendGoogleAvatarSizeParam(url: string, size: number): string {
@@ -26,22 +25,21 @@ const ComposedAvatar: React.FC<ComposedAvatarProps> = ({
   fallback = 'U',
   size = 36,
   className = '',
+  loading = 'lazy',
   ...rest
 }) => {
-  // Only resolve Firebase Storage URLs through the resize extension;
-  // Google avatar URLs use their own size parameter.
-  const isFirebase = !!src && isFirebaseStorageUrl(src);
-  const resolvedFirebaseSrc = useThumbnailUrl(isFirebase ? src : null, THUMB_SIZES.AVATAR);
-
-  const optimizedSrc = (() => {
-    if (!src) return '';
-    if (isFirebase) return resolvedFirebaseSrc || src;
-    return appendGoogleAvatarSizeParam(src, size);
-  })();
+  // Firebase Storage URLs are now served at the correct size (256x256) because
+  // the upload pipeline pre-resizes via resizeImageBlob. Google avatar URLs still
+  // need the size hint because they come pre-sized from the OAuth provider.
+  const renderSrc = src
+    ? src.includes('googleusercontent.com')
+      ? appendGoogleAvatarSizeParam(src, size)
+      : src
+    : '';
 
   return (
     <Avatar className={cn('ring-1 ring-black/10 dark:ring-white/10', className)} style={{ width: size, height: size }} {...rest}>
-      <AvatarImage src={optimizedSrc} alt={alt} loading="lazy" decoding="async" />
+      <AvatarImage src={renderSrc} alt={alt} loading={loading} decoding="async" />
       <AvatarFallback>
         {fallback.length === 1 ? fallback : <UserIcon className="size-3.5" />}
       </AvatarFallback>
@@ -49,4 +47,4 @@ const ComposedAvatar: React.FC<ComposedAvatarProps> = ({
   );
 };
 
-export default ComposedAvatar; 
+export default ComposedAvatar;
