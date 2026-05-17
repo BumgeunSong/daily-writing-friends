@@ -56,8 +56,8 @@ export default function UserProfile({ uid }: UserProfileProps) {
   return (
     <div className='reading-shadow flex w-full items-start gap-4 rounded-lg border border-border/50 bg-card p-4'>
       <ComposedAvatar
-        className='shrink-0 md:size-20'
-        size={64}
+        className='shrink-0'
+        size={80}
         src={userData.profilePhotoURL || undefined}
         alt={`${getUserDisplayName(userData)}'s profile`}
         fallback={getUserDisplayName(userData)?.charAt(0).toUpperCase()}

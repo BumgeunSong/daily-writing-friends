@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AvatarUploadError } from '@/shared/errors/avatarUpload';
 import { uploadUserProfilePhoto } from '@/user/api/user';
 
@@ -21,6 +21,26 @@ export function useProfilePhoto({ userId, initialUrl }: UseProfilePhotoArgs) {
   const [previewURL, setPreviewURL] = useState(initialUrl || '');
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  // Track the currently-rendered object URL so we can revoke it when it's
+  // replaced (next file pick / upload success / error revert) and on unmount.
+  const objectUrlRef = useRef<string | null>(null);
+
+  const swapPreview = (next: string) => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+    if (next.startsWith('blob:')) {
+      objectUrlRef.current = next;
+    }
+    setPreviewURL(next);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    };
+  }, []);
 
   const handleProfilePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -29,14 +49,17 @@ export function useProfilePhoto({ userId, initialUrl }: UseProfilePhotoArgs) {
     // Reset the input so re-selecting the same file fires onChange again.
     e.target.value = '';
 
+    // Clear any prior upload result so a failed retry can't submit a stale URL
+    // even though the preview has been reverted (see PR #609 review).
+    setUploadedPhotoURL(null);
     setAvatarError(null);
-    setPreviewURL(URL.createObjectURL(file));
+    swapPreview(URL.createObjectURL(file));
     setIsUploadingAvatar(true);
 
     try {
       const url = await uploadUserProfilePhoto(userId, file);
       setUploadedPhotoURL(url);
-      setPreviewURL(url);
+      swapPreview(url);
     } catch (err) {
       if (err instanceof AvatarUploadError) {
         setAvatarError(AVATAR_ERROR_MESSAGES[err.messageKey] ?? GENERIC_ERROR_MESSAGE);
@@ -44,7 +67,7 @@ export function useProfilePhoto({ userId, initialUrl }: UseProfilePhotoArgs) {
         setAvatarError(GENERIC_ERROR_MESSAGE);
         Sentry.captureException(err);
       }
-      setPreviewURL(initialUrl || '');
+      swapPreview(initialUrl || '');
     } finally {
       setIsUploadingAvatar(false);
     }
