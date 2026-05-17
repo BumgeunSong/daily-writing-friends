@@ -89,7 +89,7 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
 
       - uses: supabase/setup-cli@v1
-        with: { version: 1.220.4 }   # pin, not `latest`, so the cache key is stable
+        with: { version: latest }   # See note below — pin only when image cache lands
 
       - name: Start Supabase (minimal)
         run: supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector,realtime
@@ -133,7 +133,7 @@ Key choices:
 | Node 20 (matches repo standard) | Other workflows (`run-vitest.yml`, `firebase-hosting-merge.yml`, etc.) also use Node 20. The Node 20 deprecation (Sept 2026 forced removal) is real but should be addressed in a single cross-workflow PR, not here |
 | pnpm pinned to `9.15.4` | Matches `run-vitest.yml`, `firebase-hosting-merge.yml`, `sentry-bug-fix.yml`. Floating major (`version: 9`) would drift |
 | pnpm cache + Playwright browser cache | Saves ~30s per run after first hit |
-| Pinned Supabase CLI version | `latest` would invalidate any future image cache key |
+| Supabase CLI `latest` (was: pinned `1.220.4`) | The pin was tied to a future Docker-image cache that does not yet exist; pinning now blocked CI because `1.220.4` cannot read this repo's `supabase/config.toml` (uses Postgres 17 + recent auth/storage fields). Re-introduce the pin only when we add the image cache, and choose a version known to parse our config |
 | `supabase start --exclude` (incl. `realtime`) | Drops 6 unused images; codebase has zero Realtime channel usage (grep-verified) |
 | **Single runner, no sharding** | At 6 specs, sharding burns ~33% extra runner-minutes for marginal wall-clock gain. Revisit when spec count ≥ 12 |
 | `workers: 2` in `playwright.config.ts` | Parallelism inside a single runner is cheaper than across runners |
