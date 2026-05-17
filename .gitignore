@@ -65,6 +65,7 @@ playwright-report/
 blob-report/
 /playwright/.cache/
 **/storageState.auth.json
+**/storageState.non-member.json
 **/setup-failure-screenshot.png
 scripts/agents/cache/
 
