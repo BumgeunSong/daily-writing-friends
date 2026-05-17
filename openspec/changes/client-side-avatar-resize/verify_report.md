@@ -91,6 +91,16 @@ the same coverage with stronger guarantees.
 | T.20–T.25 | E2E suite (agent-browser / Playwright + Supabase local Docker). |
 | T.26 | Manual iOS Safari HEIC happy-path verification. |
 
+## Follow-up cleanup (separate PR)
+
+- `firebase.json:97-99` still declares the `storage-resize-images@0.3.3`
+  extension, even though `gsutil` confirms it has never produced a resized
+  variant in production and the avatar path no longer relies on it. Remove the
+  `extensions` block in a small follow-up PR and run
+  `firebase deploy --only extensions` (or uninstall via the console) so prod
+  no longer carries a dormant extension. Kept out of this PR to keep the diff
+  reviewable — the extension is a harmless no-op until removed.
+
 ## Risks called out
 
 - Existing 46 user avatars continue rendering un-optimized originals until their next
