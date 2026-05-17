@@ -9,6 +9,9 @@ import { fetchUserFromSupabase, fetchAllUsersFromSupabase, fetchUsersWithBoardPe
 import type { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
 import type { AuthUser } from '@/shared/hooks/useAuth';
 import { mapUserToSupabaseUpdate, mapBoardPermissionsToRows } from '@/user/utils/userMappers';
+import { resizeImageBlob } from '@/shared/utils/resizeImageBlob';
+import { AVATAR_CACHE_CONTROL } from '@/shared/utils/storageConstants';
+import { removeCachedUserData } from '@/user/cache/userCache';
 
 // Supabase에서 User 데이터 읽기
 export async function fetchUser(uid: string): Promise<User | null> {
@@ -81,10 +84,23 @@ export async function fetchUsersWithBoardPermission(boardIds: string[]): Promise
 }
 
 // 프로필 사진 업로드 및 URL 반환
+// 클라이언트에서 256x256 JPEG로 리사이즈 후 업로드. Cache-Control 메타데이터 부여.
+// 성공 시 localStorage 의 user 캐시를 무효화한다.
 export async function uploadUserProfilePhoto(userId: string, file: File): Promise<string> {
+    const blob = await resizeImageBlob(file, {
+        width: 256,
+        height: 256,
+        quality: 0.85,
+        mimeType: 'image/jpeg',
+    });
     const storageRef = ref(storage, `profilePhotos/${userId}`);
-    await uploadBytes(storageRef, file);
-    return getDownloadURL(storageRef);
+    await uploadBytes(storageRef, blob, {
+        contentType: 'image/jpeg',
+        cacheControl: AVATAR_CACHE_CONTROL,
+    });
+    const downloadUrl = await getDownloadURL(storageRef);
+    removeCachedUserData(userId, 'v2');
+    return downloadUrl;
 }
 
 

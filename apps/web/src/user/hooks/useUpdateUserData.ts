@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from "sonner"
 import { useAuth } from '@/shared/hooks/useAuth';
-import { updateUser, uploadUserProfilePhoto } from '@/user/api/user';
+import { updateUser } from '@/user/api/user';
 import { removeCachedUserData } from '@/user/cache/userCache';
 import { updateAuthUserMetadata } from '@/shared/auth/supabaseAuth';
 import type { User } from '../model/User';
@@ -10,7 +10,9 @@ import type { User } from '../model/User';
 interface UpdateUserDataParams {
   userId: string;
   nickname: string;
-  profilePhotoFile: File | null;
+  // Pre-uploaded download URL from the avatar upload pipeline (resize + upload
+  // happens on file select in useProfilePhoto, not here).
+  profilePhotoURL?: string | null;
   bio?: string;
 }
 
@@ -19,16 +21,15 @@ export function useUpdateUserData() {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async ({ userId, nickname, profilePhotoFile, bio }: UpdateUserDataParams) => {
+    mutationFn: async ({ userId, nickname, profilePhotoURL, bio }: UpdateUserDataParams) => {
       if (!userId) throw new Error('사용자 정보를 찾을 수 없습니다.');
       const updates: Partial<User> = { nickname };
       if (bio !== undefined) updates.bio = bio;
 
-      if (profilePhotoFile) {
-        const photoURL = await uploadUserProfilePhoto(userId, profilePhotoFile);
-        updates.profilePhotoURL = photoURL;
+      if (profilePhotoURL) {
+        updates.profilePhotoURL = profilePhotoURL;
         if (currentUser && currentUser.uid === userId) {
-          await updateAuthUserMetadata({ avatar_url: photoURL });
+          await updateAuthUserMetadata({ avatar_url: profilePhotoURL });
         }
       }
 
@@ -61,4 +62,4 @@ export function useUpdateUserData() {
     isLoading: mutation.isLoading,
     error: mutation.error,
   };
-} 
+}
