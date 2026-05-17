@@ -43,9 +43,9 @@ const AuthorList: React.FC<AuthorListProps> = ({ boardId, onAuthorSelect }) => {
           >
             <ComposedAvatar
               size={48}
-              src={author.profilePhotoURL || ''}
+              src={author.profilePhotoURL || undefined}
               alt={author.nickname || ''}
-              fallback={author.nickname?.[0]?.toUpperCase() || ''}
+              fallback={author.nickname?.slice(0, 2).toUpperCase() || ''}
             />
             <span className='text-xs font-medium'>{author.nickname}</span>
           </button>

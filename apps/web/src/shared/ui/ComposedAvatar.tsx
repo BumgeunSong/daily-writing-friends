@@ -49,7 +49,7 @@ const ComposedAvatar: React.FC<ComposedAvatarProps> = ({
     <Avatar className={cn('ring-1 ring-black/10 dark:ring-white/10', className)} style={{ width: size, height: size }} {...rest}>
       {renderSrc && <AvatarImage src={renderSrc} alt={alt} loading={loading} decoding="async" />}
       <AvatarFallback>
-        {fallback.length === 1 ? fallback : <UserIcon className="size-3.5" />}
+        {fallback ? fallback : <UserIcon className="size-3.5" />}
       </AvatarFallback>
     </Avatar>
   );

@@ -25,7 +25,7 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
           size={40}
           src={notification.fromUserProfileImage}
           alt='User Avatar'
-          fallback={notification.fromUserId[0]?.toUpperCase() || 'U'}
+          fallback={notification.fromUserId.slice(0, 2).toUpperCase()}
         />
         <div className='min-w-0 flex-1 space-y-1.5'>
           <p className='text-reading text-sm font-medium text-foreground'>{message}</p>
