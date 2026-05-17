@@ -1,9 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useParams } from 'react-router-dom';
-import type {
-  GetReactionsParams
-} from '@/comment/api/reaction';
 import {
+  type GetReactionsParams,
   getReactions,
   createReaction,
   deleteUserReaction
@@ -52,13 +49,12 @@ interface UseReactionsReturn {
 
 export function useReactions({ entity }: UseReactionsProps): UseReactionsReturn {
   const { currentUser } = useAuth();
-  const { boardId, postId } = useParams<{ boardId: string; postId: string }>();
   const queryClient = useQueryClient();
+  const { boardId, postId, commentId } = entity;
 
   // 엔티티 파라미터 생성
   const getEntityParams = (): GetReactionsParams => {
-    if (!boardId || !postId) throw new Error('게시판 ID 또는 게시글 ID가 없습니다.');
-    const base = { boardId, postId, commentId: entity.commentId };
+    const base = { boardId, postId, commentId };
     return entity.type === 'reply' ? { ...base, replyId: (entity as ReplyParams).replyId } : base;
   };
 
@@ -67,7 +63,7 @@ export function useReactions({ entity }: UseReactionsProps): UseReactionsReturn 
     'reactions',
     boardId,
     postId,
-    entity.commentId,
+    commentId,
     entity.type === 'reply' ? (entity as ReplyParams).replyId : undefined
   ];
 
