@@ -73,7 +73,6 @@
 
    FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your_project_id.iam.gserviceaccount.com
    FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nyour_private_key_here\n-----END PRIVATE KEY-----\n"
-   NEXT_PUBLIC_CLOUD_FUNCTIONS_URL=https://us-central1-your_project_id.cloudfunctions.net
 
    SUPABASE_URL=https://your-project-ref.supabase.co
    SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
