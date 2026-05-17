@@ -48,6 +48,14 @@ service firebase.storage {
       allow delete: if true;
     }
 
+    // Profile photos uploaded via EditAccountPage (profilePhotos/{uid})
+    // No Firebase Auth required — app uses Supabase Auth (not Firebase Auth)
+    match /profilePhotos/{allPaths=**} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if true;
+    }
+
     // Public assets - readable by all authenticated users
     match /public/{allPaths=**} {
       allow read: if isAuthenticated();
