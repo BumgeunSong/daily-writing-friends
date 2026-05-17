@@ -6,7 +6,13 @@ import { useUser } from '@/user/hooks/useUser';
 export function useEditAccount({ userId }: { userId: string | null }) {
   const { userData, isLoading: isLoadingUser } = useUser(userId ?? null);
   const { nickname, handleNicknameChange } = useNickname(userData?.nickname || '');
-  const { profilePhotoFile, currentProfilePhotoURL, handleProfilePhotoChange } = useProfilePhoto(userData?.profilePhotoURL || null);
+  const {
+    uploadedPhotoURL,
+    currentProfilePhotoURL,
+    handleProfilePhotoChange,
+    isUploadingAvatar,
+    avatarError,
+  } = useProfilePhoto({ userId, initialUrl: userData?.profilePhotoURL || null });
   const [bio, setBio] = useState(userData?.bio || '');
 
   useEffect(() => {
@@ -18,11 +24,13 @@ export function useEditAccount({ userId }: { userId: string | null }) {
     userData,
     nickname,
     handleNicknameChange,
-    profilePhotoFile,
+    uploadedPhotoURL,
     currentProfilePhotoURL,
     handleProfilePhotoChange,
+    isUploadingAvatar,
+    avatarError,
     bio,
     setBio,
-    isLoadingUser
+    isLoadingUser,
   };
-} 
+}

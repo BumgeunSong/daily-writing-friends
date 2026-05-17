@@ -2,7 +2,7 @@ import { Camera, Loader2 } from 'lucide-react';
 import { useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import StatusMessage from '@/shared/components/StatusMessage';
-import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
+import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
@@ -16,14 +16,16 @@ export default function EditAccountPage() {
   const { userId } = useParams();
   const profilePhotoFileRef = useRef<HTMLInputElement>(null);
   const { mutateAsync, isLoading: isLoadingUpdate } = useUpdateUserData();
-  
+
   const {
     userData,
     nickname,
     handleNicknameChange,
-    profilePhotoFile,
+    uploadedPhotoURL,
     currentProfilePhotoURL,
     handleProfilePhotoChange,
+    isUploadingAvatar,
+    avatarError,
     bio,
     setBio,
     isLoadingUser
@@ -32,13 +34,15 @@ export default function EditAccountPage() {
   if (!userId) return <StatusMessage errorMessage="유저 정보를 찾을 수 없습니다." />;
   if (isLoadingUser) return <LoadingSkeleton />;
 
+  const isSubmitDisabled = isLoadingUpdate || isUploadingAvatar;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await mutateAsync({
         userId: userData?.uid || '',
         nickname,
-        profilePhotoFile,
+        profilePhotoURL: uploadedPhotoURL,
         bio,
       });
       navigate(-1)
@@ -54,7 +58,7 @@ export default function EditAccountPage() {
   };
 
   const showProfilePhotoChangeButton = () => {
-    if (!isLoadingUser && profilePhotoFileRef.current) {
+    if (!isLoadingUser && !isUploadingAvatar && profilePhotoFileRef.current) {
       profilePhotoFileRef.current.click();
     }
   };
@@ -82,6 +86,8 @@ export default function EditAccountPage() {
               handleProfilePhotoChange={handleProfilePhotoChange}
               profilePhotoFileRef={profilePhotoFileRef}
               isLoading={isLoadingUpdate}
+              isUploadingAvatar={isUploadingAvatar}
+              avatarError={avatarError}
             />
             <div className='space-y-2'>
               <Label htmlFor='nickname'>닉네임</Label>
@@ -119,11 +125,11 @@ export default function EditAccountPage() {
               >
                 취소
               </Button>
-              <Button 
+              <Button
                 type='submit'
                 variant='default'
-                className='reading-hover reading-focus min-h-[44px] w-full transition-[transform,background-color] duration-200 active:scale-[0.99]' 
-                disabled={isLoadingUpdate}
+                className='reading-hover reading-focus min-h-[44px] w-full transition-[transform,background-color] duration-200 active:scale-[0.99]'
+                disabled={isSubmitDisabled}
               >
                 {isLoadingUpdate ? <Loader2 className='size-4 animate-spin' /> : '저장하기'}
               </Button>
@@ -143,6 +149,8 @@ function ProfilePhotoUploader({
   handleProfilePhotoChange,
   profilePhotoFileRef,
   isLoading,
+  isUploadingAvatar,
+  avatarError,
 }: {
   currentProfilePhotoURL: string;
   nickname: string;
@@ -150,36 +158,66 @@ function ProfilePhotoUploader({
   handleProfilePhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   profilePhotoFileRef: React.RefObject<HTMLInputElement>;
   isLoading: boolean;
+  isUploadingAvatar: boolean;
+  avatarError: string | null;
 }) {
   return (
     <div className='flex flex-col items-center space-y-4'>
-      <Avatar
-        className='size-32 cursor-pointer'
+      <button
+        type='button'
+        className='relative cursor-pointer rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
         onClick={showProfilePhotoChangeButton}
+        aria-busy={isUploadingAvatar}
+        aria-label='프로필 사진 변경'
+        disabled={isLoading || isUploadingAvatar}
       >
-        <AvatarImage src={currentProfilePhotoURL} alt={nickname} />
-        <AvatarFallback className='flex items-center justify-center bg-gray-200 text-4xl text-gray-600'>
-          {nickname ? nickname[0].toUpperCase() : <Camera className='size-8' />}
-        </AvatarFallback>
-      </Avatar>
+        <ComposedAvatar
+          className='size-32'
+          size={128}
+          src={currentProfilePhotoURL}
+          alt={nickname || 'User'}
+          fallback={nickname ? nickname[0].toUpperCase() : 'U'}
+        />
+        {!currentProfilePhotoURL && !isUploadingAvatar && (
+          <Camera className='absolute inset-0 m-auto size-8 text-gray-600' />
+        )}
+        {isUploadingAvatar && <AvatarUploadSpinner />}
+      </button>
       <Button
         type='button'
         variant='outline'
         size='sm'
         className='mt-2'
         onClick={showProfilePhotoChangeButton}
-        disabled={isLoading}
+        disabled={isLoading || isUploadingAvatar}
       >
         프로필 사진 변경
       </Button>
+      {avatarError && (
+        <p role='alert' className='text-sm text-destructive'>
+          {avatarError}
+        </p>
+      )}
       <Input
         type='file'
-        accept='image/*'
+        accept='image/jpeg,image/png'
         onChange={handleProfilePhotoChange}
         className='hidden'
         ref={profilePhotoFileRef}
-        disabled={isLoading}
+        disabled={isLoading || isUploadingAvatar}
       />
+    </div>
+  );
+}
+
+function AvatarUploadSpinner() {
+  return (
+    <div
+      className='absolute inset-0 flex flex-col items-center justify-center rounded-full bg-black/40 text-white'
+      data-testid='avatar-upload-spinner'
+    >
+      <Loader2 className='size-6 animate-spin' aria-hidden='true' />
+      <span className='mt-1 text-xs'>변환 중…</span>
     </div>
   );
 }
