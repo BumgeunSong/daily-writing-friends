@@ -69,13 +69,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
-        with: { version: 9 }
+        with: { version: 9.15.4 }
 
       - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: 'pnpm' }
+        with: { node-version: 20, cache: 'pnpm' }
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -93,7 +93,18 @@ jobs:
         run: supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector,realtime
 
       - name: Write .env.local
-        run: cp tests/fixtures/.env.e2e.ci .env.local
+        run: |
+          cat > .env.local << 'EOF'
+          VITE_SUPABASE_URL=http://127.0.0.1:54321
+          VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+          VITE_FIREBASE_API_KEY=fake-api-key-for-e2e
+          VITE_FIREBASE_AUTH_DOMAIN=localhost
+          VITE_FIREBASE_PROJECT_ID=e2e-test-project
+          VITE_FIREBASE_STORAGE_BUCKET=e2e-test.appspot.com
+          VITE_FIREBASE_MESSAGING_SENDER_ID=000000000000
+          VITE_FIREBASE_APP_ID=1:000000000000:web:0000000000000000
+          EOF
+          sed -i 's/^          //' .env.local
 
       - name: Run Playwright
         run: pnpm exec playwright test --project=chromium-data-flows --project=chromium-non-member
@@ -117,7 +128,8 @@ Key choices:
 
 | Choice | Why |
 |---|---|
-| Node 22 | Avoid June 2026 Node 20 deprecation |
+| Node 20 (matches repo standard) | Other workflows (`run-vitest.yml`, `firebase-hosting-merge.yml`, etc.) also use Node 20. The Node 20 deprecation (Sept 2026 forced removal) is real but should be addressed in a single cross-workflow PR, not here |
+| pnpm pinned to `9.15.4` | Matches `run-vitest.yml`, `firebase-hosting-merge.yml`, `sentry-bug-fix.yml`. Floating major (`version: 9`) would drift |
 | pnpm cache + Playwright browser cache | Saves ~30s per run after first hit |
 | Pinned Supabase CLI version | `latest` would invalidate any future image cache key |
 | `supabase start --exclude` (incl. `realtime`) | Drops 6 unused images; codebase has zero Realtime channel usage (grep-verified) |
@@ -173,8 +185,8 @@ Selector contract:
 | Editor (TipTap) | `data-testid` | `page.getByTestId('post-editor')` |
 | Lists and cards | `data-testid` | `page.getByTestId('post-card')` |
 | Post detail content | `getByRole('heading')` + visible text | semantic |
-| **Banned** | DOM traversal | ❌ `.locator('..').locator('button')` |
-| **Banned** | `networkidle` | ❌ explicit waits on visible UI or API responses |
+| **Banned: DOM traversal** | — | ❌ `.locator('..').locator('button')`; replace with a `data-testid` on the target element |
+| **Banned: `networkidle`** | — | ❌ `page.waitForLoadState('networkidle')`; replace with an explicit wait on visible UI (`expect(locator).toBeVisible()`) or a specific API response (`page.waitForResponse(...)`) |
 
 Copy as named constants in `_fixtures/copy.ts`:
 
@@ -244,9 +256,9 @@ No shared `e2e-post-000`. No bespoke cleanup helpers.
 | `video` | `retain-on-failure` | Keep |
 | Test timeout | `45_000` on CI (was 60_000) | Forces fast tests |
 | `expect.timeout` | `15_000` on CI (was 20_000) | Same |
-| `reporter` | `['html', 'github', ['blob']]` | `github` annotates PR diff at failure line; `blob` enables shard merge |
+| `reporter` | `['html', 'github', ['json', { outputFile: 'playwright-report.json' }]]` | `github` annotates PR diff at failure line; `json` provides a machine-readable artifact for the flake detector |
 
-Flaky-test detection: a small post-step parses the JSON report. A test that passes only after retry does not fail the PR. It opens a tracking issue labeled `flaky-test` — **only if the same test has retry-passed in at least two separate runs within a 7-day window**. A single retry-pass on infra blip (DNS, container startup) does not generate noise. After three flags in a week, the test is marked `test.skip` (not deleted) with a comment linking the tracking issue; the body and failure evidence stay in the tree.
+Flaky-test detection: a small post-step parses `playwright-report.json` (produced by the `json` reporter above). A test that passes only after retry does not fail the PR. It opens a tracking issue labeled `flaky-test` — **only if the same test has retry-passed in at least two separate runs within a 7-day window**. A single retry-pass on infra blip (DNS, container startup) does not generate noise. After three flags in a week, the test is marked `test.skip` (not deleted) with a comment linking the tracking issue; the body and failure evidence stay in the tree.
 
 On-PR feedback:
 - Pass: silent.
@@ -336,3 +348,16 @@ This section documents the changes between v1 and v2 of the design. Three review
 **Findings rejected:**
 
 None — every flagged issue had clear merit. Where a reviewer suggested a tradeoff (e.g. "drop sharding entirely now"), this design accepts the suggestion rather than carrying the v1 complexity.
+
+### v2.1 — Copilot reviewer findings (PR #610)
+
+| Finding | v2 claim | v2.1 revision |
+|---|---|---|
+| `actions/checkout@v5` diverges from repo standard `@v4` | `@v5` used | `@v4` — matches `run-playwright.yml`, `run-vitest.yml`, all other workflows |
+| `pnpm version: 9` (floating major) diverges from repo's pinned `9.15.4` | Floating major | Pinned `9.15.4` — matches `run-vitest.yml`, `firebase-hosting-merge.yml`, `sentry-bug-fix.yml` |
+| Node 22 diverges from repo's Node 20 | Node 22 chosen for deprecation forward-compat | Reverted to Node 20. The deprecation is real but should be addressed across all workflows in one PR, not just here |
+| `cp tests/fixtures/.env.e2e.ci .env.local` references file that doesn't exist | Fictional fixture path | Replaced with inline heredoc (same approach as current `run-playwright.yml`); no new file required for Phase 0 |
+| Flake detector "parses JSON report" but reporter list has no JSON output | `['html', 'github', ['blob']]` | Reporter list now `['html', 'github', ['json', { outputFile: 'playwright-report.json' }]]`; flake detector input is explicit |
+| Selector contract "Banned: networkidle" row was confusingly worded — read like it banned the alternative | Ambiguous example column | Reworded both banned rows so the ❌ marks the banned pattern and the row text states the replacement |
+
+All six Copilot findings were valid — each one was a consistency or spec-completeness gap. None were rejected.
