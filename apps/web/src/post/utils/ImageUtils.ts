@@ -1,12 +1,9 @@
-import heic2any from 'heic2any';
-
 const MAX_IMAGE_DIMENSION_FOR_UPLOAD = 1200;
 const JPEG_QUALITY_FOR_UPLOAD = 0.85;
-const HEIC_CONVERSION_QUALITY = 0.8;
 const PROFILE_PHOTO_SIZE = 96;
 
-type ProcessingStage = 'converting' | 'resizing';
-type ProcessingFailure = 'heic_convert' | 'resize';
+type ProcessingStage = 'resizing';
+type ProcessingFailure = 'resize';
 
 interface ProcessImageOptions {
     onStage?: (stage: ProcessingStage) => void;
@@ -17,9 +14,7 @@ interface ProcessedImage {
     file: File;
     rawSize: number;
     processedSize: number;
-    wasHeic: boolean;
     didResize: boolean;
-    heicConversionFailed: boolean;
     resizeFailed: boolean;
 }
 
@@ -33,38 +28,24 @@ const cropAndResizeImage = async (file: File, callback: (resizedFile: File) => v
 };
 
 /**
- * Process image for upload: HEIC conversion + resize to MAX_IMAGE_DIMENSION_FOR_UPLOAD.
- * Yields to browser before heavy operations to keep UI responsive.
- * Returns metadata about what happened so callers can log compression ratios.
+ * Process image for upload: resize to MAX_IMAGE_DIMENSION_FOR_UPLOAD.
+ * HEIC/HEIF files are rejected upstream by validateFileType, so this function
+ * only handles JPEG/PNG/WebP/GIF inputs.
  */
 const processImageForUpload = async (
     file: File,
     options: ProcessImageOptions = {},
 ): Promise<ProcessedImage> => {
     const rawSize = file.size;
-    const wasHeic = isHeicFile(file);
-
     await yieldToBrowser();
 
     let processedFile = file;
-    let heicConversionFailed = false;
+    let didResize = false;
     let resizeFailed = false;
 
-    if (wasHeic) {
-        options.onStage?.('converting');
-        try {
-            processedFile = await convertHeicToJpeg(file);
-        } catch (error) {
-            heicConversionFailed = true;
-            options.onError?.('heic_convert', error);
-        }
-        await yieldToBrowser();
-    }
-
     options.onStage?.('resizing');
-    let didResize = false;
     try {
-        const resizeResult = await resizeImageForUpload(processedFile);
+        const resizeResult = await resizeImageForUpload(file);
         processedFile = resizeResult.file;
         didResize = resizeResult.didResize;
     } catch (error) {
@@ -76,35 +57,9 @@ const processImageForUpload = async (
         file: processedFile,
         rawSize,
         processedSize: processedFile.size,
-        wasHeic,
         didResize,
-        heicConversionFailed,
         resizeFailed,
     };
-};
-
-const isHeicFile = (file: File): boolean => {
-    const fileName = file.name.toLowerCase();
-    return (
-        file.type === 'image/heic' ||
-        file.type === 'image/heif' ||
-        fileName.endsWith('.heic') ||
-        fileName.endsWith('.heif')
-    );
-};
-
-const convertHeicToJpeg = async (file: File): Promise<File> => {
-    const convertedBlob = (await heic2any({
-        blob: file,
-        toType: 'image/jpeg',
-        quality: HEIC_CONVERSION_QUALITY,
-    })) as Blob;
-
-    const convertedFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
-    return new File([convertedBlob], convertedFileName, {
-        type: 'image/jpeg',
-        lastModified: Date.now(),
-    });
 };
 
 interface ResizeResult {

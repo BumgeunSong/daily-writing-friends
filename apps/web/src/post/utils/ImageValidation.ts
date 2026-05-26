@@ -1,9 +1,13 @@
 const MAX_RAW_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const MAX_PROCESSED_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-type ValidationResult =
-  | { valid: true }
-  | { valid: false; reason: 'exceeds_raw_limit' | 'exceeds_processed_limit' | 'not_image' };
+type ValidationReason =
+  | 'exceeds_raw_limit'
+  | 'exceeds_processed_limit'
+  | 'not_image'
+  | 'unsupported_format';
+
+type ValidationResult = { valid: true } | { valid: false; reason: ValidationReason };
 
 function validateFileSize(
   file: File | Blob,
@@ -26,10 +30,14 @@ function validateProcessedFileSize(
 }
 
 function validateFileType(file: File): ValidationResult {
-  const isImageMime = file.type.startsWith('image/');
   const isHeicByExtension = /\.(heic|heif)$/i.test(file.name);
+  const isHeicByMime = file.type === 'image/heic' || file.type === 'image/heif';
+  if (isHeicByExtension || isHeicByMime) {
+    return { valid: false, reason: 'unsupported_format' };
+  }
 
-  if (!isImageMime && !isHeicByExtension) {
+  const isImageMime = file.type.startsWith('image/');
+  if (!isImageMime) {
     return { valid: false, reason: 'not_image' };
   }
   return { valid: true };
@@ -54,6 +62,7 @@ const validationMessages: Record<string, string> = {
   exceeds_raw_limit: '파일이 너무 큽니다.',
   exceeds_processed_limit: '처리 후에도 파일이 큽니다.',
   not_image: '이미지 파일만 업로드할 수 있습니다.',
+  unsupported_format: 'HEIC/HEIF는 지원하지 않습니다. JPEG 또는 PNG로 저장 후 다시 시도해주세요.',
 };
 
 function getValidationMessage(reason: string): string {

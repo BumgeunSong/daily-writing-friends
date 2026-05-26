@@ -75,14 +75,24 @@ describe('validateFileType', () => {
     expect(validateFileType(file)).toEqual({ valid: true });
   });
 
-  it('allows .heic by extension even without image MIME', () => {
-    const file = createFile('photo.heic', 100, 'application/octet-stream');
-    expect(validateFileType(file)).toEqual({ valid: true });
+  it('rejects .heic by extension even when MIME is image/heic', () => {
+    const file = createFile('photo.heic', 100, 'image/heic');
+    expect(validateFileType(file)).toEqual({ valid: false, reason: 'unsupported_format' });
   });
 
-  it('allows .heif by extension even without image MIME', () => {
+  it('rejects .heif by extension regardless of MIME', () => {
     const file = createFile('photo.HEIF', 100, '');
-    expect(validateFileType(file)).toEqual({ valid: true });
+    expect(validateFileType(file)).toEqual({ valid: false, reason: 'unsupported_format' });
+  });
+
+  it('rejects image/heic MIME without .heic extension', () => {
+    const file = createFile('photo', 100, 'image/heic');
+    expect(validateFileType(file)).toEqual({ valid: false, reason: 'unsupported_format' });
+  });
+
+  it('rejects image/heif MIME without .heif extension', () => {
+    const file = createFile('photo', 100, 'image/heif');
+    expect(validateFileType(file)).toEqual({ valid: false, reason: 'unsupported_format' });
   });
 
   it('rejects non-image files', () => {
@@ -134,6 +144,12 @@ describe('getValidationMessage', () => {
 
   it('returns correct message for not_image', () => {
     expect(getValidationMessage('not_image')).toBe('이미지 파일만 업로드할 수 있습니다.');
+  });
+
+  it('returns correct message for unsupported_format', () => {
+    expect(getValidationMessage('unsupported_format')).toBe(
+      'HEIC/HEIF는 지원하지 않습니다. JPEG 또는 PNG로 저장 후 다시 시도해주세요.',
+    );
   });
 
   it('returns fallback for unknown reason', () => {

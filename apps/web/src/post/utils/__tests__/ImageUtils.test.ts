@@ -1,10 +1,4 @@
 import { describe, it, expect, vi } from 'vitest';
-
-vi.mock('heic2any', () => ({
-  default: vi.fn(),
-}));
-
-import heic2any from 'heic2any';
 import { processImageForUpload } from '../ImageUtils';
 
 vi.stubGlobal('requestAnimationFrame', (cb: () => void) => {
@@ -45,65 +39,7 @@ function mockImageAndFileReader(width = 100, height = 100) {
 }
 
 describe('processImageForUpload', () => {
-  it('returns original file when HEIC conversion fails', async () => {
-    const heicFile = createFile('photo.heic', 1024, 'image/heic');
-    vi.mocked(heic2any).mockRejectedValueOnce(new Error('Conversion failed'));
-    vi.stubGlobal('createImageBitmap', undefined);
-    mockImageAndFileReader();
-
-    const result = await processImageForUpload(heicFile);
-
-    expect(result.file).toBe(heicFile);
-    expect(result.file.name).toBe('photo.heic');
-    expect(result.wasHeic).toBe(true);
-    expect(result.rawSize).toBe(1024);
-    expect(result.didResize).toBe(false);
-    expect(result.heicConversionFailed).toBe(true);
-  });
-
-  it('reports onError when HEIC conversion fails', async () => {
-    const heicFile = createFile('photo.heic', 1024, 'image/heic');
-    const conversionError = new Error('Conversion failed');
-    vi.mocked(heic2any).mockRejectedValueOnce(conversionError);
-    vi.stubGlobal('createImageBitmap', undefined);
-    mockImageAndFileReader();
-
-    const onError = vi.fn();
-    await processImageForUpload(heicFile, { onError });
-
-    expect(onError).toHaveBeenCalledWith('heic_convert', conversionError);
-  });
-
-  it('converts HEIC file when conversion succeeds', async () => {
-    const heicFile = createFile('photo.heic', 1024, 'image/heic');
-    const convertedBlob = new Blob([new ArrayBuffer(512)], { type: 'image/jpeg' });
-    vi.mocked(heic2any).mockResolvedValueOnce(convertedBlob);
-    vi.stubGlobal('createImageBitmap', undefined);
-    mockImageAndFileReader();
-
-    const result = await processImageForUpload(heicFile);
-
-    expect(result.file.name).toBe('photo.jpg');
-    expect(result.file.type).toBe('image/jpeg');
-    expect(result.wasHeic).toBe(true);
-  });
-
-  it('reports onStage callbacks for HEIC files', async () => {
-    const heicFile = createFile('photo.heic', 1024, 'image/heic');
-    const convertedBlob = new Blob([new ArrayBuffer(512)], { type: 'image/jpeg' });
-    vi.mocked(heic2any).mockResolvedValueOnce(convertedBlob);
-    vi.stubGlobal('createImageBitmap', undefined);
-    mockImageAndFileReader();
-
-    const stages: string[] = [];
-    await processImageForUpload(heicFile, {
-      onStage: (stage) => stages.push(stage),
-    });
-
-    expect(stages).toEqual(['converting', 'resizing']);
-  });
-
-  it('skips converting stage for non-HEIC files', async () => {
+  it('emits only the resizing stage', async () => {
     const jpegFile = createFile('photo.jpg', 1024, 'image/jpeg');
     vi.stubGlobal('createImageBitmap', undefined);
     mockImageAndFileReader();
@@ -124,6 +60,31 @@ describe('processImageForUpload', () => {
     const result = await processImageForUpload(jpegFile);
 
     expect(result.didResize).toBe(false);
+    expect(result.resizeFailed).toBe(false);
     expect(result.file).toBe(jpegFile);
+    expect(result.rawSize).toBe(1024);
+  });
+
+  it('reports onError with resize failure when canvas decoding throws', async () => {
+    const jpegFile = createFile('photo.jpg', 1024, 'image/jpeg');
+    const decodeError = new Error('decode failed');
+    vi.stubGlobal('createImageBitmap', undefined);
+    vi.spyOn(globalThis, 'FileReader').mockImplementation(
+      () =>
+        ({
+          result: 'data:image/jpeg;base64,test',
+          onload: null,
+          onerror: null,
+          readAsDataURL() {
+            setTimeout(() => (this as unknown as FileReader).onerror?.(decodeError as unknown as ProgressEvent<FileReader>), 0);
+          },
+        }) as unknown as FileReader,
+    );
+
+    const onError = vi.fn();
+    const result = await processImageForUpload(jpegFile, { onError });
+
+    expect(result.resizeFailed).toBe(true);
+    expect(onError).toHaveBeenCalledWith('resize', expect.anything());
   });
 });

@@ -10,10 +10,7 @@ import {
   validateFileType,
   getValidationMessage,
 } from '@/post/utils/ImageValidation';
-import {
-  captureProcessingFailure,
-  HEIC_FAILURE_MESSAGE,
-} from '@/post/utils/imageUploadTelemetry';
+import { captureProcessingFailure } from '@/post/utils/imageUploadTelemetry';
 import { formatDate } from '@/post/utils/sanitizeHtml';
 import { sanitizeStorageFileName } from '@/post/utils/storageFileName';
 import { uploadFileWithProgress } from '@/post/utils/uploadWithProgress';
@@ -74,13 +71,13 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
 
       const typeResult = validateFileType(file);
       if (!typeResult.valid) {
-        logValidationRejection(typeResult.reason, file.size, false);
+        logValidationRejection(typeResult.reason, file.size);
         throw new Error(getValidationMessage(typeResult.reason));
       }
 
       const rawSizeResult = validateFileSize(file);
       if (!rawSizeResult.valid) {
-        logValidationRejection(rawSizeResult.reason, file.size, false);
+        logValidationRejection(rawSizeResult.reason, file.size);
         throw new Error(getValidationMessage(rawSizeResult.reason));
       }
 
@@ -89,16 +86,11 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
         onError: captureProcessingFailure,
       });
 
-      if (processed.wasHeic && processed.heicConversionFailed) {
-        throw new Error(HEIC_FAILURE_MESSAGE);
-      }
-
       const processedResult = validateProcessedFileSize(processed.file);
       if (!processedResult.valid) {
         logValidationRejection(
           processedResult.reason,
           processed.rawSize,
-          processed.wasHeic,
           processed.processedSize,
         );
         throw new Error(getValidationMessage(processedResult.reason));
@@ -136,7 +128,7 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
   const openFilePicker = useCallback(async () => {
     const input = document.createElement('input');
     input.setAttribute('type', 'file');
-    input.setAttribute('accept', 'image/*');
+    input.setAttribute('accept', 'image/jpeg,image/png,image/webp,image/gif');
     input.click();
 
     input.onchange = async () => {
@@ -235,23 +227,20 @@ const handleUploadError = (error: unknown, operation: string, file: File) => {
 const logValidationRejection = (
   reason: string,
   rawSize: number,
-  wasHeic: boolean,
   processedSize?: number,
 ) => {
   Sentry.addBreadcrumb({
     category: 'image_upload',
     message: 'validation_reject',
     level: 'warning',
-    data: { reason, raw_size: rawSize, processed_size: processedSize, was_heic: wasHeic },
+    data: { reason, raw_size: rawSize, processed_size: processedSize },
   });
 };
 
 const logUploadSuccess = (processed: {
   rawSize: number;
   processedSize: number;
-  wasHeic: boolean;
   didResize: boolean;
-  heicConversionFailed: boolean;
   resizeFailed: boolean;
 }) => {
   const compressionRatio =
@@ -264,9 +253,7 @@ const logUploadSuccess = (processed: {
       raw_size: processed.rawSize,
       processed_size: processed.processedSize,
       compression_ratio: Number(compressionRatio.toFixed(3)),
-      was_heic: processed.wasHeic,
       did_resize: processed.didResize,
-      heic_conversion_failed: processed.heicConversionFailed,
       resize_failed: processed.resizeFailed,
     },
   });
