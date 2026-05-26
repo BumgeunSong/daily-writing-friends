@@ -27,13 +27,17 @@ export const queryClient = new QueryClient({
   mutationCache,
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 30, // 30 seconds
+      staleTime: 1000 * 60, // 1 minute
       cacheTime: 1000 * 60 * 5, // 5 minutes
-      refetchOnWindowFocus: true,
+      // iOS Safari fires focus aggressively → refetch storm.
+      // Opt-in per query when refetch on focus is actually wanted.
+      refetchOnWindowFocus: false,
       retry: 3,
     },
     mutations: {
-      retry: 1,
+      // Mutations are not guaranteed idempotent (likes, comments, etc).
+      // Retrying on network hiccup risks duplicate writes.
+      retry: 0,
     },
   },
 });
