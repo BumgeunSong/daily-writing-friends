@@ -65,9 +65,14 @@ describe('validateFileType', () => {
     expect(validateFileType(file)).toEqual({ valid: true });
   });
 
-  it('allows image/gif', () => {
+  it('rejects image/gif', () => {
     const file = createFile('photo.gif', 100, 'image/gif');
-    expect(validateFileType(file)).toEqual({ valid: true });
+    expect(validateFileType(file)).toEqual({ valid: false, reason: 'unsupported_format' });
+  });
+
+  it('rejects .gif by extension regardless of MIME', () => {
+    const file = createFile('photo.GIF', 100, '');
+    expect(validateFileType(file)).toEqual({ valid: false, reason: 'unsupported_format' });
   });
 
   it('allows image/webp', () => {
@@ -148,7 +153,7 @@ describe('getValidationMessage', () => {
 
   it('returns correct message for unsupported_format', () => {
     expect(getValidationMessage('unsupported_format')).toBe(
-      'HEIC/HEIF는 지원하지 않습니다. JPEG 또는 PNG로 저장 후 다시 시도해주세요.',
+      '지원하지 않는 형식입니다. JPEG, PNG, WebP로 저장 후 다시 시도해주세요.',
     );
   });
 

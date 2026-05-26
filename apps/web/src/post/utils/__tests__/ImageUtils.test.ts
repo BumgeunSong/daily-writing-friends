@@ -1,5 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { processImageForUpload } from '../ImageUtils';
+import { needsReencoding, processImageForUpload } from '../ImageUtils';
+
+const FIVE_MB = 5 * 1024 * 1024;
+const MAX_DIM = 1200;
 
 vi.stubGlobal('requestAnimationFrame', (cb: () => void) => {
   cb();
@@ -86,5 +89,39 @@ describe('processImageForUpload', () => {
 
     expect(result.resizeFailed).toBe(true);
     expect(onError).toHaveBeenCalledWith('resize', expect.anything());
+  });
+});
+
+describe('needsReencoding', () => {
+  it('returns false when dimensions and byte size are both within limits', () => {
+    expect(needsReencoding(1024, { width: 800, height: 600 }, MAX_DIM, FIVE_MB)).toBe(false);
+  });
+
+  it('returns true when width exceeds the dimension cap', () => {
+    expect(needsReencoding(1024, { width: MAX_DIM + 1, height: 600 }, MAX_DIM, FIVE_MB)).toBe(
+      true,
+    );
+  });
+
+  it('returns true when height exceeds the dimension cap', () => {
+    expect(needsReencoding(1024, { width: 600, height: MAX_DIM + 1 }, MAX_DIM, FIVE_MB)).toBe(
+      true,
+    );
+  });
+
+  it('returns true when byte size exceeds the cap even if dimensions are small', () => {
+    expect(needsReencoding(FIVE_MB + 1, { width: 800, height: 800 }, MAX_DIM, FIVE_MB)).toBe(
+      true,
+    );
+  });
+
+  it('returns false at the exact byte cap', () => {
+    expect(needsReencoding(FIVE_MB, { width: 800, height: 800 }, MAX_DIM, FIVE_MB)).toBe(false);
+  });
+
+  it('returns false at the exact dimension cap', () => {
+    expect(needsReencoding(1024, { width: MAX_DIM, height: MAX_DIM }, MAX_DIM, FIVE_MB)).toBe(
+      false,
+    );
   });
 });

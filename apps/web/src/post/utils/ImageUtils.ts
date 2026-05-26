@@ -1,3 +1,5 @@
+import { MAX_PROCESSED_FILE_SIZE } from '@/post/utils/ImageValidation';
+
 const MAX_IMAGE_DIMENSION_FOR_UPLOAD = 1200;
 const JPEG_QUALITY_FOR_UPLOAD = 0.85;
 const PROFILE_PHOTO_SIZE = 96;
@@ -67,13 +69,31 @@ interface ResizeResult {
     didResize: boolean;
 }
 
+/**
+ * Decide whether an image must go through the canvas re-encode path.
+ * Re-encoding is required when EITHER the pixel dimensions exceed the upload
+ * cap OR the raw byte size already exceeds the post-processing limit — a
+ * small-pixel-but-large-byte file (e.g., uncompressed PNG screenshot) would
+ * otherwise sail past the resize step and fail validateProcessedFileSize.
+ */
+const needsReencoding = (
+    fileSize: number,
+    dimensions: ImageDimensions,
+    maxDimension: number,
+    maxBytes: number,
+): boolean => {
+    const exceedsDimensions =
+        dimensions.width > maxDimension || dimensions.height > maxDimension;
+    const exceedsByteSize = fileSize > maxBytes;
+    return exceedsDimensions || exceedsByteSize;
+};
+
 const resizeImageForUpload = async (file: File): Promise<ResizeResult> => {
     const dimensions = await loadImageDimensions(file);
-    const needsResize =
-        dimensions.width > MAX_IMAGE_DIMENSION_FOR_UPLOAD ||
-        dimensions.height > MAX_IMAGE_DIMENSION_FOR_UPLOAD;
 
-    if (!needsResize) {
+    if (
+        !needsReencoding(file.size, dimensions, MAX_IMAGE_DIMENSION_FOR_UPLOAD, MAX_PROCESSED_FILE_SIZE)
+    ) {
         return { file, didResize: false };
     }
 
@@ -209,5 +229,5 @@ const blobToFile = (blob: Blob, fileName: string, fileType: string): File => {
     return new File([blob], fileName, { type: fileType });
 };
 
-export { cropAndResizeImage, processImageForUpload };
+export { cropAndResizeImage, needsReencoding, processImageForUpload };
 export type { ProcessedImage, ProcessImageOptions, ProcessingFailure, ProcessingStage };

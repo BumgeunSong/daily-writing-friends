@@ -29,10 +29,13 @@ function validateProcessedFileSize(
   return { valid: true };
 }
 
+const UNSUPPORTED_EXTENSION_PATTERN = /\.(heic|heif|gif)$/i;
+const UNSUPPORTED_MIME_TYPES = new Set(['image/heic', 'image/heif', 'image/gif']);
+
 function validateFileType(file: File): ValidationResult {
-  const isHeicByExtension = /\.(heic|heif)$/i.test(file.name);
-  const isHeicByMime = file.type === 'image/heic' || file.type === 'image/heif';
-  if (isHeicByExtension || isHeicByMime) {
+  const isUnsupportedExtension = UNSUPPORTED_EXTENSION_PATTERN.test(file.name);
+  const isUnsupportedMime = UNSUPPORTED_MIME_TYPES.has(file.type);
+  if (isUnsupportedExtension || isUnsupportedMime) {
     return { valid: false, reason: 'unsupported_format' };
   }
 
@@ -62,7 +65,7 @@ const validationMessages: Record<string, string> = {
   exceeds_raw_limit: '파일이 너무 큽니다.',
   exceeds_processed_limit: '처리 후에도 파일이 큽니다.',
   not_image: '이미지 파일만 업로드할 수 있습니다.',
-  unsupported_format: 'HEIC/HEIF는 지원하지 않습니다. JPEG 또는 PNG로 저장 후 다시 시도해주세요.',
+  unsupported_format: '지원하지 않는 형식입니다. JPEG, PNG, WebP로 저장 후 다시 시도해주세요.',
 };
 
 function getValidationMessage(reason: string): string {

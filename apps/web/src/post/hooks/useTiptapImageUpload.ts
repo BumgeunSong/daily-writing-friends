@@ -128,7 +128,7 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
   const openFilePicker = useCallback(async () => {
     const input = document.createElement('input');
     input.setAttribute('type', 'file');
-    input.setAttribute('accept', 'image/jpeg,image/png,image/webp,image/gif');
+    input.setAttribute('accept', 'image/jpeg,image/png,image/webp');
     input.click();
 
     input.onchange = async () => {
