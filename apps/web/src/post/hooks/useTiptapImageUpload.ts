@@ -151,12 +151,12 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
       if (!items) return false;
 
       for (const item of Array.from(items)) {
-        if (!item.type.startsWith('image/')) continue;
-        event.preventDefault();
-        event.stopPropagation();
-
+        if (item.kind !== 'file') continue;
         const file = item.getAsFile();
         if (!file) continue;
+
+        event.preventDefault();
+        event.stopPropagation();
 
         try {
           const downloadURL = await uploadFile(file);
@@ -179,12 +179,12 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
       if (!items) return false;
 
       for (const item of Array.from(items)) {
-        if (item.kind !== 'file' || !item.type.startsWith('image/')) continue;
-        event.preventDefault();
-        event.stopPropagation();
-
+        if (item.kind !== 'file') continue;
         const file = item.getAsFile();
         if (!file) continue;
+
+        event.preventDefault();
+        event.stopPropagation();
 
         try {
           const downloadURL = await uploadFile(file);
