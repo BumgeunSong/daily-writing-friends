@@ -31,8 +31,8 @@ const cropAndResizeImage = async (file: File, callback: (resizedFile: File) => v
 
 /**
  * Process image for upload: resize to MAX_IMAGE_DIMENSION_FOR_UPLOAD.
- * HEIC/HEIF files are rejected upstream by validateFileType, so this function
- * only handles JPEG/PNG/WebP/GIF inputs.
+ * HEIC/HEIF/GIF are rejected upstream by validateFileType, so this function
+ * only handles JPEG/PNG/WebP inputs.
  */
 const processImageForUpload = async (
     file: File,
@@ -47,7 +47,7 @@ const processImageForUpload = async (
 
     options.onStage?.('resizing');
     try {
-        const resizeResult = await resizeImageForUpload(file);
+        const resizeResult = await resizeImageForUpload(processedFile);
         processedFile = resizeResult.file;
         didResize = resizeResult.didResize;
     } catch (error) {
