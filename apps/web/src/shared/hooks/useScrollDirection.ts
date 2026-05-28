@@ -61,6 +61,19 @@ export const useScrollDirection = (options?: ScrollOptions): ScrollDirection => 
       const currentTime = Date.now();
       const currentScrollY = window.scrollY;
 
+      // Fast-path: at/near the top — always 'up', bypass throttle.
+      if (currentScrollY <= topThreshold) {
+        setDirectionIfChanged('up');
+        lastScrollYRef.current = currentScrollY;
+        lastThrottleTimeRef.current = currentTime;
+        return;
+      }
+
+      // Fast-path: ignore small deltas (iOS bounce) without scheduling a trailing timer.
+      if (Math.abs(currentScrollY - lastScrollYRef.current) < ignoreSmallChanges) {
+        return;
+      }
+
       if (currentTime - lastThrottleTimeRef.current >= throttleTime) {
         evaluate(currentScrollY, currentTime);
         return;
