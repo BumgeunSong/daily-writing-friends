@@ -48,9 +48,16 @@ const SUPPORTED_FORMAT_LABEL = SUPPORTED_FORMATS.map((f) => f.label).join(', ');
 // Drives the more specific "지원하지 않는 형식" message when MIME is missing
 // (e.g., HEIC dragged from Photos.app on macOS often arrives with empty type).
 const KNOWN_UNSUPPORTED_IMAGE_EXTENSION_PATTERN = /\.(heic|heif|gif)$/i;
+// Browsers fall back to these when the OS cannot determine a real MIME.
+const UNKNOWN_MIME_TYPES = new Set(['', 'application/octet-stream']);
 
 function validateFileType(file: File): ValidationResult {
-  if (SUPPORTED_MIME_TYPES.has(file.type) || SUPPORTED_EXTENSION_PATTERN.test(file.name)) {
+  if (SUPPORTED_MIME_TYPES.has(file.type)) {
+    return { valid: true };
+  }
+  // Extension-based allow only kicks in when the browser provided no usable MIME,
+  // so a renamed `notes.jpg` (with `text/plain`) can't sneak past validation.
+  if (UNKNOWN_MIME_TYPES.has(file.type) && SUPPORTED_EXTENSION_PATTERN.test(file.name)) {
     return { valid: true };
   }
 

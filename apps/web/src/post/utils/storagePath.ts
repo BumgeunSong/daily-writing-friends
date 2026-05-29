@@ -1,4 +1,4 @@
-import { formatDate } from '@/post/utils/sanitizeHtml';
+import { formatDate } from '@/post/utils/dateFormat';
 import { sanitizeStorageFileName } from '@/post/utils/storageFileName';
 
 /**

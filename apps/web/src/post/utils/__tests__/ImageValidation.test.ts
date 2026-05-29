@@ -127,6 +127,22 @@ describe('validateFileType', () => {
     expect(validateFileType(file)).toEqual({ valid: true });
   });
 
+  it('allows JPEG by extension when MIME is application/octet-stream', () => {
+    const file = createFile('photo.jpg', 100, 'application/octet-stream');
+    expect(validateFileType(file)).toEqual({ valid: true });
+  });
+
+  it('rejects supported extension when MIME is a non-image type', () => {
+    // e.g. notes.txt renamed to notes.jpg — extension alone must not bypass MIME check
+    const file = createFile('notes.jpg', 100, 'text/plain');
+    expect(validateFileType(file)).toEqual({ valid: false, reason: 'not_image' });
+  });
+
+  it('rejects supported extension when MIME is application/pdf', () => {
+    const file = createFile('doc.png', 100, 'application/pdf');
+    expect(validateFileType(file)).toEqual({ valid: false, reason: 'not_image' });
+  });
+
   it('rejects non-image files', () => {
     const file = createFile('document.pdf', 100, 'application/pdf');
     expect(validateFileType(file)).toEqual({ valid: false, reason: 'not_image' });

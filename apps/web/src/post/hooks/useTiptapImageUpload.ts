@@ -86,6 +86,12 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
         onError: captureProcessingFailure,
       });
 
+      // Decode/canvas failure leaves processed.file as the original undecodable bytes.
+      // Upload would succeed but the post would render a broken <img>, so fail fast.
+      if (processed.resizeFailed) {
+        throw new Error('이미지를 처리할 수 없습니다. 다른 사진으로 다시 시도해주세요.');
+      }
+
       const processedResult = validateProcessedFileSize(processed.file);
       if (!processedResult.valid) {
         logValidationRejection(
