@@ -229,5 +229,5 @@ const blobToFile = (blob: Blob, fileName: string, fileType: string): File => {
     return new File([blob], fileName, { type: fileType });
 };
 
-export { cropAndResizeImage, needsReencoding, processImageForUpload };
-export type { ProcessedImage, ProcessImageOptions, ProcessingFailure, ProcessingStage };
+export { computeScaledDimensions, cropAndResizeImage, needsReencoding, processImageForUpload };
+export type { ImageDimensions, ProcessedImage, ProcessImageOptions, ProcessingFailure, ProcessingStage };

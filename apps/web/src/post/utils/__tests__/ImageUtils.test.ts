@@ -1,5 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { needsReencoding, processImageForUpload } from '../ImageUtils';
+import {
+  computeScaledDimensions,
+  needsReencoding,
+  processImageForUpload,
+} from '../ImageUtils';
 
 const FIVE_MB = 5 * 1024 * 1024;
 const MAX_DIM = 1200;
@@ -123,5 +127,55 @@ describe('needsReencoding', () => {
     expect(needsReencoding(1024, { width: MAX_DIM, height: MAX_DIM }, MAX_DIM, FIVE_MB)).toBe(
       false,
     );
+  });
+});
+
+describe('computeScaledDimensions', () => {
+  it('returns dimensions unchanged when both axes are within the cap', () => {
+    expect(computeScaledDimensions({ width: 800, height: 600 }, MAX_DIM)).toEqual({
+      width: 800,
+      height: 600,
+    });
+  });
+
+  it('scales a landscape image by width and preserves aspect ratio', () => {
+    expect(computeScaledDimensions({ width: 2400, height: 1200 }, MAX_DIM)).toEqual({
+      width: 1200,
+      height: 600,
+    });
+  });
+
+  it('scales a portrait image by height and preserves aspect ratio', () => {
+    expect(computeScaledDimensions({ width: 1200, height: 2400 }, MAX_DIM)).toEqual({
+      width: 600,
+      height: 1200,
+    });
+  });
+
+  it('scales a square image by either axis to the cap', () => {
+    expect(computeScaledDimensions({ width: 2000, height: 2000 }, MAX_DIM)).toEqual({
+      width: 1200,
+      height: 1200,
+    });
+  });
+
+  it('rounds the dependent axis to the nearest integer', () => {
+    // 1000 / 1500 * 1200 = 800
+    expect(computeScaledDimensions({ width: 1500, height: 1000 }, MAX_DIM)).toEqual({
+      width: 1200,
+      height: 800,
+    });
+    // odd ratio: 1999 / 3000 * 1200 = 799.6 → rounds to 800
+    expect(computeScaledDimensions({ width: 3000, height: 1999 }, MAX_DIM)).toEqual({
+      width: 1200,
+      height: 800,
+    });
+  });
+
+  it('does not upscale when both axes are smaller than the cap', () => {
+    expect(computeScaledDimensions({ width: 100, height: 50 }, MAX_DIM)).toEqual({
+      width: 100,
+      height: 50,
+    });
   });
 });
