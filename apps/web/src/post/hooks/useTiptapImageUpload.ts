@@ -11,8 +11,7 @@ import {
   getValidationMessage,
 } from '@/post/utils/ImageValidation';
 import { captureProcessingFailure } from '@/post/utils/imageUploadTelemetry';
-import { formatDate } from '@/post/utils/sanitizeHtml';
-import { sanitizeStorageFileName } from '@/post/utils/storageFileName';
+import { buildImageStoragePath } from '@/post/utils/storagePath';
 import { uploadFileWithProgress } from '@/post/utils/uploadWithProgress';
 import type { Editor } from '@tiptap/react';
 
@@ -99,10 +98,8 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
       setStage('uploading');
       setUploadProgress(0);
 
-      const now = new Date();
-      const { dateFolder, timePrefix } = formatDate(now);
-      const fileName = `${timePrefix}_${sanitizeStorageFileName(processed.file.name)}`;
-      const storageRef = ref(storage, `postImages/${dateFolder}/${fileName}`);
+      const storagePath = buildImageStoragePath('postImages', processed.file.name, new Date());
+      const storageRef = ref(storage, storagePath);
 
       const downloadURL = await uploadFileWithProgress(storageRef, processed.file, {
         metadata: { contentType: processed.file.type || 'image/jpeg' },

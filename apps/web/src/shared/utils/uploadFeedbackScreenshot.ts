@@ -9,7 +9,7 @@ import {
   getValidationMessage,
 } from '@/post/utils/ImageValidation';
 import { captureProcessingFailure } from '@/post/utils/imageUploadTelemetry';
-import { sanitizeStorageFileName } from '@/post/utils/storageFileName';
+import { buildImageStoragePath } from '@/post/utils/storagePath';
 
 interface UploadResult {
   success: boolean;
@@ -46,8 +46,12 @@ export async function uploadFeedbackScreenshot(file: File): Promise<UploadResult
       return { success: false, error: getValidationMessage(processedSizeResult.reason) };
     }
 
-    const fileName = buildFeedbackScreenshotPath(processed.file.name);
-    const storageRef = ref(storage, fileName);
+    const storagePath = buildImageStoragePath(
+      'feedbackScreenshots',
+      processed.file.name,
+      new Date(),
+    );
+    const storageRef = ref(storage, storagePath);
 
     const snapshot = await uploadBytes(storageRef, processed.file, {
       contentType: processed.file.type || 'image/jpeg',
@@ -64,16 +68,3 @@ export async function uploadFeedbackScreenshot(file: File): Promise<UploadResult
   }
 }
 
-const buildFeedbackScreenshotPath = (fileName: string): string => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  const seconds = String(now.getSeconds()).padStart(2, '0');
-
-  const dateFolder = `${year}${month}${day}`;
-  const timePrefix = `${hours}${minutes}${seconds}`;
-  return `feedbackScreenshots/${dateFolder}/${timePrefix}_${sanitizeStorageFileName(fileName)}`;
-};
