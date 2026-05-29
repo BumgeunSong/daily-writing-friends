@@ -9,6 +9,7 @@ import {
   validateProcessedFileSize,
   validateFileType,
   getValidationMessage,
+  SUPPORTED_ACCEPT_ATTRIBUTE,
 } from '@/post/utils/ImageValidation';
 import { captureProcessingFailure } from '@/post/utils/imageUploadTelemetry';
 import { buildImageStoragePath } from '@/post/utils/storagePath';
@@ -125,7 +126,7 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
   const openFilePicker = useCallback(async () => {
     const input = document.createElement('input');
     input.setAttribute('type', 'file');
-    input.setAttribute('accept', 'image/jpeg,image/png,image/webp');
+    input.setAttribute('accept', SUPPORTED_ACCEPT_ATTRIBUTE);
     input.click();
 
     input.onchange = async () => {
