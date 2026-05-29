@@ -7,6 +7,8 @@ import {
   getValidationMessage,
   MAX_RAW_FILE_SIZE,
   MAX_PROCESSED_FILE_SIZE,
+  SUPPORTED_ACCEPT_ATTRIBUTE,
+  SUPPORTED_FORMAT_LABEL,
 } from '../ImageValidation';
 
 function createFile(name: string, size: number, type: string): File {
@@ -184,5 +186,30 @@ describe('getValidationMessage', () => {
 
   it('returns fallback for unknown reason', () => {
     expect(getValidationMessage('unknown')).toBe('파일을 업로드할 수 없습니다.');
+  });
+});
+
+describe('supported-formats coherence (single source of truth)', () => {
+  const ACCEPTED_MIMES = SUPPORTED_ACCEPT_ATTRIBUTE.split(',');
+
+  it('every MIME advertised in the picker attribute also passes validateFileType', () => {
+    for (const mime of ACCEPTED_MIMES) {
+      const file = new File([new ArrayBuffer(1)], 'photo', { type: mime });
+      expect(validateFileType(file)).toEqual({ valid: true });
+    }
+  });
+
+  it('every format named in the user-facing label is also in the picker attribute', () => {
+    // e.g. label "JPEG, PNG, WebP" → picker advertises image/jpeg, image/png, image/webp
+    const labels = SUPPORTED_FORMAT_LABEL.split(', ');
+    expect(labels.length).toBe(ACCEPTED_MIMES.length);
+    for (const label of labels) {
+      const expectedMime = `image/${label.toLowerCase()}`;
+      expect(ACCEPTED_MIMES).toContain(expectedMime);
+    }
+  });
+
+  it('unsupported_format message advertises exactly the same formats as the picker', () => {
+    expect(getValidationMessage('unsupported_format')).toContain(SUPPORTED_FORMAT_LABEL);
   });
 });

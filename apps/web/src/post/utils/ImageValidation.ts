@@ -29,8 +29,22 @@ function validateProcessedFileSize(
   return { valid: true };
 }
 
-const SUPPORTED_EXTENSION_PATTERN = /\.(jpe?g|png|webp)$/i;
-const SUPPORTED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+// Single source of truth for supported upload formats.
+// Adding a format = one row here; picker accept, validation, and user message all follow.
+const SUPPORTED_FORMATS = [
+  { mime: 'image/jpeg', extensionPattern: 'jpe?g', label: 'JPEG' },
+  { mime: 'image/png', extensionPattern: 'png', label: 'PNG' },
+  { mime: 'image/webp', extensionPattern: 'webp', label: 'WebP' },
+] as const;
+
+const SUPPORTED_MIME_TYPES = new Set<string>(SUPPORTED_FORMATS.map((f) => f.mime));
+const SUPPORTED_EXTENSION_PATTERN = new RegExp(
+  `\\.(${SUPPORTED_FORMATS.map((f) => f.extensionPattern).join('|')})$`,
+  'i',
+);
+const SUPPORTED_ACCEPT_ATTRIBUTE = SUPPORTED_FORMATS.map((f) => f.mime).join(',');
+const SUPPORTED_FORMAT_LABEL = SUPPORTED_FORMATS.map((f) => f.label).join(', ');
+
 // Drives the more specific "지원하지 않는 형식" message when MIME is missing
 // (e.g., HEIC dragged from Photos.app on macOS often arrives with empty type).
 const KNOWN_UNSUPPORTED_IMAGE_EXTENSION_PATTERN = /\.(heic|heif|gif)$/i;
@@ -67,7 +81,7 @@ const validationMessages: Record<string, string> = {
   exceeds_raw_limit: '파일이 너무 큽니다.',
   exceeds_processed_limit: '처리 후에도 파일이 큽니다.',
   not_image: '이미지 파일만 업로드할 수 있습니다.',
-  unsupported_format: '지원하지 않는 형식입니다. JPEG, PNG, WebP로 저장 후 다시 시도해주세요.',
+  unsupported_format: `지원하지 않는 형식입니다. ${SUPPORTED_FORMAT_LABEL}로 저장 후 다시 시도해주세요.`,
 };
 
 function getValidationMessage(reason: string): string {
@@ -82,5 +96,7 @@ export {
   getValidationMessage,
   MAX_RAW_FILE_SIZE,
   MAX_PROCESSED_FILE_SIZE,
+  SUPPORTED_ACCEPT_ATTRIBUTE,
+  SUPPORTED_FORMAT_LABEL,
 };
 export type { ValidationResult, MultiFileResult };
