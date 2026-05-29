@@ -41,6 +41,10 @@ export async function uploadFeedbackScreenshot(file: File): Promise<UploadResult
       onError: captureProcessingFailure,
     });
 
+    if (processed.resizeFailed) {
+      return { success: false, error: '이미지를 처리할 수 없습니다. 다른 사진으로 다시 시도해주세요.' };
+    }
+
     const processedSizeResult = validateProcessedFileSize(processed.file);
     if (!processedSizeResult.valid) {
       return { success: false, error: getValidationMessage(processedSizeResult.reason) };
