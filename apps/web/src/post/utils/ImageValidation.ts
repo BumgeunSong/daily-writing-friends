@@ -29,21 +29,23 @@ function validateProcessedFileSize(
   return { valid: true };
 }
 
-const UNSUPPORTED_EXTENSION_PATTERN = /\.(heic|heif|gif)$/i;
-const UNSUPPORTED_MIME_TYPES = new Set(['image/heic', 'image/heif', 'image/gif']);
+const SUPPORTED_EXTENSION_PATTERN = /\.(jpe?g|png|webp)$/i;
+const SUPPORTED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+// Drives the more specific "지원하지 않는 형식" message when MIME is missing
+// (e.g., HEIC dragged from Photos.app on macOS often arrives with empty type).
+const KNOWN_UNSUPPORTED_IMAGE_EXTENSION_PATTERN = /\.(heic|heif|gif)$/i;
 
 function validateFileType(file: File): ValidationResult {
-  const isUnsupportedExtension = UNSUPPORTED_EXTENSION_PATTERN.test(file.name);
-  const isUnsupportedMime = UNSUPPORTED_MIME_TYPES.has(file.type);
-  if (isUnsupportedExtension || isUnsupportedMime) {
-    return { valid: false, reason: 'unsupported_format' };
+  if (SUPPORTED_MIME_TYPES.has(file.type) || SUPPORTED_EXTENSION_PATTERN.test(file.name)) {
+    return { valid: true };
   }
 
   const isImageMime = file.type.startsWith('image/');
-  if (!isImageMime) {
-    return { valid: false, reason: 'not_image' };
+  const isKnownUnsupportedExtension = KNOWN_UNSUPPORTED_IMAGE_EXTENSION_PATTERN.test(file.name);
+  if (isImageMime || isKnownUnsupportedExtension) {
+    return { valid: false, reason: 'unsupported_format' };
   }
-  return { valid: true };
+  return { valid: false, reason: 'not_image' };
 }
 
 interface MultiFileResult {

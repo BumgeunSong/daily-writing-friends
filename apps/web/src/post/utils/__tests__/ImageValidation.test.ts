@@ -100,6 +100,31 @@ describe('validateFileType', () => {
     expect(validateFileType(file)).toEqual({ valid: false, reason: 'unsupported_format' });
   });
 
+  it('rejects image/avif as unsupported_format (not in allow-list)', () => {
+    const file = createFile('photo.avif', 100, 'image/avif');
+    expect(validateFileType(file)).toEqual({ valid: false, reason: 'unsupported_format' });
+  });
+
+  it('rejects image/svg+xml as unsupported_format (not in allow-list)', () => {
+    const file = createFile('drawing.svg', 100, 'image/svg+xml');
+    expect(validateFileType(file)).toEqual({ valid: false, reason: 'unsupported_format' });
+  });
+
+  it('rejects image/tiff as unsupported_format (not in allow-list)', () => {
+    const file = createFile('scan.tif', 100, 'image/tiff');
+    expect(validateFileType(file)).toEqual({ valid: false, reason: 'unsupported_format' });
+  });
+
+  it('allows .jpg extension as JPEG alias', () => {
+    const file = createFile('photo.jpg', 100, 'image/jpeg');
+    expect(validateFileType(file)).toEqual({ valid: true });
+  });
+
+  it('allows JPEG by extension when MIME is empty', () => {
+    const file = createFile('photo.jpeg', 100, '');
+    expect(validateFileType(file)).toEqual({ valid: true });
+  });
+
   it('rejects non-image files', () => {
     const file = createFile('document.pdf', 100, 'application/pdf');
     expect(validateFileType(file)).toEqual({ valid: false, reason: 'not_image' });
