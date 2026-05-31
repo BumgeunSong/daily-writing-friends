@@ -11,5 +11,9 @@
     "lint": "pnpm --filter web lint",
     "validate": "pnpm --filter web validate",
     "prepare": "husky"
+  },
+  "devDependencies": {
+    "lighthouse": "^13.3.0",
+    "web-vitals": "^5.3.0"
   }
 }

@@ -305,21 +305,29 @@ async function seedComments(actorId: string, detailPostId: string) {
 
 async function seedNotifications(memberId: string, actorId: string, posts: SeededPost[]) {
   console.log('Seeding notifications...');
+  // Only like_on_post and comment_on_post: the app's DTO mapper requires a
+  // commentId for comment_on_post and a replyId for reply_on_post. We seed real
+  // comments (referenced below) but no replies, so reply_on_post is omitted.
+  // A like-heavy mix with some comments matches the prod inbox shape.
   const types = [
     'like_on_post',
     'comment_on_post',
     'like_on_post',
-    'reply_on_post',
+    'like_on_post',
     'comment_on_post',
   ] as const;
   const messageFor: Record<string, string> = {
     like_on_post: '글벗님이 회원님의 글을 좋아합니다.',
     comment_on_post: '글벗님이 회원님의 글에 댓글을 남겼습니다.',
-    reply_on_post: '글벗님이 회원님의 글에 답글을 남겼습니다.',
   };
   const rows = Array.from({ length: NOTIFICATION_COUNT }, (_, i) => {
     const type = types[i % types.length];
     const post = posts[i % posts.length];
+    // comment_on_post must carry a valid comment_id (FK -> comments).
+    const commentId =
+      type === 'comment_on_post'
+        ? `perf-comment-${String(i % DETAIL_COMMENT_COUNT).padStart(3, '0')}`
+        : null;
     return {
       id: `perf-notif-${String(i).padStart(3, '0')}`,
       recipient_id: memberId,
@@ -328,6 +336,7 @@ async function seedNotifications(memberId: string, actorId: string, posts: Seede
       actor_profile_image: AVATAR_URL,
       board_id: PRIMARY_BOARD_ID,
       post_id: post.id,
+      comment_id: commentId,
       message: messageFor[type],
       read: i >= 8, // first 8 unread, rest read
       created_at: isoFromEpoch(i * 60),

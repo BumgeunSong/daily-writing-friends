@@ -116,3 +116,6 @@ tests/fixtures/perf-fixture.json
 
 # Image performance reports (generated)
 test-results/image-perf-report.json
+
+# Web Vitals loop harness state (baseline, reports, ledger — regenerated locally)
+.perf-harness/
