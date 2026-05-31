@@ -13,6 +13,8 @@ import { writeEpsilon } from './lib/ledger.mjs';
 import { std, round } from './lib/stats.mjs';
 import { paths } from './lib/config.mjs';
 
+const mean = (a) => a.reduce((x, y) => x + y, 0) / a.length;
+
 const samplesArg = process.argv.indexOf('--samples');
 const SAMPLES = samplesArg >= 0 ? Number(process.argv[samplesArg + 1]) : 4;
 
@@ -35,11 +37,20 @@ for (let i = 0; i < SAMPLES; i++) {
 }
 
 const routes = {};
-for (const [k, arr] of Object.entries(perRoute)) routes[k] = round(std(arr), 4);
+const routeMeans = {};
+for (const [k, arr] of Object.entries(perRoute)) {
+  routes[k] = round(std(arr), 4);
+  routeMeans[k] = round(mean(arr), 4);
+}
 
 const eps = {
   overall: round(std(overalls), 4),
   routes,
+  // Expected (mean) score of the unchanged code. Per-route scores clamp downside
+  // noise at the floor, so scoreRoute(baseline,baseline) is the MIN, not the
+  // center — best.json must be seeded HERE so a no-op centers at Δ≈0 (loop init
+  // reads these means).
+  means: { overall: round(mean(overalls), 4), routes: routeMeans },
   samples: SAMPLES,
   overalls: overalls.map((x) => round(x, 4)),
   measuredAt: new Date().toISOString(),
@@ -48,4 +59,5 @@ writeEpsilon(eps);
 
 console.log(`\nε(overall) = ${eps.overall}  (std of ${SAMPLES} baseline re-measures)`);
 console.log(`ε(per-route) = ${Object.entries(routes).map(([k, e]) => `${k}=${e}`).join(' ')}`);
+console.log(`expected overall = ${eps.means.overall}  (mean — best.json seed)`);
 console.log(`Written to .perf-harness/epsilon.json`);

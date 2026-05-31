@@ -70,19 +70,29 @@ function snapshot(result) {
 
 function cmdInit() {
   const baseline = loadBaseline();
-  const routeScores = {};
+  const eps = readEpsilon();
+
+  // Seed best at the EXPECTED (mean) score of the unchanged code, from the ε run.
+  // scoreRoute(baseline,baseline) is the analytic FLOOR (per-route noise clamps at
+  // it), so it under-seeds — every measurement then beats it and the gate accepts
+  // phantom wins. The ε run's means are the unbiased center. Fall back to the floor
+  // only when no ε calibration exists yet.
+  const floorScores = {};
   for (const [key, m] of Object.entries(baseline)) {
-    routeScores[key] = scoreRoute(m, m).score; // current==baseline → score 0 where headroom exists
+    floorScores[key] = scoreRoute(m, m).score;
   }
+  const routeScores = eps?.means?.routes ?? floorScores;
+  const overall = eps?.means?.overall ?? scoreOverall(floorScores);
+
   const best = {
-    overall: scoreOverall(routeScores),
+    overall,
     routeScores,
     metrics: Object.fromEntries(Object.entries(baseline).map(([k, m]) => [k, { wv: m, lh: null }])),
     iter: 0,
-    note: 'baseline',
+    note: eps?.means ? `calibrated (mean of ${eps.samples} ε runs)` : 'baseline floor (uncalibrated)',
   };
   writeBest(best);
-  console.log(`best.json seeded from baseline — overall=${best.overall.toFixed(4)}`);
+  console.log(`best.json seeded — overall=${best.overall.toFixed(4)} (${best.note})`);
   for (const r of loadRoutes()) {
     console.log(`  ${(ROUTE_LABEL[r.key] ?? r.key).padEnd(16)} route_score=${routeScores[r.key].toFixed(4)}`);
   }
@@ -148,10 +158,12 @@ async function cmdEval(note) {
     return finish(best);
   }
 
-  // Accept gate B.
+  // Accept gate B. Any apparent improvement (ACCEPT outright, or a marginal
+  // |Δ|≤ε) is re-measured at median-9 and must clear ε again — median-3 tail
+  // noise can fake a multi-ε gain on identical code (proven by a no-op run).
   let decision = decideGate(current, best, eps, false);
-  if (decision.verdict === 'REMEASURE') {
-    console.log(`  margin (${decision.reason}) — re-measuring median-9…`);
+  if (decision.verdict === 'ACCEPT' || decision.verdict === 'REMEASURE') {
+    console.log(`  ${decision.verdict} on median-3 (${decision.reason}) — confirming with median-9…`);
     current = await measureOnce(9);
     decision = decideGate(current, best, eps, true);
   }
@@ -160,6 +172,17 @@ async function cmdEval(note) {
   const xc = crossCheck(snapshot(current), best);
   if (decision.verdict === 'ACCEPT' && !xc.ok) {
     decision = { ...decision, verdict: 'REVERT', improved: false, reason: `cross-check failed: ${xc.flags.join('; ')}` };
+  }
+
+  // An ACCEPT must correspond to a real app-code change. If nothing is staged,
+  // the "improvement" had no cause → it's measurement noise, not a win. Downgrade
+  // to NOOP (leave best.json untouched) rather than crashing on an empty commit.
+  if (decision.verdict === 'ACCEPT') {
+    git(['add', '-A', '--', 'apps', 'packages']);
+    const staged = git(['diff', '--cached', '--name-only', '--', 'apps', 'packages']).trim();
+    if (!staged) {
+      decision = { ...decision, verdict: 'NOOP', improved: false, reason: `apparent Δ${decision.delta.toFixed(4)} with no app change — measurement noise` };
+    }
   }
 
   const rec = appendLedger({
@@ -175,9 +198,11 @@ async function cmdEval(note) {
 
   if (decision.verdict === 'ACCEPT') {
     writeBest({ ...snapshot(current), iter: rec.iter, note });
-    git(['add', '-A', '--', 'apps', 'packages']);
     git(['commit', '-m', `perf(loop #${rec.iter}): ${note}\n\noverall ${best.overall.toFixed(4)} → ${current.overall.toFixed(4)} (Δ${decision.delta.toFixed(4)})`]);
     console.log(`ACCEPT (#${rec.iter}) — ${decision.reason}. overall → ${current.overall.toFixed(4)}. Committed.`);
+  } else if (decision.verdict === 'NOOP') {
+    git(['reset', '-q', '--', 'apps', 'packages']);
+    console.log(`NOOP (#${rec.iter}) — ${decision.reason}. best.json unchanged.`);
   } else {
     revertAppChanges();
     console.log(`${decision.verdict} (#${rec.iter}) — ${decision.reason}. App changes reverted.`);
