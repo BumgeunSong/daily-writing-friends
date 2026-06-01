@@ -68,8 +68,10 @@ interface PostRowWithEmbeds {
   replies?: { count: number }[];
 }
 
-/** Explicit column list for feed queries — excludes content and content_json to reduce transfer. */
-export const FEED_POST_SELECT = 'id, board_id, author_id, author_name, title, content_preview, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at, comments(count), replies(count)';
+/** Explicit column list for feed queries — excludes content/content_json AND the
+ * `comments(count)/replies(count)` PostgREST aggregates (each was a per-row scalar
+ * subquery; mapRowToPost falls back to denormalized count_of_comments/replies). */
+export const FEED_POST_SELECT = 'id, board_id, author_id, author_name, title, content_preview, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at';
 
 /**
  * Fetch recent posts for a board.
