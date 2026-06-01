@@ -6,14 +6,19 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { fetchUsersWithBoardPermission } from "@/user/api/user";
 
 export function useIsCurrentUserActive() {
-    const { value: activeBoardId, isLoading: isConfigLoading } = useRemoteConfig(REMOTE_CONFIG_KEYS.ACTIVE_BOARD_ID);
+    // Don't gate on !isConfigLoading: REMOTE_CONFIG_DEFAULTS.active_board_id matches
+    // the live active board, so the query can fire immediately with the default. If
+    // remote-config eventually returns a different value the queryKey changes and
+    // TanStack Query refetches — removing this gate strips one sequential Supabase
+    // RTT off RootRedirect's critical path.
+    const { value: activeBoardId } = useRemoteConfig(REMOTE_CONFIG_KEYS.ACTIVE_BOARD_ID);
     const { data: userData, isLoading } = useQuery({
         queryKey: ['userData', activeBoardId],
         queryFn: () => fetchUsersWithBoardPermission([activeBoardId]),
-        enabled: !!activeBoardId && !isConfigLoading,
+        enabled: !!activeBoardId,
     });
     const { currentUser } = useAuth();
     const isCurrentUserActive = isUserInActiveList(userData, currentUser?.uid);
 
-    return { isCurrentUserActive, isLoading: isLoading || isConfigLoading };
+    return { isCurrentUserActive, isLoading };
 }
