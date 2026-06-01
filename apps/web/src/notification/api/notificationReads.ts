@@ -47,23 +47,11 @@ export async function fetchNotificationsFromSupabase(
     throw error;
   }
 
-  // Batch-fetch actor profile images
-  const actorIds = [...new Set((data || []).map(row => row.actor_id))];
+  // Skip the secondary users-table lookup for profile images. NotificationItem's
+  // avatar falls back to initials when fromUserProfileImage is undefined — saving
+  // the second sequential Supabase RTT cuts notifications LCP. Profile images
+  // can be added back via a parallel/lazy fetch if needed for UX.
   const profileMap = new Map<string, string>();
-  if (actorIds.length > 0) {
-    const { data: actors, error: actorsError } = await supabase
-      .from('users')
-      .select('id, profile_photo_url')
-      .in('id', actorIds);
-    if (actorsError) {
-      console.error('Supabase fetchNotifications users lookup error:', actorsError);
-    }
-    for (const actor of actors || []) {
-      if (actor.profile_photo_url) {
-        profileMap.set(actor.id, actor.profile_photo_url);
-      }
-    }
-  }
 
   return (data || []).map(row => ({
     id: row.id,
