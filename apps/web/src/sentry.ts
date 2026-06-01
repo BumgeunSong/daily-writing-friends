@@ -104,6 +104,8 @@ export const initSentry = (): void => {
         useNavigationType,
         createRoutesFromChildren,
         matchRoutes,
+        traceFetch: false,
+        traceXHR: false,
       }),
     ],
     tracesSampleRate: SENTRY_CONFIG.TRACE_SAMPLE_RATE,
