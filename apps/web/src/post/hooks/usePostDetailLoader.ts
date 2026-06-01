@@ -1,6 +1,7 @@
 import type { LoaderFunctionArgs } from 'react-router-dom';
 import { fetchPost } from '@/post/utils/postUtils';
 import { SupabaseNetworkError } from '@/shared/api/supabaseClient';
+import { queryClient } from '@/shared/lib/queryClient';
 import { getCurrentUser } from '@/shared/utils/authUtils';
 import { fetchUser } from '@/user/api/user';
 
@@ -35,6 +36,8 @@ export async function postDetailLoader({ params }: LoaderFunctionArgs) {
     }
     
     const post = await fetchPost(boardId, postId);
+    // Seed TanStack Query cache so PostDetailPage's useQuery hits cache.
+    queryClient.setQueryData(['post', boardId, postId], post);
     return { post, boardId, postId };
   } catch (error) {
     console.error('Failed to fetch post:', error);
