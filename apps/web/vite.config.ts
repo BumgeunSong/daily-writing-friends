@@ -83,7 +83,15 @@ export default defineConfig(({ mode }) => {
         }
       },
       chunkSizeWarningLimit: 500,
-      target: 'es2020'
+      target: 'es2020',
+      // Native modulepreload is supported by es2020 targets; the polyfill ships
+      // an extra inline script in the HTML for unsupported browsers we don't ship to.
+      modulePreload: { polyfill: false },
+    },
+    esbuild: {
+      // 119 console.* call sites in src/. Drop them in the build output so they
+      // don't ship to production (Sentry already captures error context).
+      drop: ['console', 'debugger'],
     },
     test: {
       globals: true,
