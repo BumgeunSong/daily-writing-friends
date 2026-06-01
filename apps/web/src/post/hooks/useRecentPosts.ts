@@ -16,11 +16,15 @@ export const useRecentPosts = (
     const { currentUser } = useAuth();
     const { data: blockedByUsers } = useBlockedByUsers(currentUser?.uid);
 
+    // Don't gate on !!blockedByUsers: fire posts query immediately with the
+    // empty default; queryKey changes and TanStack refetches if a non-empty
+    // list resolves later. Strips one Supabase RTT from boardFeed's LCP path.
+    const effectiveBlockedByUsers = blockedByUsers ?? [];
     const queryResult = useInfiniteQuery<Post[]>(
-        ['posts', boardId, blockedByUsers],
-        ({ pageParam = null }) => fetchRecentPosts(boardId, limitCount, blockedByUsers ?? [], pageParam),
+        ['posts', boardId, effectiveBlockedByUsers],
+        ({ pageParam = null }) => fetchRecentPosts(boardId, limitCount, effectiveBlockedByUsers, pageParam),
         {
-            enabled: !!boardId && !!currentUser?.uid && !!blockedByUsers,
+            enabled: !!boardId && !!currentUser?.uid,
             getNextPageParam: (lastPage) => {
                 const lastPost = lastPage[lastPage.length - 1];
                 return lastPost ? lastPost.createdAt.toDate() : undefined;
