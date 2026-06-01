@@ -1,6 +1,11 @@
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter, redirect, ScrollRestoration, type LoaderFunctionArgs } from 'react-router-dom';
 import './index.css';
-import { Toaster } from '@/shared/ui/sonner';
+
+// Lazy-mount Toaster — not visible until a toast fires.
+const Toaster = lazy(() =>
+  import('@/shared/ui/sonner').then((m) => ({ default: m.Toaster })),
+);
 
 // Critical-path eager imports (always rendered on first paint or referenced
 // by errorElement / RouterProvider — adding a dynamic-import round trip would
@@ -22,7 +27,9 @@ function RootLayout() {
       <BottomTabHandlerProvider>
         <ScrollRestoration />
         <AppWithTracking />
-        <Toaster position="bottom-center" offset="4.5rem" />
+        <Suspense fallback={null}>
+          <Toaster position="bottom-center" offset="4.5rem" />
+        </Suspense>
       </BottomTabHandlerProvider>
     </NavigationProvider>
   );
