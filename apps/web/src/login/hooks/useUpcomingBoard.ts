@@ -12,7 +12,10 @@ import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
  * @returns UseQueryResult<Board | null> 쿼리 결과 (data 속성에 보드 정보 또는 null)
  */
 export function useUpcomingBoard(): UseQueryResult<Board | null> {
-    const { value: upcomingBoardId, isLoading: isConfigLoading } = useRemoteConfig(REMOTE_CONFIG_KEYS.UPCOMING_BOARD_ID);
+    // Don't gate on !isConfigLoading: REMOTE_CONFIG_DEFAULTS.upcoming_board_id is
+    // the live upcoming board id; query fires immediately with default. If the
+    // remote value differs, queryKey changes and the query refetches.
+    const { value: upcomingBoardId } = useRemoteConfig(REMOTE_CONFIG_KEYS.UPCOMING_BOARD_ID);
     const cacheKey = createBoardCacheKey(upcomingBoardId, formatYearMonth());
 
     return useQuery({
@@ -32,7 +35,7 @@ export function useUpcomingBoard(): UseQueryResult<Board | null> {
                 return null;
             }
         },
-        enabled: !!upcomingBoardId && !isConfigLoading,
+        enabled: !!upcomingBoardId,
         staleTime: CACHE_CONSTANTS.STALE_TIME,
         cacheTime: CACHE_CONSTANTS.CACHE_TIME,
         refetchOnWindowFocus: false,
