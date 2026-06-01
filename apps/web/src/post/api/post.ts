@@ -88,7 +88,7 @@ export async function fetchRecentPostsFromSupabase(
 
   let q = supabase
     .from('posts')
-    .select(`${FEED_POST_SELECT}, boards(first_day), users!author_id(profile_photo_url)`)
+    .select(`${FEED_POST_SELECT}, users!author_id(profile_photo_url)`)
     .eq('board_id', boardId)
     .order('created_at', { ascending: false });
 
@@ -130,7 +130,7 @@ export async function fetchBestPostsFromSupabase(
 
   let q = supabase
     .from('posts')
-    .select(`${FEED_POST_SELECT}, boards(first_day), users!author_id(profile_photo_url)`)
+    .select(`${FEED_POST_SELECT}, users!author_id(profile_photo_url)`)
     .eq('board_id', boardId)
     .order('engagement_score', { ascending: false })
     .limit(limitCount);
