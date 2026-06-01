@@ -1,13 +1,17 @@
 "use client"
 
+import { lazy, Suspense } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import BestPostCardList from "@/board/components/BestPostCardList"
 import { BoardPageHeader } from "@/board/components/BoardPageHeader"
 import PostFilterTabs, { type PostFilterType } from "@/board/components/PostFilterTabs"
 import RecentPostCardList from "@/board/components/RecentPostCardList"
 import { WritingActionButton } from "@/board/components/WritingActionButton"
 import { useSessionStorage } from "@/shared/hooks/useSessionStorage"
 import { Button } from "@/shared/ui/button"
+
+// Default filter is 'recent' — BestPostCardList only renders on user toggle.
+// Lazy-load it so its code doesn't ship in BoardPage's eager chunk.
+const BestPostCardList = lazy(() => import("@/board/components/BestPostCardList"))
 
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>()
@@ -53,7 +57,9 @@ export default function BoardPage() {
         {filter === 'recent' ? (
           <RecentPostCardList boardId={boardId} onPostClick={handlePostClick} onClickProfile={handleProfileClick} />
         ) : (
-          <BestPostCardList boardId={boardId} onPostClick={handlePostClick} onClickProfile={handleProfileClick} />
+          <Suspense fallback={null}>
+            <BestPostCardList boardId={boardId} onPostClick={handlePostClick} onClickProfile={handleProfileClick} />
+          </Suspense>
         )}
       </main>
       <WritingActionButton boardId={boardId} />

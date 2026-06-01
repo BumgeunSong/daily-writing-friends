@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import Comments from '@/comment/components/Comments';
+
+// Comments below the fold — lazy chunk lets LCP candidate paint first.
+const Comments = lazy(() => import('@/comment/components/Comments'));
 import { usePostDelete } from '@/post/hooks/usePostDelete';
 import { fetchPost } from '@/post/utils/postUtils';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -70,13 +72,15 @@ export default function PostDetailPage() {
         <div className='my-4 border-t border-border' />
         <div>
           {boardId && postId && (
-            <Comments
-              boardId={boardId}
-              postId={postId}
-              postAuthorId={post.authorId}
-              postAuthorNickname={typeof authorNickname === 'string' ? authorNickname : null}
-              postVisibility={post.visibility}
-            />
+            <Suspense fallback={null}>
+              <Comments
+                boardId={boardId}
+                postId={postId}
+                postAuthorId={post.authorId}
+                postAuthorNickname={typeof authorNickname === 'string' ? authorNickname : null}
+                postVisibility={post.visibility}
+              />
+            </Suspense>
           )}
         </div>
       </main>
