@@ -10,7 +10,10 @@ export const fetchPost = async (boardId: string, postId: string): Promise<Post |
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('posts')
-    .select('*, boards(first_day), users!author_id(profile_photo_url), comments(count), replies(count)')
+    // Drop redundant joins/aggregates: posts.week_days_from_first_day and
+    // posts.count_of_comments / count_of_replies are denormalized columns
+    // and mapRowToPost falls back to them. Only the author photo join stays.
+    .select('*, users!author_id(profile_photo_url)')
     .eq('id', postId)
     .eq('board_id', boardId)
     .single();
