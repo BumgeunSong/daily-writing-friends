@@ -2,7 +2,6 @@ import { useRef } from 'react';
 import { NotificationsContent } from '@/notification/components/NotificationsContent';
 import { NotificationsErrorBoundary } from '@/notification/components/NotificationsErrorBoundary';
 import NotificationsHeader from '@/notification/components/NotificationsHeader';
-import { NotificationsLoading } from '@/notification/components/NotificationsLoading';
 import { useNotificationRefresh } from '@/notification/hooks/useNotificationRefresh';
 import { useNotifications } from '@/notification/hooks/useNotifications';
 import StatusMessage from '@/shared/components/StatusMessage';
@@ -56,20 +55,12 @@ const NotificationsPage = () => {
   // ACTION - Register tab handler
   useRegisterTabHandler('Notifications', handleRefreshNotifications);
 
-  // CALCULATION - Render states
-  if (isLoading) {
-    return (
-      <NotificationsLoading 
-        scrollAreaId={NOTIFICATIONS_CONFIG.SCROLL_ID}
-        skeletonCount={NOTIFICATIONS_CONFIG.SKELETON_COUNT}
-      />
-    );
-  }
-
   if (isError) {
     return <StatusMessage error={isError} />;
   }
 
+  // Always render the layout shell. When isLoading, pass an empty array so
+  // NotificationsContent keeps its DOM structure without shifting on hydrate.
   return (
     <NotificationsErrorBoundary>
       <div className="flex h-screen flex-col overflow-hidden bg-background">
@@ -77,7 +68,7 @@ const NotificationsPage = () => {
         <main className="container mx-auto flex-1 overflow-hidden px-3 md:px-4">
           <NotificationsContent
             scrollAreaId={NOTIFICATIONS_CONFIG.SCROLL_ID}
-            notifications={notifications}
+            notifications={isLoading ? [] : notifications}
             scrollRef={scrollRef}
             observerRef={observerRef}
             isLoadingMore={isLoadingMore}
