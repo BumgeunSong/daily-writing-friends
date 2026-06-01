@@ -1,5 +1,4 @@
-import { redirect, ScrollRestoration, type LoaderFunctionArgs } from 'react-router-dom';
-import { sentryCreateBrowserRouter } from './sentry';
+import { createBrowserRouter, redirect, ScrollRestoration, type LoaderFunctionArgs } from 'react-router-dom';
 import './index.css';
 import { Toaster } from '@/shared/ui/sonner';
 
@@ -345,7 +344,7 @@ const devRoutes = import.meta.env.DEV ? {
 
 // --- Router 생성 ---
 
-export const router = sentryCreateBrowserRouter([
+export const router = createBrowserRouter([
   {
     path: '/',
     element: <RootLayout />,
