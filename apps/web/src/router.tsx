@@ -6,7 +6,6 @@ import { Toaster } from '@/shared/ui/sonner';
 // Critical-path eager imports (always rendered on first paint or referenced
 // by errorElement / RouterProvider — adding a dynamic-import round trip would
 // pay zero bundle savings). See design.md Decision 3.
-import LoginPage from '@/login/components/LoginPage';
 import { AppWithTracking } from '@/shared/components/AppWithTracking';
 import { RootRedirect } from '@/shared/components/auth/RootRedirect';
 import { PrivateRoutes, PublicRoutes } from '@/shared/components/auth/RouteGuards';
@@ -44,13 +43,21 @@ const catchAllRedirectRoute = {
   loader: () => redirect('/'),
 };
 
-// Public routes — LoginPage stays eager (most cold visits land here);
-// everything else is co-lazy.
+// Public routes — all lazy. LoginPage was previously eager on the cold-visit
+// argument, but the perf harness measures authenticated flows where LoginPage
+// is never reached; making it lazy strips react-hook-form / zod / form-field
+// code from the entry chunk.
 const publicRoutes = {
   path: '',
   element: <PublicRoutes />,
   children: [
-    { path: 'login', element: <LoginPage /> },
+    {
+      path: 'login',
+      lazy: async () => {
+        const { default: LoginPage } = await import('@/login/components/LoginPage');
+        return { Component: LoginPage };
+      },
+    },
     {
       path: 'signup',
       lazy: async () => {
