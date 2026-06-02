@@ -42,7 +42,7 @@ export function useBatchPostCardData(posts: Post[]) {
     enabled: authorIds.length > 0,
     staleTime: STALE_TIME_MS,
     cacheTime: CACHE_TIME_MS,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
 }
 

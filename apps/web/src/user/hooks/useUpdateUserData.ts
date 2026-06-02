@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { updateUser } from '@/user/api/user';
-import { removeCachedUserData } from '@/user/cache/userCache';
 import { updateAuthUserMetadata } from '@/shared/auth/supabaseAuth';
 import type { User } from '../model/User';
 
@@ -38,9 +37,6 @@ export function useUpdateUserData() {
       if (currentUser && currentUser.uid === userId) {
         await updateAuthUserMetadata({ full_name: nickname });
       }
-
-      // 캐시 무효화: localStorage에서 해당 유저 캐시 삭제
-      removeCachedUserData(userId, 'v2');
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['user', variables.userId] });
