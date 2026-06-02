@@ -11,7 +11,6 @@ import type { AuthUser } from '@/shared/hooks/useAuth';
 import { mapUserToSupabaseUpdate, mapBoardPermissionsToRows } from '@/user/utils/userMappers';
 import { resizeImageBlob } from '@/shared/utils/resizeImageBlob';
 import { AVATAR_CACHE_CONTROL } from '@/shared/utils/storageConstants';
-import { removeCachedUserData } from '@/user/cache/userCache';
 
 // Supabase에서 User 데이터 읽기
 export async function fetchUser(uid: string): Promise<User | null> {
@@ -85,7 +84,7 @@ export async function fetchUsersWithBoardPermission(boardIds: string[]): Promise
 
 // 프로필 사진 업로드 및 URL 반환
 // 클라이언트에서 256x256 JPEG로 리사이즈 후 업로드. Cache-Control 메타데이터 부여.
-// 성공 시 localStorage 의 user 캐시를 무효화한다.
+// Firebase 가 재업로드마다 새 download token 을 발급하므로, URL 자체가 버전 키 역할을 한다.
 export async function uploadUserProfilePhoto(userId: string, file: File): Promise<string> {
     const blob = await resizeImageBlob(file, {
         width: 256,
@@ -98,9 +97,7 @@ export async function uploadUserProfilePhoto(userId: string, file: File): Promis
         contentType: 'image/jpeg',
         cacheControl: AVATAR_CACHE_CONTROL,
     });
-    const downloadUrl = await getDownloadURL(storageRef);
-    removeCachedUserData(userId, 'v2');
-    return downloadUrl;
+    return getDownloadURL(storageRef);
 }
 
 
