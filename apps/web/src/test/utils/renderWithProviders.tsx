@@ -1,7 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import type React from 'react';
-import { HelmetProvider } from 'react-helmet-async';
 import { MemoryRouter } from 'react-router-dom';
 import { BottomTabHandlerProvider } from '@/shared/contexts/BottomTabHandlerContext';
 import { NavigationProvider } from '@/shared/contexts/NavigationContext';
@@ -20,22 +19,20 @@ export function renderWithProviders(
     });
     window.history.pushState({}, 'Test page', route);
     return render(
-      <HelmetProvider>
-        <MemoryRouter initialEntries={[route]}>
-          <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-              <NavigationProvider 
-                debounceTime={500} 
-                topThreshold={30} 
-                ignoreSmallChanges={10}
-              >
-                <BottomTabHandlerProvider>
-                  {ui}
-                </BottomTabHandlerProvider>
-              </NavigationProvider>
-            </AuthProvider>
-          </QueryClientProvider>
-        </MemoryRouter>
-      </HelmetProvider>
+      <MemoryRouter initialEntries={[route]}>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <NavigationProvider
+              debounceTime={500}
+              topThreshold={30}
+              ignoreSmallChanges={10}
+            >
+              <BottomTabHandlerProvider>
+                {ui}
+              </BottomTabHandlerProvider>
+            </NavigationProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </MemoryRouter>
     );
   }
