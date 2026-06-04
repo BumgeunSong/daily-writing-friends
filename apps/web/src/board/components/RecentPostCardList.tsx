@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { PenSquare } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/shared/navigation';
 import PostCard from '@/post/components/PostCard';
 import { useBatchPostCardData } from '@/post/hooks/useBatchPostCardData';
 import { useRecentPosts } from '@/post/hooks/useRecentPosts';

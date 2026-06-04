@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/shared/navigation';
 import type { Draft } from '@/draft/model/Draft';
 
 interface UseDraftActionsProps {

@@ -1,7 +1,7 @@
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/shared/navigation';
 import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
 import { ScrollArea } from '@/shared/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/ui/tabs';

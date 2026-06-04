@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/shared/navigation';
 import { z } from 'zod';
 import { ROUTES } from '@/login/constants';
 import { sendPasswordResetEmail } from '@/shared/auth/supabaseAuth';

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Edit } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/shared/navigation';
 import { DonatorBadge } from '@/donator/components/DonatorBadge';
 import { fetchActiveDonatorIds } from '@/donator/api/donator';
 import { useAuth } from '@/shared/hooks/useAuth';

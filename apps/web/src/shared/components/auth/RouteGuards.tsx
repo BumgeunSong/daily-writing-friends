@@ -1,6 +1,7 @@
-import { Outlet, useLocation, Navigate } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { SESSION_KEYS, sessionStore } from '@/shared/lib/storage';
+import { Navigate, useLocation } from '@/shared/navigation';
 import { resolvePrivateRoute } from '@/shared/utils/routingDecisions';
 
 /**

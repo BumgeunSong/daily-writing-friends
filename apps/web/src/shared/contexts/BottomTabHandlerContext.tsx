@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useCallback, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/shared/navigation';
 
 export type TabName = 'Home' | 'Stats' | 'Notifications' | 'User';
 // 각 탭의 기본 경로

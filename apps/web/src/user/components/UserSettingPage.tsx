@@ -1,6 +1,6 @@
 import { Heart, KeyRound, LogOut, Trash2, SquareArrowRight, Moon, Sun } from 'lucide-react';
 import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/shared/navigation';
 import { toast } from 'sonner';
 import { ROUTES } from '@/login/constants';
 import { signOutUser } from '@/shared/auth/supabaseAuth';

@@ -1,5 +1,5 @@
 import { Home, Bell, User, ChartNoAxesColumnIncreasing } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from '@/shared/navigation';
 import type { TabName} from '@/shared/contexts/BottomTabHandlerContext';
 import { useBottomTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
 import { useNavigation } from '@/shared/contexts/NavigationContext';
