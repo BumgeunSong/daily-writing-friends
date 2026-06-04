@@ -35,10 +35,6 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
     // 커스텀 복사 핸들러 적용
     useCopyHandler(getSelectedHtml, contentRef.current);
 
-    if (!post?.content) {
-        return <p>내용이 없습니다.</p>;
-    }
-
     if (isPrivateAndNotAuthor) {
         return (
             <div className="my-6 rounded-lg border border-gray-200 bg-gray-100 p-8 text-center">
@@ -50,6 +46,10 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
                 </p>
             </div>
         );
+    }
+
+    if (!post?.content) {
+        return <p>내용이 없습니다.</p>;
     }
 
     try {
