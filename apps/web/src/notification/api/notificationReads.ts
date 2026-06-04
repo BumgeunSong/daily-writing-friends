@@ -47,12 +47,6 @@ export async function fetchNotificationsFromSupabase(
     throw error;
   }
 
-  // Skip the secondary users-table lookup for profile images. NotificationItem's
-  // avatar falls back to initials when fromUserProfileImage is undefined — saving
-  // the second sequential Supabase RTT cuts notifications LCP. Profile images
-  // can be added back via a parallel/lazy fetch if needed for UX.
-  const profileMap = new Map<string, string>();
-
   return (data || []).map(row => ({
     id: row.id,
     // type is validated downstream by mapDTOToNotification's exhaustive switch
@@ -62,7 +56,7 @@ export async function fetchNotificationsFromSupabase(
     commentId: row.comment_id || undefined,
     replyId: row.reply_id || undefined,
     fromUserId: row.actor_id,
-    fromUserProfileImage: profileMap.get(row.actor_id) || undefined,
+    fromUserProfileImage: undefined,
     message: row.message,
     timestamp: row.created_at,
     read: row.read,
