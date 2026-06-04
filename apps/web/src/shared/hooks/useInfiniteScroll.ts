@@ -10,18 +10,9 @@ interface InfiniteScrollOptions {
 }
 
 /**
- * Web-only infinite-scroll hook. Watches a sentinel element with
- * `IntersectionObserver`; when it scrolls into view and another page is
- * available, calls `fetchNextPage`.
- *
- * React Native equivalent: a hook of the same shape that drops `observerRef`
- * (no DOM) and exposes `onEndReached: () => void` to wire into
- * `FlatList.onEndReached`. Both implementations share the same
- * `shouldFetchNextPage` decision rule.
- *
- * Consumers attach `observerRef` to a placeholder element at the list bottom:
- *   const { observerRef, isLoading } = useInfiniteScroll({ ... });
- *   return <>{posts.map(...)}<div ref={observerRef} /></>;
+ * Web infinite-scroll hook. The RN equivalent shares the input shape but
+ * exposes `onEndReached` instead of `observerRef`; both call
+ * `shouldFetchNextPage` to decide when to load.
  */
 export const useInfiniteScroll = ({
   hasNextPage,
