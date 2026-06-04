@@ -1,6 +1,6 @@
 import { Plus, X, PenSquare, Sparkle } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/shared/navigation';
 import { useAuth } from '@/shared/hooks/useAuth';
 import useWritePermission from '@/shared/hooks/useWritePermission';
 import { Button } from '@/shared/ui/button';

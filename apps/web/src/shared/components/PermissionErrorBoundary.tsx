@@ -1,7 +1,8 @@
 import React from 'react';
-import { useRouteError, isRouteErrorResponse, useNavigate } from 'react-router-dom';
+import { useRouteError, isRouteErrorResponse } from 'react-router-dom';
 
 import { STORAGE_KEYS, storage } from '@/shared/lib/storage';
+import { useNavigate } from '@/shared/navigation';
 import {
   AlertDialog,
   AlertDialogContent,

@@ -1,4 +1,4 @@
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from '@/shared/navigation';
 import { useCompletionMessage } from '@/post/hooks/useCompletionMessage';
 import { PostCompletionContent } from './PostCompletionContent';
 

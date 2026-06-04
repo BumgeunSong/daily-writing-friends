@@ -1,5 +1,5 @@
 import { ChevronLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/shared/navigation';
 import { Button } from '@/shared/ui/button';
 
 interface PostBackButtonProps {

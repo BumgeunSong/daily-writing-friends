@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from '@/shared/navigation';
 import { z } from 'zod';
 import { ROUTES } from '@/login/constants';
 import { validatePassword } from '@/login/utils/passwordValidation';

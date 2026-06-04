@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from '@/shared/navigation';
 import { toast } from 'sonner';
 import { ROUTES } from '@/login/constants';
 import {

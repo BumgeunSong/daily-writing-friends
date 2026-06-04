@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import type { FieldValues, UseFormRegister } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/shared/navigation';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { addUserToBoardWaitingList } from '@/board/utils/boardUtils';

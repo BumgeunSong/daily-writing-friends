@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, Form, useNavigation, useActionData, useSearchParams } from 'react-router-dom';
+import { Form, useNavigation, useActionData } from 'react-router-dom';
+import { useParams, useSearchParams } from '@/shared/navigation';
 import { DraftsDrawer } from '@/draft/components/DraftsDrawer';
 import { useDraftAutosave } from '@/draft/hooks/useDraftAutosave';
 import { useDraftLoader } from '@/draft/hooks/useDraftLoader';

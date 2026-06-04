@@ -1,5 +1,5 @@
 import type React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate } from '@/shared/navigation';
 
 import { STORAGE_KEYS, storage } from '@/shared/lib/storage';
 

@@ -1,6 +1,6 @@
 import { Menu, Search } from 'lucide-react';
 import { forwardRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/shared/navigation';
 
 interface UserPageHeaderProps {
   isMyPage: boolean;

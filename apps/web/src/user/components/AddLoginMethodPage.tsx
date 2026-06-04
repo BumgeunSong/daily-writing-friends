@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertTriangle, CheckCircle2, ChevronRight, Loader2, Mail } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/shared/navigation';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import FormField from '@/login/components/JoinFormField';

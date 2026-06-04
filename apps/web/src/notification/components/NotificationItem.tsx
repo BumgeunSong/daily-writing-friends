@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '@/shared/navigation';
 import type { Notification } from '@/notification/model/Notification';
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import { useUserBasic } from '@/user/hooks/useUserBasic';

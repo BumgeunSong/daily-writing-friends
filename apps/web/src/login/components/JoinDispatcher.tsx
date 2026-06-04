@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/shared/navigation';
 import { ROUTES } from '@/login/constants';
 import { useIsCurrentUserActive } from '@/login/hooks/useIsCurrentUserActive';
 import { useIsUserInWaitingList } from '@/login/hooks/useIsUserInWaitingList';

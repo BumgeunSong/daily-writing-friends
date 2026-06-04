@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Save } from 'lucide-react';
 import type React from 'react';
 import { useState, Suspense } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from '@/shared/navigation';
 import { fetchPost, updatePost } from '@/post/utils/postUtils';
 import type { ProseMirrorDoc } from '@/post/model/Post';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';

@@ -1,7 +1,7 @@
 // src/components/Pages/BoardListPage.tsx
 import { useQuery } from '@tanstack/react-query';
 import type React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '@/shared/navigation';
 import type { Board } from '@/board/model/Board';
 import { fetchBoardsWithUserPermissions } from '@/board/utils/boardUtils';
 import StatusMessage from '@/shared/components/StatusMessage';

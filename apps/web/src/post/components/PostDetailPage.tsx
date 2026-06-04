@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { lazy, Suspense, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from '@/shared/navigation';
 
 // Comments below the fold — lazy chunk lets LCP candidate paint first.
 const Comments = lazy(() => import('@/comment/components/Comments'));

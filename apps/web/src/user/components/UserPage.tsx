@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from '@/shared/navigation';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
 import { useAuth } from '@/shared/hooks/useAuth';

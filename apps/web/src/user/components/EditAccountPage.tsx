@@ -1,6 +1,6 @@
 import { Camera, Loader2 } from 'lucide-react';
 import { useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from '@/shared/navigation';
 import StatusMessage from '@/shared/components/StatusMessage';
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import { Button } from '@/shared/ui/button';
