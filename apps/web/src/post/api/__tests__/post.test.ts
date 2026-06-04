@@ -73,9 +73,17 @@ describe('mapRowToPost', () => {
     });
   });
 
-  describe('board embed handling', () => {
-    it('computes weekDaysFromFirstDay when board embed has first_day', () => {
-      // Mon Jan 12 → Wed Jan 15 = 3 working days
+  describe('board first_day handling', () => {
+    it('computes weekDaysFromFirstDay from flat board_first_day column (posts_feed view)', () => {
+      const row = makeRow({
+        board_first_day: '2026-01-12T00:00:00Z',
+        created_at: '2026-01-15T09:00:00Z',
+      });
+      const post = mapRowToPost(row);
+      expect(post.weekDaysFromFirstDay).toBe(3);
+    });
+
+    it('computes weekDaysFromFirstDay when legacy board embed has first_day', () => {
       const row = makeRow({
         boards: { first_day: '2026-01-12T00:00:00Z' },
         created_at: '2026-01-15T09:00:00Z',
@@ -84,13 +92,13 @@ describe('mapRowToPost', () => {
       expect(post.weekDaysFromFirstDay).toBe(3);
     });
 
-    it('uses row.week_days_from_first_day when board embed is absent', () => {
+    it('uses row.week_days_from_first_day when no first_day is available', () => {
       const row = makeRow({ week_days_from_first_day: 5 });
       const post = mapRowToPost(row);
       expect(post.weekDaysFromFirstDay).toBe(5);
     });
 
-    it('handles board embed as array (PostgREST format)', () => {
+    it('handles legacy board embed as array (PostgREST format)', () => {
       const row = makeRow({
         boards: [{ first_day: '2026-01-12T00:00:00Z' }],
         created_at: '2026-01-15T09:00:00Z',
@@ -114,17 +122,51 @@ describe('mapRowToPost', () => {
     });
   });
 
-  describe('user embed', () => {
-    it('extracts profile photo from users embed', () => {
+  describe('author profile photo', () => {
+    it('extracts profile photo from flat author_profile_photo_url column (posts_feed view)', () => {
+      const row = makeRow({ author_profile_photo_url: 'https://example.com/photo.jpg' });
+      const post = mapRowToPost(row);
+      expect(post.authorProfileImageURL).toBe('https://example.com/photo.jpg');
+    });
+
+    it('extracts profile photo from legacy users embed', () => {
       const row = makeRow({ users: { profile_photo_url: 'https://example.com/photo.jpg' } });
       const post = mapRowToPost(row);
       expect(post.authorProfileImageURL).toBe('https://example.com/photo.jpg');
     });
 
-    it('returns undefined when users embed is absent', () => {
+    it('returns undefined when neither flat nor embed source is present', () => {
       const row = makeRow();
       const post = mapRowToPost(row);
       expect(post.authorProfileImageURL).toBeUndefined();
+    });
+  });
+
+  describe('private content masking (posts_feed view)', () => {
+    it('maps masked private row to a Post with empty content', () => {
+      const row = makeRow({
+        visibility: 'private',
+        content: null,
+        content_preview: null,
+        content_json: null,
+        thumbnail_image_url: null,
+      });
+      const post = mapRowToPost(row);
+      expect(post.visibility).toBe(PostVisibility.PRIVATE);
+      expect(post.content).toBe('');
+      expect(post.contentJson).toBeUndefined();
+      expect(post.thumbnailImageURL).toBeNull();
+    });
+
+    it('preserves content for author-owned private rows (view returns unmasked)', () => {
+      const row = makeRow({
+        visibility: 'private',
+        content: '<p>my secret freewriting</p>',
+        content_preview: '<p>my secret',
+      });
+      const post = mapRowToPost(row);
+      expect(post.visibility).toBe(PostVisibility.PRIVATE);
+      expect(post.content).toBe('<p>my secret freewriting</p>');
     });
   });
 });

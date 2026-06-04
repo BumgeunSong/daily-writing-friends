@@ -50,8 +50,8 @@ async function fetchUserPostsFromSupabase(
   const supabase = getSupabaseClient();
 
   let queryBuilder = supabase
-    .from('posts')
-    .select(`${FEED_POST_SELECT}, boards(first_day)`)
+    .from('posts_feed')
+    .select(FEED_POST_SELECT)
     .eq('author_id', userId)
     .order('created_at', { ascending: false })
     .limit(LIMIT_COUNT);

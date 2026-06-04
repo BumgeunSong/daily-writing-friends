@@ -9,11 +9,8 @@ import { mapRowToPost } from '@/post/api/post';
 export const fetchPost = async (boardId: string, postId: string): Promise<Post | null> => {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
-    .from('posts')
-    // Drop redundant joins/aggregates: posts.week_days_from_first_day and
-    // posts.count_of_comments / count_of_replies are denormalized columns
-    // and mapRowToPost falls back to them. Only the author photo join stays.
-    .select('*, users!author_id(profile_photo_url)')
+    .from('posts_feed')
+    .select('*')
     .eq('id', postId)
     .eq('board_id', boardId)
     .single();
@@ -138,7 +135,7 @@ export const fetchAdjacentPosts = async (boardId: string, currentPostId: string)
   const supabase = getSupabaseClient();
 
   const { data: currentPost, error: currentError } = await supabase
-    .from('posts')
+    .from('posts_feed')
     .select('created_at')
     .eq('id', currentPostId)
     .single();
@@ -150,7 +147,7 @@ export const fetchAdjacentPosts = async (boardId: string, currentPostId: string)
 
   const [prevResult, nextResult] = await Promise.all([
     supabase
-      .from('posts')
+      .from('posts_feed')
       .select('id')
       .eq('board_id', boardId)
       .lt('created_at', currentPost.created_at)
@@ -158,7 +155,7 @@ export const fetchAdjacentPosts = async (boardId: string, currentPostId: string)
       .limit(1)
       .maybeSingle(),
     supabase
-      .from('posts')
+      .from('posts_feed')
       .select('id')
       .eq('board_id', boardId)
       .gt('created_at', currentPost.created_at)
