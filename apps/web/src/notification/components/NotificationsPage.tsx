@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { NotificationsContent } from '@/notification/components/NotificationsContent';
 import { NotificationsErrorBoundary } from '@/notification/components/NotificationsErrorBoundary';
 import NotificationsHeader from '@/notification/components/NotificationsHeader';
+import { useNotificationActorPrefetch } from '@/notification/hooks/useNotificationActorPrefetch';
 import { useNotificationRefresh } from '@/notification/hooks/useNotificationRefresh';
 import { useNotifications } from '@/notification/hooks/useNotifications';
 import StatusMessage from '@/shared/components/StatusMessage';
@@ -37,6 +38,10 @@ const NotificationsPage = () => {
     hasNextPage,
     isFetchingNextPage,
   } = useNotifications(currentUser?.uid ?? null, NOTIFICATIONS_CONFIG.LIMIT_COUNT);
+
+  // ACTION - Warm the per-actor avatar cache in one IN-query so per-row
+  // useUserBasic calls hit the cache instead of firing N parallel requests.
+  useNotificationActorPrefetch(notifications);
 
   // ACTION - Notification refresh handler
   const { refresh: handleRefreshNotifications } = useNotificationRefresh({

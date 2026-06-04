@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { Notification } from '@/notification/model/Notification';
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
-import { useUser } from '@/user/hooks/useUser';
+import { useUserBasic } from '@/user/hooks/useUserBasic';
 
 interface NotificationItemProps {
   notification: Notification;
@@ -13,7 +13,7 @@ function getNotificationLink(notification: Notification): string {
 
 export const NotificationItem = ({ notification }: NotificationItemProps) => {
   const message = notification.message;
-  const { userData: deferredActor } = useUser(notification.fromUserId);
+  const { data: deferredActor } = useUserBasic(notification.fromUserId);
   const actorProfilePhoto =
     notification.fromUserProfileImage ?? deferredActor?.profilePhotoURL ?? undefined;
 
