@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { REMOTE_CONFIG_KEYS } from '@/login/constants';
-import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
+import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
 import { fetchUsersWithBoardPermission } from '@/user/api/user';
 
 /**
@@ -8,7 +8,7 @@ import { fetchUsersWithBoardPermission } from '@/user/api/user';
  * @returns { data, isLoading, error }
  */
 export function useActiveUser() {
-  const { value: activeBoardId, isLoading: isConfigLoading } = useRemoteConfig(REMOTE_CONFIG_KEYS.ACTIVE_BOARD_ID);
+  const { value: activeBoardId } = useRemoteConfig(REMOTE_CONFIG_KEYS.ACTIVE_BOARD_ID);
 
   const {
     data: users,
@@ -18,7 +18,7 @@ export function useActiveUser() {
     queryKey: ['activeUserCount', activeBoardId],
     queryFn: () =>
       activeBoardId ? fetchUsersWithBoardPermission([activeBoardId]) : Promise.resolve([]),
-    enabled: !!activeBoardId && !isConfigLoading,
+    enabled: !!activeBoardId,
   });
 
   return {
@@ -26,4 +26,4 @@ export function useActiveUser() {
     isLoading,
     error
   };
-} 
+}

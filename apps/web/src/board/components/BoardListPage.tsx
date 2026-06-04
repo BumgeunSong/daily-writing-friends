@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import type { Board } from '@/board/model/Board';
 import { fetchBoardsWithUserPermissions } from '@/board/utils/boardUtils';
 import StatusMessage from '@/shared/components/StatusMessage';
-import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
+import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Badge } from '@/shared/ui/badge';
 

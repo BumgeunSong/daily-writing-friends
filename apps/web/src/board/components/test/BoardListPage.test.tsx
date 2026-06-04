@@ -3,15 +3,23 @@ vi.mock('@/firebase', () => ({
   remoteConfig: { settings: {}, defaultConfig: {} },
 }));
 
-vi.mock('@/shared/hooks/useRemoteConfig', () => ({
-  useRemoteConfig: <T,>(key: string, defaultValue: T) => ({
-    value: defaultValue,
-    isLoading: false,
-    error: null,
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    refetch: async () => {},
-  }),
-}));
+vi.mock('@/shared/hooks/useRemoteConfig', async () => {
+  const actual =
+    await vi.importActual<typeof import('@/shared/hooks/useRemoteConfig')>(
+      '@/shared/hooks/useRemoteConfig',
+    );
+  return {
+    ...actual,
+    useRemoteConfig: (key: keyof typeof actual.REMOTE_CONFIG_DEFAULTS) => ({
+      value: actual.REMOTE_CONFIG_DEFAULTS[key],
+      isPlaceholderData: false,
+      isFetching: false,
+      error: null,
+      // eslint-disable-next-line @typescript-eslint/no-empty-function
+      refetch: async () => {},
+    }),
+  };
+});
 
 // Mocking unsupported dependencies
 vi.mock('@sentry/react', () => ({

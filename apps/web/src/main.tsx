@@ -3,7 +3,6 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
-import { RemoteConfigProvider } from '@/shared/contexts/RemoteConfigContext';
 import { ThemeProvider } from '@/shared/contexts/ThemeContext';
 import { AuthProvider } from '@/shared/hooks/useAuth';
 import { queryClient } from '@/shared/lib/queryClient';
@@ -18,9 +17,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <RemoteConfigProvider>
-            <RouterProvider router={router} />
-          </RemoteConfigProvider>
+          <RouterProvider router={router} />
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>

@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query"
 import { useQuery } from '@tanstack/react-query';
 import { useRegisterTabHandler } from "@/shared/contexts/BottomTabHandlerContext"
-import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext"
+import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig"
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useCommentingStats } from "@/stats/hooks/useCommentingStats"
 import { useCurrentUserCommentingStats } from "@/stats/hooks/useCurrentUserCommentingStats"

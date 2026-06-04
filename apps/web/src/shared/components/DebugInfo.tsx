@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { installations } from '@/firebase';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
+import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 
