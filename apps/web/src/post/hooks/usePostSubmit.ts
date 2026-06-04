@@ -19,6 +19,22 @@ interface UsePostSubmitResult {
   handleSubmit: (e: React.FormEvent) => Promise<void>;
 }
 
+/**
+ * Pure validator for the post-submit form. Mirrors the silent-guard behavior
+ * of the hook: returns false (do nothing) when title/content is blank or when
+ * boardId/userId is missing.
+ */
+export function isPostSubmitInputValid(input: {
+  title: string;
+  content: string;
+  boardId: string | undefined;
+  userId: string | undefined;
+}): boolean {
+  if (!input.title.trim() || !input.content.trim()) return false;
+  if (!input.boardId || !input.userId) return false;
+  return true;
+}
+
 export function usePostSubmit({
   userId,
   userName,
@@ -33,12 +49,11 @@ export function usePostSubmit({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) return;
-    if (!boardId || !userId) return;
-    
+    if (!isPostSubmitInputValid({ title, content, boardId, userId })) return;
+
     try {
       setIsSubmitting(true);
-      await createPost({ boardId, title, content, authorId: userId, authorName: userName });
+      await createPost({ boardId: boardId!, title, content, authorId: userId!, authorName: userName });
       sendAnalyticsEvent(AnalyticsEvent.CREATE_POST, {
         boardId,
         title,
@@ -47,20 +62,20 @@ export function usePostSubmit({
       });
       // 게시물 작성 성공 후 초안 삭제
       if (draftId) {
-        await deleteDraft(userId, draftId);
-        
+        await deleteDraft(userId!, draftId);
+
         // 캐시에서도 삭제
         queryClient.removeQueries({
           queryKey: ['draft', userId, draftId, boardId],
           exact: true
         });
-        
+
         // 초안 목록 캐시 무효화
         queryClient.invalidateQueries({
           queryKey: ['drafts', userId],
         });
       }
-      
+
       // 게시물 목록 캐시 무효화
       queryClient.invalidateQueries({
         queryKey: ['posts', boardId],
@@ -74,4 +89,4 @@ export function usePostSubmit({
   };
 
   return { isSubmitting, handleSubmit };
-} 
+}
