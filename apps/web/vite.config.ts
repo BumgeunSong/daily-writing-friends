@@ -89,9 +89,12 @@ export default defineConfig(({ mode }) => {
       modulePreload: { polyfill: false },
     },
     esbuild: {
-      // 119 console.* call sites in src/. Drop them in the build output so they
-      // don't ship to production (Sentry already captures error context).
-      drop: ['console', 'debugger'],
+      // 119 console.* call sites in src/. Drop them in the production build so
+      // they don't ship to users (Sentry already captures error context).
+      // Skip in non-production modes so Vitest can transform source with
+      // console.* intact — otherwise tests that assert on console output
+      // (e.g. executeTrackedWrite slow-write warning) silently never fire.
+      drop: isProduction ? ['console', 'debugger'] : [],
     },
     test: {
       globals: true,
