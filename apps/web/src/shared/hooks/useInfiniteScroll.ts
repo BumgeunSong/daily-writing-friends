@@ -1,5 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 
+import { shouldFetchNextPage } from './shouldFetchNextPage';
+
 interface InfiniteScrollOptions {
   hasNextPage: boolean | undefined;
   fetchNextPage: () => Promise<unknown>;
@@ -8,9 +10,18 @@ interface InfiniteScrollOptions {
 }
 
 /**
- * 무한 스크롤 기능을 제공하는 커스텀 훅
- * - Intersection Observer를 사용하여 스크롤 감지
- * - 다음 페이지 로드 조건 확인
+ * Web-only infinite-scroll hook. Watches a sentinel element with
+ * `IntersectionObserver`; when it scrolls into view and another page is
+ * available, calls `fetchNextPage`.
+ *
+ * React Native equivalent: a hook of the same shape that drops `observerRef`
+ * (no DOM) and exposes `onEndReached: () => void` to wire into
+ * `FlatList.onEndReached`. Both implementations share the same
+ * `shouldFetchNextPage` decision rule.
+ *
+ * Consumers attach `observerRef` to a placeholder element at the list bottom:
+ *   const { observerRef, isLoading } = useInfiniteScroll({ ... });
+ *   return <>{posts.map(...)}<div ref={observerRef} /></>;
  */
 export const useInfiniteScroll = ({
   hasNextPage,
@@ -64,10 +75,8 @@ export const useInfiniteScroll = ({
     [scrollAreaId, observerCallback]
   );
 
-  // ACTION - 무한 스크롤 효과
   useEffect(() => {
-    const shouldFetch = inView && hasNextPage;
-    if (shouldFetch && !isFetchingNextPage) {
+    if (shouldFetchNextPage({ inView, hasNextPage, isFetchingNextPage })) {
       fetchNextPage();
     }
   }, [inView, hasNextPage, fetchNextPage, isFetchingNextPage]);
