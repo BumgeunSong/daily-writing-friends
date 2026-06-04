@@ -33,7 +33,7 @@ type ThumbSize = (typeof THUMB_SIZES)[keyof typeof THUMB_SIZES];
  * Download URLs look like:
  *   https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{encoded_path}?alt=media&token={token}
  */
-function extractStoragePath(downloadUrl: string): string | null {
+export function extractStoragePath(downloadUrl: string): string | null {
   try {
     const url = new URL(downloadUrl);
     const match = url.pathname.match(/\/o\/(.+)$/);
@@ -61,7 +61,7 @@ export function isFirebaseStorageUrl(url: string): boolean {
  *   postImages/20260421/143000_photo.jpg
  *   → postImages/20260421/143000_photo_600x338.jpg
  */
-function deriveThumbPath(originalPath: string, size: ThumbSize): string | null {
+export function deriveThumbPath(originalPath: string, size: ThumbSize): string | null {
   const lastDot = originalPath.lastIndexOf('.');
   if (lastDot === -1) return null;
   const base = originalPath.substring(0, lastDot);
