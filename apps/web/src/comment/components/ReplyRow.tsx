@@ -43,7 +43,13 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
   return (
     <div className='group flex flex-col space-y-3 pb-4'>
       <div className='flex items-center justify-between'>
-        <CommentHeader userId={reply.userId} createdAt={reply.createdAt} />
+        <CommentHeader
+          userId={reply.userId}
+          createdAt={reply.createdAt}
+          author={reply.author}
+          fallbackName={reply.userName}
+          fallbackProfileImage={reply.userProfileImage}
+        />
         {isAuthor && (
           <div className='flex items-center space-x-1'>
             <Button variant='ghost' size='icon' onClick={handleEditToggle} className='size-9'>
