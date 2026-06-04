@@ -1,31 +1,21 @@
 import { useEffect, useCallback } from 'react';
 
-// 스크롤 위치 복원 함수
+import { scrollPositionKey, sessionStore } from '@/shared/lib/storage';
+
 const restoreScrollPosition = (key: string) => {
-  try {
-    const savedScrollPosition = sessionStorage.getItem(`scrollPosition-${key}`);
-    if (savedScrollPosition) {
-      const targetPosition = parseInt(savedScrollPosition, 10);
-      setTimeout(() => {
-        window.scrollTo({
-          top: targetPosition,
-          behavior: 'instant'
-        });
-      }, 100);
-    }
-  } catch (error) {
-    console.error('❌ Scroll restoration failed:', error);
-  }
+  const savedScrollPosition = sessionStore.get(scrollPositionKey(key));
+  if (!savedScrollPosition) return;
+  const targetPosition = parseInt(savedScrollPosition, 10);
+  setTimeout(() => {
+    window.scrollTo({
+      top: targetPosition,
+      behavior: 'instant',
+    });
+  }, 100);
 };
 
-// 스크롤 위치 저장 함수
 const saveScrollPosition = (key: string) => {
-  try {
-    const currentPosition = window.scrollY;
-    sessionStorage.setItem(`scrollPosition-${key}`, currentPosition.toString());
-  } catch (error) {
-    console.error('❌ Failed to save scroll position:', error);
-  }
+  sessionStore.set(scrollPositionKey(key), window.scrollY.toString());
 };
 
 export const useScrollRestoration = (key: string) => {

@@ -8,6 +8,7 @@ import { ROUTES } from '@/login/constants';
 import { useEmailLogin } from '@/login/hooks/useEmailLogin';
 import { useGoogleLoginWithRedirect } from '@/login/hooks/useGoogleLoginWithRedirect';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { SESSION_KEYS, sessionStore } from '@/shared/lib/storage';
 import { isSafeReturnTo } from '@/shared/utils/routingDecisions';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
@@ -37,8 +38,8 @@ export default function LoginPage() {
   // currentUser 가 set 되는 즉시(이메일 로그인 성공 / 이미 로그인된 채 /login 진입) 명시적으로 이동.
   useEffect(() => {
     if (loading || !currentUser) return;
-    const returnTo = sessionStorage.getItem('returnTo');
-    if (returnTo) sessionStorage.removeItem('returnTo');
+    const returnTo = sessionStore.get(SESSION_KEYS.RETURN_TO);
+    if (returnTo) sessionStore.remove(SESSION_KEYS.RETURN_TO);
     const target = isSafeReturnTo(returnTo) ? returnTo! : ROUTES.BOARDS;
     navigate(target, { replace: true });
   }, [currentUser, loading, navigate]);

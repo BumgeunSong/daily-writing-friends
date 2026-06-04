@@ -1,12 +1,16 @@
 /**
- * Single chokepoint for persistent key-value storage.
+ * Single chokepoint for key-value storage.
  *
- * Web implementation wraps `window.localStorage` with try/catch (private mode,
- * quota exceeded, disabled cookies all throw in some browsers).
+ * `storage` is persistent across sessions; `sessionStore` is ephemeral (web:
+ * tab-scoped, cleared on tab close). Both wrap the underlying Web Storage with
+ * try/catch — private mode, quota exceeded, and disabled cookies all throw on
+ * access.
  *
- * React Native port will provide an equivalent implementation backed by
- * AsyncStorage + an in-memory hydration cache, preserving the sync read API
- * by hydrating known keys at app start.
+ * React Native port:
+ *   - `storage` → AsyncStorage + hydration cache, preserving sync reads
+ *   - `sessionStore` → app-scoped in-memory Map (semantics differ from web's
+ *     tab-scoped sessionStorage; callers that rely on per-tab isolation need
+ *     re-evaluation during the port)
  */
 export interface KeyValueStorage {
   get(key: string): string | null;
@@ -15,33 +19,41 @@ export interface KeyValueStorage {
   clear(): void;
 }
 
-export const storage: KeyValueStorage = {
-  get(key) {
-    try {
-      return window.localStorage.getItem(key);
-    } catch {
-      return null;
-    }
-  },
-  set(key, value) {
-    try {
-      window.localStorage.setItem(key, value);
-    } catch {
-      // private mode / quota exceeded — caller proceeds without persistence
-    }
-  },
-  remove(key) {
-    try {
-      window.localStorage.removeItem(key);
-    } catch {
-      // disabled storage — best-effort
-    }
-  },
-  clear() {
-    try {
-      window.localStorage.clear();
-    } catch {
-      // disabled storage — best-effort
-    }
-  },
-};
+function makeWebKeyValueStorage(getBackend: () => Storage): KeyValueStorage {
+  return {
+    get(key) {
+      try {
+        return getBackend().getItem(key);
+      } catch {
+        return null;
+      }
+    },
+    set(key, value) {
+      try {
+        getBackend().setItem(key, value);
+      } catch {
+        // private mode / quota exceeded — caller proceeds without persistence
+      }
+    },
+    remove(key) {
+      try {
+        getBackend().removeItem(key);
+      } catch {
+        // disabled storage — best-effort
+      }
+    },
+    clear() {
+      try {
+        getBackend().clear();
+      } catch {
+        // disabled storage — best-effort
+      }
+    },
+  };
+}
+
+// Lazy backend lookup: the Storage reference is resolved on every call so that
+// test environments that swap window.localStorage with a mock (and any future
+// runtime that rebinds these globals) see the up-to-date object.
+export const storage: KeyValueStorage = makeWebKeyValueStorage(() => window.localStorage);
+export const sessionStore: KeyValueStorage = makeWebKeyValueStorage(() => window.sessionStorage);

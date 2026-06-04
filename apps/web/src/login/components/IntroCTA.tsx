@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ROUTES } from '@/login/constants';
+import { SESSION_KEYS, sessionStore } from '@/shared/lib/storage';
 import { Button } from '@/shared/ui/button';
 
 interface IntroCTAProps {
@@ -32,7 +33,7 @@ export default function IntroCTA({
   };
 
   const goToLoginWith = (returnTo: string) => {
-    sessionStorage.setItem('returnTo', returnTo);
+    sessionStore.set(SESSION_KEYS.RETURN_TO, returnTo);
     navigate(ROUTES.LOGIN);
   };
 

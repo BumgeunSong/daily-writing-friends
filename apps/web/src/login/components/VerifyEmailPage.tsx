@@ -7,12 +7,12 @@ import {
   type VerifyState,
 } from '@/login/utils/verifyEmailState';
 import { resendVerificationEmail, verifyOtpForSignup } from '@/shared/auth/supabaseAuth';
+import { SESSION_KEYS, sessionStore } from '@/shared/lib/storage';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
 import { Input } from '@/shared/ui/input';
 
 const RESEND_COOLDOWN_SECONDS = 30;
-const PENDING_EMAIL_KEY = 'pendingVerificationEmail';
 
 function readEmailFromLocationState(state: unknown): string | null {
   if (!state || typeof state !== 'object') return null;
@@ -26,10 +26,10 @@ export default function VerifyEmailPage() {
   const stateEmail = readEmailFromLocationState(location.state);
   const [email] = useState(() => {
     if (stateEmail) {
-      sessionStorage.setItem(PENDING_EMAIL_KEY, stateEmail);
+      sessionStore.set(SESSION_KEYS.PENDING_VERIFICATION_EMAIL, stateEmail);
       return stateEmail;
     }
-    return sessionStorage.getItem(PENDING_EMAIL_KEY) ?? '';
+    return sessionStore.get(SESSION_KEYS.PENDING_VERIFICATION_EMAIL) ?? '';
   });
 
   // /verify-email is a public route, so a user can land here directly with no
@@ -60,7 +60,7 @@ export default function VerifyEmailPage() {
     if (state.kind === 'success') {
       toast.success('인증 완료', { position: 'bottom-center' });
       navigate(ROUTES.ONBOARDING, { replace: true });
-      sessionStorage.removeItem(PENDING_EMAIL_KEY);
+      sessionStore.remove(SESSION_KEYS.PENDING_VERIFICATION_EMAIL);
     }
   }, [state.kind, navigate]);
 
