@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { useRemoteConfig } from "@/shared/contexts/RemoteConfigContext";
+import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig";
 import { useAuth } from '@/shared/hooks/useAuth';
 import { fetchPostingData } from "@/stats/api/stats";
 import { countBoardPosts, getTitleMessage, getContentMessage, getHighlight } from "@/post/utils/completionMessageUtils";

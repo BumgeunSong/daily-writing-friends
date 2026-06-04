@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { ROUTES } from '@/login/constants';
 import { signOutUser } from '@/shared/auth/supabaseAuth';
 import { SentryFeedbackDialog } from '@/shared/components/SentryFeedbackDialog';
-import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
+import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useClearCache } from '@/shared/hooks/useClearCache';
 import { useTheme } from '@/shared/hooks/useTheme';
@@ -35,7 +35,9 @@ export default function UserSettingPage() {
   const navigate = useNavigate();
   const clearCache = useClearCache();
   const { theme, toggleTheme } = useTheme();
-  const { value: blockUserFeatureEnabled } = useRemoteConfig('block_user_feature_enabled');
+  const { value: blockUserFeatureEnabled, isPlaceholderData: isFlagResolving } =
+    useRemoteConfig('block_user_feature_enabled');
+  const showBlockUserMenu = !isFlagResolving && blockUserFeatureEnabled;
   const { currentUser } = useAuth();
   const donateUrl = useMemo(() => buildDonateUrl(currentUser?.uid), [currentUser?.uid]);
   const hasPassword = useHasPasswordIdentity();
@@ -174,7 +176,7 @@ export default function UserSettingPage() {
               </div>
             </a>
           </Button>
-          {blockUserFeatureEnabled && (
+          {showBlockUserMenu && (
             <Button
               variant="ghost"
               className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none px-4 text-base transition-[background-color] duration-200"

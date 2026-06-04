@@ -37,9 +37,9 @@ const SERVICE_ROLE_KEY =
   // Default local dev service_role key (not a secret — deterministic for local dev)
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
 
-/** The default active_board_id from RemoteConfigContext. Membership here = "active" user
+/** The default active_board_id from useRemoteConfig. Membership here = "active" user
  *  → RootRedirect sends `/` to `/boards`. Must match REMOTE_CONFIG_DEFAULTS.active_board_id. */
-const PRIMARY_BOARD_ID = 'rW3Y3E2aEbpB0KqGiigd';
+const PRIMARY_BOARD_ID = '1a65026a-cf93-4828-be54-fd8d034008da';
 const SECONDARY_BOARD_IDS = ['perf-board-2', 'perf-board-3', 'perf-board-4'];
 
 const MEMBER_EMAIL = 'e2e@example.com';

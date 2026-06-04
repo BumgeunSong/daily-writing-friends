@@ -4,7 +4,7 @@ import type { Board } from "@/board/model/Board";
 import * as boardUtils from '@/board/utils/boardUtils';
 import { REMOTE_CONFIG_KEYS, CACHE_CONSTANTS } from '@/login/constants';
 import { formatYearMonth, createBoardCacheKey, transformBoardWithId } from '@/login/utils/loginUtils';
-import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
+import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
 
 /**
  * 다가오는 보드 정보를 가져오는 훅
@@ -12,9 +12,6 @@ import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
  * @returns UseQueryResult<Board | null> 쿼리 결과 (data 속성에 보드 정보 또는 null)
  */
 export function useUpcomingBoard(): UseQueryResult<Board | null> {
-    // Don't gate on !isConfigLoading: REMOTE_CONFIG_DEFAULTS.upcoming_board_id is
-    // the live upcoming board id; query fires immediately with default. If the
-    // remote value differs, queryKey changes and the query refetches.
     const { value: upcomingBoardId } = useRemoteConfig(REMOTE_CONFIG_KEYS.UPCOMING_BOARD_ID);
     const cacheKey = createBoardCacheKey(upcomingBoardId, formatYearMonth());
 
