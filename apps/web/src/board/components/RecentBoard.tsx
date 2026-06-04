@@ -1,8 +1,10 @@
 import type React from 'react';
 import { Navigate } from 'react-router-dom';
 
+import { STORAGE_KEYS, storage } from '@/shared/lib/storage';
+
 const RecentBoard: React.FC = () => {
-  const boardId = localStorage.getItem('boardId');
+  const boardId = storage.get(STORAGE_KEYS.BOARD_ID);
 
 
   if (boardId) {

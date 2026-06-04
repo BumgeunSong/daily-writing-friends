@@ -1,5 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 
+import { storage } from '@/shared/lib/storage';
+
 interface ClearCacheOptions {
     clearReactQuery?: boolean;
     clearBrowserCache?: boolean;
@@ -34,7 +36,7 @@ export const useClearCache = () => {
 
             // localStorage 초기화
             if (options.clearLocalStorage) {
-                localStorage.clear();
+                storage.clear();
             }
 
             // 브라우저 캐시 초기화

@@ -1,17 +1,19 @@
 import type { Board } from '../model/Board';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { fetchBoardsFromSupabase, fetchBoardByIdFromSupabase, fetchBoardTitleFromSupabase } from '@/board/api/board';
+import { boardTitleKey, storage } from '@/shared/lib/storage';
 
 export async function fetchBoardTitle(boardId: string): Promise<string> {
   try {
-    const cachedTitle = localStorage.getItem(`boardTitle_${boardId}`);
+    const cacheKey = boardTitleKey(boardId);
+    const cachedTitle = storage.get(cacheKey);
     if (cachedTitle) {
       return cachedTitle;
     }
 
     const title = await fetchBoardTitleFromSupabase(boardId);
     if (title !== 'Board not found') {
-      localStorage.setItem(`boardTitle_${boardId}`, title);
+      storage.set(cacheKey, title);
     }
     return title;
   } catch (error) {

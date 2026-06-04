@@ -1,5 +1,7 @@
 import React from 'react';
 import { useRouteError, isRouteErrorResponse, useNavigate } from 'react-router-dom';
+
+import { STORAGE_KEYS, storage } from '@/shared/lib/storage';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -56,7 +58,7 @@ export function PermissionErrorBoundary() {
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => {
               setOpen(false);
-              localStorage.removeItem('boardId');
+              storage.remove(STORAGE_KEYS.BOARD_ID);
               navigate('/boards', { replace: true });
             }}>확인</AlertDialogAction>
           </AlertDialogFooter>

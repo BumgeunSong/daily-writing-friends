@@ -4,6 +4,7 @@ import { useContext, useState, useEffect, useRef, createContext } from 'react';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { setSentryUser } from '@/sentry';
 import { mapToAuthUser } from '@/shared/auth/supabaseAuth';
+import { STORAGE_KEYS, storage } from '@/shared/lib/storage';
 import { UUID_RE, parseStoredAuthUser } from '@/shared/utils/authUserParser';
 import { createUserIfNotExists } from '@/user/api/user';
 
@@ -36,8 +37,8 @@ export function useAuth() {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
-    const user = parseStoredAuthUser(localStorage.getItem('currentUser'));
-    if (!user) localStorage.removeItem('currentUser');
+    const user = parseStoredAuthUser(storage.get(STORAGE_KEYS.CURRENT_USER));
+    if (!user) storage.remove(STORAGE_KEYS.CURRENT_USER);
     return user;
   });
   const [loading, setLoading] = useState(true);
@@ -83,14 +84,14 @@ function syncUserState(
   setCurrentUser: (user: AuthUser | null) => void,
 ) {
   if (user) {
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    storage.set(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
     setSentryUser({
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
     });
   } else {
-    localStorage.removeItem('currentUser');
+    storage.remove(STORAGE_KEYS.CURRENT_USER);
     setSentryUser(null);
   }
   setCurrentUser(user);
