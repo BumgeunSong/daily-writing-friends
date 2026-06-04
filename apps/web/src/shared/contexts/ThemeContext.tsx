@@ -1,6 +1,8 @@
 import type React from 'react';
 import { createContext, useContext, useEffect, useState } from 'react'
 
+import { LEGACY_THEME_KEYS, STORAGE_KEYS, storage } from '@/shared/lib/storage'
+
 type Theme = 'light' | 'dark'
 type ThemePreference = 'system' | 'light' | 'dark'
 
@@ -12,38 +14,24 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
-const THEME_STORAGE_KEY = 'theme-preference-v2'
-
 function getSystemTheme(): Theme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
 function getStoredPreference(): ThemePreference {
-  try {
-    // Clean up old theme keys to prevent conflicts
-    const oldKeys = ['theme-preference', 'theme', 'color-scheme']
-    oldKeys.forEach(key => {
-      if (localStorage.getItem(key)) {
-        localStorage.removeItem(key)
-      }
-    })
-    
-    const stored = localStorage.getItem(THEME_STORAGE_KEY)
-    if (stored === 'system' || stored === 'light' || stored === 'dark') {
-      return stored
-    }
-  } catch {
-    // Handle storage errors silently
+  LEGACY_THEME_KEYS.forEach(key => {
+    if (storage.get(key)) storage.remove(key)
+  })
+
+  const stored = storage.get(STORAGE_KEYS.THEME_PREFERENCE)
+  if (stored === 'system' || stored === 'light' || stored === 'dark') {
+    return stored
   }
-  return 'system' // Default to system
+  return 'system'
 }
 
 function storePreference(preference: ThemePreference): void {
-  try {
-    localStorage.setItem(THEME_STORAGE_KEY, preference)
-  } catch {
-    // Handle storage errors silently
-  }
+  storage.set(STORAGE_KEYS.THEME_PREFERENCE, preference)
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {

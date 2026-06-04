@@ -1,22 +1,20 @@
+import { STORAGE_KEYS, storage } from '@/shared/lib/storage';
+
 interface StoredUser {
   uid: string;
   email?: string;
   displayName?: string;
 }
 
-/**
- * Safely parse user data from localStorage
- */
 function parseStoredUser(): StoredUser | null {
+  const storedUser = storage.get(STORAGE_KEYS.CURRENT_USER);
+  if (!storedUser) return null;
   try {
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      return JSON.parse(storedUser);
-    }
+    return JSON.parse(storedUser);
   } catch (error) {
     console.error('Failed to parse stored user:', error);
+    return null;
   }
-  return null;
 }
 
 /**

@@ -7,6 +7,7 @@ import { fetchBoardsWithUserPermissions } from '@/board/utils/boardUtils';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useRemoteConfig } from '@/shared/contexts/RemoteConfigContext';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { STORAGE_KEYS, storage } from '@/shared/lib/storage';
 import { Badge } from '@/shared/ui/badge';
 
 const BoardListPage: React.FC = () => {
@@ -37,7 +38,7 @@ const BoardListPage: React.FC = () => {
   );
 
   const handleBoardClick = (boardId: string) => {
-    localStorage.setItem('boardId', boardId);
+    storage.set(STORAGE_KEYS.BOARD_ID, boardId);
   };
 
   if (isLoading) {
