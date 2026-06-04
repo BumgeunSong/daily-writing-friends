@@ -5,6 +5,24 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { useBlockedByUsers } from '@/user/hooks/useBlockedByUsers';
 
 /**
+ * QueryKey for the recent-posts infinite query. Co-located with the hook so
+ * `invalidatePostCaches` and any future cache reader stays in lock-step.
+ */
+export function buildRecentPostsQueryKey(boardId: string, blockedByUsers: string[]) {
+  return ['posts', boardId, blockedByUsers] as const;
+}
+
+/**
+ * Pure cursor mapper for the recent-posts infinite query.
+ * Returns the last post's createdAt as the next page cursor, or undefined
+ * when the page is empty (signals end-of-list to TanStack).
+ */
+export function getRecentPostsNextPageParam(lastPage: Post[]): Date | undefined {
+  const lastPost = lastPage[lastPage.length - 1];
+  return lastPost ? lastPost.createdAt.toDate() : undefined;
+}
+
+/**
  * 최근 게시글 목록을 불러오는 커스텀 훅 (createdAt 내림차순, blockedBy 기반 서버사이드 필터링)
  * @param boardId 게시판 ID
  * @param limitCount 페이지당 글 개수
@@ -21,14 +39,11 @@ export const useRecentPosts = (
     // list resolves later. Strips one Supabase RTT from boardFeed's LCP path.
     const effectiveBlockedByUsers = blockedByUsers ?? [];
     const queryResult = useInfiniteQuery<Post[]>(
-        ['posts', boardId, effectiveBlockedByUsers],
+        buildRecentPostsQueryKey(boardId, effectiveBlockedByUsers),
         ({ pageParam = null }) => fetchRecentPosts(boardId, limitCount, effectiveBlockedByUsers, pageParam),
         {
             enabled: !!boardId && !!currentUser?.uid,
-            getNextPageParam: (lastPage) => {
-                const lastPost = lastPage[lastPage.length - 1];
-                return lastPost ? lastPost.createdAt.toDate() : undefined;
-            },
+            getNextPageParam: getRecentPostsNextPageParam,
             meta: {
                 errorContext: 'Loading board posts',
                 feature: 'board-view',
