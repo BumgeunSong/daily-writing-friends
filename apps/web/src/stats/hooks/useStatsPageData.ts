@@ -16,9 +16,8 @@ type TabType = 'posting' | 'commenting';
 export function useStatsPageData(_tab: TabType) {
     const queryClient = useQueryClient();
     const { value: activeBoardId } = useRemoteConfig('active_board_id');
-    const { users: activeUsers, isLoading: isLoadingUsers, error: usersError } = useUserInBoard(
-      activeBoardId ? [activeBoardId] : []
-    );
+    const { users: activeUsers, isLoading: isLoadingUsers, error: usersError } =
+      useUserInBoard([activeBoardId]);
     const { currentUser } = useAuth();
     const { data: blockedByUsers = [] } = useQuery(
       ['blockedByUsers', currentUser?.uid],
