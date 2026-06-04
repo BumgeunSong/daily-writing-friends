@@ -25,6 +25,16 @@ export function PostCompletionContent({
 }: PostCompletionPageProps) {
     const [isClient, setIsClient] = useState(false)
     const [showLoading, setShowLoading] = useState(true)
+    const [prevIsLoading, setPrevIsLoading] = useState(isLoading)
+
+    // Snap showLoading=true the moment isLoading flips back to true,
+    // during render, so the user never sees a flash of post-loading UI.
+    if (isLoading !== prevIsLoading) {
+        setPrevIsLoading(isLoading)
+        if (isLoading) {
+            setShowLoading(true)
+        }
+    }
 
     useEffect(() => {
         setIsClient(true)
@@ -32,21 +42,15 @@ export function PostCompletionContent({
 
     // 최소 1초 로딩 보장
     useEffect(() => {
-        let timer: NodeJS.Timeout | null = null
-        if (!isLoading) {
-            timer = setTimeout(() => {
-                setShowLoading(false)
-                // 로딩이 끝난 후 햅틱 피드백
-                if (navigator.vibrate) {
-                    navigator.vibrate([100, 50, 200])
-                }
-            }, 1000)
-        } else {
-            setShowLoading(true)
-        }
-        return () => {
-            if (timer) clearTimeout(timer)
-        }
+        if (isLoading) return
+        const timer = setTimeout(() => {
+            setShowLoading(false)
+            // 로딩이 끝난 후 햅틱 피드백
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 200])
+            }
+        }, 1000)
+        return () => clearTimeout(timer)
     }, [isLoading])
 
     if (!isClient) return null // Prevent hydration errors
@@ -133,7 +137,6 @@ function highlightMessageParts(message: string, highlight: CompletionHighlight) 
     const parts = message.split(pattern)
     return parts.map((part, i) =>
         sortedKeywords.includes(part) ? (
-            // eslint-disable-next-line tailwindcss/no-custom-classname -- dynamic color class
             <span key={`${part}-${i}`} className={`font-bold text-${highlight.color}-500`}>{part}</span>
         ) : (
             <span key={`${part}-${i}`}>{part}</span>

@@ -20,10 +20,12 @@ export default function ReviewCarousel() {
       return;
     }
 
-    setSelectedIndex(api.selectedScrollSnap());
-    api.on('select', () => {
-      setSelectedIndex(api.selectedScrollSnap());
-    });
+    const handleSelect = () => setSelectedIndex(api.selectedScrollSnap());
+    handleSelect();
+    api.on('select', handleSelect);
+    return () => {
+      api.off('select', handleSelect);
+    };
   }, [api]);
 
   const handleDotClick = (index: number) => {

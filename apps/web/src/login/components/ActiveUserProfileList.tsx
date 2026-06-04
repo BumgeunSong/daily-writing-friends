@@ -14,42 +14,42 @@ export default function ActiveUserProfileList({ users, className }: ActiveUserPr
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
-  
-  const checkScrollability = () => {
-    if (!scrollContainerRef.current) return
-
-    const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current
-
-    // Can scroll left if scrolled more than 1px from the beginning
-    setCanScrollLeft(scrollLeft > 1)
-
-    // Can scroll right if not at the end
-    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1) // -1 for rounding errors
-  }
 
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current
     if (!scrollContainer) return
 
-    // Check initial scrollability
+    const checkScrollability = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainer
+      setCanScrollLeft(scrollLeft > 1)
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1)
+    }
+
     checkScrollability()
-
-    // Add scroll event listener
     scrollContainer.addEventListener("scroll", checkScrollability)
-
-    // Add resize event listener to recheck on window resize
     window.addEventListener("resize", checkScrollability)
+
+    // Re-measure when children change size or are added/removed (e.g., users prop changes).
+    const resizeObserver = new ResizeObserver(checkScrollability)
+    resizeObserver.observe(scrollContainer)
+    for (const child of Array.from(scrollContainer.children)) {
+      resizeObserver.observe(child)
+    }
+    const mutationObserver = new MutationObserver(() => {
+      checkScrollability()
+      for (const child of Array.from(scrollContainer.children)) {
+        resizeObserver.observe(child)
+      }
+    })
+    mutationObserver.observe(scrollContainer, { childList: true })
 
     return () => {
       scrollContainer.removeEventListener("scroll", checkScrollability)
       window.removeEventListener("resize", checkScrollability)
+      resizeObserver.disconnect()
+      mutationObserver.disconnect()
     }
   }, [])
-
-  // Recheck scrollability when users change
-  useEffect(() => {
-    checkScrollability()
-  }, [users])
 
   if (users.length === 0) return null
 
