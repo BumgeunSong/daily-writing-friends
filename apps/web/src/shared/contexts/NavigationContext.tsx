@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type React from 'react';
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { useScrollDirection } from '@/shared/hooks/useScrollDirection';
 
 interface NavigationContextType {
@@ -30,22 +30,25 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({
 }) => {
   // 네비게이션 바 표시 상태
   const [isNavVisible, setIsNavVisible] = useState<boolean>(true);
-  
+
   // 스크롤 방향 감지 훅 사용 - 업데이트된 옵션 패턴 사용
   const scrollDirection = useScrollDirection({
     throttleTime: debounceTime,
     topThreshold,
     ignoreSmallChanges
   });
-  
-  useEffect(() => {
-    // 스크롤 방향에 따라 네비게이션 바 표시 여부 결정
+
+  // Sync isNavVisible to scrollDirection during render, with a prev-value comparison,
+  // so the nav doesn't briefly show a stale visibility between renders.
+  const [prevScrollDirection, setPrevScrollDirection] = useState(scrollDirection);
+  if (scrollDirection !== prevScrollDirection) {
+    setPrevScrollDirection(scrollDirection);
     if (scrollDirection === 'down') {
       setIsNavVisible(false);
     } else if (scrollDirection === 'up') {
       setIsNavVisible(true);
     }
-  }, [scrollDirection]);
+  }
   
   return (
     <NavigationContext.Provider value={{ isNavVisible }}>
