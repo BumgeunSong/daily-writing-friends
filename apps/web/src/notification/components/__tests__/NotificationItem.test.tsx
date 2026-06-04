@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { type FirebaseTimestamp } from '@/shared/model/Timestamp';
 import { MemoryRouter } from 'react-router-dom';
@@ -29,10 +30,15 @@ const createMockNotification = (overrides: Partial<CommentNotification> = {}): N
 };
 
 const renderWithRouter = (component: React.ReactNode) => {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
-    <MemoryRouter>
-      {component}
-    </MemoryRouter>
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        {component}
+      </MemoryRouter>
+    </QueryClientProvider>
   );
 };
 
