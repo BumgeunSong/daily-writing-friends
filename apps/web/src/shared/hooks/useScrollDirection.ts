@@ -2,6 +2,43 @@ import { useState, useEffect, useRef } from 'react';
 
 export type ScrollDirection = 'up' | 'down' | 'none';
 
+export interface ScrollDirectionInput {
+  currentY: number;
+  lastY: number;
+  topThreshold: number;
+  ignoreSmallChanges: number;
+}
+
+export interface ScrollDirectionDecision {
+  direction: 'up' | 'down' | null;
+  nextLastY: number | null;
+}
+
+/**
+ * Pure decision: given current/last scroll positions and the threshold knobs,
+ * report whether to change the reported direction and whether to update the
+ * tracked baseline.
+ *
+ * nextLastY === null means "ignore this sample" (iOS bounce / small-delta).
+ */
+export function decideScrollDirection(input: ScrollDirectionInput): ScrollDirectionDecision {
+  const { currentY, lastY, topThreshold, ignoreSmallChanges } = input;
+
+  if (currentY <= topThreshold) {
+    return { direction: 'up', nextLastY: currentY };
+  }
+  if (Math.abs(currentY - lastY) < ignoreSmallChanges) {
+    return { direction: null, nextLastY: null };
+  }
+  if (currentY > lastY) {
+    return { direction: 'down', nextLastY: currentY };
+  }
+  if (currentY < lastY) {
+    return { direction: 'up', nextLastY: currentY };
+  }
+  return { direction: null, nextLastY: currentY };
+}
+
 interface ScrollOptions {
   throttleTime?: number;
   topThreshold?: number;  // 상단으로 간주할 스크롤 위치 임계값
@@ -23,7 +60,6 @@ export const useScrollDirection = (options?: ScrollOptions): ScrollDirection => 
 
   const [scrollDirection, setScrollDirection] = useState<ScrollDirection>('none');
 
-  // Closure-only tracking values — kept in refs so updates do not rebind the listener.
   const lastScrollYRef = useRef<number>(0);
   const lastThrottleTimeRef = useRef<number>(0);
   const throttleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -31,51 +67,40 @@ export const useScrollDirection = (options?: ScrollOptions): ScrollDirection => 
   useEffect(() => {
     lastScrollYRef.current = window.scrollY;
 
-    const setDirectionIfChanged = (next: ScrollDirection) => {
-      setScrollDirection((prev) => (prev === next ? prev : next));
-    };
-
-    const evaluate = (currentScrollY: number, currentTime: number) => {
-      if (currentScrollY <= topThreshold) {
-        setDirectionIfChanged('up');
-        lastScrollYRef.current = currentScrollY;
-        lastThrottleTimeRef.current = currentTime;
-        return;
+    const applyDecision = (decision: ScrollDirectionDecision, currentTime: number) => {
+      const next = decision.direction;
+      if (next !== null) {
+        setScrollDirection((prev) => (prev === next ? prev : next));
       }
-
-      if (Math.abs(currentScrollY - lastScrollYRef.current) < ignoreSmallChanges) {
-        return;
+      if (decision.nextLastY !== null) {
+        lastScrollYRef.current = decision.nextLastY;
       }
-
-      if (currentScrollY > lastScrollYRef.current) {
-        setDirectionIfChanged('down');
-      } else if (currentScrollY < lastScrollYRef.current) {
-        setDirectionIfChanged('up');
-      }
-
-      lastScrollYRef.current = currentScrollY;
       lastThrottleTimeRef.current = currentTime;
     };
 
     const handleScroll = () => {
       const currentTime = Date.now();
       const currentScrollY = window.scrollY;
+      const decision = decideScrollDirection({
+        currentY: currentScrollY,
+        lastY: lastScrollYRef.current,
+        topThreshold,
+        ignoreSmallChanges,
+      });
 
-      // Fast-path: at/near the top — always 'up', bypass throttle.
+      // Fast-path: at/near the top — always apply, bypass throttle.
       if (currentScrollY <= topThreshold) {
-        setDirectionIfChanged('up');
-        lastScrollYRef.current = currentScrollY;
-        lastThrottleTimeRef.current = currentTime;
+        applyDecision(decision, currentTime);
         return;
       }
 
-      // Fast-path: ignore small deltas (iOS bounce) without scheduling a trailing timer.
-      if (Math.abs(currentScrollY - lastScrollYRef.current) < ignoreSmallChanges) {
+      // Fast-path: small delta (iOS bounce) — ignore without scheduling a trailing timer.
+      if (decision.direction === null && decision.nextLastY === null) {
         return;
       }
 
       if (currentTime - lastThrottleTimeRef.current >= throttleTime) {
-        evaluate(currentScrollY, currentTime);
+        applyDecision(decision, currentTime);
         return;
       }
 
@@ -84,7 +109,13 @@ export const useScrollDirection = (options?: ScrollOptions): ScrollDirection => 
         const delay = throttleTime - (currentTime - lastThrottleTimeRef.current);
         throttleTimerRef.current = setTimeout(() => {
           throttleTimerRef.current = null;
-          evaluate(window.scrollY, Date.now());
+          const trailingDecision = decideScrollDirection({
+            currentY: window.scrollY,
+            lastY: lastScrollYRef.current,
+            topThreshold,
+            ignoreSmallChanges,
+          });
+          applyDecision(trailingDecision, Date.now());
         }, delay);
       }
     };
