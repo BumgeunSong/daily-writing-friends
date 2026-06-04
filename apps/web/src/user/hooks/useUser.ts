@@ -22,10 +22,12 @@ export function useUser(uid: string | null | undefined) {
         console.error('유저 데이터를 불러오던 중 에러가 발생했습니다:', error);
         Sentry.captureException(error);
       },
-      staleTime: 0,
-      cacheTime: 1000 * 60 * 10,
-      refetchOnMount: true,
-      refetchOnWindowFocus: true,
+      // Other users' profile data changes rarely; own-profile edits
+      // invalidate this key explicitly via useUpdateUserData.
+      staleTime: 5 * 60 * 1000,
+      cacheTime: 30 * 60 * 1000,
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
     },
   );
 
