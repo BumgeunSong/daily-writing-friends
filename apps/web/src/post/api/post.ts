@@ -31,11 +31,12 @@ export async function fetchBestPosts(
 }
 
 /**
- * 게시글이 최근 7일 내인지 확인
+ * True when the post was created within the last `days` days from `now`.
+ * `now` is injectable for tests; defaults to the current wall clock.
  */
-export function isWithinDays(post: Post, days: number): boolean {
+export function isWithinDays(post: Post, days: number, now: Date = new Date()): boolean {
   if (!post.createdAt) return false;
-  const cutoffDate = new Date();
+  const cutoffDate = new Date(now);
   cutoffDate.setDate(cutoffDate.getDate() - days);
   const postDate = post.createdAt.toDate();
   return postDate >= cutoffDate;
