@@ -86,7 +86,7 @@ export async function fetchCommentsFromSupabase(
 
   let q = supabase
     .from('comments')
-    .select('id, content, user_id, user_name, user_profile_image, created_at')
+    .select('id, content, user_id, user_name, user_profile_image, created_at, author:users!user_id(profile_photo_url, nickname)')
     .eq('post_id', postId)
     .order('created_at', { ascending: true });
 
@@ -115,7 +115,7 @@ export async function fetchCommentByIdFromSupabase(
 
   const { data, error } = await supabase
     .from('comments')
-    .select('id, content, user_id, user_name, user_profile_image, created_at')
+    .select('id, content, user_id, user_name, user_profile_image, created_at, author:users!user_id(profile_photo_url, nickname)')
     .eq('id', commentId)
     .single();
 
@@ -129,20 +129,37 @@ export async function fetchCommentByIdFromSupabase(
   return mapRowToComment(data);
 }
 
-function mapRowToComment(row: {
+interface AuthorEmbed {
+  profile_photo_url: string | null;
+  nickname: string | null;
+}
+
+interface CommentRow {
   id: string;
   content: string;
   user_id: string;
   user_name: string;
   user_profile_image: string | null;
   created_at: string;
-}): Comment {
+  author?: AuthorEmbed | AuthorEmbed[] | null;
+}
+
+function unwrapEmbed<T>(embed: T | T[] | null | undefined): T | undefined {
+  if (!embed) return undefined;
+  return Array.isArray(embed) ? embed[0] : embed;
+}
+
+function mapRowToComment(row: CommentRow): Comment {
+  const author = unwrapEmbed(row.author);
   return {
     id: row.id,
     content: row.content,
     userId: row.user_id,
     userName: row.user_name,
     userProfileImage: row.user_profile_image || '',
+    author: author
+      ? { nickname: author.nickname, profilePhotoURL: author.profile_photo_url }
+      : undefined,
     createdAt: createTimestamp(new Date(row.created_at)),
   };
 }

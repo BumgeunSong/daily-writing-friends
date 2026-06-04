@@ -109,7 +109,7 @@ export async function fetchRepliesFromSupabase(
 
   let q = supabase
     .from('replies')
-    .select('id, content, user_id, user_name, user_profile_image, created_at')
+    .select('id, content, user_id, user_name, user_profile_image, created_at, author:users!user_id(profile_photo_url, nickname)')
     .eq('comment_id', commentId)
     .order('created_at', { ascending: true });
 
@@ -124,14 +124,7 @@ export async function fetchRepliesFromSupabase(
     throw error;
   }
 
-  return (data || []).map((row) => ({
-    id: row.id,
-    content: row.content,
-    userId: row.user_id,
-    userName: row.user_name,
-    userProfileImage: row.user_profile_image || '',
-    createdAt: createTimestamp(new Date(row.created_at)),
-  }));
+  return (data || []).map(mapRowToReply);
 }
 
 /**
@@ -174,7 +167,7 @@ export async function fetchReplyByIdFromSupabase(
 
   const { data, error } = await supabase
     .from('replies')
-    .select('id, content, user_id, user_name, user_profile_image, created_at')
+    .select('id, content, user_id, user_name, user_profile_image, created_at, author:users!user_id(profile_photo_url, nickname)')
     .eq('id', replyId)
     .single();
 
@@ -185,12 +178,40 @@ export async function fetchReplyByIdFromSupabase(
     return null;
   }
 
+  return mapRowToReply(data);
+}
+
+interface AuthorEmbed {
+  profile_photo_url: string | null;
+  nickname: string | null;
+}
+
+interface ReplyRow {
+  id: string;
+  content: string;
+  user_id: string;
+  user_name: string;
+  user_profile_image: string | null;
+  created_at: string;
+  author?: AuthorEmbed | AuthorEmbed[] | null;
+}
+
+function unwrapEmbed<T>(embed: T | T[] | null | undefined): T | undefined {
+  if (!embed) return undefined;
+  return Array.isArray(embed) ? embed[0] : embed;
+}
+
+function mapRowToReply(row: ReplyRow): Reply {
+  const author = unwrapEmbed(row.author);
   return {
-    id: data.id,
-    content: data.content,
-    userId: data.user_id,
-    userName: data.user_name,
-    userProfileImage: data.user_profile_image || '',
-    createdAt: createTimestamp(new Date(data.created_at)),
+    id: row.id,
+    content: row.content,
+    userId: row.user_id,
+    userName: row.user_name,
+    userProfileImage: row.user_profile_image || '',
+    author: author
+      ? { nickname: author.nickname, profilePhotoURL: author.profile_photo_url }
+      : undefined,
+    createdAt: createTimestamp(new Date(row.created_at)),
   };
 }

@@ -51,7 +51,13 @@ const CommentRow: React.FC<CommentRowProps> = ({
   return (
     <div className='flex flex-col space-y-3 pb-4'>
       <div className='flex items-center justify-between'>
-        <CommentHeader userId={comment.userId} createdAt={comment.createdAt} />
+        <CommentHeader
+          userId={comment.userId}
+          createdAt={comment.createdAt}
+          author={comment.author}
+          fallbackName={comment.userName}
+          fallbackProfileImage={comment.userProfileImage}
+        />
         {isAuthor && (
           <div className='flex items-center space-x-1'>
             <Button variant='ghost' size='icon' onClick={handleEditToggle} className='size-9'>
