@@ -10,6 +10,7 @@ import { validatePassword } from '@/login/utils/passwordValidation';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { mapSetPasswordErrorToKorean } from '@/shared/auth/authErrors';
 import { setPasswordForCurrentUser } from '@/shared/auth/supabaseAuth';
+import { SESSION_KEYS, sessionStore } from '@/shared/lib/storage';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
 import FormField from './JoinFormField';
@@ -104,13 +105,13 @@ export default function SetPasswordPage() {
       setSubmitError(null);
       await setPasswordForCurrentUser(password);
       toast.success('비밀번호가 설정되었습니다.', { position: 'bottom-center' });
-      const returnTo = sessionStorage.getItem('returnTo');
+      const returnTo = sessionStore.get(SESSION_KEYS.RETURN_TO);
       // Only honor app-internal paths to avoid open-redirect surprises.
       const safeReturnTo =
         returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//')
           ? returnTo
           : null;
-      if (safeReturnTo) sessionStorage.removeItem('returnTo');
+      if (safeReturnTo) sessionStore.remove(SESSION_KEYS.RETURN_TO);
       navigate(safeReturnTo ?? ROUTES.BOARDS);
     } catch (err) {
       setSubmitError(mapSetPasswordErrorToKorean(err));

@@ -3,13 +3,11 @@ import { useParams } from 'react-router-dom';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { sessionStore, userPostSearchKey } from '@/shared/lib/storage';
 import { UserPageHeader } from '@/user/components/UserPageHeader';
 import { UserPostSearchView } from '@/user/components/UserPostSearchView';
 import UserPostsList from '@/user/components/UserPostList';
 import UserProfile from '@/user/components/UserProfile';
-
-const SESSION_KEY_PREFIX = 'userPostSearch:';
-const sessionKey = (userId: string) => `${SESSION_KEY_PREFIX}${userId}`;
 
 interface SearchSession {
   isSearchMode: boolean;
@@ -19,9 +17,9 @@ interface SearchSession {
 const EMPTY_SESSION: SearchSession = { isSearchMode: false, query: '' };
 
 function readSearchSession(userId: string): SearchSession {
+  const raw = sessionStore.get(userPostSearchKey(userId));
+  if (!raw) return EMPTY_SESSION;
   try {
-    const raw = sessionStorage.getItem(sessionKey(userId));
-    if (!raw) return EMPTY_SESSION;
     const parsed = JSON.parse(raw);
     return {
       isSearchMode: parsed?.isSearchMode === true,
@@ -33,19 +31,11 @@ function readSearchSession(userId: string): SearchSession {
 }
 
 function writeSearchSession(userId: string, session: SearchSession) {
-  try {
-    sessionStorage.setItem(sessionKey(userId), JSON.stringify(session));
-  } catch {
-    // best-effort: sessionStorage may be unavailable (private mode, quota)
-  }
+  sessionStore.set(userPostSearchKey(userId), JSON.stringify(session));
 }
 
 function clearSearchSession(userId: string) {
-  try {
-    sessionStorage.removeItem(sessionKey(userId));
-  } catch {
-    // ignore
-  }
+  sessionStore.remove(userPostSearchKey(userId));
 }
 
 export default function UserPage() {

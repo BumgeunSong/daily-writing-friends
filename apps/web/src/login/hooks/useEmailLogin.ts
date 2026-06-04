@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
+
 import { signInWithEmail } from '@/shared/auth/supabaseAuth';
+import { SESSION_KEYS, sessionStore } from '@/shared/lib/storage';
 
 export function mapAuthErrorToKorean(err: unknown): string {
   const msg = err instanceof Error ? err.message.toLowerCase() : '';
@@ -22,7 +24,7 @@ export function useEmailLogin(): UseEmailLoginReturn {
     try {
       setIsLoading(true);
       setError(null);
-      if (returnTo) sessionStorage.setItem('returnTo', returnTo);
+      if (returnTo) sessionStore.set(SESSION_KEYS.RETURN_TO, returnTo);
       await signInWithEmail(email, password);
     } catch (err) {
       setError(new Error(mapAuthErrorToKorean(err)));

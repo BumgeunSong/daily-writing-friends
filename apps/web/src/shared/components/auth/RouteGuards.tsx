@@ -1,5 +1,6 @@
 import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { SESSION_KEYS, sessionStore } from '@/shared/lib/storage';
 import { resolvePrivateRoute } from '@/shared/utils/routingDecisions';
 
 /**
@@ -15,7 +16,7 @@ export function PrivateRoutes() {
 
   if (result.type === 'redirect') {
     if (result.returnToPath) {
-      sessionStorage.setItem('returnTo', result.returnToPath);
+      sessionStore.set(SESSION_KEYS.RETURN_TO, result.returnToPath);
     }
     return <Navigate to="/login" replace />;
   }

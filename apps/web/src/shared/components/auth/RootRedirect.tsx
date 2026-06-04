@@ -3,6 +3,7 @@ import { useIsCurrentUserActive } from '@/login/hooks/useIsCurrentUserActive';
 import { useIsUserInWaitingList } from '@/login/hooks/useIsUserInWaitingList';
 import { useOnboardingComplete } from '@/login/hooks/useOnboardingComplete';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { SESSION_KEYS, sessionStore } from '@/shared/lib/storage';
 import { resolveRootRedirect } from '@/shared/utils/routingDecisions';
 
 /**
@@ -15,7 +16,7 @@ export function RootRedirect() {
   const { isInWaitingList, isLoading: waitingListLoading } = useIsUserInWaitingList();
   const { onboardingComplete, isLoading: onboardingLoading } = useOnboardingComplete(currentUser?.uid);
 
-  const returnTo = sessionStorage.getItem('returnTo');
+  const returnTo = sessionStore.get(SESSION_KEYS.RETURN_TO);
 
   const result = resolveRootRedirect({
     currentUser,
@@ -28,7 +29,7 @@ export function RootRedirect() {
 
   if (result.type === 'loading') return null;
 
-  if (returnTo) sessionStorage.removeItem('returnTo');
+  if (returnTo) sessionStore.remove(SESSION_KEYS.RETURN_TO);
 
   return <Navigate to={result.to} replace />;
 }
