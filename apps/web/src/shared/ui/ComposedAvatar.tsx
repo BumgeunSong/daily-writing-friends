@@ -11,6 +11,12 @@ interface ComposedAvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   size?: number; // px 단위, Tailwind size-9=36px
   className?: string;
   loading?: 'lazy' | 'eager';
+  /**
+   * Set to true for above-the-fold avatars (e.g. profile page header). Sets
+   * `loading="eager"` and `fetchPriority="high"` to skip lazy-loading and
+   * boost network priority for the first paint.
+   */
+  priority?: boolean;
 }
 
 // Hostname check (not substring): `url.includes('googleusercontent.com')` would
@@ -32,6 +38,12 @@ function appendGoogleAvatarSizeParam(url: string, size: number): string {
   return url;
 }
 
+function resolvePriorityAttrs(priority: boolean, loading: 'lazy' | 'eager') {
+  return priority
+    ? { loading: 'eager' as const, fetchPriority: 'high' as const }
+    : { loading, fetchPriority: undefined };
+}
+
 const ComposedAvatar: React.FC<ComposedAvatarProps> = ({
   src,
   alt = 'User',
@@ -39,16 +51,20 @@ const ComposedAvatar: React.FC<ComposedAvatarProps> = ({
   size = 36,
   className = '',
   loading = 'lazy',
+  priority = false,
   ...rest
 }) => {
   // Firebase Storage avatars resolve to the 128x128 resized variant via useAvatarUrl;
   // Google OAuth avatars pass through and get the =s{size} hint instead.
   const resolvedSrc = useAvatarUrl(src);
   const renderSrc = resolvedSrc ? appendGoogleAvatarSizeParam(resolvedSrc, size) : '';
+  const priorityAttrs = resolvePriorityAttrs(priority, loading);
 
   return (
     <Avatar className={cn('ring-1 ring-black/10 dark:ring-white/10', className)} style={{ width: size, height: size }} {...rest}>
-      {renderSrc && <AvatarImage src={renderSrc} alt={alt} loading={loading} decoding="async" />}
+      {renderSrc && (
+        <AvatarImage src={renderSrc} alt={alt} decoding="async" {...priorityAttrs} />
+      )}
       <AvatarFallback>
         {fallback ? fallback : <UserIcon className="size-3.5" />}
       </AvatarFallback>

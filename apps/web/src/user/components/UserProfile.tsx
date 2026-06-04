@@ -61,6 +61,7 @@ export default function UserProfile({ uid }: UserProfileProps) {
         src={userData.profilePhotoURL || undefined}
         alt={`${getUserDisplayName(userData)}'s profile`}
         fallback={getUserDisplayName(userData)?.charAt(0).toUpperCase()}
+        priority
       />
       <div className='min-w-0 flex-1'>
         <div className='flex items-center justify-between'>
