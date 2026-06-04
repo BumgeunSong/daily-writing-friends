@@ -25,6 +25,10 @@ function upsertMeta(attr: 'name' | 'property', key: string, content: string): vo
   el.setAttribute('content', content);
 }
 
+function htmlToPlainText(html: string): string {
+  return new DOMParser().parseFromString(html, 'text/html').body.textContent ?? '';
+}
+
 function applyDefaults(): void {
   document.title = DEFAULT_TITLE;
   upsertMeta('property', 'og:title', DEFAULT_TITLE);
@@ -47,8 +51,9 @@ export function PostMetaHelmet({ post, boardId, postId }: PostHelmetProps) {
         ? `${DEFAULT_URL}/board/${boardId}/post/${postId}`
         : DEFAULT_URL;
     const title = post.title ?? DEFAULT_TITLE;
-    const description =
-      post.content?.replace(/<[^>]+>/g, '').slice(0, 100) ?? '상세 내용을 확인하세요.';
+    const description = post.content
+      ? htmlToPlainText(post.content).slice(0, 100)
+      : '상세 내용을 확인하세요.';
     const image = post.thumbnailImageURL || '/writing_girl.webp';
 
     document.title = `${title} | ${DEFAULT_TITLE}`;
