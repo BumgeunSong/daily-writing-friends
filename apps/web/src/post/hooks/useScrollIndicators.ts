@@ -7,6 +7,27 @@ interface ScrollIndicators {
   canScrollRight: boolean;
 }
 
+export interface ScrollIndicatorState {
+  canScrollLeft: boolean;
+  canScrollRight: boolean;
+}
+
+/**
+ * Pure decision: given a scroll container's metrics, decide whether arrow
+ * indicators should show. The 1px tolerances are intentional — they absorb
+ * sub-pixel rounding so the buttons don't flicker at the boundaries.
+ */
+export function computeScrollIndicators(input: {
+  scrollLeft: number;
+  scrollWidth: number;
+  clientWidth: number;
+}): ScrollIndicatorState {
+  return {
+    canScrollLeft: input.scrollLeft > 1,
+    canScrollRight: input.scrollLeft + input.clientWidth < input.scrollWidth - 1,
+  };
+}
+
 export function useScrollIndicators(): ScrollIndicators {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -14,27 +35,18 @@ export function useScrollIndicators(): ScrollIndicators {
 
   const checkScrollability = () => {
     if (!scrollContainerRef.current) return;
-
     const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-
-    // Can scroll left if scrolled more than 1px from the beginning
-    setCanScrollLeft(scrollLeft > 1);
-
-    // Can scroll right if not at the end
-    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1); // -1 for rounding errors
+    const next = computeScrollIndicators({ scrollLeft, scrollWidth, clientWidth });
+    setCanScrollLeft(next.canScrollLeft);
+    setCanScrollRight(next.canScrollRight);
   };
 
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
 
-    // Check initial scroll state
     checkScrollability();
-
-    // Add scroll event listener
     scrollContainer.addEventListener('scroll', checkScrollability);
-
-    // Add resize event listener to recheck on window resize
     window.addEventListener('resize', checkScrollability);
 
     return () => {

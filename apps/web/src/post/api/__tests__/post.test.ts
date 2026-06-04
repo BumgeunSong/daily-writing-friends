@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { mapRowToPost } from '../post';
+import { mapRowToPost, isWithinDays } from '../post';
+import type { Post } from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
 
 // Helper: minimal PostRowWithEmbeds shape for mapRowToPost
@@ -125,5 +126,70 @@ describe('mapRowToPost', () => {
       const post = mapRowToPost(row);
       expect(post.authorProfileImageURL).toBeUndefined();
     });
+  });
+});
+
+function postWithCreatedAt(iso: string | null): Post {
+  return {
+    id: 'p1',
+    boardId: 'b1',
+    title: '',
+    content: '',
+    thumbnailImageURL: null,
+    authorId: 'u1',
+    authorName: '',
+    createdAt: iso
+      ? ({ toDate: () => new Date(iso) } as Post['createdAt'])
+      : (null as unknown as Post['createdAt']),
+    countOfComments: 0,
+    countOfReplies: 0,
+    countOfLikes: 0,
+    visibility: PostVisibility.PUBLIC,
+  };
+}
+
+describe('isWithinDays', () => {
+  const now = new Date('2025-01-15T12:00:00Z');
+
+  it('returns true for a post created today', () => {
+    const post = postWithCreatedAt('2025-01-15T09:00:00Z');
+    expect(isWithinDays(post, 7, now)).toBe(true);
+  });
+
+  it('returns true for a post exactly on the cutoff (days ago, same time)', () => {
+    // cutoff = 2025-01-08T12:00:00Z; post at exactly that moment is >= → true
+    const post = postWithCreatedAt('2025-01-08T12:00:00Z');
+    expect(isWithinDays(post, 7, now)).toBe(true);
+  });
+
+  it('returns false for a post just past the cutoff', () => {
+    // cutoff = 2025-01-08T12:00:00Z; one second earlier → false
+    const post = postWithCreatedAt('2025-01-08T11:59:59Z');
+    expect(isWithinDays(post, 7, now)).toBe(false);
+  });
+
+  it('returns false for a post well outside the window', () => {
+    const post = postWithCreatedAt('2024-12-01T00:00:00Z');
+    expect(isWithinDays(post, 7, now)).toBe(false);
+  });
+
+  it('returns false when createdAt is missing', () => {
+    const post = postWithCreatedAt(null);
+    expect(isWithinDays(post, 7, now)).toBe(false);
+  });
+
+  it('with days=0 only includes posts at or after `now` (cutoff = now)', () => {
+    // cutoff equals now → posts before now are out, posts at/after now are in
+    const before = postWithCreatedAt('2025-01-15T11:59:59Z');
+    expect(isWithinDays(before, 0, now)).toBe(false);
+    const atNow = postWithCreatedAt('2025-01-15T12:00:00Z');
+    expect(isWithinDays(atNow, 0, now)).toBe(true);
+  });
+
+  it('does not mutate the injected now', () => {
+    const post = postWithCreatedAt('2025-01-15T09:00:00Z');
+    const snapshot = now.getTime();
+    isWithinDays(post, 7, now);
+    expect(now.getTime()).toBe(snapshot);
   });
 });
