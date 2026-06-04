@@ -4,18 +4,19 @@ import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { remoteConfig } from '@/firebase';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 
-export type RemoteConfigKey =
-  | 'active_board_id'
-  | 'upcoming_board_id'
-  | 'stats_notice_banner_text'
-  | 'block_user_feature_enabled';
-
 export interface RemoteConfigValueTypes {
   active_board_id: string;
   upcoming_board_id: string;
   stats_notice_banner_text: string;
   block_user_feature_enabled: boolean;
 }
+
+interface AppConfigRow {
+  key: string;
+  value: string;
+}
+
+type SupabaseConfigKey = 'active_board_id' | 'upcoming_board_id';
 
 // Mirrors production Supabase `app_config` (verified 2026-06-05) so the app
 // behaves correctly on first paint and on fetch failure.
@@ -36,11 +37,14 @@ async function fetchAppConfigFromSupabase(): Promise<Partial<RemoteConfigValueTy
     .from('app_config')
     .select('key, value')
     .in('key', ['active_board_id', 'upcoming_board_id']);
-  if (error) throw error;
+  if (error) throw error instanceof Error ? error : new Error(String(error));
 
-  const rowsByKey: Record<string, string> = {};
-  for (const row of data ?? []) {
-    rowsByKey[row.key] = row.value;
+  const rows = (data ?? []) as AppConfigRow[];
+  const rowsByKey: Partial<Record<SupabaseConfigKey, string>> = {};
+  for (const row of rows) {
+    if (row.key === 'active_board_id' || row.key === 'upcoming_board_id') {
+      rowsByKey[row.key] = row.value;
+    }
   }
   const result: Partial<RemoteConfigValueTypes> = {};
   if (rowsByKey.active_board_id) result.active_board_id = rowsByKey.active_board_id;
@@ -88,7 +92,10 @@ async function fetchRemoteConfig(): Promise<RemoteConfigValueTypes> {
 }
 
 export function useRemoteConfig<K extends keyof RemoteConfigValueTypes>(key: K) {
-  const { data, isPlaceholderData, isFetching, error, refetch } = useQuery({
+  const { data, isPlaceholderData, isFetching, error, refetch } = useQuery<
+    RemoteConfigValueTypes,
+    Error
+  >({
     queryKey: REMOTE_CONFIG_QUERY_KEY,
     queryFn: fetchRemoteConfig,
     placeholderData: REMOTE_CONFIG_DEFAULTS,
@@ -101,7 +108,7 @@ export function useRemoteConfig<K extends keyof RemoteConfigValueTypes>(key: K) 
     value: values[key],
     isPlaceholderData,
     isFetching,
-    error: error as Error | null,
+    error,
     refetch,
   } as const;
 }
