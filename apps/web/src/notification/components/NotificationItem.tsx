@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { Notification } from '@/notification/model/Notification';
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
+import { useUser } from '@/user/hooks/useUser';
 
 interface NotificationItemProps {
   notification: Notification;
@@ -12,18 +13,22 @@ function getNotificationLink(notification: Notification): string {
 
 export const NotificationItem = ({ notification }: NotificationItemProps) => {
   const message = notification.message;
+  const { userData: deferredActor } = useUser(notification.fromUserId);
+  const actorProfilePhoto =
+    notification.fromUserProfileImage ?? deferredActor?.profilePhotoURL ?? undefined;
+
   return (
     <Link to={getNotificationLink(notification)}>
       <div
         className={
-          `flex cursor-pointer items-start gap-3 border-b border-border/30 px-3 md:px-4 py-3 nav-hover reading-focus active:scale-[0.99] transition-[transform,background-color] duration-200 ${ 
+          `flex cursor-pointer items-start gap-3 border-b border-border/30 px-3 md:px-4 py-3 nav-hover reading-focus active:scale-[0.99] transition-[transform,background-color] duration-200 ${
           !notification.read ? 'bg-card' : ''}`
         }
       >
         <ComposedAvatar
           className='shrink-0'
           size={40}
-          src={notification.fromUserProfileImage}
+          src={actorProfilePhoto}
           alt='User Avatar'
           fallback={notification.fromUserId.slice(0, 2).toUpperCase()}
         />
