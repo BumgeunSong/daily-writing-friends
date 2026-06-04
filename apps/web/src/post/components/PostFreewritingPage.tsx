@@ -97,7 +97,7 @@ export default function PostFreewritingPage() {
         visibility: PostVisibility.PRIVATE,
       })
 
-      toast.success("프리라이팅으로 쓴 글은 다른 사람에게 보이지 않아요.", {position: 'bottom-center'})
+      toast.success("프리라이팅으로 쓴 글의 내용은 나만 볼 수 있어요.", {position: 'bottom-center'})
 
       sendAnalyticsEvent(AnalyticsEvent.FINISH_FREE_WRITING, { boardId })
 

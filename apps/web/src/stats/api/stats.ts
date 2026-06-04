@@ -130,7 +130,7 @@ export async function fetchBatchPostDatesByDateRange(
   if (userIds.length === 0) return [];
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
-    .from('posts')
+    .from('posts_feed')
     .select('author_id, created_at')
     .in('author_id', userIds)
     .gte('created_at', start.toISOString())

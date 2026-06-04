@@ -38,8 +38,8 @@ export async function searchOwnPosts(
   const orFilter = `title.ilike.${pattern},content.ilike.${pattern}`;
 
   const { data, error } = await supabase
-    .from('posts')
-    .select(`${FEED_POST_SELECT}, boards(first_day)`)
+    .from('posts_feed')
+    .select(FEED_POST_SELECT)
     .eq('author_id', userId)
     .or(orFilter)
     .order('created_at', { ascending: false })

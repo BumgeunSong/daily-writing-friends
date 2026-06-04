@@ -42,17 +42,21 @@ export function isWithinDays(post: Post, days: number, now: Date = new Date()): 
   return postDate >= cutoffDate;
 }
 
-/** Post row with embedded resources from PostgREST joins.
- *  Feed queries select content_preview (500 chars) instead of full content/content_json.
- *  Detail queries select * which includes both content and content_preview. */
+/** Post row shape returned by the `posts_feed` view. The view pre-joins
+ *  boards/users into flat columns (`board_first_day`, `author_profile_photo_url`)
+ *  and masks content fields to NULL for private posts viewed by non-authors.
+ *
+ *  Embed fields (`boards`, `users`, `comments`, `replies`) remain optional so
+ *  legacy queries that still read from the base `posts` table continue to
+ *  type-check while we migrate. */
 interface PostRowWithEmbeds {
   id: string;
   board_id: string;
   author_id: string;
   author_name: string;
   title: string;
-  content?: string;
-  content_preview?: string;
+  content?: string | null;
+  content_preview?: string | null;
   content_json?: unknown;
   thumbnail_image_url: string | null;
   visibility: string | null;
@@ -63,16 +67,21 @@ interface PostRowWithEmbeds {
   week_days_from_first_day: number | null;
   created_at: string;
   updated_at: string;
+  board_first_day?: string | null;
+  author_profile_photo_url?: string | null;
   boards?: { first_day: string | null } | { first_day: string | null }[];
   users?: { profile_photo_url: string | null } | { profile_photo_url: string | null }[];
   comments?: { count: number }[];
   replies?: { count: number }[];
 }
 
-/** Explicit column list for feed queries — excludes content/content_json AND the
- * `comments(count)/replies(count)` PostgREST aggregates (each was a per-row scalar
- * subquery; mapRowToPost falls back to denormalized count_of_comments/replies). */
-export const FEED_POST_SELECT = 'id, board_id, author_id, author_name, title, content_preview, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at';
+/** Explicit column list for feed queries against `posts_feed`.
+ *  The view exposes flat `board_first_day` / `author_profile_photo_url`
+ *  instead of PostgREST joins, and denormalized `count_of_comments` /
+ *  `count_of_replies` already replace the per-row `comments(count)` /
+ *  `replies(count)` scalar subqueries main #31 dropped — `mapRowToPost`
+ *  falls back to those cached counters. */
+export const FEED_POST_SELECT = 'id, board_id, author_id, author_name, title, content_preview, thumbnail_image_url, visibility, count_of_comments, count_of_replies, count_of_likes, engagement_score, week_days_from_first_day, created_at, updated_at, board_first_day, author_profile_photo_url';
 
 /**
  * Fetch recent posts for a board.
@@ -88,8 +97,8 @@ export async function fetchRecentPostsFromSupabase(
   const supabase = getSupabaseClient();
 
   let q = supabase
-    .from('posts')
-    .select(`${FEED_POST_SELECT}, users!author_id(profile_photo_url)`)
+    .from('posts_feed')
+    .select(FEED_POST_SELECT)
     .eq('board_id', boardId)
     .order('created_at', { ascending: false });
 
@@ -130,8 +139,8 @@ export async function fetchBestPostsFromSupabase(
   const supabase = getSupabaseClient();
 
   let q = supabase
-    .from('posts')
-    .select(`${FEED_POST_SELECT}, users!author_id(profile_photo_url)`)
+    .from('posts_feed')
+    .select(FEED_POST_SELECT)
     .eq('board_id', boardId)
     .order('engagement_score', { ascending: false })
     .limit(limitCount);
@@ -154,21 +163,19 @@ export async function fetchBestPostsFromSupabase(
   return (data || []).map(mapRowToPost);
 }
 
-/** Map a Supabase posts row (with board and user embeds) to Post model */
+/** Map a row from `posts_feed` (or the legacy `posts` query shape) to Post model. */
 export function mapRowToPost(row: PostRowWithEmbeds): Post {
-  // Prefer live embedded counts (PostgREST aggregates) over cached counter columns
   const commentCount = row.comments?.[0]?.count ?? row.count_of_comments ?? 0;
   const replyCount = row.replies?.[0]?.count ?? row.count_of_replies ?? 0;
 
-  // Compute weekDaysFromFirstDay from board's first_day if available via embedded join
-  const board = Array.isArray(row.boards) ? row.boards[0] : row.boards;
-  const weekDays = board?.first_day
-    ? computeWeekDaysFromFirstDay(board.first_day, row.created_at)
+  const boardEmbed = Array.isArray(row.boards) ? row.boards[0] : row.boards;
+  const firstDay = row.board_first_day ?? boardEmbed?.first_day ?? null;
+  const weekDays = firstDay
+    ? computeWeekDaysFromFirstDay(firstDay, row.created_at)
     : (row.week_days_from_first_day ?? undefined);
 
-  // Extract profile photo from joined users data (optional — not all callers include the join)
-  const usersData = Array.isArray(row.users) ? row.users[0] : row.users;
-  const user = usersData ?? null;
+  const usersEmbed = Array.isArray(row.users) ? row.users[0] : row.users;
+  const profilePhotoURL = row.author_profile_photo_url ?? usersEmbed?.profile_photo_url ?? null;
 
   return {
     id: row.id,
@@ -187,6 +194,6 @@ export function mapRowToPost(row: PostRowWithEmbeds): Post {
     engagementScore: row.engagement_score,
     weekDaysFromFirstDay: weekDays,
     visibility: (row.visibility as PostVisibility) || PostVisibility.PUBLIC,
-    authorProfileImageURL: user?.profile_photo_url || undefined,
+    authorProfileImageURL: profilePhotoURL || undefined,
   };
 }

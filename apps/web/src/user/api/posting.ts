@@ -26,7 +26,7 @@ export async function fetchPostingsFromSupabase(userId: string): Promise<Supabas
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
-    .from('posts')
+    .from('posts_feed')
     .select('id, board_id, title, content_length, created_at')
     .eq('author_id', userId)
     .order('created_at', { ascending: false });
@@ -59,7 +59,7 @@ export async function fetchPostingsByDateRangeFromSupabase(
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
-    .from('posts')
+    .from('posts_feed')
     .select('id, board_id, title, content_length, created_at')
     .eq('author_id', userId)
     .gte('created_at', start.toISOString())
