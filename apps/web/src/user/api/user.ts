@@ -8,6 +8,7 @@ import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { fetchUserFromSupabase, fetchAllUsersFromSupabase, fetchUsersWithBoardPermissionFromSupabase } from './userReads';
 import type { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
 import type { AuthUser } from '@/shared/hooks/useAuth';
+import { REMOTE_CONFIG_DEFAULTS } from '@/shared/hooks/useRemoteConfig';
 import { mapUserToSupabaseUpdate, mapBoardPermissionsToRows } from '@/user/utils/userMappers';
 import { resizeImageBlob } from '@/shared/utils/resizeImageBlob';
 import { AVATAR_CACHE_CONTROL } from '@/shared/utils/storageConstants';
@@ -125,7 +126,7 @@ export async function createUserIfNotExists(user: AuthUser): Promise<void> {
             kakaoId: null,
             referrer: null,
             boardPermissions: {
-                'rW3Y3E2aEbpB0KqGiigd': 'read', // 기본 보드 ID
+                [REMOTE_CONFIG_DEFAULTS.active_board_id]: 'read',
             },
             updatedAt: null,
         }

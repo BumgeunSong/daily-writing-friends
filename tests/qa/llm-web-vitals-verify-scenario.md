@@ -30,11 +30,11 @@
 
 ### TC-01 — Root redirect (`/`)
 1. Open `/` as authenticated member
-2. **Expected:** redirected to `/board/rW3Y3E2aEbpB0KqGiigd` (active board)
+2. **Expected:** redirected to `/board/1a65026a-cf93-4828-be54-fd8d034008da` (active board)
 3. **Pass criteria:** URL changes to `/board/:id`, no console errors
 
 ### TC-02 — Board feed loads
-1. Navigate to `/board/rW3Y3E2aEbpB0KqGiigd`
+1. Navigate to `/board/1a65026a-cf93-4828-be54-fd8d034008da`
 2. **Expected:**
    - Header shows board title within 3s
    - PostCard list renders with ≥ 1 post

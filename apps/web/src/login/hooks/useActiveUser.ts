@@ -16,9 +16,7 @@ export function useActiveUser() {
     error,
   } = useQuery({
     queryKey: ['activeUserCount', activeBoardId],
-    queryFn: () =>
-      activeBoardId ? fetchUsersWithBoardPermission([activeBoardId]) : Promise.resolve([]),
-    enabled: !!activeBoardId,
+    queryFn: () => fetchUsersWithBoardPermission([activeBoardId]),
   });
 
   return {

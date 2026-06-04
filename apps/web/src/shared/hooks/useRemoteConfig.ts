@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { remoteConfig } from '@/firebase';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
@@ -56,6 +57,14 @@ async function fetchFirebaseRemoteConfig(): Promise<Partial<RemoteConfigValueTyp
   };
 }
 
+function reportPartialFailure(source: 'supabase' | 'firebase', reason: unknown) {
+  const cause = reason instanceof Error ? reason : new Error(String(reason));
+  Sentry.captureException(cause, {
+    level: 'warning',
+    tags: { feature: 'remote-config', source },
+  });
+}
+
 async function fetchRemoteConfig(): Promise<RemoteConfigValueTypes> {
   const [supabase, firebase] = await Promise.allSettled([
     fetchAppConfigFromSupabase(),
@@ -68,6 +77,8 @@ async function fetchRemoteConfig(): Promise<RemoteConfigValueTypes> {
       ? supabase.reason
       : new Error(String(supabase.reason));
   }
+  if (supabase.status === 'rejected') reportPartialFailure('supabase', supabase.reason);
+  if (firebase.status === 'rejected') reportPartialFailure('firebase', firebase.reason);
 
   return {
     ...REMOTE_CONFIG_DEFAULTS,
