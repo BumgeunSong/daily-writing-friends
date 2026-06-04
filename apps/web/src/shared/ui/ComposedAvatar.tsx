@@ -1,5 +1,6 @@
 import { User as UserIcon } from 'lucide-react';
 import type React from 'react';
+import { useAvatarUrl } from '@/shared/hooks/useAvatarUrl';
 import { cn } from '@/shared/utils/cn';
 import { Avatar, AvatarImage, AvatarFallback } from './avatar';
 
@@ -40,10 +41,10 @@ const ComposedAvatar: React.FC<ComposedAvatarProps> = ({
   loading = 'lazy',
   ...rest
 }) => {
-  // Firebase Storage URLs are now served at the correct size (256x256) because
-  // the upload pipeline pre-resizes via resizeImageBlob. Google avatar URLs still
-  // need the size hint because they come pre-sized from the OAuth provider.
-  const renderSrc = src ? (isGoogleAvatarUrl(src) ? appendGoogleAvatarSizeParam(src, size) : src) : '';
+  // Firebase Storage avatars resolve to the 128x128 resized variant via useAvatarUrl;
+  // Google OAuth avatars pass through and get the =s{size} hint instead.
+  const resolvedSrc = useAvatarUrl(src);
+  const renderSrc = resolvedSrc ? appendGoogleAvatarSizeParam(resolvedSrc, size) : '';
 
   return (
     <Avatar className={cn('ring-1 ring-black/10 dark:ring-white/10', className)} style={{ width: size, height: size }} {...rest}>
