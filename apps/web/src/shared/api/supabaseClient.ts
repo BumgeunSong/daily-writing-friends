@@ -11,6 +11,38 @@ import { addSentryBreadcrumb } from '@/sentry';
 
 const SLOW_WRITE_THRESHOLD_MS = 1000;
 
+export interface SlowWriteReport {
+  breadcrumb: {
+    message: string;
+    category: 'supabase.write';
+    data: { operation: string; durationMs: number };
+    level: 'warning';
+  };
+  consoleMessage: string;
+}
+
+/**
+ * Pure decision for slow-write reporting. Returns null when the duration is
+ * below the threshold, otherwise returns the exact payload the imperative
+ * shell should emit to Sentry and the console.
+ */
+export function detectSlowWrite(
+  operation: string,
+  durationMs: number,
+  threshold: number = SLOW_WRITE_THRESHOLD_MS,
+): SlowWriteReport | null {
+  if (durationMs < threshold) return null;
+  return {
+    breadcrumb: {
+      message: `Slow Supabase write detected: ${operation}`,
+      category: 'supabase.write',
+      data: { operation, durationMs },
+      level: 'warning',
+    },
+    consoleMessage: `[Supabase] Slow write detected: ${operation} took ${durationMs}ms`,
+  };
+}
+
 let supabaseInstance: SupabaseClient | null = null;
 
 /**
@@ -144,14 +176,15 @@ export async function executeTrackedWrite(
   const result = await fn();
   const durationMs = Date.now() - startTime;
 
-  if (durationMs >= SLOW_WRITE_THRESHOLD_MS) {
+  const slowWriteReport = detectSlowWrite(operation, durationMs);
+  if (slowWriteReport) {
     addSentryBreadcrumb(
-      `Slow Supabase write detected: ${operation}`,
-      'supabase.write',
-      { operation, durationMs },
-      'warning',
+      slowWriteReport.breadcrumb.message,
+      slowWriteReport.breadcrumb.category,
+      slowWriteReport.breadcrumb.data,
+      slowWriteReport.breadcrumb.level,
     );
-    console.warn(`[Supabase] Slow write detected: ${operation} took ${durationMs}ms`);
+    console.warn(slowWriteReport.consoleMessage);
   }
 
   throwOnError(result, operation);
