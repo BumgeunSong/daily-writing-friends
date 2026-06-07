@@ -1,6 +1,6 @@
 import type { PostgrestError } from '@supabase/supabase-js';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { throwOnError, executeTrackedWrite, SupabaseWriteError, SupabaseNetworkError, isNetworkError } from './supabaseClient';
+import { throwOnError, executeTrackedWrite, SupabaseWriteError, SupabaseNetworkError, isNetworkError, detectSlowWrite } from './supabaseClient';
 
 const mockSetContext = vi.fn();
 const mockSetFingerprint = vi.fn();
@@ -235,29 +235,44 @@ describe('executeTrackedWrite', () => {
     expect(Sentry.captureException).toHaveBeenCalledWith(expect.any(SupabaseWriteError));
   });
 
-  it('adds slow-write warning breadcrumb and console.warn when operation exceeds threshold', async () => {
-    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    // Mock Date.now to simulate elapsed time above the slow-write threshold (1000ms)
-    // without actually waiting. executeTrackedWrite calls Date.now twice: once for
-    // startTime, once for durationMs.
-    const dateNowSpy = vi
-      .spyOn(Date, 'now')
-      .mockReturnValueOnce(0)
-      .mockReturnValueOnce(1500);
-    const fn = vi.fn().mockResolvedValue({ error: null });
+});
 
-    await executeTrackedWrite('slowOp', fn);
+describe('detectSlowWrite', () => {
+  it('returns null when duration is below threshold', () => {
+    expect(detectSlowWrite('insertPost', 999)).toBeNull();
+  });
 
-    expect(addSentryBreadcrumb).toHaveBeenCalledWith(
-      'Slow Supabase write detected: slowOp',
-      'supabase.write',
-      expect.objectContaining({ operation: 'slowOp', durationMs: 1500 }),
-      'warning',
-    );
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Slow write detected: slowOp'));
+  it('returns null when duration is well below threshold', () => {
+    expect(detectSlowWrite('insertPost', 0)).toBeNull();
+  });
 
-    consoleSpy.mockRestore();
-    dateNowSpy.mockRestore();
+  it('returns a report when duration equals threshold', () => {
+    expect(detectSlowWrite('insertPost', 1000)).toEqual({
+      breadcrumb: {
+        message: 'Slow Supabase write detected: insertPost',
+        category: 'supabase.write',
+        data: { operation: 'insertPost', durationMs: 1000 },
+        level: 'warning',
+      },
+      consoleMessage: '[Supabase] Slow write detected: insertPost took 1000ms',
+    });
+  });
+
+  it('returns a report when duration exceeds threshold', () => {
+    expect(detectSlowWrite('slowOp', 2500)).toEqual({
+      breadcrumb: {
+        message: 'Slow Supabase write detected: slowOp',
+        category: 'supabase.write',
+        data: { operation: 'slowOp', durationMs: 2500 },
+        level: 'warning',
+      },
+      consoleMessage: '[Supabase] Slow write detected: slowOp took 2500ms',
+    });
+  });
+
+  it('honors a custom threshold', () => {
+    expect(detectSlowWrite('op', 500, 1000)).toBeNull();
+    expect(detectSlowWrite('op', 500, 500)).not.toBeNull();
   });
 });
 
