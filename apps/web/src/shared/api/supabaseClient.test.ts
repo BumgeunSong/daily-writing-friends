@@ -237,23 +237,28 @@ describe('executeTrackedWrite', () => {
 
   it('adds slow-write warning breadcrumb and console.warn when operation exceeds threshold', async () => {
     const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    // Simulate a slow operation by delaying 1100ms
-    const fn = vi.fn().mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve({ error: null }), 1100)),
-    );
+    // Mock Date.now to simulate elapsed time above the slow-write threshold (1000ms)
+    // without actually waiting. executeTrackedWrite calls Date.now twice: once for
+    // startTime, once for durationMs.
+    const dateNowSpy = vi
+      .spyOn(Date, 'now')
+      .mockReturnValueOnce(0)
+      .mockReturnValueOnce(1500);
+    const fn = vi.fn().mockResolvedValue({ error: null });
 
     await executeTrackedWrite('slowOp', fn);
 
     expect(addSentryBreadcrumb).toHaveBeenCalledWith(
       'Slow Supabase write detected: slowOp',
       'supabase.write',
-      expect.objectContaining({ operation: 'slowOp' }),
+      expect.objectContaining({ operation: 'slowOp', durationMs: 1500 }),
       'warning',
     );
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Slow write detected: slowOp'));
 
     consoleSpy.mockRestore();
-  }, 5000);
+    dateNowSpy.mockRestore();
+  });
 });
 
 describe('isNetworkError', () => {
