@@ -117,12 +117,30 @@ export function buildStorageState(
     user: session.user,
   });
 
+  // Mirror what `syncUserState` writes after onAuthStateChange's INITIAL_SESSION
+  // fires — without this, PrivateRoutes blocks the page render while
+  // useAuth.loading is still true, racing the test's waitForLoadState.
+  const userMeta = (session.user.user_metadata ?? {}) as Record<string, unknown>;
+  const currentUserValue = JSON.stringify({
+    uid: session.user.id,
+    email: session.user.email ?? null,
+    displayName:
+      (typeof userMeta.full_name === 'string' ? userMeta.full_name : null) ??
+      session.user.email ??
+      null,
+    photoURL:
+      typeof userMeta.avatar_url === 'string' ? userMeta.avatar_url : null,
+  });
+
   return {
     cookies: [],
     origins: [
       {
         origin: baseURL,
-        localStorage: [{ name: storageKey, value: storageValue }],
+        localStorage: [
+          { name: storageKey, value: storageValue },
+          { name: 'currentUser', value: currentUserValue },
+        ],
       },
     ],
   };
