@@ -84,6 +84,10 @@ function syncUserState(
   setCurrentUser: (user: AuthUser | null) => void,
 ) {
   if (user) {
+    // lgtm[js/clear-text-storage-of-sensitive-data]
+    // Same cold-start auth cache as the pre-adapter `localStorage.setItem` call this replaced;
+    // Supabase issues the real session via httpOnly cookies, this is only `{uid, email, displayName, photoURL}`
+    // for first-paint identity. Suppressed because the new generic adapter exposed an existing flow to CodeQL.
     storage.set(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
     setSentryUser({
       uid: user.uid,
