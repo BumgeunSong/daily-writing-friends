@@ -3,7 +3,7 @@ import { ref } from 'firebase/storage';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { storage } from '@/firebase';
-import { processImageForUpload, type ProcessingStage } from '@/post/utils/ImageUtils';
+import { processImageForUpload, type ProcessingStage } from '@/post/web/ImageUtils';
 import {
   validateFileSize,
   validateProcessedFileSize,
