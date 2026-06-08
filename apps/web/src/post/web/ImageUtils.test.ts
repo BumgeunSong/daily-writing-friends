@@ -3,7 +3,7 @@ import {
   computeScaledDimensions,
   needsReencoding,
   processImageForUpload,
-} from '../ImageUtils';
+} from './ImageUtils';
 
 const FIVE_MB = 5 * 1024 * 1024;
 const MAX_DIM = 1200;
