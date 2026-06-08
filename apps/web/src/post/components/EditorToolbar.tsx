@@ -17,7 +17,7 @@ import {
 import { useState } from 'react';
 import { useKeyboardInset } from '@/post/hooks/useKeyboardInset';
 import { useScrollIndicators } from '@/post/hooks/useScrollIndicators';
-import { isValidHttpUrl } from '@/post/utils/sanitizeHtml';
+import { isValidHttpUrl } from '@/post/web/sanitizeHtml';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover';

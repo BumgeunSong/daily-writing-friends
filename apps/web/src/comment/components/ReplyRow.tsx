@@ -4,7 +4,7 @@ import { CommentHeader } from '@/comment/components/CommentHeader';
 import ReactionList from '@/comment/components/ReactionList';
 import ReplyInput from '@/comment/components/ReplyInput';
 import { useDeleteReply, useEditReply } from '@/comment/hooks/useCreateReply';
-import { renderCommentBodyHtml } from '@/post/utils/contentUtils';
+import { renderCommentBodyHtml } from '@/post/web/contentUtils';
 import { Button } from '@/shared/ui/button';
 import type { Reply } from '@/comment/model/Reply';
 import type React from 'react';
