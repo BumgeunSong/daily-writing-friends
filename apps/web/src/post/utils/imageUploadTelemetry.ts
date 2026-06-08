@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/react';
-import type { ProcessingFailure } from '@/post/utils/ImageUtils';
+import type { ProcessingFailure } from '@/post/web/ImageUtils';
 
 const captureProcessingFailure = (failure: ProcessingFailure, error: unknown): void => {
   Sentry.captureException(error, {
