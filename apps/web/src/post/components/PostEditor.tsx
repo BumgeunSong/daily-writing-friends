@@ -4,6 +4,7 @@ import { EditorTiptap } from './EditorTiptap';
 interface PostEditorProps {
   value: string;
   onChange: (value: string) => void;
+  onTyping?: () => void;
   placeholder?: string;
   onUploadingChange?: (isUploading: boolean) => void;
   onContentJsonChange?: (json: ProseMirrorDoc) => void;
@@ -12,6 +13,7 @@ interface PostEditorProps {
 export function PostEditor({
   value,
   onChange,
+  onTyping,
   placeholder,
   onUploadingChange,
   onContentJsonChange,
@@ -23,6 +25,7 @@ export function PostEditor({
         onChange(html);
         onContentJsonChange?.(json);
       }}
+      onTyping={onTyping}
       placeholder={placeholder}
       onUploadingChange={onUploadingChange}
     />
