@@ -1,8 +1,9 @@
 import { Loader2 } from "lucide-react"
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useCallback } from "react"
 import { useParams, useNavigate, useLocation } from "react-router-dom"
 import { toast } from "sonner"
 import { PostVisibility } from '@/post/model/Post'
+import { useTypingPresence } from '@/post/hooks/useTypingPresence'
 import { prependTopicToContent } from '@/post/utils/freewritingContentUtils'
 import { createPost } from '@/post/utils/postUtils'
 import { useAuth } from '@/shared/hooks/useAuth'
@@ -38,10 +39,12 @@ export default function PostFreewritingPage() {
   const postTitle = userNickname ? `${userNickname}님의 프리라이팅` : "프리라이팅"
   const [content, setContent] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [timerStatus, setTimerStatus] = useState<WritingStatus>(WritingStatus.Paused)
   const [hasReachedTargetTime, setHasReachedTargetTime] = useState(false)
 
-  const typingPauseTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const { isTyping, ping: handleTyping } = useTypingPresence({
+    idleDelay: TYPING_PAUSE_DELAY_IN_MILLISECONDS,
+  })
+  const timerStatus = isTyping ? WritingStatus.Writing : WritingStatus.Paused
 
   const handleTargetTimeReached = useCallback(() => {
     setHasReachedTargetTime(true)
@@ -50,24 +53,7 @@ export default function PostFreewritingPage() {
 
   const handleContentChange = (updatedContent: string) => {
     setContent(updatedContent)
-    setTimerStatus(WritingStatus.Writing)
-
-    if (typingPauseTimeoutRef.current) {
-      clearTimeout(typingPauseTimeoutRef.current)
-    }
-
-    typingPauseTimeoutRef.current = setTimeout(() => {
-      setTimerStatus(WritingStatus.Paused)
-    }, TYPING_PAUSE_DELAY_IN_MILLISECONDS)
   }
-
-  useEffect(() => {
-    return () => {
-      if (typingPauseTimeoutRef.current) {
-        clearTimeout(typingPauseTimeoutRef.current)
-      }
-    }
-  }, [])
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
@@ -156,6 +142,7 @@ export default function PostFreewritingPage() {
           <PostEditor
             value={content}
             onChange={handleContentChange}
+            onTyping={handleTyping}
           />
         </form>
       </div>

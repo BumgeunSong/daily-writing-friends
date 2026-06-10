@@ -18,6 +18,12 @@ interface UseTiptapEditorProps {
   initialHtml?: string;
   initialJson?: ProseMirrorDoc;
   onChange: (output: { html: string; json: ProseMirrorDoc }) => void;
+  /**
+   * Fired synchronously on every editor update (per keystroke), bypassing
+   * onChange's debounce. Use this for typing-presence signals that must not
+   * wait for the user to pause.
+   */
+  onTyping?: () => void;
   placeholder?: string;
   debounceDelay?: number;
 }
@@ -30,10 +36,15 @@ export function useTiptapEditor({
   initialHtml,
   initialJson,
   onChange,
+  onTyping,
   placeholder = DEFAULT_PLACEHOLDER,
   debounceDelay = DEFAULT_DEBOUNCE_DELAY,
 }: UseTiptapEditorProps) {
   const debounceTimerRef = useRef<NodeJS.Timeout>();
+  const onTypingRef = useRef(onTyping);
+  useEffect(() => {
+    onTypingRef.current = onTyping;
+  }, [onTyping]);
 
   // Configure TipTap extensions
   const extensions = [
@@ -98,6 +109,9 @@ export function useTiptapEditor({
       },
     },
     onUpdate: ({ editor }) => {
+      // Immediate typing signal — must fire per keystroke so the freewriting
+      // pause timer cannot expire mid-typing while onChange is still debounced.
+      onTypingRef.current?.();
       // Debounce onChange calls for performance
       clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = setTimeout(() => {
