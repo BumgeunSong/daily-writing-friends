@@ -7,7 +7,7 @@
  * No hooks or Supabase types here — only plain data.
  */
 
-import type { SupabaseUserUpdate } from '@/user/utils/userMappers';
+import type { User } from '@/user/model/User';
 
 export interface OnboardingFormValues {
   realName: string;
@@ -30,26 +30,27 @@ export type OnboardingSubmitAction =
       uid: string;
       boardId: string;
       cohort: number;
-      profilePayload: SupabaseUserUpdate;
+      profilePayload: Partial<User>;
       navigateTo: { path: '/join/complete'; state: { name: string; cohort: number } };
     }
   | {
       kind: 'updateOnly';
       uid: string;
-      profilePayload: SupabaseUserUpdate;
+      profilePayload: Partial<User>;
       navigateTo: { path: '/boards' };
     };
 
-function buildProfilePayload(values: OnboardingFormValues): SupabaseUserUpdate {
-  const referrer = values.referrer.trim();
+export type SubmitStepKind = 'createUser' | 'writeProfile' | 'joinWaitlist' | 'markComplete';
+
+function buildProfilePayload(values: OnboardingFormValues): Partial<User> {
+  const trimmedReferrer = values.referrer.trim();
   const isPhoneTab = values.activeContactTab === 'phone';
   return {
-    real_name: values.realName.trim(),
+    realName: values.realName.trim(),
     nickname: values.nickname.trim(),
-    phone_number: isPhoneTab ? values.phone.replace(/\D/g, '') : null,
-    kakao_id: isPhoneTab ? null : values.kakaoId.trim(),
-    referrer: referrer.length > 0 ? referrer : null,
-    onboarding_complete: true,
+    phoneNumber: isPhoneTab ? values.phone.replace(/\D/g, '') : null,
+    kakaoId: isPhoneTab ? null : values.kakaoId.trim(),
+    referrer: trimmedReferrer.length > 0 ? trimmedReferrer : null,
   };
 }
 
@@ -68,7 +69,7 @@ export function resolveOnboardingSubmit(
       profilePayload,
       navigateTo: {
         path: '/join/complete',
-        state: { name: profilePayload.real_name ?? '', cohort: ctx.upcomingCohort },
+        state: { name: profilePayload.realName ?? '', cohort: ctx.upcomingCohort },
       },
     };
   }
@@ -79,4 +80,16 @@ export function resolveOnboardingSubmit(
     profilePayload,
     navigateTo: { path: '/boards' },
   };
+}
+
+/**
+ * Returns the side-effect step order. `markComplete` is always LAST so a crash
+ * between steps leaves `onboardingComplete=false`; the user lands back on
+ * `/join/onboarding` and re-submitting is idempotent for every prior step.
+ */
+export function getSubmitStepOrder(action: OnboardingSubmitAction): SubmitStepKind[] {
+  if (action.kind === 'updateThenWaitlist') {
+    return ['createUser', 'writeProfile', 'joinWaitlist', 'markComplete'];
+  }
+  return ['createUser', 'writeProfile', 'markComplete'];
 }
