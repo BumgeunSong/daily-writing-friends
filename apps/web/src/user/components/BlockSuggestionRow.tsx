@@ -1,4 +1,3 @@
-import { Button } from '@/shared/ui/button';
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import type { User } from '@/user/model/User';
 
@@ -10,6 +9,9 @@ interface BlockSuggestionRowProps {
   onActivate: () => void;
 }
 
+// Raw <button> instead of shadcn Button: the original page used a hand-tuned
+// button with `text-left`, no shadcn ring/padding defaults, and `hover:bg-muted`
+// on the whole row. Keeping it raw preserves the exact appearance.
 export default function BlockSuggestionRow({
   user,
   active,
@@ -18,15 +20,14 @@ export default function BlockSuggestionRow({
   onActivate,
 }: BlockSuggestionRowProps) {
   return (
-    <Button
-      variant="ghost"
-      asChild={false}
+    <button
+      type="button"
+      className={`flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-muted ${
+        active ? 'bg-muted' : ''
+      }`}
       onClick={onBlock}
       disabled={loading}
       onMouseEnter={onActivate}
-      className={`flex h-auto w-full items-center justify-start gap-3 rounded-none p-3 text-left hover:bg-muted ${
-        active ? 'bg-muted' : ''
-      }`}
     >
       <ComposedAvatar
         className="shrink-0"
@@ -39,6 +40,6 @@ export default function BlockSuggestionRow({
         <div className="truncate font-medium">{user.nickname}</div>
         <div className="truncate text-sm text-muted-foreground">{user.email}</div>
       </div>
-    </Button>
+    </button>
   );
 }
