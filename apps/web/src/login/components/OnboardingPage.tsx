@@ -1,6 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm, type FieldValues, type UseFormRegister } from 'react-hook-form';
+// `tab` is read from `formValues.activeContactTab` (single source of truth) —
+// no local mirror state, to avoid a one-frame flicker when prefill resolves to
+// 'kakao' for a returning user.
 import { useNavigate } from '@/shared/navigation';
 import { useIsUserInWaitingList } from '@/login/hooks/useIsUserInWaitingList';
 import { useOnboardingPrefill } from '@/login/hooks/useOnboardingPrefill';
@@ -33,7 +36,6 @@ export default function OnboardingPage() {
   const { data: upcomingBoard, isLoading: isBoardLoading } = useUpcomingBoard();
   const { isInWaitingList, isLoading: isWaitingLoading } = useIsUserInWaitingList();
 
-  const [tab, setTab] = useState<'phone' | 'kakao'>('phone');
   const [hasAgreedToCohort, setHasAgreedToCohort] = useState(false);
 
   const form = useForm<OnboardingFormSchema>({
@@ -44,15 +46,12 @@ export default function OnboardingPage() {
   // FormField is typed against FieldValues; widen the typed register to interop.
   const register = typedRegister as unknown as UseFormRegister<FieldValues>;
   const formValues = watch();
+  const tab = formValues.activeContactTab;
 
-  const { isPrefilling, prefillError, initialContactTab } = useOnboardingPrefill(
+  const { isPrefilling, prefillError } = useOnboardingPrefill(
     { uid: currentUser?.uid, displayName: currentUser?.displayName, authLoading },
     form,
   );
-
-  useEffect(() => {
-    setTab(initialContactTab);
-  }, [initialContactTab]);
 
   useEffect(() => {
     if (!isWaitingLoading && isInWaitingList) {
@@ -71,7 +70,6 @@ export default function OnboardingPage() {
   });
 
   const switchTab = (next: 'phone' | 'kakao') => {
-    setTab(next);
     setValue('activeContactTab', next, { shouldValidate: true });
   };
 

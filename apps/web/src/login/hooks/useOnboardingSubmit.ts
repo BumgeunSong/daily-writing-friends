@@ -1,10 +1,7 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { addUserToBoardWaitingList } from '@/board/utils/boardUtils';
-import {
-  getNavigateArgs,
-  getSubmitErrorMessage,
-} from '@/login/utils/onboardingDerived';
+import { getSubmitErrorMessage } from '@/login/utils/onboardingDerived';
 import type { OnboardingFormSchema } from '@/login/utils/onboardingSchema';
 import {
   resolveOnboardingSubmit,
@@ -24,7 +21,6 @@ interface SubmitDeps {
 export interface UseOnboardingSubmitResult {
   onSubmit: (values: OnboardingFormSchema) => Promise<void>;
   submitError: string | null;
-  resetSubmitError: () => void;
 }
 
 /**
@@ -93,8 +89,11 @@ export function useOnboardingSubmit({
 
       try {
         await runWrites(action, currentUser);
-        const nav = getNavigateArgs(action);
-        navigate(nav.path, nav.options as { state: unknown } | undefined);
+        if (action.kind === 'updateThenWaitlist') {
+          navigate(action.navigateTo.path, { state: action.navigateTo.state });
+        } else {
+          navigate(action.navigateTo.path);
+        }
       } catch (err) {
         console.error('OnboardingPage submit error', err);
         setSubmitError(getSubmitErrorMessage(err));
@@ -103,9 +102,5 @@ export function useOnboardingSubmit({
     [currentUser, prefillError, upcomingBoardId, upcomingCohort, navigate, runWrites],
   );
 
-  return {
-    onSubmit,
-    submitError,
-    resetSubmitError: useCallback(() => setSubmitError(null), []),
-  };
+  return { onSubmit, submitError };
 }
