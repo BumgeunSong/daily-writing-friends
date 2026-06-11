@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Board } from '@/board/model/Board';
-import type { OnboardingSubmitAction } from './onboardingSubmit';
 import {
-  getNavigateArgs,
   getOnboardingHeader,
   getSubmitCtaLabel,
   getSubmitErrorMessage,
@@ -93,33 +91,6 @@ describe('isSubmitDisabled', () => {
     expect(
       isSubmitDisabled({ ...base, requiresCohortAgreement: true, hasAgreedToCohort: true }),
     ).toBe(false);
-  });
-});
-
-describe('getNavigateArgs', () => {
-  it('passes through path with state for updateThenWaitlist', () => {
-    const action: OnboardingSubmitAction = {
-      kind: 'updateThenWaitlist',
-      uid: 'u1',
-      boardId: 'b1',
-      cohort: 11,
-      profilePayload: {} as OnboardingSubmitAction extends { profilePayload: infer P } ? P : never,
-      navigateTo: { path: '/join/complete', state: { name: '홍길동', cohort: 11 } },
-    };
-    expect(getNavigateArgs(action)).toEqual({
-      path: '/join/complete',
-      options: { state: { name: '홍길동', cohort: 11 } },
-    });
-  });
-
-  it('returns path-only args for updateOnly', () => {
-    const action: OnboardingSubmitAction = {
-      kind: 'updateOnly',
-      uid: 'u1',
-      profilePayload: {} as OnboardingSubmitAction extends { profilePayload: infer P } ? P : never,
-      navigateTo: { path: '/boards' },
-    };
-    expect(getNavigateArgs(action)).toEqual({ path: '/boards' });
   });
 });
 
