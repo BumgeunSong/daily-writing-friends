@@ -1,21 +1,26 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
-import type { FieldValues, UseFormRegister } from 'react-hook-form';
-import { useForm } from 'react-hook-form';
+import { useForm, type FieldValues, type UseFormRegister } from 'react-hook-form';
 import { useNavigate } from '@/shared/navigation';
-import { toast } from 'sonner';
-import { z } from 'zod';
-import { addUserToBoardWaitingList } from '@/board/utils/boardUtils';
 import { useIsUserInWaitingList } from '@/login/hooks/useIsUserInWaitingList';
+import { useOnboardingPrefill } from '@/login/hooks/useOnboardingPrefill';
+import { useOnboardingSubmit } from '@/login/hooks/useOnboardingSubmit';
 import { useUpcomingBoard } from '@/login/hooks/useUpcomingBoard';
 import { ROUTES } from '@/login/constants';
-import { validateKakaoId, validatePhone } from '@/login/utils/contactValidation';
-import { resolveOnboardingSubmit } from '@/login/utils/onboardingSubmit';
+import {
+  getOnboardingHeader,
+  getSubmitCtaLabel,
+  isSubmitDisabled,
+} from '@/login/utils/onboardingDerived';
+import {
+  ONBOARDING_FORM_DEFAULTS,
+  onboardingSchema,
+  type OnboardingFormSchema,
+} from '@/login/utils/onboardingSchema';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent } from '@/shared/ui/card';
 import { Skeleton } from '@/shared/ui/skeleton';
-import { fetchUser, updateUser, createUserIfNotExists } from '@/user/api/user';
 import CohortConfirmCard from './CohortConfirmCard';
 import FormField from './JoinFormField';
 import FormHeader from './JoinFormHeader';
@@ -26,30 +31,6 @@ import FormHeader from './JoinFormHeader';
  *   Stage 2: in parallel — useUpcomingBoard, useIsUserInWaitingList, fetchUser(uid)
  * The single skeleton covers both stages so callers see one loading surface, not two.
  */
-const onboardingSchema = z
-  .object({
-    realName: z.string().trim().min(2, '이름은 2글자 이상이어야 합니다.'),
-    nickname: z.string().trim().min(1, '필명을 입력해주세요.'),
-    phone: z.string(),
-    kakaoId: z.string(),
-    referrer: z.string(),
-    activeContactTab: z.enum(['phone', 'kakao']),
-  })
-  .superRefine((v, ctx) => {
-    const ok =
-      v.activeContactTab === 'phone'
-        ? validatePhone(v.phone) !== null
-        : validateKakaoId(v.kakaoId) !== null;
-    if (ok) return;
-    ctx.addIssue({
-      code: 'custom',
-      message: '연락처를 입력해주세요.',
-      // Error attaches to the visible field so the user actually sees it.
-      path: [v.activeContactTab === 'phone' ? 'phone' : 'kakaoId'],
-    });
-  });
-
-type OnboardingFormSchema = z.infer<typeof onboardingSchema>;
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
@@ -58,69 +39,32 @@ export default function OnboardingPage() {
   const { isInWaitingList, isLoading: isWaitingLoading } = useIsUserInWaitingList();
 
   const [tab, setTab] = useState<'phone' | 'kakao'>('phone');
-  const [isPrefilling, setIsPrefilling] = useState(true);
-  const [prefillError, setPrefillError] = useState<string | null>(null);
-  const [submitError, setSubmitError] = useState<string | null>(null);
   const [hasAgreedToCohort, setHasAgreedToCohort] = useState(false);
 
   const form = useForm<OnboardingFormSchema>({
     resolver: zodResolver(onboardingSchema),
-    defaultValues: {
-      realName: '',
-      nickname: '',
-      phone: '',
-      kakaoId: '',
-      referrer: '',
-      activeContactTab: 'phone',
-    },
+    defaultValues: ONBOARDING_FORM_DEFAULTS,
   });
-  const { register: typedRegister, handleSubmit, formState, setValue, reset, watch } = form;
+  const { register: typedRegister, handleSubmit, formState, setValue, watch } = form;
   // FormField is typed against FieldValues; widen the typed register to interop.
   const register = typedRegister as unknown as UseFormRegister<FieldValues>;
   const formValues = watch();
 
-  // Pre-fill from existing profile if any. If fetchUser fails, surface the error
-  // and BLOCK submit (see `submitDisabled` below) so a transient outage cannot
-  // overwrite real profile data with the blank form's defaults.
+  const { isPrefilling, prefillError, initialContactTab } = useOnboardingPrefill(
+    {
+      uid: currentUser?.uid,
+      displayName: currentUser?.displayName,
+      authLoading,
+    },
+    form,
+  );
+
+  // Sync the tab UI with whatever the prefill picked. The form's
+  // `activeContactTab` field is the source of truth; this just mirrors it for
+  // the visible tab control state.
   useEffect(() => {
-    if (!currentUser?.uid || authLoading) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const existing = await fetchUser(currentUser.uid);
-        if (cancelled) return;
-        if (existing) {
-          const initialTab: 'phone' | 'kakao' = existing.kakaoId && !existing.phoneNumber ? 'kakao' : 'phone';
-          reset({
-            realName: existing.realName ?? '',
-            nickname: existing.nickname ?? currentUser.displayName ?? '',
-            phone: existing.phoneNumber ?? '',
-            kakaoId: existing.kakaoId ?? '',
-            referrer: existing.referrer ?? '',
-            activeContactTab: initialTab,
-          });
-          setTab(initialTab);
-        } else {
-          // First-time user — seed nickname from auth displayName if available.
-          if (currentUser.displayName) {
-            setValue('nickname', currentUser.displayName);
-          }
-        }
-        setPrefillError(null);
-      } catch (err) {
-        if (cancelled) return;
-        console.error('OnboardingPage prefill error', err);
-        setPrefillError(
-          '기존 정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요. 그대로 제출하면 기존 정보가 덮어쓰일 수 있어요.',
-        );
-      } finally {
-        if (!cancelled) setIsPrefilling(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [currentUser?.uid, currentUser?.displayName, authLoading, reset, setValue]);
+    setTab(initialContactTab);
+  }, [initialContactTab]);
 
   // If already on the waiting list, skip onboarding entirely.
   useEffect(() => {
@@ -132,57 +76,12 @@ export default function OnboardingPage() {
   const isLoading = authLoading || isBoardLoading || isWaitingLoading || isPrefilling;
   const requiresCohortAgreement = Boolean(upcomingBoard?.cohort);
 
-  const onSubmit = async (values: OnboardingFormSchema) => {
-    if (!currentUser?.uid) {
-      toast.error('로그인 상태가 만료되었습니다. 다시 로그인해주세요.');
-      return;
-    }
-    if (prefillError) {
-      // Defensive: should be unreachable because submit is disabled, but if it
-      // somehow fires, refuse to write rather than silently overwrite.
-      setSubmitError(prefillError);
-      return;
-    }
-    setSubmitError(null);
-    const action = resolveOnboardingSubmit(values, {
-      uid: currentUser.uid,
-      upcomingBoardId: upcomingBoard?.id ?? null,
-      upcomingCohort: upcomingBoard?.cohort ?? null,
-    });
-    try {
-      // Write order is deliberate: profile fields first WITHOUT onboardingComplete,
-      // then waitlist (if any), then a final flip of onboardingComplete=true.
-      // If the process crashes between steps, the user lands back on /join/onboarding
-      // (because the flag is still false) and re-submitting is idempotent for both
-      // the profile update and the waitlist upsert.
-      await createUserIfNotExists(currentUser);
-      await updateUser(action.uid, {
-        realName: action.profilePayload.real_name ?? null,
-        nickname: action.profilePayload.nickname ?? null,
-        phoneNumber: action.profilePayload.phone_number ?? null,
-        kakaoId: action.profilePayload.kakao_id ?? null,
-        referrer: action.profilePayload.referrer ?? null,
-      });
-      if (action.kind === 'updateThenWaitlist') {
-        const ok = await addUserToBoardWaitingList(action.boardId, action.uid);
-        if (!ok) throw new Error('대기자 명단에 추가하는 중 오류가 발생했습니다.');
-      }
-      // Only after profile + waitlist succeed do we flip the flag. If this final
-      // updateUser fails, the next routing pass sends the user back here and
-      // re-submitting completes the flip; no orphaned `onboarding_complete=true`
-      // row can exist without the corresponding waitlist signal.
-      await updateUser(action.uid, { onboardingComplete: true });
-      if (action.kind === 'updateThenWaitlist') {
-        navigate(action.navigateTo.path, { state: action.navigateTo.state });
-      } else {
-        navigate(action.navigateTo.path);
-      }
-    } catch (err) {
-      console.error('OnboardingPage submit error', err);
-      const message = err instanceof Error ? err.message : '신청에 실패했습니다. 잠시 후 다시 시도해주세요.';
-      setSubmitError(message);
-    }
-  };
+  const { onSubmit, submitError } = useOnboardingSubmit({
+    currentUser,
+    upcomingBoardId: upcomingBoard?.id ?? null,
+    upcomingCohort: upcomingBoard?.cohort ?? null,
+    prefillError,
+  });
 
   const switchTab = (next: 'phone' | 'kakao') => {
     setTab(next);
@@ -208,12 +107,7 @@ export default function OnboardingPage() {
     );
   }
 
-  const headerTitle = upcomingBoard?.cohort
-    ? `매글프 ${upcomingBoard.cohort}기 신청하기`
-    : '프로필을 입력해주세요';
-  const headerSubtitle = upcomingBoard?.firstDay
-    ? `${upcomingBoard.firstDay.toDate().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}에 시작합니다.`
-    : '아래 정보를 채우면 다음 기수가 열릴 때 안내드려요.';
+  const { title: headerTitle, subtitle: headerSubtitle } = getOnboardingHeader(upcomingBoard);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -346,13 +240,17 @@ export default function OnboardingPage() {
             form="onboarding-form"
             className="w-full"
             size="lg"
-            disabled={
-              formState.isSubmitting ||
-              prefillError !== null ||
-              (requiresCohortAgreement && !hasAgreedToCohort)
-            }
+            disabled={isSubmitDisabled({
+              isSubmitting: formState.isSubmitting,
+              hasPrefillError: prefillError !== null,
+              requiresCohortAgreement,
+              hasAgreedToCohort,
+            })}
           >
-            {formState.isSubmitting ? '신청 중...' : upcomingBoard?.cohort ? '신청하기' : '저장하기'}
+            {getSubmitCtaLabel({
+              isSubmitting: formState.isSubmitting,
+              hasCohort: Boolean(upcomingBoard?.cohort),
+            })}
           </Button>
         </div>
       </div>
