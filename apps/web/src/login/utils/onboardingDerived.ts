@@ -1,5 +1,4 @@
 import type { Board } from '@/board/model/Board';
-import type { OnboardingSubmitAction } from './onboardingSubmit';
 
 export interface OnboardingHeader {
   title: string;
@@ -64,26 +63,6 @@ export function isSubmitDisabled({
 }: SubmitDisabledInput): boolean {
   if (isSubmitting || hasPrefillError) return true;
   return requiresCohortAgreement && !hasAgreedToCohort;
-}
-
-export interface NavigateArgs {
-  path: string;
-  options?: { state: unknown };
-}
-
-/**
- * Pure conversion of an OnboardingSubmitAction's navigateTo descriptor into
- * the (path, options) tuple react-router's `navigate` expects.
- * Replaces the if/else navigate branch in OnboardingPage.onSubmit.
- */
-export function getNavigateArgs(action: OnboardingSubmitAction): NavigateArgs {
-  if (action.kind === 'updateThenWaitlist') {
-    return {
-      path: action.navigateTo.path,
-      options: { state: action.navigateTo.state },
-    };
-  }
-  return { path: action.navigateTo.path };
 }
 
 export const SUBMIT_ERROR_FALLBACK = '신청에 실패했습니다. 잠시 후 다시 시도해주세요.';

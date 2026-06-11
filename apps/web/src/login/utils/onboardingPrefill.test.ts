@@ -98,4 +98,19 @@ describe('buildPrefillFormValues', () => {
     const existing = makeUser({ kakaoId: 'kakao_user', phoneNumber: null });
     expect(buildPrefillFormValues(existing, null).activeContactTab).toBe('kakao');
   });
+
+  it('for a first-time user, leaves every non-nickname field at the default', () => {
+    // Regression guard for the late-displayName scenario: if `displayName`
+    // arrives after the user has begun typing into other fields, we must NOT
+    // overwrite realName/phone/kakaoId/referrer. The one-shot guard in
+    // useOnboardingPrefill prevents re-runs, but if that guard is ever lost,
+    // this test ensures the prefill values themselves never carry non-default
+    // data into other fields for the first-time path.
+    const values = buildPrefillFormValues(null, '구글닉');
+    expect(values.realName).toBe('');
+    expect(values.phone).toBe('');
+    expect(values.kakaoId).toBe('');
+    expect(values.referrer).toBe('');
+    expect(values.activeContactTab).toBe('phone');
+  });
 });
