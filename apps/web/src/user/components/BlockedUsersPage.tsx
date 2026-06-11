@@ -1,26 +1,31 @@
-import { ArrowLeft, UserX, Search, X } from "lucide-react"
-import { useState, useEffect, useMemo, useRef, Suspense } from "react"
-import { toast } from "sonner"
-import { useAuth } from '@/shared/hooks/useAuth'
+import { ArrowLeft, Search, UserX, X } from 'lucide-react';
+import { Suspense, useCallback, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
+import { useAuth } from '@/shared/hooks/useAuth';
 import {
   AlertDialog,
-  AlertDialogTrigger,
+  AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
-} from "@/shared/ui/alert-dialog"
-import ComposedAvatar from "@/shared/ui/ComposedAvatar"
-import { Button } from "@/shared/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
-import { Input } from "@/shared/ui/input"
-import { Separator } from "@/shared/ui/separator"
-import { blockUser, unblockUser, getBlockedUsers, fetchUser } from '@/user/api/user'
-import useUserSearch from '@/user/hooks/useUserSearch'
-import type { User } from '@/user/model/User'
-import type React from "react"
+  AlertDialogTrigger,
+} from '@/shared/ui/alert-dialog';
+import { Button } from '@/shared/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
+import ComposedAvatar from '@/shared/ui/ComposedAvatar';
+import { Input } from '@/shared/ui/input';
+import { Separator } from '@/shared/ui/separator';
+import { useBlockedUsersList } from '@/user/hooks/useBlockedUsersList';
+import { useCloseSuggestionsOnOutsideClick } from '@/user/hooks/useCloseSuggestionsOnOutsideClick';
+import useUserSearch from '@/user/hooks/useUserSearch';
+import type { User } from '@/user/model/User';
+import {
+  filterBlockSuggestions,
+  getNextSuggestionIndex,
+  isCloseSuggestionsKey,
+  MAX_BLOCKED_USERS,
+} from '@/user/utils/blockedUsersUtils';
 
 // 검색 서제스트 드롭다운만 별도 컴포넌트로 분리 (Suspense 지원)
 function SuggestionsDropdown({
@@ -33,30 +38,20 @@ function SuggestionsDropdown({
   loading,
   suggestionsRef,
 }: {
-  searchQuery: string
-  blockedUsers: User[]
-  currentUser: User | null
-  handleBlock: (user: User) => void
-  selectedSuggestionIndex: number
-  setSelectedSuggestionIndex: (idx: number) => void
-  loading: boolean
-  suggestionsRef: React.RefObject<HTMLDivElement>
+  searchQuery: string;
+  blockedUsers: User[];
+  currentUser: User | null;
+  handleBlock: (user: User) => void;
+  selectedSuggestionIndex: number;
+  setSelectedSuggestionIndex: (idx: number) => void;
+  loading: boolean;
+  suggestionsRef: React.RefObject<HTMLDivElement | null>;
 }) {
-  const { data: searchResult } = useUserSearch(searchQuery, currentUser?.boardPermissions)
-  const suggestions = useMemo(() => {
-    if (!searchResult || !searchQuery.trim()) return []
-    const blockedUids = new Set(blockedUsers.map((user) => user.uid))
-    const currentUserUid = currentUser?.uid
-    const arr = Array.isArray(searchResult) ? searchResult : [searchResult]
-    return arr
-      .filter(
-        (user) =>
-          user &&
-          user.uid !== currentUserUid &&
-          !blockedUids.has(user.uid)
-      )
-      .slice(0, 5)
-  }, [searchResult, searchQuery, blockedUsers, currentUser])
+  const { data: searchResult } = useUserSearch(searchQuery, currentUser?.boardPermissions);
+  const suggestions = useMemo(
+    () => filterBlockSuggestions(searchResult, blockedUsers, currentUser?.uid, searchQuery),
+    [searchResult, searchQuery, blockedUsers, currentUser?.uid],
+  );
 
   if (suggestions.length > 0) {
     return (
@@ -68,7 +63,7 @@ function SuggestionsDropdown({
           <button
             key={user.uid}
             className={`flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-muted ${
-              index === selectedSuggestionIndex ? "bg-muted" : ""
+              index === selectedSuggestionIndex ? 'bg-muted' : ''
             }`}
             onClick={() => handleBlock(user)}
             disabled={loading}
@@ -88,153 +83,80 @@ function SuggestionsDropdown({
           </button>
         ))}
       </div>
-    )
+    );
   }
-  if (searchQuery.trim() && suggestions.length === 0) {
+  if (searchQuery.trim()) {
     return (
       <div className="absolute inset-x-0 top-full z-50 mt-1 rounded-md border bg-background p-4 text-center text-muted-foreground shadow-lg">
         검색 결과가 없습니다
       </div>
-    )
+    );
   }
-  return null
+  return null;
 }
 
 export default function BlockedUsersPage() {
-  const { currentUser } = useAuth()
-  const [blockedUsers, setBlockedUsers] = useState<User[]>([])
-  const [searchQuery, setSearchQuery] = useState("")
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1)
-  const [loading, setLoading] = useState(false)
-  const [confirmUnblockUid, setConfirmUnblockUid] = useState<string | null>(null)
-  const [showLimitDialog, setShowLimitDialog] = useState(false)
-  const searchInputRef = useRef<HTMLInputElement>(null)
-  const suggestionsRef = useRef<HTMLDivElement>(null)
+  const { currentUser } = useAuth();
+  const { blockedUsers, loading, isAtLimit, block, unblock } = useBlockedUsersList(currentUser);
 
-  // 차단 목록 불러오기
-  useEffect(() => {
-    if (!currentUser) return;
-    (async () => {
-      const blockedUids = await getBlockedUsers(currentUser.uid);
-      if (!blockedUids || blockedUids.length === 0) {
-        setBlockedUsers([]);
-        return;
-      }
-      // 차단 유저 정보 fetch
-      const results = await Promise.allSettled(
-        blockedUids.map(uid => fetchUser(uid))
-      );
-      const rejectedCount = results.filter(r => r.status === 'rejected').length;
-      const users = results
-        .filter((r): r is PromiseFulfilledResult<User | null> => r.status === 'fulfilled')
-        .map(r => r.value)
-        .filter((u): u is User => u !== null);
-      if (rejectedCount > 0 && users.length > 0) {
-        toast.warning(`차단된 사용자 ${rejectedCount}명의 정보를 불러오지 못했습니다.`);
-      }
-      if (users.length === 0 && rejectedCount === results.length) {
-        toast.error('차단된 사용자 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
-        return;
-      }
-      setBlockedUsers(users);
-    })();
-  }, [currentUser]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  const [confirmUnblockUid, setConfirmUnblockUid] = useState<string | null>(null);
+  const [showLimitDialog, setShowLimitDialog] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  // Handle search input
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setSearchQuery(value)
-    setShowSuggestions(value.trim().length > 0)
-    setSelectedSuggestionIndex(-1)
-  }
+  const closeSuggestions = useCallback(() => setShowSuggestions(false), []);
+  useCloseSuggestionsOnOutsideClick(searchInputRef, suggestionsRef, closeSuggestions);
 
-  // Handle keyboard navigation
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Suspense 내부에서만 suggestions 사용
-    if (!showSuggestions) return
-    switch (e.key) {
-      case "ArrowDown":
-        e.preventDefault()
-        setSelectedSuggestionIndex((prev) => prev + 1)
-        break
-      case "ArrowUp":
-        e.preventDefault()
-        setSelectedSuggestionIndex((prev) => (prev > 0 ? prev - 1 : 0))
-        break
-      case "Enter":
-        e.preventDefault()
-        // Suspense 내부에서 suggestionsRef.current로 처리
-        break
-      case "Escape":
-        setShowSuggestions(false)
-        setSelectedSuggestionIndex(-1)
-        break
+  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setShowSuggestions(value.trim().length > 0);
+    setSelectedSuggestionIndex(-1);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (!showSuggestions) return;
+    const nextIndex = getNextSuggestionIndex(selectedSuggestionIndex, e.key);
+    if (nextIndex !== null) {
+      e.preventDefault();
+      setSelectedSuggestionIndex(nextIndex);
+      return;
     }
-  }
-
-  // Handle clicking outside to close suggestions
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchInputRef.current &&
-        suggestionsRef.current &&
-        !searchInputRef.current.contains(event.target as Node) &&
-        !suggestionsRef.current.contains(event.target as Node)
-      ) {
-        setShowSuggestions(false)
-      }
+    if (isCloseSuggestionsKey(e.key)) {
+      setShowSuggestions(false);
+      setSelectedSuggestionIndex(-1);
     }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+  };
 
-  // Block user
   const handleBlock = async (user: User) => {
-    if (!currentUser) return;
-    if (blockedUsers.length >= 10) {
-      setShowLimitDialog(true)
-      return
+    const outcome = await block(user);
+    if (outcome.kind === 'limit-exceeded') {
+      setShowLimitDialog(true);
+      return;
     }
-    setLoading(true)
-    try {
-      await blockUser(currentUser.uid, user.uid)
-      setBlockedUsers((prev) => [...prev, user])
-      setSearchQuery("")
-      setShowSuggestions(false)
-      toast.success(`${user.nickname}님을 비공개 사용자로 설정했습니다.`, {position: 'bottom-center'})
-    } catch (error) {
-      toast.error("비공개 사용자 설정 중 오류가 발생했습니다.", {position: 'bottom-center'})
+    if (outcome.kind === 'success') {
+      setSearchQuery('');
+      setShowSuggestions(false);
     }
-    setLoading(false)
-  }
+  };
 
-  // Unblock user
   const handleUnblock = async (uid: string) => {
-    if (!currentUser) return;
-    setLoading(true)
-    try {
-      await unblockUser(currentUser.uid, uid)
-      const user = blockedUsers.find((u) => u.uid === uid)
-      setBlockedUsers((prev) => prev.filter((u) => u.uid !== uid))
-      setConfirmUnblockUid(null)
-      toast.success(`${user?.nickname}님의 비공개 설정을 해제했습니다.`, {position: 'bottom-center'})
-    } catch (error) {
-      toast.error("비공개 설정 해제 중 오류가 발생했습니다.", {position: 'bottom-center'})
-    }
-    setLoading(false)
-  }
+    const outcome = await unblock(uid);
+    if (outcome.kind === 'success') setConfirmUnblockUid(null);
+  };
 
   const clearSearch = () => {
-    setSearchQuery("")
-    setShowSuggestions(false)
-    searchInputRef.current?.focus()
-  }
+    setSearchQuery('');
+    setShowSuggestions(false);
+    searchInputRef.current?.focus();
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-2xl space-y-6 px-4 py-6">
-        {/* Header */}
         <header className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="shrink-0" onClick={() => window.history.back()}>
             <ArrowLeft className="size-5" />
@@ -245,7 +167,6 @@ export default function BlockedUsersPage() {
           </div>
         </header>
 
-        {/* Search Section */}
         <Card>
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">사용자 검색</CardTitle>
@@ -262,7 +183,7 @@ export default function BlockedUsersPage() {
                   onKeyDown={handleKeyDown}
                   onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
                   className="px-10"
-                  disabled={loading || blockedUsers.length >= 10}
+                  disabled={loading || isAtLimit}
                 />
                 {searchQuery && (
                   <Button
@@ -276,17 +197,18 @@ export default function BlockedUsersPage() {
                 )}
               </div>
 
-              {/* Suspense로 검색 결과만 감싸기 */}
               {showSuggestions && searchQuery.trim() && (
-                <Suspense fallback={
-                  <div className="absolute inset-x-0 top-full z-50 mt-1 rounded-md border bg-background p-4 text-center text-muted-foreground shadow-lg">
-                    검색 중...
-                  </div>
-                }>
+                <Suspense
+                  fallback={
+                    <div className="absolute inset-x-0 top-full z-50 mt-1 rounded-md border bg-background p-4 text-center text-muted-foreground shadow-lg">
+                      검색 중...
+                    </div>
+                  }
+                >
                   <SuggestionsDropdown
                     searchQuery={searchQuery}
                     blockedUsers={blockedUsers}
-                    currentUser={currentUser}
+                    currentUser={currentUser as User | null}
                     handleBlock={handleBlock}
                     selectedSuggestionIndex={selectedSuggestionIndex}
                     setSelectedSuggestionIndex={setSelectedSuggestionIndex}
@@ -297,20 +219,21 @@ export default function BlockedUsersPage() {
               )}
             </div>
 
-            {blockedUsers.length >= 10 && (
+            {isAtLimit && (
               <div className="rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
-                💡 비공개 사용자는 최대 10명까지 설정할 수 있습니다
+                💡 비공개 사용자는 최대 {MAX_BLOCKED_USERS}명까지 설정할 수 있습니다
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Blocked Users List */}
         <Card>
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">비공개 사용자 목록</CardTitle>
-              <span className="text-sm text-muted-foreground">{blockedUsers.length}/10</span>
+              <span className="text-sm text-muted-foreground">
+                {blockedUsers.length}/{MAX_BLOCKED_USERS}
+              </span>
             </div>
           </CardHeader>
           <CardContent>
@@ -330,7 +253,7 @@ export default function BlockedUsersPage() {
                         size={40}
                         src={user.profilePhotoURL || undefined}
                         alt={user.nickname || 'User'}
-                        fallback={user.nickname[0]}
+                        fallback={user.nickname?.[0] || ''}
                       />
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-medium">{user.nickname}</div>
@@ -371,14 +294,13 @@ export default function BlockedUsersPage() {
           </CardContent>
         </Card>
 
-        {/* Limit Dialog */}
         <AlertDialog open={showLimitDialog} onOpenChange={setShowLimitDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>비공개 사용자 한도 초과</AlertDialogTitle>
             </AlertDialogHeader>
             <div className="py-4">
-              <p>비공개 사용자는 최대 10명까지만 설정할 수 있습니다.</p>
+              <p>비공개 사용자는 최대 {MAX_BLOCKED_USERS}명까지만 설정할 수 있습니다.</p>
               <p className="mt-2 text-sm text-muted-foreground">
                 새로운 사용자를 추가하려면 기존 사용자의 설정을 먼저 해제해주세요.
               </p>
@@ -390,5 +312,5 @@ export default function BlockedUsersPage() {
         </AlertDialog>
       </div>
     </div>
-  )
+  );
 }
