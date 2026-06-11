@@ -4,8 +4,10 @@ import { addUserToBoardWaitingList } from '@/board/utils/boardUtils';
 import { getSubmitErrorMessage } from '@/login/utils/onboardingDerived';
 import type { OnboardingFormSchema } from '@/login/utils/onboardingSchema';
 import {
+  getSubmitStepOrder,
   resolveOnboardingSubmit,
   type OnboardingSubmitAction,
+  type SubmitStepKind,
 } from '@/login/utils/onboardingSubmit';
 import type { AuthUser } from '@/shared/hooks/useAuth';
 import { useNavigate } from '@/shared/navigation';
@@ -23,12 +25,36 @@ export interface UseOnboardingSubmitResult {
   submitError: string | null;
 }
 
+const WAITLIST_FAILED_MESSAGE = '대기자 명단에 추가하는 중 오류가 발생했습니다.';
+const SESSION_EXPIRED_MESSAGE = '로그인 상태가 만료되었습니다. 다시 로그인해주세요.';
+
+async function joinWaitlist(action: OnboardingSubmitAction): Promise<void> {
+  if (action.kind !== 'updateThenWaitlist') return;
+  const wasAdded = await addUserToBoardWaitingList(action.boardId, action.uid);
+  if (!wasAdded) throw new Error(WAITLIST_FAILED_MESSAGE);
+}
+
+async function runSubmitStep(
+  step: SubmitStepKind,
+  action: OnboardingSubmitAction,
+  user: AuthUser,
+): Promise<void> {
+  switch (step) {
+    case 'createUser':
+      return createUserIfNotExists(user);
+    case 'writeProfile':
+      return updateUser(action.uid, action.profilePayload);
+    case 'joinWaitlist':
+      return joinWaitlist(action);
+    case 'markComplete':
+      return updateUser(action.uid, { onboardingComplete: true });
+  }
+}
+
 /**
- * Wraps the onboarding submit pipeline. The decision of WHAT to write is pure
- * (`resolveOnboardingSubmit` / `getNavigateArgs`); this hook owns the side
- * effects: createUserIfNotExists → updateUser → (waitlist if cohort) → flip
- * onboardingComplete → navigate. Submit error is exposed as state so the page
- * can render it inline.
+ * Wraps the onboarding submit pipeline. WHAT to write (`resolveOnboardingSubmit`)
+ * and the ORDER to write it in (`getSubmitStepOrder`) are pure; this hook owns
+ * the side effects and exposes `submitError` so the page renders it inline.
  */
 export function useOnboardingSubmit({
   currentUser,
@@ -39,43 +65,19 @@ export function useOnboardingSubmit({
   const navigate = useNavigate();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const runWrites = useCallback(
-    async (action: OnboardingSubmitAction, user: AuthUser) => {
-      // Write order is deliberate: profile fields first WITHOUT onboardingComplete,
-      // then waitlist (if any), then a final flip of onboardingComplete=true.
-      // If the process crashes between steps, the user lands back on /join/onboarding
-      // (because the flag is still false) and re-submitting is idempotent for both
-      // the profile update and the waitlist upsert.
-      await createUserIfNotExists(user);
-      await updateUser(action.uid, {
-        realName: action.profilePayload.real_name ?? null,
-        nickname: action.profilePayload.nickname ?? null,
-        phoneNumber: action.profilePayload.phone_number ?? null,
-        kakaoId: action.profilePayload.kakao_id ?? null,
-        referrer: action.profilePayload.referrer ?? null,
-      });
-      if (action.kind === 'updateThenWaitlist') {
-        const ok = await addUserToBoardWaitingList(action.boardId, action.uid);
-        if (!ok) throw new Error('대기자 명단에 추가하는 중 오류가 발생했습니다.');
-      }
-      // Only after profile + waitlist succeed do we flip the flag. If this final
-      // updateUser fails, the next routing pass sends the user back here and
-      // re-submitting completes the flip; no orphaned `onboarding_complete=true`
-      // row can exist without the corresponding waitlist signal.
-      await updateUser(action.uid, { onboardingComplete: true });
-    },
-    [],
-  );
+  const runWrites = useCallback(async (action: OnboardingSubmitAction, user: AuthUser) => {
+    for (const step of getSubmitStepOrder(action)) {
+      await runSubmitStep(step, action, user);
+    }
+  }, []);
 
   const onSubmit = useCallback(
     async (values: OnboardingFormSchema) => {
       if (!currentUser?.uid) {
-        toast.error('로그인 상태가 만료되었습니다. 다시 로그인해주세요.');
+        toast.error(SESSION_EXPIRED_MESSAGE);
         return;
       }
       if (prefillError) {
-        // Defensive: submit should already be disabled in this state. If it
-        // fires anyway, refuse to write rather than silently overwrite.
         setSubmitError(prefillError);
         return;
       }
@@ -95,7 +97,7 @@ export function useOnboardingSubmit({
           navigate(action.navigateTo.path);
         }
       } catch (err) {
-        console.error('OnboardingPage submit error', err);
+        console.error('useOnboardingSubmit error', err);
         setSubmitError(getSubmitErrorMessage(err));
       }
     },
