@@ -129,6 +129,25 @@ export function useTiptapEditor({
     };
   }, []);
 
+  // DOM-level typing signal. Tiptap's onUpdate only fires when ProseMirror
+  // dispatches a transaction, but ProseMirror suppresses transactions during
+  // IME composition (Korean/Japanese/Chinese). For a Korean user composing a
+  // syllable, onUpdate stays silent until the syllable finalizes — long enough
+  // for the freewriting 2s pause timer to expire mid-typing. beforeinput and
+  // compositionupdate fire even while composing, so they keep the keepalive
+  // alive through IME.
+  useEffect(() => {
+    if (!editor) return;
+    const dom = editor.view.dom;
+    const handleTypingSignal = () => onTypingRef.current?.();
+    dom.addEventListener('beforeinput', handleTypingSignal);
+    dom.addEventListener('compositionupdate', handleTypingSignal);
+    return () => {
+      dom.removeEventListener('beforeinput', handleTypingSignal);
+      dom.removeEventListener('compositionupdate', handleTypingSignal);
+    };
+  }, [editor]);
+
   // Tiptap's useEditor only seeds `content` once. Refs keep the freshest
   // target/onChange visible to the blur handler without re-binding it.
   const initialHtmlRef = useRef(initialHtml);
