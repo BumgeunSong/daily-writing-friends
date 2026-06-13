@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   buildAccessDenialResponse,
   checkBoardAccess,
+  isUnknownLoaderError,
   mapPostLoaderError,
 } from './postLoaderAccess';
 import { SupabaseNetworkError } from '@/shared/api/supabaseClient';
@@ -107,5 +108,30 @@ describe('mapPostLoaderError', () => {
     it('returns 404 for undefined', () => {
       expect(mapPostLoaderError(undefined).status).toBe(404);
     });
+  });
+});
+
+describe('isUnknownLoaderError', () => {
+  it('returns false for a Response (already shaped — not unknown)', () => {
+    expect(isUnknownLoaderError(new Response('x', { status: 403 }))).toBe(false);
+  });
+
+  it('returns false for SupabaseNetworkError (classified as network)', () => {
+    const error = new SupabaseNetworkError({
+      message: 'network down',
+      details: '',
+      hint: '',
+      code: '',
+    } as never);
+    expect(isUnknownLoaderError(error)).toBe(false);
+  });
+
+  it('returns true for a generic Error (must reach Sentry, not silently 404)', () => {
+    expect(isUnknownLoaderError(new TypeError('Cannot read properties of undefined'))).toBe(true);
+  });
+
+  it('returns true for non-Error values (e.g. a thrown string or undefined)', () => {
+    expect(isUnknownLoaderError('boom')).toBe(true);
+    expect(isUnknownLoaderError(undefined)).toBe(true);
   });
 });

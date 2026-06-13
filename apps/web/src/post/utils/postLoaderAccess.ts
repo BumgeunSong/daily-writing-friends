@@ -49,3 +49,13 @@ export function mapPostLoaderError(error: unknown): Response {
   }
   return new Response(FALLBACK_NOT_FOUND_MESSAGE, { status: 404 });
 }
+
+/**
+ * True when the loader caught something it can't classify — i.e. not an
+ * intentional Response throw and not a network failure. These cases default
+ * to a 404 in {@link mapPostLoaderError} but the underlying error needs to
+ * reach Sentry so a real bug doesn't hide as "Post not found".
+ */
+export function isUnknownLoaderError(error: unknown): boolean {
+  return !(error instanceof Response) && !(error instanceof SupabaseNetworkError);
+}

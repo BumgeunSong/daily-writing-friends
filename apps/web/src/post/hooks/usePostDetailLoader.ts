@@ -1,14 +1,17 @@
+import * as Sentry from '@sentry/react';
 import type { LoaderFunctionArgs } from 'react-router-dom';
 import {
   buildAccessDenialResponse,
   checkBoardAccess,
+  isUnknownLoaderError,
   mapPostLoaderError,
 } from '@/post/utils/postLoaderAccess';
-import { postQueryKey, userQueryKey } from '@/post/utils/postQueryKeys';
+import { postQueryKey } from '@/post/utils/postQueryKeys';
 import { fetchPost } from '@/post/utils/postUtils';
 import { queryClient } from '@/shared/lib/queryClient';
 import { getCurrentUser } from '@/shared/utils/authUtils';
 import { fetchUser } from '@/user/api/user';
+import { userQueryKey } from '@/user/utils/userQueryKeys';
 
 export async function postDetailLoader({ params }: LoaderFunctionArgs) {
   // NOTE: Auth checking is handled by PrivateRoutes component
@@ -41,11 +44,15 @@ export async function postDetailLoader({ params }: LoaderFunctionArgs) {
       queryKey: postQueryKey(boardId, postId),
       queryFn: () => fetchPost(boardId, postId),
     });
-    // Seed for cold path so PostDetailPage's useQuery sees the data on first render
-    // (avoids loading flash). Redundant for warm path - ensureQueryData already populated it.
-    queryClient.setQueryData(postQueryKey(boardId, postId), post);
     return { post, boardId, postId };
   } catch (error) {
+    // Unknown errors (TypeError, schema mismatch, etc.) default to a 404 via
+    // mapPostLoaderError. Capture them so real bugs don't silently masquerade
+    // as "Post not found". Intentional Response throws and network errors
+    // already carry meaning — log them but don't escalate.
+    if (isUnknownLoaderError(error)) {
+      Sentry.captureException(error, { tags: { surface: 'postDetailLoader' } });
+    }
     console.error('Failed to fetch post:', error);
     throw mapPostLoaderError(error);
   }

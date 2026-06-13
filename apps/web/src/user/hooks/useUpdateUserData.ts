@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { userQueryKey } from '@/post/utils/postQueryKeys';
+import { userQueryKey } from '@/user/utils/userQueryKeys';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { updateUser } from '@/user/api/user';
 import { updateAuthUserMetadata } from '@/shared/auth/supabaseAuth';
