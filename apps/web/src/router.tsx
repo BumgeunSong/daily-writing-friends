@@ -16,6 +16,7 @@ import { RootRedirect } from '@/shared/components/auth/RootRedirect';
 import { PrivateRoutes, PublicRoutes } from '@/shared/components/auth/RouteGuards';
 import { BottomNavigatorLayout } from '@/shared/components/BottomNavigatorLayout';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
+import { NavigationProgressBar } from '@/shared/components/NavigationProgressBar';
 import { PermissionErrorBoundary } from '@/shared/components/PermissionErrorBoundary';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { BottomTabHandlerProvider } from './shared/contexts/BottomTabHandlerContext';
@@ -26,6 +27,7 @@ function RootLayout() {
   return (
     <NavigationProvider debounceTime={500} topThreshold={30} ignoreSmallChanges={10}>
       <BottomTabHandlerProvider>
+        <NavigationProgressBar />
         <ScrollRestoration />
         <AppWithTracking />
         <Suspense fallback={null}>
