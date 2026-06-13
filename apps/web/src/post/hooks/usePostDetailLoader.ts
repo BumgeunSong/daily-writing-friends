@@ -25,18 +25,25 @@ export async function postDetailLoader({ params }: LoaderFunctionArgs) {
     }
     
     // Check board permissions before fetching post
-    const userData = await fetchUser(user.uid);
+    const userData = await queryClient.ensureQueryData({
+      queryKey: ['user', user.uid],
+      queryFn: () => fetchUser(user.uid),
+    });
     if (!userData) {
       throw new Response('User data not found', { status: 403 });
     }
-    
+
     const userPermission = userData.boardPermissions?.[boardId];
     if (userPermission !== 'read' && userPermission !== 'write') {
       throw new Response('Access denied - insufficient board permissions', { status: 403 });
     }
-    
-    const post = await fetchPost(boardId, postId);
-    // Seed TanStack Query cache so PostDetailPage's useQuery hits cache.
+
+    const post = await queryClient.ensureQueryData({
+      queryKey: ['post', boardId, postId],
+      queryFn: () => fetchPost(boardId, postId),
+    });
+    // Seed for cold path so PostDetailPage's useQuery sees the data on first render
+    // (avoids loading flash). Redundant for warm path - ensureQueryData already populated it.
     queryClient.setQueryData(['post', boardId, postId], post);
     return { post, boardId, postId };
   } catch (error) {
