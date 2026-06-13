@@ -5,6 +5,7 @@ import { useNavigate, useParams } from '@/shared/navigation';
 // Comments below the fold — lazy chunk lets LCP candidate paint first.
 const Comments = lazy(() => import('@/comment/components/Comments'));
 import { usePostDelete } from '@/post/hooks/usePostDelete';
+import { postQueryKey } from '@/post/utils/postQueryKeys';
 import { fetchPost } from '@/post/utils/postUtils';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Skeleton } from '@/shared/ui/skeleton';
@@ -27,7 +28,7 @@ export default function PostDetailPage() {
     data: post,
     isLoading,
     error,
-  } = useQuery(['post', boardId, postId], () => fetchPost(boardId!, postId!), {
+  } = useQuery(postQueryKey(boardId!, postId!), () => fetchPost(boardId!, postId!), {
     enabled: !!boardId && !!postId,
   });
 

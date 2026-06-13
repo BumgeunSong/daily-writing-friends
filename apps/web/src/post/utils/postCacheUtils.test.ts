@@ -22,6 +22,7 @@ vi.mock('@/shared/utils/dateUtils', () => ({
 
 // Import after mocking
 import { optimisticallyUpdatePostingStreak, seedPostCache } from './postCacheUtils';
+import { postQueryKey } from './postQueryKeys';
 
 const makePost = (over: Partial<Post> = {}): Post => ({
   id: 'p1',
@@ -44,15 +45,15 @@ describe('seedPostCache', () => {
     const qc = new QueryClient();
     const post = makePost({ id: 'p1', boardId: 'b1' });
     seedPostCache(qc, post);
-    expect(qc.getQueryData(['post', 'b1', 'p1'])).toEqual(post);
+    expect(qc.getQueryData(postQueryKey('b1', 'p1'))).toEqual(post);
   });
 
   it('does NOT overwrite an existing cache entry (avoid regressing fresher detail-page data)', () => {
     const qc = new QueryClient();
     const fresher = makePost({ id: 'p1', boardId: 'b1', title: 'fresher-detail-data' });
-    qc.setQueryData(['post', 'b1', 'p1'], fresher);
+    qc.setQueryData(postQueryKey('b1', 'p1'), fresher);
     seedPostCache(qc, makePost({ id: 'p1', boardId: 'b1', title: 'older-list-data' }));
-    expect((qc.getQueryData(['post', 'b1', 'p1']) as Post).title).toBe('fresher-detail-data');
+    expect((qc.getQueryData(postQueryKey('b1', 'p1')) as Post).title).toBe('fresher-detail-data');
   });
 });
 

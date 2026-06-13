@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { Post } from '@/post/model/Post';
+import { postQueryKey } from '@/post/utils/postQueryKeys';
 import { queryClient } from '@/shared/lib/queryClient';
 import { isWorkingDay } from '@/shared/utils/dateUtils';
 
@@ -12,7 +13,7 @@ import { isWorkingDay } from '@/shared/utils/dateUtils';
  * within the 60s staleTime window.
  */
 export function seedPostCache(client: QueryClient, post: Post): void {
-  const key = ['post', post.boardId, post.id] as const;
+  const key = postQueryKey(post.boardId, post.id);
   if (client.getQueryData(key) !== undefined) return;
   client.setQueryData(key, post);
 }

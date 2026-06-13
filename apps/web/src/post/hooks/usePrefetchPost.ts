@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
+import { postQueryKey } from '@/post/utils/postQueryKeys';
 import { fetchPost } from '@/post/utils/postUtils';
 
 /**
@@ -14,7 +15,7 @@ export function usePrefetchPost(boardId: string, postId: string): void {
 
   useEffect(() => {
     void queryClient.prefetchQuery({
-      queryKey: ['post', boardId, postId],
+      queryKey: postQueryKey(boardId, postId),
       queryFn: () => fetchPost(boardId, postId),
     });
   }, [queryClient, boardId, postId]);
