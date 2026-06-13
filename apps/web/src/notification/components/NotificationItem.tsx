@@ -1,5 +1,6 @@
 import { Link } from '@/shared/navigation';
 import type { Notification } from '@/notification/model/Notification';
+import { usePrefetchPost } from '@/post/hooks/usePrefetchPost';
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import { useUserBasic } from '@/user/hooks/useUserBasic';
 
@@ -14,6 +15,7 @@ function getNotificationLink(notification: Notification): string {
 export const NotificationItem = ({ notification }: NotificationItemProps) => {
   const message = notification.message;
   const { data: deferredActor } = useUserBasic(notification.fromUserId);
+  usePrefetchPost(notification.boardId, notification.postId);
   const actorProfilePhoto =
     notification.fromUserProfileImage ?? deferredActor?.profilePhotoURL ?? undefined;
 
