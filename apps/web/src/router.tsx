@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, redirect, ScrollRestoration, type LoaderFunctionArgs } from 'react-router-dom';
+import { redirect, ScrollRestoration, type LoaderFunctionArgs } from 'react-router-dom';
+import { sentryCreateBrowserRouter } from '@/sentry';
 import './index.css';
 
 // Lazy-mount Toaster — not visible until a toast fires.
@@ -351,7 +352,7 @@ const devRoutes = import.meta.env.DEV ? {
 
 // --- Router 생성 ---
 
-export const router = createBrowserRouter([
+export const router = sentryCreateBrowserRouter([
   {
     path: '/',
     element: <RootLayout />,
