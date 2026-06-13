@@ -3,16 +3,16 @@ import { useNavigation as useRouterNavigation } from 'react-router-dom';
 import {
   NAV_PROGRESS_SHOW_DELAY_MS,
   shouldShowProgressBar,
-  type RouterNavigationState,
 } from '@/shared/utils/navigationProgress';
 
 /**
  * Thin top bar shown during react-router navigation/submission.
  * Suppressed for the first 150ms so warm-cache navigations don't flash the bar.
- * Decision logic lives in @/shared/utils/navigationProgress.
+ * Visibility predicate lives in @/shared/utils/navigationProgress; this
+ * component just owns the timer + show state.
  */
 export function NavigationProgressBar() {
-  const { state } = useRouterNavigation() as { state: RouterNavigationState };
+  const { state } = useRouterNavigation();
   const [hasDelayElapsed, setHasDelayElapsed] = useState(false);
 
   useEffect(() => {
