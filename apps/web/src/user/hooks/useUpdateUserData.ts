@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { userQueryKey } from '@/post/utils/postQueryKeys';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { updateUser } from '@/user/api/user';
 import { updateAuthUserMetadata } from '@/shared/auth/supabaseAuth';
@@ -39,7 +40,7 @@ export function useUpdateUserData() {
       }
     },
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['user', variables.userId] });
+      queryClient.invalidateQueries({ queryKey: userQueryKey(variables.userId) });
       toast.success('프로필이 업데이트되었습니다.', {
         position: 'bottom-center',
       });

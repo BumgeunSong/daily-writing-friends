@@ -1,4 +1,5 @@
 import type { LoaderFunctionArgs } from 'react-router-dom';
+import { postQueryKey, userQueryKey } from '@/post/utils/postQueryKeys';
 import { fetchPost } from '@/post/utils/postUtils';
 import { SupabaseNetworkError } from '@/shared/api/supabaseClient';
 import { queryClient } from '@/shared/lib/queryClient';
@@ -26,7 +27,7 @@ export async function postDetailLoader({ params }: LoaderFunctionArgs) {
     
     // Check board permissions before fetching post
     const userData = await queryClient.ensureQueryData({
-      queryKey: ['user', user.uid],
+      queryKey: userQueryKey(user.uid),
       queryFn: () => fetchUser(user.uid),
     });
     if (!userData) {
@@ -39,12 +40,12 @@ export async function postDetailLoader({ params }: LoaderFunctionArgs) {
     }
 
     const post = await queryClient.ensureQueryData({
-      queryKey: ['post', boardId, postId],
+      queryKey: postQueryKey(boardId, postId),
       queryFn: () => fetchPost(boardId, postId),
     });
     // Seed for cold path so PostDetailPage's useQuery sees the data on first render
     // (avoids loading flash). Redundant for warm path - ensureQueryData already populated it.
-    queryClient.setQueryData(['post', boardId, postId], post);
+    queryClient.setQueryData(postQueryKey(boardId, postId), post);
     return { post, boardId, postId };
   } catch (error) {
     console.error('Failed to fetch post:', error);
