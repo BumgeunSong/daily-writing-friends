@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import type React from 'react';
 import { Link } from '@/shared/navigation';
 import type { Board } from '@/board/model/Board';
+import { userBoardsQueryKey } from '@/board/utils/boardQueryKeys';
 import { fetchBoardsWithUserPermissions } from '@/board/utils/boardUtils';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
@@ -13,9 +14,9 @@ import { Badge } from '@/shared/ui/badge';
 const BoardListPage: React.FC = () => {
   const { currentUser } = useAuth();
   const { value: activeBoardId } = useRemoteConfig("active_board_id");
-  
+
   const { data: boards = [], isLoading, error } = useQuery<Board[]>(
-    ['boards', currentUser?.uid],
+    userBoardsQueryKey(currentUser?.uid),
     () => fetchBoardsWithUserPermissions(currentUser!.uid),
     {
       enabled: !!currentUser, // currentUser가 있을 때만 쿼리 실행

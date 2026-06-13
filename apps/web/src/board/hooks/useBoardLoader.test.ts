@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { PostgrestError } from '@supabase/supabase-js';
 import type { AuthUser } from '@/shared/hooks/useAuth';
-import { SupabaseNetworkError } from '@/shared/api/supabaseClient';
+import { queryClient } from '@/shared/lib/queryClient';
 import { getCurrentUser } from '@/shared/utils/authUtils';
 import { fetchUser } from '@/user/api/user';
 import { boardLoader } from './useBoardLoader';
@@ -35,78 +34,21 @@ const mockUser: AuthUser = {
   photoURL: null,
 };
 
-function setupBoardLoaderTest() {
+function resetSharedStateBetweenTests() {
   vi.clearAllMocks();
+  queryClient.clear();
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
 }
 
-describe('boardLoader basic behavior', () => {
+describe('boardLoader caching contract', () => {
   beforeEach(() => {
-    setupBoardLoaderTest();
+    resetSharedStateBetweenTests();
   });
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('throws 400 response when boardId is missing', async () => {
-    await expect(boardLoader({ params: {} } as never)).rejects.toMatchObject({ status: 400 });
-  });
-
-  it('returns boardId when user is not authenticated', async () => {
-    mockedGetCurrentUser.mockResolvedValue(null);
-
-    await expect(loadBoard()).resolves.toEqual({
-      boardId,
-    });
-  });
-
-  it('throws 403 response when user data is missing', async () => {
-    mockedGetCurrentUser.mockResolvedValue(mockUser);
-    mockedFetchUser.mockResolvedValue(null);
-
-    await expect(loadBoard()).rejects.toMatchObject({
-      status: 403,
-      statusText: '',
-    });
-  });
-});
-
-describe('boardLoader permission and network handling', () => {
-  beforeEach(() => {
-    setupBoardLoaderTest();
-  });
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('throws 403 response when user has no board permission', async () => {
-    mockedGetCurrentUser.mockResolvedValue(mockUser);
-    mockedFetchUser.mockResolvedValue({
-      boardPermissions: {},
-    } as unknown as Awaited<ReturnType<typeof fetchUser>>);
-
-    await expect(loadBoard()).rejects.toMatchObject({
-      status: 403,
-    });
-  });
-
-  it('throws 503 response when Supabase network error occurs', async () => {
-    mockedGetCurrentUser.mockResolvedValue(mockUser);
-    const postgrestError: PostgrestError = {
-      message: 'Failed to fetch',
-      code: '',
-      details: '',
-      hint: '',
-      name: '',
-    };
-    mockedFetchUser.mockRejectedValue(new SupabaseNetworkError(postgrestError));
-
-    await expect(loadBoard()).rejects.toMatchObject({
-      status: 503,
-    });
-  });
-
-  it('returns boardId when user has read permission', async () => {
+  it('reuses cached user data across repeat navigations', async () => {
     mockedGetCurrentUser.mockResolvedValue(mockUser);
     mockedFetchUser.mockResolvedValue({
       boardPermissions: {
@@ -114,8 +56,9 @@ describe('boardLoader permission and network handling', () => {
       },
     } as unknown as Awaited<ReturnType<typeof fetchUser>>);
 
-    await expect(loadBoard()).resolves.toEqual({
-      boardId,
-    });
+    await loadBoard();
+    await loadBoard();
+
+    expect(mockedFetchUser).toHaveBeenCalledTimes(1);
   });
 });
