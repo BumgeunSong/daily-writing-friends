@@ -1,9 +1,18 @@
 import * as Sentry from '@sentry/react';
+import { useEffect } from 'react';
+import {
+  createBrowserRouter,
+  createRoutesFromChildren,
+  matchRoutes,
+  useLocation,
+  useNavigationType,
+} from 'react-router-dom';
 import { isIndexedDbConnectionError } from '@/shared/lib/queryErrorTracking';
 
 // Configuration constants
 const SENTRY_CONFIG = {
   DSN: 'https://8909fb2b0ca421e67d747c29dc427694@o4508460976635904.ingest.us.sentry.io/4508460981747712',
+  TRACE_SAMPLE_RATE: Number(import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE) || 0.2,
 } as const;
 
 const IGNORED_ERRORS = [
@@ -94,7 +103,25 @@ export const initSentry = (): void => {
     dsn: SENTRY_CONFIG.DSN,
     environment,
     sendDefaultPii: true,
-    integrations: [],
+    integrations: [
+      Sentry.reactRouterV6BrowserTracingIntegration({
+        useEffect,
+        useLocation,
+        useNavigationType,
+        createRoutesFromChildren,
+        matchRoutes,
+        // Web Vitals (LCP/FCP/CLS) are captured by PerformanceObserver,
+        // so fetch/XHR span instrumentation stays off to avoid critical-path cost.
+        traceFetch: false,
+        traceXHR: false,
+      }),
+    ],
+    tracesSampleRate: SENTRY_CONFIG.TRACE_SAMPLE_RATE,
+    tracePropagationTargets: [
+      'localhost',
+      /^https:\/\/daily-writing-friends\.com\/api/,
+      import.meta.env.VITE_SUPABASE_URL,
+    ],
     ignoreErrors: [...IGNORED_ERRORS],
 
     beforeSend(event, hint) {
@@ -163,4 +190,6 @@ export const setSentryContext = (key: string, context: Record<string, unknown>) 
 export const setSentryTags = (tags: Record<string, string>) => {
   Sentry.setTags(tags);
 };
+
+export const sentryCreateBrowserRouter = Sentry.wrapCreateBrowserRouterV6(createBrowserRouter);
 
