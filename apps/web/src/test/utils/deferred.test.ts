@@ -28,4 +28,18 @@ describe('deferred', () => {
     d.resolve();
     await expect(d.promise).resolves.toBeUndefined();
   });
+
+  it('forwards a PromiseLike passed to resolve', async () => {
+    const d = deferred<string>();
+    const inner = Promise.resolve('forwarded');
+    d.resolve(inner);
+    await expect(d.promise).resolves.toBe('forwarded');
+  });
+
+  it('treats a subsequent reject after resolve as a no-op', async () => {
+    const d = deferred<number>();
+    d.resolve(1);
+    d.reject(new Error('too late'));
+    await expect(d.promise).resolves.toBe(1);
+  });
 });
