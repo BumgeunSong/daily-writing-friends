@@ -1,10 +1,11 @@
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
 import { server } from './msw/server';
 import { deferred } from './utils/deferred';
+import { createTestQueryClient } from './utils/withProviders';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? 'http://localhost:54321';
 const TOKEN_URL = `${SUPABASE_URL}/auth/v1/token?grant_type=password`;
@@ -52,9 +53,7 @@ describe('integration infra guard-rails', () => {
 
   it('G-3 — deferred() drives a React Query loading→success transition deterministically', async () => {
     const gate = deferred<string>();
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const queryClient = createTestQueryClient();
 
     function Harness() {
       const { data, status } = useQuery({
@@ -84,9 +83,7 @@ describe('integration infra guard-rails', () => {
         return HttpResponse.json({ message: 'boom' }, { status: 500 });
       }),
     );
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const queryClient = createTestQueryClient();
 
     function Harness() {
       const { status } = useQuery({
