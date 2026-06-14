@@ -41,6 +41,22 @@ description: Use when writing tests for React components or custom hooks that to
 - Loader tests: use `createMemoryRouter` + `RouterProvider`, NEVER nest inside `MemoryRouter`
 - Optimistic-mutation tests: prefer a thin Harness over a real product component when the product UI hides the asserted state
 
+# Auth: mock `useAuth` or sign in via `signInAs`?
+
+Two valid paths, picked per seam under test — NOT per author preference.
+
+**Use `signInAs(email)` from `@/test/utils/signInAs`** when:
+- The seam under test IS the auth boundary or trusts the auth state shape (protected routes, loader-driven pages, RouteGuards, returnTo round-trip).
+- A regression in `AuthProvider`'s `onAuthStateChange` subscription, `mapToAuthUser`, or `UUID_RE` validation should fail this test.
+- See `infra.integration.test.tsx` G-2 for the round-trip pattern.
+
+**Use `vi.mock('@/shared/hooks/useAuth')`** when:
+- The seam is downstream of auth (form callbacks, infinite-list cursor, presentational rendering).
+- The component reads `currentUser` only to gate an early-return that the test doesn't exercise.
+- Wiring up `signInAs` would couple the test to `AuthProvider`'s lifecycle without proving anything new.
+
+Both reference patterns in this PR use the mock — their JSDoc preambles state which seam they target. When a future test mounts `RouterProvider` or asserts on access decisions, switch to `signInAs`.
+
 # Pre-flight checklist
 
 - [ ] Read the component source

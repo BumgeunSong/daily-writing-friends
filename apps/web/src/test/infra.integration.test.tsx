@@ -5,22 +5,11 @@ import { describe, expect, it } from 'vitest';
 
 import { server } from './msw/server';
 import { deferred } from './utils/deferred';
+import { signInAs } from './utils/signInAs';
 import { createTestQueryClient } from './utils/withProviders';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? 'http://localhost:54321';
-const TOKEN_URL = `${SUPABASE_URL}/auth/v1/token?grant_type=password`;
 const USER_URL = `${SUPABASE_URL}/auth/v1/user`;
-
-async function signInAs(email: string): Promise<void> {
-  const res = await fetch(TOKEN_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password: 'pw' }),
-  });
-  if (!res.ok) {
-    throw new Error(`sign-in failed: ${res.status}`);
-  }
-}
 
 /**
  * Guard-rail tests for the integration test infrastructure itself.
