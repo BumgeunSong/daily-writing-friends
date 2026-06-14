@@ -8,10 +8,6 @@ export function resetAuthHandlerState(): void {
   signedInUserId = null;
 }
 
-export function setSignedInUser(userId: string | null): void {
-  signedInUserId = userId;
-}
-
 export const authHandlers = [
   http.get(`${SUPABASE_URL}/auth/v1/user`, () => {
     if (!signedInUserId) {
