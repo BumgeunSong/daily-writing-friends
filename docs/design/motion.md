@@ -14,9 +14,42 @@ content changes without drawing attention to itself.
   while its data loads asynchronously, animate the data, not the parent.
 - **Direction conveys hierarchy.** Use directional slides only when navigation
   goes deeper or steps back. Sibling navigation gets no slide.
+- **Asymmetric press and release.** When the user is *deciding*, motion can be
+  deliberate (a 2-second hold-to-delete). When the system is *responding*,
+  motion must be fast (200ms release). Slow where the user is choosing; fast
+  where the system is reporting.
+- **Perceived performance.** A fast spinner makes the app feel faster than a
+  slow one even when actual load time is identical. A 180ms select feels more
+  responsive than a 400ms one. When tuning, pick the value that *feels* fast,
+  not what looks elegant in isolation.
 - **Reduced-motion is the floor.** Animations must work for users who disable
   motion. The universal `*` rule in `index.css` covers most cases; new
   animations still need verification.
+
+## Decision Framework
+
+Answer in order before adding animation.
+
+**1. Should this animate at all?**
+
+| Frequency | Decision |
+|---|---|
+| 100+ times per day (keyboard shortcuts, command palette toggle) | No animation — ever |
+| Tens of times per day (filter swaps, list navigation, tab toggles) | None, or drastically reduce |
+| Occasional (modals, drawers, page transitions, toasts) | Standard animation |
+| Rare or first-time (onboarding, celebrations, async data arriving) | Allow more presence |
+
+This is why lateral tab swaps stay silent and hierarchical page transitions
+animate — the first happens dozens of times per session, the second a handful.
+
+**2. What does this animation communicate?**
+
+If you can't finish the sentence *"This animates so the user understands…"*,
+delete the animation.
+
+**3. Use the tokens.**
+
+Pick from the table below. Don't invent a one-off duration or easing curve.
 
 ## Design Tokens
 
@@ -83,6 +116,30 @@ asynchronously animates the wrong thing — typically a form input or empty
 space appears with the reveal animation while the actual content arrives later
 without one.
 
+### Stagger entrance for lists
+
+When a list of items enters together, stagger them 30–80ms apart so the eye can
+follow the cascade. Cap the total stagger — long lists shouldn't feel slower
+than short ones.
+
+Use `.dwf-content-stagger` on the list wrapper. The wrapper itself doesn't
+animate; each child animates with the existing `dwf-content-enter` keyframe,
+delayed by 40ms per child up to a 200ms ceiling.
+
+```tsx
+{!isReady ? null : (
+  <div className="dwf-content-stagger space-y-6">
+    {items.map((item) => <Row key={item.id} {...item} />)}
+  </div>
+)}
+```
+
+Used by `CommentList` to reveal comments individually once data and the
+reactions cache are ready.
+
+When the entering thing is a single block (not a list), keep using
+`.dwf-content-enter` instead — the block fades and slides as one unit.
+
 ### Press feedback
 
 All buttons inherit `active:scale-[0.96]` from the base `Button` component. Cards
@@ -90,6 +147,24 @@ and list items use `active:scale-[0.99]`. Both use
 `transition-[transform,background-color] duration-200`.
 
 Never use `transition-all`. Specify the exact properties.
+
+### Touch device hover guard
+
+Touch devices fire `:hover` on tap, producing false positives — a transform
+that should only run on real cursor hover ends up triggered on every touch.
+
+Gate hover-only transforms behind the pointer media query:
+
+```css
+@media (hover: hover) and (pointer: fine) {
+  .element:hover {
+    transform: scale(1.02);
+  }
+}
+```
+
+Audit and apply when touching the project's hover utility classes
+(`reading-hover`, `nav-hover`).
 
 ## Anti-patterns
 

@@ -212,8 +212,10 @@ Defined in `:root` in `apps/web/src/index.css`. Use these. Don't invent one-off 
 |---|---|---|
 | Hierarchical navigation (list → detail) | Directional root slide via `useViewTransitionNavigate().forward()` | "Going deeper" |
 | Hierarchical back (detail → list) | Opposite slide via `useViewTransitionNavigate().back()` | "Going back up" |
-| Suspense reveal (data loaded) | `.dwf-content-enter` class on the element that mounts when data is ready | "Content arrived" |
+| Suspense reveal — single block | `.dwf-content-enter` on the element that mounts when data is ready | "Content arrived" |
+| Suspense reveal — list | `.dwf-content-stagger` on the list wrapper; children cascade 40ms apart | "Items arriving one by one" |
 | Lateral navigation (tab ↔ tab) | None | No depth to communicate |
+| High-frequency actions (100+/day, keyboard shortcuts) | None | Animation slows repeated use |
 | Background refresh / revalidation | None | Silent by design |
 | Press feedback | `active:scale-[0.96]` (button) or `active:scale-[0.99]` (card) | "Touch received" |
 
@@ -224,6 +226,8 @@ Defined in `:root` in `apps/web/src/index.css`. Use these. Don't invent one-off 
 - **Never set `view-transition-name` on text.** The browser captures the element as a bitmap and scales bitmaps blurrily. Animate surfaces and backgrounds, not glyphs.
 - **One easing curve per app.** Multiple curves feel chaotic; one curve feels intentional.
 - **Reduced-motion is the floor.** The universal `*` rule in `index.css` covers most cases — verify each new animation by emulating `prefers-reduced-motion: reduce` in DevTools.
+- **Gate hover transforms on touch devices.** Wrap any `:hover` transform in `@media (hover: hover) and (pointer: fine)` so taps don't fire false hover states.
+- **Asymmetric press and release.** Slow when the user is deciding (e.g., hold-to-delete); fast when the system is responding.
 
 ### Implementation
 
