@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { isScrollDirectionSuppressed } from '@/shared/lib/scrollSuppression';
 
 export type ScrollDirection = 'up' | 'down' | 'none';
 
@@ -81,6 +82,15 @@ export const useScrollDirection = (options?: ScrollOptions): ScrollDirection => 
     const handleScroll = () => {
       const currentTime = Date.now();
       const currentScrollY = window.scrollY;
+
+      // 라우트 전환 직후의 프로그래매틱 스크롤 복원은 사용자 의도가 아니므로
+      // baseline만 따라 올리고 방향 변경 이벤트는 발행하지 않는다.
+      if (isScrollDirectionSuppressed()) {
+        lastScrollYRef.current = currentScrollY;
+        lastThrottleTimeRef.current = currentTime;
+        return;
+      }
+
       const decision = decideScrollDirection({
         currentY: currentScrollY,
         lastY: lastScrollYRef.current,

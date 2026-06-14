@@ -8,7 +8,6 @@ import { useNavigate } from '@/shared/navigation';
 import PostCard from '@/post/components/PostCard';
 import { useBatchPostCardData } from '@/post/hooks/useBatchPostCardData';
 import { useRecentPosts } from '@/post/hooks/useRecentPosts';
-import { useScrollRestoration } from '@/post/hooks/useScrollRestoration';
 import type { Post } from '@/post/model/Post';
 import { seedPostCache } from '@/post/utils/postCacheUtils';
 import StatusMessage from '@/shared/components/StatusMessage';
@@ -57,8 +56,6 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
     }
   }, [allPosts.length]);
 
-  const { saveScrollPosition, restoreScrollPosition } = useScrollRestoration(`${boardId}-posts`);
-
   const handleRefreshPosts = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     queryClient.invalidateQueries(['posts', boardId]);
@@ -70,7 +67,6 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
   const handlePostClick = (post: Post) => {
     seedPostCache(queryClient, post);
     onPostClick(post.id);
-    saveScrollPosition();
   };
 
   useEffect(() => {
@@ -78,12 +74,6 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
       fetchNextPage();
     }
   }, [inView, hasNextPage, fetchNextPage]);
-
-  useEffect(() => {
-    if (boardId) {
-      restoreScrollPosition();
-    }
-  }, [boardId, restoreScrollPosition]);
 
   if (isLoading) {
     return (
