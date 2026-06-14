@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect } from 'react';
+import { useLayoutEffect } from 'react';
 import { useNavigationType } from 'react-router-dom';
 
 const SCROLL_STORAGE_PREFIX = 'route-scroll:';
@@ -15,7 +15,11 @@ export function useRouteScrollRestoration(key: string): void {
   const navigationType = useNavigationType();
   const storageKey = SCROLL_STORAGE_PREFIX + key;
 
-  useEffect(() => {
+  // 저장은 mutation phase 이전에 동기적으로 실행되어야 한다. useEffect cleanup은
+  // paint 이후라 다음 라우트의 DOM이 이미 들어와 scrollHeight가 줄고 window.scrollY가
+  // 클램프된 뒤에 발화한다. useLayoutEffect cleanup은 DOM 제거 직전에 실행돼 사용자의
+  // 실제 스크롤 위치를 캡처한다.
+  useLayoutEffect(() => {
     return () => {
       try {
         sessionStorage.setItem(storageKey, String(window.scrollY));
