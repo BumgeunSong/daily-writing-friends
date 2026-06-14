@@ -240,6 +240,15 @@
    `document.documentElement.dataset.transition = 'forward' | 'back'`
    at navigation call sites. */
 @media (prefers-reduced-motion: no-preference) {
+  /* 디폴트: 방향 속성이 없으면 뷰 트랜지션은 즉시 스왑한다. 브라우저 기본
+     크로스페이드를 꺼서, iOS 가장자리 스와이프로 popstate가 발생했을 때처럼
+     앱이 직접 발동시킨 트랜지션이 아닌 경우 두 번째 애니메이션이 겹치지 않게.
+     의도된 forward/back 규칙은 아래에서 덮어쓴다. */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+
   @keyframes dwf-slide-out-left {
     to { transform: translateX(-30%); opacity: 0; }
   }
