@@ -56,11 +56,11 @@ describe('integration infra guard-rails', () => {
     const queryClient = createTestQueryClient();
 
     function Harness() {
-      const { data, status } = useQuery({
+      const { data, isLoading } = useQuery({
         queryKey: ['g3'],
         queryFn: () => gate.promise,
       });
-      return <div data-testid="state">{status === 'success' ? data : status}</div>;
+      return <div data-testid="state">{isLoading ? 'loading' : (data ?? 'no-data')}</div>;
     }
 
     render(
@@ -69,10 +69,14 @@ describe('integration infra guard-rails', () => {
       </QueryClientProvider>,
     );
 
-    expect(screen.getByTestId('state')).toHaveTextContent('loading');
+    expect(screen.getByTestId('state')).toHaveTextContent(/^loading$/);
+    // Pump microtasks: the harness MUST stay loading until gate.resolve.
+    // Catches a regression where deferred() returns an already-resolved promise.
+    await Promise.resolve();
+    expect(screen.getByTestId('state')).toHaveTextContent(/^loading$/);
 
     gate.resolve('done');
-    await waitFor(() => expect(screen.getByTestId('state')).toHaveTextContent('done'));
+    await waitFor(() => expect(screen.getByTestId('state')).toHaveTextContent(/^done$/));
   });
 
   it('G-4 — createTestQueryClient retry:false surfaces an error on the first 500 (no retries)', async () => {
