@@ -18,7 +18,7 @@ description: Use when writing tests for React components or custom hooks that to
 
 # Before you write the sketch — MANDATORY
 
-1. Read the component file. Confirm props, accessible names, copy text, ARIA roles. The PR-1 workflow showed 3 of 4 fictional sketches had wrong Korean copy.
+1. Read the component file. Confirm props, accessible names, copy text, ARIA roles. Fictional Korean copy is the #1 failure mode for AI-written test sketches — type-checks fine, fails at runtime when `getByText` can't find a string the component never renders.
 2. Read the hook file. Confirm queryKey shape, whether optimistic branches are gated by cache presence, what cancels what.
 3. Confirm MSW handlers exist for EVERY query the component fires (`onUnhandledRequest:'error'` surfaces gaps immediately).
 
@@ -30,7 +30,6 @@ description: Use when writing tests for React components or custom hooks that to
 
 - `apps/web/src/board/components/RecentPostCardList.integration.test.tsx` — infinite-query list with pagination + empty + error states
 - `apps/web/src/comment/components/CommentInput.integration.test.tsx` — form with onSubmit callback (uses vi.fn + deferred, NOT MSW — see "form-with-callback" rule below)
-- (PR-3 will add) usePostLikes.integration.test.tsx, RouteGuards.integration.test.tsx, PermissionErrorBoundary.unit.test.tsx, PostDetailPage.integration.test.tsx
 
 # Core rules
 
