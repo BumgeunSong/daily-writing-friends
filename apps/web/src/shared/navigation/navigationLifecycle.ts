@@ -36,6 +36,11 @@ function extendSuppressionWindow(durationMs: number): void {
   if (until > suppressUntilTimestamp) suppressUntilTimestamp = until;
 }
 
+// 우리 back()가 막 호출되었음을 popstate 리스너에 알리는 플래그. popstate가 우리
+// navigate(-1)에서 비롯되었는지(슬라이드 유지) 아니면 브라우저/iOS 스와이프에서
+// 비롯되었는지(잔여 방향 제거) 구분하기 위함.
+let isOurNextPopIntentional = false;
+
 /** Tag the next route change as a forward (deeper) navigation. */
 export function markForwardNavigation(): void {
   setDirectionAttribute('forward');
@@ -44,6 +49,7 @@ export function markForwardNavigation(): void {
 
 /** Tag the next route change as a back (shallower) navigation. */
 export function markBackNavigation(): void {
+  isOurNextPopIntentional = true;
   setDirectionAttribute('back');
   extendSuppressionWindow(HOLD_MS);
 }
@@ -54,10 +60,19 @@ export function isScrollDirectionSuppressed(): boolean {
 }
 
 // 브라우저가 시작한 pop (iOS 가장자리 스와이프 백, 데스크톱 백 버튼)도 동일하게
-// ScrollRestoration의 동기 스크롤을 유발하므로 같은 창으로 침묵시킨다. 우리 forward/back
-// 헬퍼가 이미 윈도를 설정했더라도 extendSuppressionWindow는 idempotent.
+// 프로그래매틱 스크롤을 유발하므로 같은 창으로 침묵시킨다. extendSuppressionWindow는
+// idempotent라 우리 forward/back 헬퍼와 중복 호출되어도 안전.
+//
+// 또한 잔여 'forward' 방향 속성이 남은 상태에서 사용자가 스와이프하면 그 pop에 대해
+// view transition이 잘못된 방향으로 슬라이드를 그려 버린다. markBackNavigation()이
+// 직전 호출되어 의도된 pop인 경우에만 속성을 유지하고, 그 외에는 비운다.
 if (typeof window !== 'undefined') {
   window.addEventListener('popstate', () => {
     extendSuppressionWindow(HOLD_MS);
+    if (isOurNextPopIntentional) {
+      isOurNextPopIntentional = false;
+      return;
+    }
+    delete document.documentElement.dataset.transition;
   });
 }
