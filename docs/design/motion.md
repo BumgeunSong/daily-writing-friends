@@ -95,6 +95,22 @@ import { markPageTransitionForward } from '@/shared/navigation/useViewTransition
 This preserves Link semantics (right-click, middle-click open in new tab) while
 opting into the directional transition.
 
+#### Tab-bar taps from a deep page
+
+A tab-bar tap fires `markPageTransitionBack` only when the destination tab is a
+true ancestor of the current path — i.e. the user is at a deep page inside that
+tab's stack. Example: `/board/X/post/Y` → tap Home → back slide to `/boards`.
+This matches the in-app back button's animation, so leaving a deep view feels
+the same regardless of which control the user reached for.
+
+Taps that jump to an unrelated tab root (e.g. `/board/X/post/Y` → Stats) stay
+silent. The destination shares no hierarchy with the current path, so a
+directional slide would imply a relationship that does not exist.
+
+Ownership of each route by tab is declared in
+`apps/web/src/shared/navigation/tabHierarchy.ts`. Add new routes there when
+their user mental model belongs under an existing tab.
+
 ### Async content reveal
 
 When async data arrives — comments load, a list resolves, a lazy chunk

@@ -1,8 +1,9 @@
 import { Home, Bell, User, ChartNoAxesColumnIncreasing } from 'lucide-react';
 import { Link, useLocation, useNavigate } from '@/shared/navigation';
 import type { TabName} from '@/shared/contexts/BottomTabHandlerContext';
-import { TAB_PATHS, useBottomTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
+import { useBottomTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
 import { useNavigation } from '@/shared/contexts/NavigationContext';
+import { isTabAncestorOfPath } from '@/shared/navigation/tabHierarchy';
 import { markPageTransitionBack } from '@/shared/navigation/useViewTransitionNavigate';
 import { cn } from "@/shared/utils/cn";
 
@@ -19,8 +20,6 @@ const tabs: Tab[] = [
   { name: 'User', icon: User, path: '/user' },
 ];
 
-const TAB_ROOT_PATHS: ReadonlySet<string> = new Set(Object.values(TAB_PATHS));
-
 const SPRING_EASING_STYLE = {
   transitionTimingFunction: 'var(--dwf-transition-easing)',
 } as const;
@@ -32,16 +31,15 @@ export default function BottomTabsNavigator() {
   const { handleTabAction } = useBottomTabHandler();
   const { isNavVisible } = useNavigation();
 
-  // 깊은 화면(예: PostDetailPage)에서 탭바를 탭하면 상위 계층으로 올라가는 느낌으로
-  // 백 슬라이드. 탭 루트 사이의 측면 이동은 슬라이드 없이 즉시 전환(원칙).
+  // 같은 탭 스택의 깊은 화면에서 탭바를 탭한 경우에만 백 슬라이드.
+  // 무관한 탭으로의 점프(예: PostDetailPage → Stats)는 측면 이동이라
+  // 슬라이드 없이 즉시 전환한다(원칙: 방향은 계층을 의미한다).
   const handleTabClick = (tab: Tab) => {
-    const isSameTab = location.pathname === tab.path;
-    if (isSameTab) {
+    if (location.pathname === tab.path) {
       handleTabAction(tab.name);
       return;
     }
-    const isFromDeepPage = !TAB_ROOT_PATHS.has(location.pathname);
-    if (isFromDeepPage) {
+    if (isTabAncestorOfPath(tab.name, location.pathname)) {
       markPageTransitionBack();
       navigate(tab.path, { viewTransition: true });
       return;
