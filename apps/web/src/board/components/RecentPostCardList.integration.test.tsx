@@ -4,6 +4,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import RecentPostCardList from './RecentPostCardList';
+import type { Post } from '@/post/model/Post';
+import { deduplicateAuthorIds } from '@/post/utils/batchPostCardDataUtils';
 import { server } from '@/test/msw/server';
 import { postsFeedErrorHandler, postsFeedHandler } from '@/test/msw/handlers/posts';
 import { makePostRow, type PostRow } from '@/test/fixtures/post';
@@ -38,9 +40,14 @@ vi.mock('@/shared/hooks/useAuth', async () => {
 function renderList(opts: { posts: PostRow[]; onPostsRequest?: (url: URL) => void }) {
   const { Wrapper, queryClient } = withProviders();
   if (opts.posts.length > 0) {
-    const authorIds = Array.from(new Set(opts.posts.map((p) => p.author_id)))
-      .sort((a, b) => a.localeCompare(b));
-    queryClient.setQueryData(['batchPostCardData', authorIds.join(',')], new Map());
+    // Stay locked to useBatchPostCardData's keying so any future normalization
+    // in `deduplicateAuthorIds` propagates here automatically. Casting through
+    // a minimal `{authorId}` shape: the util only reads that field.
+    const minimalPosts = opts.posts.map((p) => ({ authorId: p.author_id })) as Post[];
+    const authorIdsKey = deduplicateAuthorIds(minimalPosts)
+      .sort((a, b) => a.localeCompare(b))
+      .join(',');
+    queryClient.setQueryData(['batchPostCardData', authorIdsKey], new Map());
   }
   server.use(postsFeedHandler({ posts: opts.posts, onRequest: opts.onPostsRequest }));
   return render(
