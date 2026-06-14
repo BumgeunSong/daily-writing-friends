@@ -122,11 +122,14 @@ describe('RecentPostCardList — Pattern 1 (infinite-query list)', () => {
     expect(cursorIso).toBe('2026-01-05T00:00:00.000Z');
   });
 
-  it('keeps next-page fetches bounded when the sentinel toggles rapidly', async () => {
-    // Pagination is exhausted after one cursor fetch (second page is empty).
-    // The point of this test: rapid sentinel toggles must NEVER trigger a
-    // runaway loop. Even if React Query's in-flight dedup or the effect's
-    // closure timing produce 1–2 cursor requests, the count stays bounded.
+  it('does not fire any next-page fetch after hasNextPage settles to false', async () => {
+    // The strongest contract for the infinite-list seam: once the cursor query
+    // returns an empty page, useRecentPosts.hasNextPage flips false and NO
+    // subsequent sentinel intersection can produce a fetch — no matter how
+    // rapidly the sentinel toggles. A bound like `cursorRequestsCount <= 2`
+    // would silently accept a runaway-bug regression that bursts a few
+    // duplicates before settling; the invariant we want is hard zero after
+    // exhaustion.
     const requests: URL[] = [];
     const posts: PostRow[] = [
       makePostRow({ id: 'p1', created_at: '2026-01-15T00:00:00.000Z' }),
@@ -136,18 +139,26 @@ describe('RecentPostCardList — Pattern 1 (infinite-query list)', () => {
 
     await screen.findAllByRole('button', { name: '게시글 상세로 이동' });
 
+    // Trigger the cursor fetch and wait for the empty page to settle.
     mockAllIsIntersecting(true);
-    mockAllIsIntersecting(false);
-    mockAllIsIntersecting(true);
-
     await waitFor(() => {
       const cursorCalls = requests.filter((u) => u.searchParams.get('created_at')?.startsWith('lt.'));
       expect(cursorCalls.length).toBeGreaterThanOrEqual(1);
     });
+    // Let the empty response propagate so hasNextPage flips to false.
+    await waitFor(() => {
+      expect(screen.queryByText('글을 불러오는 중...')).not.toBeInTheDocument();
+    });
 
-    const cursorRequestsCount = requests.filter((u) =>
-      u.searchParams.get('created_at')?.startsWith('lt.'),
-    ).length;
-    expect(cursorRequestsCount).toBeLessThanOrEqual(2);
+    const requestsAfterExhaustion = requests.length;
+
+    // Sentinel re-enters view several times after exhaustion — must not fetch.
+    mockAllIsIntersecting(false);
+    mockAllIsIntersecting(true);
+    mockAllIsIntersecting(false);
+    mockAllIsIntersecting(true);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    expect(requests.length).toBe(requestsAfterExhaustion);
   });
 });
