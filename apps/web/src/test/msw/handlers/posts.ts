@@ -11,9 +11,14 @@ export interface PostsFeedHandlerOptions {
   onRequest?: (url: URL) => void;
 }
 
+const DEFAULT_LIMIT = 7;
+
 /**
  * MSW handler for the `posts_feed` view that the recent-posts infinite query reads.
- * Replicates PostgREST cursor semantics: `created_at=lt.<iso>` filter + `limit=<n>`.
+ * Implements the narrow slice of PostgREST cursor semantics that `useRecentPosts`
+ * depends on: `created_at=lt.<iso>` + `limit=<n>`. Any other filter shape is a
+ * test-config bug (or a production drift this handler hasn't been extended for) —
+ * fail loud rather than silently returning the full list.
  */
 export function postsFeedHandler({ posts, onRequest }: PostsFeedHandlerOptions) {
   return http.get(POSTS_FEED_URL, ({ request }) => {
@@ -21,12 +26,22 @@ export function postsFeedHandler({ posts, onRequest }: PostsFeedHandlerOptions) 
     onRequest?.(url);
 
     const limitParam = url.searchParams.get('limit');
-    const limit = limitParam ? Number(limitParam) : 7;
+    const limit = limitParam === null ? DEFAULT_LIMIT : Number(limitParam);
+    if (!Number.isFinite(limit) || limit < 0) {
+      return HttpResponse.json(
+        { message: `postsFeedHandler: malformed limit "${limitParam}"` },
+        { status: 500 },
+      );
+    }
 
     const createdAtFilter = url.searchParams.get('created_at');
-    const cursorIso = createdAtFilter?.startsWith('lt.')
-      ? createdAtFilter.slice('lt.'.length)
-      : undefined;
+    if (createdAtFilter !== null && !createdAtFilter.startsWith('lt.')) {
+      return HttpResponse.json(
+        { message: `postsFeedHandler: unsupported created_at filter "${createdAtFilter}" — extend the handler if a new operator is needed` },
+        { status: 500 },
+      );
+    }
+    const cursorIso = createdAtFilter?.slice('lt.'.length);
 
     const filtered = cursorIso
       ? posts.filter((p) => p.created_at < cursorIso)
