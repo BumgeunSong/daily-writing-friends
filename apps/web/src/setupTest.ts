@@ -69,9 +69,9 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   thresholds: [],
 }));
 
-// onUnhandledRequest: 'warn' — 핸들러 누락을 테스트 실패로 만들지 않고 로그로 노출시켜
-// 인프라 도입 단계에서 false-positive 없이 미처리 요청을 발견하기 위함.
-beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
+// onUnhandledRequest: 'error' — 핸들러 누락이 곧 테스트 실패가 되어
+// AI/사람 작성자가 누락된 endpoint를 즉시 발견하도록 강제.
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 afterEach(() => {
   server.resetHandlers();
   resetAuthHandlerState();
