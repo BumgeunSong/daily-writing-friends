@@ -223,4 +223,41 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* Hierarchical page transitions — list ↔ detail. Direction set by
+   `document.documentElement.dataset.transition = 'forward' | 'back'`
+   at navigation call sites. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes dwf-slide-out-left {
+    to { transform: translateX(-30%); opacity: 0; }
+  }
+  @keyframes dwf-slide-in-right {
+    from { transform: translateX(100%); }
+  }
+  @keyframes dwf-slide-out-right {
+    to { transform: translateX(30%); opacity: 0; }
+  }
+  @keyframes dwf-slide-in-left {
+    from { transform: translateX(-100%); }
+  }
+
+  [data-transition='forward']::view-transition-old(root) {
+    animation: dwf-slide-out-left 280ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  [data-transition='forward']::view-transition-new(root) {
+    animation: dwf-slide-in-right 280ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  [data-transition='back']::view-transition-old(root) {
+    animation: dwf-slide-out-right 280ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  [data-transition='back']::view-transition-new(root) {
+    animation: dwf-slide-in-left 280ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
 }
