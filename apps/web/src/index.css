@@ -275,4 +275,15 @@
   .dwf-content-enter {
     animation: dwf-content-enter var(--dwf-content-transition-duration) var(--dwf-transition-easing) both;
   }
+
+  /* Stagger variant — each direct child animates individually, 40ms apart,
+     capped so long lists don't feel slow. The wrapper itself doesn't animate. */
+  .dwf-content-stagger > * {
+    animation: dwf-content-enter var(--dwf-content-transition-duration) var(--dwf-transition-easing) both;
+  }
+  .dwf-content-stagger > *:nth-child(2) { animation-delay: 40ms; }
+  .dwf-content-stagger > *:nth-child(3) { animation-delay: 80ms; }
+  .dwf-content-stagger > *:nth-child(4) { animation-delay: 120ms; }
+  .dwf-content-stagger > *:nth-child(5) { animation-delay: 160ms; }
+  .dwf-content-stagger > *:nth-child(n + 6) { animation-delay: 200ms; }
 }
