@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { isScrollDirectionSuppressed } from '@/shared/lib/scrollSuppression';
+import { isScrollDirectionSuppressed } from '@/shared/navigation/navigationLifecycle';
 
 export type ScrollDirection = 'up' | 'down' | 'none';
 

@@ -3,8 +3,8 @@ import { Link, useLocation, useNavigate } from '@/shared/navigation';
 import type { TabName} from '@/shared/contexts/BottomTabHandlerContext';
 import { useBottomTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
 import { useNavigation } from '@/shared/contexts/NavigationContext';
+import { markBackNavigation } from '@/shared/navigation/navigationLifecycle';
 import { isTabAncestorOfPath } from '@/shared/navigation/tabHierarchy';
-import { markPageTransitionBack } from '@/shared/navigation/useViewTransitionNavigate';
 import { cn } from "@/shared/utils/cn";
 
 interface Tab {
@@ -40,7 +40,7 @@ export default function BottomTabsNavigator() {
       return;
     }
     if (isTabAncestorOfPath(tab.name, location.pathname)) {
-      markPageTransitionBack();
+      markBackNavigation();
       navigate(tab.path, { viewTransition: true });
       return;
     }
