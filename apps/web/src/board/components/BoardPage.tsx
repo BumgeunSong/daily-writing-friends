@@ -7,6 +7,7 @@ import PostFilterTabs, { type PostFilterType } from "@/board/components/PostFilt
 import RecentPostCardList from "@/board/components/RecentPostCardList"
 import { WritingActionButton } from "@/board/components/WritingActionButton"
 import { useSessionStorage } from "@/shared/hooks/useSessionStorage"
+import { useViewTransitionNavigate } from "@/shared/navigation/useViewTransitionNavigate"
 import { Button } from "@/shared/ui/button"
 
 // Default filter is 'recent' — BestPostCardList only renders on user toggle.
@@ -16,6 +17,7 @@ const BestPostCardList = lazy(() => import("@/board/components/BestPostCardList"
 export default function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>()
   const navigate = useNavigate()
+  const viewTransitionNavigate = useViewTransitionNavigate()
 
   const [filter, setFilter] = useSessionStorage<PostFilterType>(
     boardId ? `boardFilter-${boardId}` : '',
@@ -23,8 +25,7 @@ export default function BoardPage() {
   );
 
   const handlePostClick = (postId: string) => {
-    document.documentElement.dataset.transition = 'forward'
-    navigate(`/board/${boardId}/post/${postId}`, { viewTransition: true })
+    viewTransitionNavigate.forward(`/board/${boardId}/post/${postId}`)
   }
 
   const handleProfileClick = (userId: string) => {

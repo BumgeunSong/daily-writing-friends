@@ -35,6 +35,11 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+
+    /* View transition tokens — see hierarchical page transitions below. */
+    --dwf-page-transition-duration: 280ms;
+    --dwf-content-transition-duration: 560ms;
+    --dwf-transition-easing: cubic-bezier(0.32, 0.72, 0, 1);
   }
   .dark {
     /* Dark Graphite Mode - Dual-Mode Reading Theme */
@@ -249,16 +254,16 @@
   }
 
   [data-transition='forward']::view-transition-old(root) {
-    animation: dwf-slide-out-left 280ms cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation: dwf-slide-out-left var(--dwf-page-transition-duration) var(--dwf-transition-easing) both;
   }
   [data-transition='forward']::view-transition-new(root) {
-    animation: dwf-slide-in-right 280ms cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation: dwf-slide-in-right var(--dwf-page-transition-duration) var(--dwf-transition-easing) both;
   }
   [data-transition='back']::view-transition-old(root) {
-    animation: dwf-slide-out-right 280ms cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation: dwf-slide-out-right var(--dwf-page-transition-duration) var(--dwf-transition-easing) both;
   }
   [data-transition='back']::view-transition-new(root) {
-    animation: dwf-slide-in-left 280ms cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation: dwf-slide-in-left var(--dwf-page-transition-duration) var(--dwf-transition-easing) both;
   }
 
   /* Suspense reveal — content slides up + fades in when a lazy chunk resolves.
@@ -268,6 +273,6 @@
     to { transform: translateY(0); opacity: 1; }
   }
   .dwf-content-enter {
-    animation: dwf-content-enter 560ms cubic-bezier(0.32, 0.72, 0, 1) both;
+    animation: dwf-content-enter var(--dwf-content-transition-duration) var(--dwf-transition-easing) both;
   }
 }

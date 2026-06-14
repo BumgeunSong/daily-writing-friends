@@ -1,4 +1,5 @@
 import { Link } from '@/shared/navigation';
+import { markPageTransitionForward } from '@/shared/navigation/useViewTransitionNavigate';
 import type { Notification } from '@/notification/model/Notification';
 import { usePrefetchPost } from '@/post/hooks/usePrefetchPost';
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
@@ -19,12 +20,8 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
   const actorProfilePhoto =
     notification.fromUserProfileImage ?? deferredActor?.profilePhotoURL ?? undefined;
 
-  const handleNavigateForward = () => {
-    document.documentElement.dataset.transition = 'forward';
-  };
-
   return (
-    <Link to={getNotificationLink(notification)} viewTransition onClick={handleNavigateForward}>
+    <Link to={getNotificationLink(notification)} viewTransition onClick={markPageTransitionForward}>
       <div
         className={
           `flex cursor-pointer items-start gap-3 border-b border-border/30 px-3 md:px-4 py-3 nav-hover reading-focus active:scale-[0.99] transition-[transform,background-color] duration-200 ${
