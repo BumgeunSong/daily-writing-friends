@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { testEmailFor, userIdFromEmail } from './auth';
+import { authSessionFromEmail, testEmailFor, userIdFromEmail } from './auth';
 
 describe('userIdFromEmail', () => {
   it('returns the local part of a standard email', () => {
@@ -18,5 +18,18 @@ describe('userIdFromEmail', () => {
 describe('testEmailFor', () => {
   it('round-trips with userIdFromEmail', () => {
     expect(userIdFromEmail(testEmailFor('alice'))).toBe('alice');
+  });
+});
+
+describe('authSessionFromEmail', () => {
+  it('produces a session whose userId is the email local-part', () => {
+    expect(authSessionFromEmail(testEmailFor('alice'))).toEqual({
+      userId: 'alice',
+      email: 'alice@test.local',
+    });
+  });
+
+  it('throws on empty local-part — the cross-field invariant is enforced at construction', () => {
+    expect(() => authSessionFromEmail('@test.local')).toThrow();
   });
 });

@@ -33,6 +33,22 @@ export function userIdFromEmail(email: string): string {
   return localPart;
 }
 
+/**
+ * Single, validating constructor for `AuthSession`. Locks the cross-field
+ * invariant `userId === userIdFromEmail(email)` so a future handler can't
+ * accidentally produce `{ userId: 'alice', email: 'bob@…' }` and silently
+ * desync the `GET /auth/v1/user` response from the password-grant body.
+ */
+export function authSessionFromEmail(email: string): AuthSession {
+  return { userId: userIdFromEmail(email), email };
+}
+
+function isValidEmailLike(value: unknown): value is string {
+  if (typeof value !== 'string') return false;
+  const at = value.indexOf('@');
+  return at > 0;
+}
+
 function unauthorized() {
   return new HttpResponse(null, { status: 401 });
 }
@@ -66,13 +82,13 @@ export const authHandlers = [
       return new HttpResponse(null, { status: 400 });
     }
     const body = (await request.json()) as { email?: unknown; password?: unknown };
-    if (typeof body.email !== 'string' || !body.email.includes('@')) {
+    if (!isValidEmailLike(body.email)) {
       return invalidGrant('email required');
     }
     if (typeof body.password !== 'string' || body.password.length === 0) {
       return invalidGrant('password required');
     }
-    const next: AuthSession = { userId: userIdFromEmail(body.email), email: body.email };
+    const next = authSessionFromEmail(body.email);
     setSession(next);
     return passwordGrantSession(next);
   }),
