@@ -1,11 +1,10 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import PostCard from '@/post/components/PostCard';
 import { useBatchPostCardData } from '@/post/hooks/useBatchPostCardData';
 import { useBestPosts } from '@/post/hooks/useBestPosts';
-import { useScrollRestoration } from '@/post/hooks/useScrollRestoration';
 import type { Post } from '@/post/model/Post';
 import { seedPostCache } from '@/post/utils/postCacheUtils';
 import StatusMessage from '@/shared/components/StatusMessage';
@@ -38,8 +37,6 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
 
   const { data: batchData, isError: isBatchError } = useBatchPostCardData(recentPosts);
 
-  const { saveScrollPosition, restoreScrollPosition } = useScrollRestoration(`${boardId}-best-posts`);
-
   const handleRefreshPosts = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     queryClient.invalidateQueries(['bestPosts', boardId]);
@@ -50,14 +47,7 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
   const handlePostClick = (post: Post) => {
     seedPostCache(queryClient, post);
     onPostClick(post.id);
-    saveScrollPosition();
   };
-
-  useEffect(() => {
-    if (boardId) {
-      restoreScrollPosition();
-    }
-  }, [boardId, restoreScrollPosition]);
 
   if (isLoading) {
     return (
