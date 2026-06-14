@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { BottomTabHandlerProvider } from '@/shared/contexts/BottomTabHandlerContext';
 import { NavigationProvider } from '@/shared/contexts/NavigationContext';
 import { AuthProvider } from '@/shared/hooks/useAuth';
+import { TEST_NAVIGATION_PROPS } from './testNavigationProps';
 
 export function renderWithProviders(
     ui: React.ReactElement,
@@ -22,11 +23,7 @@ export function renderWithProviders(
       <MemoryRouter initialEntries={[route]}>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <NavigationProvider
-              debounceTime={500}
-              topThreshold={30}
-              ignoreSmallChanges={10}
-            >
+            <NavigationProvider {...TEST_NAVIGATION_PROPS}>
               <BottomTabHandlerProvider>
                 {ui}
               </BottomTabHandlerProvider>
