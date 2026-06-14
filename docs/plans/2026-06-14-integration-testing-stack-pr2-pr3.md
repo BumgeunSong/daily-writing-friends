@@ -191,111 +191,55 @@ test(infra): MSW를 integration 프로젝트로 분리
 
 ---
 
-### Task PR-2-2: Refactor auth handler to single setSession path with AuthSession type (S-2)
+### Task PR-2-2: Add AuthSession type + single setSession write path on top of PR-1's refactor (S-2)
+
+**Status:** Partially done in PR-1 (#656 commit `92acab07`). PR-1 already extracted: URL constants, response builders (`unauthorized`, `invalidGrant`, `passwordGrantSession`, `userResponse`), and the pure `userIdFromEmail` helper with its test at `apps/web/src/test/msw/handlers/auth.test.ts`. Remaining work in PR-2: introduce `AuthSession` type, add `testEmailFor` companion, harden `userIdFromEmail` to throw on empty local part, route all 3 writes (`POST /token`, `POST /logout`, `resetAuthHandlerState`) through a single private `setSession(next)`.
 
 **Files:**
-- Modify: `apps/web/src/test/msw/handlers/auth.ts` — full rewrite per type-design-analyzer proposal
+- Modify: `apps/web/src/test/msw/handlers/auth.ts`
+- Modify: `apps/web/src/test/msw/handlers/auth.test.ts` — extend with the round-trip test + empty-local-part throw test
 
-**Step 1: Write a failing test for the named type contract**
+**Step 1: Extend the failing test**
 
-Create `apps/web/src/test/msw/handlers/auth.test.ts`:
+Add to `auth.test.ts`:
 
 ```typescript
-import { describe, it, expect, beforeEach } from 'vitest';
-import { resetAuthHandlerState, testEmailFor, userIdFromEmail } from './auth';
+import { testEmailFor, userIdFromEmail } from './auth';
 
-describe('auth handler helpers', () => {
-  beforeEach(() => resetAuthHandlerState());
+it('testEmailFor and userIdFromEmail round-trip', () => {
+  expect(userIdFromEmail(testEmailFor('alice'))).toBe('alice');
+});
 
-  it('testEmailFor and userIdFromEmail round-trip', () => {
-    expect(userIdFromEmail(testEmailFor('alice'))).toBe('alice');
-  });
-
-  it('userIdFromEmail rejects empty local-part', () => {
-    expect(() => userIdFromEmail('@test.local')).toThrow();
-  });
+it('userIdFromEmail rejects empty local-part', () => {
+  expect(() => userIdFromEmail('@test.local')).toThrow();
 });
 ```
 
-Run: `pnpm --filter web test:run apps/web/src/test/msw/handlers/auth.test.ts`. Expected: FAIL — `testEmailFor`/`userIdFromEmail` not exported yet.
+Run: expected FAIL — `testEmailFor` not exported; existing `userIdFromEmail` doesn't throw on empty local part.
 
-**Step 2: Rewrite handler**
+**Step 2: Modify handler**
 
-Replace `apps/web/src/test/msw/handlers/auth.ts` body (after imports + `SUPABASE_URL` const):
+In `auth.ts`:
 
-```typescript
-interface AuthSession {
-  readonly userId: string;
-  readonly email: string;
-}
-
-export function testEmailFor(userId: string): string {
-  return `${userId}@test.local`;
-}
-
-export function userIdFromEmail(email: string): string {
-  const localPart = email.split('@')[0];
-  if (!localPart) throw new Error(`empty local part: ${email}`);
-  return localPart;
-}
-
-let session: AuthSession | null = null;
-
-function setSession(next: AuthSession | null): void {
-  session = next;
-}
-
-export function resetAuthHandlerState(): void {
-  setSession(null);
-}
-
-export const authHandlers = [
-  http.get(`${SUPABASE_URL}/auth/v1/user`, () => {
-    if (!session) return new HttpResponse(null, { status: 401 });
-    return HttpResponse.json({ id: session.userId, email: session.email });
-  }),
-
-  http.post(`${SUPABASE_URL}/auth/v1/token`, async ({ request }) => {
-    const url = new URL(request.url);
-    if (url.searchParams.get('grant_type') !== 'password') {
-      return new HttpResponse(null, { status: 400 });
-    }
-    const body = (await request.json()) as { email?: unknown; password?: unknown };
-    if (typeof body.email !== 'string' || !body.email.includes('@')) {
-      return HttpResponse.json({ error: 'invalid_grant', error_description: 'email required' }, { status: 400 });
-    }
-    if (typeof body.password !== 'string' || body.password.length === 0) {
-      return HttpResponse.json({ error: 'invalid_grant', error_description: 'password required' }, { status: 400 });
-    }
-    const userId = userIdFromEmail(body.email);
-    setSession({ userId, email: body.email });
-    return HttpResponse.json({
-      access_token: 'test-access-token',
-      token_type: 'bearer',
-      expires_in: 3600,
-      refresh_token: 'test-refresh-token',
-      user: { id: userId, email: body.email },
-    });
-  }),
-
-  http.post(`${SUPABASE_URL}/auth/v1/logout`, () => {
-    setSession(null);
-    return new HttpResponse(null, { status: 204 });
-  }),
-];
-```
+- Add `interface AuthSession { readonly userId: string; readonly email: string; }`
+- Add `export function testEmailFor(userId: string): string { return \`${userId}@test.local\`; }`
+- Harden `userIdFromEmail` to throw when `localPart` is empty
+- Replace `let signedInUserId: string \| null` with `let session: AuthSession \| null`
+- Add private `function setSession(next: AuthSession \| null): void { session = next; }`
+- Route `resetAuthHandlerState`, the token handler success path, and the logout handler all through `setSession(...)`
+- Update `userResponse` to take an `AuthSession` (`{ userId, email }`) instead of just `userId` — derived email no longer needed since the session carries it
 
 **Step 3: Verify**
 
-Run the new test + full suite: `pnpm --filter web test:run`. Expected: all green.
+Full suite green.
 
 **Step 4: Commit**
 
 ```
 refactor(test): auth handler에 AuthSession 타입과 단일 setSession 경로 도입
 
-- 두 곳에서 signedInUserId를 직접 mutate하던 패턴 — 새 cross-cutting 로직(로그 emit, 토큰 store)이 들어오면 한 쪽만 적용되는 silent drift trap
-- AuthSession 타입으로 id+email이 같이 다님을 강제, testEmailFor/userIdFromEmail로 round-trip 컨벤션 고정
+- PR-1의 헬퍼 추출 위에 의미적 강화 — id+email이 함께 다니도록 AuthSession 타입으로 묶음
+- 3개의 직접 mutation 지점을 setSession 단일 경로로 통합 — cross-cutting 로직(로그/토큰 store 등) 확장 시 한 곳만 수정
 ```
 
 ---
