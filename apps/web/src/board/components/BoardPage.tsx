@@ -23,7 +23,8 @@ export default function BoardPage() {
   );
 
   const handlePostClick = (postId: string) => {
-    navigate(`/board/${boardId}/post/${postId}`)
+    document.documentElement.dataset.transition = 'forward'
+    navigate(`/board/${boardId}/post/${postId}`, { viewTransition: true })
   }
 
   const handleProfileClick = (userId: string) => {

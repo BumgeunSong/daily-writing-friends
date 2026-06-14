@@ -8,11 +8,15 @@ interface PostBackButtonProps {
 
 export function PostBackButton({ className }: PostBackButtonProps) {
   const navigate = useNavigate();
+  const handleBack = () => {
+    document.documentElement.dataset.transition = 'back';
+    navigate(-1);
+  };
   return (
     <Button
       variant='ghost'
       className={className}
-      onClick={() => navigate(-1)}
+      onClick={handleBack}
       aria-label="뒤로가기"
     >
       <ChevronLeft className='size-4' />
