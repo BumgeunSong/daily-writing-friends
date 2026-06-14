@@ -22,19 +22,31 @@ export const authHandlers = [
 
   http.post(`${SUPABASE_URL}/auth/v1/token`, async ({ request }) => {
     const url = new URL(request.url);
-    if (url.searchParams.get('grant_type') === 'password') {
-      const body = (await request.json()) as { email?: string };
-      const userId = body.email?.split('@')[0] ?? 'test-user';
-      signedInUserId = userId;
-      return HttpResponse.json({
-        access_token: 'test-access-token',
-        token_type: 'bearer',
-        expires_in: 3600,
-        refresh_token: 'test-refresh-token',
-        user: { id: userId, email: body.email },
-      });
+    if (url.searchParams.get('grant_type') !== 'password') {
+      return new HttpResponse(null, { status: 400 });
     }
-    return new HttpResponse(null, { status: 400 });
+    const body = (await request.json()) as { email?: unknown; password?: unknown };
+    if (typeof body.email !== 'string' || !body.email.includes('@')) {
+      return HttpResponse.json(
+        { error: 'invalid_grant', error_description: 'email required' },
+        { status: 400 },
+      );
+    }
+    if (typeof body.password !== 'string' || body.password.length === 0) {
+      return HttpResponse.json(
+        { error: 'invalid_grant', error_description: 'password required' },
+        { status: 400 },
+      );
+    }
+    const userId = body.email.split('@')[0];
+    signedInUserId = userId;
+    return HttpResponse.json({
+      access_token: 'test-access-token',
+      token_type: 'bearer',
+      expires_in: 3600,
+      refresh_token: 'test-refresh-token',
+      user: { id: userId, email: body.email },
+    });
   }),
 
   http.post(`${SUPABASE_URL}/auth/v1/logout`, () => {
