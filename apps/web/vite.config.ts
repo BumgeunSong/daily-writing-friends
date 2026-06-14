@@ -131,14 +131,32 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       globals: true,
-      environment: 'jsdom',
-      setupFiles: ['./src/setupTest.ts'],
-      include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
+      projects: [
+        {
+          extends: true,
+          test: {
+            name: 'unit',
+            environment: 'jsdom',
+            include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
+            exclude: ['src/**/*.integration.test.{ts,tsx}'],
+            setupFiles: ['./src/setupTest.ts'],
+          },
+        },
+        {
+          extends: true,
+          test: {
+            name: 'integration',
+            environment: 'jsdom',
+            include: ['src/**/*.integration.test.{ts,tsx}'],
+            setupFiles: ['./src/setupTest.ts', './src/setupTest.integration.ts'],
+          },
+        },
+      ],
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json-summary', 'json', 'lcov'],
         reportOnFailure: true,
-        exclude: ['node_modules/', 'src/setupTest.ts']
+        exclude: ['node_modules/', 'src/setupTest.ts', 'src/setupTest.integration.ts']
       },
       deps: {
         inline: ['chai', '@testing-library/jest-dom']

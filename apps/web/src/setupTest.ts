@@ -1,8 +1,6 @@
 import '@testing-library/jest-dom';
 import * as matchers from '@testing-library/jest-dom/matchers';
-import { afterAll, afterEach, beforeAll, expect, vi } from 'vitest';
-import { server } from './test/msw/server';
-import { resetAuthHandlerState } from './test/msw/handlers/auth';
+import { expect, vi } from 'vitest';
 
 // Sentry 글로벌 mock — AuthProvider가 setSentryUser를 호출하므로 모든 컴포넌트 테스트에서 필요
 vi.mock('@sentry/react', () => ({
@@ -69,11 +67,3 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   thresholds: [],
 }));
 
-// onUnhandledRequest: 'error' — 핸들러 누락이 곧 테스트 실패가 되어
-// AI/사람 작성자가 누락된 endpoint를 즉시 발견하도록 강제.
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
-afterEach(() => {
-  server.resetHandlers();
-  resetAuthHandlerState();
-});
-afterAll(() => server.close());
