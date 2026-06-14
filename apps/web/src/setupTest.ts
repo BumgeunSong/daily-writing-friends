@@ -1,6 +1,8 @@
 import '@testing-library/jest-dom';
 import * as matchers from '@testing-library/jest-dom/matchers';
-import { expect, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, expect, vi } from 'vitest';
+import { server } from './test/msw/server';
+import { resetAuthHandlerState } from './test/msw/handlers/auth';
 
 // Sentry 글로벌 mock — AuthProvider가 setSentryUser를 호출하므로 모든 컴포넌트 테스트에서 필요
 vi.mock('@sentry/react', () => ({
@@ -66,3 +68,13 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   rootMargin: '',
   thresholds: [],
 }));
+
+// MSW 라이프사이클 — 통합 테스트(integration) 계층의 네트워크 가로채기.
+// onUnhandledRequest: 'warn' 단계에서 시작해 누락 핸들러를 노출시키고,
+// 후속 PR에서 'error'로 승격해 강제한다.
+beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
+afterEach(() => {
+  server.resetHandlers();
+  resetAuthHandlerState();
+});
+afterAll(() => server.close());
