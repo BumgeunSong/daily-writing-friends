@@ -42,19 +42,18 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
     isFetchingNextPage,
   } = useRecentPosts(boardId, limitCount);
 
-  const allPosts = postPages?.pages.flat() || [];
+  const pages = postPages?.pages ?? [];
+  const allPosts = pages.flat();
   const { data: batchData, isError: isBatchError } = useBatchPostCardData(allPosts);
 
-  // 첫 데이터 도착 시점에는 스태거하지 않고, 이후 다음 페이지로 도착한 카드만 페이드 슬라이드인.
-  // 렌더 중에 ref.current를 읽지만, ref는 커밋 이후 effect에서만 변경되므로 동시 모드에서도 안정적이다.
-  const settledCountRef = useRef<number | null>(null);
-  const staggerThreshold = settledCountRef.current ?? allPosts.length;
-
-  useEffect(() => {
-    if (allPosts.length > 0 || settledCountRef.current !== null) {
-      settledCountRef.current = allPosts.length;
-    }
-  }, [allPosts.length]);
+  // 첫 데이터가 채워진 시점의 페이지 수를 한 번만 캡처한다. 그 이후 fetchNextPage로 들어온
+  // 페이지의 카드들만 스태거 등장. 렌더 중 ref 쓰기는 lazy-init 패턴(useRef와 동일 의미)이라
+  // 커밋 타이밍에 의존하지 않는다.
+  const baselinePageCountRef = useRef<number | null>(null);
+  if (baselinePageCountRef.current === null && pages.length > 0) {
+    baselinePageCountRef.current = pages.length;
+  }
+  const baselinePageCount = baselinePageCountRef.current ?? pages.length;
 
   const handleRefreshPosts = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -117,26 +116,26 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
 
   return (
     <div className='space-y-4'>
-      {allPosts.map((post, index) => {
-        const isNewArrival = index >= staggerThreshold;
-        const animationDelayMs = isNewArrival
-          ? Math.min((index - staggerThreshold) * 40, 200)
-          : 0;
-        return (
-          <div
-            key={post.id}
-            className={isNewArrival ? 'dwf-content-enter' : undefined}
-            style={isNewArrival ? { animationDelay: `${animationDelayMs}ms` } : undefined}
-          >
-            <PostCard
-              post={post}
-              onClick={() => handlePostClick(post)}
-              onClickProfile={onClickProfile}
-              prefetchedData={batchData?.get(post.authorId)}
-              isBatchMode={allPosts.length > 0 && !isBatchError}
-            />
-          </div>
-        );
+      {pages.flatMap((page, pageIndex) => {
+        const isNewBatch = pageIndex >= baselinePageCount;
+        return page.map((post, postIndexInPage) => {
+          const delayMs = isNewBatch ? Math.min(postIndexInPage * 40, 200) : 0;
+          return (
+            <div
+              key={post.id}
+              className={isNewBatch ? 'dwf-content-enter' : undefined}
+              style={isNewBatch ? { animationDelay: `${delayMs}ms` } : undefined}
+            >
+              <PostCard
+                post={post}
+                onClick={() => handlePostClick(post)}
+                onClickProfile={onClickProfile}
+                prefetchedData={batchData?.get(post.authorId)}
+                isBatchMode={allPosts.length > 0 && !isBatchError}
+              />
+            </div>
+          );
+        });
       })}
       <div ref={inViewRef} />
       {isFetchingNextPage && (

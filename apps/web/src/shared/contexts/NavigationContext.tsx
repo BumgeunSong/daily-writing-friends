@@ -3,12 +3,6 @@ import type React from 'react';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { useLocation } from '@/shared/navigation';
 import { useScrollDirection } from '@/shared/hooks/useScrollDirection';
-import { suppressScrollDirectionFor } from '@/shared/lib/scrollSuppression';
-
-// 라우트 전환 직후 React Router의 ScrollRestoration이 동기 스크롤 복원을 수행한다.
-// 그 프로그래매틱 스크롤이 사용자 스크롤로 오해되지 않도록 잠시 감지를 잠근다.
-// 280ms 페이지 트랜지션 + 코드 분할 청크 페치 여유를 합한 값.
-const NAV_SCROLL_SUPPRESSION_MS = 600;
 
 interface NavigationContextType {
   isNavVisible: boolean;
@@ -38,12 +32,13 @@ export const NavigationProvider: React.FC<NavigationProviderProps> = ({
   // 네비게이션 바 표시 상태
   const [isNavVisible, setIsNavVisible] = useState<boolean>(true);
 
+  // 라우트가 바뀌면 항상 하단 내비를 보이는 상태로 시작한다. 스크롤 감지 침묵은
+  // navigationLifecycle이 forward/back/popstate에서 직접 다루므로 여기서는 다루지 않는다.
   const location = useLocation();
   const prevPathnameRef = useRef(location.pathname);
   useEffect(() => {
     if (location.pathname === prevPathnameRef.current) return;
     prevPathnameRef.current = location.pathname;
-    suppressScrollDirectionFor(NAV_SCROLL_SUPPRESSION_MS);
     setIsNavVisible(true);
   }, [location.pathname]);
 

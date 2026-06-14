@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense } from 'react';
 import { useNavigate, useParams } from '@/shared/navigation';
 
 // Comments below the fold — lazy chunk lets LCP candidate paint first.
@@ -36,10 +36,7 @@ export default function PostDetailPage() {
   const { userData: authorData } = useUser(post?.authorId ?? null);
   const authorNickname = getUserDisplayName(authorData);
 
-  // 게시글 상세 페이지는 항상 맨 위부터 시작
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' });
-  }, [postId]);
+  // 상단으로 스크롤하는 동작은 router.tsx의 <ScrollRestoration />이 PUSH 시 처리한다.
 
   if (isLoading) return <PostDetailSkeleton />;
   if (error || !post) return <PostDetailError boardId={boardId} />;
