@@ -14,7 +14,7 @@ export interface WithProvidersResult {
   queryClient: QueryClient;
 }
 
-function createTestQueryClient(): QueryClient {
+export function createTestQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
       queries: { retry: false, cacheTime: Infinity, staleTime: Infinity },
