@@ -6,14 +6,31 @@ const USER_URL = `${SUPABASE_URL}/auth/v1/user`;
 const TOKEN_URL = `${SUPABASE_URL}/auth/v1/token`;
 const LOGOUT_URL = `${SUPABASE_URL}/auth/v1/logout`;
 
-let signedInUserId: string | null = null;
+export interface AuthSession {
+  readonly userId: string;
+  readonly email: string;
+}
+
+let session: AuthSession | null = null;
+
+function setSession(next: AuthSession | null): void {
+  session = next;
+}
 
 export function resetAuthHandlerState(): void {
-  signedInUserId = null;
+  setSession(null);
+}
+
+export function testEmailFor(userId: string): string {
+  return `${userId}@test.local`;
 }
 
 export function userIdFromEmail(email: string): string {
-  return email.split('@')[0];
+  const localPart = email.split('@')[0];
+  if (!localPart) {
+    throw new Error(`userIdFromEmail: empty local-part in "${email}"`);
+  }
+  return localPart;
 }
 
 function unauthorized() {
@@ -27,7 +44,7 @@ function invalidGrant(description: string) {
   );
 }
 
-function passwordGrantSession(userId: string, email: string) {
+function passwordGrantSession({ userId, email }: AuthSession) {
   return HttpResponse.json({
     access_token: 'test-access-token',
     token_type: 'bearer',
@@ -37,12 +54,12 @@ function passwordGrantSession(userId: string, email: string) {
   });
 }
 
-function userResponse(userId: string) {
-  return HttpResponse.json({ id: userId, email: `${userId}@test.local` });
+function userResponse({ userId, email }: AuthSession) {
+  return HttpResponse.json({ id: userId, email });
 }
 
 export const authHandlers = [
-  http.get(USER_URL, () => (signedInUserId ? userResponse(signedInUserId) : unauthorized())),
+  http.get(USER_URL, () => (session ? userResponse(session) : unauthorized())),
 
   http.post(TOKEN_URL, async ({ request }) => {
     if (new URL(request.url).searchParams.get('grant_type') !== 'password') {
@@ -55,13 +72,13 @@ export const authHandlers = [
     if (typeof body.password !== 'string' || body.password.length === 0) {
       return invalidGrant('password required');
     }
-    const userId = userIdFromEmail(body.email);
-    signedInUserId = userId;
-    return passwordGrantSession(userId, body.email);
+    const next: AuthSession = { userId: userIdFromEmail(body.email), email: body.email };
+    setSession(next);
+    return passwordGrantSession(next);
   }),
 
   http.post(LOGOUT_URL, () => {
-    signedInUserId = null;
+    setSession(null);
     return new HttpResponse(null, { status: 204 });
   }),
 ];

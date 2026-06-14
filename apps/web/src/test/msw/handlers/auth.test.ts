@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { userIdFromEmail } from './auth';
+import { testEmailFor, userIdFromEmail } from './auth';
 
 describe('userIdFromEmail', () => {
   it('returns the local part of a standard email', () => {
@@ -8,5 +8,15 @@ describe('userIdFromEmail', () => {
 
   it('returns the input when no @ is present', () => {
     expect(userIdFromEmail('plain')).toBe('plain');
+  });
+
+  it('rejects empty local-part', () => {
+    expect(() => userIdFromEmail('@test.local')).toThrow();
+  });
+});
+
+describe('testEmailFor', () => {
+  it('round-trips with userIdFromEmail', () => {
+    expect(userIdFromEmail(testEmailFor('alice'))).toBe('alice');
   });
 });
