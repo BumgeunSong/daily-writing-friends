@@ -69,9 +69,8 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   thresholds: [],
 }));
 
-// MSW 라이프사이클 — 통합 테스트(integration) 계층의 네트워크 가로채기.
-// onUnhandledRequest: 'warn' 단계에서 시작해 누락 핸들러를 노출시키고,
-// 후속 PR에서 'error'로 승격해 강제한다.
+// onUnhandledRequest: 'warn' — 핸들러 누락을 테스트 실패로 만들지 않고 로그로 노출시켜
+// 인프라 도입 단계에서 false-positive 없이 미처리 요청을 발견하기 위함.
 beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
 afterEach(() => {
   server.resetHandlers();
