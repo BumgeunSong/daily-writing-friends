@@ -3,7 +3,7 @@ import { Skeleton } from '@/shared/ui/skeleton';
 
 const PostCardSkeleton: React.FC = () => {
   return (
-    <div className="mb-4 rounded-md border p-4 shadow-sm">
+    <div data-testid="post-card-skeleton" className="mb-4 rounded-md border p-4 shadow-sm">
       <Skeleton className="mb-2 h-6 w-1/2" /> {/* Title */}
       <div className="mb-4 flex items-center">
         <Skeleton className="mr-2 size-8 rounded-full" /> {/* Avatar */}
