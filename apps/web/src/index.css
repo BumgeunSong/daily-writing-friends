@@ -260,4 +260,14 @@
   [data-transition='back']::view-transition-new(root) {
     animation: dwf-slide-in-left 280ms cubic-bezier(0.32, 0.72, 0, 1) both;
   }
+
+  /* Suspense reveal — content slides up + fades in when a lazy chunk resolves.
+     Reduced-motion is handled by the universal `*` rule above. */
+  @keyframes dwf-content-enter {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .dwf-content-enter {
+    animation: dwf-content-enter 560ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
 }
