@@ -22,6 +22,7 @@ interface BottomTabHandlerContextType {
   registerTabHandler: (tabName: TabName, handler: () => void) => void;
   unregisterTabHandler: (tabName: TabName) => void;
   handleTabAction: (tabName: TabName) => void;
+  hasRegisteredHandler: (tabName: TabName) => boolean;
 }
 
 const BottomTabHandlerContext = createContext<BottomTabHandlerContextType | undefined>(undefined);
@@ -55,8 +56,13 @@ export const BottomTabHandlerProvider: React.FC<{ children: ReactNode }> = ({ ch
     }
   }, [handlers, createDefaultHandlers]);
 
+  const hasRegisteredHandler = useCallback(
+    (tabName: TabName) => Boolean(handlers[tabName]),
+    [handlers],
+  );
+
   return (
-    <BottomTabHandlerContext.Provider value={{ registerTabHandler, unregisterTabHandler, handleTabAction }}>
+    <BottomTabHandlerContext.Provider value={{ registerTabHandler, unregisterTabHandler, handleTabAction, hasRegisteredHandler }}>
       {children}
     </BottomTabHandlerContext.Provider>
   );

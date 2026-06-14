@@ -28,18 +28,24 @@ export default function BottomTabsNavigator() {
   const location = useLocation();
   const navigate = useNavigate();
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const { handleTabAction } = useBottomTabHandler();
+  const { handleTabAction, hasRegisteredHandler } = useBottomTabHandler();
   const { isNavVisible } = useNavigation();
 
-  // 같은 탭 스택의 깊은 화면에서 탭바를 탭한 경우에만 백 슬라이드.
-  // 무관한 탭으로의 점프(예: PostDetailPage → Stats)는 측면 이동이라
-  // 슬라이드 없이 즉시 전환한다(원칙: 방향은 계층을 의미한다).
+  // 같은 탭 스택의 깊은 화면에서 탭바를 탭했을 때:
+  // - 그 화면이 핸들러를 등록해 두었다면(예: BoardPage가 등록한 "스크롤 톱 + 새로고침")
+  //   현재 화면에 머무르며 핸들러를 실행한다.
+  // - 등록된 핸들러가 없다면(예: PostDetailPage) 상위 탭 루트로 백 슬라이드.
+  // 무관한 탭으로의 점프는 측면 이동이라 슬라이드 없이 즉시 전환.
   const handleTabClick = (tab: Tab) => {
     if (location.pathname === tab.path) {
       handleTabAction(tab.name);
       return;
     }
     if (isTabAncestorOfPath(tab.name, location.pathname)) {
+      if (hasRegisteredHandler(tab.name)) {
+        handleTabAction(tab.name);
+        return;
+      }
       markBackNavigation();
       navigate(tab.path, { viewTransition: true });
       return;
