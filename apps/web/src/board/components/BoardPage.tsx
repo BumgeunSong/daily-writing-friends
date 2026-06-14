@@ -7,6 +7,7 @@ import PostFilterTabs, { type PostFilterType } from "@/board/components/PostFilt
 import RecentPostCardList from "@/board/components/RecentPostCardList"
 import { WritingActionButton } from "@/board/components/WritingActionButton"
 import { useSessionStorage } from "@/shared/hooks/useSessionStorage"
+import { useRouteScrollRestoration } from "@/shared/navigation/useRouteScrollRestoration"
 import { useViewTransitionNavigate } from "@/shared/navigation/useViewTransitionNavigate"
 import { Button } from "@/shared/ui/button"
 
@@ -23,6 +24,10 @@ export default function BoardPage() {
     boardId ? `boardFilter-${boardId}` : '',
     'recent'
   );
+
+  // POP(앱 내 뒤로가기 버튼, iOS 가장자리 스와이프 백)으로 돌아왔을 때 스크롤 위치를
+  // 동기적으로 복원한다. <ScrollRestoration />이 view transition과 함께 누락하는 케이스 보강.
+  useRouteScrollRestoration(`board-${boardId ?? ''}`);
 
   const handlePostClick = (postId: string) => {
     viewTransitionNavigate.forward(`/board/${boardId}/post/${postId}`)
