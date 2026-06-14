@@ -2,7 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { PenSquare } from 'lucide-react';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { useNavigate } from '@/shared/navigation';
 import PostCard from '@/post/components/PostCard';
@@ -45,6 +45,17 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
 
   const allPosts = postPages?.pages.flat() || [];
   const { data: batchData, isError: isBatchError } = useBatchPostCardData(allPosts);
+
+  // 첫 데이터 도착 시점에는 스태거하지 않고, 이후 다음 페이지로 도착한 카드만 페이드 슬라이드인.
+  // 렌더 중에 ref.current를 읽지만, ref는 커밋 이후 effect에서만 변경되므로 동시 모드에서도 안정적이다.
+  const settledCountRef = useRef<number | null>(null);
+  const staggerThreshold = settledCountRef.current ?? allPosts.length;
+
+  useEffect(() => {
+    if (allPosts.length > 0 || settledCountRef.current !== null) {
+      settledCountRef.current = allPosts.length;
+    }
+  }, [allPosts.length]);
 
   const { saveScrollPosition, restoreScrollPosition } = useScrollRestoration(`${boardId}-posts`);
 
@@ -116,16 +127,27 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
 
   return (
     <div className='space-y-4'>
-      {allPosts.map((post) => (
-        <PostCard
-          key={post.id}
-          post={post}
-          onClick={() => handlePostClick(post)}
-          onClickProfile={onClickProfile}
-          prefetchedData={batchData?.get(post.authorId)}
-          isBatchMode={allPosts.length > 0 && !isBatchError}
-        />
-      ))}
+      {allPosts.map((post, index) => {
+        const isNewArrival = index >= staggerThreshold;
+        const animationDelayMs = isNewArrival
+          ? Math.min((index - staggerThreshold) * 40, 200)
+          : 0;
+        return (
+          <div
+            key={post.id}
+            className={isNewArrival ? 'dwf-content-enter' : undefined}
+            style={isNewArrival ? { animationDelay: `${animationDelayMs}ms` } : undefined}
+          >
+            <PostCard
+              post={post}
+              onClick={() => handlePostClick(post)}
+              onClickProfile={onClickProfile}
+              prefetchedData={batchData?.get(post.authorId)}
+              isBatchMode={allPosts.length > 0 && !isBatchError}
+            />
+          </div>
+        );
+      })}
       <div ref={inViewRef} />
       {isFetchingNextPage && (
         <div className='text-reading-sm flex items-center justify-center p-6 text-muted-foreground'>
