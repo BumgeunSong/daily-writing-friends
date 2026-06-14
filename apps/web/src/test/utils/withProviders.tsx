@@ -23,15 +23,12 @@ function createTestQueryClient(): QueryClient {
 }
 
 /**
- * Router-agnostic provider stack for integration tests.
+ * Returns a Wrapper that does not render its children itself, so the caller
+ * owns the `render` call and can seed the returned `queryClient` via
+ * `setQueryData(...)` before mounting the subject.
  *
- * Returns a Wrapper component (intentionally not rendering anything itself —
- * the test owns the `render` call) and the QueryClient so the test can seed
- * the cache via `queryClient.setQueryData(...)` before mounting the subject.
- *
- * Tests that need a Router should wrap their UI in MemoryRouter / RouterProvider
- * themselves; route-config-driven scenarios will get a dedicated `renderAppAt`
- * helper in a follow-up PR (depends on extracting routes from router.tsx).
+ * Router-agnostic by design: tests that need routing must wrap the UI in
+ * their own MemoryRouter / RouterProvider.
  */
 export function withProviders(opts: WithProvidersOptions = {}): WithProvidersResult {
   const queryClient = opts.queryClient ?? createTestQueryClient();
