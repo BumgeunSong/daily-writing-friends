@@ -3,6 +3,7 @@ import type React from 'react';
 import { BottomTabHandlerProvider } from '@/shared/contexts/BottomTabHandlerContext';
 import { NavigationProvider } from '@/shared/contexts/NavigationContext';
 import { AuthProvider } from '@/shared/hooks/useAuth';
+import { TEST_NAVIGATION_PROPS } from './testNavigationProps';
 
 export interface WithProvidersOptions {
   queryClient?: QueryClient;
@@ -36,7 +37,7 @@ export function withProviders(opts: WithProvidersOptions = {}): WithProvidersRes
   const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <NavigationProvider debounceTime={500} topThreshold={30} ignoreSmallChanges={10}>
+        <NavigationProvider {...TEST_NAVIGATION_PROPS}>
           <BottomTabHandlerProvider>{children}</BottomTabHandlerProvider>
         </NavigationProvider>
       </AuthProvider>
