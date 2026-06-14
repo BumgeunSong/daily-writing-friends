@@ -1,22 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
+import { deferred, type Deferred } from '@/test/utils/deferred';
 import { createSquashableInvoker } from './squashableInvoker';
-
-interface Deferred {
-  promise: Promise<void>;
-  resolve: () => void;
-  reject: (reason?: unknown) => void;
-}
-
-function createDeferred(): Deferred {
-  let resolve!: () => void;
-  let reject!: (reason?: unknown) => void;
-  const promise = new Promise<void>((res, rej) => {
-    resolve = () => res();
-    reject = rej;
-  });
-  return { promise, resolve, reject };
-}
 
 function flushMicrotasks(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
@@ -42,9 +27,9 @@ describe('createSquashableInvoker', () => {
       const deferreds: Deferred[] = [];
       const trigger = createSquashableInvoker(async () => {
         invocations += 1;
-        const deferred = createDeferred();
-        deferreds.push(deferred);
-        await deferred.promise;
+        const d = deferred();
+        deferreds.push(d);
+        await d.promise;
       });
 
       const firstCall = trigger();
@@ -72,9 +57,9 @@ describe('createSquashableInvoker', () => {
       const deferreds: Deferred[] = [];
       const trigger = createSquashableInvoker(async () => {
         invocations += 1;
-        const deferred = createDeferred();
-        deferreds.push(deferred);
-        await deferred.promise;
+        const d = deferred();
+        deferreds.push(d);
+        await d.promise;
       });
 
       const firstCall = trigger().catch(() => undefined);
@@ -133,9 +118,9 @@ describe('createSquashableInvoker', () => {
       const deferreds: Deferred[] = [];
       const trigger = createSquashableInvoker(async () => {
         seenValues.push(counter);
-        const deferred = createDeferred();
-        deferreds.push(deferred);
-        await deferred.promise;
+        const d = deferred();
+        deferreds.push(d);
+        await d.promise;
       });
 
       const firstCall = trigger();
