@@ -181,9 +181,6 @@ export function mapRowToPost(row: PostRowWithEmbeds): Post {
     id: row.id,
     boardId: row.board_id,
     title: row.title,
-    // Never substitute content_preview into content — list queries (FEED_POST_SELECT)
-    // omit `content`, so leaving an empty string here is the signal that this Post is
-    // preview-only. seedPostCache uses that signal to refuse poisoning the detail cache.
     content: row.content ?? '',
     contentPreview: row.content_preview ?? row.content ?? null,
     contentJson: row.content_json ? (row.content_json as Post['contentJson']) : undefined,

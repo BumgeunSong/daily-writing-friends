@@ -33,10 +33,6 @@ describe('mapRowToPost', () => {
       expect(post.contentPreview).toBe('<p>Full ');
     });
 
-    // Pins the PostDetailPage truncation fix: feed queries (FEED_POST_SELECT) omit the
-    // `content` column. `mapRowToPost` must NOT silently substitute content_preview into
-    // `content` — that would let seedPostCache write a preview-only Post into the per-post
-    // cache and make PostDetailPage / PostEditPage render only the first 500 chars.
     it('leaves content empty when only content_preview is selected (feed query)', () => {
       const row = makeRow({ content_preview: '<p>Preview text</p>' });
       const post = mapRowToPost(row);
