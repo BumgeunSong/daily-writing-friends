@@ -15,7 +15,7 @@ interface PostItemProps {
 export const PostItem: React.FC<PostItemProps> = ({ post }) => {
     const queryClient = useQueryClient();
     const isPrivate = post.visibility === 'private';
-    const contentPreview = renderPostPreviewHtml(post.content)
+    const contentPreview = renderPostPreviewHtml(post.contentPreview ?? post.content)
     const handleClick = () => seedPostCache(queryClient, post);
 
     return (
