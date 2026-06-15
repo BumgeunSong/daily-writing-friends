@@ -3,6 +3,7 @@ import { MessageCircle } from "lucide-react"
 import { Link } from "react-router-dom"
 import { renderPostPreviewHtml } from "@/post/web/contentUtils"
 import { seedPostCache } from "@/post/utils/postCacheUtils"
+import { usePrefetchPost } from "@/post/hooks/usePrefetchPost"
 import { Card, CardContent, CardFooter } from "@/shared/ui/card"
 import { Skeleton } from "@/shared/ui/skeleton"
 import { formatDate, toDate } from "@/shared/utils/dateUtils"
@@ -14,6 +15,9 @@ interface PostItemProps {
 
 export const PostItem: React.FC<PostItemProps> = ({ post }) => {
     const queryClient = useQueryClient();
+    // Same staleTime-deduped prefetch as PostCard so user-page lists also warm the
+    // detail cache with full content before navigation.
+    usePrefetchPost(post.boardId, post.id);
     const isPrivate = post.visibility === 'private';
     const contentPreview = renderPostPreviewHtml(post.contentPreview ?? post.content)
     const handleClick = () => seedPostCache(queryClient, post);
