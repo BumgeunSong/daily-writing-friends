@@ -2,6 +2,7 @@
 
 import type { PostCardPrefetchedData } from '@/post/hooks/useBatchPostCardData';
 import { usePostCard } from '@/post/hooks/usePostCard';
+import { usePrefetchPost } from '@/post/hooks/usePrefetchPost';
 import { type Post } from '@/post/model/Post';
 import { Card } from '@/shared/ui/card';
 import { PostCardContent } from './PostCardContent';
@@ -26,6 +27,12 @@ function handleKeyDown(e: React.KeyboardEvent, onClick: (e: React.KeyboardEvent 
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, prefetchedData, isBatchMode }) => {
+  // 60s staleTime dedup means visible feed cards prefetch full posts at most once per
+  // minute, so PostDetailPage navigation hits a warm cache instead of waiting on
+  // fetchPost — recovers the latency we lost when seedPostCache stopped poisoning
+  // the cache with preview-only Posts.
+  usePrefetchPost(post.boardId, post.id);
+
   const {
     authorData,
     isAuthorLoading,
