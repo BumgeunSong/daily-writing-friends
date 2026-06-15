@@ -15,8 +15,6 @@ interface PostItemProps {
 
 export const PostItem: React.FC<PostItemProps> = ({ post }) => {
     const queryClient = useQueryClient();
-    // Same staleTime-deduped prefetch as PostCard so user-page lists also warm the
-    // detail cache with full content before navigation.
     usePrefetchPost(post.boardId, post.id);
     const isPrivate = post.visibility === 'private';
     const contentPreview = renderPostPreviewHtml(post.contentPreview ?? post.content)

@@ -11,11 +11,6 @@ import { isWorkingDay } from '@/shared/utils/dateUtils';
  * Skips the write when an entry already exists, so a fresher detail-page
  * fetch (e.g. updated countOfComments) is never regressed by older list data
  * within the 60s staleTime window.
- *
- * Refuses to seed a preview-only Post (empty `content`): list queries use
- * FEED_POST_SELECT which omits `content`, so seeding would poison the
- * detail cache and make PostDetailPage / PostEditPage render only the first
- * 500 chars served by `content_preview`.
  */
 export function seedPostCache(client: QueryClient, post: Post): void {
   if (!post.content) return;

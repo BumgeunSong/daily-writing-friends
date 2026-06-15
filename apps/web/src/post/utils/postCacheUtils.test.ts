@@ -56,11 +56,6 @@ describe('seedPostCache', () => {
     expect((qc.getQueryData(postQueryKey('b1', 'p1')) as Post).title).toBe('fresher-detail-data');
   });
 
-  // Pin the fix for the PostDetailPage truncated-content bug: list queries map rows
-  // through FEED_POST_SELECT which omits the `content` column, so the resulting Post
-  // carries content_preview in `contentPreview` and an empty `content`. If we seeded
-  // that into the per-post cache, postDetailLoader's ensureQueryData would short-circuit
-  // and PostDetailPage / PostEditPage would render only ~500 chars of preview.
   it('does NOT seed a preview-only Post (empty content) — prevents truncated detail render', () => {
     const qc = new QueryClient();
     const listShapePost = makePost({

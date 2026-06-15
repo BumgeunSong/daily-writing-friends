@@ -42,8 +42,6 @@ export const usePostCard = (
   const { data: streakData, isLoading: isStreakLoading } = usePostingStreak(skipIndividual ? '' : post.authorId);
 
   const isPrivate = post.visibility === PostVisibility.PRIVATE;
-  // Read the dedicated preview column (set by FEED_POST_SELECT) — falling back to `content`
-  // only for legacy/detail-shape Posts where content_preview was not selected.
   const previewSource = post.contentPreview ?? post.content;
   const contentPreview = useMemo(
     () => (!isPrivate ? renderPostPreviewHtml(previewSource) : null),
