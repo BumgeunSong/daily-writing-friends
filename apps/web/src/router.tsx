@@ -1,11 +1,11 @@
-import { lazy, Suspense, type ComponentType } from 'react';
+import { lazy, Suspense } from 'react';
 import { redirect, useMatches, type LoaderFunctionArgs } from 'react-router-dom';
-import type { ToasterProps } from 'sonner';
+import type { Toaster as ToasterComponent } from '@/shared/ui/sonner';
 import { sentryCreateBrowserRouter } from '@/sentry';
 import './index.css';
 
 // Lazy-mount Toaster — not visible until a toast fires.
-const Toaster = lazy<ComponentType<ToasterProps>>(() =>
+const Toaster = lazy<typeof ToasterComponent>(() =>
   import('@/shared/ui/sonner').then((m) => ({ default: m.Toaster })),
 );
 
