@@ -1,12 +1,21 @@
 import { lazy, Suspense } from 'react';
-import { redirect, type LoaderFunctionArgs } from 'react-router-dom';
+import { redirect, useMatches, type LoaderFunctionArgs } from 'react-router-dom';
+import type { Toaster as ToasterComponent } from '@/shared/ui/sonner';
 import { sentryCreateBrowserRouter } from '@/sentry';
 import './index.css';
 
 // Lazy-mount Toaster — not visible until a toast fires.
-const Toaster = lazy(() =>
+const Toaster = lazy<typeof ToasterComponent>(() =>
   import('@/shared/ui/sonner').then((m) => ({ default: m.Toaster })),
 );
+
+function LocationAwareToaster() {
+  const matches = useMatches();
+  const hasBottomNav = matches.some(
+    (m) => (m.handle as { hasBottomNav?: boolean } | undefined)?.hasBottomNav,
+  );
+  return <Toaster position="bottom-center" offset={hasBottomNav ? '4.5rem' : undefined} />;
+}
 
 // Critical-path eager imports (always rendered on first paint or referenced
 // by errorElement / RouterProvider — adding a dynamic-import round trip would
@@ -33,7 +42,7 @@ function RootLayout() {
         <NavigationProgressBar />
         <AppWithTracking />
         <Suspense fallback={null}>
-          <Toaster position="bottom-center" offset="4.5rem" />
+          <LocationAwareToaster />
         </Suspense>
       </BottomTabHandlerProvider>
     </NavigationProvider>
@@ -128,6 +137,7 @@ const privateRoutesWithNav = {
     {
       path: '',
       element: <BottomNavigatorLayout />,
+      handle: { hasBottomNav: true },
       children: [
         {
           path: 'boards',
