@@ -3,7 +3,7 @@ import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { formatInFilter } from '@/shared/api/postgrestFilters';
 import { createTimestamp } from '@/shared/model/Timestamp';
 import { computeWeekDaysFromFirstDay } from '@/post/utils/weekDays';
-import { parsePostVisibility } from '@/post/api/postParsers';
+import { parsePostVisibility, parsePostContentJson } from '@/post/api/postParsers';
 
 /**
  * 최근 게시글을 불러옴 (createdAt 내림차순, blockedByUsers 서버사이드 필터링)
@@ -183,7 +183,7 @@ export function mapRowToPost(row: PostRowWithEmbeds): Post {
     title: row.title,
     content: row.content ?? '',
     contentPreview: row.content_preview ?? row.content ?? null,
-    contentJson: row.content_json ? (row.content_json as Post['contentJson']) : undefined,
+    contentJson: parsePostContentJson(row.content_json),
     thumbnailImageURL: row.thumbnail_image_url,
     authorId: row.author_id,
     authorName: row.author_name,
