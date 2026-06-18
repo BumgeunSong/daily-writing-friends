@@ -1,5 +1,6 @@
 import type { Draft } from '@/draft/model/Draft';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
+import { createTimestamp, type FirebaseTimestamp } from '@/shared/model/Timestamp';
 
 export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: string }, userId: string): Promise<Draft> {
   if (!userId?.trim()) {
@@ -17,7 +18,7 @@ export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: st
 
   const supabase = getSupabaseClient();
   const draftId = draft.id || crypto.randomUUID();
-  const savedAt = new Date().toISOString();
+  const savedAtDate = new Date();
 
   throwOnError(await supabase.from('drafts').upsert({
     id: draftId,
@@ -25,7 +26,7 @@ export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: st
     board_id: draft.boardId,
     title: draft.title,
     content: draft.content,
-    saved_at: savedAt,
+    saved_at: savedAtDate.toISOString(),
   }));
 
   return {
@@ -33,7 +34,7 @@ export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: st
     boardId: draft.boardId,
     title: draft.title,
     content: draft.content,
-    savedAt,
+    savedAt: createTimestamp(savedAtDate),
   };
 }
 
@@ -61,7 +62,7 @@ export async function getDrafts(userId: string, boardId?: string): Promise<Draft
     boardId: row.board_id,
     title: row.title,
     content: row.content,
-    savedAt: row.saved_at,
+    savedAt: createTimestamp(new Date(row.saved_at)),
   }));
 }
 
@@ -82,7 +83,7 @@ export async function getDraftById(userId: string, draftId: string): Promise<Dra
     boardId: data.board_id,
     title: data.title,
     content: data.content,
-    savedAt: data.saved_at,
+    savedAt: createTimestamp(new Date(data.saved_at)),
   };
 }
 
@@ -93,15 +94,14 @@ export async function deleteDraft(userId: string, draftId: string): Promise<void
 
 
 // 임시 저장 글 날짜 포맷팅 - 사용자의 로케일 기반
-export const formatDraftDate = (savedAt: string) => {
-  const date = new Date(savedAt);
+export const formatDraftDate = (savedAt: FirebaseTimestamp) => {
   return new Intl.DateTimeFormat(navigator.language || 'ko-KR', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(date);
+  }).format(savedAt.toDate());
 };
 
 // 임시 저장 글 제목 표시 (비어있으면 '제목 없음' 표시)

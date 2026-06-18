@@ -115,7 +115,7 @@ export function useDraftAutosave({
       );
 
       setDraftId(savedDraft.id);
-      setLastSavedAt(new Date(savedDraft.savedAt));
+      setLastSavedAt(savedDraft.savedAt.toDate());
       setLastSavedSnapshot({ title: currentTitle, content: currentContent });
       return savedDraft;
     },

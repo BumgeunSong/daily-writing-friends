@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 import { formatDraftDate, getDraftTitle, getDraftPreview } from './draftUtils';
 import type { Draft } from '@/draft/model/Draft';
+import { createTimestamp } from '@/shared/model/Timestamp';
 
 function createMockDraft(overrides: Partial<Draft> = {}): Draft {
   return {
@@ -9,15 +10,15 @@ function createMockDraft(overrides: Partial<Draft> = {}): Draft {
     boardId: 'board-1',
     title: 'Test Title',
     content: '<p>Test content</p>',
-    savedAt: '2025-01-15T12:00:00.000Z',
+    savedAt: createTimestamp(new Date('2025-01-15T12:00:00.000Z')),
     ...overrides,
   };
 }
 
 describe('draftUtils', () => {
   describe('formatDraftDate', () => {
-    it('should format ISO string to readable date string', () => {
-      const result = formatDraftDate('2025-01-15T14:30:00.000Z');
+    it('should format Timestamp to readable date string', () => {
+      const result = formatDraftDate(createTimestamp(new Date('2025-01-15T14:30:00.000Z')));
 
       // Should contain year, month, day, hour, minute
       expect(result).toMatch(/2025/);
@@ -26,7 +27,7 @@ describe('draftUtils', () => {
     });
 
     it('should use user locale formatting', () => {
-      const result = formatDraftDate('2025-12-25T09:30:00.000Z');
+      const result = formatDraftDate(createTimestamp(new Date('2025-12-25T09:30:00.000Z')));
 
       // The result should be a valid formatted string
       expect(typeof result).toBe('string');
