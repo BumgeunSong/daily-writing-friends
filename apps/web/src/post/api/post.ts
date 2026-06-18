@@ -1,9 +1,9 @@
 import type { Post } from '@/post/model/Post';
-import { PostVisibility } from '@/post/model/Post';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { formatInFilter } from '@/shared/api/postgrestFilters';
 import { createTimestamp } from '@/shared/model/Timestamp';
 import { computeWeekDaysFromFirstDay } from '@/post/utils/weekDays';
+import { parsePostVisibility } from '@/post/api/postParsers';
 
 /**
  * 최근 게시글을 불러옴 (createdAt 내림차순, blockedByUsers 서버사이드 필터링)
@@ -194,7 +194,7 @@ export function mapRowToPost(row: PostRowWithEmbeds): Post {
     countOfLikes: row.count_of_likes,
     engagementScore: row.engagement_score,
     weekDaysFromFirstDay: weekDays,
-    visibility: (row.visibility as PostVisibility) || PostVisibility.PUBLIC,
+    visibility: parsePostVisibility(row.visibility),
     authorProfileImageURL: profilePhotoURL || undefined,
   };
 }
