@@ -1,32 +1,23 @@
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
-import { NotificationType } from '@/notification/model/Notification';
+import type { Notification } from '@/notification/model/Notification';
 
-// --- Notifications ---
-
-export interface NotificationDTO {
-  id: string;
-  type: NotificationType;
-  boardId: string;
-  postId: string;
-  commentId?: string;
-  replyId?: string;
-  fromUserId: string;
-  fromUserProfileImage?: string;
-  message: string;
-  timestamp: string; // ISO string from Supabase
-  read: boolean;
-}
+import {
+  parseNotificationRow,
+  type SupabaseNotificationRow,
+} from './notificationParsers';
 
 /**
  * Fetch notifications for a user from Supabase.
- * Replaces: fetchNotifications in notificationApi.ts
- * Uses index: idx_notifications_recipient_created
+ *
+ * Parses each row at the trust boundary into a strongly-typed `Notification`
+ * (discriminated union). Invalid rows throw — there is no weak intermediate
+ * DTO. Uses index: idx_notifications_recipient_created.
  */
 export async function fetchNotificationsFromSupabase(
   userId: string,
   limitCount: number,
-  after?: string
-): Promise<NotificationDTO[]> {
+  after?: string,
+): Promise<Notification[]> {
   const supabase = getSupabaseClient();
 
   let query = supabase
@@ -47,18 +38,5 @@ export async function fetchNotificationsFromSupabase(
     throw error;
   }
 
-  return (data || []).map(row => ({
-    id: row.id,
-    // type is validated downstream by mapDTOToNotification's exhaustive switch
-    type: row.type as NotificationType,
-    boardId: row.board_id,
-    postId: row.post_id,
-    commentId: row.comment_id || undefined,
-    replyId: row.reply_id || undefined,
-    fromUserId: row.actor_id,
-    fromUserProfileImage: undefined,
-    message: row.message,
-    timestamp: row.created_at,
-    read: row.read,
-  }));
+  return (data || []).map((row) => parseNotificationRow(row as SupabaseNotificationRow));
 }
