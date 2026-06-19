@@ -109,6 +109,45 @@ Deno.test('parseFairyPayload', async (t) => {
     const body = JSON.stringify({ ...PAYLOAD, data: { ...PAYLOAD.data, source: undefined } });
     assertEquals(parseFairyPayload(body), null);
   });
+
+  await t.step('returns null when projectName is not a string', () => {
+    const body = JSON.stringify({ ...PAYLOAD, data: { ...PAYLOAD.data, projectName: 123 } });
+    assertEquals(parseFairyPayload(body), null);
+  });
+
+  await t.step('returns null when fairyName is a number (must be string or null)', () => {
+    const body = JSON.stringify({ ...PAYLOAD, data: { ...PAYLOAD.data, fairyName: 42 } });
+    assertEquals(parseFairyPayload(body), null);
+  });
+
+  await t.step('returns null when fairyMessage is an object (must be string or null)', () => {
+    const body = JSON.stringify({ ...PAYLOAD, data: { ...PAYLOAD.data, fairyMessage: {} } });
+    assertEquals(parseFairyPayload(body), null);
+  });
+
+  await t.step('returns null when timestamp is a number', () => {
+    const body = JSON.stringify({ ...PAYLOAD, timestamp: 1234567890 });
+    assertEquals(parseFairyPayload(body), null);
+  });
+
+  await t.step('returns null when data.payload is an array', () => {
+    const body = JSON.stringify({ ...PAYLOAD, data: { ...PAYLOAD.data, payload: [1, 2, 3] } });
+    assertEquals(parseFairyPayload(body), null);
+  });
+
+  await t.step('accepts when data.payload is a record', () => {
+    const body = JSON.stringify({
+      ...PAYLOAD,
+      data: { ...PAYLOAD.data, payload: { dwf_user_id: 'u1' } },
+    });
+    const result = parseFairyPayload(body);
+    assertEquals(result?.data.payload, { dwf_user_id: 'u1' });
+  });
+
+  await t.step('normalizes missing data.payload to null', () => {
+    const result = parseFairyPayload(RAW_BODY);
+    assertEquals(result?.data.payload, null);
+  });
 });
 
 Deno.test('extractDwfUserId', async (t) => {
