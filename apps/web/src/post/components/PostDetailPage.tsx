@@ -8,6 +8,7 @@ import { usePostDelete } from '@/post/hooks/usePostDelete';
 import { postQueryKey } from '@/post/utils/postQueryKeys';
 import { fetchPost } from '@/post/utils/postUtils';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { ReadingColumn } from '@/shared/ui/reading-column';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { getUserDisplayName } from '@/shared/utils/userUtils';
 import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';
@@ -18,6 +19,7 @@ import { PostAdjacentButtons } from './PostAdjacentButtons';
 import { PostBackButton } from './PostBackButton';
 import { PostContent } from './PostContent';
 import { PostDetailHeader } from './PostDetailHeader';
+import { PostDetailLayout } from './PostDetailLayout';
 import { PostLikeButton } from './PostLikeButton';
 import { PostMetaHelmet } from './PostMetaHelmet';
 
@@ -64,49 +66,46 @@ export default function PostDetailPage() {
   };
 
   return (
-    <div className='min-h-screen bg-background'>
+    <PostDetailLayout>
       <PostMetaHelmet post={post} boardId={boardId} postId={postId} />
-      <main className='container mx-auto max-w-4xl overflow-x-hidden px-6 py-2'>
-        <PostBackButton className='mb-4' />
-        <article className='mx-auto max-w-2xl space-y-4'>
-          <PostDetailHeader
-            post={post}
-            authorData={authorData}
-            isAuthorLoading={isAuthorLoading && !hasEmbeddedAuthorData}
-            isDonator={false}
-            badges={badges}
-            streak={streakData?.streak}
-            isStreakLoading={isStreakLoading}
-            isAuthor={isAuthor}
-            boardId={boardId}
-            postId={postId}
-            onDelete={handleDelete}
-            navigate={navigate}
-          />
-          <PostContent post={post} isAuthor={isAuthor} />
-        </article>
-
-        <div className='mt-6 flex items-center justify-between border-t border-border py-4'>
-          {boardId && postId && (
-            <PostLikeButton boardId={boardId} postId={postId} authorId={post.authorId} />
-          )}
-          {boardId && postId && <PostAdjacentButtons boardId={boardId} postId={postId} />}
-        </div>
-        <div className='mt-8'>
-          {boardId && postId && (
-            <Suspense fallback={null}>
-              <Comments
-                boardId={boardId}
-                postId={postId}
-                postAuthorId={post.authorId}
-                postAuthorNickname={authorData.displayName ?? null}
-                postVisibility={post.visibility}
-              />
-            </Suspense>
-          )}
-        </div>
-      </main>
-    </div>
+      <PostBackButton className='mb-4' />
+      <PostDetailLayout.Article>
+        <PostDetailHeader
+          post={post}
+          authorData={authorData}
+          isAuthorLoading={isAuthorLoading && !hasEmbeddedAuthorData}
+          isDonator={false}
+          badges={badges}
+          streak={streakData?.streak}
+          isStreakLoading={isStreakLoading}
+          isAuthor={isAuthor}
+          boardId={boardId}
+          postId={postId}
+          onDelete={handleDelete}
+          navigate={navigate}
+        />
+        <PostContent post={post} isAuthor={isAuthor} />
+      </PostDetailLayout.Article>
+      {boardId && postId && (
+        <PostDetailLayout.Actions>
+          <PostLikeButton boardId={boardId} postId={postId} authorId={post.authorId} />
+          <PostAdjacentButtons boardId={boardId} postId={postId} />
+        </PostDetailLayout.Actions>
+      )}
+      {boardId && postId && (
+        <PostDetailLayout.Comments>
+          <Suspense fallback={null}>
+            <Comments
+              boardId={boardId}
+              postId={postId}
+              postAuthorId={post.authorId}
+              postAuthorNickname={authorData.displayName ?? null}
+              postVisibility={post.visibility}
+            />
+          </Suspense>
+        </PostDetailLayout.Comments>
+      )}
+    </PostDetailLayout>
   );
 }
 
@@ -114,12 +113,12 @@ export default function PostDetailPage() {
 function PostDetailSkeleton() {
   return (
     <div className='min-h-screen bg-background'>
-      <main className='container mx-auto max-w-4xl px-6 py-2'>
+      <ReadingColumn>
         <Skeleton className='mb-4 h-12 w-3/4' />
         <Skeleton className='mb-2 h-4 w-full' />
         <Skeleton className='mb-2 h-4 w-full' />
         <Skeleton className='h-4 w-2/3' />
-      </main>
+      </ReadingColumn>
     </div>
   );
 }
@@ -128,12 +127,12 @@ function PostDetailSkeleton() {
 function PostDetailError({ boardId }: { boardId?: string }) {
   return (
     <div className='min-h-screen bg-background'>
-      <main className='container mx-auto max-w-4xl px-6 py-2 text-center'>
+      <ReadingColumn className='text-center'>
         <h1 className='mb-4 text-xl font-semibold text-foreground md:text-2xl'>
           게시물을 찾을 수 없습니다.
         </h1>
         {boardId && <PostBackButton />}
-      </main>
+      </ReadingColumn>
     </div>
   );
 }
