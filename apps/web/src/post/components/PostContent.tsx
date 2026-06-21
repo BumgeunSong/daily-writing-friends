@@ -97,7 +97,7 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
                             prose-headings:text-balance
                             prose-h1:text-3xl prose-h1:font-semibold prose-h1:leading-tight
                             prose-h2:text-2xl prose-h2:font-semibold prose-h2:leading-snug
-                            prose-p:mb-5 prose-p:mt-0 prose-p:text-pretty
+                            prose-p:mb-5 prose-p:mt-0
                             prose-ol:my-4
                             prose-ul:my-4
                         "
