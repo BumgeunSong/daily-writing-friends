@@ -184,6 +184,10 @@
   }
   
   /* TipTap Editor Styles */
+  .ProseMirror p {
+    margin-bottom: 1.25rem;
+  }
+
   .ProseMirror p.is-editor-empty:first-child::before {
     @apply text-muted-foreground;
     content: attr(data-placeholder);
