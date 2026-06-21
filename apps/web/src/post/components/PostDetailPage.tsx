@@ -10,7 +10,10 @@ import { fetchPost } from '@/post/utils/postUtils';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { getUserDisplayName } from '@/shared/utils/userUtils';
+import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';
+import { usePostingStreak } from '@/stats/hooks/usePostingStreak';
 import { useUser } from '@/user/hooks/useUser';
+import type { PostAuthorData } from './PostUserProfile';
 import { PostAdjacentButtons } from './PostAdjacentButtons';
 import { PostBackButton } from './PostBackButton';
 import { PostContent } from './PostContent';
@@ -33,8 +36,9 @@ export default function PostDetailPage() {
   });
 
   // PostCard에서 이미 캐시된 author 데이터 활용
-  const { userData: authorData } = useUser(post?.authorId ?? null);
-  const authorNickname = getUserDisplayName(authorData);
+  const { userData: authorUserData, isLoading: isAuthorLoading } = useUser(post?.authorId ?? null);
+  const { data: badges } = usePostProfileBadges(post?.authorId ?? '');
+  const { data: streakData, isLoading: isStreakLoading } = usePostingStreak(post?.authorId ?? '');
 
   // PostDetail은 진입 시 항상 상단부터 보여야 한다. BoardPage(긴 피드) → PostDetail(짧은 글)
   // 전환 시 브라우저가 이전 scrollY를 새 문서의 max로 클램프하므로, 그대로 두면 글의 하단
@@ -50,16 +54,29 @@ export default function PostDetailPage() {
   if (error || !post) return <PostDetailError boardId={boardId} />;
 
   const isAuthor = currentUser?.uid === post.authorId;
+  // post에 이미 작성 시점의 닉네임·프로필 이미지가 내장되어 있으므로,
+  // useUser가 아직 로딩 중이더라도 기본 데이터가 있으면 스켈레톤을 보이지 않는다.
+  const hasEmbeddedAuthorData = !!(post.authorName || post.authorProfileImageURL);
+  const authorData: PostAuthorData = {
+    id: post.authorId,
+    displayName: authorUserData ? getUserDisplayName(authorUserData) : (post.authorName ?? '??'),
+    profileImageURL: authorUserData?.profilePhotoURL || post.authorProfileImageURL || '',
+  };
 
   return (
     <div className='min-h-screen bg-background'>
       <PostMetaHelmet post={post} boardId={boardId} postId={postId} />
       <main className='container mx-auto max-w-4xl overflow-x-hidden px-6 py-2'>
         <PostBackButton className='mb-4' />
-        <article className='space-y-4'>
+        <article className='mx-auto max-w-2xl space-y-4'>
           <PostDetailHeader
             post={post}
-            authorNickname={authorNickname ?? undefined}
+            authorData={authorData}
+            isAuthorLoading={isAuthorLoading && !hasEmbeddedAuthorData}
+            isDonator={false}
+            badges={badges}
+            streak={streakData?.streak}
+            isStreakLoading={isStreakLoading}
             isAuthor={isAuthor}
             boardId={boardId}
             postId={postId}
@@ -75,15 +92,14 @@ export default function PostDetailPage() {
           )}
           {boardId && postId && <PostAdjacentButtons boardId={boardId} postId={postId} />}
         </div>
-        <div className='my-4 border-t border-border' />
-        <div>
+        <div className='mt-8'>
           {boardId && postId && (
             <Suspense fallback={null}>
               <Comments
                 boardId={boardId}
                 postId={postId}
                 postAuthorId={post.authorId}
-                postAuthorNickname={typeof authorNickname === 'string' ? authorNickname : null}
+                postAuthorNickname={authorData.displayName ?? null}
                 postVisibility={post.visibility}
               />
             </Suspense>

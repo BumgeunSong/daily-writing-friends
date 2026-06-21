@@ -184,6 +184,10 @@
   }
   
   /* TipTap Editor Styles */
+  .ProseMirror p {
+    margin-bottom: 1.25rem;
+  }
+
   .ProseMirror p.is-editor-empty:first-child::before {
     @apply text-muted-foreground;
     content: attr(data-placeholder);
@@ -299,6 +303,17 @@
   /* Post body image reveal — fades each image in when its `load` event sets
      `data-loaded`. Scoped inside no-preference so reduced-motion users (and
      any path where JS does not run) see images at full opacity by default. */
+  .dwf-post-body {
+    word-break: keep-all;
+  }
+
+  @media (max-width: 480px) {
+    .dwf-post-body {
+      word-break: initial;
+      text-wrap: wrap;
+    }
+  }
+
   .dwf-post-body img {
     opacity: 0;
     transition: opacity var(--dwf-page-transition-duration) var(--dwf-transition-easing);

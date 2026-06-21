@@ -99,11 +99,19 @@ export default function PostFreewritingPage() {
   const isUploadButtonDisabled = isSubmitting || !hasReachedTargetTime || !postTitle.trim() || !content.trim()
 
   if (!currentUser) {
-    return <div>Loading user...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">로딩 중...</p>
+      </div>
+    );
   }
 
   if (!boardId) {
-    return <div>No board ID found</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">잘못된 접근입니다.</p>
+      </div>
+    );
   }
 
   return (
@@ -137,7 +145,7 @@ export default function PostFreewritingPage() {
         }
       />
 
-      <div className="container mx-auto max-w-4xl grow px-6 py-8">
+      <div className="container mx-auto max-w-2xl grow px-6 py-8">
         <form id="freewriting-form" onSubmit={handleSubmit} className="space-y-6">
           <PostEditor
             value={content}

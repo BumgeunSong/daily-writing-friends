@@ -63,11 +63,11 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
 
     if (isPrivateAndNotAuthor) {
         return (
-            <div className="my-6 rounded-lg border border-gray-200 bg-gray-100 p-8 text-center">
-                <div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-gray-200">
-                    <Lock className="size-8 text-gray-600" />
+            <div className="my-6 rounded-lg border border-border bg-muted p-8 text-center">
+                <div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-muted/70">
+                    <Lock className="size-8 text-muted-foreground" />
                 </div>
-                <p className="mb-4 text-gray-600">
+                <p className="mb-4 text-muted-foreground">
                     이 글은 작성자만 볼 수 있어요.
                 </p>
             </div>
@@ -85,7 +85,7 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
                 <div className="relative">
                     {isPrivateAndAuthor && (
                         <div className="mb-4 flex items-center">
-                            <span className="inline-flex items-center rounded-md bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600 ring-1 ring-inset ring-gray-300">
+                            <span className="inline-flex items-center rounded-md bg-muted px-3 py-1 text-sm font-medium text-muted-foreground ring-1 ring-inset ring-border">
                                 <Lock className="mr-1 size-3" /> 비공개 글
                             </span>
                         </div>
@@ -93,14 +93,15 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
                     <div
                         ref={contentRef}
                         dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-                        className="dwf-post-body prose prose-lg prose-slate mt-6 max-w-none dark:prose-invert
+                        className="dwf-post-body prose prose-lg prose-slate mt-6 dark:prose-invert
+                            prose-headings:text-balance
                             prose-h1:text-3xl prose-h1:font-semibold prose-h1:leading-tight
                             prose-h2:text-2xl prose-h2:font-semibold prose-h2:leading-snug
-                            prose-p:mb-2 prose-p:mt-0 prose-p:[overflow-wrap:anywhere]
+                            prose-p:mb-5 prose-p:mt-0 prose-p:text-pretty prose-p:[overflow-wrap:anywhere]
                             prose-ol:my-4
                             prose-ul:my-4
                         "
-                        style={{ overflowWrap: 'anywhere', wordBreak: 'keep-all', lineHeight: KOREAN_OPTIMAL_LINE_HEIGHT }}
+                        style={{ overflowWrap: 'anywhere', lineHeight: KOREAN_OPTIMAL_LINE_HEIGHT }}
                     />
                 </div>
             </CopyErrorBoundary>
