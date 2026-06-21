@@ -145,7 +145,7 @@ export default function PostFreewritingPage() {
         }
       />
 
-      <div className="container mx-auto max-w-4xl grow px-6 py-8">
+      <div className="container mx-auto max-w-2xl grow px-6 py-8">
         <form id="freewriting-form" onSubmit={handleSubmit} className="space-y-6">
           <PostEditor
             value={content}

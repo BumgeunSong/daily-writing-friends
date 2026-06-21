@@ -96,7 +96,7 @@ export default function PostCreationPage() {
         }
       />
 
-      <div className='mx-auto max-w-4xl px-6 py-4'>
+      <div className='mx-auto max-w-2xl px-6 py-4'>
         <Form id='post-creation-form' method='post'>
           <input type='hidden' name='boardId' value={boardId} />
           <input type='hidden' name='authorId' value={currentUser?.uid} />
