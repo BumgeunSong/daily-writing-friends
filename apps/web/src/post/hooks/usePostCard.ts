@@ -42,9 +42,10 @@ export const usePostCard = (
   const { data: streakData, isLoading: isStreakLoading } = usePostingStreak(skipIndividual ? '' : post.authorId);
 
   const isPrivate = post.visibility === PostVisibility.PRIVATE;
+  const previewSource = post.contentPreview ?? post.content;
   const contentPreview = useMemo(
-    () => (!isPrivate ? renderPostPreviewHtml(post.content) : null),
-    [post.content, isPrivate],
+    () => (!isPrivate ? renderPostPreviewHtml(previewSource) : null),
+    [previewSource, isPrivate],
   );
 
   const authorData: PostAuthorData = useMemo(() => {

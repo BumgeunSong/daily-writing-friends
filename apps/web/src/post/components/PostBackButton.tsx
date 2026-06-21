@@ -1,5 +1,5 @@
 import { ChevronLeft } from 'lucide-react';
-import { useNavigate } from '@/shared/navigation';
+import { useViewTransitionNavigate } from '@/shared/navigation/useViewTransitionNavigate';
 import { Button } from '@/shared/ui/button';
 
 interface PostBackButtonProps {
@@ -7,12 +7,12 @@ interface PostBackButtonProps {
 }
 
 export function PostBackButton({ className }: PostBackButtonProps) {
-  const navigate = useNavigate();
+  const { back } = useViewTransitionNavigate();
   return (
     <Button
       variant='ghost'
       className={className}
-      onClick={() => navigate(-1)}
+      onClick={back}
       aria-label="뒤로가기"
     >
       <ChevronLeft className='size-4' />

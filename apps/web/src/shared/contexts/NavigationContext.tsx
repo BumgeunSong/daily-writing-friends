@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type React from 'react';
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { useLocation } from '@/shared/navigation';
 import { useScrollDirection } from '@/shared/hooks/useScrollDirection';
 
 interface NavigationContextType {
@@ -22,14 +23,24 @@ interface NavigationProviderProps {
   ignoreSmallChanges?: number;
 }
 
-export const NavigationProvider: React.FC<NavigationProviderProps> = ({ 
-  children, 
+export const NavigationProvider: React.FC<NavigationProviderProps> = ({
+  children,
   debounceTime = 500,
   topThreshold = 10,
   ignoreSmallChanges = 5
 }) => {
   // 네비게이션 바 표시 상태
   const [isNavVisible, setIsNavVisible] = useState<boolean>(true);
+
+  // 라우트가 바뀌면 항상 하단 내비를 보이는 상태로 시작한다. 스크롤 감지 침묵은
+  // navigationLifecycle이 forward/back/popstate에서 직접 다루므로 여기서는 다루지 않는다.
+  const location = useLocation();
+  const prevPathnameRef = useRef(location.pathname);
+  useEffect(() => {
+    if (location.pathname === prevPathnameRef.current) return;
+    prevPathnameRef.current = location.pathname;
+    setIsNavVisible(true);
+  }, [location.pathname]);
 
   // 스크롤 방향 감지 훅 사용 - 업데이트된 옵션 패턴 사용
   const scrollDirection = useScrollDirection({

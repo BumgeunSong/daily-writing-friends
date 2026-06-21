@@ -2,13 +2,14 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { PenSquare } from 'lucide-react';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { useNavigate } from '@/shared/navigation';
 import PostCard from '@/post/components/PostCard';
 import { useBatchPostCardData } from '@/post/hooks/useBatchPostCardData';
 import { useRecentPosts } from '@/post/hooks/useRecentPosts';
-import { useScrollRestoration } from '@/post/hooks/useScrollRestoration';
+import type { Post } from '@/post/model/Post';
+import { seedPostCache } from '@/post/utils/postCacheUtils';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
 import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
@@ -41,10 +42,18 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
     isFetchingNextPage,
   } = useRecentPosts(boardId, limitCount);
 
-  const allPosts = postPages?.pages.flat() || [];
+  const pages = postPages?.pages ?? [];
+  const allPosts = pages.flat();
   const { data: batchData, isError: isBatchError } = useBatchPostCardData(allPosts);
 
-  const { saveScrollPosition, restoreScrollPosition } = useScrollRestoration(`${boardId}-posts`);
+  // 첫 데이터가 채워진 시점의 페이지 수를 한 번만 캡처한다. 그 이후 fetchNextPage로 들어온
+  // 페이지의 카드들만 스태거 등장. 렌더 중 ref 쓰기는 lazy-init 패턴(useRef와 동일 의미)이라
+  // 커밋 타이밍에 의존하지 않는다.
+  const baselinePageCountRef = useRef<number | null>(null);
+  if (baselinePageCountRef.current === null && pages.length > 0) {
+    baselinePageCountRef.current = pages.length;
+  }
+  const baselinePageCount = baselinePageCountRef.current ?? pages.length;
 
   const handleRefreshPosts = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -54,9 +63,9 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
   // 홈 탭 핸들러 등록
   useRegisterTabHandler('Home', handleRefreshPosts);
 
-  const handlePostClick = (postId: string) => {
-    onPostClick(postId);
-    saveScrollPosition();
+  const handlePostClick = (post: Post) => {
+    seedPostCache(queryClient, post);
+    onPostClick(post.id);
   };
 
   useEffect(() => {
@@ -64,12 +73,6 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
       fetchNextPage();
     }
   }, [inView, hasNextPage, fetchNextPage]);
-
-  useEffect(() => {
-    if (boardId) {
-      restoreScrollPosition();
-    }
-  }, [boardId, restoreScrollPosition]);
 
   if (isLoading) {
     return (
@@ -113,16 +116,27 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
 
   return (
     <div className='space-y-4'>
-      {allPosts.map((post) => (
-        <PostCard
-          key={post.id}
-          post={post}
-          onClick={() => handlePostClick(post.id)}
-          onClickProfile={onClickProfile}
-          prefetchedData={batchData?.get(post.authorId)}
-          isBatchMode={allPosts.length > 0 && !isBatchError}
-        />
-      ))}
+      {pages.flatMap((page, pageIndex) => {
+        const isNewBatch = pageIndex >= baselinePageCount;
+        return page.map((post, postIndexInPage) => {
+          const delayMs = isNewBatch ? Math.min(postIndexInPage * 40, 200) : 0;
+          return (
+            <div
+              key={post.id}
+              className={isNewBatch ? 'dwf-content-enter' : undefined}
+              style={isNewBatch ? { animationDelay: `${delayMs}ms` } : undefined}
+            >
+              <PostCard
+                post={post}
+                onClick={() => handlePostClick(post)}
+                onClickProfile={onClickProfile}
+                prefetchedData={batchData?.get(post.authorId)}
+                isBatchMode={allPosts.length > 0 && !isBatchError}
+              />
+            </div>
+          );
+        });
+      })}
       <div ref={inViewRef} />
       {isFetchingNextPage && (
         <div className='text-reading-sm flex items-center justify-center p-6 text-muted-foreground'>

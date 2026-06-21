@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
+import { userQueryKey } from '@/user/utils/userQueryKeys';
 import { fetchUser } from '@/user/api/user';
 import type { User } from '@/user/model/User';
 
@@ -11,7 +12,7 @@ export function useUser(uid: string | null | undefined) {
   const isEnabled = !!uid;
 
   const { data, isLoading, error } = useQuery<User | null>(
-    ['user', uid],
+    userQueryKey(uid),
     async () => {
       if (!uid) throw new Error('유저 ID가 존재하지 않아 유저 데이터를 불러올 수 없습니다.');
       return fetchUser(uid);

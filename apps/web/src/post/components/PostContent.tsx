@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { AlertCircle, Lock } from 'lucide-react';
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import { useCopyHandler } from '@/post/hooks/useCopyHandler';
 import type { Post} from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
@@ -35,6 +35,32 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
     // 커스텀 복사 핸들러 적용
     useCopyHandler(getSelectedHtml, contentRef.current);
 
+    // 본문 이미지는 디코딩되어 그려질 때 자연스럽게 페이드인한다.
+    useEffect(() => {
+        const container = contentRef.current;
+        if (!container) return;
+        const images = Array.from(container.querySelectorAll('img'));
+        const markLoaded = (img: HTMLImageElement) => {
+            img.dataset.loaded = 'true';
+        };
+        const cleanups: Array<() => void> = [];
+        images.forEach((img) => {
+            if (img.complete && img.naturalWidth > 0) {
+                markLoaded(img);
+                return;
+            }
+            const onLoad = () => markLoaded(img);
+            const onError = () => markLoaded(img);
+            img.addEventListener('load', onLoad, { once: true });
+            img.addEventListener('error', onError, { once: true });
+            cleanups.push(() => {
+                img.removeEventListener('load', onLoad);
+                img.removeEventListener('error', onError);
+            });
+        });
+        return () => cleanups.forEach((cleanup) => cleanup());
+    }, [post?.content]);
+
     if (isPrivateAndNotAuthor) {
         return (
             <div className="my-6 rounded-lg border border-gray-200 bg-gray-100 p-8 text-center">
@@ -67,7 +93,7 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
                     <div
                         ref={contentRef}
                         dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-                        className="prose prose-lg prose-slate mt-6 max-w-none dark:prose-invert
+                        className="dwf-post-body prose prose-lg prose-slate mt-6 max-w-none dark:prose-invert
                             prose-h1:text-3xl prose-h1:font-semibold prose-h1:leading-tight
                             prose-h2:text-2xl prose-h2:font-semibold prose-h2:leading-snug
                             prose-p:mb-2 prose-p:mt-0 prose-p:[overflow-wrap:anywhere]

@@ -1,12 +1,21 @@
 import { lazy, Suspense } from 'react';
-import { redirect, ScrollRestoration, type LoaderFunctionArgs } from 'react-router-dom';
+import { redirect, useMatches, type LoaderFunctionArgs } from 'react-router-dom';
+import type { Toaster as ToasterComponent } from '@/shared/ui/sonner';
 import { sentryCreateBrowserRouter } from '@/sentry';
 import './index.css';
 
 // Lazy-mount Toaster — not visible until a toast fires.
-const Toaster = lazy(() =>
+const Toaster = lazy<typeof ToasterComponent>(() =>
   import('@/shared/ui/sonner').then((m) => ({ default: m.Toaster })),
 );
+
+function LocationAwareToaster() {
+  const matches = useMatches();
+  const hasBottomNav = matches.some(
+    (m) => (m.handle as { hasBottomNav?: boolean } | undefined)?.hasBottomNav,
+  );
+  return <Toaster position="bottom-center" offset={hasBottomNav ? '4.5rem' : undefined} />;
+}
 
 // Critical-path eager imports (always rendered on first paint or referenced
 // by errorElement / RouterProvider — adding a dynamic-import round trip would
@@ -16,20 +25,24 @@ import { RootRedirect } from '@/shared/components/auth/RootRedirect';
 import { PrivateRoutes, PublicRoutes } from '@/shared/components/auth/RouteGuards';
 import { BottomNavigatorLayout } from '@/shared/components/BottomNavigatorLayout';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
+import { NavigationProgressBar } from '@/shared/components/NavigationProgressBar';
 import { PermissionErrorBoundary } from '@/shared/components/PermissionErrorBoundary';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { BottomTabHandlerProvider } from './shared/contexts/BottomTabHandlerContext';
 import { NavigationProvider } from './shared/contexts/NavigationContext';
 
-// Root layout component with router-dependent providers and tracking
+// Root layout component with router-dependent providers and tracking.
+// 스크롤 복원은 라우트별로 useRouteScrollRestoration이 담당한다. RR의
+// <ScrollRestoration />은 view transition과 함께 POP 복원을 누락하는 케이스가 있어
+// 자식 컴포넌트의 useLayoutEffect 복원을 덮어쓰는 문제가 있었기에 제거했다.
 function RootLayout() {
   return (
     <NavigationProvider debounceTime={500} topThreshold={30} ignoreSmallChanges={10}>
       <BottomTabHandlerProvider>
-        <ScrollRestoration />
+        <NavigationProgressBar />
         <AppWithTracking />
         <Suspense fallback={null}>
-          <Toaster position="bottom-center" offset="4.5rem" />
+          <LocationAwareToaster />
         </Suspense>
       </BottomTabHandlerProvider>
     </NavigationProvider>
@@ -124,6 +137,7 @@ const privateRoutesWithNav = {
     {
       path: '',
       element: <BottomNavigatorLayout />,
+      handle: { hasBottomNav: true },
       children: [
         {
           path: 'boards',

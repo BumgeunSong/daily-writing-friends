@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useLayoutEffect } from 'react';
 import { useNavigate, useParams } from '@/shared/navigation';
 
 // Comments below the fold — lazy chunk lets LCP candidate paint first.
 const Comments = lazy(() => import('@/comment/components/Comments'));
 import { usePostDelete } from '@/post/hooks/usePostDelete';
+import { postQueryKey } from '@/post/utils/postQueryKeys';
 import { fetchPost } from '@/post/utils/postUtils';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Skeleton } from '@/shared/ui/skeleton';
@@ -27,7 +28,7 @@ export default function PostDetailPage() {
     data: post,
     isLoading,
     error,
-  } = useQuery(['post', boardId, postId], () => fetchPost(boardId!, postId!), {
+  } = useQuery(postQueryKey(boardId!, postId!), () => fetchPost(boardId!, postId!), {
     enabled: !!boardId && !!postId,
   });
 
@@ -35,9 +36,14 @@ export default function PostDetailPage() {
   const { userData: authorData } = useUser(post?.authorId ?? null);
   const authorNickname = getUserDisplayName(authorData);
 
-  // 게시글 상세 페이지는 항상 맨 위부터 시작
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' });
+  // PostDetail은 진입 시 항상 상단부터 보여야 한다. BoardPage(긴 피드) → PostDetail(짧은 글)
+  // 전환 시 브라우저가 이전 scrollY를 새 문서의 max로 클램프하므로, 그대로 두면 글의 하단
+  // (또는 중간)부터 보인다. mutation phase 안에서 동기적으로 0으로 맞춰 view-transition
+  // 새 스냅샷이 상단을 캡처하게 한다 — useEffect는 paint 이후라 잠깐 클램프된 위치가
+  // 보였다가 점프하므로 부적합. postId 의존성은 PostAdjacentButtons로 같은 컴포넌트가
+  // 재사용되는 경우(다음/이전 글) 대비.
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }, [postId]);
 
   if (isLoading) return <PostDetailSkeleton />;

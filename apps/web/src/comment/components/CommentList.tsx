@@ -29,7 +29,7 @@ const CommentListContent: React.FC<CommentListProps> = ({
 
   // 댓글 목록 렌더링
   return (
-    <div className='space-y-6'>
+    <div className='dwf-content-stagger space-y-6'>
       {comments.map((comment: Comment) => (
         <CommentRow
           key={comment.id}

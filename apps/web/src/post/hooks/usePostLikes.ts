@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { GetLikesParams } from '@/post/api/like';
 import { createLike, deleteUserLike } from '@/post/api/like';
+import { postQueryKey } from '@/post/utils/postQueryKeys';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useUser } from '@/user/hooks/useUser';
@@ -26,7 +27,7 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
   const queryClient = useQueryClient();
 
   const likesQueryKey = ['postLikes', boardId, postId];
-  const postQueryKey = ['post', boardId, postId];
+  const postKey = postQueryKey(boardId, postId);
 
   // Fetch user's like status only
   const {
@@ -63,7 +64,7 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
   const { hasLiked = false } = likeData || {};
 
   // Get like count from cached post data
-  const postData = queryClient.getQueryData(postQueryKey) as { countOfLikes?: number } | undefined;
+  const postData = queryClient.getQueryData(postKey) as { countOfLikes?: number } | undefined;
   const likeCount = postData?.countOfLikes ?? 0;
 
   // Create like mutation with optimistic update
@@ -84,10 +85,10 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
       // Optimistic update
       onMutate: async () => {
         await queryClient.cancelQueries({ queryKey: likesQueryKey });
-        await queryClient.cancelQueries({ queryKey: postQueryKey });
+        await queryClient.cancelQueries({ queryKey: postKey });
 
         const previousLikeData = queryClient.getQueryData(likesQueryKey);
-        const previousPostData = queryClient.getQueryData(postQueryKey);
+        const previousPostData = queryClient.getQueryData(postKey);
 
         // Update like status
         queryClient.setQueryData(likesQueryKey, {
@@ -96,7 +97,7 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
 
         // Update post's like count
         if (previousPostData) {
-          queryClient.setQueryData(postQueryKey, {
+          queryClient.setQueryData(postKey, {
             ...previousPostData,
             countOfLikes: likeCount + 1,
           });
@@ -112,13 +113,13 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
           queryClient.setQueryData(likesQueryKey, context.previousLikeData);
         }
         if (context?.previousPostData) {
-          queryClient.setQueryData(postQueryKey, context.previousPostData);
+          queryClient.setQueryData(postKey, context.previousPostData);
         }
       },
       // Refetch on success
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: likesQueryKey });
-        queryClient.invalidateQueries({ queryKey: postQueryKey });
+        queryClient.invalidateQueries({ queryKey: postKey });
       },
     },
   );
@@ -134,10 +135,10 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
       // Optimistic update
       onMutate: async () => {
         await queryClient.cancelQueries({ queryKey: likesQueryKey });
-        await queryClient.cancelQueries({ queryKey: postQueryKey });
+        await queryClient.cancelQueries({ queryKey: postKey });
 
         const previousLikeData = queryClient.getQueryData(likesQueryKey);
-        const previousPostData = queryClient.getQueryData(postQueryKey);
+        const previousPostData = queryClient.getQueryData(postKey);
 
         // Update like status
         queryClient.setQueryData(likesQueryKey, {
@@ -146,7 +147,7 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
 
         // Update post's like count
         if (previousPostData) {
-          queryClient.setQueryData(postQueryKey, {
+          queryClient.setQueryData(postKey, {
             ...previousPostData,
             countOfLikes: Math.max(0, likeCount - 1),
           });
@@ -162,13 +163,13 @@ export function usePostLikes({ boardId, postId }: UsePostLikesProps): UsePostLik
           queryClient.setQueryData(likesQueryKey, context.previousLikeData);
         }
         if (context?.previousPostData) {
-          queryClient.setQueryData(postQueryKey, context.previousPostData);
+          queryClient.setQueryData(postKey, context.previousPostData);
         }
       },
       // Refetch on success
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: likesQueryKey });
-        queryClient.invalidateQueries({ queryKey: postQueryKey });
+        queryClient.invalidateQueries({ queryKey: postKey });
       },
     },
   );

@@ -21,8 +21,12 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization') || '';
     const token = authHeader.replace('Bearer ', '');
     try {
-      const claims = JSON.parse(atob(token.split('.')[1]));
-      if (claims.role !== 'service_role') {
+      const claims: unknown = JSON.parse(atob(token.split('.')[1]));
+      if (
+        typeof claims !== 'object' ||
+        claims === null ||
+        (claims as { role?: unknown }).role !== 'service_role'
+      ) {
         return new Response('Forbidden', { status: 403 });
       }
     } catch {

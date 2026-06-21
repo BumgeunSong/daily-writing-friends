@@ -1,6 +1,9 @@
+import { useQueryClient } from "@tanstack/react-query"
 import { MessageCircle } from "lucide-react"
 import { Link } from "react-router-dom"
-import { renderPostPreviewHtml } from "@/post/utils/contentUtils"
+import { renderPostPreviewHtml } from "@/post/web/contentUtils"
+import { seedPostCache } from "@/post/utils/postCacheUtils"
+import { usePrefetchPost } from "@/post/hooks/usePrefetchPost"
 import { Card, CardContent, CardFooter } from "@/shared/ui/card"
 import { Skeleton } from "@/shared/ui/skeleton"
 import { formatDate, toDate } from "@/shared/utils/dateUtils"
@@ -11,12 +14,17 @@ interface PostItemProps {
 }
 
 export const PostItem: React.FC<PostItemProps> = ({ post }) => {
+    const queryClient = useQueryClient();
+    usePrefetchPost(post.boardId, post.id);
     const isPrivate = post.visibility === 'private';
-    const contentPreview = renderPostPreviewHtml(post.content)
+    const contentPreview = renderPostPreviewHtml(post.contentPreview ?? post.content)
+    const handleClick = () => seedPostCache(queryClient, post);
+
     return (
         <Card className="reading-shadow reading-hover border-border/50 transition-[transform,background-color] duration-200 active:scale-[0.99]">
             <Link to={`/board/${post.boardId}/post/${post.id}`}
-                  className="reading-focus flex gap-4">
+                  className="reading-focus flex gap-4"
+                  onClick={handleClick}>
                 <div className="min-w-0 flex-1">
                     <CardContent className="p-3 pb-2 md:px-4">
                         <h3 className="truncate text-base font-medium text-foreground">{post.title}</h3>

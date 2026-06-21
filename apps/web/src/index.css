@@ -35,6 +35,11 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+
+    /* View transition tokens — see hierarchical page transitions below. */
+    --dwf-page-transition-duration: 280ms;
+    --dwf-content-transition-duration: 560ms;
+    --dwf-transition-easing: cubic-bezier(0.32, 0.72, 0, 1);
   }
   .dark {
     /* Dark Graphite Mode - Dual-Mode Reading Theme */
@@ -222,5 +227,83 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* Hierarchical page transitions — list ↔ detail. Direction set by
+   `document.documentElement.dataset.transition = 'forward' | 'back'`
+   at navigation call sites. */
+@media (prefers-reduced-motion: no-preference) {
+  /* 디폴트: 방향 속성이 없으면 뷰 트랜지션은 즉시 스왑한다. 브라우저 기본
+     크로스페이드를 꺼서, iOS 가장자리 스와이프로 popstate가 발생했을 때처럼
+     앱이 직접 발동시킨 트랜지션이 아닌 경우 두 번째 애니메이션이 겹치지 않게.
+     의도된 forward/back 규칙은 아래에서 덮어쓴다. */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+
+  @keyframes dwf-slide-out-left {
+    to { transform: translateX(-30%); opacity: 0; }
+  }
+  @keyframes dwf-slide-in-right {
+    from { transform: translateX(100%); }
+  }
+  @keyframes dwf-slide-out-right {
+    to { transform: translateX(30%); opacity: 0; }
+  }
+  @keyframes dwf-slide-in-left {
+    from { transform: translateX(-100%); }
+  }
+
+  [data-transition='forward']::view-transition-old(root) {
+    animation: dwf-slide-out-left var(--dwf-page-transition-duration) var(--dwf-transition-easing) both;
+  }
+  [data-transition='forward']::view-transition-new(root) {
+    animation: dwf-slide-in-right var(--dwf-page-transition-duration) var(--dwf-transition-easing) both;
+  }
+  [data-transition='back']::view-transition-old(root) {
+    animation: dwf-slide-out-right var(--dwf-page-transition-duration) var(--dwf-transition-easing) both;
+  }
+  [data-transition='back']::view-transition-new(root) {
+    animation: dwf-slide-in-left var(--dwf-page-transition-duration) var(--dwf-transition-easing) both;
+  }
+
+  /* Suspense reveal — content slides up + fades in when a lazy chunk resolves.
+     Reduced-motion is handled by the universal `*` rule above. */
+  @keyframes dwf-content-enter {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .dwf-content-enter {
+    animation: dwf-content-enter var(--dwf-content-transition-duration) var(--dwf-transition-easing) both;
+  }
+
+  /* Stagger variant — each direct child animates individually, 40ms apart,
+     capped so long lists don't feel slow. The wrapper itself doesn't animate. */
+  .dwf-content-stagger > * {
+    animation: dwf-content-enter var(--dwf-content-transition-duration) var(--dwf-transition-easing) both;
+  }
+  .dwf-content-stagger > *:nth-child(2) { animation-delay: 40ms; }
+  .dwf-content-stagger > *:nth-child(3) { animation-delay: 80ms; }
+  .dwf-content-stagger > *:nth-child(4) { animation-delay: 120ms; }
+  .dwf-content-stagger > *:nth-child(5) { animation-delay: 160ms; }
+  .dwf-content-stagger > *:nth-child(n + 6) { animation-delay: 200ms; }
+
+  /* Post body image reveal — fades each image in when its `load` event sets
+     `data-loaded`. Scoped inside no-preference so reduced-motion users (and
+     any path where JS does not run) see images at full opacity by default. */
+  .dwf-post-body img {
+    opacity: 0;
+    transition: opacity var(--dwf-page-transition-duration) var(--dwf-transition-easing);
+  }
+  .dwf-post-body img[data-loaded='true'] {
+    opacity: 1;
   }
 }

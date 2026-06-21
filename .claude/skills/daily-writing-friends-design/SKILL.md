@@ -14,6 +14,7 @@ For detailed reference, see the design docs:
 - [buttons.md](../../../docs/design/buttons.md) - Button hierarchy and usage
 - [components.md](../../../docs/design/components.md) - Cards, inputs, interactions
 - [theme.md](../../../docs/design/theme.md) - Dark mode, accessibility, mobile
+- [motion.md](../../../docs/design/motion.md) - View transitions, content reveals, easing
 
 ---
 
@@ -191,6 +192,59 @@ All buttons get `active:scale-[0.96]` via the base Button component. Cards and l
 
 ---
 
+## Motion & Transitions
+
+Animation should feel native — restrained, single-purpose, quiet. Premium iOS and Android apps don't dazzle; they confirm spatial relationships and content changes. If you can't say what an animation communicates, cut it.
+
+### Design tokens
+
+Defined in `:root` in `apps/web/src/index.css`. Use these. Don't invent one-off durations.
+
+| Token | Value | Use for |
+|---|---|---|
+| `--dwf-page-transition-duration` | `280ms` | Hierarchical route changes |
+| `--dwf-content-transition-duration` | `560ms` | Async content arriving (Suspense reveals) |
+| `--dwf-transition-easing` | `cubic-bezier(0.32, 0.72, 0, 1)` | iOS-style spring; one curve everywhere |
+
+### When to animate
+
+| Pattern | Animation | Communicates |
+|---|---|---|
+| Hierarchical navigation (list → detail) | Directional root slide via `useViewTransitionNavigate().forward()` | "Going deeper" |
+| Hierarchical back (detail → list) | Opposite slide via `useViewTransitionNavigate().back()` | "Going back up" |
+| Suspense reveal — single block | `.dwf-content-enter` on the element that mounts when data is ready | "Content arrived" |
+| Suspense reveal — list | `.dwf-content-stagger` on the list wrapper; children cascade 40ms apart | "Items arriving one by one" |
+| Lateral navigation (tab ↔ tab) | None | No depth to communicate |
+| High-frequency actions (100+/day, keyboard shortcuts) | None | Animation slows repeated use |
+| Background refresh / revalidation | None | Silent by design |
+| Press feedback | `active:scale-[0.96]` (button) or `active:scale-[0.99]` (card) | "Touch received" |
+
+### Rules
+
+- **Direction conveys hierarchy.** Forward slides right-to-left, back slides left-to-right. Never apply directional slides to sibling navigation — they falsely imply depth.
+- **Animate the moment of change, not the container.** If a wrapper renders synchronously while its data loads asynchronously, animate the data — not the wrapper.
+- **Never set `view-transition-name` on text.** The browser captures the element as a bitmap and scales bitmaps blurrily. Animate surfaces and backgrounds, not glyphs.
+- **One easing curve per app.** Multiple curves feel chaotic; one curve feels intentional.
+- **Reduced-motion is the floor.** The universal `*` rule in `index.css` covers most cases — verify each new animation by emulating `prefers-reduced-motion: reduce` in DevTools.
+- **Gate hover transforms on touch devices.** Wrap any `:hover` transform in `@media (hover: hover) and (pointer: fine)` so taps don't fire false hover states.
+- **Asymmetric press and release.** Slow when the user is deciding (e.g., hold-to-delete); fast when the system is responding.
+
+### Implementation
+
+```ts
+import { useViewTransitionNavigate } from '@/shared/navigation/useViewTransitionNavigate';
+
+const nav = useViewTransitionNavigate();
+nav.forward('/board/.../post/...');  // list → detail
+nav.back();                          // detail → list
+```
+
+For async content reveals, apply `dwf-content-enter` to the element that mounts the moment the data is ready — the leaf, not the parent.
+
+See [motion.md](../../../docs/design/motion.md) for the deeper reference.
+
+---
+
 ## Principles
 
 1. **Premium minimal** - Less visual noise, Bear app style
@@ -199,3 +253,4 @@ All buttons get `active:scale-[0.96]` via the base Button component. Cards and l
 4. **Dual-mode** - All UI must work in both light and dark modes
 5. **Mobile-first** - Responsive spacing and touch targets
 6. **Polish baseline** - Follow UI Polish Baseline rules above on every change
+7. **Native motion** - Apply Motion & Transitions rules: restraint, single-purpose, one easing curve, never animate text

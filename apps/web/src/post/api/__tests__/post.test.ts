@@ -25,23 +25,26 @@ function makeRow(overrides: Record<string, unknown> = {}) {
 }
 
 describe('mapRowToPost', () => {
-  describe('content fallback', () => {
-    it('uses full content when available (detail query)', () => {
+  describe('content vs contentPreview separation', () => {
+    it('keeps content and contentPreview as distinct fields (detail query)', () => {
       const row = makeRow({ content: '<p>Full HTML content</p>', content_preview: '<p>Full ' });
       const post = mapRowToPost(row);
       expect(post.content).toBe('<p>Full HTML content</p>');
+      expect(post.contentPreview).toBe('<p>Full ');
     });
 
-    it('falls back to content_preview when content is absent (feed query)', () => {
+    it('leaves content empty when only content_preview is selected (feed query)', () => {
       const row = makeRow({ content_preview: '<p>Preview text</p>' });
       const post = mapRowToPost(row);
-      expect(post.content).toBe('<p>Preview text</p>');
+      expect(post.content).toBe('');
+      expect(post.contentPreview).toBe('<p>Preview text</p>');
     });
 
-    it('falls back to empty string when neither content nor content_preview exist', () => {
+    it('returns empty content and null contentPreview when neither column is present', () => {
       const row = makeRow();
       const post = mapRowToPost(row);
       expect(post.content).toBe('');
+      expect(post.contentPreview).toBeNull();
     });
   });
 

@@ -66,3 +66,4 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
   rootMargin: '',
   thresholds: [],
 }));
+

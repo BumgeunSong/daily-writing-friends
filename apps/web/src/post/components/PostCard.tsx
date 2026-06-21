@@ -2,6 +2,7 @@
 
 import type { PostCardPrefetchedData } from '@/post/hooks/useBatchPostCardData';
 import { usePostCard } from '@/post/hooks/usePostCard';
+import { usePrefetchPost } from '@/post/hooks/usePrefetchPost';
 import { type Post } from '@/post/model/Post';
 import { Card } from '@/shared/ui/card';
 import { PostCardContent } from './PostCardContent';
@@ -26,6 +27,8 @@ function handleKeyDown(e: React.KeyboardEvent, onClick: (e: React.KeyboardEvent 
 }
 
 const PostCard: React.FC<PostCardProps> = ({ post, onClick, onClickProfile, prefetchedData, isBatchMode }) => {
+  usePrefetchPost(post.boardId, post.id);
+
   const {
     authorData,
     isAuthorLoading,

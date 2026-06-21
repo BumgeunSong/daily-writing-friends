@@ -36,14 +36,32 @@ export function parseFairyPayload(rawBody: string): FairyWebhookPayload | null {
   if (!isRecord(parsed)) return null;
   if (typeof parsed.event !== 'string') return null;
   if (!isRecord(parsed.data)) return null;
+  if (parsed.timestamp !== undefined && typeof parsed.timestamp !== 'string') return null;
 
   const data = parsed.data;
   if (typeof data.paymentId !== 'string' || data.paymentId.length === 0) return null;
   if (typeof data.amount !== 'number' || !Number.isFinite(data.amount)) return null;
   if (typeof data.fairyEmail !== 'string') return null;
   if (typeof data.source !== 'string') return null;
+  if (data.fairyName !== null && typeof data.fairyName !== 'string') return null;
+  if (data.fairyMessage !== null && typeof data.fairyMessage !== 'string') return null;
+  if (typeof data.projectName !== 'string') return null;
+  if (data.payload !== undefined && data.payload !== null && !isRecord(data.payload)) return null;
 
-  return parsed as unknown as FairyWebhookPayload;
+  return {
+    event: parsed.event,
+    timestamp: parsed.timestamp,
+    data: {
+      paymentId: data.paymentId,
+      amount: data.amount,
+      fairyName: data.fairyName,
+      fairyEmail: data.fairyEmail,
+      fairyMessage: data.fairyMessage,
+      projectName: data.projectName,
+      source: data.source,
+      payload: data.payload ?? null,
+    },
+  };
 }
 
 export function extractDwfUserId(payload: FairyWebhookPayload): string | null {

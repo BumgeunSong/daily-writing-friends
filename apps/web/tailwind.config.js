@@ -51,6 +51,16 @@ export default {
           5: "hsl(var(--chart-5))",
         },
       },
+      keyframes: {
+        'nav-progress': {
+          '0%':   { transform: 'translateX(-100%)' },
+          '50%':  { transform: 'translateX(150%)' },
+          '100%': { transform: 'translateX(350%)' },
+        },
+      },
+      animation: {
+        'nav-progress': 'nav-progress 1.1s ease-in-out infinite',
+      },
       typography: (theme) => ({
         dark: {
           css: {

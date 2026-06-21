@@ -27,6 +27,38 @@ import devLogPlugin from './vite-plugin-dev-log';
  * - NODE_ENV는 'production' 또는 'development'로 설정되며 import.meta.env.PROD/DEV에 영향을 줍니다.
  * - 모드는 임의의 값(production, development, staging 등)이 될 수 있으며 import.meta.env.MODE에 반영됩니다.
  */
+// Loud banner on every Vite startup so anyone running `pnpm dev` (no `:local`
+// suffix) instantly sees they are pointed at a non-local Supabase. Loud here
+// is better than silent + a surprised "wait, did I just smoke-test against
+// prod?" later. Compares the host against the loopback addresses used by
+// `supabase start`; anything else is treated as non-local and gets a banner.
+const LOCAL_SUPABASE_HOSTS = new Set(['127.0.0.1', 'localhost', '0.0.0.0']);
+
+function isLocalSupabaseUrl(url: string): boolean {
+  if (!url) return false;
+  try {
+    return LOCAL_SUPABASE_HOSTS.has(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
+function logSupabaseTarget(url: string, mode: string): void {
+  if (!url) {
+    console.warn(`\n  ⚠️  VITE_SUPABASE_URL is empty (mode: ${mode}). Supabase calls will fail.\n`);
+    return;
+  }
+  if (isLocalSupabaseUrl(url)) {
+    console.log(`  🟢 Supabase target: ${url}  (LOCAL, mode: ${mode})\n`);
+    return;
+  }
+  console.warn(
+    `\n  🔴 Supabase target: ${url}  (NON-LOCAL, mode: ${mode})\n` +
+      `      Reads and writes will hit this URL. If you meant to use local Supabase,\n` +
+      `      stop and run \`pnpm --filter web dev:local\` instead.\n`,
+  );
+}
+
 export default defineConfig(({ mode }) => {
   // 환경 변수 로드 - 모노레포 루트의 .env 파일에서 로드
   // pnpm --filter web dev 실행 시 cwd가 apps/web/이므로 루트를 명시적으로 지정
@@ -67,6 +99,7 @@ export default defineConfig(({ mode }) => {
   
   console.log(`Building for ${mode} mode`);
   console.log(`Firebase emulator: ${useFirebaseEmulator ? 'enabled' : 'disabled'}`);
+  logSupabaseTarget(getEnvVariable('VITE_SUPABASE_URL'), mode);
   
   return {
     envDir: monorepoRoot,
@@ -98,14 +131,32 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       globals: true,
-      environment: 'jsdom',
-      setupFiles: ['./src/setupTest.ts'],
-      include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
+      projects: [
+        {
+          extends: true,
+          test: {
+            name: 'unit',
+            environment: 'jsdom',
+            include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
+            exclude: ['src/**/*.integration.test.{ts,tsx}'],
+            setupFiles: ['./src/setupTest.ts'],
+          },
+        },
+        {
+          extends: true,
+          test: {
+            name: 'integration',
+            environment: 'jsdom',
+            include: ['src/**/*.integration.test.{ts,tsx}'],
+            setupFiles: ['./src/setupTest.ts', './src/setupTest.integration.ts'],
+          },
+        },
+      ],
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json-summary', 'json', 'lcov'],
         reportOnFailure: true,
-        exclude: ['node_modules/', 'src/setupTest.ts']
+        exclude: ['node_modules/', 'src/setupTest.ts', 'src/setupTest.integration.ts']
       },
       deps: {
         inline: ['chai', '@testing-library/jest-dom']

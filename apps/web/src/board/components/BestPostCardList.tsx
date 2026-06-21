@@ -1,11 +1,12 @@
 'use client';
 
 import { useQueryClient } from '@tanstack/react-query';
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import PostCard from '@/post/components/PostCard';
 import { useBatchPostCardData } from '@/post/hooks/useBatchPostCardData';
 import { useBestPosts } from '@/post/hooks/useBestPosts';
-import { useScrollRestoration } from '@/post/hooks/useScrollRestoration';
+import type { Post } from '@/post/model/Post';
+import { seedPostCache } from '@/post/utils/postCacheUtils';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
 import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
@@ -36,8 +37,6 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
 
   const { data: batchData, isError: isBatchError } = useBatchPostCardData(recentPosts);
 
-  const { saveScrollPosition, restoreScrollPosition } = useScrollRestoration(`${boardId}-best-posts`);
-
   const handleRefreshPosts = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     queryClient.invalidateQueries(['bestPosts', boardId]);
@@ -45,16 +44,10 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
 
   useRegisterTabHandler('Home', handleRefreshPosts);
 
-  const handlePostClick = (postId: string) => {
-    onPostClick(postId);
-    saveScrollPosition();
+  const handlePostClick = (post: Post) => {
+    seedPostCache(queryClient, post);
+    onPostClick(post.id);
   };
-
-  useEffect(() => {
-    if (boardId) {
-      restoreScrollPosition();
-    }
-  }, [boardId, restoreScrollPosition]);
 
   if (isLoading) {
     return (
@@ -92,7 +85,7 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
         <PostCard
           key={post.id}
           post={post}
-          onClick={() => handlePostClick(post.id)}
+          onClick={() => handlePostClick(post)}
           onClickProfile={onClickProfile}
           prefetchedData={batchData?.get(post.authorId)}
           isBatchMode={recentPosts.length > 0 && !isBatchError}

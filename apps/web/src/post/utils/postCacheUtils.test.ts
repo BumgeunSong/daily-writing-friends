@@ -1,5 +1,8 @@
 import { QueryClient } from '@tanstack/react-query';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type { Post } from '@/post/model/Post';
+import { PostVisibility } from '@/post/model/Post';
+import { createTimestamp } from '@/shared/model/Timestamp';
 
 // Create a real QueryClient for testing behavior
 let queryClient: QueryClient;
@@ -18,7 +21,53 @@ vi.mock('@/shared/utils/dateUtils', () => ({
 }));
 
 // Import after mocking
-import { optimisticallyUpdatePostingStreak } from './postCacheUtils';
+import { optimisticallyUpdatePostingStreak, seedPostCache } from './postCacheUtils';
+import { postQueryKey } from './postQueryKeys';
+
+const makePost = (over: Partial<Post> = {}): Post => ({
+  id: 'p1',
+  boardId: 'b1',
+  title: 't',
+  content: 'c',
+  thumbnailImageURL: null,
+  authorId: 'a1',
+  authorName: 'A',
+  countOfComments: 0,
+  countOfReplies: 0,
+  countOfLikes: 0,
+  createdAt: createTimestamp(new Date('2026-01-01T00:00:00Z')),
+  visibility: PostVisibility.PUBLIC,
+  ...over,
+});
+
+describe('seedPostCache', () => {
+  it('writes the post under [post, boardId, postId] so PostDetailPage useQuery hits cache', () => {
+    const qc = new QueryClient();
+    const post = makePost({ id: 'p1', boardId: 'b1' });
+    seedPostCache(qc, post);
+    expect(qc.getQueryData(postQueryKey('b1', 'p1'))).toEqual(post);
+  });
+
+  it('does NOT overwrite an existing cache entry (avoid regressing fresher detail-page data)', () => {
+    const qc = new QueryClient();
+    const fresher = makePost({ id: 'p1', boardId: 'b1', title: 'fresher-detail-data' });
+    qc.setQueryData(postQueryKey('b1', 'p1'), fresher);
+    seedPostCache(qc, makePost({ id: 'p1', boardId: 'b1', title: 'older-list-data' }));
+    expect((qc.getQueryData(postQueryKey('b1', 'p1')) as Post).title).toBe('fresher-detail-data');
+  });
+
+  it('does NOT seed a preview-only Post (empty content) — prevents truncated detail render', () => {
+    const qc = new QueryClient();
+    const listShapePost = makePost({
+      id: 'p1',
+      boardId: 'b1',
+      content: '',
+      contentPreview: '<p>first 500 chars only</p>',
+    });
+    seedPostCache(qc, listShapePost);
+    expect(qc.getQueryData(postQueryKey('b1', 'p1'))).toBeUndefined();
+  });
+});
 
 describe('optimisticallyUpdatePostingStreak', () => {
   beforeEach(() => {

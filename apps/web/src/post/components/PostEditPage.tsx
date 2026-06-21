@@ -3,6 +3,7 @@ import { Save } from 'lucide-react';
 import type React from 'react';
 import { useState, Suspense } from 'react';
 import { useParams, useNavigate } from '@/shared/navigation';
+import { postQueryKey } from '@/post/utils/postQueryKeys';
 import { fetchPost, updatePost } from '@/post/utils/postUtils';
 import type { ProseMirrorDoc } from '@/post/model/Post';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
@@ -54,7 +55,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: post } = useQuery(['post', boardId, postId], () => fetchPost(boardId, postId), {
+  const { data: post } = useQuery(postQueryKey(boardId, postId), () => fetchPost(boardId, postId), {
     suspense: true,
     useErrorBoundary: true,
     refetchOnWindowFocus: false,
@@ -83,7 +84,7 @@ function PostEditForm({ boardId, postId }: { boardId: string; postId: string }) 
       await updatePost({ postId, title: editState.title, content: editState.content, contentJson });
       navigate(`/board/${boardId}/post/${postId}`);
       // Invalidate after navigation to avoid unnecessary refetching on edit page
-      queryClient.invalidateQueries(['post', boardId, postId]);
+      queryClient.invalidateQueries(postQueryKey(boardId, postId));
     } catch (error) {
       console.error('Error updating post:', error);
       toast.error('게시물 수정에 실패했습니다.', { position: 'bottom-center' });
