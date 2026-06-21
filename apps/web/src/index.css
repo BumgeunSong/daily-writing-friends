@@ -300,14 +300,4 @@
   .dwf-content-stagger > *:nth-child(5) { animation-delay: 160ms; }
   .dwf-content-stagger > *:nth-child(n + 6) { animation-delay: 200ms; }
 
-  /* Post body image reveal — fades each image in when its `load` event sets
-     `data-loaded`. Scoped inside no-preference so reduced-motion users (and
-     any path where JS does not run) see images at full opacity by default. */
-  .dwf-post-body img {
-    opacity: 0;
-    transition: opacity var(--dwf-page-transition-duration) var(--dwf-transition-easing);
-  }
-  .dwf-post-body img[data-loaded='true'] {
-    opacity: 1;
-  }
 }
