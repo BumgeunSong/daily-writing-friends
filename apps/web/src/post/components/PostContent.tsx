@@ -101,7 +101,7 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
                             prose-ol:my-4
                             prose-ul:my-4
                         "
-                        style={{ overflowWrap: 'anywhere', wordBreak: 'keep-all', lineHeight: KOREAN_OPTIMAL_LINE_HEIGHT }}
+                        style={{ overflowWrap: 'anywhere', lineHeight: KOREAN_OPTIMAL_LINE_HEIGHT }}
                     />
                 </div>
             </CopyErrorBoundary>
