@@ -20,6 +20,14 @@ export async function waitForRouteReady(page, routeKey, timeout = 30000) {
     case 'boardFeed':
       await page.waitForSelector(POST_CARD, { timeout });
       return;
+    case 'boardsList':
+      // At least one board card link must render (not the empty-state copy).
+      await page.waitForFunction(
+        () => document.querySelectorAll('main a[href^="/board/"]').length > 0,
+        undefined,
+        { timeout },
+      );
+      return;
     case 'postDetail':
       // Post title heading proves the post body resolved.
       await page.waitForSelector('h1', { timeout });

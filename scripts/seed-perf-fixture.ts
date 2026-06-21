@@ -375,6 +375,7 @@ async function main() {
       boardFeed: `/board/${PRIMARY_BOARD_ID}`,
       postDetail: `/board/${PRIMARY_BOARD_ID}/post/${detailPostId}`,
       notifications: '/notifications',
+      boardsList: '/boards/list',
     },
   };
   const outPath = path.join(__dirname, '..', 'tests', 'fixtures', 'perf-fixture.json');
