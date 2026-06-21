@@ -75,8 +75,7 @@ export default function PostDetailPage() {
           )}
           {boardId && postId && <PostAdjacentButtons boardId={boardId} postId={postId} />}
         </div>
-        <div className='my-4 border-t border-border' />
-        <div>
+        <div className='mt-8'>
           {boardId && postId && (
             <Suspense fallback={null}>
               <Comments

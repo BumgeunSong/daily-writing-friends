@@ -39,15 +39,18 @@ export function PostDetailHeader({
     };
     return (
       <header className='space-y-4'>
-        <div className="flex items-center gap-2">
-          <h1 className='mb-4 text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl'>
-            {post.title}
-          </h1>
-        </div>
+        <h1 className='mb-4 text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl'>
+          {post.title}
+        </h1>
         <div className='flex items-center justify-between text-sm text-muted-foreground'>
-          <p>
-            작성자: {authorNickname || '??'} | 작성일: {post.createdAt ? formatDateToKorean(post.createdAt.toDate()) : '?'}
-          </p>
+          <div className='flex items-center gap-3'>
+            <span>
+              <span className='text-xs'>작성자 </span>
+              <span className='font-medium text-foreground'>{authorNickname || '??'}</span>
+            </span>
+            <span aria-hidden>·</span>
+            <span>{post.createdAt ? formatDateToKorean(post.createdAt.toDate()) : '?'}</span>
+          </div>
           <div className='flex space-x-2'>
             {/* Share 버튼: 비공개글이 아닐 때만 노출 */}
             {post.visibility !== PostVisibility.PRIVATE && (
