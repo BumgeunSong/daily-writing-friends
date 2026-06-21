@@ -36,15 +36,19 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
     useCopyHandler(getSelectedHtml, contentRef.current);
 
     // 본문 이미지는 디코딩되어 그려질 때 자연스럽게 페이드인한다.
+    // 부모가 재렌더하면 innerHTML이 다시 적용되면서 기존 img가 새 노드로 교체되어
+    // data-loaded가 날아가고, CSS가 opacity:0으로 되돌려 한 번 보였던 이미지가
+    // 사라진다. MutationObserver로 새로 들어오는 img를 잡아 다시 마킹한다.
     useEffect(() => {
         const container = contentRef.current;
         if (!container) return;
-        const images = Array.from(container.querySelectorAll('img'));
+
         const markLoaded = (img: HTMLImageElement) => {
             img.dataset.loaded = 'true';
         };
-        const cleanups: Array<() => void> = [];
-        images.forEach((img) => {
+
+        const setupImage = (img: HTMLImageElement) => {
+            if (img.dataset.loaded === 'true') return;
             if (img.complete && img.naturalWidth > 0) {
                 markLoaded(img);
                 return;
@@ -53,13 +57,25 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
             const onError = () => markLoaded(img);
             img.addEventListener('load', onLoad, { once: true });
             img.addEventListener('error', onError, { once: true });
-            cleanups.push(() => {
-                img.removeEventListener('load', onLoad);
-                img.removeEventListener('error', onError);
-            });
+        };
+
+        container.querySelectorAll('img').forEach(setupImage);
+
+        const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                mutation.addedNodes.forEach((node) => {
+                    if (node instanceof HTMLImageElement) {
+                        setupImage(node);
+                    } else if (node instanceof Element) {
+                        node.querySelectorAll('img').forEach(setupImage);
+                    }
+                });
+            }
         });
-        return () => cleanups.forEach((cleanup) => cleanup());
-    }, [post?.content]);
+        observer.observe(container, { childList: true, subtree: true });
+
+        return () => observer.disconnect();
+    }, []);
 
     if (isPrivateAndNotAuthor) {
         return (
