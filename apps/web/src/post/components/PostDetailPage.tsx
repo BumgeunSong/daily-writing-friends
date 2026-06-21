@@ -86,13 +86,13 @@ export default function PostDetailPage() {
           <PostContent post={post} isAuthor={isAuthor} />
         </article>
 
-        <div className='mt-6 flex items-center justify-between border-t border-border py-4'>
+        <div className='mx-auto mt-6 max-w-2xl flex items-center justify-between border-t border-border py-4'>
           {boardId && postId && (
             <PostLikeButton boardId={boardId} postId={postId} authorId={post.authorId} />
           )}
           {boardId && postId && <PostAdjacentButtons boardId={boardId} postId={postId} />}
         </div>
-        <div className='mt-8'>
+        <div className='mx-auto mt-8 max-w-2xl'>
           {boardId && postId && (
             <Suspense fallback={null}>
               <Comments
