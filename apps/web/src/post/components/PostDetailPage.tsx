@@ -66,9 +66,9 @@ export default function PostDetailPage() {
   return (
     <div className='min-h-screen bg-background'>
       <PostMetaHelmet post={post} boardId={boardId} postId={postId} />
-      <main className='container mx-auto max-w-4xl overflow-x-hidden px-6 py-2'>
+      <main className='container mx-auto max-w-2xl overflow-x-hidden px-6 py-2'>
         <PostBackButton className='mb-4' />
-        <article className='mx-auto max-w-2xl space-y-4'>
+        <article className='space-y-4'>
           <PostDetailHeader
             post={post}
             authorData={authorData}
@@ -86,13 +86,13 @@ export default function PostDetailPage() {
           <PostContent post={post} isAuthor={isAuthor} />
         </article>
 
-        <div className='mx-auto mt-6 max-w-2xl flex items-center justify-between border-t border-border py-4'>
+        <div className='mt-6 flex items-center justify-between border-t border-border py-4'>
           {boardId && postId && (
             <PostLikeButton boardId={boardId} postId={postId} authorId={post.authorId} />
           )}
           {boardId && postId && <PostAdjacentButtons boardId={boardId} postId={postId} />}
         </div>
-        <div className='mx-auto mt-8 max-w-2xl'>
+        <div className='mt-8'>
           {boardId && postId && (
             <Suspense fallback={null}>
               <Comments
@@ -114,7 +114,7 @@ export default function PostDetailPage() {
 function PostDetailSkeleton() {
   return (
     <div className='min-h-screen bg-background'>
-      <main className='container mx-auto max-w-4xl px-6 py-2'>
+      <main className='container mx-auto max-w-2xl px-6 py-2'>
         <Skeleton className='mb-4 h-12 w-3/4' />
         <Skeleton className='mb-2 h-4 w-full' />
         <Skeleton className='mb-2 h-4 w-full' />
@@ -128,7 +128,7 @@ function PostDetailSkeleton() {
 function PostDetailError({ boardId }: { boardId?: string }) {
   return (
     <div className='min-h-screen bg-background'>
-      <main className='container mx-auto max-w-4xl px-6 py-2 text-center'>
+      <main className='container mx-auto max-w-2xl px-6 py-2 text-center'>
         <h1 className='mb-4 text-xl font-semibold text-foreground md:text-2xl'>
           게시물을 찾을 수 없습니다.
         </h1>
