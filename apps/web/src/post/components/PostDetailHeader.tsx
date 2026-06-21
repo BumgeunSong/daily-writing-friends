@@ -1,84 +1,82 @@
-import { Edit, Trash2 } from "lucide-react";
-import { Share } from "lucide-react";
-import { Link } from "react-router-dom";
-import type { Post} from '@/post/model/Post';
+import { Edit, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import type { Post } from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
+import type { WritingBadge } from '@/stats/model/WritingStats';
 import { Button } from '@/shared/ui/button';
 import { formatDateToKorean } from '@/shared/utils/dateUtils';
+import type { PostAuthorData } from './PostUserProfile';
+import { PostUserProfile } from './PostUserProfile';
 
-// 헤더 UI
+const noop = () => {};
+
+interface PostDetailHeaderProps {
+  post: Post;
+  authorData: PostAuthorData;
+  isAuthorLoading: boolean;
+  isDonator: boolean;
+  badges?: WritingBadge[];
+  streak?: boolean[];
+  isStreakLoading?: boolean;
+  isAuthor: boolean;
+  boardId?: string;
+  postId?: string;
+  onDelete: (boardId: string, postId: string, navigate: (path: string) => void) => void;
+  navigate: (path: string) => void;
+}
+
 export function PostDetailHeader({
-    post,
-    authorNickname,
-    isAuthor,
-    boardId,
-    postId,
-    onDelete,
-    navigate,
-  }: {
-    post: Post;
-    authorNickname: string | undefined;
-    isAuthor: boolean;
-    boardId?: string;
-    postId?: string;
-    onDelete: (boardId: string, postId: string, navigate: (path: string) => void) => void;
-    navigate: (path: string) => void;
-  }) {
-    // Web Share API 핸들러
-    const handleShare = () => {
-      if (navigator.share) {
-        navigator.share({
-          title: post.title,
-          url: window.location.href,
-        });
-      } else {
-        // fallback: 클립보드 복사 등
-        window.navigator.clipboard.writeText(window.location.href);
-        alert('링크가 클립보드에 복사되었습니다.');
-      }
-    };
-    return (
-      <header className='space-y-4'>
-        <h1 className='mb-4 text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl'>
-          {post.title}
-        </h1>
-        <div className='flex items-center justify-between text-sm text-muted-foreground'>
-          <div className='flex items-center gap-3'>
-            <span>
-              <span className='text-xs'>작성자 </span>
-              <span className='font-medium text-foreground'>{authorNickname || '??'}</span>
-            </span>
-            <span aria-hidden>·</span>
-            <span>{post.createdAt ? formatDateToKorean(post.createdAt.toDate()) : '?'}</span>
+  post,
+  authorData,
+  isAuthorLoading,
+  isDonator,
+  badges,
+  streak,
+  isStreakLoading,
+  isAuthor,
+  boardId,
+  postId,
+  onDelete,
+  navigate,
+}: PostDetailHeaderProps) {
+  return (
+    <header className='space-y-3'>
+      <PostUserProfile
+        authorData={authorData}
+        isLoading={isAuthorLoading}
+        isDonator={isDonator}
+        onClickProfile={noop}
+        badges={badges}
+        streak={streak}
+        isStreakLoading={isStreakLoading}
+      />
+
+      <h1 className='text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl'>
+        {post.title}
+      </h1>
+
+      <div className='flex items-center justify-between'>
+        <span className='text-xs text-muted-foreground'>
+          {post.createdAt ? formatDateToKorean(post.createdAt.toDate()) : '?'}
+        </span>
+        {isAuthor && post.visibility !== PostVisibility.PRIVATE && boardId && postId && (
+          <div className='flex space-x-1'>
+            <Button variant='ghost' size='icon' aria-label='수정' asChild>
+              <Link to={`/board/${boardId}/edit/${postId}`}>
+                <Edit className='size-4' />
+              </Link>
+            </Button>
+            <Button
+              variant='destructive'
+              size='icon'
+              onClick={() => onDelete(boardId, postId, navigate)}
+              aria-label='삭제'
+            >
+              <Trash2 className='size-4' />
+            </Button>
           </div>
-          <div className='flex space-x-2'>
-            {/* Share 버튼: 비공개글이 아닐 때만 노출 */}
-            {post.visibility !== PostVisibility.PRIVATE && (
-              <Button variant='ghost' size='icon' onClick={handleShare} aria-label='공유'>
-                <Share className='size-4' />
-              </Button>
-            )}
-            {/* 수정/삭제 버튼: 작성자만 노출, 비공개글은 제외 */}
-            {isAuthor && post.visibility !== PostVisibility.PRIVATE && boardId && postId && (
-              <>
-                <Button variant='ghost' size='icon' aria-label='수정' asChild>
-                  <Link to={`/board/${boardId}/edit/${postId}`}>
-                    <Edit className='size-4' />
-                  </Link>
-                </Button>
-                <Button
-                  variant='destructive'
-                  size='icon'
-                  onClick={() => onDelete(boardId, postId, navigate)}
-                  aria-label='삭제'
-                >
-                  <Trash2 className='size-4' />
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
-    );
-  }
-  
+        )}
+      </div>
+    </header>
+  );
+}
