@@ -46,7 +46,7 @@ export function PostLikeButton({ boardId, postId, authorId }: PostLikeButtonProp
       size='sm'
       className={`
         flex items-center gap-1.5 rounded-full border border-border bg-transparent px-3 py-1.5
-        text-foreground transition-[transform,background-color] hover:scale-105 hover:bg-muted hover:text-foreground
+        text-foreground transition-[transform,background-color] hover:bg-muted hover:text-foreground
         active:scale-[0.96]
         ${isAuthor ? 'cursor-not-allowed opacity-50' : ''}
       `}

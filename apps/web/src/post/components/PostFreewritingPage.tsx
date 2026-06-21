@@ -99,11 +99,19 @@ export default function PostFreewritingPage() {
   const isUploadButtonDisabled = isSubmitting || !hasReachedTargetTime || !postTitle.trim() || !content.trim()
 
   if (!currentUser) {
-    return <div>Loading user...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">로딩 중...</p>
+      </div>
+    );
   }
 
   if (!boardId) {
-    return <div>No board ID found</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">잘못된 접근입니다.</p>
+      </div>
+    );
   }
 
   return (
