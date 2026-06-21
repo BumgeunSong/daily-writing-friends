@@ -40,18 +40,20 @@ export function PostDetailHeader({
   navigate,
 }: PostDetailHeaderProps) {
   return (
-    <header className='space-y-3'>
-      <PostUserProfile
-        authorData={authorData}
-        isLoading={isAuthorLoading}
-        isDonator={isDonator}
-        onClickProfile={noop}
-        badges={badges}
-        streak={streak}
-        isStreakLoading={isStreakLoading}
-      />
+    <header>
+      <div className='mb-6'>
+        <PostUserProfile
+          authorData={authorData}
+          isLoading={isAuthorLoading}
+          isDonator={isDonator}
+          onClickProfile={noop}
+          badges={badges}
+          streak={streak}
+          isStreakLoading={isStreakLoading}
+        />
+      </div>
 
-      <h1 className='text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl'>
+      <h1 className='mb-2 text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl'>
         {post.title}
       </h1>
 
