@@ -1,7 +1,6 @@
 import type React from 'react';
 import { useAuthors } from '@/post/hooks/useAuthors';
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
-import { ScrollArea, ScrollBar } from '@/shared/ui/scroll-area';
 import { Skeleton } from '@/shared/ui/skeleton';
 
 interface AuthorListProps {
@@ -18,7 +17,7 @@ const AuthorList: React.FC<AuthorListProps> = ({ boardId, onAuthorSelect }) => {
 
   if (isLoading) {
     return (
-      <ScrollArea className='w-full whitespace-nowrap rounded-md border'>
+      <div className='w-full overflow-x-auto whitespace-nowrap rounded-md border'>
         <div className='flex w-max space-x-4 p-4'>
           {[...Array(5)].map((_, i) => (
             <div key={i} className='flex flex-col items-center space-y-1'>
@@ -27,13 +26,12 @@ const AuthorList: React.FC<AuthorListProps> = ({ boardId, onAuthorSelect }) => {
             </div>
           ))}
         </div>
-        <ScrollBar orientation='horizontal' />
-      </ScrollArea>
+      </div>
     );
   }
 
   return (
-    <ScrollArea className='w-full whitespace-nowrap rounded-md border'>
+    <div className='w-full overflow-x-auto whitespace-nowrap rounded-md border'>
       <div className='flex w-max space-x-4 p-4'>
         {authors.map((author) => (
           <button
@@ -51,8 +49,7 @@ const AuthorList: React.FC<AuthorListProps> = ({ boardId, onAuthorSelect }) => {
           </button>
         ))}
       </div>
-      <ScrollBar orientation='horizontal' />
-    </ScrollArea>
+    </div>
   );
 };
 

@@ -1,11 +1,11 @@
-import type { FieldErrors, FieldValues, UseFormRegister } from 'react-hook-form';
+import type { FieldErrors, UseFormRegister } from 'react-hook-form';
 import type { OnboardingFormSchema } from '@/login/utils/onboardingSchema';
 import FormField from './JoinFormField';
 
 interface ContactMethodTabsProps {
   tab: 'phone' | 'kakao';
   onTabChange: (next: 'phone' | 'kakao') => void;
-  register: UseFormRegister<FieldValues>;
+  register: UseFormRegister<any>;
   typedRegister: UseFormRegister<OnboardingFormSchema>;
   errors: FieldErrors<OnboardingFormSchema>;
 }

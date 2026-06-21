@@ -16,8 +16,8 @@ export function useCreateComment(boardId: string, postId: string) {
         postId,
         content,
         currentUser.uid,
-        userData?.nickname ?? currentUser.displayName,
-        userData?.profilePhotoURL ?? currentUser.photoURL,
+        userData?.nickname ?? currentUser.displayName ?? '',
+        userData?.profilePhotoURL ?? currentUser.photoURL ?? '',
       );
     },
     {

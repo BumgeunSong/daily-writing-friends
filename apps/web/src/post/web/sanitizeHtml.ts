@@ -10,7 +10,7 @@ export function sanitize(html: string): string {
   }
 
   // Configure DOMPurify to allow only specific tags and attributes
-  const config: DOMPurify.Config = {
+  const config: Parameters<typeof DOMPurify.sanitize>[1] = {
     // Allowed HTML tags
     ALLOWED_TAGS: [
       'p', 'h1', 'h2', 'strong', 'em', 's', 'a', 
@@ -26,12 +26,10 @@ export function sanitize(html: string): string {
     KEEP_CONTENT: true,
     // Allow data URIs for images (for pasted images)
     ALLOW_DATA_ATTR: false,
-    // Don't allow any inline styles
-    ALLOW_STYLE: false,
   };
 
   // Sanitize the HTML
-  const sanitized = DOMPurify.sanitize(html, config);
+  const sanitized = String(DOMPurify.sanitize(html, config));
 
   // Post-process to ensure all links have target="_blank" and rel="noopener noreferrer"
   const tempDiv = document.createElement('div');

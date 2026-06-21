@@ -1,6 +1,6 @@
 import { Input } from "@/shared/ui/input"
 import { Textarea } from "@/shared/ui/textarea"
-import type { FieldError, FieldValues, UseFormRegister } from "react-hook-form"
+import type { FieldError, UseFormRegister } from "react-hook-form"
 
 interface FormFieldProps {
   id: string
@@ -15,7 +15,7 @@ interface FormFieldProps {
   inputMode: "text" | "numeric" | "tel" | "email" | "url" | "search" | "none"
   placeholder: string
   autoComplete?: string
-  register: UseFormRegister<FieldValues>
+  register: UseFormRegister<any>
   error?: FieldError
   optional?: boolean
 }

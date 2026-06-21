@@ -22,7 +22,7 @@ export function useTypingPresence({
   idleDelay,
 }: UseTypingPresenceOptions): UseTypingPresenceReturn {
   const [isTyping, setIsTyping] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const ping = useCallback(() => {
     setIsTyping(true);

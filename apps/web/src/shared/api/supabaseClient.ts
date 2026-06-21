@@ -116,25 +116,27 @@ export function throwOnError(
   operation?: string,
 ): void {
   if (result.error) {
-    if (isNetworkError(result.error)) {
+    const error = result.error;
+    if (isNetworkError(error)) {
       addSentryBreadcrumb(
         operation ? `Supabase network error: ${operation}` : 'Supabase network error',
         'supabase.write',
-        { message: result.error.message, operation },
+        { message: error.message, operation },
         'warning',
       );
-      throw new SupabaseNetworkError(result.error);
+      throw new SupabaseNetworkError(error);
     }
 
-    const writeError = new SupabaseWriteError(result.error);
+
+    const writeError = new SupabaseWriteError(error);
 
     addSentryBreadcrumb(
       operation ? `Supabase write failed: ${operation}` : 'Supabase write failed',
       'supabase.write',
       {
-        code: result.error.code,
-        message: result.error.message,
-        details: result.error.details,
+        code: error.code,
+        message: error.message,
+        details: error.details,
         operation,
       },
       'error',
@@ -142,13 +144,13 @@ export function throwOnError(
 
     Sentry.withScope((scope) => {
       scope.setContext('supabaseError', {
-        code: result.error.code,
-        message: result.error.message,
-        details: result.error.details,
-        hint: result.error.hint,
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
         operation,
       });
-      if (result.error.code === '42501') {
+      if (error.code === '42501') {
         scope.setFingerprint(['supabase', 'permission-denied', operation ?? 'unknown']);
       }
       Sentry.captureException(writeError);

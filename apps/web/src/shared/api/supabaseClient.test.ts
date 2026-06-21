@@ -26,7 +26,7 @@ describe('SupabaseWriteError', () => {
       code: '23505',
       details: 'Key (id)=(abc) already exists',
       hint: '',
-    };
+    } as unknown as PostgrestError;
     const error = new SupabaseWriteError(postgrestError);
 
     expect(error.postgrestError).toBe(postgrestError);
@@ -41,7 +41,7 @@ describe('SupabaseWriteError', () => {
       code: '42P01',
       details: '',
       hint: '',
-    };
+    } as unknown as PostgrestError;
     const error = new SupabaseWriteError(postgrestError);
 
     expect(error).toBeInstanceOf(Error);
@@ -68,7 +68,7 @@ describe('throwOnError', () => {
       code: 'PGRST116',
       details: 'no rows',
       hint: '',
-    };
+    } as unknown as PostgrestError;
 
     expect(() => throwOnError({ error: postgrestError })).toThrow(SupabaseWriteError);
   });
@@ -79,7 +79,7 @@ describe('throwOnError', () => {
       code: '42501',
       details: 'RLS policy violation',
       hint: '',
-    };
+    } as unknown as PostgrestError;
 
     try {
       throwOnError({ error: postgrestError });
@@ -100,7 +100,7 @@ describe('throwOnError', () => {
       code: '23503',
       details: 'FK constraint',
       hint: '',
-    };
+    } as unknown as PostgrestError;
 
     expect(() => throwOnError({ error: postgrestError }, 'createComment')).toThrow(SupabaseWriteError);
 
@@ -114,7 +114,7 @@ describe('throwOnError', () => {
   });
 
   it('uses generic breadcrumb message when operation is omitted', () => {
-    const postgrestError = { message: 'fail', code: '500', details: '', hint: '' };
+    const postgrestError = { message: 'fail', code: '500', details: '', hint: '' } as unknown as PostgrestError;
 
     expect(() => throwOnError({ error: postgrestError })).toThrow(SupabaseWriteError);
 
@@ -132,7 +132,7 @@ describe('throwOnError', () => {
       code: '42501',
       details: 'RLS policy violation',
       hint: '',
-    };
+    } as unknown as PostgrestError;
 
     expect(() => throwOnError({ error: postgrestError }, 'createComment')).toThrow(SupabaseWriteError);
 
@@ -140,7 +140,7 @@ describe('throwOnError', () => {
   });
 
   it('does not set fingerprint for non-permission errors', () => {
-    const postgrestError = { message: 'conflict', code: '23505', details: '', hint: '' };
+    const postgrestError = { message: 'conflict', code: '23505', details: '', hint: '' } as unknown as PostgrestError;
 
     expect(() => throwOnError({ error: postgrestError }, 'insertPost')).toThrow(SupabaseWriteError);
 
@@ -153,7 +153,7 @@ describe('throwOnError', () => {
       code: '',
       details: '@https://example.com/assets/index.js:1270:7060',
       hint: '',
-    };
+    } as unknown as PostgrestError;
 
     expect(() => throwOnError({ error: networkError }, 'createComment')).toThrow(SupabaseNetworkError);
   });
@@ -164,7 +164,7 @@ describe('throwOnError', () => {
       code: '',
       details: '',
       hint: '',
-    };
+    } as unknown as PostgrestError;
 
     expect(() => throwOnError({ error: networkError })).toThrow(SupabaseNetworkError);
 
@@ -183,7 +183,7 @@ describe('throwOnError', () => {
       code: '',
       details: '',
       hint: '',
-    };
+    } as unknown as PostgrestError;
 
     expect(() => throwOnError({ error: networkError })).toThrow(SupabaseNetworkError);
   });
@@ -194,7 +194,7 @@ describe('throwOnError', () => {
       code: '23505',
       details: '',
       hint: '',
-    };
+    } as unknown as PostgrestError;
 
     expect(() => throwOnError({ error: dbError })).toThrow(SupabaseWriteError);
   });
@@ -227,7 +227,7 @@ describe('executeTrackedWrite', () => {
   });
 
   it('throws SupabaseWriteError and reports to Sentry on operation error', async () => {
-    const postgrestError = { message: 'conflict', code: '23505', details: '', hint: '' };
+    const postgrestError = { message: 'conflict', code: '23505', details: '', hint: '' } as unknown as PostgrestError;
     const fn = vi.fn().mockResolvedValue({ error: postgrestError });
 
     await expect(executeTrackedWrite('insertPost', fn)).rejects.toBeInstanceOf(SupabaseWriteError);

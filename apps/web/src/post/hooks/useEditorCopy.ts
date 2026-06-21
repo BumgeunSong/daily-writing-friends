@@ -93,7 +93,7 @@ function nodeToHtml(node: ProseMirrorNode): string {
     case NODE_TYPES.PARAGRAPH:
       return `<p>${formattedText}</p>`;
     case NODE_TYPES.HEADING: {
-      const level = Math.max(1, Math.min(6, attrs.level || 1));
+      const level = Math.max(1, Math.min(6, (attrs.level as number) || 1));
       return `<h${level}>${formattedText}</h${level}>`;
     }
     case NODE_TYPES.BLOCKQUOTE:

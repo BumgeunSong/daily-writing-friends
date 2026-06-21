@@ -40,7 +40,7 @@ export function useTiptapEditor({
   placeholder = DEFAULT_PLACEHOLDER,
   debounceDelay = DEFAULT_DEBOUNCE_DELAY,
 }: UseTiptapEditorProps) {
-  const debounceTimerRef = useRef<NodeJS.Timeout>();
+  const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const onTypingRef = useRef(onTyping);
   useEffect(() => {
     onTypingRef.current = onTyping;
