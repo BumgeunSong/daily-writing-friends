@@ -21,6 +21,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import {
   paths,
   TARGETS,
+  METRIC_WEIGHTS,
   STAGNATION_LIMIT,
   TARGET_OVERALL,
   loadRoutes,
@@ -44,6 +45,7 @@ const ROUTE_LABEL = {
   boardFeed: '/board/*',
   postDetail: '/board/*/post/*',
   notifications: '/notifications',
+  boardsList: '/boards/list',
 };
 
 function git(args) {
@@ -127,6 +129,78 @@ function cmdStatus() {
   }
   const streak = stagnationStreak();
   console.log(`\nStop check: stagnation ${streak}/${STAGNATION_LIMIT}` + (best.overall >= TARGET_OVERALL ? '  | TARGET REACHED' : ''));
+  console.log(line);
+}
+
+// Rank candidate (route × metric) targets by max possible Δoverall if that one
+// metric reached its "good" threshold. The ceiling is an upper bound; what you
+// actually realize is bounded by how close the change can get to target. A
+// candidate marked ✓ can clear ε(overall) on its own — anything below ε must
+// either bundle with neighbours or come from a higher-leverage route to matter.
+function cmdSuggest() {
+  const baseline = loadBaseline();
+  const best = readBest();
+  const eps = readEpsilon();
+  if (!best) return console.log('No best.json yet — run: loop.mjs init');
+
+  const routes = loadRoutes();
+  const totalTraffic = routes.reduce((s, r) => s + r.traffic, 0);
+
+  const candidates = [];
+  for (const r of routes) {
+    const cur = best.metrics[r.key]?.wv ?? baseline[r.key];
+    const sub = scoreRoute(cur, baseline[r.key]).sub;
+    for (const m of ['lcp', 'fcp', 'cls']) {
+      if (cur[m] <= TARGETS[m]) continue; // already at/under target
+      const maxOverallGain = (1 - sub[m].s) * METRIC_WEIGHTS[m] * (r.traffic / totalTraffic);
+      candidates.push({
+        route: r.key,
+        metric: m,
+        cur: cur[m],
+        target: TARGETS[m],
+        currentSub: sub[m].s,
+        maxOverallGain,
+        worthTrying: maxOverallGain > (eps?.overall ?? 0),
+        trafficShare: r.traffic / totalTraffic,
+      });
+    }
+  }
+  candidates.sort((a, b) => b.maxOverallGain - a.maxOverallGain);
+
+  const line = '─'.repeat(72);
+  console.log(`\n${line}\nSUGGEST — ranked targets by max Δoverall if metric reaches "good"\n${line}`);
+  console.log(`best overall = ${best.overall.toFixed(4)}   ε(overall) = ${eps ? eps.overall.toFixed(4) : 'n/a'}`);
+  console.log('\n  # route × metric                current → target     traffic   max Δoverall  beats ε?');
+  for (const [i, c] of candidates.slice(0, 8).entries()) {
+    const label = `${ROUTE_LABEL[c.route] ?? c.route}/${c.metric.toUpperCase()}`;
+    const cur = c.metric === 'cls' ? c.cur.toFixed(3) : `${Math.round(c.cur)}ms`;
+    const tgt = c.metric === 'cls' ? c.target.toFixed(2) : `${c.target}ms`;
+    const mark = c.worthTrying ? '✓' : '·';
+    console.log(
+      `  ${String(i + 1).padStart(2)} ${label.padEnd(28)} ` +
+        `${(cur + ' → ' + tgt).padEnd(18)}  ${(c.trafficShare * 100).toFixed(1).padStart(4)}%   ` +
+        `+${c.maxOverallGain.toFixed(4)}      ${mark}`,
+    );
+  }
+  console.log('\nLegend: ✓ = single-metric gain alone can beat ε(overall). Rows below ε can still');
+  console.log('matter when bundled with neighbours (one PR may move several metrics at once).');
+
+  const ledger = readLedger();
+  const accepts = ledger.filter((e) => e.verdict === 'ACCEPT').slice(-5);
+  const reverts = ledger.filter((e) => e.verdict === 'REVERT').slice(-5);
+  if (accepts.length) {
+    console.log('\nRecent ACCEPTed (study what worked):');
+    for (const e of accepts) {
+      console.log(`  #${String(e.iter).padStart(3)} +${(e.delta ?? 0).toFixed(4)}  ${e.note ?? ''}`);
+    }
+  }
+  if (reverts.length) {
+    console.log('\nRecent REVERTed (avoid repeating):');
+    for (const e of reverts) {
+      const d = (e.delta ?? 0).toFixed(4);
+      console.log(`  #${String(e.iter).padStart(3)} ${d.padStart(7)}  ${e.note ?? ''}${e.reason ? ' — ' + e.reason : ''}`);
+    }
+  }
   console.log(line);
 }
 
@@ -241,10 +315,13 @@ switch (cmd) {
   case 'status':
     cmdStatus();
     break;
+  case 'suggest':
+    cmdSuggest();
+    break;
   case 'eval':
     await cmdEval(note);
     break;
   default:
-    console.log('usage: loop.mjs <init|status|eval --note "...">');
+    console.log('usage: loop.mjs <init|status|suggest|eval --note "...">');
     process.exit(1);
 }
