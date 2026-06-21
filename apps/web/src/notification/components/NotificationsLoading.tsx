@@ -1,6 +1,5 @@
 import NotificationsHeader from '@/notification/components/NotificationsHeader';
 import { Card } from '@/shared/ui/card';
-import { ScrollArea } from '@/shared/ui/scroll-area';
 import { Skeleton } from '@/shared/ui/skeleton';
 
 interface NotificationsLoadingProps {
@@ -19,7 +18,7 @@ export const NotificationsLoading = ({
     <div className="flex h-[calc(100vh-4rem)] flex-col">
       <NotificationsHeader />
       <Card className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full" id={scrollAreaId}>
+        <div className="h-full overflow-y-auto" id={scrollAreaId}>
           <div>
             {Array.from({ length: skeletonCount }).map((_, index) => (
               <Skeleton 
@@ -29,7 +28,7 @@ export const NotificationsLoading = ({
               />
             ))}
           </div>
-        </ScrollArea>
+        </div>
       </Card>
     </div>
   );
