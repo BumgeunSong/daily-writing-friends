@@ -307,13 +307,6 @@
     word-break: keep-all;
   }
 
-  @media (max-width: 480px) {
-    .dwf-post-body {
-      word-break: initial;
-      text-wrap: wrap;
-    }
-  }
-
   .dwf-post-body img {
     opacity: 0;
     transition: opacity var(--dwf-page-transition-duration) var(--dwf-transition-easing);

@@ -54,7 +54,7 @@ export function PostDetailHeader({
           isStreakLoading={isStreakLoading}
         />
         <Stack gap='sm'>
-          <h1 className='text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl'>
+          <h1 className='text-3xl font-bold leading-tight tracking-tight text-foreground [word-break:keep-all] sm:text-4xl'>
             {post.title}
           </h1>
           <Row align='center' justify='between'>
