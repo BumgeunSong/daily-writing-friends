@@ -130,7 +130,7 @@ export function useDraftAutosave({
   });
 
   const mutateAsyncRef = useLatestValueRef(mutateAsync);
-  const squashedSaveRef = useRef<() => Promise<void>>();
+  const squashedSaveRef = useRef<(() => Promise<void>) | undefined>(undefined);
   if (!squashedSaveRef.current) {
     squashedSaveRef.current = createSquashableInvoker(async () => {
       await mutateAsyncRef.current();

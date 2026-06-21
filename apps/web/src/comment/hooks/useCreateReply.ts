@@ -17,8 +17,8 @@ export function useCreateReply(boardId: string, postId: string, commentId: strin
         commentId,
         content,
         currentUser.uid,
-        userData?.nickname ?? currentUser.displayName,
-        userData?.profilePhotoURL ?? currentUser.photoURL,
+        userData?.nickname ?? currentUser.displayName ?? '',
+        userData?.profilePhotoURL ?? currentUser.photoURL ?? '',
       );
     },
     {

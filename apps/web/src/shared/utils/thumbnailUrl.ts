@@ -92,7 +92,7 @@ export async function getResizedUrl(
   if (!thumbPath) return originalUrl;
 
   try {
-    const thumbUrl = await getDownloadURL(ref(storage, thumbPath));
+    const thumbUrl = await getDownloadURL(ref(storage!, thumbPath));
     cache.set(cacheKey, thumbUrl);
     return thumbUrl;
   } catch (error: unknown) {

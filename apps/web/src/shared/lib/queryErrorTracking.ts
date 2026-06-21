@@ -215,20 +215,21 @@ export function trackMutationError(
     options: { mutationKey },
     state: { variables },
   } = mutation;
-  const mutationDescription = mutationKey
-    ? getQueryKeyDescription(mutationKey)
+  const mutationKeyArr = mutationKey as unknown[] | undefined;
+  const mutationDescription = mutationKeyArr
+    ? getQueryKeyDescription(mutationKeyArr)
     : 'Unknown mutation';
 
   // Add error context and breadcrumb
   addErrorContext({
     type: 'mutation',
-    key: mutationKey,
+    key: mutationKeyArr,
     description: mutationDescription,
     variables,
     error,
   });
 
-  captureMutationError(error, mutationKey, variables);
+  captureMutationError(error, mutationKeyArr, variables);
 }
 
 /**

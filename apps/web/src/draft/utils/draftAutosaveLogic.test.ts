@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
+import type { PostgrestError } from '@supabase/supabase-js';
 import { SupabaseWriteError } from '@/shared/api/supabaseClient';
 import {
   hasContentChanged,
@@ -86,7 +87,7 @@ describe('draftAutosaveLogic', () => {
           details: '',
           hint: '',
           name: 'PostgrestError',
-        });
+        } as unknown as PostgrestError);
         expect(shouldRetryDraftSave(0, writeError)).toBe(false);
       });
     });

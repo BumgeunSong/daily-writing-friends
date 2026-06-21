@@ -46,7 +46,7 @@ const NotificationsPage = () => {
   // ACTION - Notification refresh handler
   const { refresh: handleRefreshNotifications } = useNotificationRefresh({
     scrollAreaId: NOTIFICATIONS_CONFIG.SCROLL_ID,
-    userId: currentUser?.uid
+    userId: currentUser?.uid ?? null
   });
 
   // ACTION - Infinite scroll handler

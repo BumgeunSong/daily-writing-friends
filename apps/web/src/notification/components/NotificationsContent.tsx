@@ -7,8 +7,8 @@ import { ScrollArea } from '@/shared/ui/scroll-area';
 interface NotificationsContentProps {
   scrollAreaId: string;
   notifications: Notification[];
-  scrollRef: RefObject<HTMLDivElement>;
-  observerRef: (node?: Element | null) => void;
+  scrollRef: RefObject<HTMLDivElement | null>;
+  observerRef: (node: Element | null) => void;
   isLoadingMore: boolean;
 }
 

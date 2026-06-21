@@ -32,7 +32,7 @@ export function SentryFeedbackDialog({ triggerButton }: SentryFeedbackDialogProp
   const [message, setMessage] = useState('');
 
   // Auto-fill name and email from user data
-  const userName = userData?.name || currentUser?.displayName || '';
+  const userName = userData?.nickname || userData?.realName || currentUser?.displayName || '';
   const userEmail = userData?.email || currentUser?.email || '';
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {

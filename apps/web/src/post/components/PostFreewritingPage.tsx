@@ -30,7 +30,7 @@ export default function PostFreewritingPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { boardId } = useParams<{ boardId: string }>()
-  const { nickname: userNickname } = useUserNickname(currentUser?.uid);
+  const { nickname: userNickname } = useUserNickname(currentUser?.uid ?? null);
 
   const freewritingConfig = (location.state as FreewritingConfig) || {}
   const targetTimeInSeconds = freewritingConfig.targetTime ?? DEFAULT_TARGET_TIME_IN_SECONDS
