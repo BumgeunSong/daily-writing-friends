@@ -54,6 +54,9 @@ export default function PostDetailPage() {
   if (error || !post) return <PostDetailError boardId={boardId} />;
 
   const isAuthor = currentUser?.uid === post.authorId;
+  // post에 이미 작성 시점의 닉네임·프로필 이미지가 내장되어 있으므로,
+  // useUser가 아직 로딩 중이더라도 기본 데이터가 있으면 스켈레톤을 보이지 않는다.
+  const hasEmbeddedAuthorData = !!(post.authorName || post.authorProfileImageURL);
   const authorData: PostAuthorData = {
     id: post.authorId,
     displayName: authorUserData ? getUserDisplayName(authorUserData) : (post.authorName ?? '??'),
@@ -69,7 +72,7 @@ export default function PostDetailPage() {
           <PostDetailHeader
             post={post}
             authorData={authorData}
-            isAuthorLoading={isAuthorLoading}
+            isAuthorLoading={isAuthorLoading && !hasEmbeddedAuthorData}
             isDonator={false}
             badges={badges}
             streak={streakData?.streak}
