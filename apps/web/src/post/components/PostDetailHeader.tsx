@@ -40,11 +40,11 @@ export function PostDetailHeader({
     return (
       <header className='space-y-4'>
         <div className="flex items-center gap-2">
-          <h1 className='mb-4 text-3xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100 sm:text-4xl'>
+          <h1 className='mb-4 text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl'>
             {post.title}
           </h1>
         </div>
-        <div className='flex items-center justify-between text-sm text-gray-500 dark:text-gray-400'>
+        <div className='flex items-center justify-between text-sm text-muted-foreground'>
           <p>
             작성자: {authorNickname || '??'} | 작성일: {post.createdAt ? formatDateToKorean(post.createdAt.toDate()) : '?'}
           </p>

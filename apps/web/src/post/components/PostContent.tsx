@@ -63,11 +63,11 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
 
     if (isPrivateAndNotAuthor) {
         return (
-            <div className="my-6 rounded-lg border border-gray-200 bg-gray-100 p-8 text-center">
-                <div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-gray-200">
-                    <Lock className="size-8 text-gray-600" />
+            <div className="my-6 rounded-lg border border-border bg-muted p-8 text-center">
+                <div className="mb-4 inline-flex size-16 items-center justify-center rounded-full bg-muted/70">
+                    <Lock className="size-8 text-muted-foreground" />
                 </div>
-                <p className="mb-4 text-gray-600">
+                <p className="mb-4 text-muted-foreground">
                     이 글은 작성자만 볼 수 있어요.
                 </p>
             </div>
@@ -85,7 +85,7 @@ export function PostContent({ post, isAuthor }: PostContentProps) {
                 <div className="relative">
                     {isPrivateAndAuthor && (
                         <div className="mb-4 flex items-center">
-                            <span className="inline-flex items-center rounded-md bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600 ring-1 ring-inset ring-gray-300">
+                            <span className="inline-flex items-center rounded-md bg-muted px-3 py-1 text-sm font-medium text-muted-foreground ring-1 ring-inset ring-border">
                                 <Lock className="mr-1 size-3" /> 비공개 글
                             </span>
                         </div>
