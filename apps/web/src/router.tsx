@@ -391,4 +391,9 @@ export const router = sentryCreateBrowserRouter([
       catchAllRedirectRoute,
     ],
   },
-]);
+], {
+  future: {
+    v7_relativeSplatPath: true,
+    v7_partialHydration: true,
+  },
+});
