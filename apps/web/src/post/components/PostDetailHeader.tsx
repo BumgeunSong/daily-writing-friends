@@ -25,6 +25,8 @@ interface PostDetailHeaderProps {
   postId?: string;
   onDelete: (boardId: string, postId: string, navigate: (path: string) => void) => void;
   navigate: (path: string) => void;
+  /** Avatar click handler; defaults to a no-op (real app does not navigate). */
+  onClickProfile?: () => void;
 }
 
 export function PostDetailHeader({
@@ -40,6 +42,7 @@ export function PostDetailHeader({
   postId,
   onDelete,
   navigate,
+  onClickProfile = noop,
 }: PostDetailHeaderProps) {
   return (
     <Stack asChild gap='lg'>
@@ -48,7 +51,7 @@ export function PostDetailHeader({
           authorData={authorData}
           isLoading={isAuthorLoading}
           isDonator={isDonator}
-          onClickProfile={noop}
+          onClickProfile={onClickProfile}
           badges={badges}
           streak={streak}
           isStreakLoading={isStreakLoading}
