@@ -75,6 +75,22 @@ describe('PreviewPostDetailPage — navigation isolation + invalid-id redirect',
     expect(screen.getByRole('heading', { name: post.title })).toBeInTheDocument();
   });
 
+  it('renders the post comments and their nested replies', () => {
+    const post = PREVIEW_POSTS[0];
+    renderDetailAt(`/preview/post/${post.id}`);
+
+    // Every commenter's display name renders (each row's CommentHeader).
+    for (const comment of post.comments) {
+      expect(screen.getByText(comment.author.displayName)).toBeInTheDocument();
+    }
+
+    // Nested replies render their author too — proves PreviewReplyList wires in.
+    const replyAuthors = post.comments.flatMap((c) => c.replies.map((r) => r.author.displayName));
+    for (const name of replyAuthors) {
+      expect(screen.getAllByText(name).length).toBeGreaterThan(0);
+    }
+  });
+
   it('redirects an unknown :previewPostId to /preview', async () => {
     renderDetailAt('/preview/post/does-not-exist');
 
