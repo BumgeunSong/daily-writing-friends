@@ -6,9 +6,14 @@ import { calculateCommentTemperature } from '@/stats/utils/commentTemperature';
 import type { Commenting } from '@/user/model/Commenting';
 import type { Replying } from '@/user/model/Replying';
 
-export function usePostProfileBadges(userId: string) {
+interface UsePostProfileBadgesOptions {
+  /** Override the auto-derived enabled flag; callers can disable the fetch entirely. */
+  enabled?: boolean;
+}
+
+export function usePostProfileBadges(userId: string, options?: UsePostProfileBadgesOptions) {
   return useQuery(['postProfileBadges', userId], () => fetchUserBadges(userId), {
-    enabled: !!userId,
+    enabled: (options?.enabled ?? true) && !!userId,
     staleTime: 5 * 60 * 1000, // 5분 동안 데이터를 'fresh'하게 유지
     cacheTime: 10 * 60 * 1000, // 10분 동안 캐시 유지
   });

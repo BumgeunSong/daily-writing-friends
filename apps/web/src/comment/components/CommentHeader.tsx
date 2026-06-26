@@ -3,6 +3,7 @@ import type { FirebaseTimestamp } from '@/shared/model/Timestamp';
 import { getRelativeTime } from '@/shared/utils/dateUtils';
 import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';
 import { WritingBadgeComponent } from '@/stats/components/WritingBadgeComponent';
+import type { WritingBadge } from '@/stats/model/WritingStats';
 import type { CommentAuthor } from '@/comment/model/Comment';
 
 interface CommentHeaderProps {
@@ -13,6 +14,11 @@ interface CommentHeaderProps {
   /** Snapshot fields used as fallback when author is unavailable. */
   fallbackName: string;
   fallbackProfileImage: string;
+  /**
+   * Pre-resolved badges (e.g. static preview data). When provided, the internal
+   * usePostProfileBadges fetch is skipped entirely.
+   */
+  badges?: WritingBadge[];
 }
 
 function resolveDisplayName(author: CommentAuthor | undefined, fallback: string): string {
@@ -32,8 +38,14 @@ export function CommentHeader({
   author,
   fallbackName,
   fallbackProfileImage,
+  badges: providedBadges,
 }: CommentHeaderProps) {
-  const { data: badges } = usePostProfileBadges(userId);
+  // Always call the hook to satisfy the rules of hooks, but disable the fetch
+  // when badges are supplied directly (preview / static data).
+  const { data: fetchedBadges } = usePostProfileBadges(userId, {
+    enabled: providedBadges === undefined,
+  });
+  const badges = providedBadges ?? fetchedBadges;
   const displayName = resolveDisplayName(author, fallbackName);
   const profileImage = resolveProfileImage(author, fallbackProfileImage);
 
