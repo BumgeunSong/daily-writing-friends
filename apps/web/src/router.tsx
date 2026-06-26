@@ -129,6 +129,15 @@ const publicRoutes = {
         return { Component: PreviewBoardPage };
       },
     },
+    {
+      path: 'preview/post/:previewPostId',
+      lazy: async () => {
+        const { default: PreviewPostDetailPage } = await import(
+          '@/preview/components/PreviewPostDetailPage'
+        );
+        return { Component: PreviewPostDetailPage };
+      },
+    },
   ],
 };
 
