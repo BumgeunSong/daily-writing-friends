@@ -80,8 +80,10 @@ describe('PreviewPostDetailPage — navigation isolation + invalid-id redirect',
     renderDetailAt(`/preview/post/${post.id}`);
 
     // Every commenter's display name renders (each row's CommentHeader).
+    // Use getAllByText: a member may comment more than once, so a name can
+    // legitimately appear multiple times.
     for (const comment of post.comments) {
-      expect(screen.getByText(comment.author.displayName)).toBeInTheDocument();
+      expect(screen.getAllByText(comment.author.displayName).length).toBeGreaterThan(0);
     }
 
     // Nested replies render their author too — proves PreviewReplyList wires in.
