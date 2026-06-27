@@ -6,7 +6,6 @@ import { PostMetaHelmet } from '@/post/components/PostMetaHelmet';
 import type { PostAuthorData } from '@/post/components/PostUserProfile';
 import { PreviewBackButton } from '@/preview/components/PreviewBackButton';
 import { PreviewCommentList } from '@/preview/components/PreviewCommentList';
-import { PreviewJoinCTA } from '@/preview/components/PreviewJoinCTA';
 import { PREVIEW_POSTS } from '@/preview/data/previewPosts';
 import { toPostModel } from '@/preview/utils/toPostModel';
 
@@ -19,9 +18,11 @@ const noop = () => {};
  * (`PostDetailLayout`/`PostDetailHeader`/`PostContent`) — never the Supabase-backed
  * orchestrator.
  *
- * Comments and replies render read-only via {@link PreviewCommentList} (design
- * doc §9 step 4). Interactive affordances stay off: no like button, no adjacent
- * prev/next, no comment input. The bottom CTA closes the funnel back to `/join`.
+ * Comments and replies render read-only via {@link PreviewCommentList} in the
+ * dedicated {@link PostDetailLayout.Comments} slot (design doc §9 step 4), which
+ * sets the article/comments boundary. Interactive affordances stay off: no like
+ * button, no adjacent prev/next, no comment input. No bottom CTA here — the
+ * funnel CTA lives only on the board so the detail read stays uninterrupted.
  *
  * Navigation isolation (§4):
  * - the author avatar routes to `/join` via `onClickProfile`,
@@ -69,9 +70,10 @@ export default function PreviewPostDetailPage() {
           navigate={navigate}
         />
         <PostContent post={post} isAuthor={false} />
-        <PreviewCommentList comments={previewPost.comments} />
       </PostDetailLayout.Article>
-      <PreviewJoinCTA />
+      <PostDetailLayout.Comments>
+        <PreviewCommentList comments={previewPost.comments} />
+      </PostDetailLayout.Comments>
     </PostDetailLayout>
   );
 }

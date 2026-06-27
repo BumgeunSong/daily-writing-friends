@@ -80,7 +80,8 @@ export function PreviewCommentList({ comments }: { comments: PreviewComment[] })
   if (comments.length === 0) return null;
 
   return (
-    <section className='space-y-6'>
+    <section className='border-t border-border pt-8'>
+      <h2 className='mb-6 text-base font-semibold text-foreground'>댓글 {comments.length}</h2>
       <div className='space-y-6'>
         {comments.map((comment) => (
           <PreviewCommentRow key={comment.id} comment={comment} />
