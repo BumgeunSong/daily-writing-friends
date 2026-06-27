@@ -1,7 +1,19 @@
 import { CommentHeader } from '@/comment/components/CommentHeader';
 import { renderCommentBodyHtml } from '@/post/web/contentUtils';
-import { createTimestamp } from '@/shared/model/Timestamp';
 import type { PreviewComment, PreviewReply } from '@/preview/data/previewPosts';
+
+/**
+ * Formats a snapshot ISO date as `YYYY. MM. dd`. The preview is a frozen
+ * capture, so comments show an absolute date rather than a relative "N일 전"
+ * that would drift against the viewer's clock.
+ */
+function formatSnapshotDate(iso: string): string {
+  const d = new Date(iso);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}. ${month}. ${day}`;
+}
 
 /**
  * Static, read-only twin of the real comment section (design doc §4, §9 step 4).
@@ -14,8 +26,9 @@ import type { PreviewComment, PreviewReply } from '@/preview/data/previewPosts';
  * Two preview-specific adaptations (design doc §5):
  * - `badges={[]}` short-circuits `CommentHeader`'s `usePostProfileBadges` fetch,
  *   so the synthetic `pv-author-*` IDs never hit Supabase.
- * - `createdAt` is an ISO string here; `CommentHeader` calls `createdAt?.toDate()`,
- *   so each timestamp is wrapped via `createTimestamp(new Date(...))` first.
+ * - `timeLabel` passes an absolute `YYYY. MM. dd` date instead of relying on
+ *   `CommentHeader`'s default relative time — the snapshot must not drift to
+ *   "N일 전" against the viewer's clock.
  */
 
 function PreviewBody({ body }: { body: string }) {
@@ -36,7 +49,7 @@ function PreviewReplyRow({ reply }: { reply: PreviewReply }) {
     <div className='flex flex-col space-y-3 pb-4'>
       <CommentHeader
         userId={reply.author.id}
-        createdAt={createTimestamp(new Date(reply.createdAt))}
+        timeLabel={formatSnapshotDate(reply.createdAt)}
         fallbackName={reply.author.displayName}
         fallbackProfileImage={reply.author.profileImageURL}
         badges={[]}
@@ -63,7 +76,7 @@ function PreviewCommentRow({ comment }: { comment: PreviewComment }) {
     <div className='flex flex-col space-y-3 pb-4'>
       <CommentHeader
         userId={comment.author.id}
-        createdAt={createTimestamp(new Date(comment.createdAt))}
+        timeLabel={formatSnapshotDate(comment.createdAt)}
         fallbackName={comment.author.displayName}
         fallbackProfileImage={comment.author.profileImageURL}
         badges={[]}

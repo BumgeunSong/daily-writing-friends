@@ -89,6 +89,10 @@ describe('PreviewPostDetailPage — navigation isolation + invalid-id redirect',
     for (const name of replyAuthors) {
       expect(screen.getAllByText(name).length).toBeGreaterThan(0);
     }
+
+    // Comment timestamps render as an absolute `YYYY. MM. dd` snapshot date,
+    // never a relative "N일 전" that would drift against the viewer's clock.
+    expect(screen.getAllByText(/^\d{4}\. \d{2}\. \d{2}$/).length).toBeGreaterThan(0);
   });
 
   it('redirects an unknown :previewPostId to /preview', async () => {
