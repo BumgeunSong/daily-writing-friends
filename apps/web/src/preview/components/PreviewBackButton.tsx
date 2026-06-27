@@ -21,9 +21,9 @@ export const PreviewBackButton: React.FC<PreviewBackButtonProps> = ({ className 
       variant="ghost"
       className={className}
       onClick={() => navigate('/preview')}
-      aria-label="프리뷰로 돌아가기"
+      aria-label="돌아가기"
     >
-      ← 프리뷰로 돌아가기
+      ← 돌아가기
     </Button>
   );
 };
