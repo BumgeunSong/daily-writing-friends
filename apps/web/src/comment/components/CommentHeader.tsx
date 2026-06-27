@@ -19,6 +19,12 @@ interface CommentHeaderProps {
    * usePostProfileBadges fetch is skipped entirely.
    */
   badges?: WritingBadge[];
+  /**
+   * Overrides the default relative-time label. Static snapshots (e.g. the
+   * preview) pass an absolute date here so the timestamp does not drift to
+   * "N일 전" against the viewer's clock.
+   */
+  timeLabel?: string;
 }
 
 function resolveDisplayName(author: CommentAuthor | undefined, fallback: string): string {
@@ -39,6 +45,7 @@ export function CommentHeader({
   fallbackName,
   fallbackProfileImage,
   badges: providedBadges,
+  timeLabel,
 }: CommentHeaderProps) {
   // Always call the hook to satisfy the rules of hooks, but disable the fetch
   // when badges are supplied directly (preview / static data).
@@ -63,7 +70,7 @@ export function CommentHeader({
           <WritingBadgeComponent key={badge.name} badge={badge} />
         ))}
         <span className='text-sm leading-none text-muted-foreground/70'>
-          {getRelativeTime(createdAt?.toDate())}
+          {timeLabel ?? getRelativeTime(createdAt?.toDate())}
         </span>
       </div>
     </div>
