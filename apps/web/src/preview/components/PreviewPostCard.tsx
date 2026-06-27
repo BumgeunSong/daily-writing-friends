@@ -25,9 +25,10 @@ function handleKeyDown(e: React.KeyboardEvent, onActivate: () => void) {
  * from a hand-curated {@link PreviewPost} instead of the Supabase-backed
  * `usePostCard` orchestrator.
  *
- * Navigation isolation (design doc §4): the card body routes to the in-preview
- * detail page, and the author avatar routes to `/join` — never to a real
- * `/user/:id` profile.
+ * Navigation isolation (design doc §4): the card routes only to the in-preview
+ * detail page — never to a real `/user/:id` profile. The author avatar is not a
+ * separate target; a tap on it falls through to the card and opens the post,
+ * which is what a visitor expects.
  *
  * Reused-prop defaults follow §5: `isDonator=false`, `isPrivate=false`,
  * `streak=undefined`, `isStreakLoading=false`, `badges=[]`.
@@ -43,11 +44,6 @@ export const PreviewPostCard: React.FC<PreviewPostCardProps> = ({ post }) => {
 
   const handleCardClick = () => {
     navigate(`/preview/post/${post.id}`);
-  };
-
-  const handleProfileClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigate('/join');
   };
 
   return (
@@ -70,7 +66,6 @@ export const PreviewPostCard: React.FC<PreviewPostCardProps> = ({ post }) => {
           badges={[]}
           streak={undefined}
           isStreakLoading={false}
-          onClickProfile={handleProfileClick}
           isMobile={true}
         />
         <PostCardContent
@@ -94,7 +89,6 @@ export const PreviewPostCard: React.FC<PreviewPostCardProps> = ({ post }) => {
               badges={[]}
               streak={undefined}
               isStreakLoading={false}
-              onClickProfile={handleProfileClick}
               isMobile={false}
             />
             <PostCardContent
