@@ -247,6 +247,9 @@ async function main() {
     if (p) out.push(p);
   }
 
+  // Emit in chronological order (oldest first), independent of CLI arg order.
+  out.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
   const target = resolve(repoRoot, 'scripts/.preview-export.json');
   writeFileSync(target, JSON.stringify(out, null, 2), 'utf8');
   console.log(`\nWrote ${out.length}/${args.length} post(s) to ${target}`);
