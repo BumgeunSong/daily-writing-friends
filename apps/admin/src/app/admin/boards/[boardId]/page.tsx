@@ -77,6 +77,12 @@ const fetchBoardUsersHydrated = async (boardId: string): Promise<BoardUserRow[]>
   }))
 }
 
+const NullableCell = ({ value }: { value: string | null }) => (
+  <TableCell>
+    {value ? value : <span className="text-gray-400">null</span>}
+  </TableCell>
+)
+
 const getPermissionBadge = (permission: 'read' | 'write' | 'admin') => {
   switch (permission) {
     case 'admin':
@@ -493,20 +499,8 @@ export default function BoardDetailPage() {
                     <TableCell>
                       {user.email || '이메일 없음'}
                     </TableCell>
-                    <TableCell>
-                      {user.phoneNumber ? (
-                        user.phoneNumber
-                      ) : (
-                        <span className="text-gray-400">null</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {user.kakaoId ? (
-                        user.kakaoId
-                      ) : (
-                        <span className="text-gray-400">null</span>
-                      )}
-                    </TableCell>
+                    <NullableCell value={user.phoneNumber} />
+                    <NullableCell value={user.kakaoId} />
                     <TableCell className="text-center">
                       {getPermissionBadge(user.permission as 'read' | 'write' | 'admin')}
                     </TableCell>
