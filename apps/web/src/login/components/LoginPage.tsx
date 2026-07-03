@@ -12,7 +12,7 @@ import { SESSION_KEYS, sessionStore } from '@/shared/lib/storage';
 import { isSafeReturnTo } from '@/shared/utils/routingDecisions';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
-import FormField from './JoinFormField';
+import FormField from '@/shared/components/FormField';
 
 const loginSchema = z.object({
   email: z.string().email('올바른 이메일 형식이 아닙니다.'),

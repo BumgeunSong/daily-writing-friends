@@ -5,10 +5,10 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from '@/shared/navigation';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import FormField from '@/login/components/JoinFormField';
-import { PasswordRequirements } from '@/login/components/PasswordRequirements';
+import FormField from '@/shared/components/FormField';
+import { PasswordRequirements } from '@/shared/components/PasswordRequirements';
 import { ROUTES } from '@/shared/constants/routes';
-import { validatePassword } from '@/login/utils/passwordValidation';
+import { validatePassword } from '@/shared/utils/passwordValidation';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { mapSetPasswordErrorToKorean } from '@/shared/auth/authErrors';
 import {

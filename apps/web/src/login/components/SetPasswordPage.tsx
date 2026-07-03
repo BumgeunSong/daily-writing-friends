@@ -6,15 +6,15 @@ import { useNavigate } from '@/shared/navigation';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { ROUTES } from '@/shared/constants/routes';
-import { validatePassword } from '@/login/utils/passwordValidation';
+import { validatePassword } from '@/shared/utils/passwordValidation';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { mapSetPasswordErrorToKorean } from '@/shared/auth/authErrors';
 import { setPasswordForCurrentUser } from '@/shared/auth/supabaseAuth';
 import { SESSION_KEYS, sessionStore } from '@/shared/lib/storage';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
-import FormField from './JoinFormField';
-import { PasswordRequirements } from './PasswordRequirements';
+import FormField from '@/shared/components/FormField';
+import { PasswordRequirements } from '@/shared/components/PasswordRequirements';
 
 const setPasswordSchema = z
   .object({

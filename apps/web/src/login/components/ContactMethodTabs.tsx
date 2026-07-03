@@ -1,6 +1,6 @@
 import type { FieldErrors, UseFormRegister } from 'react-hook-form';
 import type { OnboardingFormSchema } from '@/login/utils/onboardingSchema';
-import FormField from './JoinFormField';
+import FormField from '@/shared/components/FormField';
 
 interface ContactMethodTabsProps {
   tab: 'phone' | 'kakao';
