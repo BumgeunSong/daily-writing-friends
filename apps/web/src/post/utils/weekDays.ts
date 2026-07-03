@@ -7,9 +7,11 @@
  *
  * Both dates are projected to KST (Asia/Seoul) calendar dates before counting.
  */
+import { projectToTimezone } from '@/shared/utils/dateUtils';
+
 export function computeWeekDaysFromFirstDay(boardFirstDay: string, postCreatedAt: string): number {
-  const kstStart = new Date(new Date(boardFirstDay).toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
-  const kstEnd = new Date(new Date(postCreatedAt).toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+  const kstStart = projectToTimezone(new Date(boardFirstDay), 'Asia/Seoul');
+  const kstEnd = projectToTimezone(new Date(postCreatedAt), 'Asia/Seoul');
   kstStart.setHours(0, 0, 0, 0);
   kstEnd.setHours(0, 0, 0, 0);
 

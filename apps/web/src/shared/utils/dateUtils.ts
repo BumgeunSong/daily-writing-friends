@@ -1,3 +1,8 @@
+/** Project a date into a target timezone's wall-clock time (for date arithmetic, not display). */
+export function projectToTimezone(date: Date, timeZone: string): Date {
+  return new Date(date.toLocaleString('en-US', { timeZone }));
+}
+
 const KOREAN_HOLIDAYS: Date[] = [
   new Date('2024-12-31T00:00:00Z'),
   new Date('2025-01-01T00:00:00Z'),
@@ -45,13 +50,13 @@ export function isWorkingDay(
 }
 
 function isWeekend(date: Date, timeZone: string): boolean {
-  const dateInTimeZone = new Date(date.toLocaleString('en-US', { timeZone }));
+  const dateInTimeZone = projectToTimezone(date, timeZone);
   const day = dateInTimeZone.getDay();
   return day === 0 || day === 6;
 }
 
 function isKoreanHoliday(date: Date, timeZone: string): boolean {
-  const dateInTimeZone = new Date(date.toLocaleString('en-US', { timeZone }));
+  const dateInTimeZone = projectToTimezone(date, timeZone);
   return KOREAN_HOLIDAYS.some(
     (holiday) =>
       dateInTimeZone.getFullYear() === holiday.getFullYear() &&
