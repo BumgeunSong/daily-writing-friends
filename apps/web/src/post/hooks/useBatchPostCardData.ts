@@ -20,6 +20,7 @@ import {
   STREAK_WINDOW_WORKING_DAYS,
   TEMPERATURE_WINDOW_WORKING_DAYS,
 } from '@/stats/constants';
+import { badgeQueryKey, streakQueryKey } from '@/stats/utils/statsQueryKeys';
 
 export type { PostCardPrefetchedData } from '@/post/utils/batchPostCardDataUtils';
 
@@ -53,8 +54,8 @@ export function useBatchPostCardData(posts: Post[]) {
   useEffect(() => {
     if (!query.data) return;
     query.data.forEach((prefetchedData, authorId) => {
-      queryClient.setQueryData(['postProfileBadges', authorId], prefetchedData.badges);
-      queryClient.setQueryData(['postingStreak', authorId], { streak: prefetchedData.streak });
+      queryClient.setQueryData(badgeQueryKey(authorId), prefetchedData.badges);
+      queryClient.setQueryData(streakQueryKey(authorId), { streak: prefetchedData.streak });
     });
   }, [query.data, queryClient]);
 
