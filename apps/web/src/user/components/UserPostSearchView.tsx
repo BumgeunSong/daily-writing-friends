@@ -5,6 +5,7 @@ import { PostItem, PostItemSkeleton } from '@/user/components/UserPostItem';
 import { UserPostSearchInput } from '@/user/components/UserPostSearchInput';
 import { deriveSearchState } from '@/user/components/deriveSearchState';
 import { SEARCH_RESULTS_CAP } from '@/user/search/constants';
+import { Button } from '@/shared/ui/button';
 
 const LOADING_SKELETONS = 5;
 
@@ -83,7 +84,10 @@ export function UserPostSearchView({
 
         {state === 'error' && (
           <div className="py-10 text-center">
-            <p className="text-muted-foreground">검색 중 문제가 발생했습니다. 다시 시도해주세요.</p>
+            <p className="text-muted-foreground">검색 중 문제가 발생했습니다.</p>
+            <Button variant="outline" className="mt-3" onClick={() => result.refetch()}>
+              다시 시도
+            </Button>
           </div>
         )}
 
