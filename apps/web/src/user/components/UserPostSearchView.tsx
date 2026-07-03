@@ -4,7 +4,7 @@ import { useUserPostSearch } from '@/user/hooks/useUserPostSearch';
 import { PostItem, PostItemSkeleton } from '@/user/components/UserPostItem';
 import { UserPostSearchInput } from '@/user/components/UserPostSearchInput';
 import { deriveSearchState } from '@/user/components/deriveSearchState';
-import { SEARCH_RESULTS_CAP } from '@/user/search/constants';
+import { SEARCH_RESULTS_CAP } from '@/user/constants';
 
 const LOADING_SKELETONS = 5;
 

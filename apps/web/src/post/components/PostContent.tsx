@@ -4,7 +4,7 @@ import { useRef, useCallback } from 'react';
 import { useCopyHandler } from '@/post/hooks/useCopyHandler';
 import type { Post} from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
-import { KOREAN_OPTIMAL_LINE_HEIGHT } from '@/post/constants/typography';
+import { KOREAN_OPTIMAL_LINE_HEIGHT } from '@/post/constants';
 import { renderPostBodyHtml } from '@/shared/content/contentUtils';
 import { Alert, AlertDescription, AlertTitle } from '@/shared/ui/alert';
 import { CopyErrorBoundary } from './CopyErrorBoundary';
