@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { useCountupTimer } from '../useCountupTimer';
+import { useCountupTimer } from './useCountupTimer';
 import { WritingStatus } from '@/stats/model/WritingStatus';
 
 describe('useCountupTimer', () => {

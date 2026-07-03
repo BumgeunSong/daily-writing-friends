@@ -5,7 +5,7 @@ import {
   createContributions,
   getTotalContentLength,
   sortWritingStats,
-} from '../writingStatsUtils';
+} from './writingStatsUtils';
 import type { Posting } from '@/post/model/Posting';
 import type { WritingStats, Contribution } from '@/stats/model/WritingStats';
 

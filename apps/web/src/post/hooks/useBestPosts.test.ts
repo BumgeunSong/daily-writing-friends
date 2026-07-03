@@ -6,7 +6,7 @@ import {
   shouldFetchMoreBestPosts,
   BEST_POSTS_PAGE_SIZE,
   BEST_POSTS_MAX_PAGES,
-} from '../useBestPosts';
+} from './useBestPosts';
 
 function makePost(engagementScore: number, overrides: Partial<Post> = {}): Post {
   return {

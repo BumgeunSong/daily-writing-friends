@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatDate } from '../dateFormat';
+import { formatDate } from './dateFormat';
 
 describe('formatDate', () => {
   it('should return dateFolder in YYYYMMDD format', () => {

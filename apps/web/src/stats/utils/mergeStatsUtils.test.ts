@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergeCurrentUserFirst } from '../mergeStatsUtils';
+import { mergeCurrentUserFirst } from './mergeStatsUtils';
 import type { UserCommentingStats } from '@/stats/hooks/useCommentingStats';
 import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 

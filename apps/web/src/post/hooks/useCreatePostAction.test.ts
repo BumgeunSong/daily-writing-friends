@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   validateCreatePostFormData,
   mapCreatePostErrorMessage,
-} from '../useCreatePostAction';
+} from './useCreatePostAction';
 
 function makeFormData(entries: Record<string, string>): FormData {
   const fd = new FormData();

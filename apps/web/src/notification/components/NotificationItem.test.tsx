@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import type { Notification } from '@/notification/model/Notification';
 import { NotificationType } from '@/notification/model/Notification';
 import type { CommentNotification } from '@/notification/model/Notification';
-import { NotificationItem } from '../NotificationItem';
+import { NotificationItem } from './NotificationItem';
 
 const createMockNotification = (overrides: Partial<CommentNotification> = {}): Notification => {
   const mockDate = new Date('2026-01-04T10:00:00Z');

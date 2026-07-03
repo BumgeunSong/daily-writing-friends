@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapRowToPost, isWithinDays } from '../post';
+import { mapRowToPost, isWithinDays } from './post';
 import type { Post } from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
 

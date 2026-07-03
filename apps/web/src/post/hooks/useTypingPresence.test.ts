@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { useTypingPresence } from '../useTypingPresence';
+import { useTypingPresence } from './useTypingPresence';
 
 describe('useTypingPresence', () => {
   beforeEach(() => {
