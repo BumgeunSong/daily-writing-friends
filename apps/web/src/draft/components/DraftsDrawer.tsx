@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useBoardTitle } from '@/board/hooks/useBoardTitle';
-import { useDrawer } from '@/comment/hooks/useDrawer';
+import { useDrawer } from '@/shared/hooks/useDrawer';
 import { useDeleteDraft } from '@/draft/hooks/useDeleteDraft';
 import { useDraftActions } from '@/draft/hooks/useDraftActions';
 import { useDrafts } from '@/draft/hooks/useDrafts';
