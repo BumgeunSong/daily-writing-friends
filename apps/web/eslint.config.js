@@ -137,7 +137,6 @@ export default tseslint.config(
         baseline: [
           'user/hooks/useUserPosts.ts -> post',
           'user/api/searchUserPosts.ts -> post',
-          'draft/components/DraftsDrawer.tsx -> comment',
           'draft/components/DraftsDrawer.tsx -> board',
           'comment/components/CommentRow.tsx -> post',
           'comment/components/ReplyRow.tsx -> post',
