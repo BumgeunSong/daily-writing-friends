@@ -8,7 +8,7 @@ import {
   processCommentingContributions,
   filterWeekdayContributions,
   WEEKS_TO_DISPLAY
-} from '../contributionGridUtils'
+} from './contributionGridUtils'
 import type { Contribution } from '@/stats/model/WritingStats'
 import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils'
 

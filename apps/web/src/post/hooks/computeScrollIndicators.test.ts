@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeScrollIndicators } from '../useScrollIndicators';
+import { computeScrollIndicators } from './useScrollIndicators';
 
 describe('computeScrollIndicators', () => {
   describe('container fits content (no overflow)', () => {

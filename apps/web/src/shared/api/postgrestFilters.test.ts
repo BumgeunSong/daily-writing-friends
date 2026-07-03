@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { escapeForOrFilter } from '../postgrestFilters';
+import { escapeForOrFilter } from './postgrestFilters';
 
 describe('escapeForOrFilter', () => {
   it('returns empty for empty input', () => {

@@ -3,7 +3,7 @@ import {
   createUserCommentingStats,
   getTotalCommentCount,
   sortCommentingStats,
-} from '../commentingStatsUtils';
+} from './commentingStatsUtils';
 import type { UserCommentingStats } from '@/stats/hooks/useCommentingStats';
 import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 import type { User } from '@/user/model/User';

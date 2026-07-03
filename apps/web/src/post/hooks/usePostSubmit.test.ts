@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isPostSubmitInputValid } from '../usePostSubmit';
+import { isPostSubmitInputValid } from './usePostSubmit';
 
 const VALID = {
   title: 'My title',

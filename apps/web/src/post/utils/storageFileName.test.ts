@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeStorageFileName, MAX_FILENAME_LENGTH } from '../storageFileName';
+import { sanitizeStorageFileName, MAX_FILENAME_LENGTH } from './storageFileName';
 
 describe('sanitizeStorageFileName', () => {
   it('passes a normal filename through unchanged', () => {

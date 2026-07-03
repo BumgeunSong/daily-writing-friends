@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { useTiptapEditor } from '../useTiptapEditor';
+import { useTiptapEditor } from './useTiptapEditor';
 
 describe('useTiptapEditor — typing signal', () => {
   it('calls onTyping when beforeinput fires on the editor DOM (covers normal input)', () => {

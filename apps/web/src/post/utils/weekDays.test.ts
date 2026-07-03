@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeWeekDaysFromFirstDay } from '../weekDays';
+import { computeWeekDaysFromFirstDay } from './weekDays';
 
 describe('computeWeekDaysFromFirstDay', () => {
   it('returns 0 for same-day post', () => {

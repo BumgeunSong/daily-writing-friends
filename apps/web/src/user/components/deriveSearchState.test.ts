@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Post } from '@/post/model/Post';
-import { deriveSearchState } from '../deriveSearchState';
+import { deriveSearchState } from './deriveSearchState';
 
 const noData = { isFetching: false, isError: false } as const;
 const stubPost = { id: 'p1' } as unknown as Post;

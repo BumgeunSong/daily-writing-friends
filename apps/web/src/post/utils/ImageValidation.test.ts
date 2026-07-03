@@ -9,7 +9,7 @@ import {
   MAX_PROCESSED_FILE_SIZE,
   SUPPORTED_ACCEPT_ATTRIBUTE,
   SUPPORTED_FORMAT_LABEL,
-} from '../ImageValidation';
+} from './ImageValidation';
 
 function createFile(name: string, size: number, type: string): File {
   const buffer = new ArrayBuffer(size);

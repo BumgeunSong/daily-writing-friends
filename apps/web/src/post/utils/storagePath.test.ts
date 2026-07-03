@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildImageStoragePath } from '../storagePath';
+import { buildImageStoragePath } from './storagePath';
 
 const FIXED_DATE = new Date('2026-05-28T09:07:03Z');
 

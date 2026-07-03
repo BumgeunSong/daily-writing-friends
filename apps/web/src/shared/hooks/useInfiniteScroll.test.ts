@@ -1,6 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { useInfiniteScroll } from '../useInfiniteScroll';
+import { useInfiniteScroll } from './useInfiniteScroll';
 
 // Mock IntersectionObserver
 type IntersectionCallback = (entries: IntersectionObserverEntry[]) => void;

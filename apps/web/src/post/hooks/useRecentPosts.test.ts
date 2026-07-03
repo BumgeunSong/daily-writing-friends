@@ -3,7 +3,7 @@ import type { Post } from '@/post/model/Post';
 import {
   buildRecentPostsQueryKey,
   getRecentPostsNextPageParam,
-} from '../useRecentPosts';
+} from './useRecentPosts';
 
 function makePost(createdAtIso: string, overrides: Partial<Post> = {}): Post {
   return {
