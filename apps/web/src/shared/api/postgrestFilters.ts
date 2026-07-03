@@ -16,11 +16,17 @@ export function formatInFilter(values: string[]): string {
  *  1. SQL `ILIKE` wildcards (`\` `%` `_`) are escaped with `\` so the literal
  *     character is matched (Postgres uses `\` as the default escape character).
  *  2. PostgREST `.or()` value-segment reserved characters (`,` `(` `)` `*`
- *     `"` `:` `.` and any whitespace) are UTF-8 percent-encoded so they cannot
- *     break out of the value position. `encodeURIComponent` is used so
- *     non-ASCII whitespace (NBSP U+00A0, U+2028, U+3000, etc.) is encoded as
- *     valid UTF-8 byte sequences (e.g. NBSP → `%C2%A0`) rather than ambiguous
- *     code-point hex (`%A0` / `%2028`).
+ *     `"` `:` `.` and any character matched by JS `\s`, which covers ASCII
+ *     whitespace and Unicode whitespace such as NBSP) are UTF-8
+ *     percent-encoded so they cannot break out of the value position.
+ *     `encodeURIComponent` is used so non-ASCII whitespace (NBSP U+00A0,
+ *     U+2028, U+3000, etc.) is encoded as valid UTF-8 byte sequences
+ *     (e.g. NBSP → `%C2%A0`) rather than ambiguous code-point hex
+ *     (`%A0` / `%2028`).
+ *
+ * Backslashes produced by layer 1 are left as-is because PostgREST treats
+ * them as ordinary characters inside an `ilike` value-segment; only the
+ * listed delimiters can terminate the segment.
  *
  * The caller wraps the returned token with `%…%` before passing to `.ilike()`.
  */
