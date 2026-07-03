@@ -3,6 +3,7 @@ import { fetchCommentingData } from '@/stats/api/stats';
 import { TEMPERATURE_WINDOW_WORKING_DAYS } from '@/stats/constants';
 import type { WritingBadge } from '@/stats/model/WritingStats';
 import { calculateCommentTemperature } from '@/stats/utils/commentTemperature';
+import { badgeQueryKey } from '@/stats/utils/statsQueryKeys';
 import type { Commenting } from '@/user/model/Commenting';
 import type { Replying } from '@/user/model/Replying';
 
@@ -12,7 +13,7 @@ interface UsePostProfileBadgesOptions {
 }
 
 export function usePostProfileBadges(userId: string, options?: UsePostProfileBadgesOptions) {
-  return useQuery(['postProfileBadges', userId], () => fetchUserBadges(userId), {
+  return useQuery(badgeQueryKey(userId), () => fetchUserBadges(userId), {
     enabled: (options?.enabled ?? true) && !!userId,
     staleTime: 5 * 60 * 1000, // 5분 동안 데이터를 'fresh'하게 유지
     cacheTime: 10 * 60 * 1000, // 10분 동안 캐시 유지

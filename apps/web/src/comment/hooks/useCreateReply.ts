@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createReply, updateReplyToComment, deleteReplyToComment } from '@/comment/api/reply';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { badgeQueryKey } from '@/stats/utils/statsQueryKeys';
 import { useUser } from '@/user/hooks/useUser';
 
 export function useCreateReply(boardId: string, postId: string, commentId: string) {
@@ -26,7 +27,7 @@ export function useCreateReply(boardId: string, postId: string, commentId: strin
         queryClient.invalidateQueries({ queryKey: ['replies', boardId, postId, commentId] });
         queryClient.invalidateQueries({ queryKey: ['replyCount', boardId, postId, commentId] });
         if (currentUser) {
-          queryClient.invalidateQueries({ queryKey: ['postProfileBadges', currentUser.uid] });
+          queryClient.invalidateQueries({ queryKey: badgeQueryKey(currentUser.uid) });
         }
       },
     },

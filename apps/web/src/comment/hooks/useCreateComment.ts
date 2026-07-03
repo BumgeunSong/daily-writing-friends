@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createComment, updateCommentToPost, deleteCommentToPost } from '@/comment/api/comment';
 import { useAuth } from '@/shared/hooks/useAuth';
+import { badgeQueryKey } from '@/stats/utils/statsQueryKeys';
 import { useUser } from '@/user/hooks/useUser';
 
 export function useCreateComment(boardId: string, postId: string) {
@@ -24,7 +25,7 @@ export function useCreateComment(boardId: string, postId: string) {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] });
         if (currentUser) {
-          queryClient.invalidateQueries({ queryKey: ['postProfileBadges', currentUser.uid] });
+          queryClient.invalidateQueries({ queryKey: badgeQueryKey(currentUser.uid) });
         }
       },
     },

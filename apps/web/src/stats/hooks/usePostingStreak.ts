@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getRecentWorkingDays, getDateKey } from '@/shared/utils/dateUtils';
 import { fetchPostingDataForContributions } from '@/stats/api/stats';
 import { STREAK_WINDOW_WORKING_DAYS } from '@/stats/constants';
+import { streakQueryKey } from '@/stats/utils/statsQueryKeys';
 
 export interface PostingStreakData {
   streak: boolean[];
@@ -9,7 +10,7 @@ export interface PostingStreakData {
 
 export function usePostingStreak(userId: string) {
   return useQuery({
-    queryKey: ['postingStreak', userId],
+    queryKey: streakQueryKey(userId),
     queryFn: () => fetchPostingStreak(userId),
     enabled: !!userId,
     staleTime: 5 * 60 * 1000,
