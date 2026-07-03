@@ -6,7 +6,7 @@ export type SearchState = 'idle' | 'loading' | 'empty' | 'results' | 'error';
 /**
  * Map (trimmed query, plain React Query result shape) → one of five UI states.
  *
- * Evaluation order is contractual (design D7): the idle gate runs before
+ * Evaluation order is contractual: the idle gate runs before
  * we ever read `data`, so when the user clears the input the previous
  * `keepPreviousData` cache cannot leak into the idle prompt.
  */
