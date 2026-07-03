@@ -8,6 +8,7 @@ import requireSortCompare from './eslint-local-rules/require-sort-compare.js';
 import noNewSharedSupabaseFetch from './eslint-local-rules/no-new-shared-supabase-fetch.js';
 import enforceFeatureBoundaries from './eslint-local-rules/enforce-feature-boundaries.js';
 import colocateTestFiles from './eslint-local-rules/colocate-test-files.js';
+import noInlineDateFormatting from './eslint-local-rules/no-inline-date-formatting.js';
 
 export default tseslint.config(
   // Global ignores
@@ -67,6 +68,7 @@ export default tseslint.config(
           'no-new-shared-supabase-fetch': noNewSharedSupabaseFetch,
           'enforce-feature-boundaries': enforceFeatureBoundaries,
           'colocate-test-files': colocateTestFiles,
+          'no-inline-date-formatting': noInlineDateFormatting,
         },
       },
     },
@@ -132,6 +134,7 @@ export default tseslint.config(
       // Tier 3: Sorting safety
       'local/require-sort-compare': 'warn',
       'local/no-new-shared-supabase-fetch': 'error',
+      'local/no-inline-date-formatting': 'error',
       'local/colocate-test-files': 'error',
 
       // ADR-0001: Feature tier enforcement (shared < core < app)
