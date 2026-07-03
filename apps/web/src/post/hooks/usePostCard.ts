@@ -2,7 +2,7 @@ import { useEffect, useMemo } from 'react';
 import type { PostAuthorData } from '@/post/components/PostUserProfile';
 import type { PostCardPrefetchedData } from '@/post/hooks/useBatchPostCardData';
 import { type Post, PostVisibility } from '@/post/model/Post';
-import { renderPostPreviewHtml } from '@/post/web/contentUtils';
+import { renderPostPreviewHtml } from '@/shared/content/contentUtils';
 import { devLog } from '@/shared/utils/devLog';
 import { usePostingStreak } from '@/stats/hooks/usePostingStreak';
 import { usePostProfileBadges } from '@/stats/hooks/usePostProfileBadges';

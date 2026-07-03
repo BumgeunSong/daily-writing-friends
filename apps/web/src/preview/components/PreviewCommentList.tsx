@@ -1,5 +1,5 @@
 import { CommentHeader } from '@/comment/components/CommentHeader';
-import { renderCommentBodyHtml } from '@/post/web/contentUtils';
+import { renderCommentBodyHtml } from '@/shared/content/contentUtils';
 import type { PreviewComment, PreviewReply } from '@/preview/data/previewPosts';
 
 /**

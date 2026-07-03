@@ -1,6 +1,6 @@
 import { createTimestamp } from '@/shared/model/Timestamp';
 import type { Comment } from '@/comment/model/Comment';
-import { renderCommentBodyHtml } from '@/post/web/contentUtils';
+import { renderCommentBodyHtml } from '@/shared/content/contentUtils';
 import { AvatarFallback, AvatarImage, Avatar } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 

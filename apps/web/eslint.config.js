@@ -138,10 +138,7 @@ export default tseslint.config(
           'user/hooks/useUserPosts.ts -> post',
           'user/api/searchUserPosts.ts -> post',
           'draft/components/DraftsDrawer.tsx -> board',
-          'comment/components/CommentRow.tsx -> post',
-          'comment/components/ReplyRow.tsx -> post',
           // Discovered by initial lint run (survey missed these)
-          'shared/components/MockCommentRow.tsx -> post',
           'shared/components/SentryFeedbackDialog.tsx -> user',
           'shared/components/auth/RootRedirect.tsx -> login',
           'shared/hooks/useAuth.tsx -> user',
