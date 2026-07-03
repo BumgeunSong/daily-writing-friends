@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react';
-import { extractPlainText } from '@/post/web/contentUtils';
+import { extractPlainText } from '@/shared/content/contentUtils';
 
 /**
  * HTML 콘텐츠를 순수 텍스트로 복사하는 커스텀 훅

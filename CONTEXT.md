@@ -4,6 +4,8 @@ Domain language for Daily Writing Friends. Use these terms exactly in code, comm
 
 ## Terms
 
+The Content Rendering module lives at `apps/web/src/shared/content/` (contentUtils.ts, contentUtils.test.ts).
+
 **Draft**
 A user's in-progress writing for a specific board, not yet published as a Post. Persisted in the `drafts` table, scoped to one user and one board, identified by a UUID. A user can have multiple drafts per board. Becomes a Post when published.
 
