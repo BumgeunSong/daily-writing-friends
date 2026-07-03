@@ -5,13 +5,13 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from '@/shared/navigation';
 import { z } from 'zod';
 import { ROUTES } from '@/shared/constants/routes';
-import { validatePassword } from '@/login/utils/passwordValidation';
+import { validatePassword } from '@/shared/utils/passwordValidation';
 import { isAlreadyRegisteredError } from '@/shared/auth/authErrors';
 import { signUpWithEmail } from '@/shared/auth/supabaseAuth';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
-import FormField from './JoinFormField';
-import { PasswordRequirements } from './PasswordRequirements';
+import FormField from '@/shared/components/FormField';
+import { PasswordRequirements } from '@/shared/components/PasswordRequirements';
 
 const signupSchema = z
   .object({

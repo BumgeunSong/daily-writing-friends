@@ -135,8 +135,6 @@ export default tseslint.config(
       'local/enforce-feature-boundaries': ['error', {
         // ADR-0001 baseline — shrink only, never add. Each entry is "file -> feature".
         baseline: [
-          'user/components/ChangePasswordPage.tsx -> login',
-          'user/components/AddLoginMethodPage.tsx -> login',
           'user/hooks/useUserPosts.ts -> post',
           'user/api/searchUserPosts.ts -> post',
           'draft/components/DraftsDrawer.tsx -> comment',

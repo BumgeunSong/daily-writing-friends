@@ -1,4 +1,4 @@
-import { passwordHint } from '@/login/utils/passwordValidation';
+import { passwordHint } from '@/shared/utils/passwordValidation';
 
 interface PasswordRequirementsProps {
   password: string;
