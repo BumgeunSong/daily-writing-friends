@@ -6,6 +6,7 @@ import jsxA11y from 'eslint-plugin-jsx-a11y';
 import prettier from 'eslint-config-prettier';
 import requireSortCompare from './eslint-local-rules/require-sort-compare.js';
 import noNewSharedSupabaseFetch from './eslint-local-rules/no-new-shared-supabase-fetch.js';
+import enforceFeatureBoundaries from './eslint-local-rules/enforce-feature-boundaries.js';
 
 export default tseslint.config(
   // Global ignores
@@ -63,6 +64,7 @@ export default tseslint.config(
         rules: {
           'require-sort-compare': requireSortCompare,
           'no-new-shared-supabase-fetch': noNewSharedSupabaseFetch,
+          'enforce-feature-boundaries': enforceFeatureBoundaries,
         },
       },
     },
@@ -128,6 +130,30 @@ export default tseslint.config(
       // Tier 3: Sorting safety
       'local/require-sort-compare': 'warn',
       'local/no-new-shared-supabase-fetch': 'error',
+
+      // ADR-0001: Feature dependency layer enforcement
+      'local/enforce-feature-boundaries': ['error', {
+        // ADR-0001 baseline — shrink only, never add. Each entry is "file -> feature".
+        baseline: [
+          'user/components/ChangePasswordPage.tsx -> login',
+          'user/components/AddLoginMethodPage.tsx -> login',
+          'user/components/UserSettingPage.tsx -> login',
+          'shared/auth/supabaseAuth.ts -> login',
+          'user/hooks/useUserPosts.ts -> post',
+          'user/api/searchUserPosts.ts -> post',
+          'draft/components/DraftsDrawer.tsx -> comment',
+          'draft/components/DraftsDrawer.tsx -> board',
+          'comment/components/CommentRow.tsx -> post',
+          'comment/components/ReplyRow.tsx -> post',
+          // Discovered by initial lint run (survey missed these)
+          'shared/components/MockCommentRow.tsx -> post',
+          'shared/components/SentryFeedbackDialog.tsx -> user',
+          'shared/components/auth/RootRedirect.tsx -> login',
+          'shared/hooks/useAuth.tsx -> user',
+          'shared/utils/uploadFeedbackScreenshot.ts -> post',
+          'user/components/UserPostItem.tsx -> post',
+        ],
+      }],
     },
   },
 );
