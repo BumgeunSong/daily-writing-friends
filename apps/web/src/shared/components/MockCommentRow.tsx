@@ -3,6 +3,7 @@ import type { Comment } from '@/comment/model/Comment';
 import { renderCommentBodyHtml } from '@/shared/content/contentUtils';
 import { AvatarFallback, AvatarImage, Avatar } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
+import { formatLocaleDateTime } from '@/shared/utils/dateUtils';
 
 export const mockComment: Comment = {
   id: 'mock-comment-1',
@@ -40,7 +41,7 @@ export default function MockCommentRow() {
         </Avatar>
         <p className='text-base font-semibold leading-none'>{mockUserProfile.nickname || '??'}</p>
         <span className='text-sm text-muted-foreground'>
-          {mockComment.createdAt?.toDate().toLocaleString()}
+          {mockComment.createdAt ? formatLocaleDateTime(mockComment.createdAt.toDate()) : undefined}
         </span>
       </div>
       <div className='text-base'>

@@ -5,15 +5,9 @@ import {
   DAYS_PER_WEEK,
   SUNDAY
 } from './types';
+import { formatDateInKoreanTimezone } from '@/shared/utils/dateUtils';
 
-export function formatDateInKoreanTimezone(date: Date): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
-}
+export { formatDateInKoreanTimezone };
 
 function getKoreanToday(): Date {
   const now = new Date();

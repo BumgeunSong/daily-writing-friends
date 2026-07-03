@@ -188,3 +188,79 @@ export function getDateKey(date: Date): string {
 export function getUserTimeZone(): string {
   return 'Asia/Seoul';
 }
+
+/**
+ * 임시 저장 글 날짜 포맷팅 - 사용자의 로케일 기반 (연/월/일/시/분 포함)
+ * 브라우저 환경에서는 navigator.language를 사용하고, 서버/테스트 환경에서는 'ko-KR'로 대체합니다.
+ * @param date Date 객체
+ * @returns 포맷팅된 날짜/시간 문자열
+ */
+export const formatDraftDate = (date: Date): string => {
+  const locale =
+    typeof navigator !== 'undefined' ? navigator.language || 'ko-KR' : 'ko-KR';
+  return new Intl.DateTimeFormat(locale, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+};
+
+/**
+ * 날짜를 한국어 "월 일" 형식으로 포맷팅합니다. (예: "1월 15일")
+ * @param date Date 객체
+ * @returns 포맷팅된 문자열
+ */
+export function formatStartDate(date: Date): string {
+  return date.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+}
+
+/**
+ * 날짜를 한국어 "년 월 일" 전체 형식으로 포맷팅합니다. (예: "2025년 1월 15일")
+ * @param date Date 객체
+ * @returns 포맷팅된 문자열
+ */
+export function formatKoreanLongDate(date: Date): string {
+  return date.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+/**
+ * 날짜를 한국어 숫자 형식으로 포맷팅합니다. (예: "2025. 01. 15.")
+ * @param date Date 객체
+ * @returns 포맷팅된 문자열
+ */
+export function formatKoreanShortDate(date: Date): string {
+  return date.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+}
+
+/**
+ * 날짜와 시간을 시스템 로케일 기본 형식으로 포맷팅합니다.
+ * @param date Date 객체
+ * @returns 포맷팅된 날짜/시간 문자열
+ */
+export function formatLocaleDateTime(date: Date): string {
+  return date.toLocaleString();
+}
+
+/**
+ * 날짜를 한국 시간대(Asia/Seoul) 기준의 YYYY-MM-DD 형식으로 포맷팅합니다. (예: "2025-01-15")
+ * @param date Date 객체
+ * @returns YYYY-MM-DD 형식의 문자열
+ */
+export function formatDateInKoreanTimezone(date: Date): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}
