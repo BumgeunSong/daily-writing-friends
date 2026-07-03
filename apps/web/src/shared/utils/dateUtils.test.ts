@@ -8,6 +8,12 @@ import {
   getDateKey,
   getUserTimeZone,
   getRecentWorkingDays,
+  formatDraftDate,
+  formatStartDate,
+  formatKoreanLongDate,
+  formatKoreanShortDate,
+  formatLocaleDateTime,
+  formatDateInKoreanTimezone,
 } from './dateUtils';
 
 describe('dateUtils', () => {
@@ -302,6 +308,92 @@ describe('dateUtils', () => {
       });
       // Should skip Jan 1 (holiday) and include Dec 31, Jan 2, Jan 3
       expect(dateKeys).not.toContain(1);
+    });
+  });
+
+  describe('formatDraftDate', () => {
+    // In the Node.js test environment, typeof navigator is 'undefined', so locale falls back to 'ko-KR'.
+    it('should format date with year, month, day, hour, and minute', () => {
+      // Use noon UTC to avoid date-boundary ambiguity across timezones
+      const date = new Date('2025-01-15T12:00:00Z');
+      const result = formatDraftDate(date);
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
+      expect(result).toMatch(/2025/);
+      expect(result).toMatch(/01/);
+      expect(result).toMatch(/15/);
+    });
+
+    it('should include time components (hours and minutes)', () => {
+      const date = new Date('2025-01-15T12:30:00Z');
+      const result = formatDraftDate(date);
+      // Korean Intl format includes colon-separated time
+      expect(result).toMatch(/:\d{2}/);
+    });
+  });
+
+  describe('formatStartDate', () => {
+    it('should format date to Korean month-day format', () => {
+      // noon UTC, Jan 15 → stable across all timezones
+      const date = new Date('2025-01-15T12:00:00Z');
+      expect(formatStartDate(date)).toBe('1월 15일');
+    });
+
+    it('should use correct month name for December', () => {
+      const date = new Date('2025-12-25T12:00:00Z');
+      expect(formatStartDate(date)).toBe('12월 25일');
+    });
+  });
+
+  describe('formatKoreanLongDate', () => {
+    it('should format date to Korean full year-month-day format', () => {
+      const date = new Date('2025-01-15T12:00:00Z');
+      expect(formatKoreanLongDate(date)).toBe('2025년 1월 15일');
+    });
+
+    it('should include year for different years', () => {
+      const date = new Date('2024-06-01T12:00:00Z');
+      expect(formatKoreanLongDate(date)).toBe('2024년 6월 1일');
+    });
+  });
+
+  describe('formatKoreanShortDate', () => {
+    it('should format date to Korean numeric YYYY. MM. DD. format', () => {
+      const date = new Date('2025-01-15T12:00:00Z');
+      expect(formatKoreanShortDate(date)).toBe('2025. 01. 15.');
+    });
+
+    it('should zero-pad month and day', () => {
+      const date = new Date('2025-03-05T12:00:00Z');
+      expect(formatKoreanShortDate(date)).toBe('2025. 03. 05.');
+    });
+  });
+
+  describe('formatLocaleDateTime', () => {
+    it('should return a non-empty string for a valid date', () => {
+      const date = new Date('2025-01-15T12:00:00Z');
+      const result = formatLocaleDateTime(date);
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    it('should include the year in the output', () => {
+      const date = new Date('2025-01-15T12:00:00Z');
+      expect(formatLocaleDateTime(date)).toMatch(/2025/);
+    });
+  });
+
+  describe('formatDateInKoreanTimezone', () => {
+    it('should format date in Asia/Seoul timezone as YYYY-MM-DD', () => {
+      // noon UTC Jan 15 = 9pm KST Jan 15 → still Jan 15 in Seoul
+      const date = new Date('2025-01-15T12:00:00Z');
+      expect(formatDateInKoreanTimezone(date)).toBe('2025-01-15');
+    });
+
+    it('should use Seoul timezone: UTC 15:30 Jan 15 = 00:30 Jan 16 KST', () => {
+      // 15:30 UTC = 00:30 KST next day (Jan 16 in Seoul)
+      const date = new Date('2025-01-15T15:30:00Z');
+      expect(formatDateInKoreanTimezone(date)).toBe('2025-01-16');
     });
   });
 });

@@ -2,6 +2,7 @@ import type { Board } from '../model/Board';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { fetchBoardsFromSupabase, fetchBoardByIdFromSupabase, fetchBoardTitleFromSupabase } from '@/board/api/board';
 import { boardTitleKey, storage } from '@/shared/lib/storage';
+import { formatStartDate as formatStartDateUtil } from '@/shared/utils/dateUtils';
 
 export async function fetchBoardTitle(boardId: string): Promise<string> {
   try {
@@ -114,5 +115,5 @@ export function formatStartDate(board: Board | null | undefined): string {
   if (!board?.firstDay) {
     return '미정';
   }
-  return board.firstDay.toDate().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+  return formatStartDateUtil(board.firstDay.toDate());
 }

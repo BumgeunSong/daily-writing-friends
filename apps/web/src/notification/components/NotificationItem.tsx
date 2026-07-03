@@ -4,6 +4,7 @@ import type { Notification } from '@/notification/model/Notification';
 import { usePrefetchPost } from '@/post/hooks/usePrefetchPost';
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import { useUserBasic } from '@/user/hooks/useUserBasic';
+import { formatLocaleDateTime } from '@/shared/utils/dateUtils';
 
 interface NotificationItemProps {
   notification: Notification;
@@ -38,7 +39,7 @@ export const NotificationItem = ({ notification }: NotificationItemProps) => {
         <div className='min-w-0 flex-1 space-y-1.5'>
           <p className='text-reading text-sm font-medium text-foreground'>{message}</p>
           <span className='text-xs text-muted-foreground'>
-            {notification.timestamp.toDate().toLocaleString()}
+            {formatLocaleDateTime(notification.timestamp.toDate())}
           </span>
         </div>
       </div>

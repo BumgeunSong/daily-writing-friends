@@ -1,6 +1,7 @@
 import type { Draft } from '@/draft/model/Draft';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { createTimestamp, type FirebaseTimestamp } from '@/shared/model/Timestamp';
+import { formatDraftDate as formatDraftDateUtil } from '@/shared/utils/dateUtils';
 
 export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: string }, userId: string): Promise<Draft> {
   if (!userId?.trim()) {
@@ -93,16 +94,9 @@ export async function deleteDraft(userId: string, draftId: string): Promise<void
 }
 
 
-// 임시 저장 글 날짜 포맷팅 - 사용자의 로케일 기반
-export const formatDraftDate = (savedAt: FirebaseTimestamp) => {
-  return new Intl.DateTimeFormat(navigator.language || 'ko-KR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(savedAt.toDate());
-};
+/** 임시 저장 글 날짜 포맷팅 - 사용자의 로케일 기반 */
+export const formatDraftDate = (savedAt: FirebaseTimestamp): string =>
+  formatDraftDateUtil(savedAt.toDate());
 
 // 임시 저장 글 제목 표시 (비어있으면 '제목 없음' 표시)
 export const getDraftTitle = (draft: Draft) => {

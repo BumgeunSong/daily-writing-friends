@@ -1,4 +1,5 @@
 import type { Board } from '@/board/model/Board';
+import { formatStartDate } from '@/shared/utils/dateUtils';
 
 export interface OnboardingHeader {
   title: string;
@@ -24,9 +25,7 @@ export function getOnboardingHeader(
     };
   }
 
-  const formatted = upcomingBoard.firstDay
-    .toDate()
-    .toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+  const formatted = formatStartDate(upcomingBoard.firstDay.toDate());
 
   return { title, subtitle: `${formatted}에 시작합니다.` };
 }

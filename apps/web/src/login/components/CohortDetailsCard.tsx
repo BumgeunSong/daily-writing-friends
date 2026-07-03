@@ -2,6 +2,7 @@ import { CalendarDays, Clock, PenLine, AlignLeft, Sparkles, MessageCircle } from
 import type { Board } from "@/board/model/Board"
 import { Card } from "@/shared/ui/card"
 import type React from "react"
+import { formatKoreanLongDate, formatStartDate } from "@/shared/utils/dateUtils"
 
 interface CohortDetailsCardProps {
   upcomingBoard?: Board | null
@@ -24,7 +25,7 @@ const CohortDetailsCard: React.FC<CohortDetailsCardProps> = ({ upcomingBoard }) 
       {upcomingBoard && upcomingBoard.firstDay && upcomingBoard.lastDay && (
         <div className="flex items-center gap-2">
           <CalendarDays className="size-5 text-muted-foreground" />
-          <p className="md:text-lg">{upcomingBoard.firstDay.toDate().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })} - {upcomingBoard.lastDay.toDate().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}</p>
+          <p className="md:text-lg">{formatKoreanLongDate(upcomingBoard.firstDay.toDate())} - {formatStartDate(upcomingBoard.lastDay.toDate())}</p>
         </div>
       )}
 

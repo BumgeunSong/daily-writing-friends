@@ -3,6 +3,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shar
 import { cn } from '@/shared/utils/cn';
 import type { Contribution } from '@/stats/model/WritingStats';
 import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
+import { formatKoreanShortDate } from '@/shared/utils/dateUtils';
 
 interface ContributionItemProps {
   contribution?: Contribution | CommentingContribution;
@@ -39,11 +40,7 @@ function formatDate(contribution: CombinedContribution) {
   if (!createdAt) return { yearMonthDay: '', day: '' };
 
   const parsed = new Date(createdAt);
-  const yearMonthDay = parsed.toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
+  const yearMonthDay = formatKoreanShortDate(parsed);
   const day = parsed.getDate().toString();
 
   return { yearMonthDay, day };

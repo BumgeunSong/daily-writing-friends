@@ -1,6 +1,7 @@
 import { CalendarDays, Clock, PenLine, AlignLeft, MessageCircle } from 'lucide-react';
 import type { Board } from '@/board/model/Board';
 import { Card } from '@/shared/ui/card';
+import { formatKoreanLongDate, formatStartDate } from '@/shared/utils/dateUtils';
 
 interface CohortConfirmCardProps {
   upcomingBoard: Board;
@@ -15,14 +16,7 @@ export default function CohortConfirmCard({
 }: CohortConfirmCardProps) {
   const dateRange =
     upcomingBoard.firstDay && upcomingBoard.lastDay
-      ? `${upcomingBoard.firstDay.toDate().toLocaleDateString('ko-KR', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        })} - ${upcomingBoard.lastDay.toDate().toLocaleDateString('ko-KR', {
-          month: 'long',
-          day: 'numeric',
-        })}`
+      ? `${formatKoreanLongDate(upcomingBoard.firstDay.toDate())} - ${formatStartDate(upcomingBoard.lastDay.toDate())}`
       : null;
 
   return (
