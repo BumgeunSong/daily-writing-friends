@@ -7,6 +7,7 @@ import prettier from 'eslint-config-prettier';
 import requireSortCompare from './eslint-local-rules/require-sort-compare.js';
 import noNewSharedSupabaseFetch from './eslint-local-rules/no-new-shared-supabase-fetch.js';
 import enforceFeatureBoundaries from './eslint-local-rules/enforce-feature-boundaries.js';
+import colocateTestFiles from './eslint-local-rules/colocate-test-files.js';
 
 export default tseslint.config(
   // Global ignores
@@ -65,6 +66,7 @@ export default tseslint.config(
           'require-sort-compare': requireSortCompare,
           'no-new-shared-supabase-fetch': noNewSharedSupabaseFetch,
           'enforce-feature-boundaries': enforceFeatureBoundaries,
+          'colocate-test-files': colocateTestFiles,
         },
       },
     },
@@ -130,6 +132,7 @@ export default tseslint.config(
       // Tier 3: Sorting safety
       'local/require-sort-compare': 'warn',
       'local/no-new-shared-supabase-fetch': 'error',
+      'local/colocate-test-files': 'error',
 
       // ADR-0001: Feature tier enforcement (shared < core < app)
       'local/enforce-feature-boundaries': ['error', {
