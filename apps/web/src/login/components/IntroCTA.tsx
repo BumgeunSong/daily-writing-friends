@@ -1,5 +1,5 @@
 import { useNavigate } from '@/shared/navigation';
-import { ROUTES } from '@/login/constants';
+import { ROUTES } from '@/shared/constants/routes';
 import { SESSION_KEYS, sessionStore } from '@/shared/lib/storage';
 import { Button } from '@/shared/ui/button';
 

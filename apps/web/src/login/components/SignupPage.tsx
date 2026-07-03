@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from '@/shared/navigation';
 import { z } from 'zod';
-import { ROUTES } from '@/login/constants';
+import { ROUTES } from '@/shared/constants/routes';
 import { validatePassword } from '@/login/utils/passwordValidation';
 import { isAlreadyRegisteredError } from '@/shared/auth/authErrors';
 import { signUpWithEmail } from '@/shared/auth/supabaseAuth';

@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import FormField from '@/login/components/JoinFormField';
 import { PasswordRequirements } from '@/login/components/PasswordRequirements';
-import { ROUTES } from '@/login/constants';
+import { ROUTES } from '@/shared/constants/routes';
 import { validatePassword } from '@/login/utils/passwordValidation';
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { mapSetPasswordErrorToKorean } from '@/shared/auth/authErrors';

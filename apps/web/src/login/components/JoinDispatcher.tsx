@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from '@/shared/navigation';
-import { ROUTES } from '@/login/constants';
+import { ROUTES } from '@/shared/constants/routes';
 import { useIsCurrentUserActive } from '@/login/hooks/useIsCurrentUserActive';
 import { useIsUserInWaitingList } from '@/login/hooks/useIsUserInWaitingList';
 import { useAuth } from '@/shared/hooks/useAuth';

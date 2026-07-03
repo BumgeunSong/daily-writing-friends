@@ -137,8 +137,6 @@ export default tseslint.config(
         baseline: [
           'user/components/ChangePasswordPage.tsx -> login',
           'user/components/AddLoginMethodPage.tsx -> login',
-          'user/components/UserSettingPage.tsx -> login',
-          'shared/auth/supabaseAuth.ts -> login',
           'user/hooks/useUserPosts.ts -> post',
           'user/api/searchUserPosts.ts -> post',
           'draft/components/DraftsDrawer.tsx -> comment',

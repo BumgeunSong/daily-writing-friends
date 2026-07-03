@@ -1,5 +1,5 @@
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
-import { ROUTES } from '@/login/constants';
+import { ROUTES } from '@/shared/constants/routes';
 import type { AuthUser } from '@/shared/hooks/useAuth';
 import type { VerifyOtpOutcome } from '@/login/utils/verifyEmailState';
 
