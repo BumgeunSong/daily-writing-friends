@@ -1,4 +1,4 @@
-import { formatDate } from '@/post/utils/dateFormat';
+import { formatStorageDateParts } from '@/post/utils/dateFormat';
 import { sanitizeStorageFileName } from '@/post/utils/storageFileName';
 
 /**
@@ -8,7 +8,7 @@ import { sanitizeStorageFileName } from '@/post/utils/storageFileName';
  * Path shape: {prefix}/{YYYYMMDD}/{HHMMSS}_{sanitizedFileName}
  */
 const buildImageStoragePath = (prefix: string, fileName: string, now: Date): string => {
-  const { dateFolder, timePrefix } = formatDate(now);
+  const { dateFolder, timePrefix } = formatStorageDateParts(now);
   return `${prefix}/${dateFolder}/${timePrefix}_${sanitizeStorageFileName(fileName)}`;
 };
 
