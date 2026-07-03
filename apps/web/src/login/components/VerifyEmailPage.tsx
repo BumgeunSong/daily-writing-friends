@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from '@/shared/navigation';
 import { toast } from 'sonner';
-import { ROUTES } from '@/login/constants';
+import { ROUTES } from '@/shared/constants/routes';
 import {
   decideVerifySuccessState,
   type VerifyState,

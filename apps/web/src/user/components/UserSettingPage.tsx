@@ -2,7 +2,7 @@ import { Heart, KeyRound, LogOut, Trash2, SquareArrowRight, Moon, Sun } from 'lu
 import { useMemo } from 'react';
 import { useNavigate } from '@/shared/navigation';
 import { toast } from 'sonner';
-import { ROUTES } from '@/login/constants';
+import { ROUTES } from '@/shared/constants/routes';
 import { signOutUser } from '@/shared/auth/supabaseAuth';
 import { SentryFeedbackDialog } from '@/shared/components/SentryFeedbackDialog';
 import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
