@@ -131,19 +131,39 @@ export default tseslint.config(
       'local/require-sort-compare': 'warn',
       'local/no-new-shared-supabase-fetch': 'error',
 
-      // ADR-0001: Feature dependency layer enforcement
+      // ADR-0001: Feature tier enforcement (shared < core < app)
       'local/enforce-feature-boundaries': ['error', {
-        // ADR-0001 baseline — shrink only, never add. Each entry is "file -> feature".
+        // Baseline — shrink only, never add. "file -> feature". Every entry is a
+        // genuine smell to invert or relocate over time; new violations are blocked.
         baseline: [
-          'user/hooks/useUserPosts.ts -> post',
-          'user/api/searchUserPosts.ts -> post',
-          'draft/components/DraftsDrawer.tsx -> board',
-          // Discovered by initial lint run (survey missed these)
+          // shared/ reaching into a feature — inject the dependency or move into shared/
           'shared/components/SentryFeedbackDialog.tsx -> user',
           'shared/components/auth/RootRedirect.tsx -> login',
           'shared/hooks/useAuth.tsx -> user',
           'shared/utils/uploadFeedbackScreenshot.ts -> post',
-          'user/components/UserPostItem.tsx -> post',
+          // app -> app lateral coupling — route through shared/ or a core feature
+          'draft/components/DraftsDrawer.tsx -> board',
+          'login/components/GoalSection.tsx -> stats',
+          'login/components/JoinFormCardForActiveUser.tsx -> board',
+          'login/components/JoinFormPageForActiveUser.tsx -> board',
+          'login/hooks/useOnboardingSubmit.ts -> board',
+          'login/hooks/useUpcomingBoard.ts -> board',
+          // core -> app inversion — domain core depending on a derived feature.
+          // The post<->stats cluster (author streak/badges) is the top refactor target.
+          'comment/components/CommentHeader.tsx -> stats',
+          'comment/hooks/useActivity.ts -> stats',
+          'post/components/CountupWritingTimer.tsx -> stats',
+          'post/components/PostCreationPage.tsx -> draft',
+          'post/components/PostDetailPage.tsx -> stats',
+          'post/components/PostFreewritingPage.tsx -> stats',
+          'post/components/PostUserProfile.tsx -> stats',
+          'post/hooks/useBatchPostCardData.ts -> stats',
+          'post/hooks/useCompletionMessage.ts -> stats',
+          'post/hooks/useCountupTimer.ts -> stats',
+          'post/hooks/useCreatePostAction.ts -> draft',
+          'post/hooks/usePostCard.ts -> stats',
+          'post/hooks/usePostSubmit.ts -> draft',
+          'post/utils/batchPostCardDataUtils.ts -> stats',
         ],
       }],
     },
