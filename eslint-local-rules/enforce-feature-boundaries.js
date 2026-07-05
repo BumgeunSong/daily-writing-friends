@@ -1,15 +1,10 @@
-const LAYERS = {
-  donator: 1,
-  user: 2,
-  stats: 3,
-  comment: 4,
-  draft: 4,
-  post: 5,
-  board: 6,
-  login: 7,
-  notification: 7,
-  preview: 7,
-};
+// Three tiers (ADR-0001). shared(0) < core(1) < app(2).
+// - core features form the cohesive domain model; they may import each other freely.
+// - app features are peers; they compose core + shared but must not import each other.
+// - import type is always exempt; shared/ may import no feature.
+const CORE = { donator: 1, user: 1, post: 1, comment: 1 };
+const APP = { board: 2, draft: 2, stats: 2, notification: 2, login: 2, preview: 2 };
+const TIERS = { ...CORE, ...APP };
 
 const SRC_MARKER = 'apps/web/src/';
 
@@ -25,7 +20,7 @@ function featureOfFile(filePath) {
   if (!rel) return null;
   const first = rel.split('/')[0];
   if (first === 'shared') return 'shared';
-  return LAYERS[first] ? first : null;
+  return TIERS[first] ? first : null;
 }
 
 function featureOfImport(source, importerDir) {
@@ -33,7 +28,7 @@ function featureOfImport(source, importerDir) {
   if (aliasMatch) {
     const name = aliasMatch[1];
     if (name === 'shared') return 'shared';
-    return LAYERS[name] ? name : null;
+    return TIERS[name] ? name : null;
   }
   if (source.startsWith('.')) {
     const joined = `${importerDir}/${source}`.replace(/\\/g, '/');
@@ -60,16 +55,21 @@ export default {
     type: 'problem',
     docs: {
       description:
-        'Enforce the feature dependency layers from ADR-0001. Runtime imports must flow ' +
-        'from higher layers to lower layers; import type is exempt; shared/ may not ' +
-        'import features.',
+        'Enforce the three feature tiers from ADR-0001: shared < core < app. core features ' +
+        'may import each other; app features are peers and may not; shared/ imports no ' +
+        'feature; import type is exempt.',
     },
     messages: {
-      upwardImport:
-        "'{{from}}' (layer {{fromLayer}}) may not import '{{to}}' (layer {{toLayer}}) at runtime. " +
-        'Move the shared code to shared/, or use `import type` if only types are needed. See docs/adr/0001-feature-dependency-layers.md.',
       sharedImportsFeature:
-        "shared/ may not import feature '{{to}}' at runtime. Move the imported code into shared/. See docs/adr/0001-feature-dependency-layers.md.",
+        "shared/ may not import feature '{{to}}' at runtime. Move the imported code into shared/, " +
+        'or invert the dependency so the feature depends on shared. See docs/adr/0001-feature-dependency-layers.md.',
+      coreImportsApp:
+        "core feature '{{from}}' may not import app feature '{{to}}' at runtime — the domain core must " +
+        "not depend on a derived feature. Invert the dependency (have '{{to}}' consume '{{from}}'), move the " +
+        'shared piece into shared/, or use `import type`. See docs/adr/0001-feature-dependency-layers.md.',
+      crossAppFeature:
+        "app feature '{{from}}' may not import app feature '{{to}}' — app features are peers. Route shared " +
+        'code through shared/ or a core feature, or use `import type`. See docs/adr/0001-feature-dependency-layers.md.',
     },
     schema: [
       {
@@ -107,18 +107,15 @@ export default {
           context.report({ node, messageId: 'sharedImportsFeature', data: { to: toFeature } });
           return;
         }
-        if (LAYERS[toFeature] >= LAYERS[fromFeature]) {
-          context.report({
-            node,
-            messageId: 'upwardImport',
-            data: {
-              from: fromFeature,
-              fromLayer: String(LAYERS[fromFeature]),
-              to: toFeature,
-              toLayer: String(LAYERS[toFeature]),
-            },
-          });
+
+        const fromTier = TIERS[fromFeature];
+        const toTier = TIERS[toFeature];
+        if (fromTier === 1 && toTier === 2) {
+          context.report({ node, messageId: 'coreImportsApp', data: { from: fromFeature, to: toFeature } });
+        } else if (fromTier === 2 && toTier === 2) {
+          context.report({ node, messageId: 'crossAppFeature', data: { from: fromFeature, to: toFeature } });
         }
+        // core -> core and app -> core are allowed.
       },
     };
   },
