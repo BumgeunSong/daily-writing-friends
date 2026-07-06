@@ -76,6 +76,7 @@ core features form the cohesive domain model and may import one another; app fea
 ## Code Conventions (apps/web)
 
 - Tests are colocated: `foo.test.ts` beside `foo.ts` (enforced by `local/colocate-test-files`); `src/test/` holds shared fixtures/setup/MSW.
+- Date display formatting lives in `shared/utils/dateUtils.ts` as named formatters (enforced by `local/no-inline-date-formatting`); `projectToTimezone` covers timezone arithmetic.
 - Custom ESLint rules: implementation + tests in root `eslint-local-rules/`, re-exported in `apps/web/eslint-local-rules/`, wired in `apps/web/eslint.config.js`.
 
 ## Database
