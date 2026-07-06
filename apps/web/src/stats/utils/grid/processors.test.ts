@@ -165,12 +165,24 @@ describe('processPostingContributions', () => {
     result.matrix.forEach((row) => row.forEach((cell) => expect(cell).toBeNull()));
   });
 
-  it('treats null contentLength as 0', () => {
+  it('keeps a no-post day (null contentLength) as an empty cell', () => {
     const contributions: Contribution[] = [
       { createdAt: new Date(2025, 0, 8, 12).toISOString(), contentLength: null },
     ];
     const result = processPostingContributions(contributions, TIME_RANGE);
+    // Wed of week 0 → row 0, col 2. No post → cell stays null (gray) and does not inflate maxValue.
+    expect(result.matrix[0][2]).toBeNull();
     expect(result.maxValue).toBe(0);
+  });
+
+  it('marks a posted-but-empty day (0 contentLength) as activity, distinct from a no-post day', () => {
+    // Regression for #291: an image-only / 0-length post must stay distinguishable from a
+    // no-post day (null) so the grid agrees with the posting streak instead of showing gray.
+    const contributions: Contribution[] = [
+      { createdAt: new Date(2025, 0, 8, 12).toISOString(), contentLength: 0 },
+    ];
+    const result = processPostingContributions(contributions, TIME_RANGE);
+    expect(result.matrix[0][2]).toBe(0);
   });
 });
 

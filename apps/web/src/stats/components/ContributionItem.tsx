@@ -14,6 +14,7 @@ type CombinedContribution = Contribution | CommentingContribution | undefined;
 
 const INTENSITY_HOLIDAY = -2;
 const INTENSITY_NONE = 0;
+const INTENSITY_MIN_ACTIVE = 1;
 const MAX_INTENSITY_LEVELS = 4;
 const HIGH_INTENSITY_THRESHOLD = 3;
 
@@ -22,13 +23,22 @@ function extractContributionFlags(contribution: CombinedContribution) {
   return { isHoliday };
 }
 
-function calculateIntensity(
+/**
+ * Maps a day's activity magnitude to a color intensity level.
+ *
+ * null means the user had no activity that day → gray. A magnitude of 0 means the
+ * activity happened but was empty (e.g. an image-only post with 0-length content) →
+ * lowest active level, so the day stays consistent with the posting streak instead of
+ * looking like a skipped day.
+ */
+export function calculateIntensity(
   value: number | null,
   maxValue: number,
   isHoliday: boolean,
 ): number {
   if (isHoliday) return INTENSITY_HOLIDAY;
-  if (!value) return INTENSITY_NONE;
+  if (value === null || value === undefined) return INTENSITY_NONE;
+  if (value === 0) return INTENSITY_MIN_ACTIVE;
 
   const normalizedValue = value / Math.max(maxValue, 1);
   return Math.ceil(normalizedValue * MAX_INTENSITY_LEVELS);
