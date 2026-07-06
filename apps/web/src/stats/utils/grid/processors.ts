@@ -17,7 +17,7 @@ import type {
 
 export function placeContributionInGrid(
   contribution: ContributionData,
-  getValue: (contribution: ContributionData) => number,
+  getValue: (contribution: ContributionData) => number | null,
   matrices: { matrix: ContributionMatrix; weeklyContributions: ContributionDataMatrix },
   weeksAgo: Date,
 ): void {
@@ -36,7 +36,7 @@ function placeAllContributionsInGrid<T extends ContributionData>(
   contributions: T[],
   matrices: { matrix: ContributionMatrix; weeklyContributions: ContributionDataMatrix },
   weeksAgo: Date,
-  getValue: (contribution: T) => number,
+  getValue: (contribution: T) => number | null,
 ): void {
   contributions.forEach((contribution) => {
     placeContributionInGrid(contribution, (c) => getValue(c as T), matrices, weeksAgo);
@@ -45,10 +45,11 @@ function placeAllContributionsInGrid<T extends ContributionData>(
 
 function calculateMaxValueFromWeekdayContributions<T extends ContributionData>(
   contributions: T[],
-  getValue: (contribution: T) => number,
+  getValue: (contribution: T) => number | null,
 ): number {
   const weekdayContributions = filterWeekdayContributions(contributions);
-  const values = weekdayContributions.map(getValue);
+  // null marks a day with no activity — exclude it so it never inflates the scale
+  const values = weekdayContributions.map(getValue).filter((v): v is number => v !== null);
   return Math.max(...values, 0);
 }
 
@@ -57,7 +58,7 @@ export function processContributionsInGrid<T extends ContributionData>(
   matrices: { matrix: ContributionMatrix; weeklyContributions: ContributionDataMatrix },
   weeksAgo: Date,
   today: Date,
-  getValue: (contribution: T) => number,
+  getValue: (contribution: T) => number | null,
 ): { processedContributions: T[]; maxValue: number } {
   const recentContributions = filterContributionsInTimeRange(contributions, weeksAgo, today);
   placeAllContributionsInGrid(recentContributions, matrices, weeksAgo, getValue);
@@ -65,8 +66,10 @@ export function processContributionsInGrid<T extends ContributionData>(
   return { processedContributions: recentContributions, maxValue };
 }
 
-function extractContentLengthValue(contribution: Contribution): number {
-  return contribution.contentLength ?? 0;
+function extractContentLengthValue(contribution: Contribution): number | null {
+  // Preserve null (= no post that day). A real post with 0-length content (e.g. an
+  // image-only post) keeps its 0 so it stays distinguishable from a no-post day.
+  return contribution.contentLength;
 }
 
 /**
@@ -98,8 +101,10 @@ export function processPostingContributions(
   };
 }
 
-function extractCommentAndRepliesCount(contribution: CommentingContribution): number {
-  return contribution.countOfCommentAndReplies ?? 0;
+function extractCommentAndRepliesCount(contribution: CommentingContribution): number | null {
+  // Preserve null (= no comment/reply that day) so it stays gray. An active day is
+  // always >= 1, so commenting never produces a legitimate 0.
+  return contribution.countOfCommentAndReplies;
 }
 
 /**

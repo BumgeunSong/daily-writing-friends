@@ -35,7 +35,7 @@ export function updateMatricesAtPosition(
   matrices: { matrix: ContributionMatrix; weeklyContributions: ContributionDataMatrix },
   position: GridPosition,
   contribution: ContributionData,
-  value: number,
+  value: number | null,
 ): void {
   const { weekRow, weekdayColumn } = position;
   const existingContribution = matrices.weeklyContributions[weekRow][weekdayColumn];
