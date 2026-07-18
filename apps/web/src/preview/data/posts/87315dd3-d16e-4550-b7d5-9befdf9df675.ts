@@ -62,7 +62,7 @@ export const post: PreviewPostContent = {
     {
       id: '3e8cea3d-87db-4674-b1a3-08c848358fc4',
       author: PREVIEW_AUTHORS['pv-author-20'],
-      body: '역시 매글프 홍보대사 행귤님 👍',
+      body: '역시 매글프 홍보대사 울릉도오징어님 👍',
       createdAt: '2026-06-10T12:50:35.492+00:00',
       replies: [],
     },

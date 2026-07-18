@@ -154,7 +154,7 @@ export const post: PreviewPostContent = {
         {
           id: 'E656z6XlzmmXB20l4n0J',
           author: PREVIEW_AUTHORS['pv-author-6'],
-          body: '반가워유 행귤님! ㅎㅎ 저거 꼭 써볼게유!',
+          body: '반가워유 울릉도오징어님! ㅎㅎ 저거 꼭 써볼게유!',
           createdAt: '2025-12-17T10:43:17.311+00:00',
         },
       ],

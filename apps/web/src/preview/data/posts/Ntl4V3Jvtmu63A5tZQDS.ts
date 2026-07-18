@@ -92,7 +92,7 @@ export const post: PreviewPostContent = {
         {
           id: 'xETIbJ0kwlXHhy37pNww',
           author: PREVIEW_AUTHORS['pv-author-9'],
-          body: '하고싶은것만 열심히하는 거죠 모..ㅎㅎ\n행귤님도 좋은 일 가득하시길 바랄게요오><',
+          body: '하고싶은것만 열심히하는 거죠 모..ㅎㅎ\n울릉도오징어님도 좋은 일 가득하시길 바랄게요오><',
           createdAt: '2025-12-29T12:28:27.766+00:00',
         },
       ],

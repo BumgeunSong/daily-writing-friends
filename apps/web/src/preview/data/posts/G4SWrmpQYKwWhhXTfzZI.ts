@@ -30,7 +30,7 @@ export const post: PreviewPostContent = {
     {
       id: '3wNjJ5qwt3aJD5SIkEr0',
       author: PREVIEW_AUTHORS['pv-author-7'],
-      body: '할머니집처럼 음식이 끊임없이 제공되는 행귤하우스... 행복이었습니다💫',
+      body: '할머니집처럼 음식이 끊임없이 제공되는 울릉도오징어하우스... 행복이었습니다💫',
       createdAt: '2025-12-12T03:42:37.059+00:00',
       replies: [
         {
@@ -44,7 +44,7 @@ export const post: PreviewPostContent = {
     {
       id: 'W9vn9I8KuSrdRpGhsODf',
       author: PREVIEW_AUTHORS['pv-author-14'],
-      body: '행귤님은 최고의 호스트입니다 👍',
+      body: '울릉도오징어님은 최고의 호스트입니다 👍',
       createdAt: '2025-12-12T09:06:49.569+00:00',
       replies: [
         {

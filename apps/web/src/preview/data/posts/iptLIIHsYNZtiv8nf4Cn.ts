@@ -104,7 +104,7 @@ export const post: PreviewPostContent = {
         {
           id: 'IT1noeH7hAIYSykahEL8',
           author: PREVIEW_AUTHORS['pv-author-5'],
-          body: '반겨주셔서 너무 감사합니다 행귤님!! 아이스크림계의 최강록이라니.. 이미지 메이킹 대성공입니다. ㅎㅎ 저희 고양이 칭찬은 잘 전달해주도록 할게요 ',
+          body: '반겨주셔서 너무 감사합니다 울릉도오징어님!! 아이스크림계의 최강록이라니.. 이미지 메이킹 대성공입니다. ㅎㅎ 저희 고양이 칭찬은 잘 전달해주도록 할게요 ',
           createdAt: '2026-01-13T13:16:07.501+00:00',
         },
       ],

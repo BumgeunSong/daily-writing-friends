@@ -14,7 +14,7 @@ export const PREVIEW_AUTHORS: Record<string, PreviewAuthor> = {
   },
   'pv-author-3': {
     id: 'pv-author-3',
-    displayName: '행귤',
+    displayName: '울릉도오징어',
     profileImageURL: '/preview/avatars/pv-author-3.jpg',
   },
   'pv-author-4': {

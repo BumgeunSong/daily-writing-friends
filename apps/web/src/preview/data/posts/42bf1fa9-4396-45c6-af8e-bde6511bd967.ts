@@ -36,7 +36,7 @@ export const post: PreviewPostContent = {
     {
       id: '035f48b7-0415-466e-b60a-bbadd768ee6e',
       author: PREVIEW_AUTHORS['pv-author-7'],
-      body: '매글프요정 행귤님🧚🏻 \n꿀팁이라길래 후다닥 눌렀는데 3번부터 탈락이네요....🥲 그치만 매글프를 소중히 여기시는 그 마음가짐을 본받아 댓글온도 얄심히 올려보겟슴다',
+      body: '매글프요정 울릉도오징어님🧚🏻 \n꿀팁이라길래 후다닥 눌렀는데 3번부터 탈락이네요....🥲 그치만 매글프를 소중히 여기시는 그 마음가짐을 본받아 댓글온도 얄심히 올려보겟슴다',
       createdAt: '2026-02-25T09:57:31.601+00:00',
       replies: [
         {
@@ -50,7 +50,7 @@ export const post: PreviewPostContent = {
     {
       id: 'de8c0054-97b7-47ec-94f7-9f62f91bc719',
       author: PREVIEW_AUTHORS['pv-author-5'],
-      body: '행귤님 덕분에 글쓰기에 맛이나요 🍀🙏 매댓글프요정 행귤님 감사해요오 ',
+      body: '울릉도오징어님 덕분에 글쓰기에 맛이나요 🍀🙏 매댓글프요정 울릉도오징어님 감사해요오 ',
       createdAt: '2026-02-25T10:54:14.943+00:00',
       replies: [
         {
@@ -78,7 +78,7 @@ export const post: PreviewPostContent = {
     {
       id: 'c60ceadd-d94e-48b3-9299-b9a1f7e4b580',
       author: PREVIEW_AUTHORS['pv-author-2'],
-      body: 'ㅋㅋㅋ꿀팁이지만 행귤님이 아니면 다 쉽게 할수 없는 것들이네요',
+      body: 'ㅋㅋㅋ꿀팁이지만 울릉도오징어님이 아니면 다 쉽게 할수 없는 것들이네요',
       createdAt: '2026-02-25T11:22:03.116+00:00',
       replies: [
         {
@@ -106,7 +106,7 @@ export const post: PreviewPostContent = {
     {
       id: '44003de2-eb92-4098-b72b-64d8d10aa0ba',
       author: PREVIEW_AUTHORS['pv-author-17'],
-      body: '매글프 지킴이 행귤님🥰',
+      body: '매글프 지킴이 울릉도오징어님🥰',
       createdAt: '2026-02-25T11:34:39.095+00:00',
       replies: [
         {
@@ -134,7 +134,7 @@ export const post: PreviewPostContent = {
     {
       id: 'c37ee20b-7639-4f85-9fb9-3765a8628fe3',
       author: PREVIEW_AUTHORS['pv-author-25'],
-      body: '제목에 후킹과.. 항상 어디서든 댓글 달아주시는 행귤님께 감사함과 이런 노력이 숨겨져서 온도가 만들어졌다니!! 항상 감사해요 ❤️ ',
+      body: '제목에 후킹과.. 항상 어디서든 댓글 달아주시는 울릉도오징어님께 감사함과 이런 노력이 숨겨져서 온도가 만들어졌다니!! 항상 감사해요 ❤️ ',
       createdAt: '2026-02-25T14:13:33.702+00:00',
       replies: [
         {
@@ -162,7 +162,7 @@ export const post: PreviewPostContent = {
     {
       id: '94cb947b-4899-435d-9118-83d1b71e1682',
       author: PREVIEW_AUTHORS['pv-author-14'],
-      body: '댓글요정 행귤님🧚 마침내 50도 달성하신 거 보고 바로 달려왔쟈나요… 매생이들의 에너지예요!!',
+      body: '댓글요정 울릉도오징어님🧚 마침내 50도 달성하신 거 보고 바로 달려왔쟈나요… 매생이들의 에너지예요!!',
       createdAt: '2026-02-26T13:28:26.072+00:00',
       replies: [
         {
@@ -176,7 +176,7 @@ export const post: PreviewPostContent = {
     {
       id: 'bf03a201-ca9d-47c7-8918-6cd363a098dc',
       author: PREVIEW_AUTHORS['pv-author-4'],
-      body: '아 ㅋㅋㅋㅋㅋ\n> 그러므로 제 댓글 온도를 넘볼 수 있는 자는 많지 않다는 것이지요\n> 제가 점점 무서워지시나요?\n> 매글프가 매글프이지 매댓글프가 아닌 이유가 있지 않겠습니까...\n진짜 너무웃겨요 행귤님의 글로 하루 시작하면 늘 즐겁습니다',
+      body: '아 ㅋㅋㅋㅋㅋ\n> 그러므로 제 댓글 온도를 넘볼 수 있는 자는 많지 않다는 것이지요\n> 제가 점점 무서워지시나요?\n> 매글프가 매글프이지 매댓글프가 아닌 이유가 있지 않겠습니까...\n진짜 너무웃겨요 울릉도오징어님의 글로 하루 시작하면 늘 즐겁습니다',
       createdAt: '2026-03-02T22:58:54.361+00:00',
       replies: [],
     },

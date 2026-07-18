@@ -16,7 +16,7 @@ export const post: PreviewPostContent = {
     {
       id: 'f27eebfe-fb29-4de4-88a1-28da59f7e354',
       author: PREVIEW_AUTHORS['pv-author-10'],
-      body: '저도 노트북 키캡이 떨어져나가서 쿠팡에서 산 싸구려 키보드를 쓰는데, 행귤님의 레트로풍 키보드 탐나네요 ㅎㅎ',
+      body: '저도 노트북 키캡이 떨어져나가서 쿠팡에서 산 싸구려 키보드를 쓰는데, 울릉도오징어님의 레트로풍 키보드 탐나네요 ㅎㅎ',
       createdAt: '2026-06-10T12:14:08.356+00:00',
       replies: [
         {
@@ -30,7 +30,7 @@ export const post: PreviewPostContent = {
     {
       id: '5b8e9ff6-c5c6-4d61-ac24-a0a4120a858e',
       author: PREVIEW_AUTHORS['pv-author-2'],
-      body: "뭔가 좀 더 살이 붙으면 무라카미 행귤의 '내가 키보드를 청소할 때 하고 싶은 이야기' 같은 에세이가 될 것 같아요. 키보드가 초심의 상징이군요. 그나저나 저는 키캡 뽑아서 청소 한번도 안해봤는데 오늘 해봐야겠다.",
+      body: "뭔가 좀 더 살이 붙으면 무라카미 울릉도오징어의 '내가 키보드를 청소할 때 하고 싶은 이야기' 같은 에세이가 될 것 같아요. 키보드가 초심의 상징이군요. 그나저나 저는 키캡 뽑아서 청소 한번도 안해봤는데 오늘 해봐야겠다.",
       createdAt: '2026-06-10T12:16:41.984+00:00',
       replies: [
         {
@@ -48,7 +48,7 @@ export const post: PreviewPostContent = {
         {
           id: '9b9d409b-dfbe-4cef-9a7a-649ab77bd250',
           author: PREVIEW_AUTHORS['pv-author-4'],
-          body: '무라카미 행귤 ㅋㅋㅋㅋㅋ',
+          body: '무라카미 울릉도오징어 ㅋㅋㅋㅋㅋ',
           createdAt: '2026-06-11T01:31:17.64+00:00',
         },
       ],
@@ -70,7 +70,7 @@ export const post: PreviewPostContent = {
     {
       id: '4481c0ec-10bd-4bff-b64d-b4c1ad225264',
       author: PREVIEW_AUTHORS['pv-author-20'],
-      body: '키보드를 티슈로 물티슈로 닦을 생각만 했지 이렇게 키캡을 빼서 청소할 생각은 못해봤네요.. 역시 깔끔 행귤님!',
+      body: '키보드를 티슈로 물티슈로 닦을 생각만 했지 이렇게 키캡을 빼서 청소할 생각은 못해봤네요.. 역시 깔끔 울릉도오징어님!',
       createdAt: '2026-06-10T12:38:49.031+00:00',
       replies: [
         {
