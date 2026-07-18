@@ -11,7 +11,10 @@ export { PREVIEW_AUTHORS } from './previewAuthors';
 export const PREVIEW_BOARD_NAME = '매일 글쓰기 프렌즈 프리뷰';
 
 function withCommentTallies(content: PreviewPostContent): PreviewPost {
-  const countOfReplies = content.comments.reduce((total, comment) => total + comment.replies.length, 0);
+  const countOfReplies = content.comments.reduce(
+    (total, comment) => total + comment.replies.length,
+    0,
+  );
   return { ...content, countOfComments: content.comments.length, countOfReplies };
 }
 
