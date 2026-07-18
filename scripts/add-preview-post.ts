@@ -203,6 +203,11 @@ function isoDate(iso: string): string {
   return iso.slice(0, 10);
 }
 
+/** Collapse whitespace so a title is safe inside a single-line `//` comment. */
+function singleLineTitle(title: string): string {
+  return title.replace(/\s+/g, ' ').trim();
+}
+
 function serializeAuthorReference(author: PreviewAuthor): string {
   return `PREVIEW_AUTHORS['${author.id}']`;
 }
@@ -238,7 +243,7 @@ function writePostModule(content: PreviewPostContent): string {
   const source = `import type { PreviewPostContent } from '../previewTypes';
 import { PREVIEW_AUTHORS } from '../previewAuthors';
 
-/** ${content.title} (${isoDate(content.createdAt)}) */
+/** ${singleLineTitle(content.title)} (${isoDate(content.createdAt)}) */
 export const post: PreviewPostContent = ${serializePostContent(content)};
 `;
   writeFileSync(filePath, source, 'utf8');
@@ -284,7 +289,7 @@ function patchPostsIndex(content: PreviewPostContent): string | null {
 
   const newDate = isoDate(content.createdAt);
   const importLine = `import { post as ${identifier} } from './${content.id}';`;
-  const arrayLine = `  ${identifier}, // ${content.title} (${newDate})`;
+  const arrayLine = `  ${identifier}, // ${singleLineTitle(content.title)} (${newDate})`;
 
   const lines = text.split('\n');
   const entries = parseIndexEntries(lines);
