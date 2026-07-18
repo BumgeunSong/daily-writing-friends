@@ -66,8 +66,10 @@ describe('PreviewBoardPage — navigation isolation + card smoke', () => {
     expect(screen.getAllByText(post.title).length).toBeGreaterThan(0);
     expect(screen.getAllByText(post.author.displayName).length).toBeGreaterThan(0);
 
-    // PostCardFooter renders comments + replies summed together, once per card.
+    // PostCardFooter sums comments + replies once per card, but that small total
+    // is not unique across the full board — assert presence like the title/author
+    // checks above rather than requiring a single global match.
     const totalCount = post.countOfComments + post.countOfReplies;
-    expect(screen.getByText(String(totalCount))).toBeInTheDocument();
+    expect(screen.getAllByText(String(totalCount)).length).toBeGreaterThan(0);
   });
 });
