@@ -102,4 +102,59 @@ export const PREVIEW_AUTHORS: Record<string, PreviewAuthor> = {
     displayName: '나미',
     profileImageURL: '/preview/avatars/pv-author-20.jpg',
   },
+  'pv-author-21': {
+    id: 'pv-author-21',
+    displayName: '이병찬',
+    profileImageURL: '/preview/avatars/pv-author-21.jpg',
+  },
+  'pv-author-22': {
+    id: 'pv-author-22',
+    displayName: '스티브',
+    profileImageURL: '/preview/avatars/pv-author-22.png',
+  },
+  'pv-author-23': {
+    id: 'pv-author-23',
+    displayName: '찹도',
+    profileImageURL: '/preview/avatars/pv-author-23.jpg',
+  },
+  'pv-author-24': {
+    id: 'pv-author-24',
+    displayName: '모리친구',
+    profileImageURL: '/preview/avatars/pv-author-24.jpg',
+  },
+  'pv-author-25': {
+    id: 'pv-author-25',
+    displayName: '가희',
+    profileImageURL: '/preview/avatars/pv-author-25.jpg',
+  },
+  'pv-author-26': {
+    id: 'pv-author-26',
+    displayName: '섬',
+    profileImageURL: '/preview/avatars/pv-author-26.jpg',
+  },
+  'pv-author-27': {
+    id: 'pv-author-27',
+    displayName: '얼룩룩',
+    profileImageURL: '/preview/avatars/pv-author-27.jpg',
+  },
+  'pv-author-28': {
+    id: 'pv-author-28',
+    displayName: '초월의집',
+    profileImageURL: '/preview/avatars/pv-author-28.png',
+  },
+  'pv-author-29': {
+    id: 'pv-author-29',
+    displayName: '규니',
+    profileImageURL: '/preview/avatars/pv-author-29.jpg',
+  },
+  'pv-author-30': {
+    id: 'pv-author-30',
+    displayName: '접속자',
+    profileImageURL: '/preview/avatars/pv-author-30.jpg',
+  },
+  'pv-author-31': {
+    id: 'pv-author-31',
+    displayName: '장한솔',
+    profileImageURL: '/preview/avatars/pv-author-31.jpg',
+  },
 };
