@@ -7,15 +7,31 @@ const MONDAY = 1;
 const FRIDAY = 5;
 const DAYS_FROM_SUNDAY_TO_MONDAY = 6;
 
-/**
- * 평일 슬롯별 글 분량(글자 수). null은 그날 글을 쉬어 잔디가 비는 칸이다.
- * 색 농도가 1~4단계로 골고루 보이도록 값을 흩뿌리고, 사람 냄새가 나도록 빈칸을 섞었다.
- */
-const WEEKDAY_CONTENT_LENGTHS: (number | null)[] = [
+// 평일 슬롯(월~금 20칸)별 글 분량(글자 수). null은 그날 글을 쉬어 잔디가 비는 칸이다.
+// 세 프로필로 서로 다른 잔디 상태를 보여줘 "며칠 빠져도 괜찮다"는 안심을 준다.
+
+/** 거의 매일 꽉 채운 고인물. 빈칸 없이 진한 초록 위주. */
+const FULL_STREAK_LENGTHS: (number | null)[] = [
+  320, 480, 300, 540, 360,
+  420, 500, 330, 560, 300,
+  380, 520, 340, 460, 300,
+  500, 360, 540, 320, 480,
+];
+
+/** 대체로 쓰되 가끔 빠지는 현실적인 리듬. 농도가 골고루 섞이고 빈칸도 조금 있다. */
+const REALISTIC_LENGTHS: (number | null)[] = [
   120, 250, null, 300, 180,
   400, 150, 520, 200, 90,
   0, 210, 300, null, 160,
   250, 180, 420, 300, 240,
+];
+
+/** 이제 막 시작해 띄엄띄엄 쓰는 새싹. 대부분 비어 있고 드문드문 초록. */
+const RARE_LENGTHS: (number | null)[] = [
+  null, 150, null, null, null,
+  null, null, 80, null, null,
+  200, null, null, null, null,
+  null, 90, null, null, 120,
 ];
 
 function isWeekday(date: Date): boolean {
@@ -51,14 +67,17 @@ function findGridStartMonday(today: Date): Date {
  * 하드코딩한 고정 날짜는 시간이 지나면 그리드 표시 창을 벗어나 잔디가 텅 비므로,
  * 항상 today에 맞춰 생성해 마케팅 카드가 늘 채워진 상태로 보이게 한다.
  */
-export function generateMockContributions(today: Date = new Date()): Contribution[] {
+export function generateMockContributions(
+  today: Date = new Date(),
+  weekdayLengths: (number | null)[] = REALISTIC_LENGTHS,
+): Contribution[] {
   const contributions: Contribution[] = [];
   const cursor = findGridStartMonday(today);
   let weekdayIndex = 0;
 
   while (cursor <= today) {
     if (isWeekday(cursor)) {
-      const contentLength = WEEKDAY_CONTENT_LENGTHS[weekdayIndex] ?? null;
+      const contentLength = weekdayLengths[weekdayIndex] ?? null;
       if (contentLength !== null) {
         contributions.push({ createdAt: toLocalISODate(cursor), contentLength });
       }
@@ -70,15 +89,54 @@ export function generateMockContributions(today: Date = new Date()): Contributio
   return contributions;
 }
 
-export const mockUserStats: WritingStats = {
-  user: {
-    id: '1',
-    nickname: '매글프',
-    realname: '김매글',
-    profilePhotoURL: 'https://github.com/shadcn.png',
-    bio: '매일 글쓰기를 실천하는 프렌즈',
-  },
-  contributions: generateMockContributions(),
-  badges: [{ name: '연속 12일', emoji: '🔥' }],
-  recentStreak: 5,
-};
+interface MockProfile {
+  nickname: string;
+  profilePhotoURL: string;
+  bio: string;
+  badge: { name: string; emoji: string };
+  recentStreak: number;
+  weekdayLengths: (number | null)[];
+}
+
+function buildMockStats(profile: MockProfile): WritingStats {
+  return {
+    user: {
+      id: profile.nickname,
+      nickname: profile.nickname,
+      realname: null,
+      profilePhotoURL: profile.profilePhotoURL,
+      bio: profile.bio,
+    },
+    contributions: generateMockContributions(new Date(), profile.weekdayLengths),
+    badges: [profile.badge],
+    recentStreak: profile.recentStreak,
+  };
+}
+
+// 세 명의 잔디를 나란히 보여줘 방문자가 자신을 어디에든 대입할 수 있게 한다.
+export const mockStatsShowcase: WritingStats[] = [
+  buildMockStats({
+    nickname: '매생이',
+    profilePhotoURL: '/preview/avatars/pv-author-5.jpg',
+    bio: '거의 매일 쓰는 고인물',
+    badge: { name: '연속 20일', emoji: '🔥' },
+    recentStreak: 20,
+    weekdayLengths: FULL_STREAK_LENGTHS,
+  }),
+  buildMockStats({
+    nickname: '매글이',
+    profilePhotoURL: '/preview/avatars/pv-author-15.jpg',
+    bio: '가끔 빠져도 꾸준히',
+    badge: { name: '연속 5일', emoji: '✨' },
+    recentStreak: 5,
+    weekdayLengths: REALISTIC_LENGTHS,
+  }),
+  buildMockStats({
+    nickname: '매일이',
+    profilePhotoURL: '/preview/avatars/pv-author-18.jpg',
+    bio: '이제 막 시작한 새싹',
+    badge: { name: '새싹', emoji: '🌱' },
+    recentStreak: 1,
+    weekdayLengths: RARE_LENGTHS,
+  }),
+];

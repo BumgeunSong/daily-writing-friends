@@ -1,6 +1,6 @@
-import { mockUserStats } from '../../shared/components/mockUserStats';
+import { mockStatsShowcase } from '../../shared/components/mockUserStats';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../shared/ui/card';
-import { UserPostingStatsCard } from '../../stats/components/UserPostingStatsCard';
+import { PostingStatsShowcase } from '../../stats/components/PostingStatsShowcase';
 import { CommunityThreadPreview } from './CommunityThreadPreview';
 
 export default function GoalSection() {
@@ -25,7 +25,7 @@ export default function GoalSection() {
           </p>
         </CardContent>
         <CardFooter>
-          <UserPostingStatsCard stats={mockUserStats} />
+          <PostingStatsShowcase statsList={mockStatsShowcase} />
         </CardFooter>
       </Card>
 
