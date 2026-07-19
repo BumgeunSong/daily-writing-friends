@@ -7,12 +7,12 @@ import IntroCTA from '@/login/components/IntroCTA';
 import IntroHeader from '@/login/components/IntroHeader';
 import IntroHero from '@/login/components/IntroHero';
 import { IntroPageLayout } from '@/login/components/IntroPageLayout';
+import { PreviewPeekSection } from '@/login/components/PreviewPeekSection';
 import ReviewCarousel from '@/login/components/ReviewCarousel';
 import { useActiveUser } from '@/login/hooks/useActiveUser';
 import { useDaysUntilCohortStart } from '@/login/hooks/useDaysUntilCohortStart';
 import { useIsUserInWaitingList } from '@/login/hooks/useIsUserInWaitingList';
 import { useUpcomingBoard } from '@/login/hooks/useUpcomingBoard';
-import { PreviewEntryButton } from '@/login/components/PreviewEntryButton';
 import NoticeSection from '@/shared/components/NoticeSection';
 import { useAuth } from '@/shared/hooks/useAuth';
 
@@ -44,12 +44,13 @@ export default function JoinIntroPage() {
       <IntroHero />
 
       <IntroContentSection>
-        <PreviewEntryButton />
         <GoalSection />
 
         <SectionWrapper>
           <ReviewCarousel />
         </SectionWrapper>
+
+        <PreviewPeekSection />
 
         <SectionWrapper variant='highlighted'>
           <CountdownSection daysRemaining={daysRemaining} activeUserCount={activeUsers?.length} />
