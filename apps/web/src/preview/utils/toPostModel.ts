@@ -1,6 +1,6 @@
 import { createTimestamp } from '@/shared/model/Timestamp';
 import { PostVisibility, type Post } from '@/post/model/Post';
-import type { PreviewPost } from '@/preview/data/previewPosts';
+import type { PreviewPost } from '@/shared/preview-content/previewPosts';
 
 /**
  * Adapts a static {@link PreviewPost} onto the real {@link Post} model so the

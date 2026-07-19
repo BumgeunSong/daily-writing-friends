@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import PreviewPostDetailPage from './PreviewPostDetailPage';
-import { PREVIEW_POSTS } from '@/preview/data/previewPosts';
+import { PREVIEW_POSTS } from '@/shared/preview-content/previewPosts';
 import { withProviders } from '@/test/utils/withProviders';
 
 /**

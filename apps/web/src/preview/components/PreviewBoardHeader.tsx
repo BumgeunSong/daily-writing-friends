@@ -1,4 +1,4 @@
-import { PREVIEW_BOARD_NAME } from '@/preview/data/previewPosts';
+import { PREVIEW_BOARD_NAME } from '@/shared/preview-content/previewPosts';
 import type React from 'react';
 
 /**
