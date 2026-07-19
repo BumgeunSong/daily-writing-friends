@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { generateMockContributions } from './mockUserStats';
+import { generateMockContributions, mockStatsShowcase } from './mockUserStats';
 
 const FOUR_WEEKS_IN_DAYS = 28;
 const MIN_FILLED_DAYS = 12;
@@ -57,5 +57,19 @@ describe('generateMockContributions', () => {
       expect(contributions.length).toBeGreaterThanOrEqual(MIN_FILLED_DAYS);
       expect(distinctLengths.size).toBeGreaterThanOrEqual(MIN_DISTINCT_LENGTHS);
     });
+  });
+});
+
+describe('mockStatsShowcase', () => {
+  it('exposes three distinctly-named profiles', () => {
+    const names = mockStatsShowcase.map((stats) => stats.user.nickname);
+    expect(names).toEqual(['매생이', '매글이', '매일이']);
+  });
+
+  it('orders profiles from densest to sparsest grid', () => {
+    const filledCounts = mockStatsShowcase.map((stats) => stats.contributions.length);
+    const [fullStreak, realistic, rare] = filledCounts;
+    expect(fullStreak).toBeGreaterThan(realistic);
+    expect(realistic).toBeGreaterThan(rare);
   });
 });
