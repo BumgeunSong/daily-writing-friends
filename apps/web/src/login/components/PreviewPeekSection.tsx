@@ -83,7 +83,7 @@ export function PreviewPeekSection() {
           전체 보기 →
         </button>
       </div>
-      <div className='-mx-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-2 pb-2 md:-mx-6 md:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
+      <div className='flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
         {peekPosts.map((post) => (
           <PeekCard key={post.id} post={post} onOpen={() => navigate(`/preview/post/${post.id}`)} />
         ))}
