@@ -6,7 +6,7 @@ import { PostMetaHelmet } from '@/post/components/PostMetaHelmet';
 import type { PostAuthorData } from '@/post/components/PostUserProfile';
 import { PreviewBackButton } from '@/preview/components/PreviewBackButton';
 import { PreviewCommentList } from '@/preview/components/PreviewCommentList';
-import { PREVIEW_POSTS } from '@/preview/data/previewPosts';
+import { PREVIEW_POSTS } from '@/shared/preview-content/previewPosts';
 import { toPostModel } from '@/preview/utils/toPostModel';
 
 const noop = () => {};

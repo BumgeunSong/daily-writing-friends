@@ -5,7 +5,7 @@ import { PostCardHeader } from '@/post/components/PostCardHeader';
 import { PostCardThumbnail } from '@/post/components/PostCardThumbnail';
 import type { PostAuthorData } from '@/post/components/PostUserProfile';
 import { Card } from '@/shared/ui/card';
-import type { PreviewPost } from '@/preview/data/previewPosts';
+import type { PreviewPost } from '@/shared/preview-content/previewPosts';
 import type React from 'react';
 
 interface PreviewPostCardProps {

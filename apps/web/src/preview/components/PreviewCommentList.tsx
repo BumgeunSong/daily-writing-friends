@@ -1,6 +1,6 @@
 import { CommentHeader } from '@/comment/components/CommentHeader';
 import { renderCommentBodyHtml } from '@/shared/content/contentUtils';
-import type { PreviewComment, PreviewReply } from '@/preview/data/previewPosts';
+import type { PreviewComment, PreviewReply } from '@/shared/preview-content/previewPosts';
 
 /**
  * Formats a snapshot ISO date as `YYYY. MM. dd`. The preview is a frozen

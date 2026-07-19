@@ -1,5 +1,5 @@
 import { PreviewPostCard } from '@/preview/components/PreviewPostCard';
-import { PREVIEW_POSTS } from '@/preview/data/previewPosts';
+import { PREVIEW_POSTS } from '@/shared/preview-content/previewPosts';
 import type React from 'react';
 
 /**
