@@ -1,7 +1,7 @@
 import { mockStatsShowcase } from '../../shared/components/mockUserStats';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../shared/ui/card';
 import { PostingStatsShowcase } from '../../stats/components/PostingStatsShowcase';
-import { CommunityThreadPreview } from './CommunityThreadPreview';
+import { CommunityVoicesCarousel } from './CommunityVoicesCarousel';
 
 export default function GoalSection() {
   return (
@@ -48,7 +48,7 @@ export default function GoalSection() {
           </p>
         </CardContent>
         <CardFooter>
-          <CommunityThreadPreview />
+          <CommunityVoicesCarousel />
         </CardFooter>
       </Card>
 
