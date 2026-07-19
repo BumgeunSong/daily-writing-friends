@@ -6,7 +6,7 @@ import {
   type PreviewPost,
 } from '@/shared/preview-content/previewPosts';
 
-// 같이 쓰기 카드에 붙이는 대표 스레드. 트레바리(유료 모임) 경험자가 매글프가 더 좋다고 말하고,
+// 같이 쓰기 카드에 붙이는 대표 스레드. 유료 독서 모임 경험자가 매글프가 더 좋다고 말하고,
 // 글쓴이가 따뜻하게 되받는 주고받는 대화라 "무료인데 이렇게 따뜻하다"를 잘 전달한다.
 // 이 스레드의 본문은 평문이라 sanitizer 없이 텍스트로 그대로 렌더한다.
 const FEATURED_POST_ID = '87315dd3-d16e-4550-b7d5-9befdf9df675';
