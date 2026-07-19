@@ -4,7 +4,6 @@ import { ContributionItem } from '@/stats/components/ContributionItem';
 import { useContributionGridData, type ContributionType } from '@/stats/hooks/useContributionGrid';
 import type { Contribution } from '@/stats/model/WritingStats';
 import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
-import { WEEKS_TO_DISPLAY } from '@/stats/utils/contributionGridUtils';
 
 export type ContributionGraphProps =
   | { type: 'posting'; contributions: Contribution[]; className?: string; userId?: string }
@@ -67,7 +66,8 @@ function ContributionGraphInner(props: ContributionGraphProps) {
   return (
     <div
       className={cn(
-        `w-full grid grid-rows-${WEEKS_TO_DISPLAY} grid-flow-col gap-1`,
+        // grid-rows-4 must stay static: Tailwind can't emit a class from an interpolated value.
+        'grid w-full grid-flow-col grid-rows-4 gap-1',
         props.className,
       )}
     >
