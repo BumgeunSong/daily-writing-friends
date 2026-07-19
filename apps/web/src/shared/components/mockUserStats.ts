@@ -117,7 +117,7 @@ function buildMockStats(profile: MockProfile): WritingStats {
 export const mockStatsShowcase: WritingStats[] = [
   buildMockStats({
     nickname: '매생이',
-    profilePhotoURL: '/preview/avatars/pv-author-5.jpg',
+    profilePhotoURL: '/mock-avatars/mae-saeng.svg',
     bio: '거의 매일 쓰는 고인물',
     badge: { name: '연속 20일', emoji: '🔥' },
     recentStreak: 20,
@@ -125,7 +125,7 @@ export const mockStatsShowcase: WritingStats[] = [
   }),
   buildMockStats({
     nickname: '매글이',
-    profilePhotoURL: '/preview/avatars/pv-author-15.jpg',
+    profilePhotoURL: '/mock-avatars/mae-geul.svg',
     bio: '가끔 빠져도 꾸준히',
     badge: { name: '연속 5일', emoji: '✨' },
     recentStreak: 5,
@@ -133,7 +133,7 @@ export const mockStatsShowcase: WritingStats[] = [
   }),
   buildMockStats({
     nickname: '매일이',
-    profilePhotoURL: '/preview/avatars/pv-author-18.jpg',
+    profilePhotoURL: '/mock-avatars/mae-il.svg',
     bio: '이제 막 시작한 새싹',
     badge: { name: '새싹', emoji: '🌱' },
     recentStreak: 1,
