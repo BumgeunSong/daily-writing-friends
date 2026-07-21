@@ -61,15 +61,14 @@ describe('generateMockContributions', () => {
 });
 
 describe('mockStatsShowcase', () => {
-  it('exposes three distinctly-named profiles', () => {
+  it('exposes two distinctly-named profiles', () => {
     const names = mockStatsShowcase.map((stats) => stats.user.nickname);
-    expect(names).toEqual(['매생이', '매글이', '매일이']);
+    expect(names).toEqual(['매생이', '매글이']);
   });
 
   it('orders profiles from densest to sparsest grid', () => {
     const filledCounts = mockStatsShowcase.map((stats) => stats.contributions.length);
-    const [fullStreak, realistic, rare] = filledCounts;
+    const [fullStreak, realistic] = filledCounts;
     expect(fullStreak).toBeGreaterThan(realistic);
-    expect(realistic).toBeGreaterThan(rare);
   });
 });

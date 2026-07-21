@@ -8,7 +8,7 @@ const FRIDAY = 5;
 const DAYS_FROM_SUNDAY_TO_MONDAY = 6;
 
 // 평일 슬롯(월~금 20칸)별 글 분량(글자 수). null은 그날 글을 쉬어 잔디가 비는 칸이다.
-// 세 프로필로 서로 다른 잔디 상태를 보여줘 "며칠 빠져도 괜찮다"는 안심을 준다.
+// 두 프로필로 서로 다른 잔디 상태를 보여줘 "며칠 빠져도 괜찮다"는 안심을 준다.
 
 /** 거의 매일 꽉 채운 고인물. 빈칸 없이 진한 초록 위주. */
 const FULL_STREAK_LENGTHS: (number | null)[] = [
@@ -24,14 +24,6 @@ const REALISTIC_LENGTHS: (number | null)[] = [
   400, 150, 520, 200, 90,
   0, 210, 300, null, 160,
   250, 180, 420, 300, 240,
-];
-
-/** 이제 막 시작해 띄엄띄엄 쓰는 새싹. 대부분 비어 있고 드문드문 초록. */
-const RARE_LENGTHS: (number | null)[] = [
-  null, 150, null, null, null,
-  null, null, 80, null, null,
-  200, null, null, null, null,
-  null, 90, null, null, 120,
 ];
 
 function isWeekday(date: Date): boolean {
@@ -113,7 +105,7 @@ function buildMockStats(profile: MockProfile): WritingStats {
   };
 }
 
-// 세 명의 잔디를 나란히 보여줘 방문자가 자신을 어디에든 대입할 수 있게 한다.
+// 두 명의 잔디를 나란히 보여줘 방문자가 자신을 어디에든 대입할 수 있게 한다.
 export const mockStatsShowcase: WritingStats[] = [
   buildMockStats({
     nickname: '매생이',
@@ -130,13 +122,5 @@ export const mockStatsShowcase: WritingStats[] = [
     badge: { name: '연속 5일', emoji: '✨' },
     recentStreak: 5,
     weekdayLengths: REALISTIC_LENGTHS,
-  }),
-  buildMockStats({
-    nickname: '매일이',
-    profilePhotoURL: '/mock-avatars/mae-il.svg',
-    bio: '이제 막 시작한 새싹',
-    badge: { name: '새싹', emoji: '🌱' },
-    recentStreak: 1,
-    weekdayLengths: RARE_LENGTHS,
   }),
 ];
