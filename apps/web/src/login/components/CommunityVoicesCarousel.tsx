@@ -1,16 +1,10 @@
-import * as React from 'react';
-import { cn } from '@/shared/utils';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  type CarouselApi,
-} from '@/shared/ui/Carousel';
+import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import {
   PREVIEW_POSTS,
   type PreviewComment,
   type PreviewReply,
 } from '@/shared/preview-content/previewPosts';
+import { cn } from '@/shared/utils';
 
 interface Voice {
   comment: PreviewComment;
@@ -18,7 +12,7 @@ interface Voice {
   isReplyByPostAuthor: boolean;
 }
 
-// 손으로 고른 따뜻하고 재밌는 댓글-답글 짝. 실제 UI 대신 카드 캐러셀로 담백하게 보여준다.
+// 손으로 고른 따뜻하고 재밌는 댓글-답글 짝. 실제 대화처럼 채팅 카드로 담백하게 보여준다.
 // 원문이 바뀌어도 어긋나지 않도록 답글 id로 shared preview 데이터에서 직접 해석한다.
 const VOICE_REFS = [
   { postId: 'f675d197-9bf3-489a-947e-33ef6f2b6721', replyId: '2d3c9c68-92e9-492b-bfcd-a260aa8fbcf0' },
@@ -37,69 +31,69 @@ export function resolveCommunityVoices(): Voice[] {
   }).filter((voice): voice is Voice => voice !== null);
 }
 
+interface ChatMessageProps {
+  name: string;
+  imageUrl?: string;
+  body: string;
+  align: 'start' | 'end';
+  isAuthor?: boolean;
+}
+
+function ChatMessage({ name, imageUrl, body, align, isAuthor = false }: ChatMessageProps) {
+  const isReply = align === 'end';
+
+  return (
+    <div className={cn('flex flex-col gap-1', isReply ? 'items-end' : 'items-start')}>
+      <div className={cn('flex items-center gap-1.5', isReply && 'flex-row-reverse')}>
+        <ComposedAvatar size={20} src={imageUrl} alt={name} fallback={name[0] || '?'} />
+        <span className='text-xs font-medium text-muted-foreground'>
+          {name}
+          {isAuthor && <span className='ml-1 text-muted-foreground/60'>· 글쓴이</span>}
+        </span>
+      </div>
+      <p
+        className={cn(
+          'max-w-[85%] text-pretty px-3 py-2 text-sm leading-relaxed text-foreground',
+          isReply ? 'rounded-2xl rounded-tr-sm bg-primary/10' : 'rounded-2xl rounded-tl-sm bg-muted',
+        )}
+      >
+        {body}
+      </p>
+    </div>
+  );
+}
+
 function VoiceCard({ voice }: { voice: Voice }) {
   const { comment, reply, isReplyByPostAuthor } = voice;
 
   return (
-    <div className='flex min-h-36 flex-col justify-center gap-3 px-1'>
-      <div className='space-y-1'>
-        <p className='text-pretty text-base leading-relaxed text-foreground'>{comment.body}</p>
-        <p className='text-xs text-muted-foreground/70'>{comment.author.displayName}</p>
-      </div>
-      <div className='ml-3 space-y-1 rounded-lg bg-muted/50 px-3 py-2.5'>
-        <p className='text-pretty text-sm leading-relaxed text-muted-foreground'>{reply.body}</p>
-        <p className='text-xs text-muted-foreground/70'>
-          {reply.author.displayName}
-          {isReplyByPostAuthor && <span className='ml-1 text-muted-foreground/60'>· 글쓴이</span>}
-        </p>
-      </div>
+    <div className='reading-shadow flex w-72 shrink-0 snap-start flex-col gap-3 rounded-lg border border-border/50 bg-card p-4 md:w-80'>
+      <ChatMessage
+        name={comment.author.displayName}
+        imageUrl={comment.author.profileImageURL}
+        body={comment.body}
+        align='start'
+      />
+      <ChatMessage
+        name={reply.author.displayName}
+        imageUrl={reply.author.profileImageURL}
+        body={reply.body}
+        align='end'
+        isAuthor={isReplyByPostAuthor}
+      />
     </div>
   );
 }
 
 export function CommunityVoicesCarousel() {
   const voices = resolveCommunityVoices();
-  const [selectedIndex, setSelectedIndex] = React.useState(0);
-  const [api, setApi] = React.useState<CarouselApi>();
-
-  React.useEffect(() => {
-    if (!api) return;
-    const handleSelect = () => setSelectedIndex(api.selectedScrollSnap());
-    handleSelect();
-    api.on('select', handleSelect);
-    return () => {
-      api.off('select', handleSelect);
-    };
-  }, [api]);
-
   if (voices.length === 0) return null;
 
   return (
-    <div className='w-full space-y-4'>
-      <Carousel opts={{ loop: true }} setApi={setApi} className='w-full'>
-        <CarouselContent>
-          {voices.map((voice) => (
-            <CarouselItem key={voice.reply.id}>
-              <VoiceCard voice={voice} />
-            </CarouselItem>
-          ))}
-        </CarouselContent>
-      </Carousel>
-
-      <div className='flex justify-center gap-2'>
-        {voices.map((voice, index) => (
-          <button
-            key={voice.reply.id}
-            type='button'
-            onClick={() => api?.scrollTo(index)}
-            className={cn(
-              'size-2 rounded-full transition-[width,background-color]',
-              selectedIndex === index ? 'w-6 bg-primary' : 'bg-muted-foreground/30',
-            )}
-            aria-label={`커뮤니티 대화 ${index + 1}번으로 이동`}
-          />
-        ))}
-      </div>
+    <div className='flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
+      {voices.map((voice) => (
+        <VoiceCard key={voice.reply.id} voice={voice} />
+      ))}
     </div>
   );
 }
