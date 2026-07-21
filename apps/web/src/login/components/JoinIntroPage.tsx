@@ -57,7 +57,6 @@ export default function JoinIntroPage() {
         </SectionWrapper>
 
         <ActiveUserProfileList users={activeUsers ?? []} />
-        <div className='h-6' />
 
         <SectionWrapper variant='grid'>
           <CohortDetailsCard upcomingBoard={upcomingBoard} />
