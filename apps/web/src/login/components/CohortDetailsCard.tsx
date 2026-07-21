@@ -8,7 +8,7 @@ interface CohortDetailsCardProps {
 }
 
 const CohortDetailsCard: React.FC<CohortDetailsCardProps> = ({ upcomingBoard }) => (
-  <Card className="relative space-y-4 bg-muted/30 p-6 md:h-full">
+  <Card className="relative space-y-4 border-border/50 p-6 md:h-full">
     <div className="absolute -top-3 left-6">
       <div className="flex items-center gap-1 rounded-full bg-black px-3 py-1 text-white shadow-md">
         <Sparkles className="size-4" />
