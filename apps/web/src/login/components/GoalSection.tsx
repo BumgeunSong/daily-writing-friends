@@ -1,5 +1,5 @@
 import { mockStatsShowcase } from '../../shared/components/mockUserStats';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../shared/ui/card';
+import { Card, CardContent, CardFooter, CardHeader } from '../../shared/ui/card';
 import { PostingStatsShowcase } from '../../stats/components/PostingStatsShowcase';
 import { CommunityVoicesCarousel } from './CommunityVoicesCarousel';
 
@@ -9,7 +9,7 @@ export default function GoalSection() {
       {/* 첫 번째 목표 섹션 */}
       <Card className='border-none bg-muted/10'>
         <CardHeader>
-          <CardTitle className='text-xl font-bold'>매일 쓰기</CardTitle>
+          <h2 className='text-xl font-bold leading-none tracking-tight'>매일 쓰기</h2>
         </CardHeader>
         <CardContent className='space-y-4'>
           <p className='text-muted-foreground'>건강해지려면 일단 헬스장에 꾸준히 가야하잖아요?</p>
@@ -32,7 +32,7 @@ export default function GoalSection() {
       {/* 두 번째 목표 섹션 */}
       <Card className='border-none bg-muted/10'>
         <CardHeader>
-          <CardTitle className='text-xl font-bold'>같이 쓰기</CardTitle>
+          <h2 className='text-xl font-bold leading-none tracking-tight'>같이 쓰기</h2>
         </CardHeader>
         <CardContent className='space-y-4'>
           <p className='text-muted-foreground'>혼자서만 글을 쓰면 머릿속이 잘 정리되지 않습니다.</p>
@@ -55,7 +55,7 @@ export default function GoalSection() {
       {/* 3번째 목표 섹션 */}
       <Card className='border-none bg-muted/10'>
         <CardHeader>
-          <CardTitle className='text-xl font-bold'>생각의 깊이</CardTitle>
+          <h2 className='text-xl font-bold leading-none tracking-tight'>생각의 깊이</h2>
         </CardHeader>
         <CardContent className='space-y-4'>
           <p className='text-muted-foreground'>
