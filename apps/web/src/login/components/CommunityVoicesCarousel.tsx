@@ -1,4 +1,5 @@
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
+import { SnapRow } from '@/shared/ui/SnapRow';
 import {
   PREVIEW_POSTS,
   type PreviewComment,
@@ -90,10 +91,10 @@ export function CommunityVoicesCarousel() {
   if (voices.length === 0) return null;
 
   return (
-    <div className='flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
+    <SnapRow>
       {voices.map((voice) => (
         <VoiceCard key={voice.reply.id} voice={voice} />
       ))}
-    </div>
+    </SnapRow>
   );
 }
