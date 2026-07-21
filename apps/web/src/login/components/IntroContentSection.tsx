@@ -7,7 +7,7 @@ interface IntroContentSectionProps {
 
 export function IntroContentSection({ children, className = '' }: IntroContentSectionProps) {
   return (
-    <div className={`space-y-8 px-2 md:px-6 ${className}`.trim()}>
+    <div className={`space-y-8 px-4 md:px-6 ${className}`.trim()}>
       {children}
     </div>
   );
