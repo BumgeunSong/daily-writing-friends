@@ -1,6 +1,7 @@
 import { MessageCircle } from 'lucide-react';
 import { useNavigate } from '@/shared/navigation';
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
+import { SnapRow } from '@/shared/ui/SnapRow';
 import { PREVIEW_POSTS, type PreviewPost } from '@/shared/preview-content/previewPosts';
 
 // 후기 다음에 붙는 미리보기 peek. ~20개 중 재밌는 제목 위주로 8개만 손으로 골라 스와이프로 맛보게 하고,
@@ -83,12 +84,12 @@ export function PreviewPeekSection() {
           전체 보기 →
         </button>
       </div>
-      <div className='flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
+      <SnapRow>
         {peekPosts.map((post) => (
           <PeekCard key={post.id} post={post} onOpen={() => navigate(`/preview/post/${post.id}`)} />
         ))}
         {remaining > 0 && <MoreCard remaining={remaining} onOpen={() => navigate('/preview')} />}
-      </div>
+      </SnapRow>
     </section>
   );
 }
