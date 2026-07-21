@@ -72,7 +72,7 @@ export function PreviewPeekSection() {
   const remaining = Math.max(0, PREVIEW_POSTS.length - peekPosts.length);
 
   return (
-    <section className='space-y-3'>
+    <section className='space-y-3 px-6'>
       <div className='flex items-baseline justify-between gap-4'>
         <h2 className='text-xl font-bold md:text-2xl'>이런 글들이 올라와요</h2>
         <button

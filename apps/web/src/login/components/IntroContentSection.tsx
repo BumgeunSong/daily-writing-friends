@@ -21,8 +21,8 @@ interface SectionWrapperProps {
 export function SectionWrapper({ children, variant = 'default' }: SectionWrapperProps) {
   const variantClasses = {
     default: '',
-    highlighted: 'px-0 md:px-4',
-    grid: 'px-4 md:px-4',
+    highlighted: 'px-0',
+    grid: 'px-0',
   };
 
   const className = variantClasses[variant];
