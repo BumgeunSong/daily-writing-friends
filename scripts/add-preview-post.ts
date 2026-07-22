@@ -33,7 +33,7 @@ import {
 } from './lib/preview-source';
 
 const ROOT = repoRoot();
-const DATA_DIR = resolve(ROOT, 'apps/web/src/preview/data');
+const DATA_DIR = resolve(ROOT, 'apps/web/src/shared/preview-content');
 const POSTS_DIR = resolve(DATA_DIR, 'posts');
 const PUBLIC_PREVIEW_DIR = resolve(ROOT, 'apps/web/public/preview');
 const AVATARS_SUBDIR = 'avatars';
