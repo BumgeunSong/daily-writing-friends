@@ -157,4 +157,9 @@ export const PREVIEW_AUTHORS: Record<string, PreviewAuthor> = {
     displayName: '장한솔',
     profileImageURL: '/preview/avatars/pv-author-31.jpg',
   },
+  'pv-author-32': {
+    id: 'pv-author-32',
+    displayName: '행귤',
+    profileImageURL: '/preview/avatars/pv-author-32.png',
+  },
 };

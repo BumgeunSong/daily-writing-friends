@@ -1,6 +1,7 @@
 import type { PreviewPostContent } from '../previewTypes';
 import { post as post_G4SWrmpQYKwWhhXTfzZI } from './G4SWrmpQYKwWhhXTfzZI';
 import { post as post_cWjTVRDguRoeIplV0deg } from './cWjTVRDguRoeIplV0deg';
+import { post as post_hqwh5CWhRAKeaVboABWY } from './hqwh5CWhRAKeaVboABWY';
 import { post as post_RxEj4JK4omOslhmGDln4 } from './RxEj4JK4omOslhmGDln4';
 import { post as post_Ntl4V3Jvtmu63A5tZQDS } from './Ntl4V3Jvtmu63A5tZQDS';
 import { post as post_hoBdfQvdLfUDJLyV2Xc4 } from './hoBdfQvdLfUDJLyV2Xc4';
@@ -17,6 +18,7 @@ import { post as post_bc6e8407aa3a4cc59859b459584c1f67 } from './bc6e8407-aa3a-4
 import { post as post_983f41f033004076870fabfb69fdafff } from './983f41f0-3300-4076-870f-abfb69fdafff';
 import { post as post_8011f7b54a724f398a6b9a7bd8df3b0f } from './8011f7b5-4a72-4f39-8a6b-9a7bd8df3b0f';
 import { post as post_3f5af82d53c14d27969203dc993497b4 } from './3f5af82d-53c1-4d27-9692-03dc993497b4';
+import { post as post_ce0bf37343eb4cdaab812eb996fd7f5d } from './ce0bf373-43eb-4cda-ab81-2eb996fd7f5d';
 import { post as post_17e4a8d1ee3e42ef846472295f1741d5 } from './17e4a8d1-ee3e-42ef-8464-72295f1741d5';
 import { post as post_53f95d201bcb43bdafc6ca2c219e3e2c } from './53f95d20-1bcb-43bd-afc6-ca2c219e3e2c';
 import { post as post_d4bede82ed4e462aabc691725de2cb7e } from './d4bede82-ed4e-462a-abc6-91725de2cb7e';
@@ -39,6 +41,7 @@ import { post as post_f37e2cb59e674ef59224513574ec226a } from './f37e2cb5-9e67-4
 export const PREVIEW_POST_CONTENTS: PreviewPostContent[] = [
   post_G4SWrmpQYKwWhhXTfzZI, // 오프모임 후기 (2025-12-11)
   post_cWjTVRDguRoeIplV0deg, // 글 쓸수 있어 감 사해 (2025-12-15)
+  post_hqwh5CWhRAKeaVboABWY, // 20기를 시작하며! (2025-12-15)
   post_RxEj4JK4omOslhmGDln4, // નુલુગ નુલુગ (2025-12-16)
   post_Ntl4V3Jvtmu63A5tZQDS, // "할" 도전과 "안 할" 도전 (2025-12-26)
   post_hoBdfQvdLfUDJLyV2Xc4, // 질리지 않는 기본 (2026-01-12)
@@ -55,6 +58,7 @@ export const PREVIEW_POST_CONTENTS: PreviewPostContent[] = [
   post_983f41f033004076870fabfb69fdafff, // 안녕하세요 쿄울입니다! (2026-04-08)
   post_8011f7b54a724f398a6b9a7bd8df3b0f, // 참을 인 세 번이면 살인도 막는다던데 (2026-04-15)
   post_3f5af82d53c14d27969203dc993497b4, // 상대방이 변화하도록 돕는 대화 프레임워크 (2026-04-17)
+  post_ce0bf37343eb4cdaab812eb996fd7f5d, // 세금을 잘 알아야 해..! (2026-05-06)
   post_17e4a8d1ee3e42ef846472295f1741d5, // "You just need someone to be brave for." (2026-05-08)
   post_53f95d201bcb43bdafc6ca2c219e3e2c, // 밴댕이회 (2026-05-10)
   post_d4bede82ed4e462aabc691725de2cb7e, // 나 돌보는 법 (2026-05-21)
