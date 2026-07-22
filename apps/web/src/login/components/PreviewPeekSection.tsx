@@ -4,24 +4,50 @@ import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import { SnapRow } from '@/shared/ui/SnapRow';
 import { PREVIEW_POSTS, type PreviewPost } from '@/shared/preview-content/previewPosts';
 
-// 후기 다음에 붙는 미리보기 peek. ~20개 중 재밌는 제목 위주로 8개만 손으로 골라 스와이프로 맛보게 하고,
+// 후기 다음에 붙는 미리보기 peek. 전체 preview 글 중 매시간 8개를 뽑아 스와이프로 맛보게 하고,
 // 마지막 더보기 카드와 헤더 링크로 전체 /preview로 넘어가게 한다.
-const PEEK_POST_IDS = [
-  '718edb41-bc7b-46cd-9853-beb85bf4f9ab', // 멋쩍은 자기소개
-  '42bf1fa9-4396-45c6-af8e-bde6511bd967', // 댓글온도 높이는 꿀팁 푼다
-  '7xlnIv7YIs9BHCs8SNiF', // 소신발언 : 포켓몬은 가짜다.
-  'bc6e8407-aa3a-4cc5-9859-b459584c1f67', // 닭다리를 독식하는 인간들에 대한 글
-  '87315dd3-d16e-4550-b7d5-9befdf9df675', // 매글프에게 치덕대는 글
-  'cKuBvVv09YAtuwJwhyW1', // 막걸리
-  '8011f7b5-4a72-4f39-8a6b-9a7bd8df3b0f', // 참을 인 세 번이면 살인도 막는다던데
-  'iptLIIHsYNZtiv8nf4Cn', // 아이스크림 제조 공장장으로서
-];
+const PEEK_COUNT = 8;
+const MS_PER_HOUR = 3_600_000;
 
-/** Curated peek posts in editorial order. Silently skips any id that drifts out of the shared content. */
-export function selectPeekPosts(): PreviewPost[] {
-  return PEEK_POST_IDS.map((id) => PREVIEW_POSTS.find((post) => post.id === id)).filter(
-    (post): post is PreviewPost => Boolean(post),
-  );
+/**
+ * 시(hour) 단위 시드. 같은 시간대의 모든 방문자가 동일한 값을 얻으므로 peek 목록이
+ * 시간마다 한 번씩만 바뀌고 그 안에서는 안정적이다.
+ */
+function currentHourSeed(now: number = Date.now()): number {
+  return Math.floor(now / MS_PER_HOUR);
+}
+
+/** mulberry32 — 작고 결정적인 시드 기반 PRNG. 같은 시드는 항상 같은 수열을 낸다. */
+function createSeededRandom(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** 시드 기반 Fisher–Yates 셔플. 입력을 변형하지 않는 순수 함수. */
+function seededShuffle<T>(items: readonly T[], random: () => number): T[] {
+  const result = items.slice();
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+/**
+ * 매시간 로테이션되는 peek 글 목록. 선택되는 글과 순서 모두 시(hour) 시드로 결정되므로
+ * 같은 시간대 방문자는 같은 카드를 보고, 정각마다 전체 pool에서 새로 8개가 뽑힌다.
+ * 시드/pool을 주입할 수 있어 순수 함수로 테스트할 수 있다.
+ */
+export function selectPeekPosts(
+  seed: number = currentHourSeed(),
+  pool: readonly PreviewPost[] = PREVIEW_POSTS,
+): PreviewPost[] {
+  return seededShuffle(pool, createSeededRandom(seed)).slice(0, PEEK_COUNT);
 }
 
 function PeekCard({ post, onOpen }: { post: PreviewPost; onOpen: () => void }) {
