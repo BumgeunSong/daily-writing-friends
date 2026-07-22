@@ -1,3 +1,4 @@
+import { useLayoutEffect } from 'react';
 import { Navigate, useNavigate, useParams } from '@/shared/navigation';
 import { PostContent } from '@/post/components/PostContent';
 import { PostDetailHeader } from '@/post/components/PostDetailHeader';
@@ -33,6 +34,13 @@ const noop = () => {};
 export default function PreviewPostDetailPage() {
   const { previewPostId } = useParams<{ previewPostId: string }>();
   const navigate = useNavigate();
+
+  // 미리보기 상세는 진입 시 항상 상단부터 보여야 한다. /join의 peek 섹션(페이지 하단)에서
+  // PUSH 진입하면 브라우저가 이전 scrollY를 새 문서 높이에 클램프해 글 중간부터 보이므로,
+  // 실제 PostDetailPage와 동일하게 mutation phase에서 동기적으로 0으로 맞춘다.
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [previewPostId]);
 
   const previewPost = PREVIEW_POSTS.find((entry) => entry.id === previewPostId);
 
