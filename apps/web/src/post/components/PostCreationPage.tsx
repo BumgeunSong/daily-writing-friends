@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Form, useNavigation, useActionData } from 'react-router-dom';
+import { Form, useNavigation, useActionData, useSubmit } from 'react-router-dom';
 import { useParams, useSearchParams } from '@/shared/navigation';
 import { DraftsDrawer } from '@/draft/components/DraftsDrawer';
+import { DraftStatusIndicator } from '@/draft/components/DraftStatusIndicator';
 import { useDraftAutosave } from '@/draft/hooks/useDraftAutosave';
 import { useDraftLoader } from '@/draft/hooks/useDraftLoader';
 import { usePostEditor } from '@/post/hooks/usePostEditor';
@@ -54,8 +55,10 @@ export default function PostCreationPage() {
 
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [isImageUploading, setIsImageUploading] = useState(false);
+  const [isFlushingDraft, setIsFlushingDraft] = useState(false);
   const [contentJson, setContentJson] = useState<ProseMirrorDoc | undefined>();
-  const isSubmitting = navigation.state === 'submitting';
+  const submit = useSubmit();
+  const isSubmitting = navigation.state === 'submitting' || isFlushingDraft;
 
   useEffect(() => {
     if (actionData?.error) {
@@ -63,7 +66,13 @@ export default function PostCreationPage() {
     }
   }, [actionData?.error]);
 
-  const { draftId: autoSavedDraftId } = useDraftAutosave({
+  const {
+    draftId: autoSavedDraftId,
+    manualSave,
+    isSaving,
+    savingError,
+    lastSavedAt,
+  } = useDraftAutosave({
     boardId: boardId || '',
     userId: currentUser?.uid,
     title,
@@ -74,6 +83,23 @@ export default function PostCreationPage() {
   });
 
   const draftIdToSubmit = autoSavedDraftId || loadedDraftId || '';
+
+  const flushDraftThenSubmit = async (formData: FormData) => {
+    const savedDraftId = await manualSave().catch(() => null);
+    if (savedDraftId) {
+      formData.set('draftId', savedDraftId);
+    }
+    submit(formData, { method: 'post' });
+  };
+
+  const handlePublishSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isSubmitting) return;
+    const formData = new FormData(event.currentTarget);
+    setIsFlushingDraft(true);
+    void flushDraftThenSubmit(formData).finally(() => setIsFlushingDraft(false));
+  };
+
   return (
     <div>
       <PostEditorHeader
@@ -97,7 +123,7 @@ export default function PostCreationPage() {
       />
 
       <div className='mx-auto max-w-4xl px-6 py-4'>
-        <Form id='post-creation-form' method='post'>
+        <Form id='post-creation-form' method='post' onSubmit={handlePublishSubmit}>
           <input type='hidden' name='boardId' value={boardId} />
           <input type='hidden' name='authorId' value={currentUser?.uid} />
           <input
@@ -113,6 +139,11 @@ export default function PostCreationPage() {
           )}
 
           <PostTitleEditor value={title} onChange={(e) => setTitle(e.target.value)} />
+          <DraftStatusIndicator
+            isSaving={isSaving}
+            savingError={savingError}
+            lastSavedAt={lastSavedAt}
+          />
           <PostEditor
             value={content}
             onChange={setContent}
