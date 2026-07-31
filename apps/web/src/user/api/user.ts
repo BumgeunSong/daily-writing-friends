@@ -7,7 +7,7 @@ import { storage } from '@/firebase';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { fetchUserFromSupabase, fetchAllUsersFromSupabase, fetchUsersWithBoardPermissionFromSupabase } from './userReads';
 import type { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
-import type { AuthUser } from '@/shared/hooks/useAuth';
+import type { AuthUser } from '@/shared/auth/authTypes';
 import { REMOTE_CONFIG_DEFAULTS } from '@/shared/hooks/useRemoteConfig';
 import { mapUserToSupabaseUpdate, mapBoardPermissionsToRows } from '@/user/utils/userMappers';
 import { resizeImageBlob } from '@/shared/utils/resizeImageBlob';
