@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Form, useNavigation, useActionData, useSubmit } from 'react-router-dom';
 import { useParams, useSearchParams } from '@/shared/navigation';
 import { DraftsDrawer } from '@/draft/components/DraftsDrawer';
@@ -20,7 +20,7 @@ import {
 } from '@/shared/ui/alert-dialog';
 import { Button } from '@/shared/ui/button';
 import type { ProseMirrorDoc } from '@/post/model/Post';
-import { PostEditor } from './PostEditor';
+import { PostEditor, type PostEditorHandle } from './PostEditor';
 import { PostEditorHeader } from './PostEditorHeader';
 import { PostTitleEditor } from './PostTitleEditor';
 
@@ -57,6 +57,7 @@ export default function PostCreationPage() {
   const [isImageUploading, setIsImageUploading] = useState(false);
   const [isFlushingDraft, setIsFlushingDraft] = useState(false);
   const [contentJson, setContentJson] = useState<ProseMirrorDoc | undefined>();
+  const editorRef = useRef<PostEditorHandle>(null);
   const submit = useSubmit();
   const isSubmitting = navigation.state === 'submitting' || isFlushingDraft;
 
@@ -96,6 +97,11 @@ export default function PostCreationPage() {
     event.preventDefault();
     if (isSubmitting) return;
     const formData = new FormData(event.currentTarget);
+    const latestContent = editorRef.current?.getCurrentContent();
+    if (latestContent) {
+      formData.set('content', latestContent.html);
+      formData.set('contentJson', JSON.stringify(latestContent.json));
+    }
     setIsFlushingDraft(true);
     void flushDraftThenSubmit(formData).finally(() => setIsFlushingDraft(false));
   };
@@ -145,6 +151,7 @@ export default function PostCreationPage() {
             lastSavedAt={lastSavedAt}
           />
           <PostEditor
+            ref={editorRef}
             value={content}
             onChange={setContent}
             onContentJsonChange={setContentJson}
