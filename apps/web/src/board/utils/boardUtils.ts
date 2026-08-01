@@ -1,7 +1,11 @@
 import type { Board } from '../model/Board';
-// eslint-disable-next-line no-restricted-imports -- 기존 위반: external/ 레이어로 이관 예정인 raw 접근
-import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
-import { fetchBoardsFromSupabase, fetchBoardByIdFromSupabase, fetchBoardTitleFromSupabase } from '@/board/external/board.api';
+import {
+  fetchBoardsFromSupabase,
+  fetchBoardByIdFromSupabase,
+  fetchBoardTitleFromSupabase,
+  addUserToBoardWaitingListInSupabase,
+  removeUserFromBoardWaitingListInSupabase,
+} from '@/board/external/board.api';
 import { boardTitleKey, storage } from '@/shared/lib/storage';
 
 export async function fetchBoardTitle(boardId: string): Promise<string> {
@@ -68,11 +72,7 @@ export async function addUserToBoardWaitingList(boardId: string, userId: string)
   }
 
   try {
-    const supabase = getSupabaseClient();
-    throwOnError(await supabase.from('board_waiting_users').upsert({
-      board_id: boardId,
-      user_id: userId,
-    }));
+    await addUserToBoardWaitingListInSupabase(boardId, userId);
     return true;
   } catch (error) {
     console.error(`Error adding user ${userId} to board ${boardId} waiting list:`, error);
@@ -93,12 +93,7 @@ export async function removeUserFromBoardWaitingList(boardId: string, userId: st
   }
 
   try {
-    const supabase = getSupabaseClient();
-    throwOnError(await supabase
-      .from('board_waiting_users')
-      .delete()
-      .eq('board_id', boardId)
-      .eq('user_id', userId));
+    await removeUserFromBoardWaitingListInSupabase(boardId, userId);
     return true;
   } catch (error) {
     console.error(`Error removing user ${userId} from board ${boardId} waiting list:`, error);
