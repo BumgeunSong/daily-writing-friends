@@ -1,5 +1,6 @@
 import { captureException } from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
+// eslint-disable-next-line no-restricted-imports -- 기존 위반: external/ 레이어로 이관 예정인 raw 접근
 import { getSupabaseClient } from '@/shared/external/supabaseClient';
 
 export default function useWritePermission(userId: string | null, boardId: string) {

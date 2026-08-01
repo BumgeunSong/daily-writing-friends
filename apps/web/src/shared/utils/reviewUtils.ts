@@ -1,5 +1,6 @@
 import type { JoinFormDataForActiveUser } from "@/login/model/join";
 import type { Review } from "@/login/model/Review";
+// eslint-disable-next-line no-restricted-imports -- 기존 위반: external/ 레이어로 이관 예정인 raw 접근
 import { getSupabaseClient, throwOnError } from "@/shared/external/supabaseClient";
 
 // --- Pure mappers (testable) ---
