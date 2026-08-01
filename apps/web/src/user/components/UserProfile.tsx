@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Edit } from 'lucide-react';
 import { useNavigate } from '@/shared/navigation';
 import { DonatorBadge } from '@/donator/components/DonatorBadge';
-import { fetchActiveDonatorIds } from '@/donator/external/donator';
+import { fetchActiveDonatorIds } from '@/donator/external/donator.api';
 import { useAuth } from '@/shared/hooks/useAuth';
 import ComposedAvatar from '@/shared/ui/ComposedAvatar';
 import { Button } from '@/shared/ui/button';

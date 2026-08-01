@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useEffect } from 'react';
 
-import { fetchActiveDonatorIds } from '@/donator/external/donator';
+import { fetchActiveDonatorIds } from '@/donator/external/donator.api';
 import type { Post } from '@/post/model/Post';
 import {
   buildPostCardDataMap,
