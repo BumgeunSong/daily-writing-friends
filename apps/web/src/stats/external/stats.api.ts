@@ -1,4 +1,5 @@
 import type { Posting } from '@/post/model/Posting';
+import type { Database } from '@/shared/external/database.types';
 import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { createUserInfo } from '@/stats/utils/userInfoUtils';
@@ -98,11 +99,10 @@ async function fetchBatchUserIdRowsByDateRange(
     .in('user_id', userIds)
     .gte('created_at', start.toISOString())
     .lt('created_at', end.toISOString());
-  if (error) {
-    console.error(`Supabase batch ${table} fetch error:`, { userCount: userIds.length, start, end, error });
-    throw error;
-  }
-  return (data || []) as UserIdRow[];
+  if (error) throw error;
+  // comments/replies are base tables, so user_id/created_at are NOT NULL —
+  // the generated types already guarantee the UserIdRow shape without a cast.
+  return data ?? [];
 }
 
 export const fetchBatchCommentUserIdsByDateRange = (
@@ -122,6 +122,28 @@ export interface PostDateRow {
   created_at: string;
 }
 
+type PostFeedDateRow = Pick<
+  Database['public']['Views']['posts_feed']['Row'],
+  'author_id' | 'created_at'
+>;
+
+/**
+ * Pure: keep only rows whose author/date are both present.
+ *
+ * `posts_feed` is a view, so Postgres drops the underlying NOT NULL constraints
+ * and types both columns as nullable. A null date would become `new Date(null)`
+ * (epoch 1970) and corrupt streak calculations downstream, so such rows are
+ * dropped rather than coerced. This is the nullability the old `as PostDateRow[]`
+ * cast silently hid.
+ */
+export function mapToPostDateRows(rows: PostFeedDateRow[]): PostDateRow[] {
+  return rows.flatMap((row) =>
+    row.author_id !== null && row.created_at !== null
+      ? [{ author_id: row.author_id, created_at: row.created_at }]
+      : [],
+  );
+}
+
 export async function fetchBatchPostDatesByDateRange(
   userIds: string[],
   start: Date,
@@ -135,11 +157,8 @@ export async function fetchBatchPostDatesByDateRange(
     .in('author_id', userIds)
     .gte('created_at', start.toISOString())
     .lte('created_at', end.toISOString());
-  if (error) {
-    console.error('Supabase batch posts fetch error:', { userCount: userIds.length, start, end, error });
-    throw error;
-  }
-  return (data || []) as PostDateRow[];
+  if (error) throw error;
+  return mapToPostDateRows(data ?? []);
 }
 
 // ================================================
@@ -191,9 +210,9 @@ export async function fetchActivityCountsFromSupabase(
       .gte('created_at', cutoffIso),
   ]);
 
-  if (commentsOnPosts.error) console.error('Activity comments query error:', { fromUserId, toUserId }, commentsOnPosts.error);
-  if (repliesOnPosts.error) console.error('Activity repliesOnPosts query error:', { fromUserId, toUserId }, repliesOnPosts.error);
-  if (repliesOnComments.error) console.error('Activity repliesOnComments query error:', { fromUserId, toUserId }, repliesOnComments.error);
+  if (commentsOnPosts.error) throw commentsOnPosts.error;
+  if (repliesOnPosts.error) throw repliesOnPosts.error;
+  if (repliesOnComments.error) throw repliesOnComments.error;
 
   return {
     commentings: commentsOnPosts.count ?? 0,
