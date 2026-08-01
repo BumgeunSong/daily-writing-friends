@@ -8,6 +8,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { PostgrestError , SupabaseClient } from '@supabase/supabase-js';
 import * as Sentry from '@sentry/react';
 import { addSentryBreadcrumb } from '@/sentry';
+import type { Database } from './database.types';
 
 const SLOW_WRITE_THRESHOLD_MS = 1000;
 
@@ -43,13 +44,17 @@ export function detectSlowWrite(
   };
 }
 
-let supabaseInstance: SupabaseClient | null = null;
+let supabaseInstance: SupabaseClient<Database> | null = null;
 
 /**
  * Get the singleton Supabase client instance.
  * Lazily initialized on first call.
+ *
+ * Typed with the Supabase-generated `Database` so `.from(...)` / `.select(...)`
+ * results are inferred from the schema. This is what makes casting at the
+ * boundary unnecessary (#694).
  */
-export function getSupabaseClient(): SupabaseClient {
+export function getSupabaseClient(): SupabaseClient<Database> {
   if (supabaseInstance) {
     return supabaseInstance;
   }
@@ -73,7 +78,7 @@ export function getSupabaseClient(): SupabaseClient {
     supabaseUrl = `https://${rawUrl}`;
   }
 
-  supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+  supabaseInstance = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
