@@ -3,9 +3,9 @@ import { useContext, useState, useEffect, useRef, createContext } from 'react';
 
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { setSentryUser } from '@/sentry';
-import { mapToAuthUser } from '@/shared/auth/supabaseAuth';
+import { decideAuthTransition } from '@/shared/auth/authTransitionLogic';
 import { STORAGE_KEYS, storage } from '@/shared/lib/storage';
-import { UUID_RE, parseStoredAuthUser } from '@/shared/utils/authUserParser';
+import { parseStoredAuthUser } from '@/shared/utils/authUserParser';
 import { createUserIfNotExists } from '@/user/api/user';
 
 /**
@@ -49,21 +49,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // onAuthStateChange fires INITIAL_SESSION on mount — no need for getSession()
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      const user = session?.user;
-      const authUser = user && UUID_RE.test(user.id) ? mapToAuthUser(user) : null;
-      // Create user on actual sign-ins and initial session restore (OAuth redirect)
-      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && authUser && !userCreationAttempted.current) {
+      const plan = decideAuthTransition(event, session?.user, userCreationAttempted.current);
+      if (plan.userToCreate) {
         userCreationAttempted.current = true;
-        createUserIfNotExists(authUser).catch((error) => {
+        createUserIfNotExists(plan.userToCreate).catch((error) => {
           console.error(error);
           userCreationAttempted.current = false;
         });
       }
-      // Reset flag on sign-out so a different user can trigger creation
-      if (!authUser) {
+      if (plan.resetAttemptFlag) {
         userCreationAttempted.current = false;
       }
-      syncUserState(authUser, setCurrentUser);
+      syncUserState(plan.nextUser, setCurrentUser);
       setLoading(false);
     });
 
