@@ -1,17 +1,43 @@
+import * as Sentry from '@sentry/react';
 import { shouldReloadForChunkFailure } from './chunkReloadDecision';
 
 const CHUNK_RELOAD_TIMESTAMP_KEY = 'chunkReloadAttemptedAt';
 
 function readLastReloadAt(): number | null {
-  const stored = sessionStorage.getItem(CHUNK_RELOAD_TIMESTAMP_KEY);
-  if (stored === null) return null;
-  const parsed = Number(stored);
-  return Number.isNaN(parsed) ? null : parsed;
+  try {
+    const stored = sessionStorage.getItem(CHUNK_RELOAD_TIMESTAMP_KEY);
+    if (stored === null) return null;
+    const parsed = Number(stored);
+    return Number.isNaN(parsed) ? null : parsed;
+  } catch {
+    return null;
+  }
 }
 
-function reloadForFreshChunks(nowMs: number): void {
-  sessionStorage.setItem(CHUNK_RELOAD_TIMESTAMP_KEY, String(nowMs));
-  window.location.reload();
+/**
+ * Persist the reload timestamp, returning whether it stuck. sessionStorage can
+ * throw (private mode, quota) — and if we can't remember that we reloaded, we
+ * can't guard against an endless reload cycle, so the caller must not reload.
+ */
+function tryPersistReloadAttempt(nowMs: number): boolean {
+  try {
+    sessionStorage.setItem(CHUNK_RELOAD_TIMESTAMP_KEY, String(nowMs));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Leave a trace before the reload throws the JS context away. Without it an
+ * auto-reload is invisible: we lose the deploy-health signal (how often stale
+ * chunks bite) and the eventual error-boundary report for a persistent failure
+ * has no history explaining the earlier reload. Sent as a warning message, not
+ * the raw error, because the common stale-chunk cause is a NetworkError that
+ * Sentry's IGNORED_ERRORS filters out.
+ */
+function reportChunkReloadRecovery(payload: unknown): void {
+  Sentry.captureMessage(`vite:preloadError auto-reload: ${String(payload)}`, 'warning');
 }
 
 /**
@@ -30,7 +56,9 @@ export function registerChunkReloadHandler(): void {
   window.addEventListener('vite:preloadError', (event) => {
     const nowMs = Date.now();
     if (!shouldReloadForChunkFailure(nowMs, readLastReloadAt())) return;
+    if (!tryPersistReloadAttempt(nowMs)) return;
     event.preventDefault();
-    reloadForFreshChunks(nowMs);
+    reportChunkReloadRecovery(event.payload);
+    window.location.reload();
   });
 }
