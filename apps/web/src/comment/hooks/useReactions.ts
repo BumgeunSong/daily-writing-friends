@@ -4,7 +4,7 @@ import {
   getReactions,
   createReaction,
   deleteUserReaction
-} from '@/comment/external/reaction';
+} from '@/comment/external/reaction.api';
 import type { GroupedReaction, ReactionUser } from '@/comment/model/Reaction';
 import { groupReactionsByEmoji } from '@/comment/utils/reactionUtils';
 import { useAuth } from '@/shared/hooks/useAuth';

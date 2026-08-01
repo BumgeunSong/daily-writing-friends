@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchRepliesOnce } from '@/comment/external/reply';
+import { fetchRepliesOnce } from '@/comment/external/reply.api';
 import type { Reply } from '@/comment/model/Reply';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { getBlockedByUsers } from '@/user/external/user';

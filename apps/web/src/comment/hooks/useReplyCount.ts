@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchReplyCountOnce } from '@/comment/external/reply';
+import { fetchReplyCountOnce } from '@/comment/external/reply.api';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { getBlockedByUsers } from '@/user/external/user';
 
