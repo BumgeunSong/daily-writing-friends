@@ -6,11 +6,15 @@ import { RouterProvider } from 'react-router-dom';
 import { ThemeProvider } from '@/shared/contexts/ThemeContext';
 import { AuthProvider } from '@/shared/hooks/useAuth';
 import { queryClient } from '@/shared/lib/queryClient';
+import { registerChunkReloadHandler } from '@/shared/utils/registerChunkReloadHandler';
 import { router } from './router';
 import { initSentry } from './sentry';
 
 // Initialize Sentry first
 initSentry();
+
+// Recover from stale-chunk load failures after a deploy (Vite vite:preloadError).
+registerChunkReloadHandler();
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
