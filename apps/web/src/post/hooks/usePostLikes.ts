@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { GetLikesParams } from '@/post/external/like';
 import { createLike, deleteUserLike } from '@/post/external/like';
 import { postQueryKey } from '@/post/utils/postQueryKeys';
+// eslint-disable-next-line no-restricted-imports -- 기존 위반: external/ 레이어로 이관 예정인 raw 접근
 import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useUser } from '@/user/hooks/useUser';

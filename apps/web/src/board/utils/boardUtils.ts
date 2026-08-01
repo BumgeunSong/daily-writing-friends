@@ -1,4 +1,5 @@
 import type { Board } from '../model/Board';
+// eslint-disable-next-line no-restricted-imports -- 기존 위반: external/ 레이어로 이관 예정인 raw 접근
 import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
 import { fetchBoardsFromSupabase, fetchBoardByIdFromSupabase, fetchBoardTitleFromSupabase } from '@/board/external/board';
 import { boardTitleKey, storage } from '@/shared/lib/storage';

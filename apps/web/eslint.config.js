@@ -170,4 +170,30 @@ export default tseslint.config(
       }],
     },
   },
+
+  // raw Supabase access + generated types are confined to the external/ boundary
+  // zone. Files under */external/ are exempt; hooks/components/utils must go through
+  // external/ fetch*/read* functions. Existing violations carry a visible
+  // eslint-disable, and only new ones are blocked.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/**/external/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: [
+          {
+            name: '@/shared/external/supabaseClient',
+            importNames: ['getSupabaseClient'],
+            message:
+              'raw Supabase 접근(getSupabaseClient)은 <feature>/external/ 레이어에서만 허용됩니다. hooks/components는 external/의 fetch*/read* 함수를 통해 도메인 타입을 받으세요.',
+          },
+          {
+            name: '@/shared/external/database.types',
+            message:
+              'database.types(Supabase 생성 타입)는 external/ 레이어에서만 import하세요. UI는 도메인 타입만 다룹니다.',
+          },
+        ],
+      }],
+    },
+  },
 );
