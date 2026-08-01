@@ -1,117 +1,42 @@
 ---
 name: testing
-description: Use when writing tests, adding coverage, implementing business logic, or building features with TDD. Enforces output-based testing of pure functions only - never test imperative shell directly.
+description: Use when writing, adding, or modifying tests (*.test.ts, *.test.tsx, *.integration.test.tsx), adding coverage, implementing business logic, or doing TDD — unit tests for pure functions AND integration tests for components/hooks (React Query cache, MSW-mocked Supabase, React Router data-router loaders). Routes to strategy, naming, unit, integration, spec, and mutation-verification references. Does NOT cover cross-page journeys (use Playwright E2E in apps/web/tests/).
 ---
 
-# Output-Based Testing for Pure Functions
+# Writing Tests
 
-Test pure functions with input/output assertions. Never unit test hooks, components, or side effects.
+The single source of truth for test rules is `references/`. This skill routes there. Read the docs in order and write to their rules.
 
-## When to Use
+The goal is not coverage. **The goal is trust: after reading this test, can you trust the implementation more?**
 
-- User asks to "write tests" or "add coverage"
-- New business logic is being implemented
-- TDD requested for new feature
-- Coverage report shows untested utils/
+## Read order
 
-## Core Pattern
+1. **[references/strategy.md](references/strategy.md)** — Define the risk you are blocking in one sentence, then place the code in the deep×wide quadrant to pick the level: unit / integration / don't-test / refactor-first.
+2. **[references/spec.md](references/spec.md)** — For high-stakes features (payment, issuance, PII, feature-flag gates, or code with fix-commit history), confirm a domain answer-sheet (정답지) first. Ask the user once; skip for obvious pure-logic utils.
+3. **Level doc** — Write with the rules of the level strategy picked:
+   - **[references/unit.md](references/unit.md)** — pure functions, output-based, boundary+exception.
+   - **[references/integration.md](references/integration.md)** — components/hooks/loaders, MSW + React Query + data-router, user-observable results.
+4. **[references/verification.md](references/verification.md)** — If you added or changed an assertion, run the mutation loop to filter false-green. Skip for pure refactors (but record the skip).
 
-```
-TESTABLE (Functional Core)     │  NOT UNIT TESTED (Imperative Shell)
-───────────────────────────────│────────────────────────────────────
-Pure functions in utils/       │  React hooks (useX)
-Calculations, transformations  │  Components (*.tsx)
-Validators, formatters         │  API calls, Firebase operations
-State machines, reducers       │  localStorage, Date.now(), Math.random()
-```
+Test names follow **[references/naming.md](references/naming.md)** at every level.
 
-## Implementation
+## File conventions
 
-### What to Test
+Tests are colocated with source (next to the file, or in a sibling `__tests__/`). Two Vitest projects, routed by filename:
 
-```typescript
-// ✅ TESTABLE: Pure function
-export const calculateStreak = (dates: Date[], today: Date): number => {
-  // Pure transformation: dates → number
-};
+| Kind | Extension | Vitest project | Setup | MSW |
+|---|---|---|---|---|
+| Unit | `*.test.ts(x)` | `unit` | `setupTest.ts` | off |
+| Integration | `*.integration.test.tsx` | `integration` | `setupTest.ts` + `setupTest.integration.ts` | on (`onUnhandledRequest: 'error'`) |
 
-// Test with simple input/output
-describe('calculateStreak', () => {
-  it('returns 0 for empty dates', () => {
-    expect(calculateStreak([], new Date('2024-01-15'))).toBe(0);
-  });
+**Missing the `.integration` suffix routes the file to the unit project with no MSW → silent false green.** This is the #1 filename mistake.
 
-  it('returns consecutive days count', () => {
-    const dates = [new Date('2024-01-14'), new Date('2024-01-15')];
-    expect(calculateStreak(dates, new Date('2024-01-15'))).toBe(2);
-  });
-});
-```
+- Config: `apps/web/vite.config.ts` (`test.projects`). Run: `pnpm --filter web test` / `test:run` / `test:coverage`.
+- E2E (Playwright, `apps/web/tests/*.spec.ts`, local Supabase) is out of scope for this skill.
 
-### What NOT to Test
+## Stack facts (assume these; verify if surprised)
 
-```typescript
-// ❌ DON'T TEST: Hook with side effects
-export function useStreak(userId: string) {
-  const { data } = useQuery(['streak', userId], () => fetchStreak(userId));
-  return calculateStreak(data?.dates ?? [], new Date());
-}
-
-// ❌ DON'T TEST: Component
-const StreakBadge = ({ userId }) => {
-  const streak = useStreak(userId);
-  return <Badge>{streak} days</Badge>;
-};
-```
-
-### TDD Workflow
-
-```
-1. Write failing test for pure function
-2. Implement pure function to pass test
-3. Create thin hook/component that calls pure function
-4. Skip unit tests for hook/component (E2E covers integration)
-```
-
-### Test File Location
-
-```
-src/
-├── feature/
-│   ├── utils/
-│   │   ├── calculations.ts      # Pure functions
-│   │   └── calculations.test.ts # Tests here
-│   ├── hooks/
-│   │   └── useFeature.ts        # NO unit tests
-│   └── components/
-│       └── Feature.tsx          # NO unit tests
-```
-
-## Common Mistakes
-
-| Mistake | Symptom | Fix |
-|---------|---------|-----|
-| Testing hooks | `renderHook()`, `QueryClientProvider` in test | Extract logic to pure function |
-| Mocking time | `vi.useFakeTimers()`, `mockDate` | Inject timestamp as parameter |
-| Mocking internals | `vi.mock('../api/firebase')` | Test pure logic, not integration |
-| Testing UI | `render()`, `screen.getByText()` | Only E2E tests for UI |
-
-## Red Flags
-
-Stop and refactor if your test file has:
-- `vi.mock()` for anything except external APIs
-- `renderHook()` or `render()` from testing-library
-- `QueryClient`, `Provider`, or `wrapper` setup
-- More than 5 lines of test setup
-
-## Naming Convention
-
-```typescript
-describe('FeatureName', () => {
-  describe('when [condition]', () => {
-    it('[expected outcome]', () => {
-      // Arrange - Act - Assert (max 3-5 lines)
-    });
-  });
-});
-```
+- React Query **v4**, React Router **v6** data-router (`createBrowserRouter`, loaders, lazy).
+- Backend calls go to **Supabase REST** (`/rest/v1/*`, `/auth/v1/*`); tests mock the **network with MSW**, never the Supabase SDK.
+- Render helper: `renderWithProviders` (`src/test/utils/renderWithProviders.tsx`). Auth: `signInAs` (`src/test/utils/signInAs.ts`) or `vi.mock('@/shared/hooks/useAuth')` — see integration.md.
+- No Stryker; mutation verification is manual, using `vitest run <file> --coverage` (v8) for reachability.
