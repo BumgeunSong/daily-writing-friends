@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { getRecentWorkingDays, getDateKey } from '@/shared/utils/dateUtils';
-import { fetchPostingDataForContributions } from '@/stats/external/stats';
+import { fetchPostingDataForContributions } from '@/stats/external/stats.api';
 import { STREAK_WINDOW_WORKING_DAYS } from '@/stats/constants';
 import { streakQueryKey } from '@/stats/utils/statsQueryKeys';
 

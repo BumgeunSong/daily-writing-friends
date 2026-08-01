@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Post } from '@/post/model/Post';
 import type { BasicUserRow } from '@/user/external/userReads';
-import type { UserIdRow, PostDateRow } from '@/stats/external/stats';
+import type { UserIdRow, PostDateRow } from '@/stats/external/stats.api';
 import {
   deduplicateAuthorIds,
   buildPostCardDataMap,
