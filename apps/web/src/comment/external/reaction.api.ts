@@ -1,6 +1,49 @@
 import type { Reaction } from '@/comment/model/Reaction';
+import type { Database } from '@/shared/external/database.types';
 import type { UserSummary } from '@/shared/model/UserSummary';
 import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
+
+type ReactionRow = Pick<
+  Database['public']['Tables']['reactions']['Row'],
+  'id' | 'reaction_type' | 'user_id' | 'user_name' | 'user_profile_image' | 'created_at'
+>;
+
+type BatchReactionRow = ReactionRow &
+  Pick<Database['public']['Tables']['reactions']['Row'], 'comment_id'>;
+
+const REACTION_SELECT = 'id, reaction_type, user_id, user_name, user_profile_image, created_at';
+
+/** Pure: project a reactions row onto the domain Reaction. */
+export function mapToReaction(row: ReactionRow): Reaction {
+  return {
+    id: row.id,
+    content: row.reaction_type,
+    createdAt: new Date(row.created_at),
+    reactionUser: {
+      userId: row.user_id,
+      userName: row.user_name,
+      userProfileImage: row.user_profile_image || '',
+    },
+  };
+}
+
+/**
+ * Pure: bucket reaction rows under their comment id, seeding an empty list for
+ * every requested id. Rows with a null comment_id (reply-reactions) or a comment
+ * outside the requested set are skipped.
+ */
+export function groupReactionsByComment(
+  commentIds: string[],
+  rows: BatchReactionRow[],
+): Map<string, Reaction[]> {
+  const byComment = new Map<string, Reaction[]>();
+  for (const commentId of commentIds) byComment.set(commentId, []);
+  for (const row of rows) {
+    if (row.comment_id === null) continue;
+    byComment.get(row.comment_id)?.push(mapToReaction(row));
+  }
+  return byComment;
+}
 
 // Shared base for all reaction param types
 interface ReactionParamsBase {
@@ -136,9 +179,7 @@ export async function fetchReactionsFromSupabase(params: {
 }): Promise<Reaction[]> {
   const supabase = getSupabaseClient();
 
-  let q = supabase
-    .from('reactions')
-    .select('id, reaction_type, user_id, user_name, user_profile_image, created_at');
+  let q = supabase.from('reactions').select(REACTION_SELECT);
 
   if (params.replyId) {
     q = q.eq('reply_id', params.replyId);
@@ -148,21 +189,8 @@ export async function fetchReactionsFromSupabase(params: {
 
   const { data, error } = await q;
 
-  if (error) {
-    console.error('Supabase fetchReactions error:', error);
-    throw error;
-  }
-
-  return (data || []).map((row) => ({
-    id: row.id,
-    content: row.reaction_type,
-    createdAt: new Date(row.created_at),
-    reactionUser: {
-      userId: row.user_id,
-      userName: row.user_name,
-      userProfileImage: row.user_profile_image || '',
-    },
-  }));
+  if (error) throw error;
+  return (data ?? []).map(mapToReaction);
 }
 
 /**
@@ -177,31 +205,9 @@ export async function fetchBatchReactionsForComments(
 
   const { data, error } = await supabase
     .from('reactions')
-    .select('id, comment_id, reaction_type, user_id, user_name, user_profile_image, created_at')
+    .select(`comment_id, ${REACTION_SELECT}`)
     .in('comment_id', commentIds);
 
-  if (error) {
-    console.error('Supabase batch reactions fetch error:', { commentCount: commentIds.length, error });
-    throw error;
-  }
-
-  const result = new Map<string, Reaction[]>();
-  for (const commentId of commentIds) {
-    result.set(commentId, []);
-  }
-  for (const row of data || []) {
-    const reactions = result.get(row.comment_id) ?? [];
-    reactions.push({
-      id: row.id,
-      content: row.reaction_type,
-      createdAt: new Date(row.created_at),
-      reactionUser: {
-        userId: row.user_id,
-        userName: row.user_name,
-        userProfileImage: row.user_profile_image || '',
-      },
-    });
-    result.set(row.comment_id, reactions);
-  }
-  return result;
+  if (error) throw error;
+  return groupReactionsByComment(commentIds, data ?? []);
 }
