@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useEffect } from 'react';
 
 import { fetchActiveDonatorIds } from '@/donator/api/donator';
 import type { Post } from '@/post/model/Post';
@@ -20,6 +20,7 @@ import {
   STREAK_WINDOW_WORKING_DAYS,
   TEMPERATURE_WINDOW_WORKING_DAYS,
 } from '@/stats/constants';
+import { badgeQueryKey, streakQueryKey } from '@/stats/utils/statsQueryKeys';
 
 export type { PostCardPrefetchedData } from '@/post/utils/batchPostCardDataUtils';
 
@@ -27,6 +28,8 @@ const STALE_TIME_MS = 5 * 60 * 1000;
 const CACHE_TIME_MS = 10 * 60 * 1000;
 
 export function useBatchPostCardData(posts: Post[]) {
+  const queryClient = useQueryClient();
+
   const authorIds = useMemo(
     () => deduplicateAuthorIds(posts),
     [posts],
@@ -36,7 +39,7 @@ export function useBatchPostCardData(posts: Post[]) {
     [authorIds],
   );
 
-  return useQuery({
+  const query = useQuery({
     queryKey: ['batchPostCardData', authorIdsKey],
     queryFn: () => fetchBatchPostCardData(authorIds),
     enabled: authorIds.length > 0,
@@ -44,6 +47,19 @@ export function useBatchPostCardData(posts: Post[]) {
     cacheTime: CACHE_TIME_MS,
     refetchOnWindowFocus: true,
   });
+
+  // Seed individual query caches so PostDetailPage finds badges/streak
+  // on first render without an extra network round-trip.
+  // badges and streak shapes match their individual hook contracts exactly.
+  useEffect(() => {
+    if (!query.data) return;
+    query.data.forEach((prefetchedData, authorId) => {
+      queryClient.setQueryData(badgeQueryKey(authorId), prefetchedData.badges);
+      queryClient.setQueryData(streakQueryKey(authorId), { streak: prefetchedData.streak });
+    });
+  }, [query.data, queryClient]);
+
+  return query;
 }
 
 async function fetchBatchPostCardData(

@@ -7,6 +7,7 @@ import IntroCTA from '@/login/components/IntroCTA';
 import IntroHeader from '@/login/components/IntroHeader';
 import IntroHero from '@/login/components/IntroHero';
 import { IntroPageLayout } from '@/login/components/IntroPageLayout';
+import { PreviewPeekSection } from '@/login/components/PreviewPeekSection';
 import ReviewCarousel from '@/login/components/ReviewCarousel';
 import { useActiveUser } from '@/login/hooks/useActiveUser';
 import { useDaysUntilCohortStart } from '@/login/hooks/useDaysUntilCohortStart';
@@ -49,12 +50,13 @@ export default function JoinIntroPage() {
           <ReviewCarousel />
         </SectionWrapper>
 
+        <PreviewPeekSection />
+
         <SectionWrapper variant='highlighted'>
           <CountdownSection daysRemaining={daysRemaining} activeUserCount={activeUsers?.length} />
         </SectionWrapper>
 
         <ActiveUserProfileList users={activeUsers ?? []} />
-        <div className='h-6' />
 
         <SectionWrapper variant='grid'>
           <CohortDetailsCard upcomingBoard={upcomingBoard} />

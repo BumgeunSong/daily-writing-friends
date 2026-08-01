@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom"
-import { ROUTES } from "@/login/constants"
+import { ROUTES } from "@/shared/constants/routes"
 import { useAuth } from "@/shared/hooks/useAuth"
 import { Button } from "@/shared/ui/button"
 

@@ -43,14 +43,20 @@
    cd daily-writing-friends
    ```
 
-2. **pnpm 활성화 및 의존성 설치:**
+2. **런타임 설치 (mise):**
+   [mise](https://mise.jdx.dev/getting-started.html)가 `.mise.toml`에 고정된 node/pnpm/deno 버전을 한 번에 설치합니다.
 
    ```bash
-   corepack enable
-   corepack pnpm install
+   mise install
    ```
 
-3. **환경 변수 설정:**
+3. **의존성 설치:**
+
+   ```bash
+   pnpm install
+   ```
+
+4. **환경 변수 설정:**
    `.env.example`을 참고해 프로젝트 루트에 `.env` 파일을 생성합니다.
 
    ```plaintext
@@ -107,11 +113,11 @@ pnpm run prepare     # husky 훅 설치
 
 ## 로컬에서 프로젝트 실행하기
 
-1. **의존성 설치 및 환경 변수 준비:**
+1. **런타임·의존성 설치 및 환경 변수 준비:**
 
    ```bash
-   corepack enable
-   corepack pnpm install
+   mise install
+   pnpm install
    ```
 
 2. **개발 서버 시작:**

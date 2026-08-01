@@ -156,7 +156,7 @@ function ProfilePhotoUploader({
   nickname: string;
   showProfilePhotoChangeButton: () => void;
   handleProfilePhotoChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  profilePhotoFileRef: React.RefObject<HTMLInputElement>;
+  profilePhotoFileRef: React.RefObject<HTMLInputElement | null>;
   isLoading: boolean;
   isUploadingAvatar: boolean;
   avatarError: string | null;

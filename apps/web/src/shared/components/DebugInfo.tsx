@@ -63,7 +63,7 @@ export function DebugInfo() {
     // Get Firebase Installation ID
     const fetchFID = async () => {
       try {
-        const installationId = await getId(installations);
+        const installationId = await getId(installations!);
         setFid(installationId);
       } catch (error) {
         console.error('Error getting Firebase Installation ID:', error);

@@ -8,7 +8,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { useCallback, useEffect, useRef } from 'react';
 import type { ProseMirrorDoc } from '@/post/model/Post';
 import { decideEditorContentSync } from '@/post/utils/editorContentSync';
-import { sanitize } from '@/post/web/sanitizeHtml';
+import { sanitize } from '@/post/utils/sanitizeHtml';
 
 // Editor configuration constants
 const DEFAULT_DEBOUNCE_DELAY = 300; // milliseconds
@@ -40,7 +40,7 @@ export function useTiptapEditor({
   placeholder = DEFAULT_PLACEHOLDER,
   debounceDelay = DEFAULT_DEBOUNCE_DELAY,
 }: UseTiptapEditorProps) {
-  const debounceTimerRef = useRef<NodeJS.Timeout>();
+  const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const onTypingRef = useRef(onTyping);
   useEffect(() => {
     onTypingRef.current = onTyping;

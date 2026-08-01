@@ -40,7 +40,7 @@ function SuggestionsDropdown({
   selectedSuggestionIndex: number
   setSelectedSuggestionIndex: (idx: number) => void
   loading: boolean
-  suggestionsRef: React.RefObject<HTMLDivElement>
+  suggestionsRef: React.RefObject<HTMLDivElement | null>
 }) {
   const { data: searchResult } = useUserSearch(searchQuery, currentUser?.boardPermissions)
   const suggestions = useMemo(() => {
@@ -286,7 +286,7 @@ export default function BlockedUsersPage() {
                   <SuggestionsDropdown
                     searchQuery={searchQuery}
                     blockedUsers={blockedUsers}
-                    currentUser={currentUser}
+                    currentUser={currentUser as User | null}
                     handleBlock={handleBlock}
                     selectedSuggestionIndex={selectedSuggestionIndex}
                     setSelectedSuggestionIndex={setSelectedSuggestionIndex}
@@ -330,7 +330,7 @@ export default function BlockedUsersPage() {
                         size={40}
                         src={user.profilePhotoURL || undefined}
                         alt={user.nickname || 'User'}
-                        fallback={user.nickname[0]}
+                        fallback={(user.nickname ?? '')[0]}
                       />
                       <div className="min-w-0 flex-1">
                         <div className="truncate font-medium">{user.nickname}</div>

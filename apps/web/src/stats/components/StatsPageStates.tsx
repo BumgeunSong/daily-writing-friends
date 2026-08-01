@@ -1,4 +1,3 @@
-import { ScrollArea } from '@/shared/ui/scroll-area';
 import StatsHeader from '@/stats/components/StatsHeader';
 import { StatsNoticeBanner } from '@/stats/components/StatsNoticeBanner';
 import { UserPostingStatsCardSkeleton } from '@/stats/components/UserPostingStatsCardSkeleton';
@@ -10,14 +9,14 @@ export function StatsLoadingState() {
     <div className='min-h-screen bg-background'>
       <StatsHeader />
       <main className='container mx-auto px-3 py-2 md:px-4'>
-        <ScrollArea className='h-full' id={STATS_SCROLL_ID}>
+        <div className='h-full overflow-y-auto' id={STATS_SCROLL_ID}>
           <StatsNoticeBanner />
           <div className='grid grid-cols-1 gap-4 pb-20 md:grid-cols-2'>
             {Array.from({ length: 5 }, (_, i) => (
               <UserPostingStatsCardSkeleton key={`loading-skeleton-${i}`} />
             ))}
           </div>
-        </ScrollArea>
+        </div>
       </main>
     </div>
   );
@@ -28,7 +27,7 @@ export function StatsMaintenanceState() {
     <div className='min-h-screen bg-background'>
       <StatsHeader />
       <main className='container mx-auto px-3 py-2 md:px-4'>
-        <ScrollArea className='h-full' id={STATS_SCROLL_ID}>
+        <div className='h-full overflow-y-auto' id={STATS_SCROLL_ID}>
           <div className='flex flex-col items-center justify-center space-y-6 py-16'>
             <img
               src='/admin-poodle-icon.webp'
@@ -42,7 +41,7 @@ export function StatsMaintenanceState() {
               <p className='max-w-md text-lg text-muted-foreground'>조금만 기다려주세요 🙏</p>
             </div>
           </div>
-        </ScrollArea>
+        </div>
       </main>
     </div>
   );

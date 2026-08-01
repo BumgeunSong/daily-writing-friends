@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from '@/shared/navigation';
 import { z } from 'zod';
-import { ROUTES } from '@/login/constants';
+import { ROUTES } from '@/shared/constants/routes';
 import { useEmailLogin } from '@/login/hooks/useEmailLogin';
 import { useGoogleLoginWithRedirect } from '@/login/hooks/useGoogleLoginWithRedirect';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -12,7 +12,7 @@ import { SESSION_KEYS, sessionStore } from '@/shared/lib/storage';
 import { isSafeReturnTo } from '@/shared/utils/routingDecisions';
 import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/shared/ui/card';
-import FormField from './JoinFormField';
+import FormField from '@/shared/components/FormField';
 
 const loginSchema = z.object({
   email: z.string().email('올바른 이메일 형식이 아닙니다.'),

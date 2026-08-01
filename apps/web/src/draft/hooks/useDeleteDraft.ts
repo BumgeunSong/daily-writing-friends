@@ -2,7 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { Draft } from '@/draft/model/Draft';
 import { deleteDraft } from '@/draft/utils/draftUtils';
-import { toast } from '@/shared/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface UseDeleteDraftProps {
   userId: string | undefined;
@@ -47,10 +47,8 @@ export function useDeleteDraft({ userId, onDeleteSuccess }: UseDeleteDraftProps)
       });
       
       // 성공 메시지 표시
-      toast({
-        title: "임시 저장 글 삭제 완료",
-        description: "임시 저장 글이 삭제되었습니다.",
-        variant: "default",
+      toast.success('임시 저장 글 삭제 완료', {
+        description: '임시 저장 글이 삭제되었습니다.',
       });
       
       // 성공 콜백 호출
@@ -61,10 +59,8 @@ export function useDeleteDraft({ userId, onDeleteSuccess }: UseDeleteDraftProps)
       console.error('임시 저장 글 삭제 중 오류 발생:', error);
       
       // 오류 메시지 표시
-      toast({
-        title: "임시 저장 글 삭제 실패",
-        description: "임시 저장 글을 삭제하는 중 오류가 발생했습니다.",
-        variant: "destructive",
+      toast.error('임시 저장 글 삭제 실패', {
+        description: '임시 저장 글을 삭제하는 중 오류가 발생했습니다.',
       });
     } finally {
       setIsDeleting(false);

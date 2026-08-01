@@ -40,7 +40,7 @@ export function PostFreewritingHeader({
 
         {/* Row 2: Topic (conditional) */}
         {topic && (
-          <div className="mt-3 border-t pt-3">
+          <div className="mt-3 pt-3">
             <p className="break-words text-center text-sm text-muted-foreground">
               {topic}
             </p>

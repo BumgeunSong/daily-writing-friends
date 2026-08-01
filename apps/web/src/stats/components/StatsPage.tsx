@@ -3,7 +3,6 @@ import { useState } from 'react';
 import React from 'react';
 import { useNavigate } from '@/shared/navigation';
 import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
-import { ScrollArea } from '@/shared/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/ui/tabs';
 import StatsHeader from '@/stats/components/StatsHeader';
 import { StatsNoticeBanner } from '@/stats/components/StatsNoticeBanner';
@@ -52,7 +51,7 @@ export default function StatsPage() {
     <div className='min-h-screen bg-background'>
       <StatsHeader />
       <main className='container mx-auto px-3 py-2 md:px-4'>
-        <ScrollArea className='h-full' id={STATS_SCROLL_ID}>
+        <div className='h-full overflow-y-auto' id={STATS_SCROLL_ID}>
           <StatsNoticeBanner />
           <Tabs value={tab} onValueChange={(v) => setTab(v as TabType)}>
             <TabsList className='mb-4 flex w-full justify-between rounded-lg bg-muted'>
@@ -104,7 +103,7 @@ export default function StatsPage() {
               )}
             </div>
           </Tabs>
-        </ScrollArea>
+        </div>
       </main>
     </div>
   );

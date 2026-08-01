@@ -31,7 +31,7 @@ export function useQueryPerformanceMonitor(enabled = false) {
 
       const stats = getQueryPerformanceStats();
       const staleQueries = queries.filter(q => q.isStale()).length;
-      const activeQueries = queries.filter(q => q.isFetching()).length;
+      const activeQueries = queries.filter(q => q.state.fetchStatus === 'fetching').length;
 
       setPerformanceData({
         activeQueries,

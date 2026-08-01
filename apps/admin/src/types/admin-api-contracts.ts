@@ -89,6 +89,7 @@ export const BoardUserSchema = z.object({
     nickname: z.string().nullable(),
     email: z.string().nullable(),
     phone_number: z.string().nullable(),
+    kakao_id: z.string().nullable(),
     profile_photo_url: z.string().nullable(),
   }),
 });

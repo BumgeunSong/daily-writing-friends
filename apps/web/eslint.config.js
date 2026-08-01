@@ -6,6 +6,7 @@ import jsxA11y from 'eslint-plugin-jsx-a11y';
 import prettier from 'eslint-config-prettier';
 import requireSortCompare from './eslint-local-rules/require-sort-compare.js';
 import noNewSharedSupabaseFetch from './eslint-local-rules/no-new-shared-supabase-fetch.js';
+import enforceFeatureBoundaries from './eslint-local-rules/enforce-feature-boundaries.js';
 
 export default tseslint.config(
   // Global ignores
@@ -63,6 +64,7 @@ export default tseslint.config(
         rules: {
           'require-sort-compare': requireSortCompare,
           'no-new-shared-supabase-fetch': noNewSharedSupabaseFetch,
+          'enforce-feature-boundaries': enforceFeatureBoundaries,
         },
       },
     },
@@ -128,6 +130,42 @@ export default tseslint.config(
       // Tier 3: Sorting safety
       'local/require-sort-compare': 'warn',
       'local/no-new-shared-supabase-fetch': 'error',
+
+      // ADR-0001: Feature tier enforcement (shared < core < app)
+      'local/enforce-feature-boundaries': ['error', {
+        // Baseline — shrink only, never add. "file -> feature". Every entry is a
+        // genuine smell to invert or relocate over time; new violations are blocked.
+        baseline: [
+          // shared/ reaching into a feature — inject the dependency or move into shared/
+          'shared/components/SentryFeedbackDialog.tsx -> user',
+          'shared/components/auth/RootRedirect.tsx -> login',
+          'shared/hooks/useAuth.tsx -> user',
+          'shared/utils/uploadFeedbackScreenshot.ts -> post',
+          // app -> app lateral coupling — route through shared/ or a core feature
+          'draft/components/DraftsDrawer.tsx -> board',
+          'login/components/GoalSection.tsx -> stats',
+          'login/components/JoinFormCardForActiveUser.tsx -> board',
+          'login/components/JoinFormPageForActiveUser.tsx -> board',
+          'login/hooks/useOnboardingSubmit.ts -> board',
+          'login/hooks/useUpcomingBoard.ts -> board',
+          // core -> app inversion — domain core depending on a derived feature.
+          // The post<->stats cluster (author streak/badges) is the top refactor target.
+          'comment/components/CommentHeader.tsx -> stats',
+          'comment/hooks/useActivity.ts -> stats',
+          'post/components/CountupWritingTimer.tsx -> stats',
+          'post/components/PostCreationPage.tsx -> draft',
+          'post/components/PostDetailPage.tsx -> stats',
+          'post/components/PostFreewritingPage.tsx -> stats',
+          'post/components/PostUserProfile.tsx -> stats',
+          'post/hooks/useBatchPostCardData.ts -> stats',
+          'post/hooks/useCompletionMessage.ts -> stats',
+          'post/hooks/useCountupTimer.ts -> stats',
+          'post/hooks/useCreatePostAction.ts -> draft',
+          'post/hooks/usePostCard.ts -> stats',
+          'post/hooks/usePostSubmit.ts -> draft',
+          'post/utils/batchPostCardDataUtils.ts -> stats',
+        ],
+      }],
     },
   },
 );

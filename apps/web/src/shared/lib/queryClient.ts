@@ -4,17 +4,17 @@ import { trackQueryError, trackMutationError, trackQuerySuccess } from './queryE
 // Create QueryCache with error handling
 const queryCache = new QueryCache({
   onError: (error, query) => {
-    trackQueryError(error, query);
+    trackQueryError(error, query as any);
   },
-  onSuccess: (data, query) => {
+  onSuccess: (_data, query) => {
     // Track successful queries for performance monitoring
-    trackQuerySuccess(query.queryKey);
+    trackQuerySuccess(query.queryKey as unknown[]);
   },
 });
 
 // Create MutationCache with error handling
 const mutationCache = new MutationCache({
-  onError: (error, variables, context, mutation) => {
+  onError: (error, _variables, _context, mutation) => {
     trackMutationError(error, mutation);
   },
 });

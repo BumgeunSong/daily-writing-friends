@@ -61,6 +61,22 @@ import { Post } from '@post/model/Post';
 // Available: @/, @board/, @post/, @comment/, @draft/, @notification/, @user/, @shared/, @login/, @stats/
 ```
 
+## Feature Tiers (apps/web)
+
+Enforced by `local/enforce-feature-boundaries` (see `docs/adr/0001-feature-dependency-layers.md`). `import type` is exempt in all directions.
+
+| Tier | Features | May import |
+|------|----------|------------|
+| shared | `shared/` | nothing (infra only) |
+| core | donator, user, post, comment | shared + each other |
+| app | board, draft, stats, notification, login, preview | shared + core (not each other) |
+
+core features form the cohesive domain model and may import one another; app features are peers and may not. The rule reports three smells: `shared → feature`, `core → app` (inversion), and `app → app` (lateral coupling). Known violations live in a shrink-only `baseline` in `apps/web/eslint.config.js` — removed as fixed, never added.
+
+## Code Conventions (apps/web)
+
+- Custom ESLint rules: implementation + tests in root `eslint-local-rules/`, re-exported in `apps/web/eslint-local-rules/`, wired in `apps/web/eslint.config.js`.
+
 ## Database
 
 Supabase Postgres with RLS. Key tables: `users`, `boards`, `posts`, `comments`, `replies`, `likes`, `reactions`, `blocks`, `notifications`, `drafts`, `user_board_permissions`, `board_waiting_users`.

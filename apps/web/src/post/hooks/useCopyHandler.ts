@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react';
-import { extractPlainText } from '@/post/web/contentUtils';
+import { extractPlainText } from '@/shared/content/contentUtils';
 
 /**
  * HTML 콘텐츠를 순수 텍스트로 복사하는 커스텀 훅
@@ -11,16 +11,17 @@ export const useCopyHandler = (
   getHtml: () => string,
   targetElement?: HTMLElement | null
 ) => {
-  const handleCopy = useCallback((e: ClipboardEvent) => {
+  const handleCopy = useCallback((e: Event) => {
     try {
+      const clipboardEvent = e as ClipboardEvent;
       const html = getHtml();
       if (!html) return;
-      
+
       const plainText = extractPlainText(html);
       if (!plainText) return;
-      
-      e.clipboardData?.setData('text/plain', plainText);
-      e.preventDefault();
+
+      clipboardEvent.clipboardData?.setData('text/plain', plainText);
+      clipboardEvent.preventDefault();
     } catch (error) {
       console.error('Copy handler failed:', error);
       // 에러 발생 시 기본 복사 동작 허용

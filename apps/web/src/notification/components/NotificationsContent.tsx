@@ -2,13 +2,12 @@ import { Loader2 } from 'lucide-react';
 import type { RefObject } from 'react';
 import NotificationsList from '@/notification/components/NotificationsList';
 import type { Notification } from '@/notification/model/Notification';
-import { ScrollArea } from '@/shared/ui/scroll-area';
 
 interface NotificationsContentProps {
   scrollAreaId: string;
   notifications: Notification[];
-  scrollRef: RefObject<HTMLDivElement>;
-  observerRef: (node?: Element | null) => void;
+  scrollRef: RefObject<HTMLDivElement | null>;
+  observerRef: (node: Element | null) => void;
   isLoadingMore: boolean;
 }
 
@@ -24,7 +23,7 @@ export const NotificationsContent = ({
 }: NotificationsContentProps) => {
   return (
     <div className="h-full">
-      <ScrollArea className="h-full" id={scrollAreaId}>
+      <div className="h-full overflow-y-auto" id={scrollAreaId}>
         <div ref={scrollRef} className="space-y-0">
           <NotificationsList notifications={notifications} />
           <div ref={observerRef} className="h-10 w-full" />
@@ -37,7 +36,7 @@ export const NotificationsContent = ({
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }; 

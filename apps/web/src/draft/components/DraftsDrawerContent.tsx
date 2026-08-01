@@ -1,7 +1,6 @@
 import { Loader2 } from 'lucide-react';
 import type React from 'react';
 import type { Draft } from '@/draft/model/Draft';
-import { ScrollArea } from '@/shared/ui/scroll-area';
 import { DraftItem } from './DraftItem';
 
 interface DraftsDrawerContentProps {
@@ -47,7 +46,7 @@ const DraftsList: React.FC<DraftsListProps> = ({
     onSelectDraft,
     onDeleteDraft
 }) => (
-    <ScrollArea className="h-[60vh] px-4">
+    <div className="h-[60vh] overflow-y-auto px-4">
         <div className="space-y-2" role="list">
             {drafts.map((draft) => (
                 <div key={draft.id} role="listitem">
@@ -59,7 +58,7 @@ const DraftsList: React.FC<DraftsListProps> = ({
                 </div>
             ))}
         </div>
-    </ScrollArea>
+    </div>
 );
 
 // 로딩 컴포넌트

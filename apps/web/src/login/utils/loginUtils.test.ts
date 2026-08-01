@@ -55,7 +55,6 @@ describe('loginUtils', () => {
     const mockBoard = {
       cohort: 10,
       title: '매글프 10기',
-      memberIds: ['user1', 'user2'],
       waitingList: [],
       startHour: 0,
       endHour: 24,
@@ -77,7 +76,6 @@ describe('loginUtils', () => {
       const result = transformBoardWithId(mockBoard as any, 'board-789');
       expect(result?.cohort).toBe(10);
       expect(result?.title).toBe('매글프 10기');
-      expect(result?.memberIds).toEqual(['user1', 'user2']);
     });
   });
 

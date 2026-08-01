@@ -76,12 +76,24 @@ export const useBottomTabHandler = () => {
   return context;
 };
 
-// 편의를 위한 커스텀 훅 생성
+/**
+ * Registers a bottom-tab action handler for the given tab.
+ *
+ * The latest handler is kept in a ref and invoked through a stable wrapper, so an
+ * unstable (inline, non-memoized) handler identity does NOT re-run the registration
+ * effect on every render. Registering on every render would push a new handler into
+ * the context state, re-render every consumer, produce yet another handler, and loop
+ * forever ("Maximum update depth exceeded").
+ */
 export const useRegisterTabHandler = (tabName: TabName, handler: () => void) => {
   const { registerTabHandler, unregisterTabHandler } = useBottomTabHandler();
 
+  const handlerRef = React.useRef(handler);
+  handlerRef.current = handler;
+
   React.useEffect(() => {
-    registerTabHandler(tabName, handler);
+    const stableHandler = () => handlerRef.current();
+    registerTabHandler(tabName, stableHandler);
     return () => unregisterTabHandler(tabName);
-  }, [registerTabHandler, unregisterTabHandler, tabName, handler]);
+  }, [registerTabHandler, unregisterTabHandler, tabName]);
 };

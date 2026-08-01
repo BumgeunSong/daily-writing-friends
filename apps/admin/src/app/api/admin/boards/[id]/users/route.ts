@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, ctx: RouteParams) {
       const { data, error } = await supabase
         .from('user_board_permissions')
         .select(
-          'permission, users(id, real_name, nickname, email, phone_number, profile_photo_url)',
+          'permission, users(id, real_name, nickname, email, phone_number, kakao_id, profile_photo_url)',
         )
         .eq('board_id', id);
       if (error) throw AdminApiError.serverError(error.message);

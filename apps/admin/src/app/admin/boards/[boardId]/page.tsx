@@ -53,6 +53,7 @@ interface BoardUserRow {
   nickname: string | null
   email: string | null
   phoneNumber: string | null
+  kakaoId: string | null
   permission: string
 }
 
@@ -71,9 +72,16 @@ const fetchBoardUsersHydrated = async (boardId: string): Promise<BoardUserRow[]>
     nickname: row.user.nickname,
     email: row.user.email,
     phoneNumber: row.user.phone_number,
+    kakaoId: row.user.kakao_id,
     permission: row.permission,
   }))
 }
+
+const NullableCell = ({ value }: { value: string | null }) => (
+  <TableCell>
+    {value ? value : <span className="text-gray-400">null</span>}
+  </TableCell>
+)
 
 const getPermissionBadge = (permission: 'read' | 'write' | 'admin') => {
   switch (permission) {
@@ -475,6 +483,7 @@ export default function BoardDetailPage() {
                   <TableHead>실명</TableHead>
                   <TableHead>이메일</TableHead>
                   <TableHead>전화번호</TableHead>
+                  <TableHead>카카오 ID</TableHead>
                   <TableHead className="text-center">권한</TableHead>
                 </TableRow>
               </TableHeader>
@@ -490,13 +499,8 @@ export default function BoardDetailPage() {
                     <TableCell>
                       {user.email || '이메일 없음'}
                     </TableCell>
-                    <TableCell>
-                      {user.phoneNumber ? (
-                        user.phoneNumber
-                      ) : (
-                        <span className="text-gray-400">null</span>
-                      )}
-                    </TableCell>
+                    <NullableCell value={user.phoneNumber} />
+                    <NullableCell value={user.kakaoId} />
                     <TableCell className="text-center">
                       {getPermissionBadge(user.permission as 'read' | 'write' | 'admin')}
                     </TableCell>

@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import { type FirebaseTimestamp } from '@/shared/model/Timestamp';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import type { Notification } from '@/notification/model/Notification';
 import { NotificationType } from '@/notification/model/Notification';
 import type { CommentNotification } from '@/notification/model/Notification';

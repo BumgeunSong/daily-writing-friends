@@ -3,22 +3,13 @@ import { useContext, useState, useEffect, useRef, createContext } from 'react';
 
 import { getSupabaseClient } from '@/shared/api/supabaseClient';
 import { setSentryUser } from '@/sentry';
+import type { AuthUser } from '@/shared/auth/authTypes';
 import { mapToAuthUser } from '@/shared/auth/supabaseAuth';
 import { STORAGE_KEYS, storage } from '@/shared/lib/storage';
 import { UUID_RE, parseStoredAuthUser } from '@/shared/utils/authUserParser';
 import { createUserIfNotExists } from '@/user/api/user';
 
-/**
- * AuthUser is a backward-compatible wrapper around Supabase User.
- * It maps Supabase fields to the same interface Firebase had,
- * so 30+ consumer files can keep using `currentUser.uid` unchanged.
- */
-export interface AuthUser {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  photoURL: string | null;
-}
+export type { AuthUser } from '@/shared/auth/authTypes';
 
 interface AuthContextType {
   currentUser: AuthUser | null;

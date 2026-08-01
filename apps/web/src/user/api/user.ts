@@ -7,7 +7,7 @@ import { storage } from '@/firebase';
 import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
 import { fetchUserFromSupabase, fetchAllUsersFromSupabase, fetchUsersWithBoardPermissionFromSupabase } from './userReads';
 import type { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
-import type { AuthUser } from '@/shared/hooks/useAuth';
+import type { AuthUser } from '@/shared/auth/authTypes';
 import { REMOTE_CONFIG_DEFAULTS } from '@/shared/hooks/useRemoteConfig';
 import { mapUserToSupabaseUpdate, mapBoardPermissionsToRows } from '@/user/utils/userMappers';
 import { resizeImageBlob } from '@/shared/utils/resizeImageBlob';
@@ -93,7 +93,7 @@ export async function uploadUserProfilePhoto(userId: string, file: File): Promis
         quality: 0.85,
         mimeType: 'image/jpeg',
     });
-    const storageRef = ref(storage, `profilePhotos/${userId}`);
+    const storageRef = ref(storage!, `profilePhotos/${userId}`);
     await uploadBytes(storageRef, blob, {
         contentType: 'image/jpeg',
         cacheControl: AVATAR_CACHE_CONTROL,

@@ -2,7 +2,7 @@ import { AlertCircle } from "lucide-react"
 import type React from "react"
 
 const NoticeSection: React.FC = () => (
-  <div className="space-y-3 rounded-lg bg-muted/20 p-2 md:flex md:h-full md:flex-col md:justify-center">
+  <div className="space-y-3 rounded-lg border border-border/50 bg-card p-6 shadow-sm md:flex md:h-full md:flex-col md:justify-center">
     <h3 className="flex items-center gap-2 font-medium md:text-lg">
       <AlertCircle className="size-4 md:size-5" />
       안내

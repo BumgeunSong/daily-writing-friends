@@ -9,7 +9,7 @@ import { Label } from '@/shared/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/shared/ui/radio-group'
 import { Slider } from '@/shared/ui/slider'
 import { formatStartDate } from '@/board/utils/boardUtils'
-import FormField from "./JoinFormField"
+import FormField from "@/shared/components/FormField"
 
 interface JoinFormCardForActiveUserProps {
   upcomingBoard: Board | null

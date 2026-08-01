@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="매생이 캐릭터">
+  <rect width="64" height="64" rx="16" fill="#FDE7DE"/>
+  <path d="M32 9c3 4 5 6 5 9a5 5 0 0 1-10 0c0-3 2-5 5-9z" fill="#FF7A59"/>
+  <circle cx="32" cy="36" r="16" fill="#FF7A59"/>
+  <circle cx="26" cy="34" r="3.4" fill="#fff"/>
+  <circle cx="38" cy="34" r="3.4" fill="#fff"/>
+  <circle cx="26.6" cy="34.6" r="1.7" fill="#3a2018"/>
+  <circle cx="38.6" cy="34.6" r="1.7" fill="#3a2018"/>
+  <circle cx="21.5" cy="40" r="2.2" fill="#ff5a7a" opacity="0.5"/>
+  <circle cx="42.5" cy="40" r="2.2" fill="#ff5a7a" opacity="0.5"/>
+  <path d="M27 41c2.5 3 7.5 3 10 0" stroke="#3a2018" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+</svg>

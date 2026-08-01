@@ -122,6 +122,22 @@ const publicRoutes = {
         return { Component: PostFreewritingTutorial };
       },
     },
+    {
+      path: 'preview',
+      lazy: async () => {
+        const { default: PreviewBoardPage } = await import('@/preview/components/PreviewBoardPage');
+        return { Component: PreviewBoardPage };
+      },
+    },
+    {
+      path: 'preview/post/:previewPostId',
+      lazy: async () => {
+        const { default: PreviewPostDetailPage } = await import(
+          '@/preview/components/PreviewPostDetailPage'
+        );
+        return { Component: PreviewPostDetailPage };
+      },
+    },
   ],
 };
 
@@ -391,4 +407,12 @@ export const router = sentryCreateBrowserRouter([
       catchAllRedirectRoute,
     ],
   },
-]);
+], {
+  future: {
+    v7_relativeSplatPath: true,
+    v7_partialHydration: true,
+    v7_normalizeFormMethod: true,
+    v7_startTransition: true,
+    v7_fetcherPersist: true,
+  },
+});

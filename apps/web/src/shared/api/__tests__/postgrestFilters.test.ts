@@ -74,4 +74,37 @@ describe('escapeForOrFilter', () => {
     // The underscore in `author_id` is ILIKE-escaped (would only match a literal `_`).
     expect(escaped).toContain('author\\_id');
   });
+
+  // Guards below pin transitively-safe behavior: today the `.` encoding alone
+  // blocks these payloads, but narrowing the encoded set would regress silently.
+  describe('injection regression guards', () => {
+    it('leaves a ! prefix as a harmless literal (no dot survives to form an operator)', () => {
+      expect(escapeForOrFilter('!foo')).toBe('!foo');
+      expect(escapeForOrFilter('!inner.eq.x')).not.toContain('.');
+    });
+
+    it('cannot reconstruct a not.ilike operator', () => {
+      expect(escapeForOrFilter('not.ilike.foo')).toBe('not%2Eilike%2Efoo');
+    });
+
+    it('cannot reconstruct a nested and(...) group', () => {
+      const escaped = escapeForOrFilter('and(visibility.eq.private)');
+      expect(escaped).not.toContain('(');
+      expect(escaped).not.toContain(')');
+      expect(escaped).not.toContain('.');
+    });
+
+    it('stays free of raw delimiters when applied twice', () => {
+      const twice = escapeForOrFilter(escapeForOrFilter('100% _ , .'));
+      for (const delimiter of [',', '(', ')', '*', '"', ':', '.', ' ']) {
+        expect(twice).not.toContain(delimiter);
+      }
+    });
+
+    it('escapes backslashes before percent-encoding, so encoded bytes are not re-escaped', () => {
+      // Layer 1 first: `\` → `\\`, then `%` → `\%`. Reversed order would
+      // ILIKE-escape the `%` of percent-encoded bytes and corrupt them.
+      expect(escapeForOrFilter('\\%')).toBe('\\\\\\%');
+    });
+  });
 });

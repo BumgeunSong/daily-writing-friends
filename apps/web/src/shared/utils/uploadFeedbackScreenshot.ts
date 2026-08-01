@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/firebase';
-import { processImageForUpload } from '@/post/web/ImageUtils';
+import { processImageForUpload } from '@/post/utils/ImageUtils';
 import {
   validateFileSize,
   validateProcessedFileSize,

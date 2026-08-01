@@ -2,7 +2,7 @@ import type { RefObject } from 'react';
 import { useRef, useState, useEffect } from 'react';
 
 interface ScrollIndicators {
-  scrollContainerRef: RefObject<HTMLDivElement>;
+  scrollContainerRef: RefObject<HTMLDivElement | null>;
   canScrollLeft: boolean;
   canScrollRight: boolean;
 }

@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query"
 import { MessageCircle } from "lucide-react"
 import { Link } from "react-router-dom"
-import { renderPostPreviewHtml } from "@/post/web/contentUtils"
+import { renderPostPreviewHtml } from "@/shared/content/contentUtils"
 import { seedPostCache } from "@/post/utils/postCacheUtils"
 import { usePrefetchPost } from "@/post/hooks/usePrefetchPost"
 import { Card, CardContent, CardFooter } from "@/shared/ui/card"

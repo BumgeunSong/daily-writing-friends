@@ -3,6 +3,7 @@ import type { Post } from '@/post/model/Post';
 import { postQueryKey } from '@/post/utils/postQueryKeys';
 import { queryClient } from '@/shared/lib/queryClient';
 import { isWorkingDay } from '@/shared/utils/dateUtils';
+import { streakQueryKey } from '@/stats/utils/statsQueryKeys';
 
 /**
  * Seed the TanStack Query cache from a list page so PostDetailPage's
@@ -39,7 +40,7 @@ export function optimisticallyUpdatePostingStreak(authorId: string) {
     return;
   }
 
-  const postingStreakQueryKey = ['postingStreak', authorId];
+  const postingStreakQueryKey = streakQueryKey(authorId);
   const cachedStreakData = queryClient.getQueryData<{ streak: boolean[] }>(postingStreakQueryKey);
 
   const hasValidStreakCache = cachedStreakData && cachedStreakData.streak.length > 0;

@@ -9,7 +9,7 @@ import { useIsUserInWaitingList } from '@/login/hooks/useIsUserInWaitingList';
 import { useOnboardingPrefill } from '@/login/hooks/useOnboardingPrefill';
 import { useOnboardingSubmit } from '@/login/hooks/useOnboardingSubmit';
 import { useUpcomingBoard } from '@/login/hooks/useUpcomingBoard';
-import { ROUTES } from '@/login/constants';
+import { ROUTES } from '@/shared/constants/routes';
 import { getOnboardingHeader } from '@/login/utils/onboardingDerived';
 import {
   ONBOARDING_FORM_DEFAULTS,

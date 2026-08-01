@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="매글이 캐릭터">
+  <rect width="64" height="64" rx="16" fill="#E2ECFF"/>
+  <path d="M32 12v6" stroke="#4C8DFF" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="32" cy="11" r="2.6" fill="#4C8DFF"/>
+  <circle cx="32" cy="36" r="16" fill="#4C8DFF"/>
+  <circle cx="26" cy="34" r="3.4" fill="#fff"/>
+  <circle cx="38" cy="34" r="3.4" fill="#fff"/>
+  <circle cx="26.6" cy="34.6" r="1.7" fill="#1f2a44"/>
+  <circle cx="38.6" cy="34.6" r="1.7" fill="#1f2a44"/>
+  <circle cx="21.5" cy="40" r="2.2" fill="#3a6fd8" opacity="0.5"/>
+  <circle cx="42.5" cy="40" r="2.2" fill="#3a6fd8" opacity="0.5"/>
+  <path d="M28 42c2 2 6 2 8 0" stroke="#1f2a44" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+</svg>

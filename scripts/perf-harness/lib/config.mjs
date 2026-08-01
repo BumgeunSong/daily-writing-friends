@@ -42,11 +42,18 @@ export const TARGETS = { lcp: 2500, fcp: 1800, cls: 0.1 };
 export const METRIC_WEIGHTS = { lcp: 0.5, fcp: 0.2, cls: 0.3 };
 
 // Objective Sentry 30-day traffic per route (used as traffic weights).
+// Refreshed 2026-06-21 from the 30d pre-#623 window (2026-05-05 → 2026-06-04)
+// — the prior snapshot over-weighted root by ~16pp and under-weighted postDetail
+// by ~8pp because it counted root-redirect transactions instead of pageloads.
+// These counts come from Sentry Discover, transactions dataset, filtered to
+// pageloads (count_web_vitals(measurements.lcp,any) > 0) so each unit = one
+// real user-visible page paint.
 export const TRAFFIC = {
-  root: 830,
-  notifications: 369,
-  boardFeed: 181,
-  postDetail: 136,
+  root: 2676,
+  boardFeed: 1299,
+  notifications: 1291,
+  postDetail: 1198,
+  boardsList: 447,
 };
 
 // Median-of-N per measurement (validated: median-3 noise ~ median-5).
@@ -59,14 +66,17 @@ export function loadManifest() {
 }
 
 // Returns [{ key, path, traffic }] in a stable order.
+// Stable order = traffic-descending so status output reads top-down by importance.
 export function loadRoutes() {
   const manifest = loadManifest();
-  const order = ['root', 'boardFeed', 'postDetail', 'notifications'];
-  return order.map((key) => ({
-    key,
-    path: manifest.routes[key],
-    traffic: TRAFFIC[key],
-  }));
+  const order = ['root', 'boardFeed', 'notifications', 'postDetail', 'boardsList'];
+  return order
+    .filter((key) => manifest.routes[key])
+    .map((key) => ({
+      key,
+      path: manifest.routes[key],
+      traffic: TRAFFIC[key],
+    }));
 }
 
 export const paths = {
