@@ -3,7 +3,7 @@ import { useEditorCopy } from '@/post/hooks/useEditorCopy';
 import { useTiptapEditor } from '@/post/hooks/useTiptapEditor';
 import { useTiptapImageUpload } from '@/post/hooks/useTiptapImageUpload';
 import type { ProseMirrorDoc } from '@/post/model/Post';
-import { sanitize } from '@/post/web/sanitizeHtml';
+import { sanitize } from '@/post/utils/sanitizeHtml';
 import { CopyErrorBoundary } from './CopyErrorBoundary';
 import { EditorContentArea } from './EditorContentArea';
 import { ResponsiveEditorToolbar } from './ResponsiveEditorToolbar';
