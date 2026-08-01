@@ -1,7 +1,17 @@
+import type { Database } from '@/shared/external/database.types';
 import { getSupabaseClient } from '@/shared/external/supabaseClient';
 
-interface DonatorStatusRow {
-  user_id: string;
+type DonatorStatusResponse = Pick<Database['public']['Views']['donator_status']['Row'], 'user_id'>;
+
+/**
+ * Pure: projects donator_status rows to their user ids.
+ *
+ * The `donator_status` view types `user_id` as nullable, so null rows are
+ * dropped rather than leaking into the donator id set as `undefined`. This is
+ * the shape the previous `as DonatorStatusRow[]` cast silently hid.
+ */
+export function mapToDonatorUserIds(rows: DonatorStatusResponse[]): string[] {
+  return rows.map((row) => row.user_id).filter((id): id is string => id !== null);
 }
 
 export async function fetchActiveDonatorIds(userIds: string[]): Promise<string[]> {
@@ -14,5 +24,5 @@ export async function fetchActiveDonatorIds(userIds: string[]): Promise<string[]
     .in('user_id', userIds);
 
   if (error) throw error;
-  return (data as DonatorStatusRow[] | null ?? []).map((row) => row.user_id);
+  return mapToDonatorUserIds(data ?? []);
 }
