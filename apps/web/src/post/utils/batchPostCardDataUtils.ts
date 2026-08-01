@@ -1,6 +1,6 @@
 import type { PostAuthorData } from '@/post/components/PostUserProfile';
 import type { BasicUserRow } from '@/user/external/userReads';
-import type { UserIdRow, PostDateRow } from '@/stats/external/stats';
+import type { UserIdRow, PostDateRow } from '@/stats/external/stats.api';
 import { getDateKey } from '@/shared/utils/dateUtils';
 import { calculateCommentTemperature } from '@/stats/utils/commentTemperature';
 import type { WritingBadge } from '@/stats/model/WritingStats';

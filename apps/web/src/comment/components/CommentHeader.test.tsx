@@ -13,7 +13,7 @@ import type { WritingBadge } from '@/stats/model/WritingStats';
 
 const fetchCommentingData = vi.hoisted(() => vi.fn(() => Promise.resolve({ commentings: [], replyings: [] })));
 
-vi.mock('@/stats/external/stats', () => ({
+vi.mock('@/stats/external/stats.api', () => ({
   fetchCommentingData,
 }));
 

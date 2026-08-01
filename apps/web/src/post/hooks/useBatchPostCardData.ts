@@ -15,7 +15,7 @@ import {
   fetchBatchCommentUserIdsByDateRange,
   fetchBatchReplyUserIdsByDateRange,
   fetchBatchPostDatesByDateRange,
-} from '@/stats/external/stats';
+} from '@/stats/external/stats.api';
 import {
   STREAK_WINDOW_WORKING_DAYS,
   TEMPERATURE_WINDOW_WORKING_DAYS,
