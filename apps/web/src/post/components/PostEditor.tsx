@@ -1,5 +1,6 @@
+import { forwardRef } from 'react';
 import type { ProseMirrorDoc } from '@/post/model/Post';
-import { EditorTiptap } from './EditorTiptap';
+import { EditorTiptap, type EditorTiptapHandle } from './EditorTiptap';
 
 interface PostEditorProps {
   value: string;
@@ -10,24 +11,24 @@ interface PostEditorProps {
   onContentJsonChange?: (json: ProseMirrorDoc) => void;
 }
 
-export function PostEditor({
-  value,
-  onChange,
-  onTyping,
-  placeholder,
-  onUploadingChange,
-  onContentJsonChange,
-}: PostEditorProps) {
-  return (
-    <EditorTiptap
-      initialHtml={value}
-      onChange={({ html, json }) => {
-        onChange(html);
-        onContentJsonChange?.(json);
-      }}
-      onTyping={onTyping}
-      placeholder={placeholder}
-      onUploadingChange={onUploadingChange}
-    />
-  );
-}
+export type PostEditorHandle = EditorTiptapHandle;
+
+export const PostEditor = forwardRef<PostEditorHandle, PostEditorProps>(
+  ({ value, onChange, onTyping, placeholder, onUploadingChange, onContentJsonChange }, ref) => {
+    return (
+      <EditorTiptap
+        ref={ref}
+        initialHtml={value}
+        onChange={({ html, json }) => {
+          onChange(html);
+          onContentJsonChange?.(json);
+        }}
+        onTyping={onTyping}
+        placeholder={placeholder}
+        onUploadingChange={onUploadingChange}
+      />
+    );
+  },
+);
+
+PostEditor.displayName = 'PostEditor';

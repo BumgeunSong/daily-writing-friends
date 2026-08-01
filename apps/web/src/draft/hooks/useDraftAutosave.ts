@@ -44,7 +44,8 @@ interface UseDraftAutosaveResult {
   lastSavedAt: Date | null;
   isSaving: boolean;
   savingError: Error | null;
-  manualSave: () => Promise<void>;
+  /** Drains in-flight + queued saves, then resolves with the saved draft id. */
+  manualSave: () => Promise<string | null>;
 }
 
 function useLatestValueRef<T>(value: T): MutableRefObject<T> {
@@ -68,6 +69,12 @@ function useLatestValueRef<T>(value: T): MutableRefObject<T> {
  *    capped at {@link MAX_DRAFT_RETRY_DELAY_MS}; no retry on SupabaseWriteError or TypeError.
  *  - Errors raise a Korean toast and surface via savingError.
  *  - Caller passes live title/content each render; refs handle stale closures.
+ *  - draftIdRef is written synchronously at save completion (not mirrored from
+ *    state at render), so a queued follow-up save and manualSave callers see
+ *    the created id before React re-renders — never creating a duplicate draft.
+ *  - initialDraftId can arrive after mount (DraftsDrawer selects a draft while
+ *    the create page is already mounted — same route, no remount), so the ref
+ *    late-seeds whenever it is still null.
  */
 export function useDraftAutosave({
   boardId,
@@ -86,7 +93,10 @@ export function useDraftAutosave({
     content,
   });
 
-  const draftIdRef = useLatestValueRef(draftId);
+  const draftIdRef = useRef<string | null>(initialDraftId ?? null);
+  if (draftIdRef.current === null && initialDraftId) {
+    draftIdRef.current = initialDraftId;
+  }
   const titleRef = useLatestValueRef(title);
   const contentRef = useLatestValueRef(content);
   const saveDraftFnRef = useLatestValueRef(saveDraftFn);
@@ -114,6 +124,7 @@ export function useDraftAutosave({
         userId,
       );
 
+      draftIdRef.current = savedDraft.id;
       setDraftId(savedDraft.id);
       setLastSavedAt(savedDraft.savedAt.toDate());
       setLastSavedSnapshot({ title: currentTitle, content: currentContent });
@@ -139,6 +150,7 @@ export function useDraftAutosave({
 
   const manualSave = useCallback(async () => {
     await squashedSaveRef.current!();
+    return draftIdRef.current;
   }, []);
 
   useInterval(

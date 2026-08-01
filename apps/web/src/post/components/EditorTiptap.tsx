@@ -3,6 +3,7 @@ import { useEditorCopy } from '@/post/hooks/useEditorCopy';
 import { useTiptapEditor } from '@/post/hooks/useTiptapEditor';
 import { useTiptapImageUpload } from '@/post/hooks/useTiptapImageUpload';
 import type { ProseMirrorDoc } from '@/post/model/Post';
+import { sanitize } from '@/post/utils/sanitizeHtml';
 import { CopyErrorBoundary } from './CopyErrorBoundary';
 import { EditorContentArea } from './EditorContentArea';
 import { ResponsiveEditorToolbar } from './ResponsiveEditorToolbar';
@@ -20,6 +21,11 @@ interface EditorTiptapProps {
 
 export interface EditorTiptapHandle {
   focus: () => void;
+  /**
+   * Reads the live editor content, bypassing onChange's debounce. Publish-time
+   * reads must use this — parent state lags typing by the debounce delay.
+   */
+  getCurrentContent: () => { html: string; json: ProseMirrorDoc } | null;
 }
 
 /**
@@ -96,13 +102,14 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
       };
     }, [editor, handlePaste, handleDrop]);
 
-    // Expose focus method
     useImperativeHandle(
       ref,
       () => ({
         focus: () => {
           editor?.commands.focus();
         },
+        getCurrentContent: () =>
+          editor ? { html: sanitize(editor.getHTML()), json: editor.getJSON() } : null,
       }),
       [editor],
     );
