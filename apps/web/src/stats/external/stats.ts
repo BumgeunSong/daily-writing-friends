@@ -1,14 +1,14 @@
 import type { Posting } from '@/post/model/Posting';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { createUserInfo } from '@/stats/utils/userInfoUtils';
-import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/api/commenting';
-import { fetchUser } from '@/user/api/user';
+import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/external/commenting';
+import { fetchUser } from '@/user/external/user';
 import type { User } from '@/user/model/User';
 import {
   fetchPostingsFromSupabase,
   fetchPostingsByDateRangeFromSupabase
-} from '@/user/api/posting';
+} from '@/user/external/posting';
 
 // Re-export for backward compatibility
 export { createUserInfo };

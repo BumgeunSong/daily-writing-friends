@@ -1,5 +1,5 @@
 import type { Draft } from '@/draft/model/Draft';
-import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
+import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
 import { createTimestamp, type FirebaseTimestamp } from '@/shared/model/Timestamp';
 
 export async function saveDraft(draft: Omit<Draft, 'id' | 'savedAt'> & { id?: string }, userId: string): Promise<Draft> {

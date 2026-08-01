@@ -1,7 +1,7 @@
 import type { LoaderFunctionArgs } from 'react-router-dom';
-import { fetchRecentPosts } from '@/post/api/post';
+import { fetchRecentPosts } from '@/post/external/post';
 import { getCurrentUser } from '@/shared/utils/authUtils';
-import { getBlockedByUsers } from '@/user/api/user';
+import { getBlockedByUsers } from '@/user/external/user';
 
 export async function boardPostsLoader({ params }: LoaderFunctionArgs) {
   const { boardId } = params;

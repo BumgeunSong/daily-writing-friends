@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchReplyCountOnce } from '@/comment/api/reply';
+import { fetchReplyCountOnce } from '@/comment/external/reply';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { getBlockedByUsers } from '@/user/api/user';
+import { getBlockedByUsers } from '@/user/external/user';
 
 export function useReplyCount(boardId: string, postId: string, commentId: string) {
   const { currentUser } = useAuth();

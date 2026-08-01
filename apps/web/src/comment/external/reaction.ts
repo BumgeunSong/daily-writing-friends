@@ -1,6 +1,6 @@
 import type { Reaction } from '@/comment/model/Reaction';
 import type { UserSummary } from '@/shared/model/UserSummary';
-import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
+import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
 
 // Shared base for all reaction param types
 interface ReactionParamsBase {

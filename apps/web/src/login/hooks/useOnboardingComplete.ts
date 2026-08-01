@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 
 /**
  * Reads the boolean `users.onboarding_complete` flag for the given uid.

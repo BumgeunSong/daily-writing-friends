@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
-import { fetchUser } from '@/user/api/user';
+import { fetchUser } from '@/user/external/user';
 import { buildPrefillFormValues, PREFILL_ERROR_MESSAGE } from '@/login/utils/onboardingPrefill';
 import type { OnboardingFormSchema } from '@/login/utils/onboardingSchema';
 

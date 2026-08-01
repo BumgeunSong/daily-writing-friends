@@ -1,5 +1,5 @@
 import type { Board } from '@/board/model/Board';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import { createTimestamp } from '@/shared/model/Timestamp';
 
 interface BoardJoinRow {

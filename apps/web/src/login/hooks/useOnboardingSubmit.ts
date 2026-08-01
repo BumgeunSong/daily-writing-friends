@@ -11,7 +11,7 @@ import {
 } from '@/login/utils/onboardingSubmit';
 import type { AuthUser } from '@/shared/hooks/useAuth';
 import { useNavigate } from '@/shared/navigation';
-import { createUserIfNotExists, updateUser } from '@/user/api/user';
+import { createUserIfNotExists, updateUser } from '@/user/external/user';
 
 interface SubmitDeps {
   currentUser: AuthUser | null;

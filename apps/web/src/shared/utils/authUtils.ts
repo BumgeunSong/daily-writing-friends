@@ -1,4 +1,4 @@
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import type { AuthUser } from '@/shared/hooks/useAuth';
 import { UUID_RE } from '@/shared/utils/authUserParser';
 import { mapToAuthUser } from '@/shared/auth/supabaseAuth';

@@ -1,13 +1,13 @@
 import type React from 'react';
 import { useContext, useState, useEffect, useRef, createContext } from 'react';
 
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import { setSentryUser } from '@/sentry';
 import type { AuthUser } from '@/shared/auth/authTypes';
 import { mapToAuthUser } from '@/shared/auth/supabaseAuth';
 import { STORAGE_KEYS, storage } from '@/shared/lib/storage';
 import { UUID_RE, parseStoredAuthUser } from '@/shared/utils/authUserParser';
-import { createUserIfNotExists } from '@/user/api/user';
+import { createUserIfNotExists } from '@/user/external/user';
 
 export type { AuthUser } from '@/shared/auth/authTypes';
 

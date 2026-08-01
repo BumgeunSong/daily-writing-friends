@@ -8,7 +8,7 @@ import { useCurrentUserCommentingStats } from "@/stats/hooks/useCurrentUserComme
 import { useCurrentUserWritingStats } from "@/stats/hooks/useCurrentUserWritingStats"
 import { useWritingStats } from "@/stats/hooks/useWritingStats"
 import { mergeCurrentUserFirst } from "@/stats/utils/mergeStatsUtils"
-import { getBlockedByUsers } from '@/user/api/user';
+import { getBlockedByUsers } from '@/user/external/user';
 import { useUserInBoard } from "@/user/hooks/useUserInBoard"
 
 type TabType = 'posting' | 'commenting';

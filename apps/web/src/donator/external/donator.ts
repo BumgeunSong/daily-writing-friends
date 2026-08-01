@@ -1,4 +1,4 @@
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 
 interface DonatorStatusRow {
   user_id: string;

@@ -1,9 +1,9 @@
 import type { Post } from '@/post/model/Post';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
-import { formatInFilter } from '@/shared/api/postgrestFilters';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
+import { formatInFilter } from '@/shared/external/postgrestFilters';
 import { createTimestamp } from '@/shared/model/Timestamp';
 import { computeWeekDaysFromFirstDay } from '@/post/utils/weekDays';
-import { parsePostVisibility, parsePostContentJson } from '@/post/api/postParsers';
+import { parsePostVisibility, parsePostContentJson } from '@/post/external/postParsers';
 
 /**
  * 최근 게시글을 불러옴 (createdAt 내림차순, blockedByUsers 서버사이드 필터링)

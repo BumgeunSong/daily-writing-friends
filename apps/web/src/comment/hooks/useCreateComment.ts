@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createComment, updateCommentToPost, deleteCommentToPost } from '@/comment/api/comment';
+import { createComment, updateCommentToPost, deleteCommentToPost } from '@/comment/external/comment';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { badgeQueryKey } from '@/stats/utils/statsQueryKeys';
 import { useUser } from '@/user/hooks/useUser';

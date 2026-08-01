@@ -1,4 +1,4 @@
-import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
+import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
 
 export interface CreateLikeParams {
   boardId: string;

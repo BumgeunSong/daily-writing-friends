@@ -5,7 +5,7 @@ import {
   isUnknownLoaderError,
   mapPostLoaderError,
 } from './postLoaderAccess';
-import { SupabaseNetworkError } from '@/shared/api/supabaseClient';
+import { SupabaseNetworkError } from '@/shared/external/supabaseClient';
 import type { User } from '@/user/model/User';
 
 const makeUser = (

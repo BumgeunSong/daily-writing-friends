@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import { ROUTES } from '@/shared/constants/routes';
 import { validatePassword } from '@/shared/utils/passwordValidation';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import { mapSetPasswordErrorToKorean } from '@/shared/auth/authErrors';
 import { setPasswordForCurrentUser } from '@/shared/auth/supabaseAuth';
 import { SESSION_KEYS, sessionStore } from '@/shared/lib/storage';

@@ -1,6 +1,6 @@
 import type { Reply } from '@/comment/model/Reply';
-import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
-import { formatInFilter } from '@/shared/api/postgrestFilters';
+import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
+import { formatInFilter } from '@/shared/external/postgrestFilters';
 import { createTimestamp } from '@/shared/model/Timestamp';
 
 /**

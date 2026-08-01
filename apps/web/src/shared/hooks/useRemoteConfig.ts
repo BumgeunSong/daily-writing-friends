@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { remoteConfig } from '@/firebase';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 
 export interface RemoteConfigValueTypes {
   active_board_id: string;

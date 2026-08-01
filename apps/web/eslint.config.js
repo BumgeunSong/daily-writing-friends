@@ -18,7 +18,7 @@ export default tseslint.config(
       '*.config.js',
       '*.config.ts',
       // Supabase-generated schema types (regenerated via `pnpm db:types`); never hand-edited.
-      'src/shared/api/database.types.ts',
+      'src/shared/external/database.types.ts',
     ],
   },
 

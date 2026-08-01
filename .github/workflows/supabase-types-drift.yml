@@ -1,6 +1,6 @@
 name: Supabase Types Drift
 
-# Guards apps/web/src/shared/api/database.types.ts against drift from the
+# Guards apps/web/src/shared/external/database.types.ts against drift from the
 # migrations in supabase/. The generated types are TypeScript's source of truth
 # for query results (#694); if a migration changes the schema but the committed
 # types are not regenerated, the types silently lie. This job regenerates them
@@ -18,14 +18,14 @@ on:
     paths:
       - 'supabase/migrations/**'
       - 'supabase/config.toml'
-      - 'apps/web/src/shared/api/database.types.ts'
+      - 'apps/web/src/shared/external/database.types.ts'
       - '.github/workflows/supabase-types-drift.yml'
   # Manual trigger to re-check drift on demand (e.g. after a CLI bump).
   workflow_dispatch:
 
 env:
   SUPABASE_CLI_VERSION: 2.75.0
-  TYPES_FILE: apps/web/src/shared/api/database.types.ts
+  TYPES_FILE: apps/web/src/shared/external/database.types.ts
 
 jobs:
   check-drift:

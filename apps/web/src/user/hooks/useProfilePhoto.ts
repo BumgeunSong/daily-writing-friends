@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react';
 import { useEffect, useRef, useState } from 'react';
 import { AvatarUploadError } from '@/shared/errors/avatarUpload';
-import { uploadUserProfilePhoto } from '@/user/api/user';
+import { uploadUserProfilePhoto } from '@/user/external/user';
 
 // Loading copy + error messages live here (UI layer), not in the resize utility.
 const AVATAR_ERROR_MESSAGES: Record<string, string> = {

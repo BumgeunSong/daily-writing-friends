@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import type { Posting } from '@/post/model/Posting';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
-import { fetchPostingDataForContributions, createUserInfo } from '@/stats/api/stats';
+import { fetchPostingDataForContributions, createUserInfo } from '@/stats/external/stats';
 import { TEMPERATURE_WINDOW_WORKING_DAYS } from '@/stats/constants';
 import type { WritingStats } from '@/stats/model/WritingStats';
 import { createContributions } from '@/stats/utils/writingStatsUtils';

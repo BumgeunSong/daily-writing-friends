@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchCommentById } from '@/comment/api/comment';
+import { fetchCommentById } from '@/comment/external/comment';
 
 export function useCommentContent(
   boardId: string,
