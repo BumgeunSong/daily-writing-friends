@@ -1,4 +1,4 @@
-import { SupabaseWriteError } from '@/shared/api/supabaseClient';
+import { SupabaseWriteError } from '@/shared/external/supabaseClient';
 
 export const DEFAULT_DRAFT_AUTOSAVE_INTERVAL_MS = 10_000;
 export const MAX_DRAFT_RETRY_ATTEMPTS = 3;

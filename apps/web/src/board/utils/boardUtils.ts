@@ -1,6 +1,6 @@
 import type { Board } from '../model/Board';
-import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
-import { fetchBoardsFromSupabase, fetchBoardByIdFromSupabase, fetchBoardTitleFromSupabase } from '@/board/api/board';
+import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
+import { fetchBoardsFromSupabase, fetchBoardByIdFromSupabase, fetchBoardTitleFromSupabase } from '@/board/external/board';
 import { boardTitleKey, storage } from '@/shared/lib/storage';
 
 export async function fetchBoardTitle(boardId: string): Promise<string> {

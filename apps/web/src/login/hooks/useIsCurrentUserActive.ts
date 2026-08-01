@@ -3,7 +3,7 @@ import { REMOTE_CONFIG_KEYS } from "@/login/constants";
 import { isUserInActiveList } from "@/login/utils/loginUtils";
 import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig";
 import { useAuth } from '@/shared/hooks/useAuth';
-import { fetchUsersWithBoardPermission } from "@/user/api/user";
+import { fetchUsersWithBoardPermission } from "@/user/external/user";
 
 export function useIsCurrentUserActive() {
     const { value: activeBoardId } = useRemoteConfig(REMOTE_CONFIG_KEYS.ACTIVE_BOARD_ID);

@@ -18,7 +18,7 @@ ruleTester.run('enforce-feature-boundaries', rule, {
     { code: "import { useBestPosts } from '@/post/hooks/useBestPosts';", filename: src('board', 'components/BestPostCardList.tsx') },
     // core <-> core: cohesive domain, both directions allowed
     { code: "import { useUser } from '@/user/hooks/useUser';", filename: src('post', 'hooks/usePostCard.ts') },
-    { code: "import { mapRowToPost } from '@/post/api/post';", filename: src('user', 'hooks/useUserPosts.ts') },
+    { code: "import { mapRowToPost } from '@/post/external/post';", filename: src('user', 'hooks/useUserPosts.ts') },
     // type-only import in any direction is free
     { code: "import type { Post } from '@/post/model/Post';", filename: src('stats', 'utils/writingStatsUtils.ts') },
     // feature -> shared always fine
@@ -34,7 +34,7 @@ ruleTester.run('enforce-feature-boundaries', rule, {
       options: [{ baseline: ['post/hooks/usePostCard.ts -> stats'] }],
     },
     // non-feature dirs (src/test) ignored
-    { code: "import { mapRowToPost } from '@/post/api/post';", filename: '/repo/apps/web/src/test/fixtures/post.ts' },
+    { code: "import { mapRowToPost } from '@/post/external/post';", filename: '/repo/apps/web/src/test/fixtures/post.ts' },
   ],
   invalid: [
     // shared -> feature

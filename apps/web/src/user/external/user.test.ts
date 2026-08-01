@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type * as SupabaseClientModule from '@/shared/api/supabaseClient';
+import type * as SupabaseClientModule from '@/shared/external/supabaseClient';
 import type { AuthUser } from '@/shared/hooks/useAuth';
 
 const mockUsersInsert = vi.fn();
@@ -15,9 +15,9 @@ vi.mock('firebase/storage', () => ({
   getDownloadURL: vi.fn(),
 }));
 
-vi.mock('@/shared/api/supabaseClient', async () => {
+vi.mock('@/shared/external/supabaseClient', async () => {
   const actual = await vi.importActual<typeof SupabaseClientModule>(
-    '@/shared/api/supabaseClient',
+    '@/shared/external/supabaseClient',
   );
   return {
     ...actual,

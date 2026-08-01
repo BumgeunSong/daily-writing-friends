@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useRemoteConfig } from "@/shared/hooks/useRemoteConfig";
 import { useAuth } from '@/shared/hooks/useAuth';
-import { fetchPostingData } from "@/stats/api/stats";
+import { fetchPostingData } from "@/stats/external/stats";
 import { countBoardPosts, getTitleMessage, getContentMessage, getHighlight } from "@/post/utils/completionMessageUtils";
 
 export interface CompletionHighlight {

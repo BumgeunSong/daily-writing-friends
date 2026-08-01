@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import type { PostgrestError } from '@supabase/supabase-js';
-import { SupabaseWriteError } from '@/shared/api/supabaseClient';
+import { SupabaseWriteError } from '@/shared/external/supabaseClient';
 import {
   hasContentChanged,
   shouldSkipEmptyDraft,

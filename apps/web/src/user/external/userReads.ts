@@ -1,4 +1,4 @@
-import { getSupabaseClient, isNetworkError, SupabaseNetworkError } from '@/shared/api/supabaseClient';
+import { getSupabaseClient, isNetworkError, SupabaseNetworkError } from '@/shared/external/supabaseClient';
 import type { User } from '@/user/model/User';
 
 // --- Users ---

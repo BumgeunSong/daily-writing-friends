@@ -1,4 +1,4 @@
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import type { Notification } from '@/notification/model/Notification';
 
 import {

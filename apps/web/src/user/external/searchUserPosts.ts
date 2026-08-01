@@ -14,9 +14,9 @@
  * Cap: at most 50 most-recent matches. No pagination in v1.
  */
 import type { Post } from '@/post/model/Post';
-import { FEED_POST_SELECT, mapRowToPost } from '@/post/api/post';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
-import { escapeForOrFilter } from '@/shared/api/postgrestFilters';
+import { FEED_POST_SELECT, mapRowToPost } from '@/post/external/post';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
+import { escapeForOrFilter } from '@/shared/external/postgrestFilters';
 import { SEARCH_RESULTS_CAP } from '@/user/search/constants';
 
 const DEFAULT_LIMIT = SEARCH_RESULTS_CAP;

@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import type { Comment } from '@/comment/model/Comment';
 import { groupReactionsByEmoji } from '@/comment/utils/reactionUtils';
-import { fetchBatchReactionsForComments } from '@/comment/api/reaction';
+import { fetchBatchReactionsForComments } from '@/comment/external/reaction';
 
 /**
  * Prefetches reactions for all comments in one batch query,

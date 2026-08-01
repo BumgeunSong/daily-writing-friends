@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { fetchRecentPosts } from '@/post/api/post';
+import { fetchRecentPosts } from '@/post/external/post';
 import type { Post } from '@/post/model/Post';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useBlockedByUsers } from '@/user/hooks/useBlockedByUsers';

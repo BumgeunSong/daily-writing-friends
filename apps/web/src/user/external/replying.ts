@@ -1,4 +1,4 @@
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 
 /** Shared join fields for posts table */
 interface PostJoinFields {

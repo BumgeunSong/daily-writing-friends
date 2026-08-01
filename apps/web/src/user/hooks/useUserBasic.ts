@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
-import type { BasicUserRow } from '@/user/api/userReads';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
+import type { BasicUserRow } from '@/user/external/userReads';
 
 /**
  * Lightweight subset of {@link User} used by surfaces that only need to render

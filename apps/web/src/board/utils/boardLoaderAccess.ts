@@ -1,4 +1,4 @@
-import { SupabaseNetworkError } from '@/shared/api/supabaseClient';
+import { SupabaseNetworkError } from '@/shared/external/supabaseClient';
 
 const MISSING_BOARD_ID_MESSAGE = 'Missing board ID';
 const NETWORK_ERROR_MESSAGE = '네트워크 연결을 확인하고 다시 시도해주세요.';

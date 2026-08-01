@@ -1,20 +1,20 @@
 ---
 name: api-layer
-description: Use when creating or modifying API functions in */api/ directories or data-fetching hooks. Enforces Supabase patterns, mapping conventions, and N+1 prevention.
+description: Use when creating or modifying API functions in */external/ directories or data-fetching hooks. Enforces Supabase patterns, mapping conventions, and N+1 prevention.
 ---
 
 # API Layer Patterns
 
 ## Canonical References
 
-- `apps/web/src/post/api/post.ts`
-- `apps/web/src/shared/api/supabaseClient.ts`
-- `apps/web/src/comment/api/comment.ts`
+- `apps/web/src/post/external/post.ts`
+- `apps/web/src/shared/external/supabaseClient.ts`
+- `apps/web/src/comment/external/comment.ts`
 
 ## Function Structure
 
 ```typescript
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import type { Post } from '../model/Post';
 
 export async function fetchRecentPostsFromSupabase(boardId: string, limitCount: number): Promise<Post[]> {
@@ -67,7 +67,7 @@ Supabase rows stay `snake_case`; domain models stay `camelCase`.
 ## Write Error Handling (`SupabaseWriteError` + `executeTrackedWrite`)
 
 ```typescript
-import { executeTrackedWrite, throwOnError } from '@/shared/api/supabaseClient';
+import { executeTrackedWrite, throwOnError } from '@/shared/external/supabaseClient';
 
 export async function createComment(postId: string, content: string, userId: string) {
   const supabase = getSupabaseClient();

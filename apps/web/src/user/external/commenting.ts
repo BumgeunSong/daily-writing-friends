@@ -1,4 +1,4 @@
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import type { Commenting } from '@/user/model/Commenting';
 import type { Replying } from '@/user/model/Replying';
 import { fetchReplyingsByDateRangeFromSupabase } from './replying';

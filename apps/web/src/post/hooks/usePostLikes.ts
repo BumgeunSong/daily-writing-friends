@@ -1,9 +1,9 @@
 import * as Sentry from '@sentry/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { GetLikesParams } from '@/post/api/like';
-import { createLike, deleteUserLike } from '@/post/api/like';
+import type { GetLikesParams } from '@/post/external/like';
+import { createLike, deleteUserLike } from '@/post/external/like';
 import { postQueryKey } from '@/post/utils/postQueryKeys';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useUser } from '@/user/hooks/useUser';
 

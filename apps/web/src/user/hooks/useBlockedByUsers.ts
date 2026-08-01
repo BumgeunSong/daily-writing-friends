@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getBlockedByUsers } from '@/user/api/user';
+import { getBlockedByUsers } from '@/user/external/user';
 
 export function useBlockedByUsers(userId: string | undefined) {
   return useQuery({

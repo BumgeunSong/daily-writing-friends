@@ -9,7 +9,7 @@ import FormField from '@/shared/components/FormField';
 import { PasswordRequirements } from '@/shared/components/PasswordRequirements';
 import { ROUTES } from '@/shared/constants/routes';
 import { validatePassword } from '@/shared/utils/passwordValidation';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import { mapSetPasswordErrorToKorean } from '@/shared/auth/authErrors';
 import {
   sendPasswordResetEmail,
