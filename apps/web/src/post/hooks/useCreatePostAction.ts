@@ -83,8 +83,14 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
     });
 
     if (draftId) {
-      await deleteDraft(authorId, draftId);
-      invalidateDraftCaches(authorId, draftId, validBoardId);
+      try {
+        await deleteDraft(authorId, draftId);
+        invalidateDraftCaches(authorId, draftId, validBoardId);
+      } catch (deleteError) {
+        // 게시물은 이미 생성됨 — 삭제 실패로 액션을 실패시키면 사용자가 재시도해
+        // 중복 게시물이 생기므로, 고아 draft를 남기는 쪽이 덜 나쁘다.
+        console.error('임시 저장 글 삭제 실패 (게시물은 생성됨):', deleteError);
+      }
     }
 
     invalidatePostCaches(validBoardId, authorId);

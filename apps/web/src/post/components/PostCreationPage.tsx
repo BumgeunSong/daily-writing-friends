@@ -29,6 +29,8 @@ interface ActionData {
   success?: boolean;
 }
 
+const PUBLISH_DRAFT_FLUSH_TIMEOUT_MS = 2000;
+
 export default function PostCreationPage() {
   const { currentUser } = useAuth();
   const { userData } = useUser(currentUser?.uid);
@@ -80,15 +82,21 @@ export default function PostCreationPage() {
     content,
     initialDraftId: loadedDraftId || undefined,
     intervalMs: 10000,
-    enabled: !isSubmitting,
+    enabled: navigation.state === 'idle' && !isFlushingDraft,
   });
 
   const draftIdToSubmit = autoSavedDraftId || loadedDraftId || '';
 
   const flushDraftThenSubmit = async (formData: FormData) => {
-    const savedDraftId = await manualSave().catch(() => null);
-    if (savedDraftId) {
-      formData.set('draftId', savedDraftId);
+    const hasDraftToFlush = Boolean(draftIdToSubmit) || isSaving;
+    if (hasDraftToFlush) {
+      const savedDraftId = await Promise.race([
+        manualSave().catch(() => null),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), PUBLISH_DRAFT_FLUSH_TIMEOUT_MS)),
+      ]);
+      if (savedDraftId) {
+        formData.set('draftId', savedDraftId);
+      }
     }
     submit(formData, { method: 'post' });
   };

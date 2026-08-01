@@ -72,6 +72,9 @@ function useLatestValueRef<T>(value: T): MutableRefObject<T> {
  *  - draftIdRef is written synchronously at save completion (not mirrored from
  *    state at render), so a queued follow-up save and manualSave callers see
  *    the created id before React re-renders — never creating a duplicate draft.
+ *  - initialDraftId can arrive after mount (DraftsDrawer selects a draft while
+ *    the create page is already mounted — same route, no remount), so the ref
+ *    late-seeds whenever it is still null.
  */
 export function useDraftAutosave({
   boardId,
@@ -91,6 +94,9 @@ export function useDraftAutosave({
   });
 
   const draftIdRef = useRef<string | null>(initialDraftId ?? null);
+  if (draftIdRef.current === null && initialDraftId) {
+    draftIdRef.current = initialDraftId;
+  }
   const titleRef = useLatestValueRef(title);
   const contentRef = useLatestValueRef(content);
   const saveDraftFnRef = useLatestValueRef(saveDraftFn);

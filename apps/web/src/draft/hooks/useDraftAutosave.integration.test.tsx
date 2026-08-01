@@ -32,13 +32,16 @@ function makeDraft(id: string): Draft {
   };
 }
 
-function renderAutosave(saveDraftFn: (draft: Partial<Draft>, userId: string) => Promise<Draft>) {
+function renderAutosave(
+  saveDraftFn: (draft: Partial<Draft>, userId: string) => Promise<Draft>,
+  initialProps: { initialDraftId?: string } = {},
+) {
   const queryClient = createTestQueryClient();
   const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
   return renderHook(
-    () =>
+    (props: { initialDraftId?: string }) =>
       useDraftAutosave({
         boardId: 'board-1',
         userId: 'user-1',
@@ -46,8 +49,9 @@ function renderAutosave(saveDraftFn: (draft: Partial<Draft>, userId: string) => 
         content: '내용',
         intervalMs: 60_000,
         saveDraftFn: saveDraftFn as never,
+        ...props,
       }),
-    { wrapper },
+    { wrapper, initialProps },
   );
 }
 
@@ -91,5 +95,24 @@ describe('useDraftAutosave — manualSave race contract', () => {
     expect(receivedDraftIds).toEqual([undefined, SAVED_DRAFT_ID]);
     expect(queuedSavedId).toBe(SAVED_DRAFT_ID);
     expect(result.current.draftId).toBe(SAVED_DRAFT_ID);
+  });
+
+  it('updates the loaded draft when initialDraftId arrives after mount (drawer-loaded draft)', async () => {
+    const receivedDraftIds: Array<string | undefined> = [];
+    const saveDraftFn = vi.fn(async (draft: Partial<Draft>) => {
+      receivedDraftIds.push(draft.id);
+      return makeDraft(draft.id ?? SAVED_DRAFT_ID);
+    });
+    const { result, rerender } = renderAutosave(saveDraftFn);
+
+    rerender({ initialDraftId: 'draft-loaded' });
+
+    let savedId: string | null = null;
+    await act(async () => {
+      savedId = await result.current.manualSave();
+    });
+
+    expect(receivedDraftIds).toEqual(['draft-loaded']);
+    expect(savedId).toBe('draft-loaded');
   });
 });
