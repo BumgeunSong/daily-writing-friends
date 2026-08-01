@@ -12,7 +12,10 @@ service firebase.storage {
     }
     
     function isValidImageType() {
-      return request.resource.contentType.matches('image/.*');
+      // Raster allowlist — image/.* would admit image/svg+xml, which is
+      // scriptable markup. Client uploads only send jpeg/png/webp (or the
+      // image/jpeg re-encode fallback).
+      return request.resource.contentType.matches('image/(jpeg|png|webp|gif|avif)');
     }
     
     function isValidImageSize() {
@@ -40,26 +43,37 @@ service firebase.storage {
       allow delete: if isAuthenticated();
     }
 
-    // Post images uploaded via editor (postImages/{dateFolder}/{fileName})
+    // Post images uploaded via editor (postImages/{dateFolder}/{fileName}).
     // No request.auth available — app uses Supabase Auth (not Firebase Auth).
-    // Stopgap until token exchange (#593): validate content, block deletes.
+    // Stopgap until token exchange (#593): validate content, block list
+    // (read = get + list in rules v2; list enables anonymous enumeration),
+    // block update/delete (uploads always use fresh timestamped names).
     match /postImages/{allPaths=**} {
-      allow read: if true;
-      allow create, update: if isValidImageType() && isValidImageSize();
+      allow get: if true;
+      allow list: if false;
+      allow create: if isValidImageType() && isValidImageSize();
+      allow update: if false;
       allow delete: if false;
     }
 
-    // Profile photos uploaded via EditAccountPage (profilePhotos/{uid})
+    // Profile photos uploaded via EditAccountPage (profilePhotos/{uid}).
+    // update stays open: re-uploads overwrite the same fixed path.
     match /profilePhotos/{allPaths=**} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if false;
       allow create, update: if isValidImageType() && isValidImageSize();
       allow delete: if false;
     }
 
-    // Feedback screenshots uploaded via uploadFeedbackScreenshot
+    // Feedback screenshots uploaded via uploadFeedbackScreenshot.
+    // get must stay open — getDownloadURL right after upload is a rules-gated
+    // metadata get. list stays closed so screenshots (private app captures)
+    // cannot be enumerated; timestamped paths are not guessable without list.
     match /feedbackScreenshots/{allPaths=**} {
-      allow read: if true;
-      allow create, update: if isValidImageType() && isValidImageSize();
+      allow get: if true;
+      allow list: if false;
+      allow create: if isValidImageType() && isValidImageSize();
+      allow update: if false;
       allow delete: if false;
     }
 
