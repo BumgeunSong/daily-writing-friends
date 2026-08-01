@@ -1,10 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import * as Sentry from '@sentry/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PostVisibility } from '@/post/model/Post';
 
 import { parsePostContentJson, parsePostVisibility } from './postParsers';
 
 describe('parsePostVisibility', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('passes through PUBLIC', () => {
     expect(parsePostVisibility('public')).toBe(PostVisibility.PUBLIC);
   });
@@ -13,20 +18,33 @@ describe('parsePostVisibility', () => {
     expect(parsePostVisibility('private')).toBe(PostVisibility.PRIVATE);
   });
 
-  it('falls back to PUBLIC for an unknown string (instead of trusting the cast)', () => {
-    expect(parsePostVisibility('leaked-by-bug')).toBe(PostVisibility.PUBLIC);
+  // Visibility is an access-control field: unknown values must fail closed to
+  // PRIVATE so a corrupted value hides a post rather than leaking it (#705).
+  it('fails closed to PRIVATE for an unknown string', () => {
+    expect(parsePostVisibility('leaked-by-bug')).toBe(PostVisibility.PRIVATE);
   });
 
-  it('falls back to PUBLIC for null', () => {
-    expect(parsePostVisibility(null)).toBe(PostVisibility.PUBLIC);
+  it('fails closed to PRIVATE for null', () => {
+    expect(parsePostVisibility(null)).toBe(PostVisibility.PRIVATE);
   });
 
-  it('falls back to PUBLIC for undefined', () => {
-    expect(parsePostVisibility(undefined)).toBe(PostVisibility.PUBLIC);
+  it('fails closed to PRIVATE for undefined', () => {
+    expect(parsePostVisibility(undefined)).toBe(PostVisibility.PRIVATE);
   });
 
-  it('falls back to PUBLIC for empty string', () => {
-    expect(parsePostVisibility('')).toBe(PostVisibility.PUBLIC);
+  it('fails closed to PRIVATE for empty string', () => {
+    expect(parsePostVisibility('')).toBe(PostVisibility.PRIVATE);
+  });
+
+  it('reports the unknown value to Sentry so the degrade is not silent', () => {
+    const captureMessage = vi.spyOn(Sentry, 'captureMessage').mockReturnValue('');
+
+    parsePostVisibility('leaked-by-bug');
+
+    expect(captureMessage).toHaveBeenCalledWith('Unknown post visibility value', {
+      level: 'warning',
+      extra: { raw: 'leaked-by-bug' },
+    });
   });
 });
 
