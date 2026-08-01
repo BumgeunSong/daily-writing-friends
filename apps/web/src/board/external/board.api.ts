@@ -1,27 +1,52 @@
 import type { Board } from '@/board/model/Board';
-import { getSupabaseClient } from '@/shared/external/supabaseClient';
+import type { Database } from '@/shared/external/database.types';
+import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
 import { createTimestamp } from '@/shared/model/Timestamp';
 
-interface BoardJoinRow {
-  id: string;
-  title: string;
-  description: string | null;
-  first_day: string | null;
-  last_day: string | null;
-  cohort: number | null;
-  created_at: string;
+type BoardRow = Pick<
+  Database['public']['Tables']['boards']['Row'],
+  'id' | 'title' | 'description' | 'first_day' | 'last_day' | 'cohort' | 'created_at'
+>;
+
+type WaitingUserRow = Pick<
+  Database['public']['Tables']['board_waiting_users']['Row'],
+  'board_id' | 'user_id'
+>;
+
+const BOARD_SELECT = 'id, title, description, first_day, last_day, cohort, created_at';
+
+/**
+ * Pure: index waiting-user ids by their board id so each board can look up its
+ * own list in one pass instead of re-scanning the flat rows per board.
+ */
+export function groupWaitingUserIdsByBoard(rows: WaitingUserRow[]): Record<string, string[]> {
+  const byBoard: Record<string, string[]> = {};
+  for (const row of rows) {
+    (byBoard[row.board_id] ??= []).push(row.user_id);
+  }
+  return byBoard;
 }
 
-/** Row from: user_board_permissions + boards!inner join */
-interface BoardPermissionWithJoins {
-  board_id: string;
-  permission: string;
-  boards: BoardJoinRow | BoardJoinRow[];
+/**
+ * Pure: project a boards row (and its already-resolved waiting ids) onto the
+ * Board domain model. Nullable columns collapse to the domain's absence values
+ * (`''` for description, `undefined` for optional dates/cohort).
+ */
+export function mapToBoard(row: BoardRow, waitingUserIds: string[]): Board {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description ?? '',
+    createdAt: new Date(row.created_at),
+    firstDay: row.first_day ? createTimestamp(new Date(row.first_day)) : undefined,
+    lastDay: row.last_day ? createTimestamp(new Date(row.last_day)) : undefined,
+    cohort: row.cohort ?? undefined,
+    waitingUsersIds: waitingUserIds,
+  };
 }
 
 /**
  * Fetch boards the user has permission to access.
- * Replaces: fetchBoardsWithUserPermissions in boardUtils.ts
  * Uses index: idx_permissions_user
  */
 export async function fetchBoardsFromSupabase(userId: string): Promise<Board[]> {
@@ -29,95 +54,53 @@ export async function fetchBoardsFromSupabase(userId: string): Promise<Board[]> 
 
   const { data, error } = await supabase
     .from('user_board_permissions')
-    .select(`
-      board_id,
-      permission,
-      boards!inner (
-        id,
-        title,
-        description,
-        first_day,
-        last_day,
-        cohort,
-        created_at
-      )
-    `)
+    .select(`board_id, permission, boards!inner (${BOARD_SELECT})`)
     .eq('user_id', userId);
 
-  if (error) {
-    console.error('Supabase fetchBoards error:', error);
-    return [];
-  }
+  if (error) throw error;
+  const rows = data ?? [];
 
-  // Fetch waiting users for each board
-  const boardIds = (data || []).map((row: { board_id: string }) => row.board_id);
-  const { data: waitingData } = await supabase
+  const boardIds = rows.map((row) => row.board_id);
+  const { data: waitingData, error: waitingError } = await supabase
     .from('board_waiting_users')
     .select('board_id, user_id')
     .in('board_id', boardIds.length > 0 ? boardIds : ['__none__']);
+  if (waitingError) throw waitingError;
 
-  const waitingByBoard: Record<string, string[]> = {};
-  for (const w of waitingData || []) {
-    if (!waitingByBoard[w.board_id]) waitingByBoard[w.board_id] = [];
-    waitingByBoard[w.board_id].push(w.user_id);
-  }
+  const waitingByBoard = groupWaitingUserIdsByBoard(waitingData ?? []);
 
-  return ((data || []) as BoardPermissionWithJoins[]).map((row) => {
-    const board = Array.isArray(row.boards) ? row.boards[0] : row.boards;
-    return {
-      id: board.id,
-      title: board.title,
-      description: board.description || '',
-      createdAt: new Date(board.created_at),
-      firstDay: board.first_day ? createTimestamp(new Date(board.first_day)) : undefined,
-      lastDay: board.last_day ? createTimestamp(new Date(board.last_day)) : undefined,
-      cohort: board.cohort ?? undefined,
-      waitingUsersIds: waitingByBoard[board.id] || [],
-    };
-  });
+  return rows.map((row) => mapToBoard(row.boards, waitingByBoard[row.boards.id] ?? []));
 }
 
 /**
- * Fetch a single board by ID.
- * Replaces: fetchBoardById in boardUtils.ts
+ * Fetch a single board by ID. Returns null only when the board does not exist.
  */
 export async function fetchBoardByIdFromSupabase(boardId: string): Promise<Board | null> {
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
     .from('boards')
-    .select('id, title, description, first_day, last_day, cohort, created_at')
+    .select(BOARD_SELECT)
     .eq('id', boardId)
     .single();
 
-  if (error || !data) {
-    if (error?.code !== 'PGRST116') { // not "no rows" error
-      console.error('Supabase fetchBoardById error:', error);
-    }
-    return null;
+  if (error) {
+    if (error.code === 'PGRST116') return null; // no rows for this id
+    throw error;
   }
 
-  // Fetch waiting users
-  const { data: waitingData } = await supabase
+  const { data: waitingData, error: waitingError } = await supabase
     .from('board_waiting_users')
     .select('user_id')
     .eq('board_id', boardId);
+  if (waitingError) throw waitingError;
 
-  return {
-    id: data.id,
-    title: data.title,
-    description: data.description || '',
-    createdAt: new Date(data.created_at),
-    firstDay: data.first_day ? createTimestamp(new Date(data.first_day)) : undefined,
-    lastDay: data.last_day ? createTimestamp(new Date(data.last_day)) : undefined,
-    cohort: data.cohort ?? undefined,
-    waitingUsersIds: (waitingData || []).map((w: { user_id: string }) => w.user_id),
-  };
+  return mapToBoard(data, (waitingData ?? []).map((w) => w.user_id));
 }
 
 /**
- * Fetch board title by ID.
- * Replaces: fetchBoardTitle in boardUtils.ts
+ * Fetch board title by ID. A missing board resolves to a sentinel title rather
+ * than an error, since callers render it inline.
  */
 export async function fetchBoardTitleFromSupabase(boardId: string): Promise<string> {
   const supabase = getSupabaseClient();
@@ -129,16 +112,33 @@ export async function fetchBoardTitleFromSupabase(boardId: string): Promise<stri
     .single();
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      return 'Board not found';
-    }
-    console.error('Supabase fetchBoardTitle error:', error);
+    if (error.code === 'PGRST116') return 'Board not found';
     throw error;
   }
 
-  if (!data) {
-    return 'Board not found';
-  }
-
   return data.title;
+}
+
+/**
+ * Add a user to a board's waiting list. Throws on failure; callers decide how to
+ * degrade.
+ */
+export async function addUserToBoardWaitingListInSupabase(boardId: string, userId: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  throwOnError(await supabase.from('board_waiting_users').upsert({
+    board_id: boardId,
+    user_id: userId,
+  }));
+}
+
+/**
+ * Remove a user from a board's waiting list. Throws on failure.
+ */
+export async function removeUserFromBoardWaitingListInSupabase(boardId: string, userId: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  throwOnError(await supabase
+    .from('board_waiting_users')
+    .delete()
+    .eq('board_id', boardId)
+    .eq('user_id', userId));
 }
