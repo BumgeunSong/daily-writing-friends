@@ -1,7 +1,30 @@
+import { type AuthorEmbed, mapToAuthor } from '@/comment/external/authorEmbed';
 import type { Reply } from '@/comment/model/Reply';
+import type { Database } from '@/shared/external/database.types';
 import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
 import { formatInFilter } from '@/shared/external/postgrestFilters';
 import { createTimestamp } from '@/shared/model/Timestamp';
+
+type ReplyRow = Pick<
+  Database['public']['Tables']['replies']['Row'],
+  'id' | 'content' | 'user_id' | 'user_name' | 'user_profile_image' | 'created_at'
+> & { author: AuthorEmbed | AuthorEmbed[] | null };
+
+const REPLY_SELECT =
+  'id, content, user_id, user_name, user_profile_image, created_at, author:users!user_id(profile_photo_url, nickname)';
+
+/** Pure: project a replies row (with its joined author) onto the domain Reply. */
+export function mapToReply(row: ReplyRow): Reply {
+  return {
+    id: row.id,
+    content: row.content,
+    userId: row.user_id,
+    userName: row.user_name,
+    userProfileImage: row.user_profile_image || '',
+    author: mapToAuthor(row.author),
+    createdAt: createTimestamp(new Date(row.created_at)),
+  };
+}
 
 /**
  * 답글 추가 (순수 데이터 mutation 함수)
@@ -98,7 +121,6 @@ export async function fetchReplyById(
 
 /**
  * Fetch all replies for a comment.
- * Replaces: fetchRepliesOnce in reply.ts
  * Uses index: idx_replies_comment_created
  */
 export async function fetchRepliesFromSupabase(
@@ -109,7 +131,7 @@ export async function fetchRepliesFromSupabase(
 
   let q = supabase
     .from('replies')
-    .select('id, content, user_id, user_name, user_profile_image, created_at, author:users!user_id(profile_photo_url, nickname)')
+    .select(REPLY_SELECT)
     .eq('comment_id', commentId)
     .order('created_at', { ascending: true });
 
@@ -119,17 +141,12 @@ export async function fetchRepliesFromSupabase(
 
   const { data, error } = await q;
 
-  if (error) {
-    console.error('Supabase fetchReplies error:', error);
-    throw error;
-  }
-
-  return (data || []).map(mapRowToReply);
+  if (error) throw error;
+  return (data ?? []).map(mapToReply);
 }
 
 /**
  * Fetch reply count for a comment.
- * Replaces: fetchReplyCountOnce in reply.ts
  */
 export async function fetchReplyCountFromSupabase(
   commentId: string,
@@ -148,17 +165,12 @@ export async function fetchReplyCountFromSupabase(
 
   const { count, error } = await q;
 
-  if (error) {
-    console.error('Supabase fetchReplyCount error:', error);
-    throw error;
-  }
-
+  if (error) throw error;
   return count ?? 0;
 }
 
 /**
- * Fetch a single reply by ID.
- * Replaces: fetchReplyById in reply.ts
+ * Fetch a single reply by ID. Returns null only when the reply does not exist.
  */
 export async function fetchReplyByIdFromSupabase(
   replyId: string,
@@ -167,51 +179,14 @@ export async function fetchReplyByIdFromSupabase(
 
   const { data, error } = await supabase
     .from('replies')
-    .select('id, content, user_id, user_name, user_profile_image, created_at, author:users!user_id(profile_photo_url, nickname)')
+    .select(REPLY_SELECT)
     .eq('id', replyId)
     .single();
 
-  if (error || !data) {
-    if (error?.code !== 'PGRST116') {
-      console.error('Supabase fetchReplyById error:', error);
-    }
-    return null;
+  if (error) {
+    if (error.code === 'PGRST116') return null; // no rows for this id
+    throw error;
   }
 
-  return mapRowToReply(data);
-}
-
-interface AuthorEmbed {
-  profile_photo_url: string | null;
-  nickname: string | null;
-}
-
-interface ReplyRow {
-  id: string;
-  content: string;
-  user_id: string;
-  user_name: string;
-  user_profile_image: string | null;
-  created_at: string;
-  author?: AuthorEmbed | AuthorEmbed[] | null;
-}
-
-function unwrapEmbed<T>(embed: T | T[] | null | undefined): T | undefined {
-  if (!embed) return undefined;
-  return Array.isArray(embed) ? embed[0] : embed;
-}
-
-function mapRowToReply(row: ReplyRow): Reply {
-  const author = unwrapEmbed(row.author);
-  return {
-    id: row.id,
-    content: row.content,
-    userId: row.user_id,
-    userName: row.user_name,
-    userProfileImage: row.user_profile_image || '',
-    author: author
-      ? { nickname: author.nickname, profilePhotoURL: author.profile_photo_url }
-      : undefined,
-    createdAt: createTimestamp(new Date(row.created_at)),
-  };
+  return mapToReply(data);
 }

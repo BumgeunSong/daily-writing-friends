@@ -1,7 +1,30 @@
+import { type AuthorEmbed, mapToAuthor } from '@/comment/external/authorEmbed';
 import type { Comment } from '@/comment/model/Comment';
+import type { Database } from '@/shared/external/database.types';
 import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
 import { formatInFilter } from '@/shared/external/postgrestFilters';
 import { createTimestamp } from '@/shared/model/Timestamp';
+
+type CommentRow = Pick<
+  Database['public']['Tables']['comments']['Row'],
+  'id' | 'content' | 'user_id' | 'user_name' | 'user_profile_image' | 'created_at'
+> & { author: AuthorEmbed | AuthorEmbed[] | null };
+
+const COMMENT_SELECT =
+  'id, content, user_id, user_name, user_profile_image, created_at, author:users!user_id(profile_photo_url, nickname)';
+
+/** Pure: project a comments row (with its joined author) onto the domain Comment. */
+export function mapToComment(row: CommentRow): Comment {
+  return {
+    id: row.id,
+    content: row.content,
+    userId: row.user_id,
+    userName: row.user_name,
+    userProfileImage: row.user_profile_image || '',
+    author: mapToAuthor(row.author),
+    createdAt: createTimestamp(new Date(row.created_at)),
+  };
+}
 
 /**
  * 댓글 추가 (순수 데이터 mutation 함수)
@@ -75,7 +98,6 @@ export async function fetchCommentById(
 
 /**
  * Fetch all comments for a post.
- * Replaces: fetchCommentsOnce in comment.ts
  * Uses index: idx_comments_post_created
  */
 export async function fetchCommentsFromSupabase(
@@ -86,7 +108,7 @@ export async function fetchCommentsFromSupabase(
 
   let q = supabase
     .from('comments')
-    .select('id, content, user_id, user_name, user_profile_image, created_at, author:users!user_id(profile_photo_url, nickname)')
+    .select(COMMENT_SELECT)
     .eq('post_id', postId)
     .order('created_at', { ascending: true });
 
@@ -96,17 +118,12 @@ export async function fetchCommentsFromSupabase(
 
   const { data, error } = await q;
 
-  if (error) {
-    console.error('Supabase fetchComments error:', error);
-    throw error;
-  }
-
-  return (data || []).map(mapRowToComment);
+  if (error) throw error;
+  return (data ?? []).map(mapToComment);
 }
 
 /**
- * Fetch a single comment by ID.
- * Replaces: fetchCommentById in comment.ts
+ * Fetch a single comment by ID. Returns null only when the comment does not exist.
  */
 export async function fetchCommentByIdFromSupabase(
   commentId: string,
@@ -115,51 +132,14 @@ export async function fetchCommentByIdFromSupabase(
 
   const { data, error } = await supabase
     .from('comments')
-    .select('id, content, user_id, user_name, user_profile_image, created_at, author:users!user_id(profile_photo_url, nickname)')
+    .select(COMMENT_SELECT)
     .eq('id', commentId)
     .single();
 
-  if (error || !data) {
-    if (error?.code !== 'PGRST116') {
-      console.error('Supabase fetchCommentById error:', error);
-    }
-    return null;
+  if (error) {
+    if (error.code === 'PGRST116') return null; // no rows for this id
+    throw error;
   }
 
-  return mapRowToComment(data);
-}
-
-interface AuthorEmbed {
-  profile_photo_url: string | null;
-  nickname: string | null;
-}
-
-interface CommentRow {
-  id: string;
-  content: string;
-  user_id: string;
-  user_name: string;
-  user_profile_image: string | null;
-  created_at: string;
-  author?: AuthorEmbed | AuthorEmbed[] | null;
-}
-
-function unwrapEmbed<T>(embed: T | T[] | null | undefined): T | undefined {
-  if (!embed) return undefined;
-  return Array.isArray(embed) ? embed[0] : embed;
-}
-
-function mapRowToComment(row: CommentRow): Comment {
-  const author = unwrapEmbed(row.author);
-  return {
-    id: row.id,
-    content: row.content,
-    userId: row.user_id,
-    userName: row.user_name,
-    userProfileImage: row.user_profile_image || '',
-    author: author
-      ? { nickname: author.nickname, profilePhotoURL: author.profile_photo_url }
-      : undefined,
-    createdAt: createTimestamp(new Date(row.created_at)),
-  };
+  return mapToComment(data);
 }
