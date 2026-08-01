@@ -28,12 +28,8 @@ export async function fetchBoardTitle(boardId: string): Promise<string> {
 }
 
 export async function fetchBoardsWithUserPermissions(userId: string): Promise<Board[]> {
-  try {
-    return await fetchBoardsFromSupabase(userId);
-  } catch (error) {
-    console.error('Error fetching boards:', error);
-    return [];
-  }
+  // 실패를 빈 목록으로 삼키지 않고 던져, 소비자(React Query 에러 UI/로더)와 Sentry가 실패를 보게 한다.
+  return fetchBoardsFromSupabase(userId);
 }
 
 /**

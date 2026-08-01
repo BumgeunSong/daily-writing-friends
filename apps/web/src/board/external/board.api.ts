@@ -59,12 +59,13 @@ export async function fetchBoardsFromSupabase(userId: string): Promise<Board[]> 
 
   if (error) throw error;
   const rows = data ?? [];
+  if (rows.length === 0) return [];
 
   const boardIds = rows.map((row) => row.board_id);
   const { data: waitingData, error: waitingError } = await supabase
     .from('board_waiting_users')
     .select('board_id, user_id')
-    .in('board_id', boardIds.length > 0 ? boardIds : ['__none__']);
+    .in('board_id', boardIds);
   if (waitingError) throw waitingError;
 
   const waitingByBoard = groupWaitingUserIdsByBoard(waitingData ?? []);
@@ -78,21 +79,19 @@ export async function fetchBoardsFromSupabase(userId: string): Promise<Board[]> 
 export async function fetchBoardByIdFromSupabase(boardId: string): Promise<Board | null> {
   const supabase = getSupabaseClient();
 
-  const { data, error } = await supabase
-    .from('boards')
-    .select(BOARD_SELECT)
-    .eq('id', boardId)
-    .single();
+  // 두 쿼리는 boardId에만 의존해 서로 독립적이므로 병렬로 실행한다.
+  const [boardResult, waitingResult] = await Promise.all([
+    supabase.from('boards').select(BOARD_SELECT).eq('id', boardId).single(),
+    supabase.from('board_waiting_users').select('user_id').eq('board_id', boardId),
+  ]);
 
+  const { data, error } = boardResult;
   if (error) {
     if (error.code === 'PGRST116') return null; // no rows for this id
     throw error;
   }
 
-  const { data: waitingData, error: waitingError } = await supabase
-    .from('board_waiting_users')
-    .select('user_id')
-    .eq('board_id', boardId);
+  const { data: waitingData, error: waitingError } = waitingResult;
   if (waitingError) throw waitingError;
 
   return mapToBoard(data, (waitingData ?? []).map((w) => w.user_id));
