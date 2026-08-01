@@ -7,6 +7,7 @@ vi.mock('@sentry/react', () => ({
   init: vi.fn(),
   setUser: vi.fn(),
   captureException: vi.fn(),
+  captureMessage: vi.fn(),
   withScope: vi.fn((cb: (scope: Record<string, unknown>) => void) => cb({ setContext: vi.fn(), setFingerprint: vi.fn() })),
   addBreadcrumb: vi.fn(),
   startSpan: vi.fn((_ctx: unknown, cb: () => unknown) => cb()),

@@ -118,10 +118,12 @@ describe('mapRowToPost', () => {
       expect(post.visibility).toBe(PostVisibility.PRIVATE);
     });
 
-    it('defaults to PUBLIC when visibility is null', () => {
+    // Fail-closed (#705): null visibility maps to PRIVATE, matching the DB's own
+    // RLS/feed-view gate where `NULL = 'public'` is not true and content is masked.
+    it('fails closed to PRIVATE when visibility is null', () => {
       const row = makeRow({ visibility: null });
       const post = mapRowToPost(row);
-      expect(post.visibility).toBe(PostVisibility.PUBLIC);
+      expect(post.visibility).toBe(PostVisibility.PRIVATE);
     });
   });
 
