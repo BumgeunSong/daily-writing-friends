@@ -1,0 +1,55 @@
+name: Supabase Types Drift
+
+# Guards apps/web/src/shared/api/database.types.ts against drift from the
+# migrations in supabase/. The generated types are TypeScript's source of truth
+# for query results (#694); if a migration changes the schema but the committed
+# types are not regenerated, the types silently lie. This job regenerates them
+# and fails when the result differs from what is committed.
+#
+# The CLI version is PINNED. `supabase gen types` output formatting varies
+# between CLI versions, so an unpinned run would report false drift on version
+# skew alone. This pin must match the version used to produce the committed
+# file. When bumping the CLI, regenerate the file with the same version and
+# update SUPABASE_CLI_VERSION in the same PR.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/config.toml'
+      - 'apps/web/src/shared/api/database.types.ts'
+      - '.github/workflows/supabase-types-drift.yml'
+  # Manual trigger to re-check drift on demand (e.g. after a CLI bump).
+  workflow_dispatch:
+
+env:
+  SUPABASE_CLI_VERSION: 2.75.0
+  TYPES_FILE: apps/web/src/shared/api/database.types.ts
+
+jobs:
+  check-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Supabase CLI (pinned)
+        uses: supabase/setup-cli@v2
+        with:
+          version: ${{ env.SUPABASE_CLI_VERSION }}
+
+      - name: Start Supabase (minimal)
+        run: supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector,realtime
+
+      - name: Regenerate types from migrations
+        run: supabase gen types typescript --local --schema public > "$TYPES_FILE"
+
+      - name: Fail on drift
+        run: |
+          if git diff --quiet -- "$TYPES_FILE"; then
+            echo "$TYPES_FILE is in sync with supabase/migrations."
+            exit 0
+          fi
+          echo "::error file=${TYPES_FILE}::Generated types are out of sync with supabase/migrations. Run 'pnpm db:types' with Supabase CLI ${SUPABASE_CLI_VERSION} and commit the result."
+          git diff -- "$TYPES_FILE"
+          exit 1
