@@ -3,6 +3,15 @@
 작성일: 2026-08-02
 범위: 댓글, 답글에서 다른 사용자를 멘션하고 멘션된 사용자에게 알림을 보낸다. 게시글은 이번 범위에서 제외한다.
 
+## 설계 검증 정정 (크리틱 리뷰 반영)
+
+초안의 "기존 것 재사용" 주장 세 개가 실제 코드와 맞지 않아 정정했다. 아래 본문은 정정된 내용이다.
+
+- `useUserSearch`는 최소 글자수 게이트가 없고(빈 검색이면 빈 배열 반환), `boardPermissions` 인자는 무시된다(전체 유저 검색). 게시판 권한 스코핑과 "열자마자 멤버 전체" 동작은 재사용이 아니라 신규 작업이다.
+- `generateHTML`, `@tiptap/extension-mention`, `@tiptap/suggestion`는 미설치다. 파생 캐시 생성과 멘션 입력은 새 의존성 + 새 코드다.
+- 댓글 렌더 파이프라인은 평문 전제라 TipTap HTML을 그대로 넣으면 깨진다(C1). 알림 미리보기의 35자 슬라이스도 HTML을 뭉갠다(C2). 둘 다 이번 범위 안에서 처리한다.
+- `create-notification` Edge Function은 한 실행에 수신자 1명만 만든다. 멘션 우선 억제(5-1)는 함수를 1인에서 N인 구조로 재작성해야 한다. 기존 트리거는 그대로 재사용한다.
+
 ## 배경과 목표
 
 글쓰기 커뮤니티(등록 사용자 약 100~200명)에서 댓글과 답글을 통한 대화가 활발하다. 특정 사람을 대화에 끌어들이려면 그 사람을 지목할 방법이 필요하다. 멘션은 대화 안에서 사람을 가리키는 기능이고, 멘션된 사람은 알림을 받는다.
@@ -39,10 +48,10 @@
 
 동작:
 - 사용자가 `@`를 입력하면 멘션 대상 목록이 자동으로 열린다. 별도 버튼은 두지 않는다. 모바일 메신저(Slack, Discord, 카카오톡)에서 이미 익숙한 방식이라 `@` 트리거만으로 모바일에서도 문제없다.
-- 목록이 열리면 해당 게시판 멤버 전체가 바로 보인다. 타이핑하면 좁혀진다. 이를 위해 기존 `useUserSearch`의 최소 글자수를 2에서 0으로 완화한다.
+- 목록이 열리면 해당 게시판 멤버 전체가 바로 보인다. 타이핑하면 좁혀진다. 기존 `useUserSearch`는 빈 검색어에 빈 배열을 반환하고 게시판 스코핑이 없으므로 그대로는 못 쓴다. 멘션 전용 후보 조회를 새로 만든다(빈 쿼리 = 게시판 멤버 전체, 타이핑 시 클라이언트 필터).
 - 정렬은 이 글타래에 이미 참여한 사람을 먼저 보여주고, 그다음 가나다순이다. 멘션 대상은 대개 그 대화에 이미 있는 사람이라 적중률이 높다.
 - 목록 표현은 반응형이다. 데스크톱은 커서 옆에 떠다니는 팝오버, 모바일은 키보드에 가려지지 않도록 키보드 바로 위에 붙는 가로 목록 또는 바텀시트로 띄운다.
-- 후보군은 해당 게시판에 권한이 있는 사람만이다. 기존 `fetchUsersWithBoardPermission`을 재사용한다.
+- 후보군은 해당 게시판에 권한이 있는 사람만이다. `useUserSearch`의 `boardPermissions` 인자는 현재 무시되므로(전체 유저 검색), 게시판 권한으로 좁히는 조회는 신규 작업이다.
 - 사용자가 목록에서 대상을 고르면 user_id를 품은 원자적 chip 노드가 삽입된다. 선택 시점에 user_id가 확정되므로 닉네임 충돌 문제가 없다. chip은 한 단위로 삭제된다.
 
 ### 한글 IME 조합 처리
@@ -60,7 +69,15 @@
 comments와 replies 테이블에 `content_json JSONB` 컬럼을 추가한다. 게시글이 이미 쓰는 패턴과 동일하다.
 
 - `content_json`: 진실의 원천. TipTap이 뱉는 ProseMirror 문서 구조. 멘션은 여기에 user_id를 담은 구조화 노드로 들어간다. 서버는 이 컬럼을 파싱해 멘션 대상을 추출한다.
-- `content` (기존 TEXT): content_json에서 생성되는 단방향 파생 캐시다. 저장 시점에 `generateHTML(content_json)`으로 한 번 만들어 박아둔다. 멘션은 HTML에 `<span data-mention data-user-id="...">@민수</span>` 형태로 직렬화된다.
+- `content` (기존 TEXT): content_json에서 생성되는 단방향 파생 캐시다. 저장 시점에 에디터 HTML을 한 번 만들어 박아둔다. 멘션은 HTML에 `<span data-mention data-user-id="...">@민수</span>` 형태로 직렬화된다.
+
+신규 의존성: `@tiptap/extension-mention`, `@tiptap/suggestion`는 미설치라 추가한다. JSON에서 HTML을 만드는 방식은 두 갈래다. 게시글이 쓰는 라이브 `editor.getHTML()` 방식을 그대로 따르거나, `@tiptap/core`의 `generateHTML(json, extensions)`를 도입한다. 서버(Edge Function)는 브라우저 에디터가 없으므로, 서버에서 content_json을 다룰 땐 라이브 에디터를 못 쓴다. 이 점 때문에 알림용 멘션 추출은 HTML이 아니라 content_json 노드 트리를 직접 순회해 user_id를 뽑는다(직렬화 불필요).
+
+### C1: 렌더 파이프라인 충돌 처리 (in-scope)
+
+기존 `renderCommentBodyHtml`(`contentUtils.ts`)는 평문 전제다. DOMPurify 전에 `convertQuotesToBlockquotes`와 광범위한 `convertUrlsToLinks` 정규식을 raw 문자열에 돌린다. TipTap이 만든 HTML을 그대로 먹이면 정규식이 태그 속성 안까지 매칭해 마크업이 깨지고, 링크가 중첩된다. 또 이 경로의 DOMPurify는 `USE_PROFILES:{html:true}`라 `data-*`와 `class`를 날려 멘션 chip 정보가 사라진다.
+
+처리: content_json이 있는(=새 멘션형) 댓글은 평문 변환 단계를 건너뛰고, `data-user-id`와 mention class를 보존하는 정제 경로로 렌더한다. 게시글 정제기(`sanitizeHtml.ts`)는 `FORBID_ATTR:['style','class','id']` + `ALLOW_DATA_ATTR:false`라 그대로는 못 쓰므로, 멘션 span 속성만 선별 허용하는 설정을 둔다(XSS 범위는 넓히지 않음). content_json이 없는 레거시 댓글은 기존 평문 경로 그대로.
 
 두 컬럼은 따로 수정하지 않는다. 항상 content_json에서 content로 한 방향으로만 생성하므로 불일치(드리프트)가 구조적으로 불가능하다. content는 중복 데이터가 아니라 파생 캐시다.
 
@@ -85,10 +102,10 @@ comments와 replies 테이블에 `content_json JSONB` 컬럼을 추가한다. �
 
 ### 파이프라인
 
-기존 comment/reply INSERT 트리거와 `create-notification` Edge Function을 재사용한다. 새 트리거는 추가하지 않는다.
+기존 comment/reply INSERT 트리거는 그대로 재사용한다. 새 트리거는 추가하지 않는다. 다만 `create-notification` Edge Function은 현재 한 실행에 수신자 1명, 알림 1행만 만드는 구조라, 이를 1인에서 N인 구조로 재작성한다.
 
-- comment/reply가 INSERT되면 기존 트리거가 pg_net으로 Edge Function을 호출한다.
-- Edge Function이 content_json을 파싱해 멘션된 user_id를 추출하고, 멘션 알림을 생성한다.
+- comment/reply가 INSERT되면 기존 트리거가 pg_net으로 Edge Function을 한 번 호출한다.
+- 그 한 번의 실행 안에서 함수가 (1) 구조적 수신자(글/댓글 작성자)를 계산하고, (2) content_json 노드 트리를 순회해 멘션된 user_id 집합을 추출한 뒤, (3) 멘션 우선 억제를 적용해 최종 알림들을 한꺼번에 생성한다. 구조적 알림과 멘션 알림이 별도 실행으로 갈리지 않으므로 교차 실행 조율 문제나 경합이 없다.
 
 ### 새 알림 타입
 
@@ -105,7 +122,7 @@ comments와 replies 테이블에 `content_json JSONB` 컬럼을 추가한다. �
 ### 알림 규칙
 
 - 시점: 최초 생성(INSERT) 때만 알림을 보낸다. 수정과 삭제 시에는 보내지 않는다. 수정으로 새 멘션을 추가해도 알림은 가지 않는다. 이유: 알림이 지금 INSERT 트리거만 있어 UPDATE 경로를 새로 만들어야 하고, 이전 멘션과 비교하는 상태 추적은 버그가 나기 쉽다. 소규모 커뮤니티에서 수정으로 멘션을 추가하는 경우는 드물다.
-- 중복 억제 (멘션 우선): 같은 사람에게 갈 구조적 알림(reply_on_comment, comment_on_post 등)이 이미 있으면 그것을 억제하고 멘션 알림만 보낸다. 멘션이 더 의도적이고 구체적인 신호다.
+- 중복 억제 (멘션 우선): 같은 사람에게 갈 구조적 알림(reply_on_comment, comment_on_post 등)이 이미 있으면 그것을 억제하고 멘션 알림만 보낸다. 멘션이 더 의도적이고 구체적인 신호다. idempotency 인덱스는 `type`이 키 컬럼이라 `mention_on_comment`와 `reply_on_comment`가 자동으로 안 겹친다. 따라서 억제는 인덱스가 아니라 함수 안의 명시적 로직으로 처리한다(위 N인 재작성에서 한 실행 안에 구조적 수신자와 멘션 집합을 모두 알고 있으므로 겹치는 대상은 멘션만 남긴다).
 - 자기 자신 제외: 기존 `shouldSkipNotification`의 self-skip을 그대로 적용한다.
 - 한 댓글 내 중복 멘션: 같은 사람을 여러 번 멘션해도 알림은 1건으로 합친다.
 
@@ -113,10 +130,12 @@ comments와 replies 테이블에 `content_json JSONB` 컬럼을 추가한다. �
 
 기존 메시지 빌더 패턴을 따른다. 멘션 알림은 작성자 이름과 내용 미리보기를 포함한다. 후보군을 게시판 권한 보유자로 좁혔으므로, 미리보기가 알림에 노출되어도 권한 없는 사람에게 내용이 새는 문제가 없다. 알림을 누르면 기존 방식대로 해당 글/댓글로 이동한다.
 
+C2 처리 (in-scope): 현재 메시지 빌더는 `content`를 raw로 받아 35자로 자른다. content에 멘션 span HTML이 들어가면 `<span data-mention data-user-id="`처럼 태그 중간에서 잘려 미리보기가 깨지고 멘션 이름이 유실된다. 미리보기는 자르기 전에 content_json에서 평문을 추출해 사용한다(기존 `extractPlainText` 활용 또는 노드 트리 순회).
+
 ## 표시
 
 - 멘션 chip은 파란 글씨로 표시하고, 클릭하면 해당 사용자 프로필(`/user/{uid}`)로 이동한다. 멘션은 사람을 가리키므로 프로필로 가는 것이 자연스럽다.
-- DOMPurify 허용목록에 mention span(클래스, data 속성)을 추가한다.
+- DOMPurify 허용목록에 mention span의 class와 `data-user-id`를 추가한다. 현재 댓글 경로(`USE_PROFILES:{html:true}`)와 게시글 경로(`FORBID_ATTR`로 class/id 제거 + `ALLOW_DATA_ATTR:false`) 둘 다 이 속성을 지우므로, 멘션 span 속성만 선별 허용하는 설정이 필요하다(C1과 동일 사안).
 - 표시 이름은 작성 시점의 스냅샷이다. 멘션된 사람이 나중에 닉네임을 바꿔도 옛 댓글은 작성 당시 이름으로 남는다. 이는 댓글이 이미 작성 시점 작성자 이름(user_name)을 스냅샷으로 저장하는 기존 패턴과 동일하다. 링크(user_id)는 content_json에 그대로 있으므로 클릭하면 항상 최신 프로필로 간다.
 - 렌더링할 때마다 user_id로 최신 닉네임을 다시 부르는 방식은 댓글 목록마다 유저 조회가 늘어나므로 채택하지 않는다.
 
@@ -132,18 +151,20 @@ comments와 replies 테이블에 `content_json JSONB` 컬럼을 추가한다. �
 - `apps/web/src/notification/model/Notification.ts` (타입 추가)
 - `apps/web/src/notification/external/notification.parser.ts` (판별 유니온)
 - `apps/web/src/notification/external/notification.mapper.ts` (매핑)
-- `supabase/functions/create-notification/index.ts` (멘션 추출과 생성)
-- `supabase/functions/_shared/notificationMessages.ts` (멘션 메시지)
+- `supabase/functions/create-notification/index.ts` (1인 → N인 재작성: 구조적 수신자 + content_json 멘션 추출 + 멘션 우선 억제를 한 실행에서. SELECT에 content_json 추가)
+- `supabase/functions/_shared/notificationMessages.ts` (멘션 메시지, 미리보기는 content_json 평문 추출 후 슬라이스)
 
 댓글/답글:
 - `apps/web/src/comment/model/Comment.ts`, `Reply.ts` (content_json 필드)
-- `apps/web/src/comment/components/CommentInput.tsx`, `ReplyInput.tsx` (TipTap 입력으로 교체)
+- 신규 공용 `MentionableInput` 컴포넌트. `CommentInput.tsx`와 `ReplyInput.tsx`는 공유 베이스 없는 별개 `<Textarea>`라, TipTap+Mention 입력을 공용 컴포넌트로 만들어 둘 다 교체한다.
 - `apps/web/src/comment/components/CommentRow.tsx`, `ReplyRow.tsx` (멘션 표시)
-- `apps/web/src/shared/content/contentUtils.ts` (DOMPurify 허용목록, 멘션 렌더)
+- `apps/web/src/shared/content/contentUtils.ts` (멘션형 댓글용 정제 경로 분기, C1)
 
 사용자/검색:
-- `apps/web/src/user/hooks/useUserSearch.ts` (최소 글자수 0 허용)
-- `apps/web/src/user/search/constants.ts` (MIN_QUERY_LENGTH)
+- 멘션 후보 조회 신규(빈 쿼리 = 게시판 멤버 전체, 게시판 권한 스코핑). `useUserSearch`는 게이트가 없고 `boardPermissions`를 무시하므로 그대로 재사용 불가. `MIN_QUERY_LENGTH`(`user/search/constants.ts`)는 이 훅이 쓰지 않으므로 건드릴 필요 없다.
+
+의존성:
+- `@tiptap/extension-mention`, `@tiptap/suggestion` 추가. JSON→HTML 직렬화 방식(라이브 `editor.getHTML()` vs `@tiptap/core generateHTML`)은 구현 시 확정.
 
 DB:
 - comments/replies에 content_json JSONB 추가 마이그레이션
@@ -153,4 +174,6 @@ DB:
 
 - content(TEXT) 제거는 레거시 백필 완료 후 별도 마이그레이션.
 - TipTap suggestion의 한글 IME 동작은 구현 단계에서 실기기 검증.
-- 멘션 chip의 반응형 모바일 표현(키보드 위 목록 대 바텀시트)은 구현 시 실제 기기에서 확정.
+- 멘션 chip의 반응형 모바일 표현(키보드 위 목록 대 바텀시트)은 구현 시 실제 기기에서 확정. 현재 댓글 입력이 `<Textarea>` 기반이라 팝오버 위치 잡기의 실현성도 함께 확인.
+- 권한 상실 후 알림: 작성 시점엔 게시판 멤버였으나 이후 권한을 잃은 사용자가 이미 받은 멘션 알림을 누르면 RLS에 막히고 미리보기로 내용이 샐 수 있다. 후보 스코핑이 막으려던 바로 그 위험이 시점 차로 재발한다. 1차 버전은 이 잔여 위험을 감수하되, 알림 클릭 후 접근 불가 시 우아한 처리(권한 없음 안내)를 백로그로 남긴다.
+- 수정 경로가 delete+insert로 구현되면 INSERT 기반 멘션 추출이 재발화해 재알림될 수 있다. 수정은 UPDATE로 구현하거나, 재발화 방지 가드를 둔다.
