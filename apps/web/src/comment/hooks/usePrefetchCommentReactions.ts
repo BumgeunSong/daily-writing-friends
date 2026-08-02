@@ -27,7 +27,10 @@ export function usePrefetchCommentReactions(
   return useQuery({
     queryKey: ['batchCommentReactions', boardId, postId, commentIdsKey],
     queryFn: async () => {
-      const reactionsMap = await fetchBatchReactionsForComments(commentIds);
+      const reactionsMap = (await fetchBatchReactionsForComments(commentIds)).match(
+        (map) => map,
+        (error) => { throw error; },
+      );
 
       // Seed individual cache entries matching useReactions query keys
       for (const [commentId, reactions] of reactionsMap) {
