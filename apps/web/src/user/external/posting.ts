@@ -4,7 +4,7 @@ interface PostRow {
   id: string;
   board_id: string;
   title: string;
-  content_length: number;
+  content_length: number | null;
   created_at: string;
 }
 

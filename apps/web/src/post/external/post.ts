@@ -1,4 +1,5 @@
-import type { Post } from '@/post/model/Post';
+import type { Post, ProseMirrorDoc } from '@/post/model/Post';
+import type { Json } from '@/shared/external/database.types';
 import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import { formatInFilter } from '@/shared/external/postgrestFilters';
 import { createTimestamp } from '@/shared/model/Timestamp';
@@ -170,11 +171,22 @@ export async function fetchBestPostsFromSupabase(
  *  guarantees. The selected columns (`id`, `board_id`, `title`, timestamps, …)
  *  are non-null in the underlying `posts`/`boards`/`users` tables, so mapping
  *  code may treat them as present. This boundary narrowing is the single place
- *  that bridge is asserted; `mapRowToPost` handles the genuinely-nullable ones. */
+ *  that bridge is asserted; `mapRowToPost` handles the genuinely-nullable ones.
+ *
+ *  Invariant: every column `mapRowToPost` reads must stay listed in
+ *  `FEED_POST_SELECT`. The cast erases the row shape, so a dropped column is
+ *  caught at runtime, not by the type-checker — keep the two in sync. */
 export function narrowFeedRows(
   data: readonly Record<string, unknown>[] | null,
 ): PostRowWithEmbeds[] {
   return (data ?? []) as unknown as PostRowWithEmbeds[];
+}
+
+/** Widen a ProseMirror document to the jsonb `Json` column type at the write
+ *  boundary. `Json` may only be imported inside `external/`, so write paths in
+ *  UI-layer modules route through here instead of casting to `never`. */
+export function toContentJson(doc: ProseMirrorDoc): Json {
+  return doc as unknown as Json;
 }
 
 /** Map a row from `posts_feed` (or the legacy `posts` query shape) to Post model. */
