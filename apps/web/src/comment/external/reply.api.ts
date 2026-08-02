@@ -1,4 +1,4 @@
-import { type AuthorEmbed, mapToAuthor } from '@/comment/external/authorEmbed';
+import { type AuthorEmbed, AUTHOR_EMBED_SELECT, mapToAuthor } from '@/comment/external/authorEmbed';
 import type { Reply } from '@/comment/model/Reply';
 import type { Database } from '@/shared/external/database.types';
 import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
@@ -11,7 +11,7 @@ type ReplyRow = Pick<
 > & { author: AuthorEmbed | AuthorEmbed[] | null };
 
 const REPLY_SELECT =
-  'id, content, user_id, user_name, user_profile_image, created_at, author:users!user_id(profile_photo_url, nickname)';
+  `id, content, user_id, user_name, user_profile_image, created_at, ${AUTHOR_EMBED_SELECT}`;
 
 /** Pure: project a replies row (with its joined author) onto the domain Reply. */
 export function mapToReply(row: ReplyRow): Reply {

@@ -7,6 +7,9 @@ export type AuthorEmbed = Pick<
   'profile_photo_url' | 'nickname'
 >;
 
+/** The select fragment that joins the live author profile; keep in sync with AuthorEmbed. */
+export const AUTHOR_EMBED_SELECT = 'author:users!user_id(profile_photo_url, nickname)';
+
 /**
  * A to-one embed can surface as a single object or a one-element array depending
  * on how PostgREST resolves the relationship; collapse both to the single row.
