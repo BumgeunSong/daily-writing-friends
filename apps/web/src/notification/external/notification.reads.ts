@@ -4,7 +4,7 @@ import type { Notification } from '@/notification/model/Notification';
 import {
   parseNotificationRow,
   type SupabaseNotificationRow,
-} from './notificationParsers';
+} from './notification.parser';
 
 /**
  * Fetch notifications for a user from Supabase.

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { NotificationType } from '@/notification/model/Notification';
 
-import { parseNotificationRow, type SupabaseNotificationRow } from './notificationParsers';
+import { parseNotificationRow, type SupabaseNotificationRow } from './notification.parser';
 
 const baseRow: SupabaseNotificationRow = {
   id: 'n1',

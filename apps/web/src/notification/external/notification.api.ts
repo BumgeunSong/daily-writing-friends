@@ -1,4 +1,4 @@
-import { fetchNotificationsFromSupabase } from './notificationReads';
+import { fetchNotificationsFromSupabase } from './notification.reads';
 import type { Notification } from '@/notification/model/Notification';
 import type { FirebaseTimestamp } from '@/shared/model/Timestamp';
 

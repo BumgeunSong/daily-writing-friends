@@ -2,10 +2,10 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 import { createTimestamp } from '@/shared/model/Timestamp';
 import { NotificationType } from '@/notification/model/Notification';
-import { fetchNotifications } from './notificationApi';
+import { fetchNotifications } from './notification.api';
 
 const mockFetchNotificationsFromSupabase = vi.fn();
-vi.mock('./notificationReads', () => ({
+vi.mock('./notification.reads', () => ({
   fetchNotificationsFromSupabase: (...args: unknown[]) =>
     mockFetchNotificationsFromSupabase(...args),
 }));
