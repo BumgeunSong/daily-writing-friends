@@ -170,7 +170,6 @@ export async function getReactions(params: GetReactionsParams): Promise<Reaction
 
 /**
  * Fetch reactions for a comment or reply.
- * Replaces: getReactions in reaction.ts
  * Uses index: idx_reactions_comment or idx_reactions_reply
  */
 export async function fetchReactionsFromSupabase(params: {
