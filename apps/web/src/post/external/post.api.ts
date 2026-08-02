@@ -3,7 +3,7 @@ import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import { formatInFilter } from '@/shared/external/postgrestFilters';
 import { createTimestamp } from '@/shared/model/Timestamp';
 import { computeWeekDaysFromFirstDay } from '@/post/utils/weekDays';
-import { parsePostVisibility, parsePostContentJson } from '@/post/external/postParsers';
+import { parsePostVisibility, parsePostContentJson } from '@/post/external/post.parser';
 
 /**
  * 최근 게시글을 불러옴 (createdAt 내림차순, blockedByUsers 서버사이드 필터링)

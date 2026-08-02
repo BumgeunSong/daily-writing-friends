@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PostVisibility } from '@/post/model/Post';
 
-import { parsePostContentJson, parsePostVisibility } from './postParsers';
+import { parsePostContentJson, parsePostVisibility } from './post.parser';
 
 describe('parsePostVisibility', () => {
   afterEach(() => {

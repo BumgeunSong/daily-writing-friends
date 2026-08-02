@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PostVisibility } from './Post';
-import { mapRowToPost } from '@/post/external/post';
+import { mapRowToPost } from '@/post/external/post.api';
 
 const baseRow = {
   id: 'p1', board_id: 'b1', author_id: 'u1', author_name: 'Test',
