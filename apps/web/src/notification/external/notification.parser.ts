@@ -1,22 +1,6 @@
 import { type Notification, NotificationType } from '@/notification/model/Notification';
-import { createTimestamp } from '@/shared/model/Timestamp';
 
-/**
- * Raw Supabase `notifications` row shape. Lives here (next to the parser) so
- * the row contract is owned at the trust boundary where it is consumed.
- */
-export interface SupabaseNotificationRow {
-  id: string;
-  type: string;
-  board_id: string;
-  post_id: string;
-  comment_id: string | null;
-  reply_id: string | null;
-  actor_id: string;
-  message: string;
-  created_at: string;
-  read: boolean;
-}
+import { type SupabaseNotificationRow, mapNotificationBase } from './notification.mapper';
 
 function isNotificationType(value: string): value is NotificationType {
   return Object.values(NotificationType).includes(value as NotificationType);
@@ -34,15 +18,7 @@ export function parseNotificationRow(row: SupabaseNotificationRow): Notification
     throw new Error(`Notification ${row.id}: unknown notification type: ${row.type}`);
   }
 
-  const base = {
-    id: row.id,
-    boardId: row.board_id,
-    postId: row.post_id,
-    fromUserId: row.actor_id,
-    message: row.message,
-    timestamp: createTimestamp(new Date(row.created_at)),
-    read: row.read,
-  };
+  const base = mapNotificationBase(row);
 
   switch (row.type) {
     case NotificationType.COMMENT_ON_POST:
