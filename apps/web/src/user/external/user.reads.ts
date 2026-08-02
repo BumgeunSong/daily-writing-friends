@@ -120,10 +120,7 @@ export async function fetchAllUsersFromSupabase(): Promise<User[]> {
     .from('users')
     .select('id, real_name, nickname, email, profile_photo_url, bio, phone_number, kakao_id, referrer, onboarding_complete, timezone');
 
-  if (error) {
-    console.error('Supabase fetchAllUsers error:', error);
-    return [];
-  }
+  if (error) throw error;
 
   return (data || []).map((row) => ({
     uid: row.id,
@@ -176,10 +173,7 @@ export async function fetchUsersWithBoardPermissionFromSupabase(
     .in('board_id', boardIds)
     .eq('permission', 'write');
 
-  if (error) {
-    console.error('Supabase fetchUsersWithBoardPermission error:', error);
-    return [];
-  }
+  if (error) throw error;
 
   // Deduplicate users (a user may have permissions on multiple boards)
   const userMap = new Map<string, User>();
