@@ -19,16 +19,22 @@ description: Use when creating git commits in this project
 
 **Small logical steps forward.** Each commit = one feature, one fix, or one refactor.
 
+**Never mix types in a single commit.** One commit has exactly one type (`feat` OR `fix` OR `refactor` OR ...) — do not bundle a feature and a refactor, or a fix and unrelated chore, together. If the staged changes span multiple types, split them into separate commits, staging each set with `git add <paths>` before its own commit.
+
 ### Message Format
 
 ```
-<concise title in Korean>
+<type>: <concise title in Korean>
 
 - WHY point 1
 - WHY point 2
 ```
 
-- **Title**: Concise Korean summary (50 chars max)
+- **Type**: Conventional type prefix — **required** (enforced by the `commit-msg` hook)
+  - `feat` new feature · `fix` bug fix · `refactor` behavior-preserving change
+  - `chore` tooling/deps · `docs` · `test` · `style` · `perf` · `ci` · `build` · `revert`
+  - Optional scope: `feat(auth): ...`. Optional breaking marker: `feat!: ...`
+- **Title**: Concise Korean summary after the prefix (50 chars max)
 - **Body**: 1-3 bullet points explaining **WHY** we made this change (not WHAT changed)
 
 ### No AI Signatures
@@ -41,14 +47,14 @@ Never include:
 ### Good vs Bad Examples
 
 ```
-# BAD - describes WHAT changed (obvious from diff)
+# BAD - missing type prefix + describes WHAT changed (obvious from diff)
 토큰 사용량 추적 버그 수정
 
 - Changed modelUsage.tokens to usage.input_tokens
 - Added try-catch block
 
-# GOOD - explains WHY we made changes
-토큰 사용량 추적 버그 수정
+# GOOD - type prefix + explains WHY we made changes
+fix: 토큰 사용량 추적 버그 수정
 
 - API response structure changed in v2, tokens now nested under modelUsage
 - Fallback needed for backward compatibility with older API responses
