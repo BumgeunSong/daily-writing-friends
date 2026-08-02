@@ -20,13 +20,14 @@ export async function createLike(params: CreateLikeParams): Promise<string> {
   const supabase = getSupabaseClient();
 
   // Check if user already liked (prevent duplicates)
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from('likes')
     .select('id')
     .eq('post_id', postId)
     .eq('user_id', likeUser.userId)
     .limit(1);
 
+  if (existingError) throw existingError;
   if (existing && existing.length > 0) {
     return existing[0].id;
   }
@@ -50,13 +51,14 @@ export async function deleteUserLike(params: GetLikesParams, userId: string): Pr
   const supabase = getSupabaseClient();
 
   // Find and delete the like
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('likes')
     .select('id')
     .eq('post_id', params.postId)
     .eq('user_id', userId)
     .limit(1);
 
+  if (error) throw error;
   if (!data || data.length === 0) return;
 
   throwOnError(await supabase.from('likes').delete().eq('id', data[0].id));
