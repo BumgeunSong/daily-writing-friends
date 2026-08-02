@@ -12,10 +12,11 @@ export interface SupabaseReviewRow {
   problem_text: string | null;
   try_text: string | null;
   nps: number | null;
-  will_continue: 'yes' | 'no' | null;
+  will_continue: boolean | null;
 }
 
-/** Supabase row → Review 도메인 모델 */
+/** Supabase row → Review 도메인 모델.
+ *  `will_continue`는 DB에서 boolean, 도메인에서는 'yes'/'no'로 표현한다. */
 export function mapRowToReview(row: SupabaseReviewRow): Review {
   return {
     reviewer: { uid: row.reviewer_id, nickname: row.reviewer_nickname ?? undefined },
@@ -23,15 +24,12 @@ export function mapRowToReview(row: SupabaseReviewRow): Review {
     problem: row.problem_text ?? undefined,
     try: row.try_text ?? undefined,
     nps: row.nps ?? 0,
-    willContinue: row.will_continue ?? 'no',
+    willContinue: row.will_continue ? 'yes' : 'no',
   };
 }
 
 /** Review 도메인 모델 → Supabase insert/upsert 행 (timestamp 제외) */
-export function mapReviewToSupabaseRow(
-  boardId: string,
-  review: Review,
-): Record<string, unknown> {
+export function mapReviewToSupabaseRow(boardId: string, review: Review) {
   return {
     id: review.reviewer.uid,
     board_id: boardId,
@@ -41,7 +39,7 @@ export function mapReviewToSupabaseRow(
     problem_text: review.problem || null,
     try_text: review.try || null,
     nps: review.nps ?? null,
-    will_continue: review.willContinue ?? null,
+    will_continue: review.willContinue === 'yes',
   };
 }
 
