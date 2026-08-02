@@ -71,7 +71,8 @@ async function fetchUserPostsFromSupabase(
 
   const posts: PostWithPaginationMetadata[] = (data || []).map((row) => ({
     ...mapToPost(row),
-    _paginationCursor: row.created_at,
+    // posts_feed view types created_at as nullable; a null cursor just ends pagination
+    _paginationCursor: row.created_at ?? undefined,
     _fetchedFullPage: data.length === LIMIT_COUNT,
   }));
 

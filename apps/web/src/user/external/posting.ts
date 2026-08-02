@@ -1,12 +1,17 @@
 import { getSupabaseClient } from '@/shared/external/supabaseClient';
 
-// Supabase row type for posts query results
 interface PostRow {
   id: string;
   board_id: string;
   title: string;
-  content_length: number;
+  content_length: number | null;
   created_at: string;
+}
+
+/** `posts_feed` is a view, so Supabase widens columns to `T | null`; these are
+ *  non-null in the base `posts` table, so narrow to the row contract here. */
+function narrowPostRows(data: readonly Record<string, unknown>[] | null): PostRow[] {
+  return (data ?? []) as unknown as PostRow[];
 }
 
 // Type matching the Firestore fan-out model for compatibility
@@ -36,7 +41,7 @@ export async function fetchPostingsFromSupabase(userId: string): Promise<Supabas
     throw error;
   }
 
-  return (data || []).map((row: PostRow) => ({
+  return narrowPostRows(data).map((row) => ({
     board: { id: row.board_id },
     post: {
       id: row.id,
@@ -71,7 +76,7 @@ export async function fetchPostingsByDateRangeFromSupabase(
     throw error;
   }
 
-  return (data || []).map((row: PostRow) => ({
+  return narrowPostRows(data).map((row) => ({
     board: { id: row.board_id },
     post: {
       id: row.id,

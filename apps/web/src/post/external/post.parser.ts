@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/react';
 import { z } from 'zod';
 
+import type { Json } from '@/shared/external/database.types';
 import { type ProseMirrorDoc, type ProseMirrorNode, PostVisibility } from '@/post/model/Post';
 
 /**
@@ -60,4 +61,15 @@ export function parsePostContentJson(raw: unknown): ProseMirrorDoc | undefined {
   if (raw === null || raw === undefined) return undefined;
   const result = proseMirrorDocSchema.safeParse(raw);
   return result.success ? result.data : undefined;
+}
+
+/**
+ * Write-side counterpart to {@link parsePostContentJson}: widens a ProseMirror
+ * document to the jsonb `Json` column type. `ProseMirrorDoc` is an interface so
+ * it lacks the index signature `Json` requires, but it is JSON-serializable in
+ * practice. `Json` may only be imported inside `external/`, so write paths in
+ * UI-layer modules route through this boundary helper.
+ */
+export function toContentJson(doc: ProseMirrorDoc): Json {
+  return doc as unknown as Json;
 }
