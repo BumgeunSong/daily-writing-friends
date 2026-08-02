@@ -207,4 +207,18 @@ export default tseslint.config(
       }],
     },
   },
+
+  // Boundary JSON parsing goes through the parseJson reader util (narrow with a
+  // guard, don't cast). JSON.parse of untrusted strings is confined to that module.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/shared/lib/parseJson.ts', 'src/**/*.test.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': ['error', {
+        selector: "CallExpression[callee.object.name='JSON'][callee.property.name='parse']",
+        message:
+          '신뢰할 수 없는 문자열의 JSON.parse는 shared/lib/parseJson.ts(parseJson/parseJsonUnknown)를 통해 가드로 좁혀 쓰세요.',
+      }],
+    },
+  },
 );

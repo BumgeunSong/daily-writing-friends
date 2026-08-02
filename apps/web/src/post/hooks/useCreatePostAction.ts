@@ -7,6 +7,8 @@ import {
   optimisticallyUpdatePostingStreak,
 } from '@/post/utils/postCacheUtils';
 import { createPost } from '@/post/utils/postUtils';
+import { parsePostContentJson } from '@/post/external/post.parser';
+import { parseJsonUnknown } from '@/shared/lib/parseJson';
 import { sendAnalyticsEvent, AnalyticsEvent } from '@/shared/utils/analyticsUtils';
 
 export interface ValidatedCreatePostInput {
@@ -70,7 +72,7 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
 
   const draftId = formData.get('draftId') as string | null;
   const contentJsonStr = formData.get('contentJson') as string | null;
-  const contentJson = contentJsonStr ? JSON.parse(contentJsonStr) : undefined;
+  const contentJson = parsePostContentJson(parseJsonUnknown(contentJsonStr));
 
   try {
     await createPost({ boardId: validBoardId, title, content, authorId, authorName, contentJson });
