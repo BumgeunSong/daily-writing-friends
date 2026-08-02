@@ -66,18 +66,6 @@ describe('mapToPost', () => {
       expect(post.countOfComments).toBe(0);
       expect(post.countOfReplies).toBe(0);
     });
-
-    it('prefers live embedded comment/reply counts over cached columns', () => {
-      const row = makeRow({
-        count_of_comments: 0,
-        count_of_replies: 0,
-        comments: [{ count: 5 }],
-        replies: [{ count: 3 }],
-      });
-      const post = mapToPost(row);
-      expect(post.countOfComments).toBe(5);
-      expect(post.countOfReplies).toBe(3);
-    });
   });
 
   describe('board first_day handling', () => {
@@ -90,28 +78,10 @@ describe('mapToPost', () => {
       expect(post.weekDaysFromFirstDay).toBe(3);
     });
 
-    it('computes weekDaysFromFirstDay when legacy board embed has first_day', () => {
-      const row = makeRow({
-        boards: { first_day: '2026-01-12T00:00:00Z' },
-        created_at: '2026-01-15T09:00:00Z',
-      });
-      const post = mapToPost(row);
-      expect(post.weekDaysFromFirstDay).toBe(3);
-    });
-
     it('uses row.week_days_from_first_day when no first_day is available', () => {
       const row = makeRow({ week_days_from_first_day: 5 });
       const post = mapToPost(row);
       expect(post.weekDaysFromFirstDay).toBe(5);
-    });
-
-    it('handles legacy board embed as array (PostgREST format)', () => {
-      const row = makeRow({
-        boards: [{ first_day: '2026-01-12T00:00:00Z' }],
-        created_at: '2026-01-15T09:00:00Z',
-      });
-      const post = mapToPost(row);
-      expect(post.weekDaysFromFirstDay).toBe(3);
     });
   });
 
@@ -138,13 +108,7 @@ describe('mapToPost', () => {
       expect(post.authorProfileImageURL).toBe('https://example.com/photo.jpg');
     });
 
-    it('extracts profile photo from legacy users embed', () => {
-      const row = makeRow({ users: { profile_photo_url: 'https://example.com/photo.jpg' } });
-      const post = mapToPost(row);
-      expect(post.authorProfileImageURL).toBe('https://example.com/photo.jpg');
-    });
-
-    it('returns undefined when neither flat nor embed source is present', () => {
+    it('returns undefined when the flat column is absent', () => {
       const row = makeRow();
       const post = mapToPost(row);
       expect(post.authorProfileImageURL).toBeUndefined();
@@ -226,13 +190,6 @@ describe('mapToPost', () => {
       const post = mapToPost(makeRow({ count_of_likes: null, engagement_score: null }));
       expect(post.countOfLikes).toBe(0);
       expect(post.engagementScore).toBe(0);
-    });
-  });
-
-  describe('legacy users 임베드로 프로필 사진을 뽑을 때', () => {
-    it('임베드는 있지만 profile_photo_url이 null이면 authorProfileImageURL은 undefined다', () => {
-      const post = mapToPost(makeRow({ users: { profile_photo_url: null } }));
-      expect(post.authorProfileImageURL).toBeUndefined();
     });
   });
 });

@@ -40,20 +40,7 @@ type PostContentColumns = Partial<
   Pick<Database['public']['Views']['posts_feed']['Row'], 'content' | 'content_json'>
 >;
 
-/**
- * Legacy base-table (`posts`) PostgREST embeds. The feed view exposes flat
- * `board_first_day` / `author_profile_photo_url` columns instead, so current
- * queries never populate these; retained so a row read from the base table with
- * joins still maps.
- */
-interface LegacyPostEmbeds {
-  boards: { first_day: string | null } | { first_day: string | null }[];
-  users: { profile_photo_url: string | null } | { profile_photo_url: string | null }[];
-  comments: { count: number }[];
-  replies: { count: number }[];
-}
-
-export type PostFeedRow = PostFeedColumns & PostContentColumns & Partial<LegacyPostEmbeds>;
+export type PostFeedRow = PostFeedColumns & PostContentColumns;
 
 /** Explicit column list for feed queries against `posts_feed`.
  *  The view exposes flat `board_first_day` / `author_profile_photo_url`
@@ -68,7 +55,8 @@ export const FEED_POST_SELECT =
  * Identity/temporal fields the DB guarantees NOT NULL but the view types as
  * nullable. A null here means a corrupt row, so we fail loud rather than emit a
  * Post with an empty id or an epoch-1970 `createdAt` (`new Date(null)`). The
- * global QueryCache.onError reports the throw to Sentry.
+ * throw propagates to the caller: a query hook surfaces it via
+ * QueryCache.onError (Sentry), the board route loader turns it into an error page.
  */
 function required<T>(value: T | null | undefined, field: string, rowId: unknown): T {
   if (value === null || value === undefined) {
@@ -77,24 +65,19 @@ function required<T>(value: T | null | undefined, field: string, rowId: unknown)
   return value;
 }
 
-/** Map a `posts_feed` row (or a legacy joined `posts` row) to the Post model. */
+/** Map a `posts_feed` row to the Post model. */
 export function mapToPost(row: PostFeedRow): Post {
   const id = required(row.id, 'id', row.id);
   const boardId = required(row.board_id, 'board_id', id);
   const authorId = required(row.author_id, 'author_id', id);
   const createdAt = required(row.created_at, 'created_at', id);
 
-  const commentCount = row.comments?.[0]?.count ?? row.count_of_comments ?? 0;
-  const replyCount = row.replies?.[0]?.count ?? row.count_of_replies ?? 0;
-
-  const boardEmbed = Array.isArray(row.boards) ? row.boards[0] : row.boards;
-  const firstDay = row.board_first_day ?? boardEmbed?.first_day ?? null;
+  const firstDay = row.board_first_day ?? null;
   const weekDays = firstDay
     ? computeWeekDaysFromFirstDay(firstDay, createdAt)
     : (row.week_days_from_first_day ?? undefined);
 
-  const usersEmbed = Array.isArray(row.users) ? row.users[0] : row.users;
-  const profilePhotoURL = row.author_profile_photo_url ?? usersEmbed?.profile_photo_url ?? null;
+  const profilePhotoURL = row.author_profile_photo_url ?? null;
 
   return {
     id,
@@ -108,8 +91,8 @@ export function mapToPost(row: PostFeedRow): Post {
     authorName: row.author_name ?? '',
     createdAt: createTimestamp(new Date(createdAt)),
     updatedAt: row.updated_at ? createTimestamp(new Date(row.updated_at)) : undefined,
-    countOfComments: commentCount,
-    countOfReplies: replyCount,
+    countOfComments: row.count_of_comments ?? 0,
+    countOfReplies: row.count_of_replies ?? 0,
     countOfLikes: row.count_of_likes ?? 0,
     engagementScore: row.engagement_score ?? 0,
     weekDaysFromFirstDay: weekDays,
