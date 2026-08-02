@@ -2,8 +2,6 @@ import { type Notification, NotificationType } from '@/notification/model/Notifi
 
 import { type SupabaseNotificationRow, mapNotificationBase } from './notification.mapper';
 
-export type { SupabaseNotificationRow };
-
 function isNotificationType(value: string): value is NotificationType {
   return Object.values(NotificationType).includes(value as NotificationType);
 }

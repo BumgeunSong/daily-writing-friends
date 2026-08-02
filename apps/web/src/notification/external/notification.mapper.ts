@@ -19,6 +19,10 @@ export type SupabaseNotificationRow = Pick<
   | 'read'
 >;
 
+/** Columns fetched to satisfy SupabaseNotificationRow — keep in sync with the Pick above. */
+export const NOTIFICATION_SELECT =
+  'id, type, board_id, post_id, comment_id, reply_id, actor_id, message, created_at, read';
+
 /** Fields shared by every notification variant, independent of its type. */
 export interface NotificationBaseFields {
   id: string;
@@ -31,8 +35,8 @@ export interface NotificationBaseFields {
 }
 
 /**
- * Pure: project the variant-independent columns onto the domain base. Total —
- * these columns are non-null in the schema, so it has no failure mode. Variant
+ * Pure: project the variant-independent columns onto the domain base. These
+ * columns are non-null in the schema, so the projection never throws. Variant
  * validation (type + required ids) lives in the parser.
  */
 export function mapNotificationBase(row: SupabaseNotificationRow): NotificationBaseFields {

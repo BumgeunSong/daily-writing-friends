@@ -1,10 +1,8 @@
 import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import type { Notification } from '@/notification/model/Notification';
 
+import { NOTIFICATION_SELECT } from './notification.mapper';
 import { parseNotificationRow } from './notification.parser';
-
-const NOTIFICATION_SELECT =
-  'id, type, board_id, post_id, comment_id, reply_id, actor_id, message, created_at, read';
 
 /**
  * Fetch notifications for a user from Supabase.
