@@ -3,10 +3,12 @@ import { z } from 'zod';
 import { STORAGE_KEYS, storage } from '@/shared/lib/storage';
 import { parseJson } from '@/shared/lib/parseJson';
 
+// email/displayName are stored as `null` (not absent) when the user lacks them,
+// so .nullish() — .optional() alone would reject the null and drop the whole user.
 const storedUserSchema = z.object({
   uid: z.string(),
-  email: z.string().optional(),
-  displayName: z.string().optional(),
+  email: z.string().nullish(),
+  displayName: z.string().nullish(),
 });
 type StoredUser = z.infer<typeof storedUserSchema>;
 
@@ -34,7 +36,7 @@ export function getCurrentUserEmailFromStorage(): string | null {
 /**
  * Get the full current user object from localStorage
  */
-export function getCurrentUserFromStorage(): { uid: string; email?: string; displayName?: string } | null {
+export function getCurrentUserFromStorage(): StoredUser | null {
   const user = parseStoredUser();
   if (user?.uid) {
     return {
