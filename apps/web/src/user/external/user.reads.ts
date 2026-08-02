@@ -100,10 +100,12 @@ export async function fetchUsersWithBoardPermissionFromSupabase(
   const userMap = new Map<string, User>();
   for (const row of data ?? []) {
     const u = Array.isArray(row.users) ? row.users[0] : row.users;
-    if (!userMap.has(u.id)) {
-      userMap.set(u.id, mapToUser(u));
+    let user = userMap.get(u.id);
+    if (!user) {
+      user = mapToUser(u);
+      userMap.set(u.id, user);
     }
-    userMap.get(u.id)!.boardPermissions[row.board_id] = parseBoardPermission(row.permission);
+    user.boardPermissions[row.board_id] = parseBoardPermission(row.permission);
   }
 
   return Array.from(userMap.values());

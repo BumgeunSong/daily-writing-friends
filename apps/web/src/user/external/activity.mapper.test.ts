@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { mapToCommenting, mapToPosting, mapToReplying } from './activity.mapper';
 
-describe('mapToPosting', () => {
+describe('posts_feed 행을 활동(posting)으로 매핑할 때', () => {
   const base = {
     id: 'p1',
     board_id: 'b1',
@@ -41,7 +41,7 @@ describe('mapToPosting', () => {
   });
 });
 
-describe('mapToCommenting', () => {
+describe('comments 조인 행을 활동(commenting)으로 매핑할 때', () => {
   const postEmbed = { id: 'p1', title: '글', author_id: 'a1', board_id: 'b1' };
   const base = { id: 'c1', content: '댓글', created_at: '2026-01-15T09:00:00Z', post_id: 'p1' };
 
@@ -58,7 +58,7 @@ describe('mapToCommenting', () => {
   });
 });
 
-describe('mapToReplying', () => {
+describe('replies 조인 행을 활동(replying)으로 매핑할 때', () => {
   const postEmbed = { id: 'p1', title: '글', author_id: 'a1', board_id: 'b1' };
   const base = {
     id: 'r1',

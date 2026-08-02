@@ -20,7 +20,7 @@ function makeUserRow(overrides: Partial<UserRow> = {}): UserRow {
   };
 }
 
-describe('parseBoardPermission', () => {
+describe('보드 권한 값을 파싱할 때', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -52,7 +52,7 @@ describe('parseBoardPermission', () => {
   });
 });
 
-describe('mapToUser', () => {
+describe('users 행을 User 모델로 매핑할 때', () => {
   it('users 행의 snake_case 컬럼을 User 도메인 필드로 옮긴다', () => {
     const user = mapToUser(
       makeUserRow({ id: 'u9', real_name: 'Kim', profile_photo_url: 'https://x/y.jpg' }),
