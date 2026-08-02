@@ -4,7 +4,7 @@ import {
   getDateRange,
   fetchBatchCommentCountsByDateRange,
   fetchBatchReplyCountsByDateRange,
-} from '@/stats/api/stats';
+} from '@/stats/external/stats.api';
 import type { CommentingContribution } from '@/stats/utils/commentingContributionUtils';
 import { sortCommentingStats } from '@/stats/utils/commentingStatsUtils';
 import { createUserInfo } from '@/stats/utils/userInfoUtils';

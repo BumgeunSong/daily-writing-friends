@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
-import type { BasicUserRow } from '@/user/api/userReads';
+// eslint-disable-next-line no-restricted-imports -- 기존 위반: external/ 레이어로 이관 예정인 raw 접근
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
+import type { BasicUserRow } from '@/user/external/userReads';
 
 /**
  * Lightweight subset of {@link User} used by surfaces that only need to render

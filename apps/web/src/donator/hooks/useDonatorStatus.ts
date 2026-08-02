@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchActiveDonatorIds } from '../api/donator';
+import { fetchActiveDonatorIds } from '../external/donator.api';
 import { buildDonatorQueryIds } from '../utils/donatorQueryKeys';
 
 const FIVE_MINUTES_MS = 5 * 60 * 1000;

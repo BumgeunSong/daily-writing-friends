@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { fetchActivityCountsFromSupabase } from '@/stats/api/stats';
+import { fetchActivityCountsFromSupabase } from '@/stats/external/stats.api';
 
 // 메인 훅
 export const useActivity = (fromUserId: string, fromDaysAgo: number) => {

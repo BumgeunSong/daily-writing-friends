@@ -1,7 +1,7 @@
 /**
  * Test fixture for the `posts_feed` PostgREST view row shape.
  *
- * `mapRowToPost` (post/api/post.ts) converts these snake_case rows into the
+ * `mapRowToPost` (post/external/post.ts) converts these snake_case rows into the
  * `Post` model. MSW handlers should return arrays of this shape — not `Post`
  * objects — to match what supabase-js receives over the wire.
  */

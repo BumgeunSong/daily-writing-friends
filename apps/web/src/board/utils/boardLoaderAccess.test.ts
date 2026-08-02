@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SupabaseNetworkError } from '@/shared/api/supabaseClient';
+import { SupabaseNetworkError } from '@/shared/external/supabaseClient';
 import { buildMissingBoardIdResponse, mapBoardLoaderError } from './boardLoaderAccess';
 
 describe('buildMissingBoardIdResponse', () => {

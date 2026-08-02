@@ -122,3 +122,6 @@ test-results/image-perf-report.json
 
 # Web Vitals loop harness state (baseline, reports, ledger — regenerated locally)
 .perf-harness/
+
+# one-shot skip flag for warn-verbose-comments hook
+.claude/.allow-comments

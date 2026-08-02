@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchReplyById } from '@/comment/api/reply';
+import { fetchReplyById } from '@/comment/external/reply.api';
 
 export function useReplyContent(
   boardId: string,

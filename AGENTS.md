@@ -136,7 +136,7 @@ All commands run from repository root.
 | `react-hook` | Custom hook patterns, exhaustive-deps |
 | `firebase-functions` | Cloud Functions in `/functions` |
 | `daily-writing-friends-design` | UI / Tailwind conventions |
-| `testing` | TDD, output-based test patterns |
+| `testing` | Test strategy (risk + 4-quadrant), naming, unit, integration, spec, mutation-verification |
 | `refactoring` | Functional Core / Imperative Shell extraction |
 | `type-system` | Type safety reviews |
 | `verify-runtime` | Verifying data-flow changes via dev logs |

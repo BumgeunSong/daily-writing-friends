@@ -1,20 +1,36 @@
 ---
 name: api-layer
-description: Use when creating or modifying API functions in */api/ directories or data-fetching hooks. Enforces Supabase patterns, mapping conventions, and N+1 prevention.
+description: Use when creating or modifying API functions in */external/ directories or data-fetching hooks. Enforces Supabase patterns, mapping conventions, and N+1 prevention.
 ---
 
 # API Layer Patterns
 
+## Boundary Zone: `external/`
+
+All raw Supabase access and Supabase-generated types live **only** in a feature's
+`external/` directory (or `shared/external/`). This is lint-enforced:
+
+- `getSupabaseClient` may be imported **only** inside `*/external/**`. hooks,
+  components, and utils must call a feature's `external/` `fetch*`/`read*`
+  functions — which return **domain types** — never the raw client.
+- `@/shared/external/database.types` (generated schema types) may be imported
+  **only** inside `external/`. UI code deals in domain types, not row/DTO shapes.
+
+`external/` is the one place a raw row shape or a boundary cast may exist;
+everything outside it is structurally confined to domain types. The client is
+typed (`createClient<Database>`), so `.from(...).select(...)` results are inferred
+from the schema — parse and map at the boundary instead of casting.
+
 ## Canonical References
 
-- `apps/web/src/post/api/post.ts`
-- `apps/web/src/shared/api/supabaseClient.ts`
-- `apps/web/src/comment/api/comment.ts`
+- `apps/web/src/post/external/post.ts`
+- `apps/web/src/shared/external/supabaseClient.ts`
+- `apps/web/src/comment/external/comment.ts`
 
 ## Function Structure
 
 ```typescript
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import type { Post } from '../model/Post';
 
 export async function fetchRecentPostsFromSupabase(boardId: string, limitCount: number): Promise<Post[]> {
@@ -67,7 +83,7 @@ Supabase rows stay `snake_case`; domain models stay `camelCase`.
 ## Write Error Handling (`SupabaseWriteError` + `executeTrackedWrite`)
 
 ```typescript
-import { executeTrackedWrite, throwOnError } from '@/shared/api/supabaseClient';
+import { executeTrackedWrite, throwOnError } from '@/shared/external/supabaseClient';
 
 export async function createComment(postId: string, content: string, userId: string) {
   const supabase = getSupabaseClient();

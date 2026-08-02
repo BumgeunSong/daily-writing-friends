@@ -3,8 +3,9 @@ import { createTimestamp } from '@/shared/model/Timestamp';
 
 import type { Post, ProseMirrorDoc } from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
-import { getSupabaseClient, throwOnError } from '@/shared/api/supabaseClient';
-import { mapRowToPost } from '@/post/api/post';
+// eslint-disable-next-line no-restricted-imports -- 기존 위반: external/ 레이어로 이관 예정인 raw 접근
+import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
+import { mapRowToPost } from '@/post/external/post';
 
 export const fetchPost = async (boardId: string, postId: string): Promise<Post | null> => {
   const supabase = getSupabaseClient();

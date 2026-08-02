@@ -9,7 +9,7 @@ After changing data-flow code, verify it works at runtime — not just that it c
 
 ## When to Use
 
-- Modified files in `**/api/**` or `**/shared/api/**`
+- Modified files in `**/external/**` (Supabase/IO boundary zone)
 - Changed dual-write, shadow-read, or mutation logic
 - Fixed a data-flow bug and need evidence it's resolved
 

@@ -9,7 +9,8 @@ import FormField from '@/shared/components/FormField';
 import { PasswordRequirements } from '@/shared/components/PasswordRequirements';
 import { ROUTES } from '@/shared/constants/routes';
 import { validatePassword } from '@/shared/utils/passwordValidation';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+// eslint-disable-next-line no-restricted-imports -- 기존 위반: external/ 레이어로 이관 예정인 raw 접근
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import { mapSetPasswordErrorToKorean } from '@/shared/auth/authErrors';
 import {
   sendPasswordResetEmail,

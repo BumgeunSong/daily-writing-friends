@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PostVisibility } from './Post';
-import { mapRowToPost } from '@/post/api/post';
+import { mapRowToPost } from '@/post/external/post';
 
 const baseRow = {
   id: 'p1', board_id: 'b1', author_id: 'u1', author_name: 'Test',
@@ -18,9 +18,11 @@ describe('mapRowToPost', () => {
     expect(post.createdAt.toDate()).toBeInstanceOf(Date);
   });
 
-  it('defaults visibility to PUBLIC when null', () => {
+  // Fail-closed (#705): null visibility maps to PRIVATE, matching the DB's own
+  // RLS/feed-view gate where `NULL = 'public'` is not true and content is masked.
+  it('fails closed to PRIVATE when visibility is null', () => {
     const post = mapRowToPost(baseRow);
-    expect(post.visibility).toBe(PostVisibility.PUBLIC);
+    expect(post.visibility).toBe(PostVisibility.PRIVATE);
   });
 
   it('preserves explicit visibility', () => {

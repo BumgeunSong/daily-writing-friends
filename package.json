@@ -11,6 +11,7 @@
     "test": "pnpm --filter web test",
     "test:run": "pnpm --filter web test:run",
     "type-check": "pnpm --filter web type-check",
+    "db:types": "supabase gen types typescript --local --schema public > apps/web/src/shared/external/database.types.ts",
     "lint": "pnpm --filter web lint",
     "validate": "pnpm --filter web validate",
     "prepare": "husky"

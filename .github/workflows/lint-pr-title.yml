@@ -1,0 +1,58 @@
+name: Lint PR Title
+
+# This repo squash-merges PRs, and GitHub uses the PR title as the squashed
+# commit message on main (with "Default to PR title for squash merge commits").
+# The local .husky/commit-msg hook only governs intermediate branch commits, so
+# the message that actually lands on main is the PR title — which nothing else
+# validates. This job enforces the same conventional-commit type prefix on the
+# PR title that the hook enforces on commits, keeping main history consistent.
+#
+# The `types` list below is intentionally kept in lockstep with the pattern in
+# .husky/commit-msg. When you change one, change the other in the same PR.
+#
+# Subject casing / mood are deliberately NOT enforced: titles are written in
+# Korean, which has no letter case and no imperative conjugation, so the
+# English-oriented subject rules from config-conventional do not apply.
+#
+# Security: the PR title is read only inside the pinned action; it is never
+# interpolated into a run: shell step, so there is no workflow-injection vector.
+# The token is read-only and PR code is never checked out.
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+    branches: [main]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  lint-pr-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR title against conventional types
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            refactor
+            chore
+            docs
+            test
+            style
+            perf
+            ci
+            build
+            revert
+          # A PR that squashes down to a single commit uses that commit's
+          # message, not the PR title. Our commit-msg hook already enforces the
+          # convention on every commit, so that path is covered too — but we
+          # still validate the single-commit case here as a backstop.
+          validateSingleCommit: true

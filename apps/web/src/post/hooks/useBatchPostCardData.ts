@@ -1,21 +1,21 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useEffect } from 'react';
 
-import { fetchActiveDonatorIds } from '@/donator/api/donator';
+import { fetchActiveDonatorIds } from '@/donator/external/donator.api';
 import type { Post } from '@/post/model/Post';
 import {
   buildPostCardDataMap,
   deduplicateAuthorIds,
   type PostCardPrefetchedData,
 } from '@/post/utils/batchPostCardDataUtils';
-import { fetchBatchUsersBasic } from '@/user/api/userReads';
+import { fetchBatchUsersBasic } from '@/user/external/userReads';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import {
   getDateRange,
   fetchBatchCommentUserIdsByDateRange,
   fetchBatchReplyUserIdsByDateRange,
   fetchBatchPostDatesByDateRange,
-} from '@/stats/api/stats';
+} from '@/stats/external/stats.api';
 import {
   STREAK_WINDOW_WORKING_DAYS,
   TEMPERATURE_WINDOW_WORKING_DAYS,

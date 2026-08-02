@@ -4,20 +4,20 @@ export default {
     type: 'problem',
     docs: {
       description:
-        'Block new fetch*FromSupabase exports inside apps/web/src/shared/api/. ' +
-        'Feature-specific reads must live in <feature>/api/ to keep shared/api/ as cross-feature infrastructure only.',
+        'Block new fetch*FromSupabase exports inside apps/web/src/shared/external/. ' +
+        'Feature-specific reads must live in <feature>/external/ to keep shared/external/ as cross-feature infrastructure only.',
     },
     messages: {
       featureFetchInShared:
-        "'{{name}}' must live in <feature>/api/, not shared/api/. " +
-        'shared/api/ is reserved for cross-feature infrastructure (e.g., supabaseClient, httpClient, postgrestFilters).',
+        "'{{name}}' must live in <feature>/external/, not shared/external/. " +
+        'shared/external/ is reserved for cross-feature infrastructure (e.g., supabaseClient, httpClient, postgrestFilters).',
     },
     schema: [],
   },
 
   create(context) {
     const filename = context.filename || context.getFilename();
-    if (!filename.includes('apps/web/src/shared/api/')) return {};
+    if (!filename.includes('apps/web/src/shared/external/')) return {};
     // Allow infrastructure files
     if (filename.endsWith('supabaseClient.ts') || filename.endsWith('httpClient.ts')) return {};
     // Allow test files (they import from these modules and may re-export for testing)

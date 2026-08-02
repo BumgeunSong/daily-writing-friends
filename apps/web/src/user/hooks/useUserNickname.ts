@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchUser } from '../api/user';
+import { fetchUser } from '../external/user';
 
 // uid로 닉네임만 가져오는 React Query 훅
 export function useUserNickname(uid: string | null) {

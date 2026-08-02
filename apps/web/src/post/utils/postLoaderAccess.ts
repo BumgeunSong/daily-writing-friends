@@ -1,4 +1,4 @@
-import { SupabaseNetworkError } from '@/shared/api/supabaseClient';
+import { SupabaseNetworkError } from '@/shared/external/supabaseClient';
 import type { User } from '@/user/model/User';
 
 export type BoardAccessDenial = 'user-not-found' | 'no-permission';

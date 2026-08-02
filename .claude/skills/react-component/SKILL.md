@@ -42,7 +42,7 @@ Place business logic in `[feature]/hooks/`:
 
 ```typescript
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createPost } from '../api/post';
+import { createPost } from '../external/post';
 
 export function usePostEditor(boardId: string) {
   const queryClient = useQueryClient();

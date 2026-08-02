@@ -4,7 +4,7 @@ import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import {
   fetchPostingDataForContributions,
   createUserInfo,
-} from '@/stats/api/stats';
+} from '@/stats/external/stats.api';
 import { TEMPERATURE_WINDOW_WORKING_DAYS } from '@/stats/constants';
 import type { WritingStats } from '@/stats/model/WritingStats';
 import {

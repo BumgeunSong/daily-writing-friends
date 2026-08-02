@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+// eslint-disable-next-line no-restricted-imports -- 기존 위반: external/ 레이어로 이관 예정인 raw 접근
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 
 /**
  * Reads the boolean `users.onboarding_complete` flag for the given uid.

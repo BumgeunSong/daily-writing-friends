@@ -1,6 +1,7 @@
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+// eslint-disable-next-line no-restricted-imports -- 기존 위반: external/ 레이어로 이관 예정인 raw 접근
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import { ROUTES } from '@/shared/constants/routes';
-import type { AuthUser } from '@/shared/hooks/useAuth';
+import type { AuthUser } from '@/shared/auth/authTypes';
 import type { VerifyOtpOutcome } from '@/login/utils/verifyEmailState';
 
 /**

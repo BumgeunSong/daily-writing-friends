@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
-import { fetchNotifications } from '@/notification/api/notificationApi';
+import { fetchNotifications } from '@/notification/external/notificationApi';
 import type { Notification } from '@/notification/model/Notification';
 import { createNotificationQueryKey } from '@/notification/utils/notificationQueryKeys';
 import {

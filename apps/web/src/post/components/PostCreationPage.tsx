@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Form, useNavigation, useActionData } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Form, useNavigation, useActionData, useSubmit } from 'react-router-dom';
 import { useParams, useSearchParams } from '@/shared/navigation';
 import { DraftsDrawer } from '@/draft/components/DraftsDrawer';
+import { DraftStatusIndicator } from '@/draft/components/DraftStatusIndicator';
 import { useDraftAutosave } from '@/draft/hooks/useDraftAutosave';
 import { useDraftLoader } from '@/draft/hooks/useDraftLoader';
 import { usePostEditor } from '@/post/hooks/usePostEditor';
@@ -19,7 +20,7 @@ import {
 } from '@/shared/ui/alert-dialog';
 import { Button } from '@/shared/ui/button';
 import type { ProseMirrorDoc } from '@/post/model/Post';
-import { PostEditor } from './PostEditor';
+import { PostEditor, type PostEditorHandle } from './PostEditor';
 import { PostEditorHeader } from './PostEditorHeader';
 import { PostTitleEditor } from './PostTitleEditor';
 
@@ -27,6 +28,8 @@ interface ActionData {
   error?: string;
   success?: boolean;
 }
+
+const PUBLISH_DRAFT_FLUSH_TIMEOUT_MS = 2000;
 
 export default function PostCreationPage() {
   const { currentUser } = useAuth();
@@ -54,8 +57,11 @@ export default function PostCreationPage() {
 
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [isImageUploading, setIsImageUploading] = useState(false);
+  const [isFlushingDraft, setIsFlushingDraft] = useState(false);
   const [contentJson, setContentJson] = useState<ProseMirrorDoc | undefined>();
-  const isSubmitting = navigation.state === 'submitting';
+  const editorRef = useRef<PostEditorHandle>(null);
+  const submit = useSubmit();
+  const isSubmitting = navigation.state === 'submitting' || isFlushingDraft;
 
   useEffect(() => {
     if (actionData?.error) {
@@ -63,17 +69,51 @@ export default function PostCreationPage() {
     }
   }, [actionData?.error]);
 
-  const { draftId: autoSavedDraftId } = useDraftAutosave({
+  const {
+    draftId: autoSavedDraftId,
+    manualSave,
+    isSaving,
+    savingError,
+    lastSavedAt,
+  } = useDraftAutosave({
     boardId: boardId || '',
     userId: currentUser?.uid,
     title,
     content,
     initialDraftId: loadedDraftId || undefined,
     intervalMs: 10000,
-    enabled: !isSubmitting,
+    enabled: navigation.state === 'idle' && !isFlushingDraft,
   });
 
   const draftIdToSubmit = autoSavedDraftId || loadedDraftId || '';
+
+  const flushDraftThenSubmit = async (formData: FormData) => {
+    const hasDraftToFlush = Boolean(draftIdToSubmit) || isSaving;
+    if (hasDraftToFlush) {
+      const savedDraftId = await Promise.race([
+        manualSave().catch(() => null),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), PUBLISH_DRAFT_FLUSH_TIMEOUT_MS)),
+      ]);
+      if (savedDraftId) {
+        formData.set('draftId', savedDraftId);
+      }
+    }
+    submit(formData, { method: 'post' });
+  };
+
+  const handlePublishSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isSubmitting) return;
+    const formData = new FormData(event.currentTarget);
+    const latestContent = editorRef.current?.getCurrentContent();
+    if (latestContent) {
+      formData.set('content', latestContent.html);
+      formData.set('contentJson', JSON.stringify(latestContent.json));
+    }
+    setIsFlushingDraft(true);
+    void flushDraftThenSubmit(formData).finally(() => setIsFlushingDraft(false));
+  };
+
   return (
     <div>
       <PostEditorHeader
@@ -97,7 +137,7 @@ export default function PostCreationPage() {
       />
 
       <div className='mx-auto max-w-2xl px-6 py-4'>
-        <Form id='post-creation-form' method='post'>
+        <Form id='post-creation-form' method='post' onSubmit={handlePublishSubmit}>
           <input type='hidden' name='boardId' value={boardId} />
           <input type='hidden' name='authorId' value={currentUser?.uid} />
           <input
@@ -113,7 +153,13 @@ export default function PostCreationPage() {
           )}
 
           <PostTitleEditor value={title} onChange={(e) => setTitle(e.target.value)} />
+          <DraftStatusIndicator
+            isSaving={isSaving}
+            savingError={savingError}
+            lastSavedAt={lastSavedAt}
+          />
           <PostEditor
+            ref={editorRef}
             value={content}
             onChange={setContent}
             onContentJsonChange={setContentJson}

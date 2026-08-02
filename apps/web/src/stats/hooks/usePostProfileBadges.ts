@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchCommentingData } from '@/stats/api/stats';
+import { fetchCommentingData } from '@/stats/external/stats.api';
 import { TEMPERATURE_WINDOW_WORKING_DAYS } from '@/stats/constants';
 import type { WritingBadge } from '@/stats/model/WritingStats';
 import { calculateCommentTemperature } from '@/stats/utils/commentTemperature';

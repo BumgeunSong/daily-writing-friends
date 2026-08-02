@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { remoteConfig } from '@/firebase';
-import { getSupabaseClient } from '@/shared/api/supabaseClient';
+// eslint-disable-next-line no-restricted-imports -- 기존 위반: external/ 레이어로 이관 예정인 raw 접근
+import { getSupabaseClient } from '@/shared/external/supabaseClient';
 
 export interface RemoteConfigValueTypes {
   active_board_id: string;
