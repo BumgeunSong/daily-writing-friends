@@ -72,7 +72,10 @@ export function useReactions({ entity }: UseReactionsProps): UseReactionsReturn 
     queryKey: reactionsQueryKey,
     queryFn: async () => {
       const params = getEntityParams();
-      const list = await getReactions(params);
+      const list = (await getReactions(params)).match(
+        (reactions) => reactions,
+        (error) => { throw error; },
+      );
       return groupReactionsByEmoji(list);
     },
     suspense: true,
