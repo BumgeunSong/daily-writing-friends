@@ -1,10 +1,10 @@
 import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import type { Notification } from '@/notification/model/Notification';
 
-import {
-  parseNotificationRow,
-  type SupabaseNotificationRow,
-} from './notification.parser';
+import { parseNotificationRow } from './notification.parser';
+
+const NOTIFICATION_SELECT =
+  'id, type, board_id, post_id, comment_id, reply_id, actor_id, message, created_at, read';
 
 /**
  * Fetch notifications for a user from Supabase.
@@ -22,7 +22,7 @@ export async function fetchNotificationsFromSupabase(
 
   let query = supabase
     .from('notifications')
-    .select('*')
+    .select(NOTIFICATION_SELECT)
     .eq('recipient_id', userId)
     .order('created_at', { ascending: false })
     .limit(limitCount);
@@ -33,10 +33,6 @@ export async function fetchNotificationsFromSupabase(
 
   const { data, error } = await query;
 
-  if (error) {
-    console.error('Supabase fetchNotifications error:', error);
-    throw error;
-  }
-
-  return (data || []).map((row) => parseNotificationRow(row as SupabaseNotificationRow));
+  if (error) throw error;
+  return (data ?? []).map(parseNotificationRow);
 }
