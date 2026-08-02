@@ -12,7 +12,7 @@ describe('mapRowToReview', () => {
       problem_text: 'stop doing that',
       try_text: 'try this next',
       nps: 9,
-      will_continue: 'yes',
+      will_continue: true,
     };
 
     expect(mapRowToReview(row)).toEqual({
@@ -54,7 +54,7 @@ describe('mapRowToReview', () => {
       problem_text: null,
       try_text: null,
       nps: 5,
-      will_continue: 'no',
+      will_continue: false,
     };
 
     expect(mapRowToReview(row).willContinue).toBe('no');
@@ -81,7 +81,7 @@ describe('mapReviewToSupabaseRow', () => {
       problem_text: 'fix this',
       try_text: 'try this',
       nps: 8,
-      will_continue: 'yes',
+      will_continue: true,
     });
   });
 

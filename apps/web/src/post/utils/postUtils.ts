@@ -6,6 +6,7 @@ import { PostVisibility } from '@/post/model/Post';
 // eslint-disable-next-line no-restricted-imports -- 기존 위반: external/ 레이어로 이관 예정인 raw 접근
 import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
 import { mapToPost } from '@/post/external/post.mapper';
+import { toContentJson } from '@/post/external/post.parser';
 
 export const fetchPost = async (boardId: string, postId: string): Promise<Post | null> => {
   const supabase = getSupabaseClient();
@@ -58,7 +59,7 @@ export async function createPost({
 
   const thumbnailImageURL = extractFirstImageUrl(content);
 
-  const insertData: Record<string, unknown> = {
+  const insertData = {
     id,
     board_id: boardId,
     author_id: authorId,
@@ -72,11 +73,8 @@ export async function createPost({
     count_of_likes: 0,
     engagement_score: 0,
     created_at: createdAt,
+    ...(contentJson !== undefined ? { content_json: toContentJson(contentJson) } : {}),
   };
-
-  if (contentJson !== undefined) {
-    insertData.content_json = contentJson;
-  }
 
   throwOnError(await supabase.from('posts').insert(insertData));
 
@@ -118,16 +116,13 @@ export const updatePost = async ({
   const supabase = getSupabaseClient();
   const updatedAt = new Date().toISOString();
 
-  const supabaseData: Record<string, unknown> = {
+  const supabaseData = {
     title,
     content,
     thumbnail_image_url: extractFirstImageUrl(content) || null,
     updated_at: updatedAt,
+    ...(contentJson !== undefined ? { content_json: toContentJson(contentJson) } : {}),
   };
-
-  if (contentJson !== undefined) {
-    supabaseData.content_json = contentJson;
-  }
 
   throwOnError(await supabase.from('posts').update(supabaseData).eq('id', postId));
 };

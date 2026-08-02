@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import type { PostgrestError } from '@supabase/supabase-js';
 
-import { groupReactionsByComment, mapToReaction } from './reaction.api';
+import { groupReactionsByComment, mapToReaction, toReactionError } from './reaction.api';
+
+function postgrestError(overrides: Partial<PostgrestError>): PostgrestError {
+  return { message: '', details: '', hint: '', code: '', ...overrides } as PostgrestError;
+}
 
 describe('리액션 로우를 도메인 모델로 매핑할 때', () => {
   it('반응 타입과 반응 유저를 채우고, 널 프로필 이미지는 빈 문자열로 바꾼다', () => {
@@ -48,5 +53,22 @@ describe('배치 리액션을 댓글별로 묶을 때', () => {
 
     expect(grouped.get('c1')).toEqual([]);
     expect(grouped.has('c9')).toBe(false);
+  });
+});
+
+describe('PostgREST 에러를 리액션 읽기 에러로 좁힐 때', () => {
+  it('코드 없이 연결 실패 메시지면 network로 분류한다', () => {
+    const error = postgrestError({ code: '', message: 'Failed to fetch' });
+    expect(toReactionError(error)).toEqual({ kind: 'network' });
+  });
+
+  it('PGRST116(결과 없음)이면 notFound로 분류한다', () => {
+    const error = postgrestError({ code: 'PGRST116', message: 'no rows' });
+    expect(toReactionError(error)).toEqual({ kind: 'notFound' });
+  });
+
+  it('그 밖의 에러는 원본을 cause로 담아 unknown으로 분류한다', () => {
+    const error = postgrestError({ code: '42501', message: 'permission denied' });
+    expect(toReactionError(error)).toEqual({ kind: 'unknown', cause: error });
   });
 });
