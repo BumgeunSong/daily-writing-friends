@@ -1,16 +1,18 @@
 import { describe, it, expect } from 'vitest';
-import { mapRowToPost, isWithinDays } from '../post';
-import type { Post } from '@/post/model/Post';
-import { PostVisibility } from '@/post/model/Post';
 
-// Helper: minimal PostRowWithEmbeds shape for mapRowToPost
-function makeRow(overrides: Record<string, unknown> = {}) {
+import { type Post, PostVisibility } from '@/post/model/Post';
+
+import { mapToPost, isWithinDays, type PostFeedRow } from './post.mapper';
+
+// A complete, valid `posts_feed` row. Overrides narrow to the case under test.
+function makeRow(overrides: Partial<PostFeedRow> = {}): PostFeedRow {
   return {
     id: 'post-1',
     board_id: 'board-1',
     author_id: 'user-1',
     author_name: 'Author',
     title: 'Test Post',
+    content_preview: null,
     thumbnail_image_url: null,
     visibility: 'public',
     count_of_comments: 3,
@@ -20,29 +22,31 @@ function makeRow(overrides: Record<string, unknown> = {}) {
     week_days_from_first_day: null,
     created_at: '2026-01-15T09:00:00Z',
     updated_at: '2026-01-15T10:00:00Z',
+    board_first_day: null,
+    author_profile_photo_url: null,
     ...overrides,
   };
 }
 
-describe('mapRowToPost', () => {
+describe('mapToPost', () => {
   describe('content vs contentPreview separation', () => {
     it('keeps content and contentPreview as distinct fields (detail query)', () => {
       const row = makeRow({ content: '<p>Full HTML content</p>', content_preview: '<p>Full ' });
-      const post = mapRowToPost(row);
+      const post = mapToPost(row);
       expect(post.content).toBe('<p>Full HTML content</p>');
       expect(post.contentPreview).toBe('<p>Full ');
     });
 
     it('leaves content empty when only content_preview is selected (feed query)', () => {
       const row = makeRow({ content_preview: '<p>Preview text</p>' });
-      const post = mapRowToPost(row);
+      const post = mapToPost(row);
       expect(post.content).toBe('');
       expect(post.contentPreview).toBe('<p>Preview text</p>');
     });
 
     it('returns empty content and null contentPreview when neither column is present', () => {
       const row = makeRow();
-      const post = mapRowToPost(row);
+      const post = mapToPost(row);
       expect(post.content).toBe('');
       expect(post.contentPreview).toBeNull();
     });
@@ -51,28 +55,16 @@ describe('mapRowToPost', () => {
   describe('denormalized counts', () => {
     it('uses count_of_comments and count_of_replies from row', () => {
       const row = makeRow({ count_of_comments: 7, count_of_replies: 3 });
-      const post = mapRowToPost(row);
+      const post = mapToPost(row);
       expect(post.countOfComments).toBe(7);
       expect(post.countOfReplies).toBe(3);
     });
 
     it('defaults to 0 when counts are null', () => {
       const row = makeRow({ count_of_comments: null, count_of_replies: null });
-      const post = mapRowToPost(row);
+      const post = mapToPost(row);
       expect(post.countOfComments).toBe(0);
       expect(post.countOfReplies).toBe(0);
-    });
-
-    it('prefers live embedded comment/reply counts over cached columns', () => {
-      const row = makeRow({
-        count_of_comments: 0,
-        count_of_replies: 0,
-        comments: [{ count: 5 }],
-        replies: [{ count: 3 }],
-      });
-      const post = mapRowToPost(row);
-      expect(post.countOfComments).toBe(5);
-      expect(post.countOfReplies).toBe(3);
     });
   });
 
@@ -82,47 +74,29 @@ describe('mapRowToPost', () => {
         board_first_day: '2026-01-12T00:00:00Z',
         created_at: '2026-01-15T09:00:00Z',
       });
-      const post = mapRowToPost(row);
-      expect(post.weekDaysFromFirstDay).toBe(3);
-    });
-
-    it('computes weekDaysFromFirstDay when legacy board embed has first_day', () => {
-      const row = makeRow({
-        boards: { first_day: '2026-01-12T00:00:00Z' },
-        created_at: '2026-01-15T09:00:00Z',
-      });
-      const post = mapRowToPost(row);
+      const post = mapToPost(row);
       expect(post.weekDaysFromFirstDay).toBe(3);
     });
 
     it('uses row.week_days_from_first_day when no first_day is available', () => {
       const row = makeRow({ week_days_from_first_day: 5 });
-      const post = mapRowToPost(row);
+      const post = mapToPost(row);
       expect(post.weekDaysFromFirstDay).toBe(5);
-    });
-
-    it('handles legacy board embed as array (PostgREST format)', () => {
-      const row = makeRow({
-        boards: [{ first_day: '2026-01-12T00:00:00Z' }],
-        created_at: '2026-01-15T09:00:00Z',
-      });
-      const post = mapRowToPost(row);
-      expect(post.weekDaysFromFirstDay).toBe(3);
     });
   });
 
   describe('visibility', () => {
     it('maps visibility from row', () => {
       const row = makeRow({ visibility: 'private' });
-      const post = mapRowToPost(row);
+      const post = mapToPost(row);
       expect(post.visibility).toBe(PostVisibility.PRIVATE);
     });
 
-    // Fail-closed (#705): null visibility maps to PRIVATE, matching the DB's own
+    // Fail-closed: null visibility maps to PRIVATE, matching the DB's own
     // RLS/feed-view gate where `NULL = 'public'` is not true and content is masked.
     it('fails closed to PRIVATE when visibility is null', () => {
       const row = makeRow({ visibility: null });
-      const post = mapRowToPost(row);
+      const post = mapToPost(row);
       expect(post.visibility).toBe(PostVisibility.PRIVATE);
     });
   });
@@ -130,19 +104,13 @@ describe('mapRowToPost', () => {
   describe('author profile photo', () => {
     it('extracts profile photo from flat author_profile_photo_url column (posts_feed view)', () => {
       const row = makeRow({ author_profile_photo_url: 'https://example.com/photo.jpg' });
-      const post = mapRowToPost(row);
+      const post = mapToPost(row);
       expect(post.authorProfileImageURL).toBe('https://example.com/photo.jpg');
     });
 
-    it('extracts profile photo from legacy users embed', () => {
-      const row = makeRow({ users: { profile_photo_url: 'https://example.com/photo.jpg' } });
-      const post = mapRowToPost(row);
-      expect(post.authorProfileImageURL).toBe('https://example.com/photo.jpg');
-    });
-
-    it('returns undefined when neither flat nor embed source is present', () => {
+    it('returns undefined when the flat column is absent', () => {
       const row = makeRow();
-      const post = mapRowToPost(row);
+      const post = mapToPost(row);
       expect(post.authorProfileImageURL).toBeUndefined();
     });
   });
@@ -156,7 +124,7 @@ describe('mapRowToPost', () => {
         content_json: null,
         thumbnail_image_url: null,
       });
-      const post = mapRowToPost(row);
+      const post = mapToPost(row);
       expect(post.visibility).toBe(PostVisibility.PRIVATE);
       expect(post.content).toBe('');
       expect(post.contentJson).toBeUndefined();
@@ -169,9 +137,59 @@ describe('mapRowToPost', () => {
         content: '<p>my secret freewriting</p>',
         content_preview: '<p>my secret',
       });
-      const post = mapRowToPost(row);
+      const post = mapToPost(row);
       expect(post.visibility).toBe(PostVisibility.PRIVATE);
       expect(post.content).toBe('<p>my secret freewriting</p>');
+    });
+  });
+
+  // posts_feed 뷰는 base 테이블의 NOT NULL 제약을 잃어, 생성 타입이 모든 컬럼을
+  // nullable로 표기한다. 식별·시각 필드는 깨진 Post를 만들지 않고 크게 실패해야 한다.
+  describe('posts_feed 뷰에서 식별·시각 컬럼이 null로 올 때', () => {
+    it('id가 null이면 빈 id를 가진 Post를 만들지 않고 예외를 던진다', () => {
+      expect(() => mapToPost(makeRow({ id: null }))).toThrow("missing required field 'id'");
+    });
+
+    it('board_id가 null이면 예외를 던진다', () => {
+      expect(() => mapToPost(makeRow({ board_id: null }))).toThrow(
+        "missing required field 'board_id'",
+      );
+    });
+
+    it('author_id가 null이면 예외를 던진다', () => {
+      expect(() => mapToPost(makeRow({ author_id: null }))).toThrow(
+        "missing required field 'author_id'",
+      );
+    });
+
+    // created_at이 null이면 new Date(null)이 epoch 1970으로 계산돼 스트릭 집계가 망가진다.
+    it('created_at이 null이면 epoch 1970 createdAt으로 스트릭이 망가지지 않도록 예외를 던져야 한다', () => {
+      expect(() => mapToPost(makeRow({ created_at: null }))).toThrow(
+        "missing required field 'created_at'",
+      );
+    });
+  });
+
+  describe('정상 행을 매핑할 때', () => {
+    it('유효한 created_at을 그대로 Timestamp로 변환한다', () => {
+      const post = mapToPost(makeRow({ created_at: '2026-01-15T09:00:00Z' }));
+      expect(post.createdAt.toDate().toISOString()).toBe('2026-01-15T09:00:00.000Z');
+    });
+  });
+
+  describe('표시용 컬럼이 null로 올 때', () => {
+    it('title이 null이면 빈 문자열로 낮춰 표시한다', () => {
+      expect(mapToPost(makeRow({ title: null })).title).toBe('');
+    });
+
+    it('author_name이 null이면 빈 문자열로 낮춰 표시한다', () => {
+      expect(mapToPost(makeRow({ author_name: null })).authorName).toBe('');
+    });
+
+    it('count_of_likes와 engagement_score가 null이면 0으로 낮춘다', () => {
+      const post = mapToPost(makeRow({ count_of_likes: null, engagement_score: null }));
+      expect(post.countOfLikes).toBe(0);
+      expect(post.engagementScore).toBe(0);
     });
   });
 });

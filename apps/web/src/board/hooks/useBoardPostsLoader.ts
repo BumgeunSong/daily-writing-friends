@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs } from 'react-router-dom';
-import { fetchRecentPosts } from '@/post/external/post';
+import { fetchRecentPosts } from '@/post/external/post.api';
 import { getCurrentUser } from '@/shared/utils/authUtils';
 import { getBlockedByUsers } from '@/user/external/user';
 

@@ -3,7 +3,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import type { Post } from '@/post/model/Post';
 // eslint-disable-next-line no-restricted-imports -- 기존 위반: external/ 레이어로 이관 예정인 raw 접근
 import { getSupabaseClient } from '@/shared/external/supabaseClient';
-import { mapRowToPost, FEED_POST_SELECT, narrowFeedRows } from '@/post/external/post';
+import { mapToPost, FEED_POST_SELECT } from '@/post/external/post.mapper';
 
 const LIMIT_COUNT = 10;
 
@@ -69,9 +69,10 @@ async function fetchUserPostsFromSupabase(
     return [];
   }
 
-  const posts: PostWithPaginationMetadata[] = narrowFeedRows(data).map((row) => ({
-    ...mapRowToPost(row),
-    _paginationCursor: row.created_at,
+  const posts: PostWithPaginationMetadata[] = (data || []).map((row) => ({
+    ...mapToPost(row),
+    // posts_feed view types created_at as nullable; a null cursor just ends pagination
+    _paginationCursor: row.created_at ?? undefined,
     _fetchedFullPage: data.length === LIMIT_COUNT,
   }));
 

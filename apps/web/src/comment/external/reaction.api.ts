@@ -1,7 +1,9 @@
+import { err, ok, type Result } from 'neverthrow';
+import type { PostgrestError } from '@supabase/supabase-js';
 import type { Reaction } from '@/comment/model/Reaction';
 import type { Database } from '@/shared/external/database.types';
 import type { UserSummary } from '@/shared/model/UserSummary';
-import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
+import { getSupabaseClient, isNetworkError, throwOnError } from '@/shared/external/supabaseClient';
 
 type ReactionRow = Pick<
   Database['public']['Tables']['reactions']['Row'],
@@ -161,7 +163,31 @@ export async function deleteUserReaction(
   throwOnError(await supabase.from('reactions').delete().eq('id', data[0].id));
 }
 
-export async function getReactions(params: GetReactionsParams): Promise<Reaction[]> {
+/**
+ * Failure surface of the reaction read boundary. Read functions return
+ * `Result<T, ReactionFetchError>` so that any caller which forgets to handle
+ * the error channel fails to compile — prevention, not detection.
+ */
+export type ReactionFetchError =
+  | { kind: 'network' }
+  | { kind: 'notFound' }
+  | { kind: 'unknown'; cause: unknown };
+
+/**
+ * Narrow a PostgREST error into the reaction read error union. Network
+ * classification reuses the shared `isNetworkError` so the boundary agrees with
+ * the write path. `PGRST116` (no rows) is reserved for single-row reads; list
+ * reads surface an empty array rather than this error.
+ */
+export function toReactionError(error: PostgrestError): ReactionFetchError {
+  if (isNetworkError(error)) return { kind: 'network' };
+  if (error.code === 'PGRST116') return { kind: 'notFound' };
+  return { kind: 'unknown', cause: error };
+}
+
+export async function getReactions(
+  params: GetReactionsParams,
+): Promise<Result<Reaction[], ReactionFetchError>> {
   return fetchReactionsFromSupabase({
     commentId: params.commentId,
     replyId: params.replyId,
@@ -175,7 +201,7 @@ export async function getReactions(params: GetReactionsParams): Promise<Reaction
 export async function fetchReactionsFromSupabase(params: {
   commentId: string;
   replyId?: string;
-}): Promise<Reaction[]> {
+}): Promise<Result<Reaction[], ReactionFetchError>> {
   const supabase = getSupabaseClient();
 
   let q = supabase.from('reactions').select(REACTION_SELECT);
@@ -188,8 +214,8 @@ export async function fetchReactionsFromSupabase(params: {
 
   const { data, error } = await q;
 
-  if (error) throw error;
-  return (data ?? []).map(mapToReaction);
+  if (error) return err(toReactionError(error));
+  return ok((data ?? []).map(mapToReaction));
 }
 
 /**
@@ -198,8 +224,8 @@ export async function fetchReactionsFromSupabase(params: {
  */
 export async function fetchBatchReactionsForComments(
   commentIds: string[],
-): Promise<Map<string, Reaction[]>> {
-  if (commentIds.length === 0) return new Map();
+): Promise<Result<Map<string, Reaction[]>, ReactionFetchError>> {
+  if (commentIds.length === 0) return ok(new Map());
   const supabase = getSupabaseClient();
 
   const { data, error } = await supabase
@@ -207,6 +233,6 @@ export async function fetchBatchReactionsForComments(
     .select(`comment_id, ${REACTION_SELECT}`)
     .in('comment_id', commentIds);
 
-  if (error) throw error;
-  return groupReactionsByComment(commentIds, data ?? []);
+  if (error) return err(toReactionError(error));
+  return ok(groupReactionsByComment(commentIds, data ?? []));
 }
