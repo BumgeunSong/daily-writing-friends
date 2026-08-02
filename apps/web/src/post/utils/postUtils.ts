@@ -5,7 +5,7 @@ import type { Post, ProseMirrorDoc } from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
 // eslint-disable-next-line no-restricted-imports -- 기존 위반: external/ 레이어로 이관 예정인 raw 접근
 import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
-import { mapRowToPost } from '@/post/external/post.api';
+import { mapToPost } from '@/post/external/post.mapper';
 
 export const fetchPost = async (boardId: string, postId: string): Promise<Post | null> => {
   const supabase = getSupabaseClient();
@@ -23,7 +23,7 @@ export const fetchPost = async (boardId: string, postId: string): Promise<Post |
     throw error;
   }
 
-  return mapRowToPost(data);
+  return mapToPost(data);
 };
 
 export const usePostTitle = (boardId: string, postId: string) => {
