@@ -1,6 +1,7 @@
 "use client"
 
 import { lazy, Suspense } from "react"
+import { z } from "zod"
 import { useParams, useNavigate } from "react-router-dom"
 import { BoardPageHeader } from "@/board/components/BoardPageHeader"
 import PostFilterTabs, { type PostFilterType } from "@/board/components/PostFilterTabs"
@@ -20,10 +21,8 @@ export default function BoardPage() {
   const navigate = useNavigate()
   const viewTransitionNavigate = useViewTransitionNavigate()
 
-  const [filter, setFilter] = useSessionStorage<PostFilterType>(
-    boardId ? `boardFilter-${boardId}` : '',
-    'recent'
-  );
+  const filterKey = boardId ? `boardFilter-${boardId}` : '';
+  const [filter, setFilter] = useSessionStorage<PostFilterType>(filterKey, 'recent', z.enum(['recent', 'best']));
 
   // POP(앱 내 뒤로가기 버튼, iOS 가장자리 스와이프 백)으로 돌아왔을 때 스크롤 위치를
   // 동기적으로 복원한다. <ScrollRestoration />이 view transition과 함께 누락하는 케이스 보강.

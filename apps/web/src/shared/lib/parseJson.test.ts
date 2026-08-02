@@ -33,7 +33,7 @@ describe('스키마로 검증해 파싱할 때', () => {
   });
 
   // 신뢰할 수 없는 값이 스키마를 통과하지 못하면 트러스트 타입으로 새면 안 된다.
-  it('모양이 다르면 캐스팅하지 않고 undefined를 돌려준다', () => {
+  it('모양이 다르면 트러스트 타입으로 새지 않고 undefined를 돌려줘야 한다', () => {
     expect(parseJson('{"x":1}', pointSchema)).toBeUndefined();
     expect(parseJson('{"x":"a","y":"b"}', pointSchema)).toBeUndefined();
   });
