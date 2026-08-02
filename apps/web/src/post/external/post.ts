@@ -49,7 +49,7 @@ export function isWithinDays(post: Post, days: number, now: Date = new Date()): 
  *  Embed fields (`boards`, `users`, `comments`, `replies`) remain optional so
  *  legacy queries that still read from the base `posts` table continue to
  *  type-check while we migrate. */
-interface PostRowWithEmbeds {
+export interface PostRowWithEmbeds {
   id: string;
   board_id: string;
   author_id: string;
@@ -122,7 +122,7 @@ export async function fetchRecentPostsFromSupabase(
     throw error;
   }
 
-  return (data || []).map(mapRowToPost);
+  return narrowFeedRows(data).map(mapRowToPost);
 }
 
 /**
@@ -160,7 +160,21 @@ export async function fetchBestPostsFromSupabase(
     throw error;
   }
 
-  return (data || []).map(mapRowToPost);
+  return narrowFeedRows(data).map(mapRowToPost);
+}
+
+/** Narrow rows read from the `posts_feed` view to the non-null row contract.
+ *
+ *  `posts_feed` is a Postgres view, so Supabase's generated types widen every
+ *  column to `T | null` — a view cannot carry the base tables' NOT NULL
+ *  guarantees. The selected columns (`id`, `board_id`, `title`, timestamps, …)
+ *  are non-null in the underlying `posts`/`boards`/`users` tables, so mapping
+ *  code may treat them as present. This boundary narrowing is the single place
+ *  that bridge is asserted; `mapRowToPost` handles the genuinely-nullable ones. */
+export function narrowFeedRows(
+  data: readonly Record<string, unknown>[] | null,
+): PostRowWithEmbeds[] {
+  return (data ?? []) as unknown as PostRowWithEmbeds[];
 }
 
 /** Map a row from `posts_feed` (or the legacy `posts` query shape) to Post model. */
