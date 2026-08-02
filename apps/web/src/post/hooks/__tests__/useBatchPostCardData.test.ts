@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { buildPostCardDataMap, deduplicateAuthorIds } from '@/post/utils/batchPostCardDataUtils';
 import type { Post } from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
-import type { BasicUserRow } from '@/user/external/userReads';
+import type { BasicUserRow } from '@/user/external/user.reads';
 import type { UserIdRow, PostDateRow } from '@/stats/external/stats.api';
 
 const makePost = (overrides: Partial<Post> = {}): Post => ({

@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
 import { userQueryKey } from '@/user/utils/userQueryKeys';
-import { fetchUser } from '@/user/external/user';
+import { fetchUser } from '@/user/external/user.api';
 import type { User } from '@/user/model/User';
 
 // uid로 User를 가져오는 React Query 훅 (서버가 단일 진실 원천)

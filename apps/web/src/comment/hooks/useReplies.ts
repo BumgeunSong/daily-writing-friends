@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchRepliesOnce } from '@/comment/external/reply.api';
 import type { Reply } from '@/comment/model/Reply';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { getBlockedByUsers } from '@/user/external/user';
+import { getBlockedByUsers } from '@/user/external/user.api';
 
 export function useReplies(boardId: string, postId: string, commentId: string) {
   const { currentUser } = useAuth();

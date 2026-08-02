@@ -3,13 +3,13 @@ import type { Database } from '@/shared/external/database.types';
 import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import { createUserInfo } from '@/stats/utils/userInfoUtils';
-import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/external/commenting';
-import { fetchUser } from '@/user/external/user';
+import { fetchUserCommentingsByDateRange, fetchUserReplyingsByDateRange } from '@/user/external/commenting.api';
+import { fetchUser } from '@/user/external/user.api';
 import type { User } from '@/user/model/User';
 import {
   fetchPostingsFromSupabase,
   fetchPostingsByDateRangeFromSupabase
-} from '@/user/external/posting';
+} from '@/user/external/posting.api';
 
 // Re-export for backward compatibility
 export { createUserInfo };

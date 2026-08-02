@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuthUser } from '@/shared/hooks/useAuth';
 import { queryClient } from '@/shared/lib/queryClient';
 import { getCurrentUser } from '@/shared/utils/authUtils';
-import { fetchUser } from '@/user/external/user';
+import { fetchUser } from '@/user/external/user.api';
 import { boardLoader } from './useBoardLoader';
 
 vi.mock('@sentry/react', async () => {
@@ -17,7 +17,7 @@ vi.mock('@/shared/utils/authUtils', () => ({
   getCurrentUser: vi.fn(),
 }));
 
-vi.mock('@/user/external/user', () => ({
+vi.mock('@/user/external/user.api', () => ({
   fetchUser: vi.fn(),
 }));
 

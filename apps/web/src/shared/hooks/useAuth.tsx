@@ -8,7 +8,7 @@ import type { AuthUser } from '@/shared/auth/authTypes';
 import { mapToAuthUser } from '@/shared/auth/supabaseAuth';
 import { STORAGE_KEYS, storage } from '@/shared/lib/storage';
 import { UUID_RE, parseStoredAuthUser } from '@/shared/utils/authUserParser';
-import { createUserIfNotExists } from '@/user/external/user';
+import { createUserIfNotExists } from '@/user/external/user.api';
 
 export type { AuthUser } from '@/shared/auth/authTypes';
 

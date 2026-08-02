@@ -8,7 +8,7 @@ import {
   deduplicateAuthorIds,
   type PostCardPrefetchedData,
 } from '@/post/utils/batchPostCardDataUtils';
-import { fetchBatchUsersBasic } from '@/user/external/userReads';
+import { fetchBatchUsersBasic } from '@/user/external/user.reads';
 import { getRecentWorkingDays } from '@/shared/utils/dateUtils';
 import {
   getDateRange,

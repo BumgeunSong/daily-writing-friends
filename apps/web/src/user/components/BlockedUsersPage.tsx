@@ -17,7 +17,7 @@ import { Button } from "@/shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Input } from "@/shared/ui/input"
 import { Separator } from "@/shared/ui/separator"
-import { blockUser, unblockUser, getBlockedUsers, fetchUser } from '@/user/external/user'
+import { blockUser, unblockUser, getBlockedUsers, fetchUser } from '@/user/external/user.api'
 import useUserSearch from '@/user/hooks/useUserSearch'
 import type { User } from '@/user/model/User'
 import type React from "react"

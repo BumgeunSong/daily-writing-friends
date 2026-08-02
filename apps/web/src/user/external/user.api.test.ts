@@ -25,7 +25,7 @@ vi.mock('@/shared/external/supabaseClient', async () => {
   };
 });
 
-vi.mock('./userReads', () => ({
+vi.mock('./user.reads', () => ({
   fetchUserFromSupabase: (...args: unknown[]) => mockFetchUserFromSupabase(...args),
   fetchAllUsersFromSupabase: vi.fn(),
   fetchUsersWithBoardPermissionFromSupabase: vi.fn(),
@@ -35,7 +35,7 @@ vi.mock('@/sentry', () => ({
   addSentryBreadcrumb: vi.fn(),
 }));
 
-import { createUserIfNotExists } from './user';
+import { createUserIfNotExists } from './user.api';
 
 const authUser: AuthUser = {
   uid: 'test-uid',
