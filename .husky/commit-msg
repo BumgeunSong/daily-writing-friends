@@ -1,0 +1,28 @@
+# Enforce a conventional-commit type prefix on the subject line.
+# Intentionally minimal: we only check the type + ": <제목>".
+# Body format, casing, and length are left to the commit skill, not the hook.
+
+subject=$(grep -vE '^#' "$1" | sed '/^[[:space:]]*$/d' | head -n1)
+
+# Let git-generated merge/revert commits through untouched.
+case "$subject" in
+  "Merge "*|"Revert "*) exit 0 ;;
+esac
+
+pattern='^(feat|fix|refactor|chore|docs|test|style|perf|ci|build|revert)(\(.+\))?!?: .+'
+
+if ! printf '%s' "$subject" | grep -qE "$pattern"; then
+  echo ""
+  echo "✗ 커밋 메시지는 conventional 타입 접두사로 시작해야 합니다."
+  echo ""
+  echo "  입력: $subject"
+  echo ""
+  echo "  형식: <type>: <제목>"
+  echo "  타입: feat  fix  refactor  chore  docs  test  style  perf  ci  build  revert"
+  echo ""
+  echo "  예) feat: 이메일 로그인 추가"
+  echo "      fix: 발행 직전 입력 유실 버그 수정"
+  echo "      refactor: donator 경계를 external/로 이관"
+  echo ""
+  exit 1
+fi
