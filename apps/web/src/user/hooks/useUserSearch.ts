@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchAllUsers } from '@/user/external/user';
+import { fetchAllUsers } from '@/user/external/user.api';
 
 export function useAllUsers() {
   return useQuery({

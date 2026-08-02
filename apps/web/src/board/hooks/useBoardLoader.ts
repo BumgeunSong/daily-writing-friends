@@ -7,7 +7,7 @@ import {
 } from '@/post/utils/postLoaderAccess';
 import { queryClient } from '@/shared/lib/queryClient';
 import { getCurrentUser } from '@/shared/utils/authUtils';
-import { fetchUser } from '@/user/external/user';
+import { fetchUser } from '@/user/external/user.api';
 import { userQueryKey } from '@/user/utils/userQueryKeys';
 import { buildMissingBoardIdResponse, mapBoardLoaderError } from '../utils/boardLoaderAccess';
 

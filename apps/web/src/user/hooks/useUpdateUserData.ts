@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { userQueryKey } from '@/user/utils/userQueryKeys';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { updateUser } from '@/user/external/user';
+import { updateUser } from '@/user/external/user.api';
 import { updateAuthUserMetadata } from '@/shared/auth/supabaseAuth';
 import type { User } from '../model/User';
 

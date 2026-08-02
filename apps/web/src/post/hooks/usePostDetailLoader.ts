@@ -10,7 +10,7 @@ import { postQueryKey } from '@/post/utils/postQueryKeys';
 import { fetchPost } from '@/post/utils/postUtils';
 import { queryClient } from '@/shared/lib/queryClient';
 import { getCurrentUser } from '@/shared/utils/authUtils';
-import { fetchUser } from '@/user/external/user';
+import { fetchUser } from '@/user/external/user.api';
 import { userQueryKey } from '@/user/utils/userQueryKeys';
 
 export async function postDetailLoader({ params }: LoaderFunctionArgs) {

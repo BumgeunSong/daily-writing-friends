@@ -8,7 +8,7 @@ import {
 import type { GroupedReaction, ReactionUser } from '@/comment/model/Reaction';
 import { groupReactionsByEmoji } from '@/comment/utils/reactionUtils';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { fetchUser } from '@/user/external/user';
+import { fetchUser } from '@/user/external/user.api';
 
 // 엔티티 타입 정의
 export type EntityType = 'comment' | 'reply';

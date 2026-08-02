@@ -1,6 +1,7 @@
 import { ArrowLeft, UserX, Search, X } from "lucide-react"
 import { useState, useEffect, useMemo, useRef, Suspense } from "react"
 import { toast } from "sonner"
+import * as Sentry from "@sentry/react"
 import { useAuth } from '@/shared/hooks/useAuth'
 import {
   AlertDialog,
@@ -17,7 +18,7 @@ import { Button } from "@/shared/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card"
 import { Input } from "@/shared/ui/input"
 import { Separator } from "@/shared/ui/separator"
-import { blockUser, unblockUser, getBlockedUsers, fetchUser } from '@/user/external/user'
+import { blockUser, unblockUser, getBlockedUsers, fetchUser } from '@/user/external/user.api'
 import useUserSearch from '@/user/hooks/useUserSearch'
 import type { User } from '@/user/model/User'
 import type React from "react"
@@ -116,28 +117,33 @@ export default function BlockedUsersPage() {
   useEffect(() => {
     if (!currentUser) return;
     (async () => {
-      const blockedUids = await getBlockedUsers(currentUser.uid);
-      if (!blockedUids || blockedUids.length === 0) {
-        setBlockedUsers([]);
-        return;
+      try {
+        const blockedUids = await getBlockedUsers(currentUser.uid);
+        if (!blockedUids || blockedUids.length === 0) {
+          setBlockedUsers([]);
+          return;
+        }
+        // 차단 유저 정보 fetch
+        const results = await Promise.allSettled(
+          blockedUids.map(uid => fetchUser(uid))
+        );
+        const rejectedCount = results.filter(r => r.status === 'rejected').length;
+        const users = results
+          .filter((r): r is PromiseFulfilledResult<User | null> => r.status === 'fulfilled')
+          .map(r => r.value)
+          .filter((u): u is User => u !== null);
+        if (rejectedCount > 0 && users.length > 0) {
+          toast.warning(`차단된 사용자 ${rejectedCount}명의 정보를 불러오지 못했습니다.`);
+        }
+        if (users.length === 0 && rejectedCount === results.length) {
+          toast.error('차단된 사용자 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+          return;
+        }
+        setBlockedUsers(users);
+      } catch (error) {
+        Sentry.captureException(error);
+        toast.error('차단 목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
       }
-      // 차단 유저 정보 fetch
-      const results = await Promise.allSettled(
-        blockedUids.map(uid => fetchUser(uid))
-      );
-      const rejectedCount = results.filter(r => r.status === 'rejected').length;
-      const users = results
-        .filter((r): r is PromiseFulfilledResult<User | null> => r.status === 'fulfilled')
-        .map(r => r.value)
-        .filter((u): u is User => u !== null);
-      if (rejectedCount > 0 && users.length > 0) {
-        toast.warning(`차단된 사용자 ${rejectedCount}명의 정보를 불러오지 못했습니다.`);
-      }
-      if (users.length === 0 && rejectedCount === results.length) {
-        toast.error('차단된 사용자 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
-        return;
-      }
-      setBlockedUsers(users);
     })();
   }, [currentUser]);
 

@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import type { Notification } from '@/notification/model/Notification';
-import { fetchBatchUsersBasic } from '@/user/external/userReads';
+import { fetchBatchUsersBasic } from '@/user/external/user.reads';
 import { mapBasicRowToUserBasic, userBasicQueryKey } from '@/user/hooks/useUserBasic';
 
 /**

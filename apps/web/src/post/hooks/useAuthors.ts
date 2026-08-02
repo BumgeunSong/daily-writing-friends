@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback, useState, useEffect } from 'react';
 import { getHourBasedSeed, shuffleArray } from '@/shared/utils/shuffleUtils';
-import { fetchUsersWithBoardPermission } from '@/user/external/user';
+import { fetchUsersWithBoardPermission } from '@/user/external/user.api';
 import type { User } from '@/user/model/User';
 
 /**

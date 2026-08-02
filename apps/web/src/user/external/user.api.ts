@@ -5,7 +5,7 @@
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/firebase';
 import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
-import { fetchUserFromSupabase, fetchAllUsersFromSupabase, fetchUsersWithBoardPermissionFromSupabase } from './userReads';
+import { fetchUserFromSupabase, fetchAllUsersFromSupabase, fetchUsersWithBoardPermissionFromSupabase } from './user.reads';
 import type { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
 import type { AuthUser } from '@/shared/auth/authTypes';
 import { REMOTE_CONFIG_DEFAULTS } from '@/shared/hooks/useRemoteConfig';
@@ -74,13 +74,8 @@ export async function deleteUser(uid: string): Promise<void> {
 
 // 특정 boardIds에 write 권한이 있는 모든 사용자 데이터 가져오기
 export async function fetchUsersWithBoardPermission(boardIds: string[]): Promise<User[]> {
-    try {
-        if (boardIds.length === 0) return [];
-        return await fetchUsersWithBoardPermissionFromSupabase(boardIds);
-    } catch (error) {
-        console.error('Error fetching users with board permission:', error);
-        return [];
-    }
+    if (boardIds.length === 0) return [];
+    return fetchUsersWithBoardPermissionFromSupabase(boardIds);
 }
 
 // 프로필 사진 업로드 및 URL 반환
@@ -142,12 +137,7 @@ export async function createUserIfNotExists(user: AuthUser): Promise<void> {
  * @returns User[]
  */
 export async function fetchAllUsers(): Promise<User[]> {
-    try {
-        return await fetchAllUsersFromSupabase();
-    } catch (error) {
-        console.error('Error fetching all users:', error);
-        return [];
-    }
+    return fetchAllUsersFromSupabase();
 }
 
 /** 차단 */
@@ -175,10 +165,7 @@ export async function getBlockedUsers(userId: string): Promise<string[]> {
     .from('blocks')
     .select('blocked_id')
     .eq('blocker_id', userId);
-  if (error) {
-    console.error('Error fetching blocked users:', error);
-    return [];
-  }
+  if (error) throw error;
   return (data || []).map(row => row.blocked_id);
 }
 
@@ -189,9 +176,6 @@ export async function getBlockedByUsers(userId: string): Promise<string[]> {
     .from('blocks')
     .select('blocker_id')
     .eq('blocked_id', userId);
-  if (error) {
-    console.error('Error fetching blocked-by users:', error);
-    return [];
-  }
+  if (error) throw error;
   return (data || []).map(row => row.blocker_id);
 }

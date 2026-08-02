@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { REMOTE_CONFIG_KEYS } from '@/login/constants';
 import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
-import { fetchUsersWithBoardPermission } from '@/user/external/user';
+import { fetchUsersWithBoardPermission } from '@/user/external/user.api';
 
 /**
  * 현재 활성 보드의 write 권한을 가진 유저 수를 반환하는 커스텀 훅

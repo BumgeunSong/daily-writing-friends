@@ -9,7 +9,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import type { Post } from '@/post/model/Post';
-import { searchOwnPosts } from '@/user/external/searchUserPosts';
+import { searchOwnPosts } from '@/user/external/searchUserPosts.api';
 import { MIN_QUERY_LENGTH } from '@/user/search/constants';
 const STALE_TIME_MS = 30_000;
 const CACHE_TIME_MS = 5 * 60_000;
