@@ -1,20 +1,17 @@
+import { z } from "zod"
 import { useLocation, useNavigate } from "react-router-dom"
 import { ROUTES } from "@/shared/constants/routes"
 import { useAuth } from "@/shared/hooks/useAuth"
+import { readLocationState } from "@/shared/navigation"
 import { Button } from "@/shared/ui/button"
 
-interface JoinCompleteState {
-  name?: string
-  cohort?: number
-}
+const joinCompleteStateSchema = z.object({
+  name: z.string().optional(),
+  cohort: z.number().optional(),
+})
 
-function readState(state: unknown): JoinCompleteState {
-  if (!state || typeof state !== 'object') return {}
-  const s = state as Record<string, unknown>
-  return {
-    name: typeof s.name === 'string' ? s.name : undefined,
-    cohort: typeof s.cohort === 'number' ? s.cohort : undefined,
-  }
+function readState(state: unknown): z.infer<typeof joinCompleteStateSchema> {
+  return readLocationState(state, joinCompleteStateSchema) ?? {}
 }
 
 export default function JoinCompletePage() {

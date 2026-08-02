@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from '@/shared/navigation';
+import { z } from 'zod';
+import { useLocation, useNavigate, readLocationState } from '@/shared/navigation';
 import { toast } from 'sonner';
 import { ROUTES } from '@/shared/constants/routes';
 import {
@@ -14,10 +15,10 @@ import { Input } from '@/shared/ui/input';
 
 const RESEND_COOLDOWN_SECONDS = 30;
 
+const verifyEmailStateSchema = z.object({ email: z.string().min(1) });
+
 function readEmailFromLocationState(state: unknown): string | null {
-  if (!state || typeof state !== 'object') return null;
-  const v = (state as Record<string, unknown>).email;
-  return typeof v === 'string' && v.length > 0 ? v : null;
+  return readLocationState(state, verifyEmailStateSchema)?.email ?? null;
 }
 
 export default function VerifyEmailPage() {

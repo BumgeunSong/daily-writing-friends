@@ -1,7 +1,8 @@
 import { Loader2 } from "lucide-react"
 import { useState, useCallback } from "react"
-import { useParams, useNavigate, useLocation } from "@/shared/navigation"
+import { useParams, useNavigate, useLocation, readLocationState } from "@/shared/navigation"
 import { toast } from "sonner"
+import { z } from 'zod'
 import { PostVisibility } from '@/post/model/Post'
 import { useTypingPresence } from '@/post/hooks/useTypingPresence'
 import { prependTopicToContent } from '@/post/utils/freewritingContentUtils'
@@ -17,10 +18,10 @@ import { PostEditor } from "./PostEditor"
 import { PostFreewritingHeader } from "./PostFreewritingHeader"
 import type React from "react"
 
-interface FreewritingConfig {
-  targetTime?: number
-  topic?: string
-}
+const freewritingConfigSchema = z.object({
+  targetTime: z.number().optional(),
+  topic: z.string().optional(),
+})
 
 const DEFAULT_TARGET_TIME_IN_SECONDS = 10 * 60
 const TYPING_PAUSE_DELAY_IN_MILLISECONDS = 2000
@@ -32,7 +33,7 @@ export default function PostFreewritingPage() {
   const { boardId } = useParams()
   const { nickname: userNickname } = useUserNickname(currentUser?.uid ?? null);
 
-  const freewritingConfig = (location.state as FreewritingConfig) || {}
+  const freewritingConfig = readLocationState(location.state, freewritingConfigSchema) ?? {}
   const targetTimeInSeconds = freewritingConfig.targetTime ?? DEFAULT_TARGET_TIME_IN_SECONDS
   const selectedTopic = freewritingConfig.topic
 
