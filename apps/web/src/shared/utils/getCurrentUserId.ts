@@ -1,20 +1,17 @@
-import { STORAGE_KEYS, storage } from '@/shared/lib/storage';
+import { z } from 'zod';
 
-interface StoredUser {
-  uid: string;
-  email?: string;
-  displayName?: string;
-}
+import { STORAGE_KEYS, storage } from '@/shared/lib/storage';
+import { parseJson } from '@/shared/lib/parseJson';
+
+const storedUserSchema = z.object({
+  uid: z.string(),
+  email: z.string().optional(),
+  displayName: z.string().optional(),
+});
+type StoredUser = z.infer<typeof storedUserSchema>;
 
 function parseStoredUser(): StoredUser | null {
-  const storedUser = storage.get(STORAGE_KEYS.CURRENT_USER);
-  if (!storedUser) return null;
-  try {
-    return JSON.parse(storedUser);
-  } catch (error) {
-    console.error('Failed to parse stored user:', error);
-    return null;
-  }
+  return parseJson(storage.get(STORAGE_KEYS.CURRENT_USER), storedUserSchema) ?? null;
 }
 
 /**

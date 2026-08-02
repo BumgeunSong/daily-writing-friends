@@ -51,10 +51,10 @@ describe('parseStoredAuthUser', () => {
     });
   });
 
-  it('parses AuthUser with only uid', () => {
+  // 저장된 AuthUser는 uid·email·displayName·photoURL을 모두 담으므로(useAuth 쓰기),
+  // 일부만 있는 값은 손상된 것으로 보고 거부한다(재로그인 유도).
+  it('returns null when required identity fields are missing', () => {
     const stored = JSON.stringify({ uid: VALID_UUID });
-    const result = parseStoredAuthUser(stored);
-    expect(result).not.toBeNull();
-    expect(result!.uid).toBe(VALID_UUID);
+    expect(parseStoredAuthUser(stored)).toBeNull();
   });
 });

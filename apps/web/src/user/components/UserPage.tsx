@@ -4,6 +4,7 @@ import StatusMessage from '@/shared/components/StatusMessage';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { sessionStore, userPostSearchKey } from '@/shared/lib/storage';
+import { parseJsonUnknown } from '@/shared/lib/parseJson';
 import { UserPageHeader } from '@/user/components/UserPageHeader';
 import { UserPostSearchView } from '@/user/components/UserPostSearchView';
 import UserPostsList from '@/user/components/UserPostList';
@@ -17,17 +18,13 @@ interface SearchSession {
 const EMPTY_SESSION: SearchSession = { isSearchMode: false, query: '' };
 
 function readSearchSession(userId: string): SearchSession {
-  const raw = sessionStore.get(userPostSearchKey(userId));
-  if (!raw) return EMPTY_SESSION;
-  try {
-    const parsed = JSON.parse(raw);
-    return {
-      isSearchMode: parsed?.isSearchMode === true,
-      query: typeof parsed?.query === 'string' ? parsed.query : '',
-    };
-  } catch {
-    return EMPTY_SESSION;
-  }
+  const parsed = parseJsonUnknown(sessionStore.get(userPostSearchKey(userId)));
+  if (typeof parsed !== 'object' || parsed === null) return EMPTY_SESSION;
+  const obj = parsed as Record<string, unknown>;
+  return {
+    isSearchMode: obj.isSearchMode === true,
+    query: typeof obj.query === 'string' ? obj.query : '',
+  };
 }
 
 function writeSearchSession(userId: string, session: SearchSession) {
