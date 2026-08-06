@@ -179,7 +179,8 @@ export default tseslint.config(
   //      @/shared/navigation chokepoint so the RN port swaps a single module.
   // external/** and shared/navigation/** are the respective boundary zones, exempt
   // below. Existing Supabase violations carry a visible eslint-disable; only new
-  // ones are blocked.
+  // ones are blocked. Exempting navigation/** also lifts the Supabase restrictions
+  // there, which is harmless: the routing chokepoint never touches Supabase.
   {
     files: ['src/**/*.{ts,tsx}'],
     ignores: ['src/**/external/**', 'src/shared/navigation/**'],

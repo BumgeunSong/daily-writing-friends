@@ -23,6 +23,10 @@ describe('필수 URL 파라미터를 검증할 때', () => {
     expect(selectRequiredParams({}, ['boardId'])).toBeNull();
   });
 
+  it('값이 빈 문자열이면 없는 것으로 보고 null을 돌려준다', () => {
+    expect(selectRequiredParams({ boardId: '' }, ['boardId'])).toBeNull();
+  });
+
   it('요청한 키가 없으면 빈 객체를 돌려준다', () => {
     expect(selectRequiredParams({ boardId: 'b1' }, [])).toEqual({});
   });
