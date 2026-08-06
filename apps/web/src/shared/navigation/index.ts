@@ -23,5 +23,5 @@ export type {
   NavigateOptions,
 } from 'react-router-dom';
 
-/** Read required route params, narrowing `string | undefined` to `string` or null (see useValidatedParams). */
-export { useValidatedParams } from './useValidatedParams';
+/** Read required route params, narrowing `string | undefined` to `string` or null (see useRequiredParams). */
+export { useRequiredParams } from './useRequiredParams';

@@ -7,6 +7,6 @@ import { selectRequiredParams } from './selectRequiredParams';
  * any is missing — the honest boundary for `useParams`, whose raw values are
  * really `string | undefined` regardless of the type argument callers pass.
  */
-export function useValidatedParams<K extends string>(...keys: K[]): Record<K, string> | null {
+export function useRequiredParams<K extends string>(...keys: K[]): Record<K, string> | null {
   return selectRequiredParams(useParams(), keys);
 }

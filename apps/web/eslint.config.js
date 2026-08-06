@@ -196,11 +196,11 @@ export default tseslint.config(
           },
           {
             // Route params are a string | undefined runtime boundary; the chokepoint
-            // owns the react-router-dom dependency and offers useValidatedParams.
+            // owns the react-router-dom dependency and offers useRequiredParams.
             name: 'react-router-dom',
             importNames: ['useParams', 'useSearchParams'],
             message:
-              'URL 파라미터 접근(useParams/useSearchParams)은 @/shared/navigation 초크포인트를 통해 가져오세요. 필수 파라미터는 useValidatedParams로 검증할 수 있습니다.',
+              'URL 파라미터 접근(useParams/useSearchParams)은 @/shared/navigation 초크포인트를 통해 가져오세요. 필수 파라미터는 useRequiredParams로 받을 수 있습니다.',
           },
         ],
         // Patterns (not exact paths) so both the `@/` alias and relative imports

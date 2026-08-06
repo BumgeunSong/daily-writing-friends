@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Save } from 'lucide-react';
 import type React from 'react';
 import { useState, Suspense } from 'react';
-import { useNavigate, useValidatedParams } from '@/shared/navigation';
+import { useNavigate, useRequiredParams } from '@/shared/navigation';
 import { postQueryKey } from '@/post/utils/postQueryKeys';
 import { fetchPost, updatePost } from '@/post/utils/postUtils';
 import type { ProseMirrorDoc } from '@/post/model/Post';
@@ -16,7 +16,7 @@ import { PostEditorHeader } from './PostEditorHeader';
 import { PostTitleEditor } from './PostTitleEditor';
 
 export default function PostEditPage() {
-  const params = useValidatedParams('boardId', 'postId');
+  const params = useRequiredParams('boardId', 'postId');
 
   if (!params) {
     return <ErrorState error={new Error('게시판 또는 게시물 ID가 없습니다.')} />;
