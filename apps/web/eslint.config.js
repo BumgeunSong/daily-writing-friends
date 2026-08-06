@@ -171,13 +171,18 @@ export default tseslint.config(
     },
   },
 
-  // raw Supabase access + generated types are confined to the external/ boundary
-  // zone. Files under */external/ are exempt; hooks/components/utils must go through
-  // external/ fetch*/read* functions. Existing violations carry a visible
-  // eslint-disable, and only new ones are blocked.
+  // Import boundaries. Two zones live in one no-restricted-imports rule because
+  // ESLint flat config replaces (not merges) the rule across matching blocks, so a
+  // second block would silently drop the first's restrictions on shared files.
+  //   1. raw Supabase access + generated types are confined to */external/**.
+  //   2. page-routing params (useParams/useSearchParams) go through the
+  //      @/shared/navigation chokepoint so the RN port swaps a single module.
+  // external/** and shared/navigation/** are the respective boundary zones, exempt
+  // below. Existing Supabase violations carry a visible eslint-disable; only new
+  // ones are blocked.
   {
     files: ['src/**/*.{ts,tsx}'],
-    ignores: ['src/**/external/**'],
+    ignores: ['src/**/external/**', 'src/shared/navigation/**'],
     rules: {
       'no-restricted-imports': ['error', {
         paths: [
@@ -187,6 +192,14 @@ export default tseslint.config(
             importNames: ['createClient'],
             message:
               'raw Supabase 클라이언트 생성(createClient)은 shared/external/supabaseClient.ts에서만 합니다. 다른 곳은 external/의 fetch*/read* 함수를 통해 도메인 타입을 받으세요.',
+          },
+          {
+            // Route params are a string | undefined runtime boundary; the chokepoint
+            // owns the react-router-dom dependency and offers useValidatedParams.
+            name: 'react-router-dom',
+            importNames: ['useParams', 'useSearchParams'],
+            message:
+              'URL 파라미터 접근(useParams/useSearchParams)은 @/shared/navigation 초크포인트를 통해 가져오세요. 필수 파라미터는 useValidatedParams로 검증할 수 있습니다.',
           },
         ],
         // Patterns (not exact paths) so both the `@/` alias and relative imports
