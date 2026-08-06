@@ -132,6 +132,7 @@ export type Database = {
       comments: {
         Row: {
           content: string
+          content_json: Json | null
           count_of_replies: number
           created_at: string
           id: string
@@ -143,6 +144,7 @@ export type Database = {
         }
         Insert: {
           content: string
+          content_json?: Json | null
           count_of_replies?: number
           created_at?: string
           id: string
@@ -154,6 +156,7 @@ export type Database = {
         }
         Update: {
           content?: string
+          content_json?: Json | null
           count_of_replies?: number
           created_at?: string
           id?: string
@@ -632,6 +635,7 @@ export type Database = {
         Row: {
           comment_id: string
           content: string
+          content_json: Json | null
           created_at: string
           id: string
           post_id: string
@@ -643,6 +647,7 @@ export type Database = {
         Insert: {
           comment_id: string
           content: string
+          content_json?: Json | null
           created_at?: string
           id: string
           post_id: string
@@ -654,6 +659,7 @@ export type Database = {
         Update: {
           comment_id?: string
           content?: string
+          content_json?: Json | null
           created_at?: string
           id?: string
           post_id?: string
