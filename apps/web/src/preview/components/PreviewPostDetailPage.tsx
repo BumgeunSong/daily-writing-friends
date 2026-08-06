@@ -32,7 +32,7 @@ const noop = () => {};
  * - an unknown `:previewPostId` redirects to `/preview` rather than 404ing.
  */
 export default function PreviewPostDetailPage() {
-  const { previewPostId } = useParams<{ previewPostId: string }>();
+  const { previewPostId } = useParams();
   const navigate = useNavigate();
 
   // 미리보기 상세는 진입 시 항상 상단부터 보여야 한다. /join의 peek 섹션(페이지 하단)에서

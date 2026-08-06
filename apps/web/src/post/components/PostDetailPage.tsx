@@ -24,7 +24,7 @@ import { PostLikeButton } from './PostLikeButton';
 import { PostMetaHelmet } from './PostMetaHelmet';
 
 export default function PostDetailPage() {
-  const { postId, boardId } = useParams<{ postId: string; boardId: string }>();
+  const { postId, boardId } = useParams();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const handleDelete = usePostDelete();

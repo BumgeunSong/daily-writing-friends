@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams } from '@/shared/navigation';
 import { PostEditor } from '@/post/components/PostEditor';
 
 export default function EditorTestPage() {

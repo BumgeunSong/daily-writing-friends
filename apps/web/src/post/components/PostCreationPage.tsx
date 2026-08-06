@@ -34,7 +34,7 @@ const PUBLISH_DRAFT_FLUSH_TIMEOUT_MS = 2000;
 export default function PostCreationPage() {
   const { currentUser } = useAuth();
   const { userData } = useUser(currentUser?.uid);
-  const { boardId } = useParams<{ boardId: string }>();
+  const { boardId } = useParams();
   const [searchParams] = useSearchParams();
   const navigation = useNavigation();
   const actionData = useActionData() as ActionData;

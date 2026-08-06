@@ -1,6 +1,6 @@
 import { ArrowRight, Info } from "lucide-react"
 import { useEffect, useState, type ChangeEvent } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useNavigate, useParams } from "@/shared/navigation"
 
 import {
   countNonWhitespaceCharacters,
@@ -21,7 +21,7 @@ const TARGET_TIME_OPTIONS_IN_MINUTES = [5, 10, 20] as const
 
 const PostFreewritingIntro: React.FC = () => {
   const navigate = useNavigate()
-  const { boardId } = useParams<{ boardId: string }>()
+  const { boardId } = useParams()
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
 
   const [selectedTargetTimeInSeconds, setSelectedTargetTimeInSeconds] = useState(DEFAULT_TARGET_TIME_IN_SECONDS)
