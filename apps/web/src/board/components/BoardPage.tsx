@@ -2,7 +2,7 @@
 
 import { lazy, Suspense } from "react"
 import { z } from "zod"
-import { useParams, useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "@/shared/navigation"
 import { BoardPageHeader } from "@/board/components/BoardPageHeader"
 import PostFilterTabs, { type PostFilterType } from "@/board/components/PostFilterTabs"
 import RecentPostCardList from "@/board/components/RecentPostCardList"
@@ -17,7 +17,7 @@ import { Button } from "@/shared/ui/button"
 const BestPostCardList = lazy(() => import("@/board/components/BestPostCardList"))
 
 export default function BoardPage() {
-  const { boardId } = useParams<{ boardId: string }>()
+  const { boardId } = useParams()
   const navigate = useNavigate()
   const viewTransitionNavigate = useViewTransitionNavigate()
 

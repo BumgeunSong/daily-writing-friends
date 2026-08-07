@@ -1,6 +1,6 @@
 import { Loader2 } from "lucide-react"
 import { useState, useCallback } from "react"
-import { useParams, useNavigate, useLocation } from "react-router-dom"
+import { useParams, useNavigate, useLocation } from "@/shared/navigation"
 import { toast } from "sonner"
 import { PostVisibility } from '@/post/model/Post'
 import { useTypingPresence } from '@/post/hooks/useTypingPresence'
@@ -29,7 +29,7 @@ export default function PostFreewritingPage() {
   const { currentUser } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const { boardId } = useParams<{ boardId: string }>()
+  const { boardId } = useParams()
   const { nickname: userNickname } = useUserNickname(currentUser?.uid ?? null);
 
   const freewritingConfig = (location.state as FreewritingConfig) || {}
