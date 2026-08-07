@@ -25,3 +25,6 @@ export type {
 
 /** Read required route params, narrowing `string | undefined` to `string` or null (see useRequiredParams). */
 export { useRequiredParams } from './useRequiredParams';
+
+/** Validate untrusted `location.state` against a zod schema (see readLocationState). */
+export { readLocationState } from './readLocationState';
