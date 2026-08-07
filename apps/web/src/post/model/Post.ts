@@ -1,26 +1,9 @@
 import type { FirebaseTimestamp } from '@/shared/model/Timestamp';
+import type { ProseMirrorDoc } from '@/shared/model/ProseMirror';
 
-/**
- * ProseMirror document structure for TipTap editor
- * Based on ProseMirror JSON schema
- */
-export interface ProseMirrorDoc {
-  type: 'doc';
-  content?: ProseMirrorNode[];
-}
-
-export interface ProseMirrorNode {
-  type: string;
-  attrs?: Record<string, unknown>;
-  content?: ProseMirrorNode[];
-  marks?: ProseMirrorMark[];
-  text?: string;
-}
-
-export interface ProseMirrorMark {
-  type: string;
-  attrs?: Record<string, unknown>;
-}
+// ProseMirror types moved to a feature-neutral home; re-exported here so
+// existing `@/post/model/Post` importers keep working.
+export type { ProseMirrorDoc, ProseMirrorNode, ProseMirrorMark } from '@/shared/model/ProseMirror';
 
 export interface Post {
   id: string;
