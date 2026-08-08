@@ -24,7 +24,12 @@ vi.mock('@/shared/hooks/useAuth', async () => {
   );
   return {
     ...actual,
-    useAuth: () => ({ currentUser: SIGNED_IN_USER, loading: false }),
+    useAuth: () => ({
+      authState: { status: 'signedIn', user: SIGNED_IN_USER },
+      currentUser: SIGNED_IN_USER,
+      verifiedUser: SIGNED_IN_USER,
+      loading: false,
+    }),
     AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   };
 });

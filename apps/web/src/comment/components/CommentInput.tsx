@@ -18,7 +18,7 @@ export const CommentInput: React.FC<CommentInputProps> = ({
   onSubmit,
 }) => {
   const [newComment, setNewComment] = useState(initialValue);
-  const { currentUser } = useAuth();
+  const { verifiedUser } = useAuth();
 
   const mutation = useMutation({
     mutationFn: (content: string) => onSubmit(content),
@@ -27,7 +27,7 @@ export const CommentInput: React.FC<CommentInputProps> = ({
 
   const handleAddComment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser || !newComment.trim() || mutation.isLoading) return;
+    if (!verifiedUser || !newComment.trim() || mutation.isLoading) return;
 
     mutation.mutate(newComment);
   };

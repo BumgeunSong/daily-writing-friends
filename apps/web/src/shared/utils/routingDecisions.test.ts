@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import type { AuthUser } from '@/shared/auth/authTypes';
 import { isSafeReturnTo, resolveRootRedirect, resolvePrivateRoute } from './routingDecisions';
 
 const activeUser = { uid: 'user-1', displayName: '홍길동' };
+const authUser: AuthUser = { uid: 'user-1', email: null, displayName: '홍길동', photoURL: null };
 
 describe('resolveRootRedirect', () => {
   const defaults = {
@@ -70,29 +72,29 @@ describe('resolveRootRedirect', () => {
 });
 
 describe('resolvePrivateRoute', () => {
-  it('allows authenticated user through', () => {
-    expect(resolvePrivateRoute({ currentUser: activeUser, loading: false, pathname: '/boards' }))
+  it('allows a verified (signedIn) user through', () => {
+    expect(resolvePrivateRoute({ authState: { status: 'signedIn', user: authUser }, pathname: '/boards' }))
       .toEqual({ type: 'allow' });
   });
 
-  it('returns loading while auth is in progress', () => {
-    expect(resolvePrivateRoute({ currentUser: null, loading: true, pathname: '/boards' }))
+  it('waits while checking the session with no cache', () => {
+    expect(resolvePrivateRoute({ authState: { status: 'checking' }, pathname: '/boards' }))
       .toEqual({ type: 'loading' });
   });
 
-  it('redirects unauthenticated user and saves deep link path', () => {
-    expect(resolvePrivateRoute({ currentUser: null, loading: false, pathname: '/board/abc-123' }))
+  it('waits while restoring a cached user, never allowing access from an unverified cache', () => {
+    expect(resolvePrivateRoute({ authState: { status: 'restoring', cachedUser: authUser }, pathname: '/boards' }))
+      .toEqual({ type: 'loading' });
+  });
+
+  it('redirects a signed-out user and saves the deep-link path', () => {
+    expect(resolvePrivateRoute({ authState: { status: 'signedOut' }, pathname: '/board/abc-123' }))
       .toEqual({ type: 'redirect', returnToPath: '/board/abc-123' });
   });
 
-  it('redirects unauthenticated user without saving /login as returnTo', () => {
-    expect(resolvePrivateRoute({ currentUser: null, loading: false, pathname: '/login' }))
+  it('redirects a signed-out user without saving /login as returnTo', () => {
+    expect(resolvePrivateRoute({ authState: { status: 'signedOut' }, pathname: '/login' }))
       .toEqual({ type: 'redirect', returnToPath: null });
-  });
-
-  it('returns loading for authenticated user while auth is in progress', () => {
-    expect(resolvePrivateRoute({ currentUser: activeUser, loading: true, pathname: '/boards' }))
-      .toEqual({ type: 'loading' });
   });
 });
 
