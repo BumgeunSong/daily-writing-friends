@@ -358,13 +358,13 @@ const extractPlainText = (html: string): string => {
       .replace(/<br\s*\/?>/gi, '\n')
       // 모든 HTML 태그 제거
       .replace(/<[^>]*>/g, '')
-      // HTML 엔티티 디코딩
+      // HTML 엔티티 디코딩 (&amp; 는 반드시 마지막에 디코딩)
       .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
       .replace(/&#39;/g, "'")
+      .replace(/&amp;/g, '&')
       // 연속된 공백을 단일 공백으로 변환 (줄바꿈 제외)
       .replace(/[ \t]+/g, ' ')
       // 연속된 줄바꿈을 최대 2개까지만 허용
