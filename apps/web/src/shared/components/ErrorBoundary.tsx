@@ -9,15 +9,14 @@ interface ErrorBoundaryProps {
   context?: string; // Optional context identifier for the error boundary
 }
 
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error: Error | null;
-}
+type ErrorBoundaryState =
+  | { hasError: false }
+  | { hasError: true; error: Error };
 
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
@@ -53,7 +52,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   render(): ReactNode {
     if (this.state.hasError) {
       if (typeof this.props.fallback === 'function') {
-        return this.props.fallback(this.state.error!);
+        return this.props.fallback(this.state.error);
       }
       return this.props.fallback;
     }

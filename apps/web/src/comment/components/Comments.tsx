@@ -29,7 +29,7 @@ const Comments: React.FC<CommentsProps> = ({
   postAuthorNickname,
   postVisibility,
 }) => {
-  const { currentUser } = useAuth();
+  const { currentUser, verifiedUser } = useAuth();
   const addComment = useCreateComment(boardId, postId);
 
   // Activity data for dynamic placeholder
@@ -37,7 +37,7 @@ const Comments: React.FC<CommentsProps> = ({
   const { data: activity, isLoading } = useActivity(postAuthorId, fromDaysAgo);
   const totalActivityCounts = (activity?.commentings || 0) + (activity?.replyings || 0);
   const authorNickname = postAuthorNickname || '작성자';
-  const isAuthorViewingPrivatePost = postVisibility === 'private' && currentUser?.uid === postAuthorId;
+  const isAuthorViewingPrivatePost = postVisibility === 'private' && verifiedUser?.uid === postAuthorId;
 
   // Create dynamic placeholder
   const getPlaceholder = () => {

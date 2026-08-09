@@ -13,11 +13,11 @@ interface ReactionListProps {
 
 // 실제 반응 데이터를 표시하는 컴포넌트
 const ReactionContent: React.FC<ReactionListProps> = ({ entity }) => {
-  const { currentUser } = useAuth()
+  const { verifiedUser } = useAuth()
   const { reactions, isLoading, isError, createReaction, deleteReaction } = useReactions({ entity })
 
   // 로그인하지 않은 경우 반응 버튼만 표시
-  if (!currentUser) {
+  if (!verifiedUser) {
     return null
   }
 
@@ -41,7 +41,7 @@ const ReactionContent: React.FC<ReactionListProps> = ({ entity }) => {
           content={reaction.content}
           count={reaction.by.length}
           users={reaction.by}
-          currentUserId={currentUser.uid}
+          currentUserId={verifiedUser.uid}
           onDelete={deleteReaction}
           onCreate={createReaction}
         />

@@ -11,11 +11,11 @@ interface PostLikeButtonProps {
 }
 
 export function PostLikeButton({ boardId, postId, authorId }: PostLikeButtonProps) {
-  const { currentUser } = useAuth();
+  const { verifiedUser } = useAuth();
   const { hasLiked, likeCount, toggleLike } = usePostLikes({ boardId, postId });
 
   const handleToggleLike = async () => {
-    if (!currentUser) {
+    if (!verifiedUser) {
       toast.error('로그인이 필요합니다.', {
         position: 'bottom-center',
       });
@@ -33,11 +33,11 @@ export function PostLikeButton({ boardId, postId, authorId }: PostLikeButtonProp
   };
 
   // Don't show if not logged in
-  if (!currentUser) {
+  if (!verifiedUser) {
     return null;
   }
 
-  const isAuthor = currentUser.uid === authorId;
+  const isAuthor = verifiedUser.uid === authorId;
   const showCount = isAuthor && likeCount > 0;
 
   return (

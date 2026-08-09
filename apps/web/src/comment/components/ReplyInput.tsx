@@ -15,7 +15,7 @@ interface ReplyInputProps {
 
 const ReplyInput: React.FC<ReplyInputProps> = ({ placeholder, initialValue = "", onSubmit }) => {
   const [newReply, setNewReply] = useState(initialValue)
-  const { currentUser } = useAuth()
+  const { verifiedUser } = useAuth()
 
   const mutation = useMutation({
     mutationFn: (content: string) => onSubmit(content),
@@ -30,7 +30,7 @@ const ReplyInput: React.FC<ReplyInputProps> = ({ placeholder, initialValue = "",
 
   const handleAddReply = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!currentUser || !newReply.trim() || mutation.isLoading) return
+    if (!verifiedUser || !newReply.trim() || mutation.isLoading) return
     
     mutation.mutate(newReply)
   }
