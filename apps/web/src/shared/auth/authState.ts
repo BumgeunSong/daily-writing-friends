@@ -18,9 +18,14 @@ export type AuthState =
   | { status: 'signedIn'; user: AuthUser }
   | { status: 'signedOut' };
 
-/** Compile-time exhaustiveness guard: a new AuthState variant fails to build at the call site. */
+/**
+ * Compile-time exhaustiveness guard: a new AuthState variant fails to build at
+ * the call site. Logs only the discriminant, never the full state — the
+ * `restoring`/`signedIn` variants carry user PII (email, displayName) that must
+ * not leak into logs or Sentry, and the status alone identifies the missed case.
+ */
 export function assertNever(state: never): never {
-  throw new Error(`Unhandled auth state: ${JSON.stringify(state)}`);
+  throw new Error(`Unhandled auth state: ${(state as AuthState).status}`);
 }
 
 /**
