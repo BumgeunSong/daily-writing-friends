@@ -1,0 +1,60 @@
+name: Deploy Migrations to Production
+
+# Applies pending Supabase migrations to the production database when they land
+# on main. The frontend already auto-deploys on merge (see
+# firebase-hosting-merge.yml), but migrations were applied by hand — so a
+# schema-dependent code change could deploy while its migration was still
+# unapplied, and every affected query failed in production with
+# "column ... does not exist". This job closes that gap by pushing migrations
+# automatically, so schema and code ship from the same merge.
+#
+# `supabase db push` is idempotent: it only applies migrations not yet recorded
+# in the production `supabase_migrations.schema_migrations` table, so re-runs
+# and merges that touch no migrations are safe no-ops.
+#
+# Ordering note: this runs in parallel with the hosting deploy, not before it.
+# That is safe as long as migrations stay backward-compatible (expand-contract:
+# add nullable columns first, read them in a later release, drop/rename last) so
+# neither deploy order breaks the other during the rollout window.
+#
+# The CLI version is PINNED and kept in lockstep with supabase-types-drift.yml
+# so both jobs exercise the same CLI behaviour.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/config.toml'
+      - '.github/workflows/supabase-migrate-prod.yml'
+  # Manual trigger to recover from a missed/failed push without an empty commit.
+  workflow_dispatch:
+
+# Never let two pushes race the same database; queue them instead.
+concurrency:
+  group: supabase-migrate-prod
+  cancel-in-progress: false
+
+env:
+  SUPABASE_CLI_VERSION: 2.75.0
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Supabase CLI (pinned)
+        uses: supabase/setup-cli@v2
+        with:
+          version: ${{ env.SUPABASE_CLI_VERSION }}
+
+      - name: Link production project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
+
+      - name: Push pending migrations
+        run: supabase db push
