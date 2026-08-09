@@ -32,6 +32,8 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
     }
   };
 
+  // Edit stays content-only for now; content_json dual-write on edit is a
+  // follow-up (updateReplyToComment does not yet touch content_json).
   const handleEditSubmit = async (content: string) => {
     await editReply.mutateAsync(content);
     setIsEditing(false);
@@ -63,7 +65,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
       </div>
       <div className='text-base'>
         {isEditing ? (
-          <ReplyInput onSubmit={handleEditSubmit} initialValue={reply.content} />
+          <ReplyInput boardId={boardId} onSubmit={handleEditSubmit} initialValue={reply.content} />
         ) : (
           <div
             className='prose prose-slate whitespace-pre-wrap dark:prose-invert'
