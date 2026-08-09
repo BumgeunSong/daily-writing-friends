@@ -4,13 +4,14 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, it, expect } from 'vitest';
 import { CommentContent } from './CommentContent';
 import type { ProseMirrorDoc } from '@/shared/model/ProseMirror';
+import type { ReactElement } from 'react';
 
 const emptyDoc: ProseMirrorDoc = { type: 'doc', content: [] };
 
 const mentionHtml =
   '<p>hi <span class="rounded bg-primary/10 px-1 text-primary" data-mention="" data-user-id="user-1">@alice</span></p>';
 
-function renderContent(ui: React.ReactElement) {
+function renderContent(ui: ReactElement) {
   return render(
     <MemoryRouter initialEntries={['/board']}>
       <Routes>

@@ -41,11 +41,12 @@ export function CommentContent({ content, contentJson, className }: CommentConte
     if (!container) return;
 
     const handleClick = (event: MouseEvent) => {
-      const mention = (event.target as HTMLElement).closest('a[data-user-id]');
-      const uid = mention?.getAttribute('data-user-id');
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const uid = target.closest('a[data-user-id]')?.getAttribute('data-user-id');
       if (!uid || !isPlainLeftClick(event)) return;
       event.preventDefault();
-      navigate(`/user/${uid}`);
+      navigate(`/user/${encodeURIComponent(uid)}`);
     };
 
     container.addEventListener('click', handleClick);

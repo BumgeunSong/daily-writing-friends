@@ -346,6 +346,14 @@ describe('contentUtils', () => {
       expect(result).not.toContain('<a href="https://example.com"');
       expect(result).toContain('href="/user/u10"');
     });
+
+    it('falls back to the legacy path when content is plaintext despite a stale contentJson', () => {
+      // Editing only rewrites content, leaving content_json behind; a plaintext
+      // body must not lose URL/quote handling just because contentJson lingers.
+      const result = renderCommentContentHtml('see https://example.com', emptyDoc);
+
+      expect(result).toContain('<a href="https://example.com"');
+    });
   });
 
   describe('extractPlainText', () => {

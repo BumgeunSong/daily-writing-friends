@@ -278,11 +278,14 @@ const renderMentionBodyHtml = (html: string): string => {
 };
 
 /**
- * 댓글/답글 본문 렌더 진입점. content_json이 있으면 멘션 보존 경로로, 없으면
- * 기존 평문 변환 경로로 분기해 레거시 댓글과 하위 호환한다.
+ * 댓글/답글 본문 렌더 진입점. content_json이 있고 content가 실제 HTML일 때만 멘션
+ * 보존 경로로 간다. 수정이 content만 갱신해 content_json이 남는 경우처럼 둘이
+ * 어긋나면 평문 변환 경로로 떨어져 레거시 댓글과 하위 호환한다.
  */
 const renderCommentContentHtml = (content: string, contentJson?: ProseMirrorDoc): string => {
-  return contentJson ? renderMentionBodyHtml(content) : renderCommentBodyHtml(content);
+  return contentJson && isHtmlContent(content)
+    ? renderMentionBodyHtml(content)
+    : renderCommentBodyHtml(content);
 };
 
 function convertUrlsToLinks(content: string): string {
