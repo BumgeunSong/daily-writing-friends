@@ -30,6 +30,11 @@ on:
   # Manual trigger to recover from a missed/failed push without an empty commit.
   workflow_dispatch:
 
+# Least privilege: this job only checks out code and talks to Supabase via
+# SUPABASE_* secrets, so GITHUB_TOKEN needs nothing beyond reading the repo.
+permissions:
+  contents: read
+
 # Never let two pushes race the same database; queue them instead.
 concurrency:
   group: supabase-migrate-prod
