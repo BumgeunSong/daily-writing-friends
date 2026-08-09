@@ -3,8 +3,15 @@ import {
   renderPostPreviewHtml,
   renderPostBodyHtml,
   renderCommentBodyHtml,
+  renderMentionBodyHtml,
+  renderCommentContentHtml,
   extractPlainText,
 } from './contentUtils';
+import type { ProseMirrorDoc } from '@/shared/model/ProseMirror';
+
+/** HTML as emitted by MentionableInput's TipTap editor. */
+const mentionSpan = (uid: string, label: string) =>
+  `<span class="rounded bg-primary/10 px-1 text-primary" data-mention="" data-user-id="${uid}">@${label}</span>`;
 
 describe('contentUtils', () => {
   describe('renderPostPreviewHtml', () => {
@@ -262,6 +269,82 @@ describe('contentUtils', () => {
       const result = renderCommentBodyHtml(content);
 
       expect(result).toContain('<ul');
+    });
+  });
+
+  describe('renderMentionBodyHtml', () => {
+    it('converts a mention span into a profile link carrying the user id', () => {
+      const content = `<p>Hi ${mentionSpan('user-1', 'alice')}</p>`;
+      const result = renderMentionBodyHtml(content);
+
+      expect(result).toContain('<a');
+      expect(result).toContain('href="/user/user-1"');
+      expect(result).toContain('data-user-id="user-1"');
+      expect(result).toContain('@alice');
+    });
+
+    it('preserves the mention markup instead of mangling it through URL/quote regexes', () => {
+      // A raw URL next to a mention would be rewritten by the legacy plaintext
+      // path; the mention path must leave both the URL text and the chip intact.
+      const content = `<p>see https://example.com ${mentionSpan('u2', 'bob')}</p>`;
+      const result = renderMentionBodyHtml(content);
+
+      expect(result).not.toContain('<a href="https://example.com"');
+      expect(result).toContain('href="/user/u2"');
+      expect(result).toContain('@bob');
+    });
+
+    it('does not convert > lines into blockquotes', () => {
+      const content = '<p>&gt; not a quote</p>';
+      const result = renderMentionBodyHtml(content);
+
+      expect(result).not.toContain('<blockquote>');
+    });
+
+    it('strips script tags and inline event handlers', () => {
+      const content = `<p onclick="alert(1)">safe ${mentionSpan('u3', 'carol')}</p><script>alert("XSS")</script>`;
+      const result = renderMentionBodyHtml(content);
+
+      expect(result).not.toContain('<script');
+      expect(result).not.toContain('onclick');
+      expect(result).not.toContain('alert');
+      expect(result).toContain('safe');
+      expect(result).toContain('href="/user/u3"');
+    });
+
+    it('escapes a hostile user id so it cannot break out of the href', () => {
+      const content = `<p>${mentionSpan('"><img src=x onerror=alert(1)>', 'evil')}</p>`;
+      const result = renderMentionBodyHtml(content);
+
+      expect(result).not.toContain('<img');
+      expect(result).not.toContain('onerror');
+    });
+  });
+
+  describe('renderCommentContentHtml', () => {
+    const emptyDoc: ProseMirrorDoc = { type: 'doc', content: [] };
+
+    it('uses the legacy plaintext path when contentJson is absent', () => {
+      const result = renderCommentContentHtml('> quoted\ntext', undefined);
+
+      expect(result).toContain('<blockquote>');
+      expect(result).toContain('quoted');
+    });
+
+    it('uses the mention path when contentJson is present', () => {
+      const content = `<p>hey ${mentionSpan('u9', 'dave')}</p>`;
+      const result = renderCommentContentHtml(content, emptyDoc);
+
+      expect(result).toContain('href="/user/u9"');
+      expect(result).toContain('@dave');
+    });
+
+    it('does not linkify raw URLs on the mention path', () => {
+      const content = `<p>visit https://example.com ${mentionSpan('u10', 'erin')}</p>`;
+      const result = renderCommentContentHtml(content, emptyDoc);
+
+      expect(result).not.toContain('<a href="https://example.com"');
+      expect(result).toContain('href="/user/u10"');
     });
   });
 
