@@ -6,7 +6,7 @@ import { PostVisibility } from '@/post/model/Post';
 // eslint-disable-next-line no-restricted-imports -- 기존 위반: external/ 레이어로 이관 예정인 raw 접근
 import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
 import { mapToPost } from '@/post/external/post.mapper';
-import { toContentJson } from '@/post/external/post.parser';
+import { toContentJson } from '@/shared/external/proseMirrorContentJson';
 
 export const fetchPost = async (boardId: string, postId: string): Promise<Post | null> => {
   const supabase = getSupabaseClient();

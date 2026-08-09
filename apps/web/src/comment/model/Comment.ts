@@ -1,4 +1,5 @@
 import type { FirebaseTimestamp } from '@/shared/model/Timestamp';
+import type { ProseMirrorDoc } from '@/shared/model/ProseMirror';
 
 export interface CommentAuthor {
   nickname: string | null;
@@ -15,5 +16,10 @@ export interface Comment {
   userProfileImage: string;
   /** Live author profile joined from the users table; absent when the user row is unavailable. */
   author?: CommentAuthor;
+  /**
+   * Structured editor content (mentions carry user_id here). Absent on legacy
+   * comments written before dual-write; `content` remains the derived cache.
+   */
+  contentJson?: ProseMirrorDoc;
   createdAt: FirebaseTimestamp;
 }
