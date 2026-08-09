@@ -1,8 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createReply, updateReplyToComment, deleteReplyToComment } from '@/comment/external/reply.api';
 import { useAuth } from '@/shared/hooks/useAuth';
+import type { ProseMirrorDoc } from '@/shared/model/ProseMirror';
 import { badgeQueryKey } from '@/stats/utils/statsQueryKeys';
 import { useUser } from '@/user/hooks/useUser';
+
+interface CreateReplyInput {
+  content: string;
+  contentJson?: ProseMirrorDoc;
+}
 
 export function useCreateReply(boardId: string, postId: string, commentId: string) {
   const { currentUser } = useAuth();
@@ -10,7 +16,7 @@ export function useCreateReply(boardId: string, postId: string, commentId: strin
   const { userData } = useUser(currentUser?.uid);
 
   return useMutation(
-    async (content: string) => {
+    async ({ content, contentJson }: CreateReplyInput) => {
       if (!currentUser) throw new Error('로그인이 필요합니다.');
       return createReply(
         boardId,
@@ -20,6 +26,7 @@ export function useCreateReply(boardId: string, postId: string, commentId: strin
         currentUser.uid,
         userData?.nickname ?? currentUser.displayName ?? '',
         userData?.profilePhotoURL ?? currentUser.photoURL ?? '',
+        contentJson,
       );
     },
     {
