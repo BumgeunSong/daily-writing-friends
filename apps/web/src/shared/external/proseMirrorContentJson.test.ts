@@ -48,6 +48,14 @@ describe('parseContentJson', () => {
     expect(parseContentJson(input)).toEqual(input);
   });
 
+  it('rejects a text node missing its text string', () => {
+    const input = {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text' }] }],
+    };
+    expect(parseContentJson(input)).toBeUndefined();
+  });
+
   it('rejects doc with wrong top-level type', () => {
     expect(parseContentJson({ type: 'paragraph' })).toBeUndefined();
   });

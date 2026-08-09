@@ -9,13 +9,19 @@ const proseMirrorMarkSchema = z.object({
 });
 
 const proseMirrorNodeSchema: z.ZodType<ProseMirrorNode> = z.lazy(() =>
-  z.object({
-    type: z.string(),
-    attrs: z.record(z.unknown()).optional(),
-    content: z.array(proseMirrorNodeSchema).optional(),
-    marks: z.array(proseMirrorMarkSchema).optional(),
-    text: z.string().optional(),
-  }),
+  z
+    .object({
+      type: z.string(),
+      attrs: z.record(z.unknown()).optional(),
+      content: z.array(proseMirrorNodeSchema).optional(),
+      marks: z.array(proseMirrorMarkSchema).optional(),
+      text: z.string().optional(),
+    })
+    // Pin only the text discriminant; other node types stay permissive so
+    // mention and future nodes parse without a schema change.
+    .refine((node) => node.type !== 'text' || typeof node.text === 'string', {
+      message: 'text node requires a text string',
+    }),
 );
 
 const proseMirrorDocSchema = z.object({
