@@ -98,7 +98,7 @@ export function MentionableInput({
     editorProps: {
       attributes: {
         class: cn(
-          'min-h-[72px] w-full rounded-md border border-input bg-background px-3 py-2 text-base',
+          'min-h-[90px] w-full rounded-md border border-input bg-background px-3 py-2 text-base',
           'focus:outline-none focus-visible:ring-1 focus-visible:ring-ring',
         ),
       },
