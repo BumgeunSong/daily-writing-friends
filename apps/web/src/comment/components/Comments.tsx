@@ -7,6 +7,7 @@ import { useCreateComment } from '@/comment/hooks/useCreateComment';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { sendAnalyticsEvent, AnalyticsEvent } from '@/shared/utils/analyticsUtils';
 import type { PostVisibility } from '@/post/model/Post';
+import type { ProseMirrorDoc } from '@/shared/model/ProseMirror';
 import type React from 'react';
 
 interface CommentsProps {
@@ -51,9 +52,9 @@ const Comments: React.FC<CommentsProps> = ({
   };
   const placeholder = getPlaceholder();
 
-  const handleSubmit = async (content: string) => {
+  const handleSubmit = async (content: string, contentJson: ProseMirrorDoc) => {
     try {
-      await addComment.mutateAsync(content);
+      await addComment.mutateAsync({ content, contentJson });
       if (currentUser) {
         sendAnalyticsEvent(AnalyticsEvent.CREATE_COMMENT, {
           boardId,
@@ -84,6 +85,7 @@ const Comments: React.FC<CommentsProps> = ({
       </Suspense>
       <div className='mt-6 space-y-4 border-t border-border pt-6'>
         <CommentInput
+          boardId={boardId}
           onSubmit={handleSubmit}
           placeholder={placeholder}
         />
