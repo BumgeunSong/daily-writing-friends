@@ -5,7 +5,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Text from '@tiptap/extension-text';
 import { EditorContent, ReactRenderer, useEditor } from '@tiptap/react';
 import { Loader2, Send } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/utils/cn';
@@ -18,6 +18,7 @@ interface MentionableInputProps {
   boardId: string;
   participantIds?: string[];
   placeholder?: string;
+  initialContent?: string;
   disabled?: boolean;
   onSubmit: (content: string, contentJson: ProseMirrorDoc) => Promise<void>;
 }
@@ -28,6 +29,7 @@ export function MentionableInput({
   boardId,
   participantIds,
   placeholder = '재밌게 읽었다면 댓글로 글값을 남겨볼까요?',
+  initialContent = '',
   disabled = false,
   onSubmit,
 }: MentionableInputProps) {
@@ -37,7 +39,7 @@ export function MentionableInput({
   // through refs rather than closing over stale render values.
   const membersRef = useRef(members);
   const participantsRef = useRef(new Set(participantIds ?? []));
-  const submittingRef = useRef(false);
+  const [submitting, setSubmitting] = useState(false);
   useEffect(() => {
     membersRef.current = members;
   }, [members]);
@@ -46,6 +48,7 @@ export function MentionableInput({
   }, [participantIds]);
 
   const editor = useEditor({
+    content: initialContent,
     extensions: [
       Document,
       Paragraph,
@@ -102,17 +105,21 @@ export function MentionableInput({
     },
   });
 
+  // Parent onSubmit owns error UX (toast/log); on failure we keep the draft
+  // (skip clearContent) and just re-enable, so a rejection is not re-thrown.
   const handleSubmit = async () => {
-    if (!editor || submittingRef.current || disabled) return;
+    if (!editor || submitting || disabled) return;
     const content = editor.getHTML();
     if (!editor.getText().trim()) return;
     const contentJson = editor.getJSON() as ProseMirrorDoc;
-    submittingRef.current = true;
+    setSubmitting(true);
     try {
       await onSubmit(content, contentJson);
       editor.commands.clearContent();
+    } catch {
+      // draft retained
     } finally {
-      submittingRef.current = false;
+      setSubmitting(false);
     }
   };
 
@@ -125,11 +132,15 @@ export function MentionableInput({
         type="button"
         variant="default"
         size="icon"
-        disabled={disabled}
+        disabled={disabled || submitting}
         aria-label="댓글 등록"
-        onClick={handleSubmit}
+        onClick={() => void handleSubmit()}
       >
-        {disabled ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+        {disabled || submitting ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
+          <Send className="size-4" />
+        )}
       </Button>
     </div>
   );

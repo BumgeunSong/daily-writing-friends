@@ -40,6 +40,8 @@ const CommentRow: React.FC<CommentRowProps> = ({
     }
   };
 
+  // Edit stays content-only for now; content_json dual-write on edit is a
+  // follow-up (updateCommentToPost does not yet touch content_json).
   const handleEditSubmit = async (content: string) => {
     await editComment.mutateAsync(content);
     setIsEditing(false);
@@ -71,7 +73,7 @@ const CommentRow: React.FC<CommentRowProps> = ({
       </div>
       <div className='text-base'>
         {isEditing ? (
-          <CommentInput onSubmit={handleEditSubmit} initialValue={comment.content} />
+          <CommentInput boardId={boardId} onSubmit={handleEditSubmit} initialValue={comment.content} />
         ) : (
           <div
             className='prose prose-slate whitespace-pre-wrap dark:prose-invert'
