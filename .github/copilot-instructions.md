@@ -15,8 +15,9 @@ Each comment must:
 - be actionable, with a clear correction or a narrowly defined question;
 - be grounded in the pull request diff and nearby repository code; and
 - focus on correctness, security, data integrity, reliability, performance
-  regressions, test coverage for changed behavior, or an inconsistency that
-  creates a maintenance, correctness, or user-experience risk.
+  regressions, appropriate tests for material changed behavior, or an
+  inconsistency that creates a maintenance, correctness, or user-experience
+  risk.
 
 Treat consistency with the existing codebase as the default. Before flagging a
 pattern, inspect analogous code in the same feature and reuse its conventions.
@@ -29,9 +30,23 @@ minor optimizations without evidence, or pre-existing issues unrelated to the
 changed lines. Do not restate the diff, praise code, or add summary-only
 comments.
 
+Do not request tests for thin imperative-shell code merely because it changed.
+Request a test only when the changed pure logic or high-risk behavior needs one
+to prevent a plausible regression.
+
 When confidence is insufficient to establish a concrete impact, remain silent
 instead of leaving a tentative comment. Do not report the same underlying issue
 more than once.
+
+## Comment language and style
+
+Write every review comment in clear, concise, natural Korean. Write as a
+Korean-speaking teammate would: name the issue and its consequence in one to
+three short sentences, using familiar technical terms where useful.
+
+Avoid literal English translation, bureaucratic wording, generic hedging,
+excessive formality, and boilerplate headings. Do not use a template when
+plain, direct prose is clearer.
 
 ## Project design principles
 
