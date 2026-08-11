@@ -7,6 +7,8 @@ export enum NotificationType {
   REACTION_ON_COMMENT = 'reaction_on_comment',
   REACTION_ON_REPLY = 'reaction_on_reply',
   LIKE_ON_POST = 'like_on_post',
+  MENTION_ON_COMMENT = 'mention_on_comment',
+  MENTION_ON_REPLY = 'mention_on_reply',
 }
 
 interface NotificationBase {
@@ -51,10 +53,22 @@ export interface LikeNotification extends NotificationBase {
   type: NotificationType.LIKE_ON_POST;
 }
 
+export interface MentionOnCommentNotification extends NotificationBase {
+  type: NotificationType.MENTION_ON_COMMENT;
+  commentId: string;
+}
+
+export interface MentionOnReplyNotification extends NotificationBase {
+  type: NotificationType.MENTION_ON_REPLY;
+  replyId: string;
+}
+
 export type Notification =
   | CommentNotification
   | ReplyOnCommentNotification
   | ReplyOnPostNotification
   | ReactionOnCommentNotification
   | ReactionOnReplyNotification
-  | LikeNotification;
+  | LikeNotification
+  | MentionOnCommentNotification
+  | MentionOnReplyNotification;
