@@ -41,58 +41,52 @@ function inPage(darkClass) {
     for (const n of el.childNodes) if (n.nodeType === 3) t += n.textContent;
     return t.trim().slice(0, 80);
   };
-  const hash = (str) => {
-    let h = 0;
-    for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
-    return h.toString(36);
+  // computed color serialization varies by browser/version; canonical rgba tuple.
+  const rgba = (v) => {
+    const n = (v.match(/[\d.]+/g) || []).map(Number);
+    if (n.length < 3) return v;
+    return `rgba(${n[0]},${n[1]},${n[2]},${n[3] ?? 1})`;
   };
-  const posKey = (el) => {
-    const parts = [];
-    let cur = el;
-    while (cur && cur !== root && cur.parentElement) {
-      const tag = cur.tagName.toLowerCase();
-      const sibs = [...cur.parentElement.children].filter((c) => c.tagName === cur.tagName);
-      parts.unshift(`${tag}:${sibs.indexOf(cur)}`);
-      cur = cur.parentElement;
-    }
-    return parts.join('/');
+  const contractKey = (el) => {
+    const tid = el.getAttribute('data-testid');
+    if (tid) return `tid:${tid}`;
+    const role = el.getAttribute('role');
+    const name = el.getAttribute('aria-label') || (role ? ownText(el) : '');
+    return role && name ? `role:${role}:${name}` : null;
   };
 
-  const records = [];
-  const all = [root, ...root.querySelectorAll('*')];
-  for (const el of all) {
-    if (!isVisible(el)) continue;
+  // Relational metrics only (absolute coords are the dominant noise source).
+  const buildTree = (el, parentRect) => {
     const r = el.getBoundingClientRect();
-    const parent = el.parentElement || root;
-    const pr = parent.getBoundingClientRect();
-    // gap = distance from the previous visible sibling's bottom (or parent top)
-    let prevBottom = pr.top;
-    let sib = el.previousElementSibling;
-    while (sib) {
+    const s = getComputedStyle(el);
+    let prevBottom = parentRect ? parentRect.top : r.top;
+    for (let sib = el.previousElementSibling; sib; sib = sib.previousElementSibling) {
       if (isVisible(sib)) {
         prevBottom = sib.getBoundingClientRect().bottom;
         break;
       }
-      sib = sib.previousElementSibling;
     }
-    const s = getComputedStyle(el);
-    const text = ownText(el);
-    records.push({
-      posKey: posKey(el),
-      contentKey: `${el.tagName.toLowerCase()}#${hash(el.textContent.trim().slice(0, 200))}`,
+    const children = [];
+    for (const c of el.children) if (isVisible(c)) children.push(buildTree(c, r));
+    return {
       tag: el.tagName.toLowerCase(),
-      dx: Math.round(r.x - pr.x),
-      gap: Math.round(r.top - prevBottom),
-      w: Math.round(r.width),
-      h: Math.round(r.height),
-      color: s.color,
-      backgroundColor: s.backgroundColor,
-      fontSize: s.fontSize,
-      fontWeight: s.fontWeight,
-      position: s.position,
-      text,
-    });
-  }
+      role: el.getAttribute('role') || undefined,
+      contractKey: contractKey(el),
+      ownText: ownText(el),
+      metrics: {
+        gapTop: Math.round(r.top - prevBottom),
+        widthRatio: parentRect && parentRect.width ? Math.round((r.width / parentRect.width) * 1000) / 1000 : 1,
+        color: rgba(s.color),
+        backgroundColor: rgba(s.backgroundColor),
+        fontSize: s.fontSize,
+        fontWeight: s.fontWeight,
+        position: s.position,
+      },
+      children,
+    };
+  };
+  const domTree = isVisible(root) ? buildTree(root, null) : { tag: 'div', metrics: {}, children: [] };
+  const all = [root, ...root.querySelectorAll('*')];
 
   // ---- A-layer invariants (five; #5 safe-area is env-dependent, stubbed) ----
   const vw = document.documentElement.clientWidth;
@@ -153,7 +147,13 @@ function inPage(darkClass) {
     }
   }
 
-  return { records, violations, viewport: { vw, vh } };
+  return { tree: domTree, violations, viewport: { vw, vh } };
+}
+
+function countNodes(n) {
+  let c = 1;
+  for (const ch of n.children || []) c += countNodes(ch);
+  return c;
 }
 
 async function run() {
@@ -164,23 +164,45 @@ async function run() {
     const context = await browser.newContext({
       viewport: { width: env.width, height: env.height },
       colorScheme: env.colorScheme,
-      deviceScaleFactor: 2,
+      deviceScaleFactor: 1, // integer DPR removes subpixel fractional jitter
+      reducedMotion: 'reduce',
     });
     const page = await context.newPage();
     const errors = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.goto(url, { waitUntil: 'networkidle' });
     await page.waitForSelector('[data-gate-root]', { timeout: 5000 }).catch(() => {});
-    const result = await page.evaluate(inPage, env.dark);
+    await page.addStyleTag({
+      content: '*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}',
+    });
+    await page.evaluate(() => document.fonts && document.fonts.ready);
+
+    // Convergence loop: re-extract until two reads agree, else flag (not a regression).
+    const rAF2 = () => page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    let result = await page.evaluate(inPage, env.dark);
+    let stable = false;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      await rAF2();
+      const next = await page.evaluate(inPage, env.dark);
+      if (JSON.stringify(next.tree) === JSON.stringify(result.tree)) {
+        stable = true;
+        result = next;
+        break;
+      }
+      result = next;
+    }
+
     const outBase = path.join(reportsDir, `${label}-${env.id}`);
-    writeFileSync(`${outBase}.json`, JSON.stringify({ env, url, ...result, errors }, null, 2));
+    writeFileSync(`${outBase}.json`, JSON.stringify({ env, url, stable, ...result, errors }, null, 2));
     await page.screenshot({ path: `${outBase}.png`, fullPage: true });
     summary.push({
       env: env.id,
-      records: result.records.length,
+      nodes: countNodes(result.tree),
       violations: result.violations.length,
       pageErrors: errors.length,
+      stable,
     });
+    if (!stable) console.log(`  [!] ${env.id} did not converge (nondeterministic render) — gate cannot judge`);
     if (result.violations.length) {
       for (const v of result.violations) console.log(`  [A] ${env.id} ${v.rule}: ${v.detail}`);
     }
@@ -188,7 +210,10 @@ async function run() {
     await context.close();
   }
   await browser.close();
-  console.log(`\n${label}: ` + summary.map((s) => `${s.env}(${s.records}el,${s.violations}v,${s.pageErrors}e)`).join('  '));
+  console.log(
+    `\n${label}: ` +
+      summary.map((s) => `${s.env}(${s.nodes}n,${s.violations}v,${s.pageErrors}e${s.stable ? '' : ',UNSTABLE'})`).join('  '),
+  );
 }
 
 run().catch((e) => {
