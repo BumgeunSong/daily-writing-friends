@@ -1,10 +1,10 @@
 import { Edit, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
+import { CommentContent } from '@/comment/components/CommentContent';
 import { CommentHeader } from '@/comment/components/CommentHeader';
 import ReactionList from '@/comment/components/ReactionList';
 import ReplyInput from '@/comment/components/ReplyInput';
 import { useDeleteReply, useEditReply } from '@/comment/hooks/useCreateReply';
-import { renderCommentBodyHtml } from '@/shared/content/contentUtils';
 import { Button } from '@/shared/ui/button';
 import type { Reply } from '@/comment/model/Reply';
 import type React from 'react';
@@ -38,7 +38,6 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
   };
 
   const EditIcon = isEditing ? X : Edit;
-  const sanitizedContent = renderCommentBodyHtml(reply.content);
 
   return (
     <div className='group flex flex-col space-y-3 pb-4'>
@@ -65,9 +64,10 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
         {isEditing ? (
           <ReplyInput onSubmit={handleEditSubmit} initialValue={reply.content} />
         ) : (
-          <div
+          <CommentContent
+            content={reply.content}
+            contentJson={reply.contentJson}
             className='prose prose-slate whitespace-pre-wrap dark:prose-invert'
-            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
         )}
       </div>

@@ -1,10 +1,10 @@
 import { Edit, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { CommentInput } from '@/comment/components/CommentInput';
+import { CommentContent } from '@/comment/components/CommentContent';
 import { CommentHeader } from '@/comment/components/CommentHeader';
 import ReactionList from '@/comment/components/ReactionList';
 import { useDeleteComment, useEditComment } from '@/comment/hooks/useCreateComment';
-import { renderCommentBodyHtml } from '@/shared/content/contentUtils';
 import { Button } from '@/shared/ui/button';
 import Replies from './Replies';
 import type { Comment } from '@/comment/model/Comment';
@@ -46,7 +46,6 @@ const CommentRow: React.FC<CommentRowProps> = ({
   };
 
   const EditIcon = isEditing ? X : Edit;
-  const sanitizedContent = renderCommentBodyHtml(comment.content);
 
   return (
     <div className='flex flex-col space-y-3 pb-4'>
@@ -73,9 +72,10 @@ const CommentRow: React.FC<CommentRowProps> = ({
         {isEditing ? (
           <CommentInput onSubmit={handleEditSubmit} initialValue={comment.content} />
         ) : (
-          <div
+          <CommentContent
+            content={comment.content}
+            contentJson={comment.contentJson}
             className='prose prose-slate whitespace-pre-wrap dark:prose-invert'
-            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
         )}
       </div>
