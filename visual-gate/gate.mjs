@@ -216,7 +216,12 @@ async function run() {
   );
 }
 
-run().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+export { inPage };
+
+const invokedDirectly = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
+if (invokedDirectly) {
+  run().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}
