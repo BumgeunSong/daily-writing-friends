@@ -1,5 +1,6 @@
 import { Loader2 } from 'lucide-react';
 import { Suspense } from 'react';
+import { toast } from 'sonner';
 import { CommentInput } from '@/comment/components/CommentInput';
 import CommentList from '@/comment/components/CommentList';
 import { useActivity } from '@/comment/hooks/useActivity';
@@ -7,6 +8,7 @@ import { useCreateComment } from '@/comment/hooks/useCreateComment';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { sendAnalyticsEvent, AnalyticsEvent } from '@/shared/utils/analyticsUtils';
 import type { PostVisibility } from '@/post/model/Post';
+import type { ProseMirrorDoc } from '@/shared/model/ProseMirror';
 import type React from 'react';
 
 interface CommentsProps {
@@ -51,9 +53,9 @@ const Comments: React.FC<CommentsProps> = ({
   };
   const placeholder = getPlaceholder();
 
-  const handleSubmit = async (content: string) => {
+  const handleSubmit = async (content: string, contentJson: ProseMirrorDoc) => {
     try {
-      await addComment.mutateAsync(content);
+      await addComment.mutateAsync({ content, contentJson });
       if (currentUser) {
         sendAnalyticsEvent(AnalyticsEvent.CREATE_COMMENT, {
           boardId,
@@ -63,7 +65,11 @@ const Comments: React.FC<CommentsProps> = ({
         });
       }
     } catch (e) {
-      // 에러 핸들링 필요시 추가
+      toast.error('댓글을 등록하는 중 문제가 발생했습니다. 다시 시도해 주세요.', {
+        position: 'bottom-center',
+      });
+      // 실패를 삼키면 입력창이 성공으로 간주해 작성 중이던 초안을 지운다. 다시 던져 초안을 지킨다.
+      throw e;
     }
   };
 
@@ -84,6 +90,7 @@ const Comments: React.FC<CommentsProps> = ({
       </Suspense>
       <div className='mt-6 space-y-4 border-t border-border pt-6'>
         <CommentInput
+          boardId={boardId}
           onSubmit={handleSubmit}
           placeholder={placeholder}
         />

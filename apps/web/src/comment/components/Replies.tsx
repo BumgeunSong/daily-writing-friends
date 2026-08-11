@@ -1,8 +1,10 @@
 import { Loader2, MessageCircle } from "lucide-react"
 import { useState, Suspense } from "react"
+import { toast } from "sonner"
 import { useCreateReply } from '@/comment/hooks/useCreateReply'
 import { useReplyCount } from '@/comment/hooks/useReplyCount'
 import { useAuth } from '@/shared/hooks/useAuth'
+import type { ProseMirrorDoc } from '@/shared/model/ProseMirror'
 import { Button } from "@/shared/ui/button"
 import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
@@ -25,9 +27,9 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
   const { replyCount } = useReplyCount(boardId, postId, commentId)
   const createReply = useCreateReply(boardId, postId, commentId)
 
-  const handleSubmit = async (content: string) => {
+  const handleSubmit = async (content: string, contentJson: ProseMirrorDoc) => {
     try {
-      await createReply.mutateAsync(content)
+      await createReply.mutateAsync({ content, contentJson })
       if (currentUser) {
         sendAnalyticsEvent(AnalyticsEvent.CREATE_REPLY, {
           boardId,
@@ -38,7 +40,9 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
         })
       }
     } catch (e) {
-      // 에러 핸들링 필요시 추가
+      toast.error("답글을 등록하는 중 문제가 발생했습니다. 다시 시도해 주세요.", { position: 'bottom-center' })
+      // 실패를 삼키면 입력창이 성공으로 간주해 작성 중이던 초안을 지운다. 다시 던져 초안을 지킨다.
+      throw e
     }
   }
 
@@ -75,7 +79,7 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
             <ReplyList boardId={boardId} postId={postId} commentId={commentId} currentUserId={currentUser?.uid} />
           </Suspense>
           <div className="space-y-2">
-            <ReplyInput onSubmit={handleSubmit} />
+            <ReplyInput boardId={boardId} onSubmit={handleSubmit} />
           </div>
         </div>
       )}
