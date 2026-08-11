@@ -83,6 +83,14 @@ describe('CommentInput — Pattern 4 (form with callback)', () => {
     vi.restoreAllMocks();
   });
 
+  it('exposes the editor as a textbox named by its placeholder', () => {
+    // The comment-flow e2e locates the input via getByRole('textbox', { name }).
+    // A bare contenteditable has no accessible name, so this guards the aria-label.
+    renderInput(vi.fn(() => Promise.resolve()));
+
+    expect(screen.getByRole('textbox', { name: /댓글|글값/ })).toBeInTheDocument();
+  });
+
   it('passes both html content and a structured content_json to onSubmit', async () => {
     const user = userEvent.setup({ delay: null });
     const onSubmit = vi.fn((_content: string, _contentJson: unknown) => Promise.resolve());
