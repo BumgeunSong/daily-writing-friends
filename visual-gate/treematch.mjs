@@ -1,5 +1,5 @@
-// Visual-gate B-layer matcher: framework-neutral, deterministic before/after
-// element matching over a captured DOM tree. No React fiber dependency.
+// DOM treematch: framework-neutral, deterministic before/after element matching
+// over a captured DOM tree (visual-gate B-layer). No React fiber dependency.
 //
 // Per matched parent, sibling lists are reconciled by:
 //   1. exactHash prefix/suffix trim  — identical subtrees at the ends are pruned

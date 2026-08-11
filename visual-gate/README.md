@@ -8,7 +8,7 @@ layout snapshot, and reports two kinds of signal:
   interactive element off-viewport, fixed-element overlap, clipped text). Works on
   brand-new UI.
 - **B-layer** — a before/after geometry diff for one change. Captures a DOM *tree* of
-  relational metrics and reconciles it framework-neutrally (`matcher.mjs`): per parent,
+  relational metrics and reconciles it framework-neutrally (`treematch.mjs`): per parent,
   sibling lists are paired by unique keys (exact-subtree → contract key → own text →
   structural shape) after exactHash end-trimming, so an inserted sibling never shifts the
   rest. Reorders fold into `moved` (LIS), indistinguishable twins report `ambiguous`
@@ -41,8 +41,8 @@ don't commit them.
 ## Files
 
 - `gate.mjs` — Playwright capture + A-layer invariants (runs on every env, no baseline).
-- `matcher.mjs` — framework-neutral tree reconciliation (pure; unit-tested in `matcher.test.mjs`).
-- `diff.mjs` — B-layer before/after tree diff; hashes both captures and calls the matcher.
+- `treematch.mjs` — framework-neutral DOM tree matching (pure; unit-tested in `treematch.test.mjs`).
+- `diff.mjs` — B-layer before/after tree diff; hashes both captures and calls treematch.
 - `apps/web/visual-gate/` — the dev-only harness (`index.html`, `main.tsx`, `Harness.tsx`) and
   its standalone `vite.gate.config.ts`.
 - `apps/web/src/shared/external/__fixtures__/supabaseClient.ts` — auth-only offline fake; the

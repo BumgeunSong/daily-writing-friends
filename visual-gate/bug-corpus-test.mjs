@@ -6,7 +6,7 @@
 // boundary, not a pass. Run: node visual-gate/bug-corpus-test.mjs [url]
 import { chromium } from '@playwright/test';
 import { inPage } from './gate.mjs';
-import { hashTree, matchTrees } from './matcher.mjs';
+import { hashTree, matchTrees } from './treematch.mjs';
 
 const URL = process.argv[2] || 'http://localhost:5200/visual-gate/index.html?component=mentionable';
 const KILL = '*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}';

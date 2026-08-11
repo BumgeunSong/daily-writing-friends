@@ -1,8 +1,8 @@
-// Synthetic before/after trees exercising the matcher's failure matrix.
-// Run: node --test visual-gate/matcher.test.mjs
+// Synthetic before/after trees exercising treematch's failure matrix.
+// Run: node --test visual-gate/treematch.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { hashTree, matchTrees } from './matcher.mjs';
+import { hashTree, matchTrees } from './treematch.mjs';
 
 const el = (tag, opts = {}, ...children) => ({
   tag,
