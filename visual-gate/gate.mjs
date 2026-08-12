@@ -72,6 +72,9 @@ function inPage(darkClass) {
       tag: el.tagName.toLowerCase(),
       role: el.getAttribute('role') || undefined,
       contractKey: contractKey(el),
+      // Source coordinate stamped by componentDebugger. Report label only — it
+      // shifts when code above it is edited, so it must never enter matching.
+      sourceId: el.getAttribute('data-vg-id') || undefined,
       ownText: ownText(el),
       metrics: {
         gapTop: Math.round(r.top - prevBottom),

@@ -65,7 +65,10 @@ function metricDeltas(b, a) {
   return out;
 }
 
-const label = (n) => `${n.tag}${n.ownText ? ` "${n.ownText.slice(0, 24)}"` : ''}`;
+// sourceId is descriptive only: it names the source location of a reported node
+// but never participates in hashing or pairing (see hashTree / matchChildren).
+const label = (n) =>
+  `${n.tag}${n.ownText ? ` "${n.ownText.slice(0, 24)}"` : ''}${n.sourceId ? ` @${n.sourceId}` : ''}`;
 
 // ---- longest strictly-increasing subsequence: returns the set of kept indices ----
 
