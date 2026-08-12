@@ -152,6 +152,7 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.2",
     "vite": "^6.4.3",
+    "vite-plugin-component-debugger": "^2.3.2",
     "vitest": "^3.2.6"
   }
 }

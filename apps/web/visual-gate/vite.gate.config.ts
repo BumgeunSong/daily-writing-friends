@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import react from '@vitejs/plugin-react';
+import componentDebugger from 'vite-plugin-component-debugger';
 import { defineConfig } from 'vite';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -14,7 +15,12 @@ const fakeClient = path.resolve(src, 'shared/external/__fixtures__/supabaseClien
 // before the generic `@` alias so it wins.
 export default defineConfig({
   root: webRoot,
-  plugins: [react()],
+  plugins: [
+    // Must precede react(): its line numbers must be counted before babel injects
+    // the HMR preamble, or every data-vg-id source line is off by ~19.
+    componentDebugger({ enabled: true, attributePrefix: 'data-vg', preset: 'minimal' }),
+    react(),
+  ],
   resolve: {
     alias: [
       { find: /^@\/shared\/external\/supabaseClient$/, replacement: fakeClient },
