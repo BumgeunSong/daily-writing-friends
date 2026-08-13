@@ -15,6 +15,7 @@
     "lint": "pnpm --filter web lint",
     "validate": "pnpm --filter web validate",
     "gate:check": "node visual-gate/check.mjs",
+    "gate:test": "node --test visual-gate/*.test.mjs",
     "prepare": "husky"
   },
   "devDependencies": {
