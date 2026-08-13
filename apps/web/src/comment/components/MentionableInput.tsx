@@ -97,6 +97,12 @@ export function MentionableInput({
     ],
     editorProps: {
       attributes: {
+        // Make the editor a named textbox explicitly rather than leaning on the
+        // browser's contenteditable heuristic; the old textarea took its
+        // accessible name from the placeholder, so mirror that here.
+        role: 'textbox',
+        'aria-multiline': 'true',
+        'aria-label': placeholder,
         class: cn(
           'min-h-[90px] w-full rounded-md border border-input bg-background px-3 py-2 text-base',
           'focus:outline-none focus-visible:ring-1 focus-visible:ring-ring',

@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify';
+import type { ProseMirrorDoc } from '@/shared/model/ProseMirror';
 
 /**
  * HTML 태그가 포함되어 있는지 확인
@@ -234,6 +235,59 @@ const renderCommentBodyHtml = (content: string): string => {
   return normalizeSanitizedHtml(sanitized);
 };
 
+const MENTION_CHIP_CLASS =
+  'rounded bg-primary/10 px-1 font-medium text-primary no-underline hover:bg-primary/20';
+
+/**
+ * 저장된 멘션 span(data-user-id 보유)을 프로필로 향하는 앵커 chip으로 교체.
+ * uid는 encodeURIComponent로 감싸 href 밖으로 탈출하지 못하게 한다.
+ */
+const convertMentionsToLinks = (element: HTMLElement): void => {
+  element.querySelectorAll('[data-user-id]').forEach((node) => {
+    const uid = node.getAttribute('data-user-id');
+    if (!uid) return;
+
+    const anchor = document.createElement('a');
+    anchor.setAttribute('href', `/user/${encodeURIComponent(uid)}`);
+    anchor.setAttribute('data-user-id', uid);
+    anchor.className = MENTION_CHIP_CLASS;
+    anchor.textContent = node.textContent ?? '';
+
+    node.replaceWith(anchor);
+  });
+};
+
+/**
+ * content_json이 있는(멘션형) 댓글/답글 본문 렌더링.
+ *
+ * 평문 전제인 convertUrlsToLinks·convertQuotesToBlockquotes를 건너뛴다. TipTap이
+ * 이미 완전한 HTML을 내보내므로 그 정규식들이 태그 속성 안까지 매칭해 마크업을
+ * 깨뜨린다. 멘션 span만 프로필 앵커로 바꾸고 나머지는 정제만 한다.
+ */
+const renderMentionBodyHtml = (html: string): string => {
+  const sanitized = DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['p', 'br', 'span', 'strong', 'em', 's', 'code'],
+    ALLOWED_ATTR: ['data-user-id'],
+  });
+
+  const div = createTempElement(sanitized);
+  preserveEmptyParagraphs(div);
+  convertMentionsToLinks(div);
+
+  return div.innerHTML;
+};
+
+/**
+ * 댓글/답글 본문 렌더 진입점. content_json이 있고 content가 실제 HTML일 때만 멘션
+ * 보존 경로로 간다. 수정이 content만 갱신해 content_json이 남는 경우처럼 둘이
+ * 어긋나면 평문 변환 경로로 떨어져 레거시 댓글과 하위 호환한다.
+ */
+const renderCommentContentHtml = (content: string, contentJson?: ProseMirrorDoc): string => {
+  return contentJson && isHtmlContent(content)
+    ? renderMentionBodyHtml(content)
+    : renderCommentBodyHtml(content);
+};
+
 function convertUrlsToLinks(content: string): string {
   const urlRegex =
     /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\\/%?=~_|!:,.;]*[-A-Z0-9+&@#\\/%=~_|]|\bwww\.[-A-Z0-9+&@#\\/%?=~_|!:,.;]*[-A-Z0-9+&@#\\/%=~_|]|\b[-A-Z0-9+&@#\\/%?=~_|!:,.;]+\.[A-Z]{2,4}\b)/gi;
@@ -358,13 +412,13 @@ const extractPlainText = (html: string): string => {
       .replace(/<br\s*\/?>/gi, '\n')
       // 모든 HTML 태그 제거
       .replace(/<[^>]*>/g, '')
-      // HTML 엔티티 디코딩
+      // HTML 엔티티 디코딩 (&amp; 는 반드시 마지막에 디코딩)
       .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
       .replace(/&#39;/g, "'")
+      .replace(/&amp;/g, '&')
       // 연속된 공백을 단일 공백으로 변환 (줄바꿈 제외)
       .replace(/[ \t]+/g, ' ')
       // 연속된 줄바꿈을 최대 2개까지만 허용
@@ -384,5 +438,7 @@ export {
   renderPostPreviewHtml,
   renderPostBodyHtml,
   renderCommentBodyHtml,
+  renderMentionBodyHtml,
+  renderCommentContentHtml,
   extractPlainText,
 };

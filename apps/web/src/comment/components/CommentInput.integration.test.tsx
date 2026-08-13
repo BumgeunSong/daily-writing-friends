@@ -28,7 +28,12 @@ vi.mock('@/shared/hooks/useAuth', async () => {
   );
   return {
     ...actual,
-    useAuth: () => ({ currentUser: SIGNED_IN_USER, loading: false }),
+    useAuth: () => ({
+      authState: { status: 'signedIn', user: SIGNED_IN_USER },
+      currentUser: SIGNED_IN_USER,
+      verifiedUser: SIGNED_IN_USER,
+      loading: false,
+    }),
     AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   };
 });
@@ -76,6 +81,14 @@ const editorText = () => document.querySelector('.ProseMirror')?.textContent ?? 
 describe('CommentInput — Pattern 4 (form with callback)', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it('exposes the editor as a textbox named by its placeholder', () => {
+    // The comment-flow e2e locates the input via getByRole('textbox', { name }).
+    // A bare contenteditable has no accessible name, so this guards the aria-label.
+    renderInput(vi.fn(() => Promise.resolve()));
+
+    expect(screen.getByRole('textbox', { name: /댓글|글값/ })).toBeInTheDocument();
   });
 
   it('passes both html content and a structured content_json to onSubmit', async () => {

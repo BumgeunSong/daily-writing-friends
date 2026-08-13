@@ -8,10 +8,10 @@ import { resolvePrivateRoute } from '@/shared/utils/routingDecisions';
  * Private route guard — thin shell over resolvePrivateRoute.
  */
 export function PrivateRoutes() {
-  const { currentUser, loading } = useAuth();
+  const { authState } = useAuth();
   const location = useLocation();
 
-  const result = resolvePrivateRoute({ currentUser, loading, pathname: location.pathname });
+  const result = resolvePrivateRoute({ authState, pathname: location.pathname });
 
   if (result.type === 'loading') return null;
 
