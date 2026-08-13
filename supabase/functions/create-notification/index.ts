@@ -185,13 +185,23 @@ serve(async (req) => {
     if (mentionType && mentionContentJson && boardId) {
       const rawIds = extractMentionUserIds(mentionContentJson);
       if (rawIds.length > 0) {
-        const { data: perms } = await supabase
+        const { data: perms, error: permError } = await supabase
           .from('user_board_permissions')
           .select('user_id')
           .eq('board_id', boardId)
           .in('user_id', rawIds);
-        const allowed = new Set((perms ?? []).map((p) => p.user_id));
-        mentionUserIds = rawIds.filter((id) => allowed.has(id));
+        if (permError) {
+          // 권한 조회 실패 시 멘션은 건너뛴다. 접근 권한을 확인하지 못한 사람에게
+          // 알림을 보내지 않는 쪽이 프라이버시상 안전하다. 조용히 사라지지 않도록
+          // 로그를 남겨 장애를 추적할 수 있게 한다(구조적 알림은 그대로 진행).
+          console.error('Mention permission lookup failed; skipping mentions', {
+            boardId,
+            error: permError.message,
+          });
+        } else {
+          const allowed = new Set((perms ?? []).map((p) => p.user_id));
+          mentionUserIds = rawIds.filter((id) => allowed.has(id));
+        }
       }
     }
 
