@@ -1,8 +1,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { buildNotificationMessage, type NotificationType } from '../_shared/notificationMessages.ts';
+import type { NotificationType } from '../_shared/notificationMessages.ts';
 import { extractMentionUserIds, extractPlainText } from '../_shared/extractMentions.ts';
 import { computeNotificationRecipients } from '../_shared/notificationRecipients.ts';
+import {
+  buildNotificationRow,
+  classifyInsertResult,
+  type NotificationRowContext,
+} from '../_shared/notificationRow.ts';
 
 interface NotificationPayload {
   type: NotificationType;
@@ -17,17 +22,6 @@ interface NotificationPayload {
 
 const MENTION_ON_COMMENT: NotificationType = 'mention_on_comment';
 const MENTION_ON_REPLY: NotificationType = 'mention_on_reply';
-
-function isMentionType(type: NotificationType): boolean {
-  return type === MENTION_ON_COMMENT || type === MENTION_ON_REPLY;
-}
-
-// PostgreSQL unique_violation. The mention 팬아웃은 idempotency 인덱스에 기대어
-// 같은 답글이 트리거를 두 번 타도(reply_on_post/reply_on_comment) 멘션 행이
-// 한 번만 남게 하므로, 중복 insert는 실패가 아니라 정상 무시로 취급한다.
-function isUniqueViolation(error: { code?: string } | null): boolean {
-  return error?.code === '23505';
-}
 
 serve(async (req) => {
   try {
@@ -149,6 +143,7 @@ serve(async (req) => {
     let mentionType: NotificationType | null = null;
     let mentionPreview = '';
     let mentionContentJson: unknown = null;
+    let replyPostId: string | null = null;
     if (payload.type === 'comment_on_post' && payload.comment_id) {
       const { data: comment } = await supabase
         .from('comments')
@@ -167,7 +162,7 @@ serve(async (req) => {
     ) {
       const { data: reply } = await supabase
         .from('replies')
-        .select('content, content_json')
+        .select('content, content_json, post_id')
         .eq('id', payload.reply_id)
         .single();
       mentionType = MENTION_ON_REPLY;
@@ -176,6 +171,10 @@ serve(async (req) => {
         ? extractPlainText(reply.content_json)
         : reply?.content || '';
       replyId = payload.reply_id;
+      // Canonical post_id for the mention_on_reply idempotency key: derive it
+      // from the reply itself so both trigger calls agree regardless of how
+      // each resolved the structural postId.
+      replyPostId = reply?.post_id ?? null;
     }
 
     // Board-permission defense layer: only notify mentioned users who can read
@@ -229,47 +228,36 @@ serve(async (req) => {
       });
     }
 
+    const rowContext: NotificationRowContext = {
+      actorId: payload.author_id,
+      actorName,
+      boardId,
+      postId,
+      commentId,
+      replyId,
+      replyPostId,
+      structuralPreview,
+      mentionPreview,
+      reactionId: payload.reaction_id ?? null,
+      likeId: payload.like_id ?? null,
+    };
+
     let created = 0;
     let duplicate = 0;
     const failures: { message: string }[] = [];
 
     for (const target of targets) {
-      const mention = isMentionType(target.type);
-      const preview = mention ? mentionPreview : structuralPreview;
-
-      const notificationRow: Record<string, unknown> = {
-        recipient_id: target.recipientId,
-        type: target.type,
-        actor_id: payload.author_id,
-        board_id: boardId,
-        post_id: postId,
-        message: buildNotificationMessage(target.type, actorName, preview),
-        read: false,
-      };
-
-      if (target.type === MENTION_ON_COMMENT) {
-        // Keep the idempotency key stable across trigger calls: mention rows
-        // carry only their own id column, never the sibling structural ids.
-        notificationRow.comment_id = commentId;
-      } else if (target.type === MENTION_ON_REPLY) {
-        notificationRow.reply_id = replyId;
-      } else {
-        if (commentId) notificationRow.comment_id = commentId;
-        if (replyId) notificationRow.reply_id = replyId;
-        if (payload.reaction_id) notificationRow.reaction_id = payload.reaction_id;
-        if (payload.like_id) notificationRow.like_id = payload.like_id;
-      }
-
-      const { error: insertError } = await supabase.from('notifications').insert(notificationRow);
-      if (insertError) {
-        if (isUniqueViolation(insertError)) {
-          duplicate++;
-          continue;
-        }
-        console.error('Error inserting notification:', insertError);
-        failures.push({ message: insertError.message });
-      } else {
+      const { error: insertError } = await supabase
+        .from('notifications')
+        .insert(buildNotificationRow(target, rowContext));
+      const outcome = classifyInsertResult(insertError);
+      if (outcome === 'created') {
         created++;
+      } else if (outcome === 'duplicate') {
+        duplicate++;
+      } else {
+        console.error('Error inserting notification:', insertError);
+        failures.push({ message: insertError!.message });
       }
     }
 
