@@ -1,128 +1,68 @@
 # Visual gate — baseline 관리와 환경 매트릭스 설계
 
-날짜: 2026-08-13
+날짜: 2026-08-13 (초안), 같은 날 4각도 리뷰 후 재순서화
 브랜치: `BumgeunSong/visual-regression-gate` (PR #749)
 선행: `2026-08-12-dom-diff-matcher-plan.md` (diff 엔진), `2026-08-09-visual-regression-gate-mvp.md`
 
 ## 목적
 
-diff 엔진(treematch + A층 절대 규칙 + data-vg 소스 귀속)은 완성·검증됐다. 남은 세 가지를 이 문서가 확정한다.
+diff 엔진(treematch + A층 절대 규칙 + data-vg 소스 귀속)은 완성·검증됐다. 남은 세 가지 — 무엇을 기준으로 비교하나(baseline), 어떤 화면·환경을 검사하나(시나리오·환경), 언제 도나(생명주기) — 를 확정한다. 철학: in-loop, gate-over-prompt, **시각 검증이지 행동 검증이 아니다**.
 
-1. 무엇을 기준으로 비교하나 — baseline
-2. 어떤 화면·환경을 검사하나 — 시나리오와 환경 매트릭스
-3. 언제 도나 — 생명주기
+## 리뷰가 뒤집은 것 (초안 → 개정)
 
-관통 철학: in-loop(에이전트가 자기 회귀를 스스로 검증), gate-over-prompt(외부 결정적 게이트), 그리고 **시각 검증이지 행동 검증이 아니다**.
+초안은 baseline-first였다(merge-base 기준점 + 일회용 워크트리 캡처 + pre-commit 게이트). 아키텍처·결정성·워크플로·YAGNI 4각도 서브에이전트 리뷰가 독립적으로 같은 결론에 수렴했다.
 
-## 확정된 결정 (브레인스토밍 산물)
+- **치명 1 — 일회용 워크트리가 이 레포에서 부팅 불가.** pnpm 모노레포라 `node_modules`·`.pnpm` 스토어·`.env`가 전부 gitignore. `git worktree add <base>`는 추적 파일만 체크아웃하므로 vite 바이너리조차 없다. 초안의 "일반 경로"는 첫 실행부터 죽는다.
+- **치명 2 — MVP 페이로드가 타깃 회귀를 못 낸다.** 게이트가 잡으려는 건 페이지 구성·콘텐츠 길이·반응형 회귀인데, 초안 MVP 시나리오는 640px 박스에 갇힌 상태 없는 격리 컴포넌트 3개다(가짜 클라이언트가 전부 빈 데이터). 정작 그 회귀를 만드는 진짜 페이지·상태는 `?__fixture=`째로 뒤로 밀렸다. 가장 약한 가정: 격리 컴포넌트가 페이지 회귀를 대표한다. baseline 기계가 페이로드를 앞선다.
+- **pre-commit은 틀린 훅.** 실측 추정 커밋당 40~70초, 새 브랜치/rebase 90초~2.5분. 에이전트가 `--no-verify`로 게이트를 무력화한다.
 
-1. **baseline 저장 = 로컬 per-dev, 재생성, gitignore.** 같은 머신이 자기 자신과 비교하므로 개발자별 폰트/OS 차이가 원천적으로 안 생긴다. 공유 저장소도 CI 게이트도 아니다.
-2. **baseline 기준점 = `git merge-base HEAD main`.** feature 브랜치가 갈라진 커밋 = 태스크 시작점. 에이전트가 시작 시점을 기억할 필요가 없고, 커밋마다 안 움직이며, rebase로 base가 이동하면 자동 갱신된다.
-3. **캡처 = SHA 메모이즈 일회용 워크트리.** base 캐시가 없을 때만 렌더한다. 워킹트리가 깨끗하고 `HEAD == base`면 현재 dev 서버로 직접 캡처, 아니면 `git worktree add <base>` + 일회용 서버로 캡처 후 워크트리 제거. base SHA로 메모이즈하므로 실제 렌더는 브랜치당 1회(또는 base가 움직일 때만).
-4. **생명주기 = pre-commit 게이트.** 영구 baseline store도 post-commit 훅도 없다. `check`가 필요한 dev 서버를 스스로 부팅·정리한다.
-5. **시나리오 단위 = URL로 주소지정되는 렌더 상태.** 컴포넌트가 아니다. 한 페이지의 상태별 차이(populated/empty/error)는 각각 별개 시나리오이며 `?__fixture=` 파라미터로 **정적으로** 도달한다. 상태에 클릭·입력을 스크립트로 몰아 도달하지 않는다(그건 행동 검증). 무엇을 검사할지는 커밋되는 레지스트리가 정한다.
-6. **환경 = E0/E1/E2/E4 + E5.** 브라우저는 비교 축이 아니라 평행 baseline 네임스페이스. 크로스브라우저 비교 금지.
-7. **MVP 레지스트리 = 컴포넌트 하네스 URL.** 실제 앱 라우트를 MSW로 렌더하는 경로는 다음 층으로 분리.
+**결론: 순서를 뒤집는다. A층 게이트 먼저 → 진짜 시나리오 → baseline B층 맨 뒤.** A층은 baseline이 필요 없어 어떤 UI에도 지금 값을 낸다. baseline 기계는 시나리오가 진짜 상태 페이지가 된 뒤에야 값을 하므로 마지막에 짓는다.
 
-## 파일 체계
+## 확정된 결정 (개정)
 
-```
-.visual-gate/
-  scenarios.json            # 커밋됨. 무엇을 검사하나 (name → url + envs). 큐레이션 그 자체
-  baselines/<base-sha>/      # gitignore. 재생성. 기준점 캡처
-    <name>__<env>.json
-  current/                   # gitignore. 워킹트리 임시 캡처
-```
+1. **MVP = A층 게이트.** baseline·merge-base·워크트리·treematch 없이, 이미 있는 절대 규칙(가로 오버플로 / 인터랙티브 뷰포트 이탈 / 고정 겹침 / 텍스트 클립)만으로 현재 트리를 검사한다. after-only 렌더라 싸다.
+2. **훅 = 명시적 에이전트 호출 `check`(주) + pre-push(안전망).** pre-commit 아님. 변경파일→시나리오 스코프와 교차 커밋 캐시가 생기기 전엔 pre-commit에 얹지 않는다. 인프라·flaky 실패는 요란하게 통과(loud-pass), stable하게 판정된 회귀만 차단.
+3. **시나리오 단위 = URL로 주소지정되는 정적 렌더 상태.** 상태별 차이는 `?__fixture=`로 정적 도달(스크립트 상호작용 금지 = 행동검증 배제). 단 진짜 상태 페이지는 Phase 2에서 MSW 라우트 렌더로 실제 구현한다. 그전까지 `scenarios.json`은 인라인 목록으로 두고 커밋 스키마로 굳히지 않는다.
+4. **baseline 저장 = 로컬 per-dev 재생성, gitignore.** 같은 머신 self-compare로 폰트/OS 결정성. 공유·CI 아님. (Phase 3에서 도입)
+5. **환경**: A층은 E0/E1/E2/E4(chromium). E2 320이 오버플로를, E4가 반응형을 잡는 A층의 실익. E5 webkit은 B층 diff에서 의미가 크므로 Phase 3로.
+6. **baseline B층은 진짜 시나리오 위에 맨 마지막.** 그때 아래 "리뷰 반영"의 worktree-deps·캐시키·동시성·결정성을 전부 적용한다.
 
-핵심 구분: **`scenarios.json`은 소스**(공유·버전관리 대상, "무엇을 검사하나"), **`baselines/`는 로컬 산출물**(재생성, "그 시점에 어떻게 보였나"). 레지스트리는 팀이 공유하고 baseline은 각자 머신에서 뜬다.
+## 단계 (재순서)
 
-### scenarios.json 스키마
+- **Phase 1 — A층 게이트 (MVP).** current-tree 캡처 + 절대 규칙. 아래 결정성 수정 포함. 명시적 `check` 커맨드 + pre-push 배선. baseline/merge-base/worktree/treematch 없음. 서버 생명주기(부팅·PID 추적·finally·SIGINT 정리) 구현.
+- **Phase 2 — 진짜 시나리오.** `?__fixture=` 계약 정의(어떻게 MSW 핸들러 상태를 고르나), MSW를 하네스에 등록, 라우터 마운트, auth 주입, `scenarios.json`이 실제 라우트 URL을 갖게. 이게 없으면 시나리오는 실물이 아니다.
+- **Phase 3 — baseline B층.** 진짜 시나리오 위 before/after. in-place base 캡처(node_modules 재사용), 캐시키 = base+lockfile, 레지스트리 재조정, merge-base `origin/main`, LRU 캐시, 동시성 네임스페이싱, 원자적 publish, E5 webkit 실측.
 
-```json
-{
-  "scenarios": [
-    { "name": "comment-input",  "url": "/visual-gate/index.html?component=mentionable", "envs": ["E0","E1","E2","E4","E5"] },
-    { "name": "reply-input",    "url": "/visual-gate/index.html?component=replyInput",  "envs": ["E0","E1"] }
-  ]
-}
-```
+## 리뷰 반영 — 반드시 고칠 것
 
-- **env를 시나리오별로 선언**한다. 모든 시나리오에 5환경을 곱하지 않는 것이 비용을 잡는 레버.
-- 슬롯을 얻는 기준: 그 화면에서 시각 회귀가 배포되면 아플 만한가. 축은 트래픽 × 상태의 시각적 하중 × 시각버그 이력. 버그가 났던 상태를 발견하면 시나리오로 추가한다(환경 E9 누적기와 같은 정신).
-- 명시적 제외: 모든 순열, 그리고 행동으로만 다른 상태(시각 하중이 없으면 뺀다).
+### 결정성 (Phase 1에서 바로)
+- **시계·RNG 동결**: `addInitScript`로 고정 `Date`/`performance.now`/`Math.random`/`crypto.randomUUID`. 상대시각("3분 전")·랜덤 id가 `ownText`에 새어 상시 오탐을 만드는 걸 원천 차단.
+- **최종 정지 신호**: rAF 2회 일치는 순간 정지지 최종 정지가 아니다(스켈레톤→콘텐츠 중간 고원에서 오탐). N(≥3) 연속 동일 또는 정착 신호(pending fetch 0 + `fonts.ready` + MutationObserver 정적 창) 후 비교 진입.
+- **networkidle 제거** → `load` + 앱 ready 신호(하네스가 MSW·폰트 준비 후 세우는 `data-vg-ready`).
+- **`font-display: block`** 을 게이트 CSS에 추가(폴백 폰트 메트릭 창 제거).
+- **empty-root stub 금지**: `[data-gate-root]` 셀렉터 타임아웃이면 빈 1노드 트리를 매처에 넣지 말고 `stable=false`(판정 불가)로.
+- **메트릭 추가**: `boxShadow`, `borderWidth`/`borderColor`, `borderRadius`, `textAlign`, `transform` 지문. 테두리·그림자·변형 제거 같은 흔한 회귀를 지금은 통과시킨다.
+- **per-env EPS + round-at-compare**: 전역 EPS 대신 env별 허용오차(webkit은 서브픽셀 불안정으로 gapTop 2). 저장은 정수 반올림 말고 비교 시점에 반올림해 이중 반올림 경계 오차 제거.
 
-## 데이터 흐름
+### baseline (Phase 3)
+- **in-place base 캡처**: 격리 워크트리를 버리고 `git stash` 또는 `git checkout <base> -- <paths>`로 제자리 캡처해 기존 `node_modules`·`.env` 재사용. (병렬이 필요하면 워크트리 + deps 심링크지만 pnpm 중첩 스토어라 취약 — 기본은 in-place.)
+- **캐시키 = `<base-sha>__<lockfile-hash>`**: `pnpm install`로 의존성이 바뀌면 같은 SHA라도 렌더가 달라진다. 레지스트리 해시도 포함.
+- **레지스트리 재조정**: `if exists(dir) return` 금지. 현재 레지스트리의 `(시나리오×env)` 중 base dir에 없는 것만 추가 캡처. 새 시나리오가 조용히 미검사되는 구멍 차단.
+- **merge-base 기준 = `origin/main`**: 로컬 `main`이 뒤처지면 고대 baseline을 잡아 전부 오탐. trunk에서 작업 중(HEAD==base)이면 "trunk에선 게이트 불가"를 **명시 메시지**로(조용한 통과 금지).
+- **단일 prune → LRU N개**: 브랜치/rebase/멀티 워크트리에서 서로의 캐시를 지워 재렌더를 유발하는 걸 막는다. 관심사는 정확성이 아니라 디스크 상한이므로 LRU가 맞다.
+- **동시성 네임스페이싱**: `current/<runid>/`, 워크트리 `tmp-<runid>`, 임시 dir → `rename`으로 원자적 publish, base 캡처에 advisory lock.
 
-```
-ensureBaseline():
-  base = `git merge-base HEAD main`
-  dir  = .visual-gate/baselines/<base>/
-  if exists(dir): return base            # 메모이즈
-  scenarios = read scenarios.json
-  if cleanTree() and HEAD == base:
-    capture(scenarios, server=현재 dev 서버) → dir
-  else:
-    wt = `git worktree add <tmp> <base>`
-    try: boot 일회용 Vite(ephemeral port); capture(scenarios, server=일회용) → dir
-    finally: `git worktree remove --force <tmp>`
-  prune baselines/ except <base>
-
-check():                                  # pre-commit 진입점
-  base = ensureBaseline()
-  boot 워킹트리 dev 서버 (없으면)
-  cur = capture(scenarios, server=워킹트리) → .visual-gate/current/
-  regressions = []
-  for each (scenario, env):
-    b = load baselines/<base>/<name>__<env>.json
-    c = load current/<name>__<env>.json
-    if b.stable == false or c.stable == false: continue   # 판정 불가, 회귀 아님
-    r = treematch(hashTree(b.tree), hashTree(c.tree))
-    newViolations = c.violations - b.violations           # A층: 새로 생긴 위반만
-    if r.changed|moved|added|removed or newViolations: regressions.push(...)
-  teardown 부팅한 서버
-  print report; exit(regressions.length ? 1 : 0)
-```
-
-캡처 단위는 기존 `gate.mjs`의 env 루프를 재사용하되, 시나리오(URL)마다 반복하고 env마다 올바른 브라우저 타입을 론치한다.
-
-## 환경 매트릭스
-
-| id | 축 | 브라우저 | 노리는 결함 |
-|----|----|---------|-----------|
-| E0 | 기준선 390·light | chromium | — |
-| E1 | dark | chromium | 대비 미달, 색 하드코딩 |
-| E2 | 320 | chromium | 가로 오버플로 |
-| E4 | 1280 | chromium | 반응형 분기 |
-| E5 | webkit(390·light) | webkit | iOS 전용 렌더 차이 |
-
-- baseline 캡처와 워킹트리 캡처는 **동일 env**로 뜬다 → 네임스페이스 안에서만 비교.
-- 시나리오가 선언한 `envs`와 이 매트릭스의 교집합만 캡처한다.
-- 보류: E3 태블릿, E6 Firefox, E7 standalone(safe-area, 별도 스파이크 필요), E8 텍스트200%, E9 버그조합 누적기(메커니즘만 자리 잡아둠).
-
-## 엣지 케이스
-
-- **merge-base 실패**(main 없음 / detached HEAD / 얕은 클론): 게이트를 막지 않고 명확한 메시지로 skip. 게이트가 인프라 문제로 커밋을 막으면 안 된다.
-- **미수렴 캡처**(stable=false): 회귀가 아니라 판정 불가. 차단하지 않는다.
-- **일회용 워크트리**: 실패 경로에서도 `finally`로 `git worktree remove --force`. 포트는 ephemeral로 충돌 회피.
-- **픽스처 없는 URL / 렌더 실패**: 명확한 에러로 표면화(조용한 통과 금지).
-- **pre-commit 속도**: MVP는 레지스트리 전체를 돈다. 느리면 변경 파일 → 영향 시나리오 스코프가 후속.
-
-## 단계
-
-- **Phase 0** — 레지스트리 로더 + 시나리오×env 확장 + envs 교집합 (순수 함수, 단위 테스트).
-- **Phase 1** — `ensureBaseline`: merge-base 해석, SHA 메모이즈, 일회용 워크트리 캡처, 프루닝.
-- **Phase 2** — `check`: baseline vs 워킹트리, 시나리오·env별 treematch + A층 신규 위반, exit code.
-- **Phase 3** — E5 webkit env + env별 브라우저 타입 론치.
-- **Phase 4** — husky pre-commit 배선 + check의 자립 서버 부팅·정리.
-- **Phase 5 (보류)** — 실제 라우트 MSW 렌더, 변경파일→시나리오 스코프, 픽셀 축, E7 standalone.
+### 훅 / 실패 UX
+- **인프라·flaky 실패 = loud-pass**(요란하게 통과), stable하게 판정된 회귀만 `exit 1`. in-loop 에이전트가 게이트를 버리지 않게.
+- **미수렴 env는 요약에 count+이름 노출**: "unstable = pass"가 조용히 커버리지를 갉아먹으므로, 판정 못 한 env를 사람/에이전트가 보게.
 
 ## 테스트 계획
 
-- **순수**: merge-base 해석, 캐시 키 생성, 시나리오×env 확장, envs 교집합.
-- **통합**: 브랜치 시나리오 하나로 base 캡처 → 실제 소스 회귀 편집 → check가 소스 좌표로 잡는지, no-op는 깨끗한지, webkit 네임스페이스가 chromium과 안 섞이는지.
+- **순수**: 레지스트리 로더, 시나리오×env 확장, envs 교집합, (Phase 3) merge-base·캐시키 생성.
+- **통합**: Phase 1 — 실제 A층 위반(가로 오버플로)을 심어 잡는지, 깨끗하면 0. Phase 3 — 브랜치 시나리오로 base 캡처→소스 회귀 편집→소스 좌표로 잡는지, no-op 깨끗, webkit 네임스페이스 격리.
 
 ## 리스크
 
-- webkit 캡처 결정성(폰트 렌더). 같은 머신 self-compare라 완화되나 flaky 가능 → 수렴 루프로 판정 불가 처리.
-- baseline 캐시 비대 → base SHA 프루닝으로 억제.
-- 컴포넌트 하네스만으로는 라우트 레이아웃 회귀 커버리지가 제한된다(설계상 알려진 한계, Phase 5가 메움).
+- webkit 캡처 run-to-run 불안정(폰트 힌팅). self-compare로 완화되나 base와 working이 다른 Vite 프로세스라 완전 동일 파이프라인은 아니다 → in-place 캡처가 이걸도 줄인다.
+- `?__fixture=` 계약은 아직 코드에 없다(레포에 `__fixture` 문자열 부재). Phase 2가 설계할 load-bearing 메커니즘이므로 그전에 레지스트리 스키마를 굳히지 않는다.
+- A층만으로는 baseline 회귀(의도 밖 미묘한 시프트)를 못 잡는다 — 그건 Phase 3의 몫. MVP는 절대 규칙 커버리지만 약속한다.
