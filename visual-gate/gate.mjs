@@ -15,8 +15,6 @@ function arg(name, fallback) {
   return i >= 0 ? process.argv[i + 1] : fallback;
 }
 
-const label = arg('label', 'after');
-const url = arg('url', 'http://localhost:5199/visual-gate/index.html?component=commentInput');
 // A-layer runs on every env (no baseline needed); B-layer callers diff later.
 // eps = per-env pixel tolerance. Chromium at integer DPR is subpixel-stable, so 1
 // suffices; webkit (Phase 3) will want a looser gapTop tolerance. Applied at
@@ -242,7 +240,7 @@ async function captureStable(page, env) {
   return { result, stable: streak >= STREAK };
 }
 
-async function run() {
+async function runScenario({ label, url }) {
   mkdirSync(reportsDir, { recursive: true });
   const browser = await chromium.launch();
   const summary = [];
@@ -304,11 +302,13 @@ async function run() {
   return summary;
 }
 
-export { inPage, roundTree, freezeNondeterminism };
+export { inPage, roundTree, freezeNondeterminism, runScenario };
 
 const invokedDirectly = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
 if (invokedDirectly) {
-  run().catch((e) => {
+  const label = arg('label', 'after');
+  const url = arg('url', 'http://localhost:5199/visual-gate/index.html?component=commentInput');
+  runScenario({ label, url }).catch((e) => {
     console.error(e);
     process.exit(1);
   });
