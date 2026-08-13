@@ -14,6 +14,7 @@
     "db:types": "supabase gen types typescript --local --schema public > apps/web/src/shared/external/database.types.ts",
     "lint": "pnpm --filter web lint",
     "validate": "pnpm --filter web validate",
+    "gate:check": "node visual-gate/check.mjs",
     "prepare": "husky"
   },
   "devDependencies": {
