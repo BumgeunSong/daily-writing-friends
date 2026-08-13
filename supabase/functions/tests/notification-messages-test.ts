@@ -36,6 +36,16 @@ Deno.test('buildNotificationMessage', async (t) => {
     assertEquals(result, "정수진님이 '감사해요' 답글에 반응했어요.");
   });
 
+  await t.step('mention_on_comment: 댓글에서 멘션 메시지 생성', () => {
+    const result = buildNotificationMessage('mention_on_comment', '홍길동', '이거 같이 해볼래?');
+    assertEquals(result, "홍길동님이 '이거 같이 해볼래?' 댓글에서 나를 언급했어요.");
+  });
+
+  await t.step('mention_on_reply: 답글에서 멘션 메시지 생성', () => {
+    const result = buildNotificationMessage('mention_on_reply', '김철수', '동의해요');
+    assertEquals(result, "김철수님이 '동의해요' 답글에서 나를 언급했어요.");
+  });
+
   await t.step('긴 콘텐츠는 35자로 잘리고 말줄임표 추가', () => {
     const longContent = '이것은 매우 긴 제목입니다 서른다섯 글자가 넘는 아주 긴 제목이에요 정말로 긴 제목';
     const result = buildNotificationMessage('comment_on_post', '테스트', longContent);
