@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { decideVerdict } from './check.mjs';
+import { spawn } from 'node:child_process';
+import { decideVerdict, waitForServer } from './check.mjs';
 
 const row = (over) => ({ scenario: 's', env: 'E0', stable: true, violations: 0, reason: undefined, ...over });
 
@@ -36,4 +37,16 @@ test('decideVerdict fails on a real regression while still surfacing unjudged pe
 
 test('decideVerdict passes an empty matrix', () => {
   assert.equal(decideVerdict([]).exitCode, 0);
+});
+
+test('waitForServer bails immediately when the harness process has already exited', async () => {
+  const dead = spawn(process.execPath, ['-e', 'process.exit(1)']);
+  await new Promise((resolve) => dead.on('exit', resolve));
+
+  const start = Date.now();
+  const up = await waitForServer('http://127.0.0.1:1/', dead);
+  const elapsedMs = Date.now() - start;
+
+  assert.equal(up, false);
+  assert.ok(elapsedMs < 1000, `expected an immediate bail, took ${elapsedMs}ms`);
 });

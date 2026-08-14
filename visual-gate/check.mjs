@@ -42,9 +42,12 @@ async function isServerUp(url) {
   }
 }
 
-async function waitForServer(url) {
+// Bail the moment the vite child dies (e.g. --strictPort conflict), rather than
+// polling a socket that will never open for the full boot timeout.
+async function waitForServer(url, server) {
   const deadline = Date.now() + SERVER_BOOT_TIMEOUT_MS;
   while (Date.now() < deadline) {
+    if (server.exitCode !== null) return false;
     if (await isServerUp(url)) return true;
     await sleep(SERVER_POLL_INTERVAL_MS);
   }
@@ -105,7 +108,7 @@ async function main() {
     process.exit(SIGTERM_EXIT_CODE);
   });
   try {
-    const up = await waitForServer(`${HARNESS_URL}?component=${SCENARIOS[0].component}`);
+    const up = await waitForServer(`${HARNESS_URL}?component=${SCENARIOS[0].component}`, server);
     if (!up) {
       console.error('visual gate: harness server did not start — abstaining (loud-pass)');
       return 0;
@@ -118,7 +121,7 @@ async function main() {
   }
 }
 
-export { decideVerdict };
+export { decideVerdict, waitForServer };
 
 const invokedDirectly = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
 if (invokedDirectly) {
