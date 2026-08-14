@@ -1,6 +1,13 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { buildNotificationMessage, shouldSkipNotification, type NotificationType } from '../_shared/notificationMessages.ts';
+import type { NotificationType } from '../_shared/notificationMessages.ts';
+import { extractMentionUserIds, extractPlainText } from '../_shared/extractMentions.ts';
+import { computeNotificationRecipients } from '../_shared/notificationRecipients.ts';
+import {
+  buildNotificationRow,
+  classifyInsertResult,
+  type NotificationRowContext,
+} from '../_shared/notificationRow.ts';
 
 interface NotificationPayload {
   type: NotificationType;
@@ -12,6 +19,9 @@ interface NotificationPayload {
   comment_id_for_reply?: string;
   author_id: string;
 }
+
+const MENTION_ON_COMMENT: NotificationType = 'mention_on_comment';
+const MENTION_ON_REPLY: NotificationType = 'mention_on_reply';
 
 serve(async (req) => {
   try {
@@ -45,13 +55,12 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    let recipientId: string | null = null;
+    let structuralRecipientId: string | null = null;
     let boardId: string | null = null;
     let postId: string | null = payload.post_id || null;
     let commentId: string | null = payload.comment_id || null;
     let replyId: string | null = payload.reply_id || null;
-    let actorName = '';
-    let message = '';
+    let structuralPreview = '';
 
     // Fetch actor name
     const { data: actor, error: actorError } = await supabase
@@ -66,7 +75,7 @@ serve(async (req) => {
         headers: { 'Content-Type': 'application/json' },
       });
     }
-    actorName = actor.nickname || actor.real_name || '';
+    const actorName = actor.nickname || actor.real_name || '';
 
     switch (payload.type) {
       case 'comment_on_post':
@@ -77,20 +86,20 @@ serve(async (req) => {
           .select('author_id, board_id, title')
           .eq('id', payload.post_id)
           .single();
-        recipientId = post?.author_id;
-        boardId = post?.board_id;
-        message = buildNotificationMessage(payload.type, actorName, post?.title || '');
+        structuralRecipientId = post?.author_id ?? null;
+        boardId = post?.board_id ?? null;
+        structuralPreview = post?.title || '';
         break;
       }
       case 'reply_on_comment':
       case 'reaction_on_comment': {
         const { data: comment } = await supabase
           .from('comments')
-          .select('user_id, post_id, content')
+          .select('user_id, post_id, content, content_json')
           .eq('id', payload.comment_id)
           .single();
-        recipientId = comment?.user_id;
-        postId = comment?.post_id;
+        structuralRecipientId = comment?.user_id ?? null;
+        postId = comment?.post_id ?? postId;
         commentId = payload.comment_id || null;
 
         const { data: post } = await supabase
@@ -98,19 +107,21 @@ serve(async (req) => {
           .select('board_id')
           .eq('id', comment?.post_id)
           .single();
-        boardId = post?.board_id;
+        boardId = post?.board_id ?? null;
 
-        message = buildNotificationMessage(payload.type, actorName, comment?.content || '');
+        structuralPreview = comment?.content_json
+          ? extractPlainText(comment.content_json)
+          : comment?.content || '';
         break;
       }
       case 'reaction_on_reply': {
         const { data: reply } = await supabase
           .from('replies')
-          .select('user_id, post_id, comment_id, content')
+          .select('user_id, post_id, comment_id, content, content_json')
           .eq('id', payload.reply_id)
           .single();
-        recipientId = reply?.user_id;
-        postId = reply?.post_id;
+        structuralRecipientId = reply?.user_id ?? null;
+        postId = reply?.post_id ?? postId;
         commentId = reply?.comment_id || null;
 
         const { data: post } = await supabase
@@ -118,19 +129,79 @@ serve(async (req) => {
           .select('board_id')
           .eq('id', reply?.post_id)
           .single();
-        boardId = post?.board_id;
+        boardId = post?.board_id ?? null;
 
-        message = buildNotificationMessage(payload.type, actorName, reply?.content || '');
+        structuralPreview = reply?.content_json
+          ? extractPlainText(reply.content_json)
+          : reply?.content || '';
         break;
       }
     }
 
-    // Don't notify self
-    if (shouldSkipNotification(recipientId, payload.author_id)) {
-      return new Response(JSON.stringify({ status: 'skipped', reason: 'self_or_no_recipient' }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    // Resolve the mention source: the newly created comment/reply whose
+    // content_json carries the mention nodes. Reactions/likes have no content.
+    let mentionType: NotificationType | null = null;
+    let mentionPreview = '';
+    let mentionContentJson: unknown = null;
+    let replyPostId: string | null = null;
+    if (payload.type === 'comment_on_post' && payload.comment_id) {
+      const { data: comment } = await supabase
+        .from('comments')
+        .select('content, content_json')
+        .eq('id', payload.comment_id)
+        .single();
+      mentionType = MENTION_ON_COMMENT;
+      mentionContentJson = comment?.content_json ?? null;
+      mentionPreview = comment?.content_json
+        ? extractPlainText(comment.content_json)
+        : comment?.content || '';
+      commentId = payload.comment_id;
+    } else if (
+      (payload.type === 'reply_on_post' || payload.type === 'reply_on_comment') &&
+      payload.reply_id
+    ) {
+      const { data: reply } = await supabase
+        .from('replies')
+        .select('content, content_json, post_id')
+        .eq('id', payload.reply_id)
+        .single();
+      mentionType = MENTION_ON_REPLY;
+      mentionContentJson = reply?.content_json ?? null;
+      mentionPreview = reply?.content_json
+        ? extractPlainText(reply.content_json)
+        : reply?.content || '';
+      replyId = payload.reply_id;
+      // Canonical post_id for the mention_on_reply idempotency key: derive it
+      // from the reply itself so both trigger calls agree regardless of how
+      // each resolved the structural postId.
+      replyPostId = reply?.post_id ?? null;
+    }
+
+    // Board-permission defense layer: only notify mentioned users who can read
+    // the board. This backstops the client-side participant filter at the
+    // privacy boundary. Self is excluded inside computeNotificationRecipients.
+    let mentionUserIds: string[] = [];
+    if (mentionType && mentionContentJson && boardId) {
+      const rawIds = extractMentionUserIds(mentionContentJson);
+      if (rawIds.length > 0) {
+        const { data: perms, error: permError } = await supabase
+          .from('user_board_permissions')
+          .select('user_id')
+          .eq('board_id', boardId)
+          .in('user_id', rawIds);
+        if (permError) {
+          // 권한 조회 실패 시 멘션은 건너뛴다. 접근 권한을 확인하지 못한 사람에게
+          // 알림을 보내지 않는 쪽이 프라이버시상 안전하다. 조용히 사라지지 않도록
+          // 로그를 남겨 장애를 추적할 수 있게 한다(구조적 알림은 그대로 진행).
+          console.error('Mention permission lookup failed; skipping mentions', {
+            boardId,
+            error: permError.message,
+          });
+        } else {
+          const allowed = new Set((perms ?? []).map((p) => p.user_id));
+          mentionUserIds = rawIds.filter((id) => allowed.has(id));
+        }
+      }
     }
 
     // Ensure required fields exist
@@ -142,39 +213,69 @@ serve(async (req) => {
       });
     }
 
-    // Create notification — only include non-null optional fields
-    const notificationRow: Record<string, unknown> = {
-      recipient_id: recipientId,
-      type: payload.type,
-      actor_id: payload.author_id,
-      board_id: boardId,
-      post_id: postId,
-      message,
-      read: false,
-    };
-    if (commentId) notificationRow.comment_id = commentId;
-    if (replyId) notificationRow.reply_id = replyId;
-    if (payload.reaction_id) notificationRow.reaction_id = payload.reaction_id;
-    if (payload.like_id) notificationRow.like_id = payload.like_id;
+    const targets = computeNotificationRecipients({
+      structuralRecipientId,
+      structuralType: payload.type,
+      mentionType,
+      mentionUserIds,
+      actorId: payload.author_id,
+    });
 
-    const { error: insertError } = await supabase.from('notifications').insert(notificationRow);
-
-    if (insertError) {
-      console.error('Error inserting notification:', insertError);
-
-      // Log to failed_notifications for retry
-      await supabase.from('failed_notifications').insert({
-        payload: payload as unknown as Record<string, unknown>,
-        error_message: insertError.message,
-      });
-
-      return new Response(JSON.stringify({ error: insertError.message }), {
-        status: 500,
+    if (targets.length === 0) {
+      return new Response(JSON.stringify({ status: 'skipped', reason: 'no_recipients' }), {
+        status: 200,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    return new Response(JSON.stringify({ status: 'created' }), {
+    const rowContext: NotificationRowContext = {
+      actorId: payload.author_id,
+      actorName,
+      boardId,
+      postId,
+      commentId,
+      replyId,
+      replyPostId,
+      structuralPreview,
+      mentionPreview,
+      reactionId: payload.reaction_id ?? null,
+      likeId: payload.like_id ?? null,
+    };
+
+    let created = 0;
+    let duplicate = 0;
+    const failures: { message: string }[] = [];
+
+    for (const target of targets) {
+      const { error: insertError } = await supabase
+        .from('notifications')
+        .insert(buildNotificationRow(target, rowContext));
+      const outcome = classifyInsertResult(insertError);
+      if (outcome === 'created') {
+        created++;
+      } else if (outcome === 'duplicate') {
+        duplicate++;
+      } else {
+        console.error('Error inserting notification:', insertError);
+        failures.push({ message: insertError!.message });
+      }
+    }
+
+    if (failures.length > 0) {
+      // Log to failed_notifications for retry. Retrying is safe because the
+      // idempotency index turns already-created rows into benign duplicates.
+      await supabase.from('failed_notifications').insert({
+        payload: payload as unknown as Record<string, unknown>,
+        error_message: failures.map((f) => f.message).join('; '),
+      });
+
+      return new Response(
+        JSON.stringify({ status: 'partial', created, duplicate, failed: failures.length }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    return new Response(JSON.stringify({ status: 'created', created, duplicate }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });

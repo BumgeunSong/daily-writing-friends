@@ -4,7 +4,9 @@ export type NotificationType =
   | 'reply_on_comment'
   | 'like_on_post'
   | 'reaction_on_comment'
-  | 'reaction_on_reply';
+  | 'reaction_on_reply'
+  | 'mention_on_comment'
+  | 'mention_on_reply';
 
 /**
  * 알림 메시지를 생성하는 순수 함수
@@ -35,6 +37,10 @@ export function buildNotificationMessage(
       return `${actorName}님이 '${preview}' 댓글에 반응했어요.`;
     case 'reaction_on_reply':
       return `${actorName}님이 '${preview}' 답글에 반응했어요.`;
+    case 'mention_on_comment':
+      return `${actorName}님이 '${preview}' 댓글에서 나를 언급했어요.`;
+    case 'mention_on_reply':
+      return `${actorName}님이 '${preview}' 답글에서 나를 언급했어요.`;
   }
 }
 
