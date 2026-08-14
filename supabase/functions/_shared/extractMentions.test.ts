@@ -170,6 +170,12 @@ Deno.test('htmlToPlainText', async (t) => {
     assertEquals(htmlToPlainText('<p>&amp;lt;</p>'), '&lt;');
   });
 
+  await t.step('script/style은 본문 텍스트까지 통째로 제거한다', () => {
+    assertEquals(htmlToPlainText('<style>.a{color:red}</style><p>본문</p>'), '본문');
+    assertEquals(htmlToPlainText('<script>alert("x")</script>안녕'), '안녕');
+    assertEquals(htmlToPlainText('<script>if (1 < 2) f()</script>진짜 본문'), '진짜 본문');
+  });
+
   await t.step('태그가 없는 평문은 그대로 통과한다', () => {
     assertEquals(htmlToPlainText('그냥 평범한 댓글'), '그냥 평범한 댓글');
   });

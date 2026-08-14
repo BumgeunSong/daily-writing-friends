@@ -79,6 +79,8 @@ export function htmlToPlainText(html: unknown): string {
   if (typeof html !== 'string' || html === '') return '';
 
   return html
+    // script/style은 본문 텍스트가 미리보기로 새지 않도록 요소째 제거한다.
+    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ')
     .replace(/<\/(p|div|li|h[1-6]|blockquote)>/gi, ' ')
     .replace(/<br\s*\/?>/gi, ' ')
     .replace(/<[^>]*>/g, '')
