@@ -1,7 +1,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import type { NotificationType } from '../_shared/notificationMessages.ts';
-import { extractMentionUserIds, extractPlainText } from '../_shared/extractMentions.ts';
+import {
+  contentPreviewText,
+  extractMentionUserIds,
+} from '../_shared/extractMentions.ts';
 import { computeNotificationRecipients } from '../_shared/notificationRecipients.ts';
 import {
   buildNotificationRow,
@@ -109,9 +112,7 @@ serve(async (req) => {
           .single();
         boardId = post?.board_id ?? null;
 
-        structuralPreview = comment?.content_json
-          ? extractPlainText(comment.content_json)
-          : comment?.content || '';
+        structuralPreview = contentPreviewText(comment?.content_json, comment?.content);
         break;
       }
       case 'reaction_on_reply': {
@@ -131,9 +132,7 @@ serve(async (req) => {
           .single();
         boardId = post?.board_id ?? null;
 
-        structuralPreview = reply?.content_json
-          ? extractPlainText(reply.content_json)
-          : reply?.content || '';
+        structuralPreview = contentPreviewText(reply?.content_json, reply?.content);
         break;
       }
     }
@@ -152,9 +151,7 @@ serve(async (req) => {
         .single();
       mentionType = MENTION_ON_COMMENT;
       mentionContentJson = comment?.content_json ?? null;
-      mentionPreview = comment?.content_json
-        ? extractPlainText(comment.content_json)
-        : comment?.content || '';
+      mentionPreview = contentPreviewText(comment?.content_json, comment?.content);
       commentId = payload.comment_id;
     } else if (
       (payload.type === 'reply_on_post' || payload.type === 'reply_on_comment') &&
@@ -167,9 +164,7 @@ serve(async (req) => {
         .single();
       mentionType = MENTION_ON_REPLY;
       mentionContentJson = reply?.content_json ?? null;
-      mentionPreview = reply?.content_json
-        ? extractPlainText(reply.content_json)
-        : reply?.content || '';
+      mentionPreview = contentPreviewText(reply?.content_json, reply?.content);
       replyId = payload.reply_id;
       // Canonical post_id for the mention_on_reply idempotency key: derive it
       // from the reply itself so both trigger calls agree regardless of how
