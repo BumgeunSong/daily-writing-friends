@@ -95,7 +95,7 @@ function inPage({ dark, eps }) {
         textAlign: s.textAlign,
         boxShadow: s.boxShadow,
         borderWidth: `${s.borderTopWidth} ${s.borderRightWidth} ${s.borderBottomWidth} ${s.borderLeftWidth}`,
-        borderColor: rgba(s.borderTopColor),
+        borderColor: `${rgba(s.borderTopColor)} ${rgba(s.borderRightColor)} ${rgba(s.borderBottomColor)} ${rgba(s.borderLeftColor)}`,
         borderRadius: s.borderRadius,
         transform: s.transform,
       },
@@ -292,7 +292,7 @@ async function runScenario({ label, url }) {
   await browser.close();
   console.log(
     `\n${label}: ` +
-      summary.map((s) => `${s.env}(${s.nodes}n,${s.violations}v,${s.pageErrors}e${s.stable ? '' : ',UNSTABLE'})`).join('  '),
+      summary.map((s) => `${s.env}(${s.nodes}n,${s.violations}v,${s.pageErrors}e${s.stable ? '' : ',UNJUDGED'})`).join('  '),
   );
   const unjudged = summary.filter((s) => !s.stable);
   if (unjudged.length) {
