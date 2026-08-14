@@ -6,7 +6,6 @@ import type { Notification } from '@/notification/model/Notification';
 import { createNotificationQueryKey } from '@/notification/utils/notificationQueryKeys';
 import {
   flattenNotificationPages,
-  getLastNotificationTimestamp,
   reportNotificationFetchError,
 } from '@/notification/utils/notificationUtils';
 
@@ -46,7 +45,7 @@ export const useNotifications = (
     },
     {
       enabled: userId != null,
-      getNextPageParam: (lastPage) => getLastNotificationTimestamp(lastPage),
+      getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
       onError: (error) => {
         reportNotificationFetchError(error, {
           log: (message, err) => console.error(message, err),
