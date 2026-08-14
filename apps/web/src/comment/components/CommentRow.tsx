@@ -50,7 +50,7 @@ const CommentRow: React.FC<CommentRowProps> = ({
   const EditIcon = isEditing ? X : Edit;
 
   return (
-    <div className='flex flex-col space-y-3 pb-4'>
+    <div id={`comment-${comment.id}`} className='flex flex-col space-y-3 pb-4'>
       <div className='flex items-center justify-between'>
         <CommentHeader
           userId={comment.userId}

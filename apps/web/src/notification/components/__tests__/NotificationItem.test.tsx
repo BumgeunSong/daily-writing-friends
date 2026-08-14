@@ -94,16 +94,34 @@ describe('NotificationItem', () => {
   });
 
   describe('link generation', () => {
-    it('generates correct link URL for notification', () => {
+    it('deep-links to the comment for a comment notification', () => {
       const notification = createMockNotification({
         boardId: 'my-board',
         postId: 'my-post',
+        commentId: 'comment-789',
       });
 
       renderWithRouter(<NotificationItem notification={notification} />);
 
       const link = screen.getByRole('link');
-      expect(link).toHaveAttribute('href', '/board/my-board/post/my-post');
+      expect(link).toHaveAttribute('href', '/board/my-board/post/my-post?commentId=comment-789');
+    });
+
+    it('deep-links to the reply (with its parent comment) for a reply notification', () => {
+      const notification: Notification = {
+        ...createMockNotification({ boardId: 'my-board', postId: 'my-post' }),
+        type: NotificationType.REPLY_ON_COMMENT,
+        commentId: 'comment-789',
+        replyId: 'reply-456',
+      };
+
+      renderWithRouter(<NotificationItem notification={notification} />);
+
+      const link = screen.getByRole('link');
+      expect(link).toHaveAttribute(
+        'href',
+        '/board/my-board/post/my-post?commentId=comment-789&replyId=reply-456',
+      );
     });
   });
 
