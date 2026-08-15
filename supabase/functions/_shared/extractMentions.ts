@@ -69,3 +69,49 @@ export function extractPlainText(doc: unknown): string {
   walk(doc);
   return parts.join('').trim().replace(/\s+/g, ' ');
 }
+
+/**
+ * 레거시 HTML content(content_json이 없는 댓글/답글)를 알림 미리보기용 한 줄 평문으로
+ * 만든다. 문단·줄바꿈 경계는 공백으로 합쳐 content_json 경로(extractPlainText)와 같은
+ * 한 줄 형태를 낸다. DOM이 없는 Edge 런타임을 위해 정규식으로 태그를 제거한다.
+ */
+export function htmlToPlainText(html: unknown): string {
+  if (typeof html !== 'string' || html === '') return '';
+
+  // 태그 제거는 문자열이 안정될 때까지 반복한다. 한 번만 돌리면 <<script>script> 처럼
+  // 한 매치를 지운 자리가 새 태그로 재조립되는 입력이 그대로 남을 수 있다.
+  let stripped = html;
+  let previous: string;
+  do {
+    previous = stripped;
+    stripped = stripped
+      // script/style은 본문 텍스트가 미리보기로 새지 않도록 요소째 제거한다.
+      .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ')
+      .replace(/<\/(p|div|li|h[1-6]|blockquote)>/gi, ' ')
+      .replace(/<br\s*\/?>/gi, ' ')
+      .replace(/<[^>]*>/g, '');
+  } while (stripped !== previous);
+
+  return stripped
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    // &amp;는 마지막에 디코딩해야 &amp;lt; 같은 입력이 태그로 재해석되지 않는다.
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * 알림 미리보기 평문을 만든다. content_json이 있으면 그 트리를 평문화하고, 없으면
+ * 레거시 HTML content에서 태그를 벗긴다. 네 곳의 fallback이 이 함수를 거쳐 HTML
+ * 태그가 미리보기로 새는 것을 한곳에서 막는다.
+ */
+export function contentPreviewText(
+  contentJson: unknown,
+  contentHtml: string | null | undefined,
+): string {
+  return contentJson ? extractPlainText(contentJson) : htmlToPlainText(contentHtml);
+}

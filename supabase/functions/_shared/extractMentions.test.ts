@@ -1,5 +1,10 @@
 import { assertEquals } from 'jsr:@std/assert@1';
-import { extractMentionUserIds, extractPlainText } from './extractMentions.ts';
+import {
+  contentPreviewText,
+  extractMentionUserIds,
+  extractPlainText,
+  htmlToPlainText,
+} from './extractMentions.ts';
 
 Deno.test('extractMentionUserIds', async (t) => {
   await t.step('멘션이 없으면 빈 배열', () => {
@@ -135,5 +140,74 @@ Deno.test('extractPlainText', async (t) => {
   await t.step('null/문서 아님이면 빈 문자열', () => {
     assertEquals(extractPlainText(null), '');
     assertEquals(extractPlainText('not a doc'), '');
+  });
+});
+
+Deno.test('htmlToPlainText', async (t) => {
+  await t.step('단일 문단의 <p> 태그를 벗겨낸다', () => {
+    assertEquals(
+      htmlToPlainText('<p>진짜 번역 제목 보면 한숨나오는 거 많음..ㅋㅋ</p>'),
+      '진짜 번역 제목 보면 한숨나오는 거 많음..ㅋㅋ',
+    );
+  });
+
+  await t.step('문단 경계와 <br>은 공백으로 합쳐 한 줄로 만든다', () => {
+    assertEquals(htmlToPlainText('<p>첫 줄</p><p>둘째 줄</p>'), '첫 줄 둘째 줄');
+    assertEquals(htmlToPlainText('첫 줄<br>둘째 줄'), '첫 줄 둘째 줄');
+  });
+
+  await t.step('중첩 태그와 속성이 있어도 텍스트만 남긴다', () => {
+    assertEquals(
+      htmlToPlainText('<p>안녕 <strong>여러분</strong> <a href="http://x">링크</a></p>'),
+      '안녕 여러분 링크',
+    );
+  });
+
+  await t.step('HTML 엔티티를 디코딩하되 &amp;는 마지막에 처리한다', () => {
+    assertEquals(htmlToPlainText('<p>A &amp; B</p>'), 'A & B');
+    assertEquals(htmlToPlainText('<p>&lt;p&gt; 는 태그</p>'), '<p> 는 태그');
+    // 사용자가 문자 그대로 입력한 &lt; 는 재해석되지 않는다
+    assertEquals(htmlToPlainText('<p>&amp;lt;</p>'), '&lt;');
+  });
+
+  await t.step('script/style은 본문 텍스트까지 통째로 제거한다', () => {
+    assertEquals(htmlToPlainText('<style>.a{color:red}</style><p>본문</p>'), '본문');
+    assertEquals(htmlToPlainText('<script>alert("x")</script>안녕'), '안녕');
+    assertEquals(htmlToPlainText('<script>if (1 < 2) f()</script>진짜 본문'), '진짜 본문');
+  });
+
+  await t.step('제거 자리가 태그로 재조립되어도 살아있는 <script 토큰은 남기지 않는다', () => {
+    assertEquals(htmlToPlainText('<<script>script>alert(1)본문').includes('<script'), false);
+    assertEquals(htmlToPlainText('<scr<script>ipt>x</script>진짜 본문').includes('<script'), false);
+  });
+
+  await t.step('태그가 없는 평문은 그대로 통과한다', () => {
+    assertEquals(htmlToPlainText('그냥 평범한 댓글'), '그냥 평범한 댓글');
+  });
+
+  await t.step('빈 값/문자열 아님이면 빈 문자열', () => {
+    assertEquals(htmlToPlainText(''), '');
+    assertEquals(htmlToPlainText(null as unknown as string), '');
+    assertEquals(htmlToPlainText(undefined as unknown as string), '');
+  });
+});
+
+Deno.test('contentPreviewText', async (t) => {
+  await t.step('content_json이 있으면 평문화 경로를 쓴다', () => {
+    const doc = {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: '제이슨 본문' }] }],
+    };
+    assertEquals(contentPreviewText(doc, '<p>무시되는 HTML</p>'), '제이슨 본문');
+  });
+
+  await t.step('content_json이 없으면 레거시 HTML에서 태그를 벗긴다', () => {
+    assertEquals(contentPreviewText(null, '<p>레거시 댓글</p>'), '레거시 댓글');
+    assertEquals(contentPreviewText(undefined, '<p>레거시 댓글</p>'), '레거시 댓글');
+  });
+
+  await t.step('둘 다 없으면 빈 문자열', () => {
+    assertEquals(contentPreviewText(null, null), '');
+    assertEquals(contentPreviewText(null, undefined), '');
   });
 });
