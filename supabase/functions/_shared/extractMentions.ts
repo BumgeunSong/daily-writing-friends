@@ -78,12 +78,21 @@ export function extractPlainText(doc: unknown): string {
 export function htmlToPlainText(html: unknown): string {
   if (typeof html !== 'string' || html === '') return '';
 
-  return html
-    // script/style은 본문 텍스트가 미리보기로 새지 않도록 요소째 제거한다.
-    .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ')
-    .replace(/<\/(p|div|li|h[1-6]|blockquote)>/gi, ' ')
-    .replace(/<br\s*\/?>/gi, ' ')
-    .replace(/<[^>]*>/g, '')
+  // 태그 제거는 문자열이 안정될 때까지 반복한다. 한 번만 돌리면 <<script>script> 처럼
+  // 한 매치를 지운 자리가 새 태그로 재조립되는 입력이 그대로 남을 수 있다.
+  let stripped = html;
+  let previous: string;
+  do {
+    previous = stripped;
+    stripped = stripped
+      // script/style은 본문 텍스트가 미리보기로 새지 않도록 요소째 제거한다.
+      .replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, ' ')
+      .replace(/<\/(p|div|li|h[1-6]|blockquote)>/gi, ' ')
+      .replace(/<br\s*\/?>/gi, ' ')
+      .replace(/<[^>]*>/g, '');
+  } while (stripped !== previous);
+
+  return stripped
     .replace(/&nbsp;/g, ' ')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')

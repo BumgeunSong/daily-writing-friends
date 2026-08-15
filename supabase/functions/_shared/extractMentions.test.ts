@@ -176,6 +176,11 @@ Deno.test('htmlToPlainText', async (t) => {
     assertEquals(htmlToPlainText('<script>if (1 < 2) f()</script>진짜 본문'), '진짜 본문');
   });
 
+  await t.step('제거 자리가 태그로 재조립되어도 살아있는 <script 토큰은 남기지 않는다', () => {
+    assertEquals(htmlToPlainText('<<script>script>alert(1)본문').includes('<script'), false);
+    assertEquals(htmlToPlainText('<scr<script>ipt>x</script>진짜 본문').includes('<script'), false);
+  });
+
   await t.step('태그가 없는 평문은 그대로 통과한다', () => {
     assertEquals(htmlToPlainText('그냥 평범한 댓글'), '그냥 평범한 댓글');
   });
