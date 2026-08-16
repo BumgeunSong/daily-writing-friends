@@ -73,12 +73,16 @@ export const useBestPosts = (boardId: string, targetCount: number) => {
   const { currentUser } = useAuth();
   const { data: blockedByUsers } = useBlockedByUsers(currentUser?.uid);
 
+  // Don't gate on !!blockedByUsers: fire best-posts immediately with the empty
+  // default; the queryKey changes and TanStack refetches if a non-empty list
+  // resolves later. Strips one Supabase RTT from the best-view's LCP path.
+  const effectiveBlockedByUsers = blockedByUsers ?? [];
   const queryResult = useInfiniteQuery<Post[]>(
-    buildBestPostsQueryKey(boardId, blockedByUsers),
+    buildBestPostsQueryKey(boardId, effectiveBlockedByUsers),
     ({ pageParam = undefined }) =>
-      fetchBestPosts(boardId, BEST_POSTS_PAGE_SIZE, blockedByUsers ?? [], pageParam),
+      fetchBestPosts(boardId, BEST_POSTS_PAGE_SIZE, effectiveBlockedByUsers, pageParam),
     {
-      enabled: !!boardId && !!currentUser?.uid && !!blockedByUsers,
+      enabled: !!boardId && !!currentUser?.uid,
       getNextPageParam: getBestPostsNextPageParam,
       meta: {
         errorContext: 'Loading best posts',
