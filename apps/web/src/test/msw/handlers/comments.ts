@@ -5,25 +5,24 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? 'http://localhost:5432
 const COMMENTS_URL = `${SUPABASE_URL}/rest/v1/comments`;
 
 /**
- * MSW handler for `GET /rest/v1/comments` (the `useComments` suspense read).
- * Honors the narrow slice `fetchCommentsFromSupabase` depends on: `post_id=eq.<id>`
- * and `order=created_at.asc`. Any other filter shape is a config/drift bug — fail
- * loud rather than silently returning the full list (mirrors postsFeedHandler).
+ * MSW handler for the `useComments` list read: `post_id=eq.<id>` + `order=created_at.asc`.
+ * The `/rest/v1/comments` path is also hit by stats reads (`user_id=eq.`, no
+ * `post_id`, a `posts!inner` embed) — those carry no `post_id`, so we answer them
+ * with an empty list rather than the wrongly-shaped comment rows. A present-but-non-`eq.`
+ * `post_id` is a real drift — fail loud (mirrors postsFeedHandler).
  */
 export function commentsHandler({ comments }: { comments: CommentRowWire[] }) {
   return http.get(COMMENTS_URL, ({ request }) => {
-    const url = new URL(request.url);
-
-    const postIdFilter = url.searchParams.get('post_id');
-    if (postIdFilter !== null && !postIdFilter.startsWith('eq.')) {
+    const postIdFilter = new URL(request.url).searchParams.get('post_id');
+    if (postIdFilter === null) return HttpResponse.json([]);
+    if (!postIdFilter.startsWith('eq.')) {
       return HttpResponse.json(
         { message: `commentsHandler: unsupported post_id filter "${postIdFilter}"` },
         { status: 500 },
       );
     }
-    const wantedPost = postIdFilter?.slice('eq.'.length);
-    const rows = wantedPost ? comments.filter((c) => c.post_id === wantedPost) : comments;
-
+    const wantedPost = postIdFilter.slice('eq.'.length);
+    const rows = comments.filter((c) => c.post_id === wantedPost);
     const ordered = [...rows].sort((a, b) => a.created_at.localeCompare(b.created_at));
     return HttpResponse.json(ordered);
   });
