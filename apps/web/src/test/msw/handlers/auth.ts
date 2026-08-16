@@ -21,6 +21,15 @@ export function resetAuthHandlerState(): void {
   setSession(null);
 }
 
+/**
+ * Seed the signed-in session directly, bypassing the password-grant round-trip.
+ * Used by the browser visual-gate harness to appear logged-in before render.
+ * Pair with `authSessionFromEmail` to keep the userId===email invariant.
+ */
+export function seedAuthSession(next: AuthSession): void {
+  setSession(next);
+}
+
 export function testEmailFor(userId: string): string {
   return `${userId}@test.local`;
 }
