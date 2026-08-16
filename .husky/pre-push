@@ -21,3 +21,13 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "TypeScript check passed"
+
+echo "Running visual gate (A-layer safety net)..."
+pnpm gate:check
+
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "Visual gate found a stably-judged regression. Push aborted."
+  echo "Inspect the reported scenario/env, or use 'git push --no-verify' to skip."
+  exit 1
+fi
