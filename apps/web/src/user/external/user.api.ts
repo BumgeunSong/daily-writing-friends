@@ -177,5 +177,7 @@ export async function getBlockedByUsers(userId: string): Promise<string[]> {
     .select('blocker_id')
     .eq('blocked_id', userId);
   if (error) throw error;
-  return (data || []).map(row => row.blocker_id);
+  // Canonical (sorted) order: this list is hashed positionally into React Query
+  // keys, so a reordered result would otherwise force a spurious refetch.
+  return (data || []).map(row => row.blocker_id).sort();
 }
