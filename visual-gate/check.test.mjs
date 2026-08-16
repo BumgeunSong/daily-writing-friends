@@ -1,7 +1,24 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { decideVerdict, waitForServer } from './check.mjs';
+import { decideVerdict, scenarioUrl, waitForServer } from './check.mjs';
+
+const HARNESS = 'http://localhost:5199/visual-gate/index.html';
+
+test('scenarioUrl builds a ?__fixture= URL for a fixture scenario', () => {
+  const url = scenarioUrl(HARNESS, { name: 'comments-long-thread', fixture: 'comments-long-thread' });
+  assert.equal(url, `${HARNESS}?__fixture=comments-long-thread`);
+});
+
+test('scenarioUrl builds a ?component= URL for a legacy scenario', () => {
+  const url = scenarioUrl(HARNESS, { name: 'commentInput', component: 'commentInput' });
+  assert.equal(url, `${HARNESS}?component=commentInput`);
+});
+
+test('scenarioUrl prefers the fixture field when both are present', () => {
+  const url = scenarioUrl(HARNESS, { name: 'x', component: 'legacy', fixture: 'fx' });
+  assert.equal(url, `${HARNESS}?__fixture=fx`);
+});
 
 const row = (over) => ({ scenario: 's', env: 'E0', stable: true, violations: 0, reason: undefined, ...over });
 

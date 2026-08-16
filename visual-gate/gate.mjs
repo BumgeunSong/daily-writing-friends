@@ -240,7 +240,7 @@ async function captureStable(page, env) {
   return { result, stable: streak >= STREAK };
 }
 
-async function runScenario({ label, url }) {
+async function runScenario({ label, url, minNodes }) {
   mkdirSync(reportsDir, { recursive: true });
   const browser = await chromium.launch();
   const summary = [];
@@ -268,15 +268,30 @@ async function runScenario({ label, url }) {
     });
 
     const { result, stable } = await captureStable(page, env);
-    const judged = stable && ready && !result.noRoot;
-    const reason = result.noRoot ? result.reason : !ready ? 'no-vg-ready' : !stable ? 'no-convergence' : undefined;
+    const nodeCount = result.tree ? countNodes(result.tree) : 0;
+    const stableJudged = stable && ready && !result.noRoot;
+    // A stable-but-near-empty capture is the false-clean trap: a broken handler
+    // renders no content, every violation rule finds nothing, and the gate would
+    // pass clean. A per-scenario floor routes an evaporated fixture to unjudged
+    // (loud-pass) instead of certifying a blank baseline.
+    const belowFloor = stableJudged && typeof minNodes === 'number' && nodeCount < minNodes;
+    const judged = stableJudged && !belowFloor;
+    const reason = result.noRoot
+      ? result.reason
+      : !ready
+        ? 'no-vg-ready'
+        : !stable
+          ? 'no-convergence'
+          : belowFloor
+            ? `below-min-nodes(${nodeCount}<${minNodes})`
+            : undefined;
 
     const outBase = path.join(reportsDir, `${label}-${env.id}`);
     writeFileSync(`${outBase}.json`, JSON.stringify({ env, url, stable: judged, reason, ...result, errors }, null, 2));
     await page.screenshot({ path: `${outBase}.png`, fullPage: true });
     summary.push({
       env: env.id,
-      nodes: result.tree ? countNodes(result.tree) : 0,
+      nodes: nodeCount,
       violations: result.violations ? result.violations.length : 0,
       pageErrors: errors.length,
       stable: judged,

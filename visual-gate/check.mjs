@@ -17,16 +17,28 @@ const SERVER_POLL_INTERVAL_MS = 300;
 const SIGINT_EXIT_CODE = 130;
 const SIGTERM_EXIT_CODE = 143;
 
-// Inline until Phase 2 gives scenarios real route URLs behind a ?__fixture= contract.
+// A scenario is either a legacy isolated component (?component=) or a fixture
+// that renders a real data-driven screen via MSW (?__fixture=). Inline until the
+// registry schema stabilizes.
 const SCENARIOS = [
   { name: 'commentInput', component: 'commentInput' },
   { name: 'mentionable', component: 'mentionable' },
   { name: 'replyInput', component: 'replyInput' },
+  // minNodes floors the fixture against a false-clean baseline: a clean render is
+  // ~83 nodes, an evaporated (broken-handler) render ~14, so 40 abstains on empty.
+  { name: 'comments-long-thread', fixture: 'comments-long-thread', minNodes: 40 },
 ];
 
 // Loud-pass: only a stably-judged env carrying violations fails the gate. Unjudged
 // envs (nondeterministic render, missing root, no ready signal) are infra/flaky —
 // surfaced by name+reason but never blocking, so in-loop agents keep the gate.
+// A fixture scenario resolves to ?__fixture= (real MSW-backed screen); a legacy
+// scenario to ?component= (isolated component). Pure so it can be unit-tested.
+function scenarioUrl(harnessUrl, scenario) {
+  const query = scenario.fixture ? `__fixture=${scenario.fixture}` : `component=${scenario.component}`;
+  return `${harnessUrl}?${query}`;
+}
+
 function decideVerdict(rows) {
   const regressions = rows.filter((row) => row.stable && row.violations > 0);
   const unjudged = rows.filter((row) => !row.stable);
@@ -61,6 +73,9 @@ function bootServer() {
     cwd: webRoot,
     detached: true,
     stdio: 'ignore',
+    // Fixture scenarios need the real Supabase client (MSW intercepts); the flag
+    // drops the offline fake-client alias in vite.gate.config.
+    env: { ...process.env, VG_FIXTURES: '1' },
   });
 }
 
@@ -76,8 +91,11 @@ function killServer(child) {
 async function captureAllScenarios() {
   const rows = [];
   for (const scenario of SCENARIOS) {
-    const url = `${HARNESS_URL}?component=${scenario.component}`;
-    const summary = await runScenario({ label: scenario.name, url });
+    const summary = await runScenario({
+      label: scenario.name,
+      url: scenarioUrl(HARNESS_URL, scenario),
+      minNodes: scenario.minNodes,
+    });
     for (const envRow of summary) rows.push({ ...envRow, scenario: scenario.name });
   }
   return rows;
@@ -121,7 +139,7 @@ async function main() {
   }
 }
 
-export { decideVerdict, waitForServer };
+export { decideVerdict, scenarioUrl, waitForServer };
 
 const invokedDirectly = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
 if (invokedDirectly) {
