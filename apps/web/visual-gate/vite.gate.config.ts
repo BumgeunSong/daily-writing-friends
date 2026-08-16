@@ -9,10 +9,21 @@ const webRoot = path.resolve(here, '..');
 const src = path.resolve(webRoot, 'src');
 const fakeClient = path.resolve(src, 'shared/external/__fixtures__/supabaseClient.ts');
 
+// VG_FIXTURES=1 switches the harness from the offline fake client to the real
+// Supabase client + MSW: the fake alias short-circuits the network, so it must be
+// dropped for MSW to see any request. Legacy ?component= scenarios keep the fake.
+const useFixtures = process.env.VG_FIXTURES === '1';
+
+const alias = [
+  { find: /^@\//, replacement: src + '/' },
+];
+if (!useFixtures) {
+  // Specific alias must precede the generic `@` alias so it wins.
+  alias.unshift({ find: /^@\/shared\/external\/supabaseClient$/, replacement: fakeClient });
+}
+
 // Standalone dev server for the visual-gate harness. Root stays apps/web so the
-// repo's tailwind/postcss config apply. The only override vs the app is swapping
-// the Supabase client factory for the offline fake — the specific alias must come
-// before the generic `@` alias so it wins.
+// repo's tailwind/postcss config apply.
 export default defineConfig({
   root: webRoot,
   plugins: [
@@ -21,12 +32,12 @@ export default defineConfig({
     componentDebugger({ enabled: true, attributePrefix: 'data-vg', preset: 'minimal' }),
     react(),
   ],
-  resolve: {
-    alias: [
-      { find: /^@\/shared\/external\/supabaseClient$/, replacement: fakeClient },
-      { find: /^@\//, replacement: src + '/' },
-    ],
+  // Point the real client and the MSW handlers at the same interceptable origin.
+  define: {
+    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify('http://localhost:54321'),
+    'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify('test-anon-key'),
   },
+  resolve: { alias },
   server: { port: 5199, strictPort: true },
   optimizeDeps: { entries: ['visual-gate/main.tsx'] },
 });
