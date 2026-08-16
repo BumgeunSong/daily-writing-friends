@@ -17,11 +17,14 @@ const SERVER_POLL_INTERVAL_MS = 300;
 const SIGINT_EXIT_CODE = 130;
 const SIGTERM_EXIT_CODE = 143;
 
-// Inline until Phase 2 gives scenarios real route URLs behind a ?__fixture= contract.
+// A scenario is either a legacy isolated component (?component=) or a fixture
+// that renders a real data-driven screen via MSW (?__fixture=). Inline until the
+// registry schema stabilizes.
 const SCENARIOS = [
   { name: 'commentInput', component: 'commentInput' },
   { name: 'mentionable', component: 'mentionable' },
   { name: 'replyInput', component: 'replyInput' },
+  { name: 'comments-long-thread', fixture: 'comments-long-thread' },
 ];
 
 // Loud-pass: only a stably-judged env carrying violations fails the gate. Unjudged
@@ -61,6 +64,9 @@ function bootServer() {
     cwd: webRoot,
     detached: true,
     stdio: 'ignore',
+    // Fixture scenarios need the real Supabase client (MSW intercepts); the flag
+    // drops the offline fake-client alias in vite.gate.config.
+    env: { ...process.env, VG_FIXTURES: '1' },
   });
 }
 
@@ -76,7 +82,8 @@ function killServer(child) {
 async function captureAllScenarios() {
   const rows = [];
   for (const scenario of SCENARIOS) {
-    const url = `${HARNESS_URL}?component=${scenario.component}`;
+    const query = scenario.fixture ? `__fixture=${scenario.fixture}` : `component=${scenario.component}`;
+    const url = `${HARNESS_URL}?${query}`;
     const summary = await runScenario({ label: scenario.name, url });
     for (const envRow of summary) rows.push({ ...envRow, scenario: scenario.name });
   }
