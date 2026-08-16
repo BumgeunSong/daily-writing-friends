@@ -1,5 +1,6 @@
 import { MemoryRouter } from 'react-router-dom';
 import Comments from '@/comment/components/Comments';
+import { PostVisibility } from '@/post/model/Post';
 import { authHandlers } from '@/test/msw/handlers/auth';
 import { blocksHandler } from '@/test/msw/handlers/blocks';
 import { commentsHandler } from '@/test/msw/handlers/comments';
@@ -82,7 +83,7 @@ export const commentsLongThread: Fixture = {
         postId={POST_ID}
         postAuthorId={POST_AUTHOR_ID}
         postAuthorNickname='작성자'
-        postVisibility='public'
+        postVisibility={PostVisibility.PUBLIC}
       />
     </MemoryRouter>
   ),

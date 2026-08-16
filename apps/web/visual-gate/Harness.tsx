@@ -44,7 +44,7 @@ function LegacyHarness() {
       {which === 'mentionable' ? (
         <MentionableInput boardId='gate-board' onSubmit={NOOP} />
       ) : which === 'replyInput' ? (
-        <ReplyInput onSubmit={NOOP} />
+        <ReplyInput boardId='gate-board' onSubmit={NOOP} />
       ) : (
         <CommentInput boardId='gate-board' onSubmit={NOOP} />
       )}
