@@ -5,6 +5,7 @@ import { useNavigate, useParams } from '@/shared/navigation';
 // Comments below the fold — lazy chunk lets LCP candidate paint first.
 const Comments = lazy(() => import('@/comment/components/Comments'));
 import { usePostDelete } from '@/post/hooks/usePostDelete';
+import { useScrollToDeepLinkTarget } from '@/post/hooks/useScrollToDeepLinkTarget';
 import { postQueryKey } from '@/post/utils/postQueryKeys';
 import { fetchPost } from '@/post/utils/postUtils';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -51,6 +52,8 @@ export default function PostDetailPage() {
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [postId]);
+
+  useScrollToDeepLinkTarget();
 
   if (isLoading) return <PostDetailSkeleton />;
   if (error || !post) return <PostDetailError boardId={boardId} />;

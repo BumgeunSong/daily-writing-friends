@@ -1,13 +1,10 @@
 import { createTimestamp } from '@/shared/model/Timestamp';
 import { describe, it, expect, vi } from 'vitest';
 import { NotificationType } from '@/notification/model/Notification';
-import {
-  flattenNotificationPages,
-  getLastNotificationTimestamp,
-  reportNotificationFetchError,
-} from './notificationUtils';
+import { flattenNotificationPages, reportNotificationFetchError } from './notificationUtils';
 import type { Notification } from '@/notification/model/Notification';
 import type { CommentNotification } from '@/notification/model/Notification';
+import type { NotificationPage } from '@/notification/external/notification.api';
 
 function createMockNotification(overrides: Partial<CommentNotification> = {}): Notification {
   return {
@@ -24,12 +21,16 @@ function createMockNotification(overrides: Partial<CommentNotification> = {}): N
   };
 }
 
+function createMockPage(notifications: Notification[]): NotificationPage {
+  return { notifications, nextCursor: null };
+}
+
 describe('notificationUtils', () => {
   describe('flattenNotificationPages', () => {
     it('should flatten multiple pages into single array', () => {
       const pages = [
-        [createMockNotification({ id: '1' }), createMockNotification({ id: '2' })],
-        [createMockNotification({ id: '3' }), createMockNotification({ id: '4' })],
+        createMockPage([createMockNotification({ id: '1' }), createMockNotification({ id: '2' })]),
+        createMockPage([createMockNotification({ id: '3' }), createMockNotification({ id: '4' })]),
       ];
 
       const result = flattenNotificationPages(pages);
@@ -48,8 +49,10 @@ describe('notificationUtils', () => {
       expect(result).toEqual([]);
     });
 
-    it('should handle single page', () => {
-      const pages = [[createMockNotification({ id: '1' }), createMockNotification({ id: '2' })]];
+    it('should handle a single page', () => {
+      const pages = [
+        createMockPage([createMockNotification({ id: '1' }), createMockNotification({ id: '2' })]),
+      ];
 
       const result = flattenNotificationPages(pages);
 
@@ -58,13 +61,13 @@ describe('notificationUtils', () => {
 
     it('should handle pages with different lengths', () => {
       const pages = [
-        [createMockNotification({ id: '1' })],
-        [
+        createMockPage([createMockNotification({ id: '1' })]),
+        createMockPage([
           createMockNotification({ id: '2' }),
           createMockNotification({ id: '3' }),
           createMockNotification({ id: '4' }),
-        ],
-        [createMockNotification({ id: '5' }), createMockNotification({ id: '6' })],
+        ]),
+        createMockPage([createMockNotification({ id: '5' }), createMockNotification({ id: '6' })]),
       ];
 
       const result = flattenNotificationPages(pages);
@@ -74,9 +77,9 @@ describe('notificationUtils', () => {
 
     it('should handle empty pages in between', () => {
       const pages = [
-        [createMockNotification({ id: '1' })],
-        [],
-        [createMockNotification({ id: '2' })],
+        createMockPage([createMockNotification({ id: '1' })]),
+        createMockPage([]),
+        createMockPage([createMockNotification({ id: '2' })]),
       ];
 
       const result = flattenNotificationPages(pages);
@@ -91,54 +94,11 @@ describe('notificationUtils', () => {
         message: 'Test message',
         read: true,
       });
-      const pages = [[notification]];
+      const pages = [createMockPage([notification])];
 
       const result = flattenNotificationPages(pages);
 
       expect(result[0]).toEqual(notification);
-    });
-  });
-
-  describe('getLastNotificationTimestamp', () => {
-    it('should return timestamp of last notification', () => {
-      const timestamp = createTimestamp(new Date('2025-01-15T12:00:00Z'));
-      const notifications = [
-        createMockNotification({ id: '1', timestamp: createTimestamp(new Date('2025-01-14')) }),
-        createMockNotification({ id: '2', timestamp }),
-      ];
-
-      const result = getLastNotificationTimestamp(notifications);
-
-      expect(result).toBe(timestamp);
-    });
-
-    it('should return undefined for empty array', () => {
-      const result = getLastNotificationTimestamp([]);
-      expect(result).toBeUndefined();
-    });
-
-    it('should return timestamp of single notification', () => {
-      const timestamp = createTimestamp(new Date('2025-01-15T12:00:00Z'));
-      const notifications = [createMockNotification({ timestamp })];
-
-      const result = getLastNotificationTimestamp(notifications);
-
-      expect(result).toBe(timestamp);
-    });
-
-    it('should return last notification timestamp regardless of date order', () => {
-      // The function returns the timestamp of the last item in array, not the oldest/newest
-      const olderTimestamp = createTimestamp(new Date('2025-01-10'));
-      const newerTimestamp = createTimestamp(new Date('2025-01-15'));
-
-      const notifications = [
-        createMockNotification({ id: '1', timestamp: newerTimestamp }),
-        createMockNotification({ id: '2', timestamp: olderTimestamp }), // Last in array
-      ];
-
-      const result = getLastNotificationTimestamp(notifications);
-
-      expect(result).toBe(olderTimestamp); // Returns last in array, not newest
     });
   });
 

@@ -42,7 +42,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
   const EditIcon = isEditing ? X : Edit;
 
   return (
-    <div className='group flex flex-col space-y-3 pb-4'>
+    <div id={`reply-${reply.id}`} className='group flex flex-col space-y-3 pb-4'>
       <div className='flex items-center justify-between'>
         <CommentHeader
           userId={reply.userId}
