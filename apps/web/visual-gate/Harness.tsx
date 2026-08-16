@@ -4,16 +4,33 @@ import { CommentInput } from '@/comment/components/CommentInput';
 import { MentionableInput } from '@/comment/components/MentionableInput';
 import ReplyInput from '@/comment/components/ReplyInput';
 
+import { SettledGate } from './SettledGate';
+import type { Fixture } from './fixtures';
+
 const NOOP = async () => {};
 
-// Mounts one comment-input component under test, chosen by ?component=.
-// Wrapped in a width box that stands in for the post-detail comment column.
-export function Harness() {
+// The width box stands in for the post-detail comment column.
+const GATE_ROOT_STYLE = { maxWidth: 640, margin: '0 auto', padding: 16 } as const;
+
+/**
+ * Fixture path: mount the fixture's real screen and let SettledGate own the
+ * data-vg-ready signal (it waits for async data). Legacy ?component= path:
+ * mount one stateless input and signal on fonts+rAF (settles synchronously).
+ */
+export function Harness({ fixture }: { fixture: Fixture | null }) {
+  if (fixture) {
+    return (
+      <div data-gate-root style={GATE_ROOT_STYLE}>
+        <SettledGate>{fixture.render()}</SettledGate>
+      </div>
+    );
+  }
+  return <LegacyHarness />;
+}
+
+function LegacyHarness() {
   const which = new URLSearchParams(location.search).get('component') ?? 'commentInput';
 
-  // The gate waits for data-vg-ready before capturing. Set it after the harness
-  // has committed and fonts have settled; the rAF defers one frame past commit so
-  // layout is final. With system fonts fonts.ready resolves immediately.
   useEffect(() => {
     let raf = 0;
     Promise.resolve(document.fonts?.ready).then(() => {
@@ -23,13 +40,13 @@ export function Harness() {
   }, []);
 
   return (
-    <div data-gate-root style={{ maxWidth: 640, margin: '0 auto', padding: 16 }}>
+    <div data-gate-root style={GATE_ROOT_STYLE}>
       {which === 'mentionable' ? (
-        <MentionableInput boardId="gate-board" onSubmit={NOOP} />
+        <MentionableInput boardId='gate-board' onSubmit={NOOP} />
       ) : which === 'replyInput' ? (
         <ReplyInput onSubmit={NOOP} />
       ) : (
-        <CommentInput boardId="gate-board" onSubmit={NOOP} />
+        <CommentInput boardId='gate-board' onSubmit={NOOP} />
       )}
     </div>
   );

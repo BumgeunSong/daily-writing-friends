@@ -39,8 +39,7 @@ const comments: CommentRowWire[] = [
   }),
   makeCommentRow({
     id: 'c3',
-    content:
-      '이 댓글은 문단 하나만큼 길어요. 여러 문장이 이어지면 세로 리듬과 줄 간격이 어떻게 쌓이는지, 그리고 가장 좁은 320px 환경에서 텍스트가 잘리지 않고 모두 보이는지를 함께 보려고 합니다. 실제 사용자가 남기는 긴 후기를 흉내 냈어요.',
+    content: '조금 긴 댓글. 여러 문장이 이어질 때 세로 리듬과 줄 간격이 어떻게 쌓이는지 봅니다.',
     user_name: '바사',
     author: { profile_photo_url: null, nickname: '바사' },
     created_at: '2024-12-30T00:00:00.000Z',
