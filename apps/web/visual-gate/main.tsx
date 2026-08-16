@@ -7,7 +7,6 @@ import { ThemeProvider } from '@/shared/contexts/ThemeContext';
 import { AuthProvider } from '@/shared/hooks/useAuth';
 import { queryClient } from '@/shared/lib/queryClient';
 import { makeWorker } from '@/test/msw/browser';
-import { authSessionFromEmail, seedAuthSession, testEmailFor } from '@/test/msw/handlers/auth';
 
 import { Harness } from './Harness';
 import { getFixture } from './fixtures';
@@ -19,10 +18,6 @@ async function bootstrap() {
   const fixture = getFixture(new URLSearchParams(location.search).get('__fixture'));
 
   if (fixture) {
-    if (fixture.auth) {
-      localStorage.setItem('currentUser', JSON.stringify(fixture.auth));
-      seedAuthSession(authSessionFromEmail(testEmailFor(fixture.auth.uid)));
-    }
     const worker = makeWorker(fixture.handlers());
     await worker.start({
       onUnhandledRequest: 'warn',
