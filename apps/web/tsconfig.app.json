@@ -27,5 +27,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "visual-gate"],
+  "exclude": ["visual-gate/vite.gate.config.ts"]
 }
