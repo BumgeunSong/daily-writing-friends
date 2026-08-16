@@ -30,6 +30,13 @@ const SCENARIOS = [
 // Loud-pass: only a stably-judged env carrying violations fails the gate. Unjudged
 // envs (nondeterministic render, missing root, no ready signal) are infra/flaky —
 // surfaced by name+reason but never blocking, so in-loop agents keep the gate.
+// A fixture scenario resolves to ?__fixture= (real MSW-backed screen); a legacy
+// scenario to ?component= (isolated component). Pure so it can be unit-tested.
+function scenarioUrl(harnessUrl, scenario) {
+  const query = scenario.fixture ? `__fixture=${scenario.fixture}` : `component=${scenario.component}`;
+  return `${harnessUrl}?${query}`;
+}
+
 function decideVerdict(rows) {
   const regressions = rows.filter((row) => row.stable && row.violations > 0);
   const unjudged = rows.filter((row) => !row.stable);
@@ -82,9 +89,7 @@ function killServer(child) {
 async function captureAllScenarios() {
   const rows = [];
   for (const scenario of SCENARIOS) {
-    const query = scenario.fixture ? `__fixture=${scenario.fixture}` : `component=${scenario.component}`;
-    const url = `${HARNESS_URL}?${query}`;
-    const summary = await runScenario({ label: scenario.name, url });
+    const summary = await runScenario({ label: scenario.name, url: scenarioUrl(HARNESS_URL, scenario) });
     for (const envRow of summary) rows.push({ ...envRow, scenario: scenario.name });
   }
   return rows;
@@ -128,7 +133,7 @@ async function main() {
   }
 }
 
-export { decideVerdict, waitForServer };
+export { decideVerdict, scenarioUrl, waitForServer };
 
 const invokedDirectly = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
 if (invokedDirectly) {
