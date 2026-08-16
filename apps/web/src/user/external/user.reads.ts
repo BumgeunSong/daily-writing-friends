@@ -17,12 +17,22 @@ const USER_SELECT =
 export async function fetchUserFromSupabase(uid: string): Promise<User | null> {
   const supabase = getSupabaseClient();
 
-  const { data, error } = await supabase
-    .from('users')
-    .select(`${USER_SELECT}, known_buddy_uid`)
-    .eq('id', uid)
-    .single();
+  // 유저 행과 권한 목록은 둘 다 uid에만 의존해 서로 독립적이므로 병렬로 실행한다.
+  // 유저가 없으면(PGRST116) 권한 쿼리는 빈 결과로 버려지지만, 그 콜드 경로 한 번의
+  // 낭비를 감수하고 매 세션 로드마다 왕복 한 번을 줄인다.
+  const [userResult, permResult] = await Promise.all([
+    supabase
+      .from('users')
+      .select(`${USER_SELECT}, known_buddy_uid`)
+      .eq('id', uid)
+      .single(),
+    supabase
+      .from('user_board_permissions')
+      .select('board_id, permission')
+      .eq('user_id', uid),
+  ]);
 
+  const { data, error } = userResult;
   if (error) {
     if (isNetworkError(error)) throw new SupabaseNetworkError(error);
     if (error.code === 'PGRST116') return null;
@@ -30,10 +40,7 @@ export async function fetchUserFromSupabase(uid: string): Promise<User | null> {
   }
   if (!data) return null;
 
-  const { data: permData, error: permError } = await supabase
-    .from('user_board_permissions')
-    .select('board_id, permission')
-    .eq('user_id', uid);
+  const { data: permData, error: permError } = permResult;
   if (permError) {
     if (isNetworkError(permError)) throw new SupabaseNetworkError(permError);
     throw permError;
