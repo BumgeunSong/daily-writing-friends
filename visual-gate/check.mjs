@@ -24,7 +24,9 @@ const SCENARIOS = [
   { name: 'commentInput', component: 'commentInput' },
   { name: 'mentionable', component: 'mentionable' },
   { name: 'replyInput', component: 'replyInput' },
-  { name: 'comments-long-thread', fixture: 'comments-long-thread' },
+  // minNodes floors the fixture against a false-clean baseline: a clean render is
+  // ~83 nodes, an evaporated (broken-handler) render ~14, so 40 abstains on empty.
+  { name: 'comments-long-thread', fixture: 'comments-long-thread', minNodes: 40 },
 ];
 
 // Loud-pass: only a stably-judged env carrying violations fails the gate. Unjudged
@@ -89,7 +91,11 @@ function killServer(child) {
 async function captureAllScenarios() {
   const rows = [];
   for (const scenario of SCENARIOS) {
-    const summary = await runScenario({ label: scenario.name, url: scenarioUrl(HARNESS_URL, scenario) });
+    const summary = await runScenario({
+      label: scenario.name,
+      url: scenarioUrl(HARNESS_URL, scenario),
+      minNodes: scenario.minNodes,
+    });
     for (const envRow of summary) rows.push({ ...envRow, scenario: scenario.name });
   }
   return rows;
