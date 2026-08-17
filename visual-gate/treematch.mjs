@@ -70,6 +70,19 @@ function metricDeltas(b, a) {
 const label = (n) =>
   `${n.tag}${n.ownText ? ` "${n.ownText.slice(0, 24)}"` : ''}${n.sourceId ? ` @${n.sourceId}` : ''}`;
 
+// A reported delta carries, alongside its human label, the machine-readable
+// identity the judge crosses against git diff: the node's own sourceId and the
+// sourceId chain of its ancestors (root→parent). Matching never uses these — they
+// exist only so the judge can ask "did the author touch this line, or an ancestor
+// file that legitimately reflows it?" ancestors is a plain string[] of sourceIds
+// (some entries undefined for library/SVG nodes without data-vg-id).
+const entry = (n, ancestors, extra) => ({
+  node: label(n),
+  sourceId: n.sourceId,
+  ancestors: ancestors.map((a) => a.sourceId),
+  ...extra,
+});
+
 // ---- longest strictly-increasing subsequence: returns the set of kept indices ----
 
 function lisKeptSet(seq) {
@@ -204,37 +217,39 @@ export function matchTrees(before, after) {
   const report = { unchanged: 0, changed: [], moved: [], added: [], removed: [], ambiguous: [] };
   const ambiguousKey = new Set();
 
-  const walkPair = (b, a) => {
+  // bAnc/aAnc are the ancestor chains (root→parent) on the before and after side,
+  // threaded down so each reported delta can name what legitimately reflows it.
+  const walkPair = (b, a, bAnc, aAnc) => {
     if (b.exactHash === a.exactHash) {
       report.unchanged += 1 + countDescendants(b);
       return;
     }
     const deltas = metricDeltas(b, a);
-    if (deltas.length) report.changed.push({ node: label(b), deltas });
-    reconcile(b.children ?? [], a.children ?? []);
+    if (deltas.length) report.changed.push(entry(b, bAnc, { kind: 'changed', deltas }));
+    reconcile(b.children ?? [], a.children ?? [], [...bAnc, b], [...aAnc, a]);
   };
 
-  const reconcile = (B, A) => {
+  const reconcile = (B, A, bAnc, aAnc) => {
     const { pairs, removed, added, ambiguous } = matchChildren(B, A);
     for (const [bi, ai] of ambiguous) {
       ambiguousKey.add(bi + ':' + ai);
-      report.ambiguous.push({ node: label(B[bi]), note: 'indistinguishable sibling changed' });
+      report.ambiguous.push(entry(B[bi], bAnc, { kind: 'ambiguous', note: 'indistinguishable sibling changed' }));
     }
     // moved = paired children not on the LIS of after-index (in before order)
     const ordered = pairs.filter(([bi, ai]) => !ambiguousKey.has(bi + ':' + ai)).sort((p, q) => p[0] - q[0]);
     const kept = lisKeptSet(ordered.map(([, ai]) => ai));
     ordered.forEach(([bi, ai], idx) => {
-      if (!kept.has(idx)) report.moved.push({ node: label(B[bi]) });
+      if (!kept.has(idx)) report.moved.push(entry(B[bi], bAnc, { kind: 'moved' }));
     });
     for (const [bi, ai] of pairs) {
       if (ambiguousKey.has(bi + ':' + ai)) continue;
-      walkPair(B[bi], A[ai]);
+      walkPair(B[bi], A[ai], bAnc, aAnc);
     }
-    for (const bi of removed) report.removed.push({ node: label(B[bi]) });
-    for (const ai of added) report.added.push({ node: label(A[ai]) });
+    for (const bi of removed) report.removed.push(entry(B[bi], bAnc, { kind: 'removed' }));
+    for (const ai of added) report.added.push(entry(A[ai], aAnc, { kind: 'added' }));
   };
 
-  walkPair(before, after);
+  walkPair(before, after, [], []);
   return report;
 }
 
