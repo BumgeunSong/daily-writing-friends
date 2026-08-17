@@ -21,7 +21,10 @@ const REFLOW_METRICS = new Set(['gapTop', 'widthRatio']);
 function isReflowShaped(delta) {
   if (delta.kind === 'moved') return true;
   if (delta.kind === 'changed') {
-    return delta.deltas.length > 0 && delta.deltas.every((d) => REFLOW_METRICS.has(d.split(':')[0]));
+    // Read the structured field names treematch attaches, not the display strings —
+    // splitting "field: a -> b" on ':' misparses any value that contains a colon.
+    const fields = delta.fields ?? [];
+    return fields.length > 0 && fields.every((f) => REFLOW_METRICS.has(f));
   }
   return false; // added / removed are structural — never reflow-excused
 }
@@ -45,19 +48,19 @@ export function judge({ report, touched }) {
   return { explained, unexplained, ambiguous: report.ambiguous ?? [] };
 }
 
-function why(delta) {
-  const own = delta.sourceId ?? 'no-source-id';
-  const anc = (delta.ancestors || []).filter(Boolean);
-  return `${delta.kind} ${delta.node}\n      source ${own}, ancestors [${anc.join(', ')}] — no author edit explains it`;
-}
-
 export function formatUnexplained(result) {
   const lines = [];
   lines.push(
     `judgment: ${result.explained.length} explained, ${result.unexplained.length} unexplained, ` +
       `${result.ambiguous.length} unattributable`,
   );
-  for (const d of result.unexplained) lines.push(`  [unexplained] ${why(d)}`);
+  for (const d of result.unexplained) {
+    const own = d.sourceId ?? 'no-source-id';
+    // Keep unlabeled (undefined) ancestors visible as ?: an omitted entry hides that
+    // a library/SVG node sits in the chain, which is exactly the audit trail here.
+    const anc = (d.ancestors || []).map((a) => a ?? '?').join(', ');
+    lines.push(`  [unexplained] ${d.kind} ${d.node}\n      source ${own}, ancestors [${anc}] — no author edit explains it`);
+  }
   for (const a of result.ambiguous) lines.push(`  [unattributable] ${a.kind ?? 'ambiguous'} ${a.node} (${a.note ?? ''})`);
   return lines.join('\n');
 }

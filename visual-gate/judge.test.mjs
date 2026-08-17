@@ -24,11 +24,20 @@ const touchedStub = (spec) => {
   };
 };
 
-const delta = (kind, sourceId, ancestors, deltas) => ({ kind, node: `${kind}@${sourceId}`, sourceId, ancestors, deltas });
+// fields is the structured metric-name list treematch attaches; deltas is its
+// human display form. The judge reads fields, so tests specify those.
+const delta = (kind, sourceId, ancestors, fields) => ({
+  kind,
+  node: `${kind}@${sourceId}`,
+  sourceId,
+  ancestors,
+  fields,
+  deltas: (fields || []).map((f) => `${f}: x -> y`),
+});
 
 test('own line edited → explained', () => {
   const t = touchedStub({ 'Btn.tsx': [44] });
-  assert.equal(isExplained(delta('changed', 'Btn.tsx:44:6', [], ['color: a -> b']), t), true);
+  assert.equal(isExplained(delta('changed', 'Btn.tsx:44:6', [], ['color']), t), true);
 });
 
 test('own line untouched, no ancestor touched → unexplained (the regression fingerprint)', () => {
@@ -40,7 +49,7 @@ test('touched ancestor + reflow delta → explained (legitimate cascade)', () =>
   const t = touchedStub({ 'List.tsx': [3] });
   assert.equal(isExplained(delta('moved', 'Btn.tsx:44:6', ['List.tsx:3:0']), t), true, 'moved is reflow');
   assert.equal(
-    isExplained(delta('changed', 'Btn.tsx:44:6', ['List.tsx:3:0'], ['gapTop: 0 -> 8']), t),
+    isExplained(delta('changed', 'Btn.tsx:44:6', ['List.tsx:3:0'], ['gapTop']), t),
     true,
     'gapTop-only is reflow',
   );
@@ -49,7 +58,7 @@ test('touched ancestor + reflow delta → explained (legitimate cascade)', () =>
 test('touched ancestor + color change → still unexplained (cascade must not amnesty recolor)', () => {
   const t = touchedStub({ 'List.tsx': [3] });
   assert.equal(
-    isExplained(delta('changed', 'Btn.tsx:44:6', ['List.tsx:3:0'], ['color: rgba(0,0,0,1) -> rgba(255,0,0,1)']), t),
+    isExplained(delta('changed', 'Btn.tsx:44:6', ['List.tsx:3:0'], ['color']), t),
     false,
     'an ancestor edit reflows a child, it does not recolor it',
   );
@@ -58,7 +67,7 @@ test('touched ancestor + color change → still unexplained (cascade must not am
 test('touched ancestor + mixed reflow-and-color delta → unexplained (any non-reflow field taints it)', () => {
   const t = touchedStub({ 'List.tsx': [3] });
   assert.equal(
-    isExplained(delta('changed', 'Btn.tsx:44:6', ['List.tsx:3:0'], ['gapTop: 0 -> 8', 'color: a -> b']), t),
+    isExplained(delta('changed', 'Btn.tsx:44:6', ['List.tsx:3:0'], ['gapTop', 'color']), t),
     false,
   );
 });
@@ -72,7 +81,7 @@ test('touched ancestor + added/removed node → unexplained (structural, not ref
 test('judge partitions a report and keeps ambiguous in its own bucket', () => {
   const t = touchedStub({ 'Btn.tsx': [44] });
   const report = {
-    changed: [delta('changed', 'Btn.tsx:44:6', [], ['color: a -> b'])], // explained
+    changed: [delta('changed', 'Btn.tsx:44:6', [], ['color'])], // explained
     moved: [delta('moved', 'Ghost.tsx:9:0', ['Root.tsx:1:0'])], // unexplained
     added: [],
     removed: [],

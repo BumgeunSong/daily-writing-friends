@@ -50,18 +50,24 @@ export function hashTree(node) {
 
 const EPS = { gapTop: 1, widthRatio: 0.02, w: 1, h: 1 };
 
+// Returns [{ field, text }] rather than bare strings: the judge decides reflow-ness
+// from field NAMES, and reconstructing them by splitting the display string on ':'
+// is a fragile cross-module contract (a value containing ':' would misparse). The
+// field travels structurally; text stays for human-readable output.
 function metricDeltas(b, a) {
   const out = [];
   for (const f of METRIC_FIELDS) {
     const bv = b.metrics?.[f];
     const av = a.metrics?.[f];
     if (typeof bv === 'number' && typeof av === 'number') {
-      if (Math.abs(bv - av) > (EPS[f] ?? 1)) out.push(`${f}: ${bv} -> ${av}`);
+      if (Math.abs(bv - av) > (EPS[f] ?? 1)) out.push({ field: f, text: `${f}: ${bv} -> ${av}` });
     } else if (bv !== av) {
-      out.push(`${f}: ${bv} -> ${av}`);
+      out.push({ field: f, text: `${f}: ${bv} -> ${av}` });
     }
   }
-  if ((b.ownText ?? '') !== (a.ownText ?? '')) out.push(`text: "${b.ownText ?? ''}" -> "${a.ownText ?? ''}"`);
+  if ((b.ownText ?? '') !== (a.ownText ?? '')) {
+    out.push({ field: 'text', text: `text: "${b.ownText ?? ''}" -> "${a.ownText ?? ''}"` });
+  }
   return out;
 }
 
@@ -224,8 +230,10 @@ export function matchTrees(before, after) {
       report.unchanged += 1 + countDescendants(b);
       return;
     }
-    const deltas = metricDeltas(b, a);
-    if (deltas.length) report.changed.push(entry(b, bAnc, { kind: 'changed', deltas }));
+    const parts = metricDeltas(b, a);
+    if (parts.length) {
+      report.changed.push(entry(b, bAnc, { kind: 'changed', deltas: parts.map((p) => p.text), fields: parts.map((p) => p.field) }));
+    }
     reconcile(b.children ?? [], a.children ?? [], [...bAnc, b], [...aAnc, a]);
   };
 

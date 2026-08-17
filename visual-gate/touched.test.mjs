@@ -17,11 +17,10 @@ index 1111111..2222222 100644
 +  const c = 3;
 `;
 
-test('parseSourceId peels file:line:col off the right', () => {
+test('parseSourceId peels file and line off the right (col dropped — line range is what matters)', () => {
   assert.deepEqual(parseSourceId('src/comment/components/MentionableInput.tsx:134:6'), {
     file: 'src/comment/components/MentionableInput.tsx',
     line: 134,
-    col: 6,
   });
   assert.equal(parseSourceId(undefined), null);
   assert.equal(parseSourceId('no-coords.tsx'), null);

@@ -11,20 +11,23 @@ import { spawnSync } from 'node:child_process';
 
 const HUNK = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/;
 
-// sourceId is file:line:col (last two segments numeric); file may itself hold no
-// colon on posix, so peel the two trailing numbers off the right.
+// sourceId is file:line:col; file may itself hold no colon on posix, so peel the
+// two trailing numbers off the right. col is captured to anchor the format but not
+// consumed — line-range matching is what the judge needs.
 export function parseSourceId(sourceId) {
   if (!sourceId) return null;
-  const m = /^(.*):(\d+):(\d+)$/.exec(sourceId);
+  const m = (sourceId || '').match(/^(.*):(\d+):\d+$/);
   if (!m) return null;
-  return { file: m[1], line: Number(m[2]), col: Number(m[3]) };
+  return { file: m[1], line: Number(m[2]) };
 }
 
 // sourceId files are app-src-relative (src/...); git paths are repo-relative
-// (apps/web/src/...). The git path is the longer one, so it ends with the
-// sourceId file. Equality covers the same-root case.
+// (apps/web/src/...). A bare suffix match would cross-credit apps/admin/src/X to
+// apps/web/src/X, so anchor the join at the gated app's root. Equality still covers
+// a same-root (no prefix) capture.
+const SRC_ROOT = 'apps/web/';
 function pathMatches(gitPath, sidFile) {
-  return gitPath === sidFile || gitPath.endsWith('/' + sidFile);
+  return gitPath === sidFile || gitPath === SRC_ROOT + sidFile;
 }
 
 // Parses a `git diff --unified=0` body into new-side touched line ranges per file.
