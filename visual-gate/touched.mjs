@@ -71,12 +71,23 @@ function makeTouchedFiles(files) {
   };
 }
 
-export function buildTouchedFiles({ baseRef = 'origin/main', cwd } = {}) {
-  const run = (args) => {
+export function buildTouchedFiles({ baseRef = 'origin/main', cwd, fetch = true } = {}) {
+  const run = (args, { allowFail = false } = {}) => {
     const r = spawnSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-    if (r.status !== 0) throw new Error(`git ${args.join(' ')} failed: ${r.stderr || r.error}`);
-    return r.stdout;
+    if (r.status !== 0 && !allowFail) throw new Error(`git ${args.join(' ')} failed: ${r.stderr || r.error}`);
+    return { ok: r.status === 0, out: r.stdout ?? '' };
   };
-  const base = run(['merge-base', baseRef, 'HEAD']).trim();
-  return parseTouched(run(['diff', '--unified=0', base]));
+  // A stale local origin/main is the gate's worst silent failure: merge-base picks
+  // an old ancestor, the diff pulls in files other devs edited, and a real
+  // regression in one of those files reads as explained. So refresh the base ref
+  // before diffing. Offline is fine — warn loudly and fall back to the local ref
+  // rather than blocking, but never pretend a possibly-stale scope is authoritative.
+  if (fetch && baseRef.startsWith('origin/')) {
+    const remoteBranch = baseRef.slice('origin/'.length);
+    const f = run(['fetch', '--quiet', 'origin', remoteBranch], { allowFail: true });
+    if (!f.ok) console.warn(`[touched] git fetch origin ${remoteBranch} failed — scope may be stale (offline?)`);
+  }
+  const base = run(['merge-base', baseRef, 'HEAD']).out.trim();
+  if (!/^[0-9a-f]{7,40}$/.test(base)) throw new Error(`merge-base did not yield a single commit: ${JSON.stringify(base)}`);
+  return parseTouched(run(['diff', '--unified=0', base]).out);
 }
