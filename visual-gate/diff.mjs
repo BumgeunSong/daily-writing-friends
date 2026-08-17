@@ -8,6 +8,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { hashTree, matchTrees } from './treematch.mjs';
+import { buildTouchedFiles } from './touched.mjs';
+import { judge, formatUnexplained } from './judge.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const reportsDir = path.resolve(here, 'reports');
@@ -35,3 +37,16 @@ for (const m of r.moved.slice(0, 20)) console.log(`  moved     ${m.node}`);
 for (const a of r.added.slice(0, 20)) console.log(`  added     ${a.node}`);
 for (const d of r.removed.slice(0, 20)) console.log(`  removed   ${d.node}`);
 for (const q of r.ambiguous.slice(0, 20)) console.log(`  ambiguous ${q.node} (${q.note})`);
+
+// Judgment: cross each delta against what this branch actually edited. If git is
+// unavailable the touched set is empty, so every delta reads as unexplained — the
+// safe over-flag direction (a miss is fatal, noise is not).
+let touched;
+try {
+  touched = buildTouchedFiles();
+} catch (e) {
+  console.log(`\n[judge] no source diff (${String(e.message).split('\n')[0]}) — treating all deltas as unexplained`);
+  touched = { hasLine: () => false, hasFile: () => false, size: 0 };
+}
+console.log(`\n=== judgment ${env} (git diff × sourceId) ===`);
+console.log(formatUnexplained(judge({ report: r, touched })));
