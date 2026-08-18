@@ -220,6 +220,23 @@ function matchChildren(B, A) {
 // ---- tree walk: accumulate a flat report ----
 
 export function matchTrees(before, after) {
+  return buildReport(before, after);
+}
+
+// A report's CHANGE identity, ignoring positional index, ancestor chain, and the
+// node's own content: twins with different text that changed the same way (same
+// field, same from→to, same source location) must produce the same signature.
+// Keying on the node label would embed per-row text and wrongly split them.
+function reportSignature(rep) {
+  const proj = (buckets) => buckets.map((e) => `${e.kind}|${e.sourceId ?? ''}|${(e.deltas ?? []).join(',')}`).sort();
+  return JSON.stringify([proj(rep.changed), proj(rep.moved), proj(rep.added), proj(rep.removed), proj(rep.ambiguous)]);
+}
+
+function hasDelta(rep) {
+  return rep.changed.length + rep.moved.length + rep.added.length + rep.removed.length + rep.ambiguous.length > 0;
+}
+
+function buildReport(before, after) {
   const report = { unchanged: 0, changed: [], moved: [], added: [], removed: [], ambiguous: [] };
   const ambiguousKey = new Set();
 
@@ -237,12 +254,37 @@ export function matchTrees(before, after) {
     reconcile(b.children ?? [], a.children ?? [], [...bAnc, b], [...aAnc, a]);
   };
 
+  // A same-shape twin whose exactHash differs can't be attributed to a specific
+  // sibling — UNLESS every twin in its group changed identically, in which case the
+  // pairing is moot (any pairing yields the same delta) and the change is safe to
+  // surface once. Divergent twins stay ambiguous. Twins share sourceIds (same
+  // component rendered N times), so one representative's coordinates are correct.
+  const resolveAmbiguous = (ambiguous, B, A, bAnc) => {
+    for (const [bi, ai] of ambiguous) ambiguousKey.add(bi + ':' + ai);
+    const groups = new Map();
+    for (const [bi, ai] of ambiguous) {
+      const sh = B[bi].shapeHash;
+      if (!groups.has(sh)) groups.set(sh, []);
+      groups.get(sh).push([bi, ai]);
+    }
+    const prefix = bAnc.map((n) => n.sourceId);
+    for (const [, grp] of groups) {
+      const subs = grp.map(([bi, ai]) => ({ bi, rep: buildReport(B[bi], A[ai]) }));
+      const sigs = subs.map((s) => reportSignature(s.rep));
+      const uniform = hasDelta(subs[0].rep) && sigs.every((s) => s === sigs[0]);
+      if (uniform) {
+        mergeLifted(report, subs[0].rep, prefix, grp.length);
+      } else {
+        for (const { bi } of subs) {
+          report.ambiguous.push(entry(B[bi], bAnc, { kind: 'ambiguous', note: 'indistinguishable sibling changed' }));
+        }
+      }
+    }
+  };
+
   const reconcile = (B, A, bAnc, aAnc) => {
     const { pairs, removed, added, ambiguous } = matchChildren(B, A);
-    for (const [bi, ai] of ambiguous) {
-      ambiguousKey.add(bi + ':' + ai);
-      report.ambiguous.push(entry(B[bi], bAnc, { kind: 'ambiguous', note: 'indistinguishable sibling changed' }));
-    }
+    resolveAmbiguous(ambiguous, B, A, bAnc);
     // moved = paired children not on the LIS of after-index (in before order)
     const ordered = pairs.filter(([bi, ai]) => !ambiguousKey.has(bi + ':' + ai)).sort((p, q) => p[0] - q[0]);
     const kept = lisKeptSet(ordered.map(([, ai]) => ai));
@@ -259,6 +301,19 @@ export function matchTrees(before, after) {
 
   walkPair(before, after, [], []);
   return report;
+}
+
+// Splices a representative twin's sub-report into the parent report: prefixes the
+// real ancestor chain above the twin (the sub-walk started at the twin as root) and
+// stamps twinCount so a reader knows N rows moved together, not one.
+function mergeLifted(report, sub, prefix, twinCount) {
+  const lift = (e) => ({ ...e, ancestors: [...prefix, ...e.ancestors], twinCount });
+  for (const e of sub.changed) report.changed.push(lift(e));
+  for (const e of sub.moved) report.moved.push(lift(e));
+  for (const e of sub.added) report.added.push(lift(e));
+  for (const e of sub.removed) report.removed.push(lift(e));
+  for (const e of sub.ambiguous) report.ambiguous.push({ ...e, ancestors: [...prefix, ...e.ancestors] });
+  report.unchanged += sub.unchanged;
 }
 
 function countDescendants(n) {

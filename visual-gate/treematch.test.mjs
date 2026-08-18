@@ -76,12 +76,49 @@ test('genuine style regression: attributed to the exact element', () => {
   assert.match(r.changed[0].deltas.join(), /gapTop: 0 -> 12/);
 });
 
-test('indistinguishable twins both changed: ambiguous, not guessed', () => {
+test('indistinguishable twins changed DIFFERENTLY: ambiguous, not guessed', () => {
   const before = tree(card(''), card(''));
   const after = tree(card('', { gap: 6 }), card('', { gap: 10 }));
   const r = matchTrees(before, after);
-  assert.equal(r.ambiguous.length, 2, 'both twins ambiguous');
+  assert.equal(r.ambiguous.length, 2, 'divergent changes stay unattributable');
   assert.equal(r.changed.length, 0, 'no confident change reported');
+});
+
+test('indistinguishable twins changed IDENTICALLY: surfaced once, not swallowed as ambiguous', () => {
+  // When every twin carries the same delta, positional pairing is moot — any
+  // pairing yields the same change — so attribution ambiguity no longer applies.
+  const before = tree(card(''), card(''));
+  const after = tree(card('', { gap: 6 }), card('', { gap: 6 }));
+  const r = matchTrees(before, after);
+  assert.equal(r.ambiguous.length, 0, 'a uniform change across twins is attributable');
+  assert.equal(r.changed.length, 1, 'surfaced once, not per-twin');
+  assert.equal(r.changed[0].twinCount, 2, 'carries how many twins moved together');
+  assert.match(r.changed[0].deltas.join(), /gapTop: 0 -> 6/);
+});
+
+test('twins with DIFFERENT content but the same change: still surfaced once (change identity, not content)', () => {
+  // Real list rows carry different text; the uniform-change test must key on WHAT
+  // changed (field, from→to, source), not the row's own content.
+  const row = (text, sid, fs) => el('div', { sid }, el('span', { text, sid: 'Content.tsx:5:0', fs }));
+  const before = tree(row('alice wrote this', 'Row.tsx:1:0', '16px'), row('bob wrote that', 'Row.tsx:1:0', '16px'));
+  const after = tree(row('alice wrote this', 'Row.tsx:1:0', '14px'), row('bob wrote that', 'Row.tsx:1:0', '14px'));
+  const r = matchTrees(before, after);
+  assert.equal(r.ambiguous.length, 0, 'differing text must not split a uniform font change');
+  assert.equal(r.changed.length, 1, 'surfaced once');
+  assert.equal(r.changed[0].twinCount, 2);
+  assert.match(r.changed[0].deltas.join(), /fontSize: 16px -> 14px/);
+});
+
+test('twins whose deep descendant changed identically: surfaced once from the depth', () => {
+  const item = (childGap) => el('div', {}, el('span', { text: 'x', gap: childGap }));
+  const before = tree(item(0), item(0));
+  const after = tree(item(8), item(8));
+  const r = matchTrees(before, after);
+  assert.equal(r.ambiguous.length, 0);
+  assert.equal(r.changed.length, 1, 'the identical deep delta surfaces once');
+  assert.match(r.changed[0].node, /span/);
+  assert.match(r.changed[0].deltas.join(), /gapTop: 0 -> 8/);
+  assert.equal(r.changed[0].twinCount, 2);
 });
 
 test('no change: deterministic zero, whole tree pruned as unchanged', () => {
