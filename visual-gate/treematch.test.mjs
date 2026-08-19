@@ -109,6 +109,17 @@ test('twins with DIFFERENT content but the same change: still surfaced once (cha
   assert.match(r.changed[0].deltas.join(), /fontSize: 16px -> 14px/);
 });
 
+test('twin uniform-check keys on delta STRUCTURE, not a comma-joined string (no delimiter collision)', () => {
+  // delta values carry commas (rgba, transform). Two genuinely different changes
+  // must stay ambiguous; a naive join(',') would collide them into one "uniform".
+  const d = (color, fs) => el('div', { color, fs });
+  const before = tree(d('x', '16px'), d('x', '16px'));
+  const after = tree(d('a', 'b,c'), d('a,fontSize: 16px -> b,c', '16px'));
+  const r = matchTrees(before, after);
+  assert.equal(r.ambiguous.length, 2, 'divergent twins must not collapse via a delimiter collision');
+  assert.equal(r.changed.length, 0);
+});
+
 test('twins whose deep descendant changed identically: surfaced once from the depth', () => {
   const item = (childGap) => el('div', {}, el('span', { text: 'x', gap: childGap }));
   const before = tree(item(0), item(0));

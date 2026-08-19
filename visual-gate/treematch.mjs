@@ -228,7 +228,10 @@ export function matchTrees(before, after) {
 // field, same from→to, same source location) must produce the same signature.
 // Keying on the node label would embed per-row text and wrongly split them.
 function reportSignature(rep) {
-  const proj = (buckets) => buckets.map((e) => `${e.kind}|${e.sourceId ?? ''}|${(e.deltas ?? []).join(',')}`).sort();
+  // JSON-encode each entry (deltas stays a nested array) rather than joining on a
+  // delimiter: a delta value can contain that delimiter (rgba/transform hold ','),
+  // and a flattened string would collide distinct delta sets into one signature.
+  const proj = (buckets) => buckets.map((e) => JSON.stringify([e.kind, e.sourceId ?? '', e.deltas ?? []])).sort();
   return JSON.stringify([proj(rep.changed), proj(rep.moved), proj(rep.added), proj(rep.removed), proj(rep.ambiguous)]);
 }
 
