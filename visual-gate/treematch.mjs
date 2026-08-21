@@ -50,18 +50,24 @@ export function hashTree(node) {
 
 const EPS = { gapTop: 1, widthRatio: 0.02, w: 1, h: 1 };
 
+// Returns [{ field, text }] rather than bare strings: the judge decides reflow-ness
+// from field NAMES, and reconstructing them by splitting the display string on ':'
+// is a fragile cross-module contract (a value containing ':' would misparse). The
+// field travels structurally; text stays for human-readable output.
 function metricDeltas(b, a) {
   const out = [];
   for (const f of METRIC_FIELDS) {
     const bv = b.metrics?.[f];
     const av = a.metrics?.[f];
     if (typeof bv === 'number' && typeof av === 'number') {
-      if (Math.abs(bv - av) > (EPS[f] ?? 1)) out.push(`${f}: ${bv} -> ${av}`);
+      if (Math.abs(bv - av) > (EPS[f] ?? 1)) out.push({ field: f, text: `${f}: ${bv} -> ${av}` });
     } else if (bv !== av) {
-      out.push(`${f}: ${bv} -> ${av}`);
+      out.push({ field: f, text: `${f}: ${bv} -> ${av}` });
     }
   }
-  if ((b.ownText ?? '') !== (a.ownText ?? '')) out.push(`text: "${b.ownText ?? ''}" -> "${a.ownText ?? ''}"`);
+  if ((b.ownText ?? '') !== (a.ownText ?? '')) {
+    out.push({ field: 'text', text: `text: "${b.ownText ?? ''}" -> "${a.ownText ?? ''}"` });
+  }
   return out;
 }
 
@@ -69,6 +75,19 @@ function metricDeltas(b, a) {
 // but never participates in hashing or pairing (see hashTree / matchChildren).
 const label = (n) =>
   `${n.tag}${n.ownText ? ` "${n.ownText.slice(0, 24)}"` : ''}${n.sourceId ? ` @${n.sourceId}` : ''}`;
+
+// A reported delta carries, alongside its human label, the machine-readable
+// identity the judge crosses against git diff: the node's own sourceId and the
+// sourceId chain of its ancestors (root→parent). Matching never uses these — they
+// exist only so the judge can ask "did the author touch this line, or an ancestor
+// file that legitimately reflows it?" ancestors is a plain string[] of sourceIds
+// (some entries undefined for library/SVG nodes without data-vg-id).
+const entry = (n, ancestors, extra) => ({
+  node: label(n),
+  sourceId: n.sourceId,
+  ancestors: ancestors.map((a) => a.sourceId),
+  ...extra,
+});
 
 // ---- longest strictly-increasing subsequence: returns the set of kept indices ----
 
@@ -201,41 +220,103 @@ function matchChildren(B, A) {
 // ---- tree walk: accumulate a flat report ----
 
 export function matchTrees(before, after) {
+  return buildReport(before, after);
+}
+
+// A report's CHANGE identity, ignoring positional index, ancestor chain, and the
+// node's own content: twins with different text that changed the same way (same
+// field, same from→to, same source location) must produce the same signature.
+// Keying on the node label would embed per-row text and wrongly split them.
+function reportSignature(rep) {
+  // JSON-encode each entry (deltas stays a nested array) rather than joining on a
+  // delimiter: a delta value can contain that delimiter (rgba/transform hold ','),
+  // and a flattened string would collide distinct delta sets into one signature.
+  const proj = (buckets) => buckets.map((e) => JSON.stringify([e.kind, e.sourceId ?? '', e.deltas ?? []])).sort();
+  return JSON.stringify([proj(rep.changed), proj(rep.moved), proj(rep.added), proj(rep.removed), proj(rep.ambiguous)]);
+}
+
+function hasDelta(rep) {
+  return rep.changed.length + rep.moved.length + rep.added.length + rep.removed.length + rep.ambiguous.length > 0;
+}
+
+function buildReport(before, after) {
   const report = { unchanged: 0, changed: [], moved: [], added: [], removed: [], ambiguous: [] };
   const ambiguousKey = new Set();
 
-  const walkPair = (b, a) => {
+  // bAnc/aAnc are the ancestor chains (root→parent) on the before and after side,
+  // threaded down so each reported delta can name what legitimately reflows it.
+  const walkPair = (b, a, bAnc, aAnc) => {
     if (b.exactHash === a.exactHash) {
       report.unchanged += 1 + countDescendants(b);
       return;
     }
-    const deltas = metricDeltas(b, a);
-    if (deltas.length) report.changed.push({ node: label(b), deltas });
-    reconcile(b.children ?? [], a.children ?? []);
+    const parts = metricDeltas(b, a);
+    if (parts.length) {
+      report.changed.push(entry(b, bAnc, { kind: 'changed', deltas: parts.map((p) => p.text), fields: parts.map((p) => p.field) }));
+    }
+    reconcile(b.children ?? [], a.children ?? [], [...bAnc, b], [...aAnc, a]);
   };
 
-  const reconcile = (B, A) => {
-    const { pairs, removed, added, ambiguous } = matchChildren(B, A);
+  // A same-shape twin whose exactHash differs can't be attributed to a specific
+  // sibling — UNLESS every twin in its group changed identically, in which case the
+  // pairing is moot (any pairing yields the same delta) and the change is safe to
+  // surface once. Divergent twins stay ambiguous. Twins share sourceIds (same
+  // component rendered N times), so one representative's coordinates are correct.
+  const resolveAmbiguous = (ambiguous, B, A, bAnc) => {
+    for (const [bi, ai] of ambiguous) ambiguousKey.add(bi + ':' + ai);
+    const groups = new Map();
     for (const [bi, ai] of ambiguous) {
-      ambiguousKey.add(bi + ':' + ai);
-      report.ambiguous.push({ node: label(B[bi]), note: 'indistinguishable sibling changed' });
+      const sh = B[bi].shapeHash;
+      if (!groups.has(sh)) groups.set(sh, []);
+      groups.get(sh).push([bi, ai]);
     }
+    const prefix = bAnc.map((n) => n.sourceId);
+    for (const [, grp] of groups) {
+      const subs = grp.map(([bi, ai]) => ({ bi, rep: buildReport(B[bi], A[ai]) }));
+      const sigs = subs.map((s) => reportSignature(s.rep));
+      const uniform = hasDelta(subs[0].rep) && sigs.every((s) => s === sigs[0]);
+      if (uniform) {
+        mergeLifted(report, subs[0].rep, prefix, grp.length);
+      } else {
+        for (const { bi } of subs) {
+          report.ambiguous.push(entry(B[bi], bAnc, { kind: 'ambiguous', note: 'indistinguishable sibling changed' }));
+        }
+      }
+    }
+  };
+
+  const reconcile = (B, A, bAnc, aAnc) => {
+    const { pairs, removed, added, ambiguous } = matchChildren(B, A);
+    resolveAmbiguous(ambiguous, B, A, bAnc);
     // moved = paired children not on the LIS of after-index (in before order)
     const ordered = pairs.filter(([bi, ai]) => !ambiguousKey.has(bi + ':' + ai)).sort((p, q) => p[0] - q[0]);
     const kept = lisKeptSet(ordered.map(([, ai]) => ai));
     ordered.forEach(([bi, ai], idx) => {
-      if (!kept.has(idx)) report.moved.push({ node: label(B[bi]) });
+      if (!kept.has(idx)) report.moved.push(entry(B[bi], bAnc, { kind: 'moved' }));
     });
     for (const [bi, ai] of pairs) {
       if (ambiguousKey.has(bi + ':' + ai)) continue;
-      walkPair(B[bi], A[ai]);
+      walkPair(B[bi], A[ai], bAnc, aAnc);
     }
-    for (const bi of removed) report.removed.push({ node: label(B[bi]) });
-    for (const ai of added) report.added.push({ node: label(A[ai]) });
+    for (const bi of removed) report.removed.push(entry(B[bi], bAnc, { kind: 'removed' }));
+    for (const ai of added) report.added.push(entry(A[ai], aAnc, { kind: 'added' }));
   };
 
-  walkPair(before, after);
+  walkPair(before, after, [], []);
   return report;
+}
+
+// Splices a representative twin's sub-report into the parent report: prefixes the
+// real ancestor chain above the twin (the sub-walk started at the twin as root) and
+// stamps twinCount so a reader knows N rows moved together, not one.
+function mergeLifted(report, sub, prefix, twinCount) {
+  const lift = (e) => ({ ...e, ancestors: [...prefix, ...e.ancestors], twinCount });
+  for (const e of sub.changed) report.changed.push(lift(e));
+  for (const e of sub.moved) report.moved.push(lift(e));
+  for (const e of sub.added) report.added.push(lift(e));
+  for (const e of sub.removed) report.removed.push(lift(e));
+  for (const e of sub.ambiguous) report.ambiguous.push({ ...e, ancestors: [...prefix, ...e.ancestors] });
+  report.unchanged += sub.unchanged;
 }
 
 function countDescendants(n) {
