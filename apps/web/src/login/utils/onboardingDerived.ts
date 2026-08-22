@@ -49,6 +49,11 @@ export interface SubmitDisabledInput {
   hasPrefillError: boolean;
 }
 
+/**
+ * The single wording for a prefill failure. It is deliberately the only one:
+ * rendering a second, differently-worded copy elsewhere would make two live
+ * regions announce conflicting instructions for one failure.
+ */
 export const SUBMIT_BLOCKED_PREFILL_MESSAGE =
   '기존 정보를 불러오지 못해 신청할 수 없어요. 새로고침 후 다시 시도해주세요.';
 

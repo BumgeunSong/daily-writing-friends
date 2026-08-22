@@ -27,7 +27,7 @@ export default function OnboardingSubmitBar({
         {blockedReason && (
           <p
             id={BLOCKED_REASON_ID}
-            role="status"
+            role="alert"
             className="text-center text-sm text-destructive"
           >
             {blockedReason}

@@ -95,7 +95,6 @@ export default function OnboardingPage() {
                 register={register}
                 typedRegister={typedRegister}
                 errors={formState.errors}
-                prefillError={prefillError}
                 submitError={submitError}
               />
             </form>

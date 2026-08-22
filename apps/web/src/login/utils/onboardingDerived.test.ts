@@ -113,6 +113,11 @@ describe('getSubmitBlockedReason', () => {
     expect(SUBMIT_BLOCKED_PREFILL_MESSAGE).toContain('새로고침');
   });
 
+  it('tells the user submitting is blocked, never that submitting may overwrite', () => {
+    expect(SUBMIT_BLOCKED_PREFILL_MESSAGE).toContain('신청할 수 없어요');
+    expect(SUBMIT_BLOCKED_PREFILL_MESSAGE).not.toContain('덮어쓰');
+  });
+
   it('stays silent while submitting because the CTA label already says so', () => {
     expect(getSubmitBlockedReason({ ...base, isSubmitting: true })).toBeNull();
   });
