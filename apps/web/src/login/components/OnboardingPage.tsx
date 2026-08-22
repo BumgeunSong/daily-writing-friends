@@ -86,7 +86,7 @@ export default function OnboardingPage() {
           </div>
         ) : null}
 
-        <Card className="bg-card">
+        <Card className="reading-shadow border-0 bg-card">
           <CardContent className="p-6">
             <form id="onboarding-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <OnboardingFormFields

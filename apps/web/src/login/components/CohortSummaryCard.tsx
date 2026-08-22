@@ -27,7 +27,7 @@ export default function CohortSummaryCard({ upcomingBoard }: CohortSummaryCardPr
       : null;
 
   return (
-    <Card className='space-y-4 bg-muted/30 p-6'>
+    <Card className='space-y-4 border-0 bg-muted p-6 shadow-none'>
       <h2 className='text-sm font-medium text-muted-foreground'>이렇게 진행돼요</h2>
 
       {dateRange && (
