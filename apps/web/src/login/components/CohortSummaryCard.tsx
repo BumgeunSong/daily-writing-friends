@@ -2,11 +2,11 @@ import { CalendarDays, Clock, PenLine, AlignLeft, MessageCircle } from 'lucide-r
 import type { Board } from '@/board/model/Board';
 import { Card } from '@/shared/ui/card';
 
-interface CohortConfirmCardProps {
+interface CohortSummaryCardProps {
   upcomingBoard: Board;
 }
 
-export default function CohortConfirmCard({ upcomingBoard }: CohortConfirmCardProps) {
+export default function CohortSummaryCard({ upcomingBoard }: CohortSummaryCardProps) {
   const dateRange =
     upcomingBoard.firstDay && upcomingBoard.lastDay
       ? `${upcomingBoard.firstDay.toDate().toLocaleDateString('ko-KR', {

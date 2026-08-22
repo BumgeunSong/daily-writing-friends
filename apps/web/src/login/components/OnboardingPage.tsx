@@ -18,7 +18,7 @@ import {
 } from '@/login/utils/onboardingSchema';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Card, CardContent } from '@/shared/ui/card';
-import CohortConfirmCard from './CohortConfirmCard';
+import CohortSummaryCard from './CohortSummaryCard';
 import FormHeader from './JoinFormHeader';
 import OnboardingFormFields from './OnboardingFormFields';
 import OnboardingLoadingSkeleton from './OnboardingLoadingSkeleton';
@@ -82,7 +82,7 @@ export default function OnboardingPage() {
 
         {upcomingBoard?.cohort ? (
           <div className="mb-4">
-            <CohortConfirmCard upcomingBoard={upcomingBoard} />
+            <CohortSummaryCard upcomingBoard={upcomingBoard} />
           </div>
         ) : null}
 
