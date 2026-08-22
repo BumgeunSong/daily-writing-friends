@@ -6,6 +6,13 @@ interface CohortSummaryCardProps {
   upcomingBoard: Board;
 }
 
+const PROGRAM_RULES = [
+  { Icon: Clock, text: '4주간' },
+  { Icon: PenLine, text: '총 20개의 글' },
+  { Icon: AlignLeft, text: '글 최소 분량 3줄' },
+  { Icon: MessageCircle, text: '하루에 댓글 1개 달기' },
+];
+
 export default function CohortSummaryCard({ upcomingBoard }: CohortSummaryCardProps) {
   const dateRange =
     upcomingBoard.firstDay && upcomingBoard.lastDay
@@ -21,33 +28,22 @@ export default function CohortSummaryCard({ upcomingBoard }: CohortSummaryCardPr
 
   return (
     <Card className='space-y-4 bg-muted/30 p-6'>
-      <h2 className='text-balance text-lg font-bold md:text-xl'>
-        매글프 {upcomingBoard.cohort}기를 신청합니다
-      </h2>
+      <h2 className='text-sm font-medium text-muted-foreground'>이렇게 진행돼요</h2>
 
-      <ul className='space-y-3 text-sm md:text-base'>
-        {dateRange && (
-          <li className='flex items-center gap-2'>
-            <CalendarDays className='size-5 text-muted-foreground' />
-            <span>{dateRange}</span>
+      {dateRange && (
+        <p className='flex items-center gap-2 text-base font-semibold md:text-lg'>
+          <CalendarDays className='size-5 shrink-0 text-muted-foreground' />
+          <span>{dateRange}</span>
+        </p>
+      )}
+
+      <ul className='space-y-3 text-sm text-muted-foreground'>
+        {PROGRAM_RULES.map(({ Icon, text }) => (
+          <li key={text} className='flex items-center gap-2'>
+            <Icon className='size-4 shrink-0' />
+            <span>{text}</span>
           </li>
-        )}
-        <li className='flex items-center gap-2'>
-          <Clock className='size-5 text-muted-foreground' />
-          <span>4주간</span>
-        </li>
-        <li className='flex items-center gap-2'>
-          <PenLine className='size-5 text-muted-foreground' />
-          <span>총 20개의 글</span>
-        </li>
-        <li className='flex items-center gap-2'>
-          <AlignLeft className='size-5 text-muted-foreground' />
-          <span>글 최소 분량 3줄</span>
-        </li>
-        <li className='flex items-center gap-2'>
-          <MessageCircle className='size-5 text-muted-foreground' />
-          <span>하루에 댓글 1개 달기</span>
-        </li>
+        ))}
       </ul>
     </Card>
   );
