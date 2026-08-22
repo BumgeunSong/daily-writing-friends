@@ -37,7 +37,7 @@ export default function OnboardingSubmitBar({
           variant="cta"
           type="submit"
           form="onboarding-form"
-          className="w-full"
+          className="h-11 w-full"
           size="lg"
           disabled={isSubmitDisabled({ isSubmitting, hasPrefillError })}
           aria-describedby={blockedReason ? BLOCKED_REASON_ID : undefined}
