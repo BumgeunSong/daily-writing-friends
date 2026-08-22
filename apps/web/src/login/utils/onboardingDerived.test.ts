@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import type { Board } from '@/board/model/Board';
 import {
   getOnboardingHeader,
+  getSubmitBlockedReason,
   getSubmitCtaLabel,
   getSubmitErrorMessage,
   isSubmitDisabled,
+  SUBMIT_BLOCKED_PREFILL_MESSAGE,
 } from './onboardingDerived';
 
 function makeBoard(overrides: Partial<Board> = {}): Board {
@@ -65,8 +67,6 @@ describe('isSubmitDisabled', () => {
   const base = {
     isSubmitting: false,
     hasPrefillError: false,
-    requiresCohortAgreement: false,
-    hasAgreedToCohort: false,
   };
 
   it('is enabled in the simple case', () => {
@@ -81,16 +81,40 @@ describe('isSubmitDisabled', () => {
     expect(isSubmitDisabled({ ...base, hasPrefillError: true })).toBe(true);
   });
 
-  it('is disabled when cohort agreement is required but missing', () => {
-    expect(
-      isSubmitDisabled({ ...base, requiresCohortAgreement: true, hasAgreedToCohort: false }),
-    ).toBe(true);
+  it('never disables for a reason the user cannot see, except the self-explaining submit state', () => {
+    const states = [
+      base,
+      { ...base, hasPrefillError: true },
+      { ...base, isSubmitting: true },
+    ];
+
+    for (const state of states) {
+      const isSilentlyDisabled =
+        isSubmitDisabled(state) && getSubmitBlockedReason(state) === null;
+      expect(isSilentlyDisabled).toBe(state.isSubmitting);
+    }
+  });
+});
+
+describe('getSubmitBlockedReason', () => {
+  const base = {
+    isSubmitting: false,
+    hasPrefillError: false,
+  };
+
+  it('returns null when the CTA is live', () => {
+    expect(getSubmitBlockedReason(base)).toBeNull();
   });
 
-  it('is enabled when cohort agreement is required and given', () => {
-    expect(
-      isSubmitDisabled({ ...base, requiresCohortAgreement: true, hasAgreedToCohort: true }),
-    ).toBe(false);
+  it('explains the prefill failure and how to recover from it', () => {
+    expect(getSubmitBlockedReason({ ...base, hasPrefillError: true })).toBe(
+      SUBMIT_BLOCKED_PREFILL_MESSAGE,
+    );
+    expect(SUBMIT_BLOCKED_PREFILL_MESSAGE).toContain('새로고침');
+  });
+
+  it('stays silent while submitting because the CTA label already says so', () => {
+    expect(getSubmitBlockedReason({ ...base, isSubmitting: true })).toBeNull();
   });
 });
 

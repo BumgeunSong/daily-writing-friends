@@ -47,22 +47,33 @@ export function getSubmitCtaLabel({ isSubmitting, hasCohort }: SubmitCtaInput): 
 export interface SubmitDisabledInput {
   isSubmitting: boolean;
   hasPrefillError: boolean;
-  requiresCohortAgreement: boolean;
-  hasAgreedToCohort: boolean;
+}
+
+export const SUBMIT_BLOCKED_PREFILL_MESSAGE =
+  '기존 정보를 불러오지 못해 신청할 수 없어요. 새로고침 후 다시 시도해주세요.';
+
+/**
+ * The message shown beside a disabled CTA, or null when nothing needs saying.
+ * Every entry names the blocker and the way out, because the submit bar is
+ * sticky and the user may never scroll to an explanation placed elsewhere.
+ *
+ * `isSubmitting` is deliberately absent: the CTA already reads 신청 중... and
+ * clears on its own, so there is no action to prompt.
+ */
+export function getSubmitBlockedReason({ hasPrefillError }: SubmitDisabledInput): string | null {
+  if (hasPrefillError) return SUBMIT_BLOCKED_PREFILL_MESSAGE;
+  return null;
 }
 
 /**
- * Pure derivation of the submit-disabled flag.
- * Disabled if submitting, prefill failed, or cohort agreement required-but-missing.
+ * Pure derivation of the submit-disabled flag, defined in terms of
+ * `getSubmitBlockedReason` so the two can never drift: a blocker added there is
+ * disabling here, and no blocker can disable the CTA without supplying its own
+ * on-screen explanation. Invalid fields are not a blocker — the CTA stays live
+ * and pressing it surfaces the per-field messages.
  */
-export function isSubmitDisabled({
-  isSubmitting,
-  hasPrefillError,
-  requiresCohortAgreement,
-  hasAgreedToCohort,
-}: SubmitDisabledInput): boolean {
-  if (isSubmitting || hasPrefillError) return true;
-  return requiresCohortAgreement && !hasAgreedToCohort;
+export function isSubmitDisabled(input: SubmitDisabledInput): boolean {
+  return input.isSubmitting || getSubmitBlockedReason(input) !== null;
 }
 
 export const SUBMIT_ERROR_FALLBACK = '신청에 실패했습니다. 잠시 후 다시 시도해주세요.';

@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm, type FieldValues, type UseFormRegister } from 'react-hook-form';
 // `tab` is read from `formValues.activeContactTab` (single source of truth) —
 // no local mirror state, to avoid a one-frame flicker when prefill resolves to
@@ -36,8 +36,6 @@ export default function OnboardingPage() {
   const { data: upcomingBoard, isLoading: isBoardLoading } = useUpcomingBoard();
   const { isInWaitingList, isLoading: isWaitingLoading } = useIsUserInWaitingList();
 
-  const [hasAgreedToCohort, setHasAgreedToCohort] = useState(false);
-
   const form = useForm<OnboardingFormSchema>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: ONBOARDING_FORM_DEFAULTS,
@@ -60,7 +58,7 @@ export default function OnboardingPage() {
   }, [isInWaitingList, isWaitingLoading, navigate]);
 
   const isLoading = authLoading || isBoardLoading || isWaitingLoading || isPrefilling;
-  const requiresCohortAgreement = Boolean(upcomingBoard?.cohort);
+  const hasCohort = Boolean(upcomingBoard?.cohort);
 
   const { onSubmit, submitError } = useOnboardingSubmit({
     currentUser,
@@ -82,15 +80,11 @@ export default function OnboardingPage() {
       <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 lg:max-w-4xl">
         <FormHeader title={headerTitle} subtitle={headerSubtitle} />
 
-        {requiresCohortAgreement && upcomingBoard && (
+        {upcomingBoard?.cohort ? (
           <div className="mb-4">
-            <CohortConfirmCard
-              upcomingBoard={upcomingBoard}
-              agreed={hasAgreedToCohort}
-              onAgreedChange={setHasAgreedToCohort}
-            />
+            <CohortConfirmCard upcomingBoard={upcomingBoard} />
           </div>
-        )}
+        ) : null}
 
         <Card className="bg-card">
           <CardContent className="p-6">
@@ -112,9 +106,7 @@ export default function OnboardingPage() {
       <OnboardingSubmitBar
         isSubmitting={formState.isSubmitting}
         hasPrefillError={prefillError !== null}
-        requiresCohortAgreement={requiresCohortAgreement}
-        hasAgreedToCohort={hasAgreedToCohort}
-        hasCohort={Boolean(upcomingBoard?.cohort)}
+        hasCohort={hasCohort}
       />
 
       {/* Hidden value sentinel to keep form values from being garbage-collected by linters */}
