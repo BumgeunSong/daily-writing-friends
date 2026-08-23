@@ -1,7 +1,7 @@
 import React from 'react';
 import { useRouteError, isRouteErrorResponse } from 'react-router-dom';
 
-import { STORAGE_KEYS, storage } from '@/shared/lib/storage';
+import { SESSION_KEYS, STORAGE_KEYS, sessionStore, storage } from '@/shared/lib/storage';
 import { useNavigate } from '@/shared/navigation';
 import {
   AlertDialog,
@@ -59,7 +59,10 @@ export function PermissionErrorBoundary() {
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => {
               setOpen(false);
+              // 두 기억을 모두 지워야 한다. 하나라도 이 게시판을 가리킨 채 남으면
+              // `/boards`가 다시 여기로 보내서 권한 오류를 무한히 반복한다.
               storage.remove(STORAGE_KEYS.BOARD_ID);
+              sessionStore.remove(SESSION_KEYS.VIEWING_BOARD_ID);
               navigate('/boards', { replace: true });
             }}>확인</AlertDialogAction>
           </AlertDialogFooter>
