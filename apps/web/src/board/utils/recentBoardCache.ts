@@ -36,11 +36,16 @@ export function resolveRecentBoardRedirect(raw: string | null, now: Date): Recen
   return { to: `/board/${cache.boardId}`, clearCache: false };
 }
 
-/** 종료일이 없는 게시판은 만료를 판정할 수 없으므로 캐시하지 않는다. */
-export function serializeRecentBoard(board: Board): string | null {
+/**
+ * 종료일이 없는 게시판은 만료를 판정할 수 없으므로 캐시하지 않는다.
+ *
+ * `satisfies`로 쓰기 모양을 읽기 스키마에 묶는다. 이게 없으면 스키마 키를 개명해도
+ * 컴파일은 통과하고, 모든 쓰기가 파싱 불가가 되어 사용자가 늘 게시판 목록으로 튕긴다.
+ */
+export function serializeRecentBoard(board: Pick<Board, 'id' | 'lastDay'>): string | null {
   if (!board.lastDay) return null;
   return JSON.stringify({
     boardId: board.id,
     expiresAt: board.lastDay.toDate().toISOString(),
-  });
+  } satisfies z.infer<typeof RecentBoardCacheSchema>);
 }
