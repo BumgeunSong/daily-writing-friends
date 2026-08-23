@@ -942,6 +942,11 @@ export type Database = {
       }
     }
     Functions: {
+      can_read_post: { Args: { p_post_id: string }; Returns: boolean }
+      can_read_reaction_target: {
+        Args: { p_comment_id: string; p_reply_id: string }
+        Returns: boolean
+      }
       check_counter_integrity: {
         Args: never
         Returns: {
@@ -955,6 +960,7 @@ export type Database = {
         }[]
       }
       get_app_config: { Args: { config_key: string }; Returns: string }
+      has_board_access: { Args: { p_board_id: string }; Returns: boolean }
       try_acquire_write_lock: { Args: { p_op_id: string }; Returns: boolean }
       update_comment_reply_counts: { Args: never; Returns: undefined }
     }

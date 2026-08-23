@@ -9,7 +9,7 @@ import { fetchUserFromSupabase, fetchAllUsersFromSupabase, fetchUsersWithBoardPe
 import type { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
 import type { AuthUser } from '@/shared/auth/authTypes';
 import { REMOTE_CONFIG_DEFAULTS } from '@/shared/hooks/useRemoteConfig';
-import { mapUserToSupabaseUpdate, mapBoardPermissionsToRows } from '@/user/utils/userMappers';
+import { mapUserToSupabaseUpdate } from '@/user/utils/userMappers';
 import { resizeImageBlob } from '@/shared/utils/resizeImageBlob';
 import { AVATAR_CACHE_CONTROL } from '@/shared/utils/storageConstants';
 
@@ -38,14 +38,6 @@ export async function createUser(data: User): Promise<void> {
         referrer: data.referrer || null,
         onboarding_complete: data.onboardingComplete ?? false,
     }, { onConflict: 'id', ignoreDuplicates: true }));
-
-    // Sync boardPermissions to user_board_permissions table
-    if (data.boardPermissions) {
-        const permRows = mapBoardPermissionsToRows(data.uid, data.boardPermissions);
-        if (permRows.length > 0) {
-            throwOnError(await supabase.from('user_board_permissions').upsert(permRows, { onConflict: 'user_id,board_id' }));
-        }
-    }
 }
 
 // Supabase의 User 데이터 수정
@@ -54,15 +46,6 @@ export async function updateUser(uid: string, data: Partial<User>): Promise<void
     const updateData = mapUserToSupabaseUpdate(data);
     if (Object.keys(updateData).length > 0) {
         throwOnError(await supabase.from('users').update(updateData).eq('id', uid));
-    }
-
-    // Sync boardPermissions
-    if (data.boardPermissions !== undefined) {
-        throwOnError(await supabase.from('user_board_permissions').delete().eq('user_id', uid));
-        const permRows = mapBoardPermissionsToRows(uid, data.boardPermissions);
-        if (permRows.length > 0) {
-            throwOnError(await supabase.from('user_board_permissions').insert(permRows));
-        }
     }
 }
 
