@@ -2,7 +2,7 @@ import { Lock } from 'lucide-react';
 import React from 'react';
 import { useRouteError, isRouteErrorResponse } from 'react-router-dom';
 
-import { STORAGE_KEYS, storage } from '@/shared/lib/storage';
+import { SESSION_KEYS, STORAGE_KEYS, sessionStore, storage } from '@/shared/lib/storage';
 import { useNavigate } from '@/shared/navigation';
 import {
   AlertDialog,
@@ -29,9 +29,11 @@ const ACCESS_DENIED_ACTION = '내 게시판으로 가기';
 function BoardAccessDenied() {
   const navigate = useNavigate();
 
-  // Clearing the stored board keeps /boards from bouncing straight back here.
+  // `/boards`는 두 기억을 참고한다. 하나라도 이 게시판을 가리킨 채 남으면 나가기를
+  // 눌러도 곧장 여기로 되돌아와서, 사용자가 빠져나갈 방법이 없어진다.
   const handleLeave = () => {
     storage.remove(STORAGE_KEYS.BOARD_ID);
+    sessionStore.remove(SESSION_KEYS.VIEWING_BOARD_ID);
     navigate('/boards', { replace: true });
   };
 
