@@ -1,9 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import type { Board } from '@/board/model/Board';
 import { createTimestamp } from '@/shared/model/Timestamp';
-import { resolveRecentBoardRedirect, serializeRecentBoard } from './recentBoardCache';
+import {
+  type RecentBoardMemory,
+  resolveRecentBoardRedirect,
+  serializeRecentBoard,
+} from './recentBoardCache';
 
 const NOW = new Date('2026-08-23T00:00:00.000Z');
+
+function memory(overrides: Partial<RecentBoardMemory> = {}): RecentBoardMemory {
+  return { viewingBoardId: null, storedCache: null, ...overrides };
+}
 
 function cacheValue(boardId: string, expiresAt: string): string {
   return JSON.stringify({ boardId, expiresAt });
@@ -16,50 +24,93 @@ function boardWith(lastDay: Date | undefined): Pick<Board, 'id' | 'lastDay'> {
   };
 }
 
-describe('재방문한 사용자를 어느 게시판으로 보낼지 정할 때', () => {
+describe('앱을 새로 열어 어느 게시판에서 시작할지 정할 때', () => {
   it('캐시된 게시판이 없으면 게시판 목록으로 보낸다', () => {
-    expect(resolveRecentBoardRedirect(null, NOW))
-      .toEqual({ to: '/boards/list', clearCache: false });
+    expect(resolveRecentBoardRedirect(memory(), NOW))
+      .toEqual({ to: '/boards/list', clearStoredCache: false });
   });
 
   it('이전 형식으로 저장된 평문 게시판 id는 지우고 게시판 목록으로 보낸다', () => {
-    expect(resolveRecentBoardRedirect('884afdbe-3620-415c-a8db-72d703e8df46', NOW))
-      .toEqual({ to: '/boards/list', clearCache: true });
+    const legacy = memory({ storedCache: '884afdbe-3620-415c-a8db-72d703e8df46' });
+    expect(resolveRecentBoardRedirect(legacy, NOW))
+      .toEqual({ to: '/boards/list', clearStoredCache: true });
   });
 
   it('이미 종료된 기수 게시판으로 리다이렉트하면 안 된다', () => {
-    const ended = cacheValue('board-28', '2026-08-21T14:59:59.999Z');
+    const ended = memory({ storedCache: cacheValue('board-28', '2026-08-21T14:59:59.999Z') });
     expect(resolveRecentBoardRedirect(ended, NOW))
-      .toEqual({ to: '/boards/list', clearCache: true });
+      .toEqual({ to: '/boards/list', clearStoredCache: true });
   });
 
   it('진행 중인 게시판이면 그 게시판으로 바로 보낸다', () => {
-    const running = cacheValue('board-29', '2026-09-18T14:59:59.999Z');
+    const running = memory({ storedCache: cacheValue('board-29', '2026-09-18T14:59:59.999Z') });
     expect(resolveRecentBoardRedirect(running, NOW))
-      .toEqual({ to: '/board/board-29', clearCache: false });
+      .toEqual({ to: '/board/board-29', clearStoredCache: false });
   });
 
   it('종료 시각의 마지막 밀리초까지는 진행 중으로 본다', () => {
     const boundary = new Date('2026-08-21T14:59:59.999Z');
-    expect(resolveRecentBoardRedirect(cacheValue('b', boundary.toISOString()), boundary))
-      .toEqual({ to: '/board/b', clearCache: false });
+    const atBoundary = memory({ storedCache: cacheValue('b', boundary.toISOString()) });
+    expect(resolveRecentBoardRedirect(atBoundary, boundary))
+      .toEqual({ to: '/board/b', clearStoredCache: false });
   });
 
   it('종료 시각을 1밀리초라도 넘기면 만료로 본다', () => {
     const boundary = new Date('2026-08-21T14:59:59.999Z');
     const justAfter = new Date(boundary.getTime() + 1);
-    expect(resolveRecentBoardRedirect(cacheValue('b', boundary.toISOString()), justAfter))
-      .toEqual({ to: '/boards/list', clearCache: true });
+    const atBoundary = memory({ storedCache: cacheValue('b', boundary.toISOString()) });
+    expect(resolveRecentBoardRedirect(atBoundary, justAfter))
+      .toEqual({ to: '/boards/list', clearStoredCache: true });
   });
 
   it('만료 시각이 깨져 있으면 캐시를 지우고 게시판 목록으로 보낸다', () => {
-    expect(resolveRecentBoardRedirect(cacheValue('b', 'not-a-date'), NOW))
-      .toEqual({ to: '/boards/list', clearCache: true });
+    const broken = memory({ storedCache: cacheValue('b', 'not-a-date') });
+    expect(resolveRecentBoardRedirect(broken, NOW))
+      .toEqual({ to: '/boards/list', clearStoredCache: true });
   });
 
   it('게시판 id가 비어 있으면 캐시를 지우고 게시판 목록으로 보낸다', () => {
-    expect(resolveRecentBoardRedirect(cacheValue('', '2026-09-18T14:59:59.999Z'), NOW))
-      .toEqual({ to: '/boards/list', clearCache: true });
+    const empty = memory({ storedCache: cacheValue('', '2026-09-18T14:59:59.999Z') });
+    expect(resolveRecentBoardRedirect(empty, NOW))
+      .toEqual({ to: '/boards/list', clearStoredCache: true });
+  });
+});
+
+describe('다른 탭에 갔다가 홈 탭으로 돌아올 때', () => {
+  // 이번 세션에 열어본 게시판은 만료를 따지지 않는다. 탭 이동은 시작 지점을 다시 고르는
+  // 일이 아니라 보던 자리로 돌아오는 일이기 때문이다.
+  it('이번 세션에 보던 게시판으로 돌아온다', () => {
+    const viewing = memory({ viewingBoardId: 'board-29' });
+    expect(resolveRecentBoardRedirect(viewing, NOW))
+      .toEqual({ to: '/board/board-29', clearStoredCache: false });
+  });
+
+  it('보던 게시판이 이미 종료된 기수여도 게시판 목록으로 튕기지 않는다', () => {
+    const viewingEnded = memory({
+      viewingBoardId: 'board-28',
+      storedCache: cacheValue('board-28', '2026-08-21T14:59:59.999Z'),
+    });
+    expect(resolveRecentBoardRedirect(viewingEnded, NOW))
+      .toEqual({ to: '/board/board-28', clearStoredCache: false });
+  });
+
+  // 세션 값이 이겼다고 저장된 기록까지 지우면, 앱을 다시 열었을 때 기수 롤오버가
+  // 판정할 대상이 사라진다.
+  it('만료된 기록이 남아 있어도 지우지 않는다', () => {
+    const viewingEnded = memory({
+      viewingBoardId: 'board-28',
+      storedCache: cacheValue('board-28', '2026-08-21T14:59:59.999Z'),
+    });
+    expect(resolveRecentBoardRedirect(viewingEnded, NOW).clearStoredCache).toBe(false);
+  });
+
+  it('세션 값이 빈 문자열이면 저장된 기록으로 판정한다', () => {
+    const noSession = memory({
+      viewingBoardId: '',
+      storedCache: cacheValue('board-29', '2026-09-18T14:59:59.999Z'),
+    });
+    expect(resolveRecentBoardRedirect(noSession, NOW))
+      .toEqual({ to: '/board/board-29', clearStoredCache: false });
   });
 });
 
@@ -72,13 +123,15 @@ describe('만료 시각이 스키마가 받는 형식을 벗어날 때', () => {
   // 과거면 스키마가 뚫려도 어차피 만료로 떨어져 초록으로 남는다.
   it('존재하지 않는 달력 날짜는 만료로 처리한다', () => {
     // 11월 31일은 없다. 보정되면 2026-12-01, 즉 NOW 이후가 된다.
-    expect(resolveRecentBoardRedirect(cacheValue('b', '2026-11-31T00:00:00.000Z'), NOW))
-      .toEqual({ to: '/boards/list', clearCache: true });
+    const impossible = memory({ storedCache: cacheValue('b', '2026-11-31T00:00:00.000Z') });
+    expect(resolveRecentBoardRedirect(impossible, NOW))
+      .toEqual({ to: '/boards/list', clearStoredCache: true });
   });
 
   it('Z가 아닌 타임존 오프셋 표기는 만료로 처리한다', () => {
-    expect(resolveRecentBoardRedirect(cacheValue('b', '2026-09-18T14:59:59.999+09:00'), NOW))
-      .toEqual({ to: '/boards/list', clearCache: true });
+    const offset = memory({ storedCache: cacheValue('b', '2026-09-18T14:59:59.999+09:00') });
+    expect(resolveRecentBoardRedirect(offset, NOW))
+      .toEqual({ to: '/boards/list', clearStoredCache: true });
   });
 });
 
@@ -100,13 +153,13 @@ describe('캐시에 적은 값을 그대로 다시 읽을 때', () => {
   // 그걸 못 잡는다.
   it('진행 중인 게시판은 그 게시판으로 다시 돌아간다', () => {
     const cached = serializeRecentBoard(boardWith(new Date('2026-09-18T14:59:59.999Z')));
-    expect(resolveRecentBoardRedirect(cached, NOW))
-      .toEqual({ to: '/board/board-1', clearCache: false });
+    expect(resolveRecentBoardRedirect(memory({ storedCache: cached }), NOW))
+      .toEqual({ to: '/board/board-1', clearStoredCache: false });
   });
 
   it('종료된 게시판은 만료로 판정되어 게시판 목록으로 돌아간다', () => {
     const cached = serializeRecentBoard(boardWith(new Date('2026-08-21T14:59:59.999Z')));
-    expect(resolveRecentBoardRedirect(cached, NOW))
-      .toEqual({ to: '/boards/list', clearCache: true });
+    expect(resolveRecentBoardRedirect(memory({ storedCache: cached }), NOW))
+      .toEqual({ to: '/boards/list', clearStoredCache: true });
   });
 });
