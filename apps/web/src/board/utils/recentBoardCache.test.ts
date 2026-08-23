@@ -64,12 +64,15 @@ describe('재방문한 사용자를 어느 게시판으로 보낼지 정할 때'
 });
 
 describe('만료 시각이 스키마가 받는 형식을 벗어날 때', () => {
-  // 스키마가 이 값들을 걸러주는 덕분에 `new Date(expiresAt)`가 Invalid Date가 될 일이
-  // 없다. 그래서 판정 함수에 NaN 가드를 두지 않는다. zod가 이 입력들을 통과시키게
-  // 바뀌면 `now > NaN`이 false라 만료가 리다이렉트로 뒤집히므로(fail-open) 여기가 먼저
-  // 빨개져야 한다.
+  // 판정 함수에는 방어 코드가 없고 스키마가 이 값들을 걸러주는 데 기대고 있다. zod가
+  // 이들을 통과시키게 바뀌면 `new Date`가 조용히 다른 시각으로 밀어내서 종료된 게시판이
+  // 살아 있는 것처럼 판정되므로, 그 회귀가 여기서 먼저 빨개져야 한다.
+  //
+  // 두 입력 모두 보정 결과가 NOW보다 미래여야 이 테스트가 제 일을 한다. 보정 결과가
+  // 과거면 스키마가 뚫려도 어차피 만료로 떨어져 초록으로 남는다.
   it('존재하지 않는 달력 날짜는 만료로 처리한다', () => {
-    expect(resolveRecentBoardRedirect(cacheValue('b', '2026-02-30T00:00:00.000Z'), NOW))
+    // 11월 31일은 없다. 보정되면 2026-12-01, 즉 NOW 이후가 된다.
+    expect(resolveRecentBoardRedirect(cacheValue('b', '2026-11-31T00:00:00.000Z'), NOW))
       .toEqual({ to: '/boards/list', clearCache: true });
   });
 
