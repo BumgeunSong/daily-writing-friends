@@ -301,33 +301,40 @@ git commit -m "feat: 게시판 선택 시 종료일을 함께 저장"
 
 ---
 
-## Task 4: 통합 테스트로 실제 리다이렉트를 검증
+## Task 4: 라우터를 통과하는 리다이렉트를 검증
 
 **Files:**
-- Create: `apps/web/src/board/components/RecentBoard.integration.test.tsx`
+- Create: `apps/web/src/board/components/RecentBoard.test.tsx`
 
-순수 함수 테스트는 판정을 증명하지만, localStorage에서 읽어 라우터가 실제로 이동하는지는 증명하지 못한다. 파일명의 `.integration` 접미사를 빠뜨리면 MSW 없는 unit 프로젝트로 라우팅되어 조용히 초록이 된다. @testing 의 references/integration.md 를 따를 것.
+순수 함수 테스트는 판정을 증명하지만, localStorage에서 읽어 라우터가 실제로 이동하는지는 증명하지 못한다. 이 Task가 막는 위험은 그 배선 하나다.
+
+**목적지 페이지는 스텁으로 둔다.** 실제 `BoardListPage`를 띄우면 `user_board_permissions` + `boards!inner` 임베드와 `board_waiting_users` MSW 핸들러를 새로 만들어야 하는데, 게시판 목록이 렌더되는지는 이번 변경의 위험이 아니다. 스텁을 쓰면 네트워크가 0이 되므로 MSW가 필요 없고, 따라서 `.integration` 접미사 없이 unit 프로젝트에 둔다. 이건 의도된 선택이다.
 
 **Step 1: 테스트를 작성한다**
 
-검증할 것은 세 가지다.
+`createMemoryRouter`로 세 경로를 띄운다. `/boards`에만 실제 `RecentBoard`를 걸고, `/boards/list`와 `/board/:boardId`는 자기 이름을 렌더하는 스텁으로 둔다. `initialEntries={['/boards']}`.
 
-1. 만료된 캐시로 `/boards` 진입 → 게시판 목록 화면이 보이고, localStorage의 `boardId`가 지워져 있다
-2. 유효한 캐시로 `/boards` 진입 → 해당 게시판 화면이 보인다
-3. 이 변경 이전의 평문 id로 `/boards` 진입 → 게시판 목록 화면이 보인다
+검증할 것은 네 가지다.
 
-라우터는 `createMemoryRouter`로 `/boards`, `/boards/list`, `/board/:boardId` 세 경로를 실제 앱과 같은 lazy/loader 구성으로 띄운다. 게시판 목록과 게시판 상세의 Supabase 응답은 MSW로 채운다. 단언은 화면에 보이는 것으로 한다(`어디로 들어갈까요?` 헤딩, 게시판 제목). URL 문자열을 단언하지 말 것. 사용자가 관찰하는 것은 화면이다.
+1. 만료된 캐시 → 게시판 목록 스텁이 보이고, `localStorage.getItem('boardId')`가 `null`이다
+2. 이 변경 이전의 평문 id → 게시판 목록 스텁이 보이고, 키가 지워져 있다
+3. 유효한 캐시 → 해당 `boardId`를 렌더하는 게시판 스텁이 보이고, 키는 그대로 남아 있다
+4. 캐시 없음 → 게시판 목록 스텁이 보인다
+
+단언은 화면에 보이는 것으로 한다. 라우터 내부 상태나 URL 문자열을 들여다보지 말 것.
+
+`beforeEach`에서 `localStorage.clear()` 할 것. 테스트 간 누수가 이 파일에서는 곧바로 거짓 초록이 된다.
 
 **Step 2: 테스트를 돌린다**
 
-Run: `pnpm --filter web test:run src/board/components/RecentBoard.integration.test.tsx`
-Expected: PASS, 3 tests
+Run: `pnpm --filter web test:run src/board/components/RecentBoard.test.tsx`
+Expected: PASS, 4 tests
 
 **Step 3: 커밋한다**
 
 ```bash
-git add apps/web/src/board/components/RecentBoard.integration.test.tsx
-git commit -m "test: 만료된 최근 게시판 캐시의 리다이렉트 경로 통합 테스트"
+git add apps/web/src/board/components/RecentBoard.test.tsx
+git commit -m "test: 만료된 최근 게시판 캐시의 리다이렉트 경로 검증"
 ```
 
 ---
