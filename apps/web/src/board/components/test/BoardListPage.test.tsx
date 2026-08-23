@@ -65,6 +65,7 @@ import BoardListPage from '@/board/components/BoardListPage';
 import { fetchBoardsWithUserPermissions } from '@/board/utils/boardUtils';
 import { renderWithProviders } from '@/test/utils/renderWithProviders';
 import type { Board } from '@/board/model/Board';
+import { createTimestamp } from '@/shared/model/Timestamp';
 
 
 /**
@@ -121,14 +122,17 @@ describe('BoardListPage', () => {
   });
 
   it('handles board click correctly', async () => {
+    const lastDay = new Date('2026-09-20T14:59:59.000Z');
     const boardsMock: Board[] = [
-      { id: '1', title: 'Board 1', description: 'First board', cohort: 1, createdAt: new Date(), waitingUsersIds: [] },
+      { id: '1', title: 'Board 1', description: 'First board', cohort: 1, createdAt: new Date(), lastDay: createTimestamp(lastDay), waitingUsersIds: [] },
     ];
     (fetchBoardsWithUserPermissions as unknown as Mock).mockImplementation(() => Promise.resolve(boardsMock));
     const { findByText } = renderWithProviders(<BoardListPage />);
     expect(fetchBoardsWithUserPermissions).toHaveBeenCalled();
     const boardLink = (await findByText(/Board 1/)).closest('a');
     if (boardLink) boardLink.click();
-    expect(localStorage.getItem('boardId')).toBe('1');
+    expect(localStorage.getItem('boardId')).toBe(
+      JSON.stringify({ boardId: '1', expiresAt: lastDay.toISOString() }),
+    );
   });
 });
