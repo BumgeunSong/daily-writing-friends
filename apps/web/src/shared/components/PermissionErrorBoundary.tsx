@@ -1,3 +1,4 @@
+import { Lock } from 'lucide-react';
 import React from 'react';
 import { useRouteError, isRouteErrorResponse } from 'react-router-dom';
 
@@ -13,6 +14,42 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from '@/shared/ui/alert-dialog';
+import { Button } from '@/shared/ui/button';
+
+const ACCESS_DENIED_TITLE = '아직 참여하지 않은 기수예요';
+const ACCESS_DENIED_BODY =
+  '이 기수 게시판은 참여한 분들만 읽을 수 있어요. 신청을 마치셨다면 기수가 시작하기 하루 전에 따로 연락드릴게요.';
+const ACCESS_DENIED_ACTION = '내 게시판으로 가기';
+
+/**
+ * Terminal state for a board the reader has no permission on. Rendered as a
+ * full page rather than a dialog: there is nothing behind it to return to, and
+ * a dismissable dialog left the reader stranded on a blank screen.
+ */
+function BoardAccessDenied() {
+  const navigate = useNavigate();
+
+  // Clearing the stored board keeps /boards from bouncing straight back here.
+  const handleLeave = () => {
+    storage.remove(STORAGE_KEYS.BOARD_ID);
+    navigate('/boards', { replace: true });
+  };
+
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center px-3 md:px-4">
+      <div className="w-full max-w-md space-y-4 text-center">
+        <Lock className="mx-auto size-12 text-muted-foreground" aria-hidden="true" />
+        <h1 className="text-balance text-xl font-semibold text-foreground md:text-2xl">
+          {ACCESS_DENIED_TITLE}
+        </h1>
+        <p className="text-reading text-pretty text-muted-foreground">{ACCESS_DENIED_BODY}</p>
+        <Button onClick={handleLeave} className="h-11 w-full">
+          {ACCESS_DENIED_ACTION}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export function PermissionErrorBoundary() {
   const error = useRouteError();
@@ -45,27 +82,8 @@ export function PermissionErrorBoundary() {
     );
   }
 
-  // Check if it's a 403 permission error
   if (isRouteErrorResponse(error) && error.status === 403) {
-    return (
-      <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>읽기 권한 없음</AlertDialogTitle>
-            <AlertDialogDescription>
-              이 기수에 참여하지 않아서 글을 읽을 수 없어요.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogAction onClick={() => {
-              setOpen(false);
-              storage.remove(STORAGE_KEYS.BOARD_ID);
-              navigate('/boards', { replace: true });
-            }}>확인</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    );
+    return <BoardAccessDenied />;
   }
 
   // For other errors, show a generic error message
