@@ -16,6 +16,13 @@ import {
 } from '@/shared/ui/alert-dialog';
 import { Button } from '@/shared/ui/button';
 
+/**
+ * 네트워크 오류의 탈출구는 게시판 목록을 직접 가리킨다. `/boards`는 어디로 갈지
+ * 판정하는 경로라서 방금 실패한 게시판으로 되돌려보내는데, 일시적 오류는 그 게시판이
+ * 나빠진 게 아니라 기억을 지워 없앨 근거도 없다. 그래서 판정 자체를 건너뛴다.
+ */
+const BOARD_LIST_PATH = '/boards/list';
+
 const ACCESS_DENIED_TITLE = '아직 참여하지 않은 기수예요';
 const ACCESS_DENIED_BODY =
   '이 기수 게시판은 참여한 분들만 읽을 수 있어요. 신청을 마치셨다면 기수가 시작하기 하루 전에 따로 연락드릴게요.';
@@ -29,8 +36,9 @@ const ACCESS_DENIED_ACTION = '내 게시판으로 가기';
 function BoardAccessDenied() {
   const navigate = useNavigate();
 
-  // `/boards`는 두 기억을 참고한다. 하나라도 이 게시판을 가리킨 채 남으면 나가기를
-  // 눌러도 곧장 여기로 되돌아와서, 사용자가 빠져나갈 방법이 없어진다.
+  // 읽을 수 없는 게시판을 가리키는 기억은 지운다. 남겨두면 `/boards`가 곧장 여기로
+  // 되돌려보내고, 홈 탭도 이후 계속 이 게시판으로 향한다. 참고하는 기억이 둘이므로
+  // 둘 다 지워야 한다.
   const handleLeave = () => {
     storage.remove(STORAGE_KEYS.BOARD_ID);
     sessionStore.remove(SESSION_KEYS.VIEWING_BOARD_ID);
@@ -72,7 +80,7 @@ export function PermissionErrorBoundary() {
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => {
               setOpen(false);
-              navigate('/boards', { replace: true });
+              navigate(BOARD_LIST_PATH, { replace: true });
             }}>홈으로</AlertDialogCancel>
             <AlertDialogAction onClick={() => {
               setOpen(false);
