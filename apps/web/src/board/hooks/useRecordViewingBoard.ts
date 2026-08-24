@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { SESSION_KEYS, sessionStore } from '@/shared/lib/storage';
+import { SESSION_KEYS, STORAGE_KEYS, sessionStore, storage } from '@/shared/lib/storage';
+import { parseStoredAuthUser } from '@/shared/utils/authUserParser';
 
 /**
  * 지금 보고 있는 게시판을 이번 세션 동안 기억한다. 홈 탭은 `/boards`로 가고 그 화면이
@@ -14,6 +15,14 @@ import { SESSION_KEYS, sessionStore } from '@/shared/lib/storage';
  */
 export function useRecordViewingBoard(boardId: string | undefined): void {
   useEffect(() => {
-    if (boardId) sessionStore.set(SESSION_KEYS.VIEWING_BOARD_ID, boardId);
+    if (!boardId) return;
+
+    const currentUser = parseStoredAuthUser(storage.get(STORAGE_KEYS.CURRENT_USER));
+    if (!currentUser) return;
+
+    sessionStore.set(SESSION_KEYS.VIEWING_BOARD_ID, JSON.stringify({
+      userId: currentUser.uid,
+      boardId,
+    }));
   }, [boardId]);
 }

@@ -28,6 +28,8 @@ const RUNNING_BOARD_CACHE = JSON.stringify({
 });
 
 const PLAIN_BOARD_ID = '884afdbe-3620-415c-a8db-72d703e8df46';
+const USER_ID = '11111111-1111-1111-1111-111111111111';
+const OTHER_USER_ID = '22222222-2222-2222-2222-222222222222';
 
 function BoardListStub() {
   return <h1>게시판 목록</h1>;
@@ -55,8 +57,17 @@ function cachedBoardId(): string | null {
   return window.localStorage.getItem(STORAGE_KEYS.BOARD_ID);
 }
 
-function viewBoardInThisSession(boardId: string): void {
-  window.sessionStorage.setItem(SESSION_KEYS.VIEWING_BOARD_ID, boardId);
+function loginAs(userId: string): void {
+  window.localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify({
+    uid: userId,
+    email: null,
+    displayName: null,
+    photoURL: null,
+  }));
+}
+
+function viewBoardInThisSession(boardId: string, userId = USER_ID): void {
+  window.sessionStorage.setItem(SESSION_KEYS.VIEWING_BOARD_ID, JSON.stringify({ userId, boardId }));
 }
 
 describe('/boards로 재진입한 사용자', () => {
@@ -108,6 +119,7 @@ describe('다른 탭에 갔다가 홈 탭으로 돌아온 사용자', () => {
   // 이 테스트가 막는 회귀가 사용자가 겪은 증상 그 자체다. 종료된 기수를 읽던 중
   // 알림 탭에 다녀오면 게시판 목록으로 튕겨서, 탭만 옮겼는데 자리를 잃었다.
   it('읽던 기수가 이미 끝났어도 그 게시판으로 돌아온다', async () => {
+    loginAs(USER_ID);
     viewBoardInThisSession('board-28');
     window.localStorage.setItem(STORAGE_KEYS.BOARD_ID, ENDED_BOARD_CACHE);
 
@@ -117,6 +129,7 @@ describe('다른 탭에 갔다가 홈 탭으로 돌아온 사용자', () => {
   });
 
   it('세션 기억이 만료된 저장 기록보다 앞선다', async () => {
+    loginAs(USER_ID);
     viewBoardInThisSession('board-29');
     window.localStorage.setItem(STORAGE_KEYS.BOARD_ID, ENDED_BOARD_CACHE);
 
@@ -128,6 +141,7 @@ describe('다른 탭에 갔다가 홈 탭으로 돌아온 사용자', () => {
   // 세션 기억이 이겼다고 저장 기록까지 지우면, 앱을 새로 열었을 때 기수 롤오버가
   // 판정할 대상이 사라진다.
   it('세션 기억으로 이동해도 저장된 기록은 남긴다', async () => {
+    loginAs(USER_ID);
     viewBoardInThisSession('board-28');
     window.localStorage.setItem(STORAGE_KEYS.BOARD_ID, ENDED_BOARD_CACHE);
 
@@ -135,5 +149,15 @@ describe('다른 탭에 갔다가 홈 탭으로 돌아온 사용자', () => {
 
     await screen.findByRole('heading');
     expect(cachedBoardId()).toBe(ENDED_BOARD_CACHE);
+  });
+
+  it('다른 사용자가 남긴 세션 기억은 무시한다', async () => {
+    loginAs(USER_ID);
+    viewBoardInThisSession('board-28', OTHER_USER_ID);
+    window.localStorage.setItem(STORAGE_KEYS.BOARD_ID, RUNNING_BOARD_CACHE);
+
+    enterBoardsEntry();
+
+    expect(await screen.findByRole('heading')).toHaveTextContent('board-29');
   });
 });
