@@ -38,6 +38,7 @@ function viewBoardInThisSession(boardId: string): void {
 }
 
 function enterFailingBoard(status: number) {
+  const user = userEvent.setup();
   const router = createMemoryRouter(
     [
       {
@@ -55,6 +56,7 @@ function enterFailingBoard(status: number) {
   );
 
   render(<RouterProvider router={router} />);
+  return user;
 }
 
 describe('참여하지 않은 기수라 읽기 권한이 없을 때', () => {
@@ -71,9 +73,9 @@ describe('참여하지 않은 기수라 읽기 권한이 없을 때', () => {
     }));
     viewBoardInThisSession(BOARD_ID);
 
-    enterFailingBoard(403);
+    const user = enterFailingBoard(403);
 
-    await userEvent.click(await screen.findByRole('button', { name: '내 게시판으로 가기' }));
+    await user.click(await screen.findByRole('button', { name: '내 게시판으로 가기' }));
 
     expect(window.localStorage.getItem(STORAGE_KEYS.BOARD_ID)).toBeNull();
     expect(window.sessionStorage.getItem(SESSION_KEYS.VIEWING_BOARD_ID)).toBeNull();
@@ -82,9 +84,9 @@ describe('참여하지 않은 기수라 읽기 권한이 없을 때', () => {
   it('나가기를 누르면 게시판 목록으로 빠져나온다', async () => {
     viewBoardInThisSession(BOARD_ID);
 
-    enterFailingBoard(403);
+    const user = enterFailingBoard(403);
 
-    await userEvent.click(await screen.findByRole('button', { name: '내 게시판으로 가기' }));
+    await user.click(await screen.findByRole('button', { name: '내 게시판으로 가기' }));
 
     expect(await screen.findByRole('heading', { name: '게시판 목록' })).toBeInTheDocument();
   });
@@ -102,9 +104,9 @@ describe('네트워크 오류로 게시판을 불러오지 못했을 때', () =>
   it('홈으로를 누르면 실패한 게시판으로 되돌아가지 않는다', async () => {
     viewBoardInThisSession(BOARD_ID);
 
-    enterFailingBoard(503);
+    const user = enterFailingBoard(503);
 
-    await userEvent.click(await screen.findByRole('button', { name: '홈으로' }));
+    await user.click(await screen.findByRole('button', { name: '홈으로' }));
 
     expect(await screen.findByRole('heading', { name: '게시판 목록' })).toBeInTheDocument();
   });
@@ -119,9 +121,9 @@ describe('네트워크 오류로 게시판을 불러오지 못했을 때', () =>
     window.localStorage.setItem(STORAGE_KEYS.BOARD_ID, cohortRecord);
     viewBoardInThisSession(BOARD_ID);
 
-    enterFailingBoard(503);
+    const user = enterFailingBoard(503);
 
-    await userEvent.click(await screen.findByRole('button', { name: '홈으로' }));
+    await user.click(await screen.findByRole('button', { name: '홈으로' }));
 
     await screen.findByRole('heading', { name: '게시판 목록' });
     expect(window.localStorage.getItem(STORAGE_KEYS.BOARD_ID)).toBe(cohortRecord);

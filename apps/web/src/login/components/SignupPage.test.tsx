@@ -1,4 +1,5 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SignupPage from './SignupPage';
@@ -25,7 +26,8 @@ function PathSpy() {
 }
 
 function renderPage() {
-  return render(
+  const user = userEvent.setup();
+  render(
     <MemoryRouter initialEntries={['/signup']}>
       <Routes>
         <Route path="/signup" element={<><SignupPage /><PathSpy /></>} />
@@ -34,17 +36,14 @@ function renderPage() {
       </Routes>
     </MemoryRouter>,
   );
+  return user;
 }
 
-async function fillAndSubmit() {
-  fireEvent.input(screen.getByLabelText('이메일'), { target: { value: 'taken@example.com' } });
-  fireEvent.input(screen.getByLabelText('비밀번호', { exact: true }), {
-    target: { value: 'StrongPass-2026!' },
-  });
-  fireEvent.input(screen.getByLabelText('비밀번호 확인'), {
-    target: { value: 'StrongPass-2026!' },
-  });
-  fireEvent.click(screen.getByRole('button', { name: /^회원가입$/ }));
+async function fillAndSubmit(user: ReturnType<typeof userEvent.setup>) {
+  await user.type(screen.getByLabelText('이메일'), 'taken@example.com');
+  await user.type(screen.getByLabelText('비밀번호', { exact: true }), 'StrongPass-2026!');
+  await user.type(screen.getByLabelText('비밀번호 확인'), 'StrongPass-2026!');
+  await user.click(screen.getByRole('button', { name: /^회원가입$/ }));
 }
 
 describe('SignupPage 422 already-registered branch', () => {
@@ -62,8 +61,8 @@ describe('SignupPage 422 already-registered branch', () => {
     mockSignUp.mockRejectedValueOnce(apiError);
     mockIsAlreadyRegistered.mockReturnValue(true);
 
-    renderPage();
-    await fillAndSubmit();
+    const user = renderPage();
+    await fillAndSubmit(user);
 
     await waitFor(() => {
       expect(screen.getByText(/이미 가입된 이메일입니다/)).toBeInTheDocument();
@@ -76,8 +75,8 @@ describe('SignupPage 422 already-registered branch', () => {
     mockSignUp.mockResolvedValueOnce(undefined);
     mockIsAlreadyRegistered.mockReturnValue(false);
 
-    renderPage();
-    await fillAndSubmit();
+    const user = renderPage();
+    await fillAndSubmit(user);
 
     await waitFor(() => {
       expect(screen.getByText('verify-email-stub')).toBeInTheDocument();
@@ -88,8 +87,8 @@ describe('SignupPage 422 already-registered branch', () => {
     mockSignUp.mockRejectedValueOnce(new Error('500 server error'));
     mockIsAlreadyRegistered.mockReturnValue(false);
 
-    renderPage();
-    await fillAndSubmit();
+    const user = renderPage();
+    await fillAndSubmit(user);
 
     await waitFor(() => {
       expect(screen.getByText(/회원가입에 실패했습니다/)).toBeInTheDocument();
