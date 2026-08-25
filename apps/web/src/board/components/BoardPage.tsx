@@ -2,7 +2,7 @@
 
 import { lazy, Suspense } from "react"
 import { z } from "zod"
-import { useNavigate, useParams } from "@/shared/navigation"
+import { readLocationState, useLocation, useNavigate, useParams } from "@/shared/navigation"
 import { BoardPageHeader } from "@/board/components/BoardPageHeader"
 import PostFilterTabs, { type PostFilterType } from "@/board/components/PostFilterTabs"
 import RecentPostCardList from "@/board/components/RecentPostCardList"
@@ -16,9 +16,13 @@ import { Button } from "@/shared/ui/button"
 // Default filter is 'recent' — BestPostCardList only renders on user toggle.
 // Lazy-load it so its code doesn't ship in BoardPage's eager chunk.
 const BestPostCardList = lazy(() => import("@/board/components/BestPostCardList"))
+const recentBoardLocationStateSchema = z.object({
+  restoreBoardScroll: z.literal(true),
+});
 
 export default function BoardPage() {
   const { boardId } = useParams()
+  const location = useLocation()
   const navigate = useNavigate()
   const viewTransitionNavigate = useViewTransitionNavigate()
 
@@ -29,7 +33,8 @@ export default function BoardPage() {
 
   // POP(앱 내 뒤로가기 버튼, iOS 가장자리 스와이프 백)으로 돌아왔을 때 스크롤 위치를
   // 동기적으로 복원한다. <ScrollRestoration />이 view transition과 함께 누락하는 케이스 보강.
-  useRouteScrollRestoration(`board-${boardId ?? ''}`);
+  const shouldRestoreFromRecentBoard = readLocationState(location.state, recentBoardLocationStateSchema) != null;
+  useRouteScrollRestoration(`board-${boardId ?? ''}`, { restoreOnMount: shouldRestoreFromRecentBoard });
 
   const handlePostClick = (postId: string) => {
     viewTransitionNavigate.forward(`/board/${boardId}/post/${postId}`)

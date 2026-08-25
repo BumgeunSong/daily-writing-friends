@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SESSION_KEYS, STORAGE_KEYS } from '@/shared/lib/storage';
-import { useParams } from '@/shared/navigation';
+import { useLocation, useParams } from '@/shared/navigation';
 import RecentBoard from './RecentBoard';
 
 /**
@@ -37,7 +37,9 @@ function BoardListStub() {
 
 function BoardStub() {
   const { boardId } = useParams();
-  return <h1>게시판 {boardId}</h1>;
+  const location = useLocation();
+  const restoreBoardScroll = (location.state as { restoreBoardScroll?: boolean } | null)?.restoreBoardScroll;
+  return <h1>{`게시판 ${boardId}${restoreBoardScroll ? ' (restore)' : ''}`}</h1>;
 }
 
 function enterBoardsEntry() {
@@ -125,7 +127,7 @@ describe('다른 탭에 갔다가 홈 탭으로 돌아온 사용자', () => {
 
     enterBoardsEntry();
 
-    expect(await screen.findByRole('heading')).toHaveTextContent('board-28');
+    expect(await screen.findByRole('heading')).toHaveTextContent('board-28 (restore)');
   });
 
   it('세션 기억이 만료된 저장 기록보다 앞선다', async () => {

@@ -22,10 +22,15 @@ function viewingBoardIdForCurrentUser(raw: string | null): string | null {
   return viewingBoard.userId === currentUser.uid ? viewingBoard.boardId : null;
 }
 
+const RETURNING_TO_VIEWING_BOARD_STATE = {
+  restoreBoardScroll: true,
+} as const;
+
 const RecentBoard: React.FC = () => {
+  const viewingBoardId = viewingBoardIdForCurrentUser(sessionStore.get(SESSION_KEYS.VIEWING_BOARD_ID));
   const { to, clearStoredCache } = resolveRecentBoardRedirect(
     {
-      viewingBoardId: viewingBoardIdForCurrentUser(sessionStore.get(SESSION_KEYS.VIEWING_BOARD_ID)),
+      viewingBoardId,
       storedCache: storage.get(STORAGE_KEYS.BOARD_ID),
     },
     new Date(),
@@ -33,7 +38,8 @@ const RecentBoard: React.FC = () => {
 
   if (clearStoredCache) storage.remove(STORAGE_KEYS.BOARD_ID);
 
-  return <Navigate to={to} />;
+  const state = viewingBoardId ? RETURNING_TO_VIEWING_BOARD_STATE : undefined;
+  return <Navigate to={to} state={state} />;
 };
 
 export default RecentBoard;
