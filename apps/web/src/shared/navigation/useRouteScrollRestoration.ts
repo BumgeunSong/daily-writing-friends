@@ -3,6 +3,11 @@ import { useNavigationType } from 'react-router-dom';
 
 const SCROLL_STORAGE_PREFIX = 'route-scroll:';
 
+interface ScrollRestorationOptions {
+  /** POP 외 진입에서도 강제로 복원할지 여부 (예: /boards -> /board 리다이렉트). */
+  restoreOnMount?: boolean;
+}
+
 /**
  * 라우트별 스크롤 복원. 라우트 컴포넌트 안에서 호출하면 그 컴포넌트가 사라질 때 현재
  * 스크롤 위치를 sessionStorage에 저장하고, POP으로 다시 마운트될 때 동기적으로 복원한다.
@@ -11,7 +16,10 @@ const SCROLL_STORAGE_PREFIX = 'route-scroll:';
  * 없다. View Transition과 함께 쓸 때 RR의 자동 복원이 누락되는 케이스를 보강하기 위해
  * 도입했다.
  */
-export function useRouteScrollRestoration(key: string): void {
+export function useRouteScrollRestoration(
+  key: string,
+  { restoreOnMount = false }: ScrollRestorationOptions = {},
+): void {
   const navigationType = useNavigationType();
   const storageKey = SCROLL_STORAGE_PREFIX + key;
 
@@ -30,7 +38,7 @@ export function useRouteScrollRestoration(key: string): void {
   }, [storageKey]);
 
   useLayoutEffect(() => {
-    if (navigationType !== 'POP') return;
+    if (navigationType !== 'POP' && !restoreOnMount) return;
     try {
       const saved = sessionStorage.getItem(storageKey);
       if (saved === null) return;
@@ -40,5 +48,5 @@ export function useRouteScrollRestoration(key: string): void {
     } catch {
       // ignore
     }
-  }, [storageKey, navigationType]);
+  }, [storageKey, navigationType, restoreOnMount]);
 }
