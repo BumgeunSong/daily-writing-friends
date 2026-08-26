@@ -21,7 +21,9 @@ import { verifyOtpForSignup } from '@/shared/auth/supabaseAuth';
 const mockedVerify = verifyOtpForSignup as unknown as ReturnType<typeof vi.fn>;
 
 function renderPage(initialState: { email?: string } = { email: 'verify@example.com' }) {
-  const user = userEvent.setup();
+  // 키 입력 사이 지연을 없앤다. 기본값은 키마다 매크로태스크를 기다려서 뒤따르는
+  // waitFor가 부하 상황에서 간헐적으로 시간을 초과한다.
+  const user = userEvent.setup({ delay: null });
   render(
     <MemoryRouter initialEntries={[{ pathname: '/verify-email', state: initialState }]}>
       <Routes>

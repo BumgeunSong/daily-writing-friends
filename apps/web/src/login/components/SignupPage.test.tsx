@@ -26,7 +26,10 @@ function PathSpy() {
 }
 
 function renderPage() {
-  const user = userEvent.setup();
+  // 키 입력 사이 지연을 없앤다. 기본값은 키마다 매크로태스크를 한 번씩 기다리는데,
+  // 이 폼은 이메일과 비밀번호로 50타를 치므로 waitFor의 1초 안에 못 끝내고 간헐적으로
+  // 빨개진다. fireEvent를 쓸 때는 동기라서 없던 민감도다.
+  const user = userEvent.setup({ delay: null });
   render(
     <MemoryRouter initialEntries={['/signup']}>
       <Routes>
