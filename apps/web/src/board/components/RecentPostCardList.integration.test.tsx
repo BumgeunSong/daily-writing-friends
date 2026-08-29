@@ -8,6 +8,9 @@ import type { Post } from '@/post/model/Post';
 import { deduplicateAuthorIds } from '@/post/utils/batchPostCardDataUtils';
 import { server } from '@/test/msw/server';
 import { postsFeedErrorHandler, postsFeedHandler } from '@/test/msw/handlers/posts';
+import { pendingPostCardBatchHandlers } from '@/test/msw/handlers/postCardBatch';
+import { buildAuthorGroupQueryKey } from '@/post/hooks/useBatchPostCardData';
+import type { PostCardPrefetchedData } from '@/post/utils/batchPostCardDataUtils';
 import { makePostRow, type PostRow } from '@/test/fixtures/post';
 import { withProviders } from '@/test/utils/withProviders';
 
@@ -26,6 +29,24 @@ import { withProviders } from '@/test/utils/withProviders';
 
 const SIGNED_IN_USER = { uid: 'alice', email: 'alice@test.local', displayName: 'Alice', photoURL: null };
 
+const FIRST_PAGE_SIZE = 7;
+const RESOLVED_AUTHOR_ID = 'author-1';
+const SECOND_PAGE_TITLE = 'Second page post';
+
+function makePrefetchedAuthorMap(authorId: string): Map<string, PostCardPrefetchedData> {
+  return new Map([
+    [
+      authorId,
+      {
+        authorData: { id: authorId, displayName: 'Alice', profileImageURL: '' },
+        badges: [],
+        streak: [],
+        isDonator: false,
+      },
+    ],
+  ]);
+}
+
 vi.mock('@/shared/hooks/useAuth', async () => {
   const actual = await vi.importActual<typeof import('@/shared/hooks/useAuth')>(
     '@/shared/hooks/useAuth',
@@ -40,14 +61,9 @@ vi.mock('@/shared/hooks/useAuth', async () => {
 function renderList(opts: { posts: PostRow[]; onPostsRequest?: (url: URL) => void }) {
   const { Wrapper, queryClient } = withProviders();
   if (opts.posts.length > 0) {
-    // Stay locked to useBatchPostCardData's keying so any future normalization
-    // in `deduplicateAuthorIds` propagates here automatically. Casting through
-    // a minimal `{authorId}` shape: the util only reads that field.
     const minimalPosts = opts.posts.map((p) => ({ authorId: p.author_id })) as Post[];
-    const authorIdsKey = deduplicateAuthorIds(minimalPosts)
-      .sort((a, b) => a.localeCompare(b))
-      .join(',');
-    queryClient.setQueryData(['batchPostCardData', authorIdsKey], new Map());
+    const authorIds = deduplicateAuthorIds(minimalPosts);
+    queryClient.setQueryData(buildAuthorGroupQueryKey(authorIds), new Map());
   }
   server.use(postsFeedHandler({ posts: opts.posts, onRequest: opts.onPostsRequest }));
   return render(
@@ -120,6 +136,54 @@ describe('RecentPostCardList — Pattern 1 (infinite-query list)', () => {
       .searchParams.get('created_at')!
       .slice('lt.'.length);
     expect(cursorIso).toBe('2026-01-05T00:00:00.000Z');
+  });
+
+  it('keeps already-resolved cards intact while the next page author batch is still pending', async () => {
+    // A resolved card renders profile buttons; a card that reverted to its
+    // loading shape renders none. That shape change is what shifted the layout.
+    const countProfileButtons = () =>
+      screen.queryAllByRole('button', { name: '작성자 프로필로 이동' }).length;
+
+    const firstPagePosts = Array.from({ length: FIRST_PAGE_SIZE }, (_, index) =>
+      makePostRow({
+        id: `page1-${index}`,
+        author_id: RESOLVED_AUTHOR_ID,
+        created_at: `2026-01-${String(20 - index).padStart(2, '0')}T00:00:00.000Z`,
+      }),
+    );
+    const secondPagePost = makePostRow({
+      id: 'page2-0',
+      author_id: 'author-2',
+      title: SECOND_PAGE_TITLE,
+      created_at: '2026-01-05T00:00:00.000Z',
+    });
+
+    const { Wrapper, queryClient } = withProviders();
+    queryClient.setQueryData<Map<string, PostCardPrefetchedData>>(
+      buildAuthorGroupQueryKey([RESOLVED_AUTHOR_ID]),
+      makePrefetchedAuthorMap(RESOLVED_AUTHOR_ID),
+    );
+    server.use(
+      ...pendingPostCardBatchHandlers(),
+      postsFeedHandler({ posts: [...firstPagePosts, secondPagePost] }),
+    );
+    render(
+      <MemoryRouter>
+        <Wrapper>
+          <RecentPostCardList boardId="b1" onPostClick={() => {}} />
+        </Wrapper>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(countProfileButtons()).toBeGreaterThan(0);
+    });
+    const resolvedButtonCount = countProfileButtons();
+
+    mockAllIsIntersecting(true);
+    await screen.findAllByText(SECOND_PAGE_TITLE);
+
+    expect(countProfileButtons()).toBe(resolvedButtonCount);
   });
 
   it('does not fire any next-page fetch after hasNextPage settles to false', async () => {
