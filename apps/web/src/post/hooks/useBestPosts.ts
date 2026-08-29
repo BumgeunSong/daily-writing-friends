@@ -10,6 +10,9 @@ export const BEST_POSTS_DAYS_RANGE = 7;
 export const BEST_POSTS_MAX_PAGES = 5;
 export const BEST_POSTS_PAGE_SIZE = 20;
 
+const BEST_POSTS_STALE_TIME_MS = 30 * 1000;
+const BEST_POSTS_CACHE_TIME_MS = 5 * 60 * 1000;
+
 /**
  * QueryKey for the best-posts infinite query. Co-located with the hook so
  * `invalidatePostCaches` (which uses ['bestPosts', boardId]) stays in lock-step.
@@ -23,15 +26,6 @@ export interface BestPostsPaginationConfig {
   maxPages: number;
 }
 
-/**
- * Pure cursor mapper for the best-posts infinite query.
- * Returns the last post's engagementScore, or undefined if pagination should stop.
- *
- * Stops on three conditions:
- *   1) empty page (server has no more)
- *   2) partial page (server returned fewer than pageSize — no more available)
- *   3) maxPages reached (client-side hard cap to bound network usage)
- */
 export function getBestPostsNextPageParam(
   lastPage: Post[],
   allPages: Post[][],
@@ -40,34 +34,30 @@ export function getBestPostsNextPageParam(
     maxPages: BEST_POSTS_MAX_PAGES,
   },
 ): number | undefined {
-  if (lastPage.length === 0 || lastPage.length < config.pageSize) return undefined;
-  if (allPages.length >= config.maxPages) return undefined;
+  const serverHasNoMore = lastPage.length < config.pageSize;
+  const hasReachedPageCap = allPages.length >= config.maxPages;
+  if (serverHasNoMore || hasReachedPageCap) return undefined;
+
   const lastPost = lastPage[lastPage.length - 1];
   return lastPost.engagementScore;
 }
 
-/**
- * Pure predicate that decides whether the best-posts hook should auto-fetch
- * another page. True only when current results are below the user-requested
- * target AND TanStack reports another page is available AND no fetch is in flight.
- */
 export function shouldFetchMoreBestPosts(input: {
   currentCount: number;
   targetCount: number;
   hasNextPage: boolean | undefined;
   isFetchingNextPage: boolean;
 }): boolean {
-  return (
-    input.currentCount < input.targetCount &&
-    !!input.hasNextPage &&
-    !input.isFetchingNextPage
-  );
+  const isBelowTarget = input.currentCount < input.targetCount;
+  const hasMoreToFetch = !!input.hasNextPage;
+  const isIdle = !input.isFetchingNextPage;
+  return isBelowTarget && hasMoreToFetch && isIdle;
 }
 
 /**
- * Truncates a list of pages to `limit` posts in total, preserving page
- * boundaries. Page structure has to survive the cap because the author-data
- * prefetch keys its cache per page.
+ * Caps the total post count while preserving page boundaries: the author-data
+ * prefetch keys one cache entry per page, so a flattened list would collapse
+ * those keys back into one.
  */
 export function limitPostGroups(groups: Post[][], limit: number): Post[][] {
   const limited: Post[][] = [];
@@ -80,11 +70,7 @@ export function limitPostGroups(groups: Post[][], limit: number): Post[][] {
   return limited;
 }
 
-/**
- * 최근 7일 내 베스트 게시글을 불러오는 훅 (engagementScore 내림차순)
- * 서버: engagementScore 순 정렬
- * 클라이언트: 7일 필터링 + 결과 부족 시 자동 추가 페이지 요청
- */
+/** 최근 7일 내 베스트 게시글 (engagementScore 내림차순) */
 export const useBestPosts = (boardId: string, targetCount: number) => {
   const { currentUser } = useAuth();
   const { data: blockedByUsers } = useBlockedByUsers(currentUser?.uid);
@@ -105,8 +91,8 @@ export const useBestPosts = (boardId: string, targetCount: number) => {
         feature: 'board-view-best',
         boardId,
       },
-      staleTime: 1000 * 30,
-      cacheTime: 1000 * 60 * 5,
+      staleTime: BEST_POSTS_STALE_TIME_MS,
+      cacheTime: BEST_POSTS_CACHE_TIME_MS,
       refetchOnWindowFocus: true,
     }
   );
@@ -115,10 +101,10 @@ export const useBestPosts = (boardId: string, targetCount: number) => {
 
   const recentPostPages = useMemo(() => {
     if (!data?.pages) return [];
-    const withinRange = data.pages.map(page =>
+    const pagesWithinDateRange = data.pages.map(page =>
       page.filter(post => isWithinDays(post, BEST_POSTS_DAYS_RANGE)),
     );
-    return limitPostGroups(withinRange, targetCount);
+    return limitPostGroups(pagesWithinDateRange, targetCount);
   }, [data?.pages, targetCount]);
 
   const recentPosts = useMemo(() => recentPostPages.flat(), [recentPostPages]);

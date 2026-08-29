@@ -14,6 +14,7 @@ import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
 import type React from 'react';
 
 const BEST_POSTS_TARGET = 20;
+const LOADING_SKELETON_COUNT = 5;
 
 interface BestPostCardListProps {
   boardId: string;
@@ -21,9 +22,26 @@ interface BestPostCardListProps {
   onClickProfile?: (userId: string) => void;
 }
 
-/**
- * 베스트 게시글 목록 컴포넌트 (최근 7일, engagementScore 내림차순)
- */
+function LoadingSkeletons() {
+  return (
+    <div className='space-y-6'>
+      {Array.from({ length: LOADING_SKELETON_COUNT }).map((_, index) => (
+        <PostCardSkeleton key={index} />
+      ))}
+    </div>
+  );
+}
+
+function EmptyBestPostsMessage() {
+  return (
+    <div className='flex flex-col items-center justify-start p-8 pt-16 text-center'>
+      <div className='mb-4 text-6xl text-muted-foreground'>~</div>
+      <div className='mb-6 text-muted-foreground'>최근 7일간 베스트 글이 없어요</div>
+    </div>
+  );
+}
+
+/** 최근 7일 베스트 게시글 목록 (engagementScore 내림차순) */
 const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClick, onClickProfile }) => {
   usePerformanceMonitoring('BestPostCardList');
   const queryClient = useQueryClient();
@@ -36,7 +54,7 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
     isFetchingNextPage,
   } = useBestPosts(boardId, BEST_POSTS_TARGET);
 
-  const { data: batchData, isError: isBatchError } = useBatchPostCardData(recentPostPages);
+  const { data: prefetchedByAuthorId, isError: isBatchError } = useBatchPostCardData(recentPostPages);
 
   const handleRefreshPosts = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -50,15 +68,7 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
     onPostClick(post.id);
   };
 
-  if (isLoading) {
-    return (
-      <div className='space-y-6'>
-        {Array.from({ length: 5 }).map((_, index) => (
-          <PostCardSkeleton key={index} />
-        ))}
-      </div>
-    );
-  }
+  if (isLoading) return <LoadingSkeletons />;
 
   if (isError) {
     return (
@@ -69,16 +79,8 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
     );
   }
 
-  if (recentPosts.length === 0 && !isFetchingNextPage) {
-    return (
-      <div className="flex flex-col items-center justify-start p-8 pt-16 text-center">
-        <div className="mb-4 text-6xl text-muted-foreground">
-          ~
-        </div>
-        <div className="mb-6 text-muted-foreground">최근 7일간 베스트 글이 없어요</div>
-      </div>
-    );
-  }
+  const isSettledAndEmpty = recentPosts.length === 0 && !isFetchingNextPage;
+  if (isSettledAndEmpty) return <EmptyBestPostsMessage />;
 
   return (
     <div className='space-y-4'>
@@ -88,7 +90,7 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
           post={post}
           onClick={() => handlePostClick(post)}
           onClickProfile={onClickProfile}
-          prefetchedData={batchData?.get(post.authorId)}
+          prefetchedData={prefetchedByAuthorId.get(post.authorId)}
           isBatchMode={recentPosts.length > 0 && !isBatchError}
         />
       ))}

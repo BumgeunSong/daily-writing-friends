@@ -8,22 +8,19 @@ function neverResolves() {
 }
 
 /**
- * Holds every endpoint in `useBatchPostCardData`'s fanout open forever.
- *
- * A pending batch is the state that exposes list churn: any card whose author
- * data is not already cached stays in its loading shape for the whole test, so
- * an assertion about already-rendered cards can never pass by accident just
+ * Holds every endpoint in `useBatchPostCardData`'s fanout open forever, so a
+ * test asserting on already-rendered cards can never pass by accident just
  * because a refetch happened to resolve in time.
  *
- * The `posts_feed` resolver only holds the stats variant (filtered by
- * `author_id`); the feed's own cursor requests fall through to the next
- * handler, so `postsFeedHandler` must still be registered after these.
+ * Only the stats variant of `posts_feed` (filtered by `author_id`) is held; the
+ * feed's own cursor requests fall through, so `postsFeedHandler` must still be
+ * registered after these.
  */
 export function pendingPostCardBatchHandlers() {
   return [
     http.get(`${SUPABASE_URL}/rest/v1/posts_feed`, ({ request }) => {
-      const url = new URL(request.url);
-      if (!url.searchParams.has('author_id')) return undefined;
+      const isStatsFanout = new URL(request.url).searchParams.has('author_id');
+      if (!isStatsFanout) return undefined;
       return neverResolves();
     }),
     http.get(`${SUPABASE_URL}/rest/v1/users`, neverResolves),
