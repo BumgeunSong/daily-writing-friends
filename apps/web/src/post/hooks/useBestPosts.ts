@@ -65,6 +65,22 @@ export function shouldFetchMoreBestPosts(input: {
 }
 
 /**
+ * Truncates a list of pages to `limit` posts in total, preserving page
+ * boundaries. Page structure has to survive the cap because the author-data
+ * prefetch keys its cache per page.
+ */
+export function limitPostGroups(groups: Post[][], limit: number): Post[][] {
+  const limited: Post[][] = [];
+  let remaining = limit;
+  for (const group of groups) {
+    if (remaining <= 0) break;
+    limited.push(group.slice(0, remaining));
+    remaining -= Math.min(group.length, remaining);
+  }
+  return limited;
+}
+
+/**
  * 최근 7일 내 베스트 게시글을 불러오는 훅 (engagementScore 내림차순)
  * 서버: engagementScore 순 정렬
  * 클라이언트: 7일 필터링 + 결과 부족 시 자동 추가 페이지 요청
@@ -97,12 +113,15 @@ export const useBestPosts = (boardId: string, targetCount: number) => {
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = queryResult;
 
-  const recentPosts = useMemo(() => {
+  const recentPostPages = useMemo(() => {
     if (!data?.pages) return [];
-    return data.pages
-      .flat()
-      .filter(post => isWithinDays(post, BEST_POSTS_DAYS_RANGE));
-  }, [data?.pages]);
+    const withinRange = data.pages.map(page =>
+      page.filter(post => isWithinDays(post, BEST_POSTS_DAYS_RANGE)),
+    );
+    return limitPostGroups(withinRange, targetCount);
+  }, [data?.pages, targetCount]);
+
+  const recentPosts = useMemo(() => recentPostPages.flat(), [recentPostPages]);
 
   useEffect(() => {
     if (shouldFetchMoreBestPosts({
@@ -117,7 +136,8 @@ export const useBestPosts = (boardId: string, targetCount: number) => {
 
   return {
     ...queryResult,
-    recentPosts: recentPosts.slice(0, targetCount),
+    recentPosts,
+    recentPostPages,
     blockedByUsers: blockedByUsers ?? [],
   };
 };

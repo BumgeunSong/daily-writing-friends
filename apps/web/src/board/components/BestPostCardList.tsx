@@ -30,12 +30,13 @@ const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClic
 
   const {
     recentPosts,
+    recentPostPages,
     isLoading,
     isError,
     isFetchingNextPage,
   } = useBestPosts(boardId, BEST_POSTS_TARGET);
 
-  const { data: batchData, isError: isBatchError } = useBatchPostCardData(recentPosts);
+  const { data: batchData, isError: isBatchError } = useBatchPostCardData(recentPostPages);
 
   const handleRefreshPosts = useCallback(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });

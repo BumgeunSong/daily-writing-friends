@@ -8,6 +8,8 @@ import type { Post } from '@/post/model/Post';
 import { deduplicateAuthorIds } from '@/post/utils/batchPostCardDataUtils';
 import { server } from '@/test/msw/server';
 import { postsFeedErrorHandler, postsFeedHandler } from '@/test/msw/handlers/posts';
+import { pendingPostCardBatchHandlers } from '@/test/msw/handlers/postCardBatch';
+import type { PostCardPrefetchedData } from '@/post/utils/batchPostCardDataUtils';
 import { makePostRow, type PostRow } from '@/test/fixtures/post';
 import { withProviders } from '@/test/utils/withProviders';
 
@@ -120,6 +122,74 @@ describe('RecentPostCardList — Pattern 1 (infinite-query list)', () => {
       .searchParams.get('created_at')!
       .slice('lt.'.length);
     expect(cursorIso).toBe('2026-01-05T00:00:00.000Z');
+  });
+
+  it('keeps already-resolved cards intact while the next page author batch is still pending', async () => {
+    // The shift this pins down: a second page introduces new authors, which used
+    // to re-key the single whole-list batch query and blank out the prefetched
+    // data of cards that were already on screen. Those cards fell back to their
+    // loading shape, shrank, and yanked the viewport. Cards that already have
+    // author data must never revert to loading because a *different* card's
+    // data is still in flight.
+    const PAGE_SIZE = 7;
+    const page1Posts = Array.from({ length: PAGE_SIZE }, (_, index) =>
+      makePostRow({
+        id: `page1-${index}`,
+        author_id: 'author-1',
+        author_name: 'Alice',
+        created_at: `2026-01-${String(20 - index).padStart(2, '0')}T00:00:00.000Z`,
+      }),
+    );
+    const page2Post = makePostRow({
+      id: 'page2-0',
+      author_id: 'author-2',
+      author_name: 'Bob',
+      title: 'Second page post',
+      created_at: '2026-01-05T00:00:00.000Z',
+    });
+
+    const { Wrapper, queryClient } = withProviders();
+    queryClient.setQueryData<Map<string, PostCardPrefetchedData>>(
+      ['batchPostCardData', 'author-1'],
+      new Map([
+        [
+          'author-1',
+          {
+            authorData: { id: 'author-1', displayName: 'Alice', profileImageURL: '' },
+            badges: [],
+            streak: [],
+            isDonator: false,
+          },
+        ],
+      ]),
+    );
+    server.use(
+      ...pendingPostCardBatchHandlers(),
+      postsFeedHandler({ posts: [...page1Posts, page2Post] }),
+    );
+    render(
+      <MemoryRouter>
+        <Wrapper>
+          <RecentPostCardList boardId="b1" onPostClick={() => {}} />
+        </Wrapper>
+      </MemoryRouter>,
+    );
+
+    // Counting buttons rather than cards: one resolved card renders several
+    // (avatar and name, in both the mobile and the desktop layout branch), and
+    // a card that reverts to loading renders none. The exact multiplier is a
+    // layout detail, so the assertion pins the count against itself.
+    const countProfileButtons = () =>
+      screen.queryAllByRole('button', { name: '작성자 프로필로 이동' }).length;
+    await waitFor(() => {
+      expect(countProfileButtons()).toBeGreaterThan(0);
+    });
+    const resolvedButtonCount = countProfileButtons();
+
+    mockAllIsIntersecting(true);
+    await screen.findAllByText('Second page post');
+
+    expect(countProfileButtons()).toBe(resolvedButtonCount);
   });
 
   it('does not fire any next-page fetch after hasNextPage settles to false', async () => {

@@ -44,7 +44,7 @@ const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPost
 
   const pages = postPages?.pages ?? [];
   const allPosts = pages.flat();
-  const { data: batchData, isError: isBatchError } = useBatchPostCardData(allPosts);
+  const { data: batchData, isError: isBatchError } = useBatchPostCardData(pages);
 
   // 첫 데이터가 채워진 시점의 페이지 수를 한 번만 캡처한다. 그 이후 fetchNextPage로 들어온
   // 페이지의 카드들만 스태거 등장. 렌더 중 ref 쓰기는 lazy-init 패턴(useRef와 동일 의미)이라

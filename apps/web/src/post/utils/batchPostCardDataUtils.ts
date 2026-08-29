@@ -17,6 +17,39 @@ export function deduplicateAuthorIds(posts: Post[]): string[] {
   return [...new Set(posts.map(p => p.authorId).filter(Boolean))];
 }
 
+/**
+ * Splits an append-only list of post pages into author-id groups that share no
+ * author, keeping each author in the earliest page they appear on.
+ *
+ * Grouping exists to keep cache keys stable. Keying one query on the whole
+ * list means every new page re-keys it, which drops the data of authors that
+ * already resolved and reverts their cards to the loading shape. Because pages
+ * only ever get appended, an earlier group's contents can never change, so its
+ * key and its cached data survive every later page.
+ */
+export function toDisjointAuthorIdGroups(postPages: Post[][]): string[][] {
+  const claimedAuthorIds = new Set<string>();
+  return postPages.map((page) => {
+    const unclaimed = deduplicateAuthorIds(page).filter((id) => !claimedAuthorIds.has(id));
+    unclaimed.forEach((id) => claimedAuthorIds.add(id));
+    return unclaimed;
+  });
+}
+
+/** Groups are disjoint, so later entries can never overwrite earlier ones. */
+export function mergeAuthorDataMaps(
+  maps: (Map<string, PostCardPrefetchedData> | undefined)[],
+): Map<string, PostCardPrefetchedData> {
+  const merged = new Map<string, PostCardPrefetchedData>();
+  for (const map of maps) {
+    if (!map) continue;
+    for (const [authorId, prefetchedData] of map) {
+      merged.set(authorId, prefetchedData);
+    }
+  }
+  return merged;
+}
+
 export interface BuildPostCardDataMapInput {
   authorIds: string[];
   users: BasicUserRow[];

@@ -1,11 +1,12 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useEffect } from 'react';
 
 import { fetchActiveDonatorIds } from '@/donator/external/donator.api';
 import type { Post } from '@/post/model/Post';
 import {
   buildPostCardDataMap,
-  deduplicateAuthorIds,
+  mergeAuthorDataMaps,
+  toDisjointAuthorIdGroups,
   type PostCardPrefetchedData,
 } from '@/post/utils/batchPostCardDataUtils';
 import { fetchBatchUsersBasic } from '@/user/external/user.reads';
@@ -27,39 +28,57 @@ export type { PostCardPrefetchedData } from '@/post/utils/batchPostCardDataUtils
 const STALE_TIME_MS = 5 * 60 * 1000;
 const CACHE_TIME_MS = 10 * 60 * 1000;
 
-export function useBatchPostCardData(posts: Post[]) {
+function buildAuthorGroupQueryKey(authorIds: string[]) {
+  return ['batchPostCardData', [...authorIds].sort((a, b) => a.localeCompare(b)).join(',')];
+}
+
+/**
+ * Prefetches author data for a list of post pages, one query per page.
+ *
+ * Takes pages rather than a flat list so each page's authors get their own
+ * cache key: appending a page must not disturb what earlier pages already
+ * resolved. See `toDisjointAuthorIdGroups`.
+ */
+export function useBatchPostCardData(postPages: Post[][]) {
   const queryClient = useQueryClient();
 
-  const authorIds = useMemo(
-    () => deduplicateAuthorIds(posts),
-    [posts],
-  );
-  const authorIdsKey = useMemo(
-    () => [...authorIds].sort((a, b) => a.localeCompare(b)).join(','),
-    [authorIds],
+  const authorIdGroups = useMemo(
+    () => toDisjointAuthorIdGroups(postPages).filter((group) => group.length > 0),
+    [postPages],
   );
 
-  const query = useQuery({
-    queryKey: ['batchPostCardData', authorIdsKey],
-    queryFn: () => fetchBatchPostCardData(authorIds),
-    enabled: authorIds.length > 0,
-    staleTime: STALE_TIME_MS,
-    cacheTime: CACHE_TIME_MS,
-    refetchOnWindowFocus: true,
+  const results = useQueries({
+    queries: authorIdGroups.map((authorIds) => ({
+      queryKey: buildAuthorGroupQueryKey(authorIds),
+      queryFn: () => fetchBatchPostCardData(authorIds),
+      staleTime: STALE_TIME_MS,
+      cacheTime: CACHE_TIME_MS,
+      refetchOnWindowFocus: true,
+    })),
   });
+
+  const dataVersion = results.map((result) => result.dataUpdatedAt).join(',');
+  const data = useMemo(
+    () => mergeAuthorDataMaps(results.map((result) => result.data)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- useQueries returns a fresh array every render; dataUpdatedAt is the only change that alters the merged map
+    [dataVersion],
+  );
 
   // Seed individual query caches so PostDetailPage finds badges/streak
   // on first render without an extra network round-trip.
   // badges and streak shapes match their individual hook contracts exactly.
   useEffect(() => {
-    if (!query.data) return;
-    query.data.forEach((prefetchedData, authorId) => {
+    data.forEach((prefetchedData, authorId) => {
       queryClient.setQueryData(badgeQueryKey(authorId), prefetchedData.badges);
       queryClient.setQueryData(streakQueryKey(authorId), { streak: prefetchedData.streak });
     });
-  }, [query.data, queryClient]);
+  }, [data, queryClient]);
 
-  return query;
+  return {
+    data,
+    isError: results.some((result) => result.isError),
+    isLoading: results.some((result) => result.isLoading),
+  };
 }
 
 async function fetchBatchPostCardData(
