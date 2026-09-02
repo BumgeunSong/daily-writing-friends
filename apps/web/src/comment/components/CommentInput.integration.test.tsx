@@ -162,4 +162,18 @@ describe('CommentInput — Pattern 4 (form with callback)', () => {
     expect(editorText()).toContain('실패해도 입력은 남아야');
     expect(onSubmit).toHaveBeenCalledTimes(1);
   });
+
+  it('does not submit when Enter or Shift+Enter is pressed', async () => {
+    const user = userEvent.setup({ delay: null });
+    const onSubmit = vi.fn(() => Promise.resolve());
+    renderInput(onSubmit);
+
+    const editor = screen.getByRole('textbox', { name: /댓글|글값/ });
+
+    editor.focus();
+    await user.keyboard('{Enter}');
+    await user.keyboard('{Shift>}{Enter}{/Shift}');
+
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
 });

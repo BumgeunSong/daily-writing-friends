@@ -377,6 +377,13 @@ const devRoutes = import.meta.env.DEV ? {
         return { Component: EditorTestPage };
       },
     },
+    {
+      path: 'comment-input',
+      lazy: async () => {
+        const { default: CommentInputTestPage } = await import('@/test/CommentInputTestPage');
+        return { Component: CommentInputTestPage };
+      },
+    },
   ],
 } : null;
 

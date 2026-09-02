@@ -1,4 +1,6 @@
+import Blockquote from '@tiptap/extension-blockquote';
 import Document from '@tiptap/extension-document';
+import HardBreak from '@tiptap/extension-hard-break';
 import Mention from '@tiptap/extension-mention';
 import Paragraph from '@tiptap/extension-paragraph';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -24,6 +26,15 @@ interface MentionableInputProps {
 }
 
 const MENTION_LIMIT = 8;
+const CommentHardBreak = HardBreak.extend({
+  addKeyboardShortcuts() {
+    return {
+      ...this.parent?.(),
+      Enter: () => this.editor.commands.setHardBreak(),
+      'Shift-Enter': () => this.editor.commands.setHardBreak(),
+    };
+  },
+});
 
 export function MentionableInput({
   boardId,
@@ -51,7 +62,9 @@ export function MentionableInput({
     content: initialContent,
     extensions: [
       Document,
+      Blockquote,
       Paragraph,
+      CommentHardBreak,
       Text,
       Placeholder.configure({ placeholder }),
       Mention.configure({
