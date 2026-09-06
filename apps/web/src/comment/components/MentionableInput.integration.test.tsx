@@ -3,19 +3,20 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
-import { CommentInput } from './CommentInput';
 import { deferred, type Deferred } from '@/test/utils/deferred';
 import { withProviders } from '@/test/utils/withProviders';
+
+import { MentionableInput } from './MentionableInput';
 
 /**
  * Pattern 4 reference test: form with `onSubmit` callback.
  *
- * The network is upstream of `CommentInput` — the parent owns `onSubmit`,
+ * The network is upstream of `MentionableInput` — the parent owns `onSubmit`,
  * which is what fires the Supabase mutation. So MSW is the wrong tool here.
  * We stub `onSubmit` with `vi.fn()` and gate it with a `deferred()` to drive
  * the in-flight state deterministically (no fake timers, no waitFor races).
  *
- * Content is seeded via `initialValue` rather than typed: ProseMirror's
+ * Content is seeded via `initialContent` rather than typed: ProseMirror's
  * contenteditable typing is unreliable under jsdom, and the `@`-mention
  * suggestion + Korean IME flow is verified in a real browser instead.
  */
@@ -64,13 +65,13 @@ beforeAll(() => {
 
 function renderInput(
   onSubmit: (content: string, contentJson: unknown) => Promise<void>,
-  initialValue = '좋은 글이에요',
+  initialContent = '좋은 글이에요',
 ) {
   const { Wrapper } = withProviders();
   return render(
     <MemoryRouter>
       <Wrapper>
-        <CommentInput boardId="b1" initialValue={initialValue} onSubmit={onSubmit} />
+        <MentionableInput boardId="b1" initialContent={initialContent} onSubmit={onSubmit} />
       </Wrapper>
     </MemoryRouter>,
   );
@@ -78,7 +79,7 @@ function renderInput(
 
 const editorText = () => document.querySelector('.ProseMirror')?.textContent ?? '';
 
-describe('CommentInput — Pattern 4 (form with callback)', () => {
+describe('MentionableInput — Pattern 4 (form with callback)', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
