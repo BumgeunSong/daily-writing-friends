@@ -29,6 +29,25 @@ test.describe('Comment Input Formatting', () => {
     await expect(page.getByTestId('submit-count')).toHaveText('0');
   });
 
+  test('pressing Enter on an empty quoted line exits the blockquote', async ({ page }) => {
+    const commentInput = page.getByRole('textbox', { name: '테스트 댓글 입력...' });
+
+    await commentInput.click();
+    await page.keyboard.type('> ');
+    await page.keyboard.type(BLOCKQUOTE_TEXT);
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Enter');
+    await page.keyboard.type(SECOND_LINE);
+
+    await expect(async () => {
+      const html = await commentInput.evaluate((element) => element.innerHTML);
+      expect(html).toContain('<blockquote>');
+      expect(html).toMatch(new RegExp(`</blockquote>\\s*<p>${SECOND_LINE}</p>`));
+    }).toPass({ timeout: 5000 });
+
+    await expect(page.getByTestId('submit-count')).toHaveText('0');
+  });
+
   test('pressing Enter inserts a line break without submitting', async ({ page }) => {
     const commentInput = page.getByRole('textbox', { name: '테스트 댓글 입력...' });
 
