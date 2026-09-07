@@ -47,9 +47,12 @@ function renderCommentEditor(initialContent: string) {
 // editor. Set the ProseMirror selection directly and dispatch the keydown on
 // the view's own DOM node -- ProseMirror's keymap listener is bound there,
 // not on the document, so it fires regardless of attachment.
-function pressEnterAtEnd(editor: NonNullable<ReturnType<typeof useCommentEditor>['editor']>) {
+function pressEnterAt(
+  editor: NonNullable<ReturnType<typeof useCommentEditor>['editor']>,
+  pos: number,
+) {
   act(() => {
-    editor.commands.setTextSelection(editor.state.doc.content.size);
+    editor.commands.setTextSelection(pos);
   });
   act(() => {
     // userEvent dispatches on document.activeElement, which renderHook's
@@ -57,6 +60,20 @@ function pressEnterAtEnd(editor: NonNullable<ReturnType<typeof useCommentEditor>
     // eslint-disable-next-line testing-library/prefer-user-event
     fireEvent.keyDown(editor.view.dom, { key: 'Enter', code: 'Enter' });
   });
+}
+
+function pressEnterAtEnd(editor: NonNullable<ReturnType<typeof useCommentEditor>['editor']>) {
+  pressEnterAt(editor, editor.state.doc.content.size);
+}
+
+function endOfFirstHardBreak(
+  editor: NonNullable<ReturnType<typeof useCommentEditor>['editor']>,
+) {
+  let pos = -1;
+  editor.state.doc.descendants((node, nodePos) => {
+    if (pos === -1 && node.type.name === 'hardBreak') pos = nodePos + node.nodeSize;
+  });
+  return pos;
 }
 
 describe('useCommentEditor — blockquote exit', () => {
@@ -76,5 +93,15 @@ describe('useCommentEditor — blockquote exit', () => {
     pressEnterAtEnd(result.current.editor!);
 
     expect(result.current.editor!.getHTML()).toBe('<blockquote><p>인용문<br></p></blockquote>');
+  });
+
+  it('inserts a plain line break, without exiting, when Enter is pressed right after a hard break that is not the last line', async () => {
+    const { result } = renderCommentEditor('<blockquote><p>줄1<br>줄2</p></blockquote>');
+    await waitFor(() => expect(result.current.editor).not.toBeNull());
+    const editor = result.current.editor!;
+
+    pressEnterAt(editor, endOfFirstHardBreak(editor));
+
+    expect(editor.getHTML()).toBe('<blockquote><p>줄1<br><br>줄2</p></blockquote>');
   });
 });

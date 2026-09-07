@@ -11,7 +11,7 @@ export const CommentHardBreak = HardBreak.extend({
     const exitBlockquoteOnBlankLine = () => {
       const { $from, empty } = this.editor.state.selection;
       const insideBlockquote = $from.node(-1)?.type.name === 'blockquote';
-      const onBlankLine = $from.nodeBefore?.type.name === 'hardBreak';
+      const onBlankLine = $from.nodeBefore?.type.name === 'hardBreak' && !$from.nodeAfter;
       if (!empty || !insideBlockquote || !onBlankLine) return false;
       return this.editor
         .chain()
