@@ -62,6 +62,16 @@ export default {
         'nav-progress': 'nav-progress 1.1s ease-in-out infinite',
       },
       typography: (theme) => ({
+        DEFAULT: {
+          css: {
+            'blockquote p:first-of-type::before': {
+              content: 'none',
+            },
+            'blockquote p:last-of-type::after': {
+              content: 'none',
+            },
+          },
+        },
         dark: {
           css: {
             color: theme('colors.gray.300'),
