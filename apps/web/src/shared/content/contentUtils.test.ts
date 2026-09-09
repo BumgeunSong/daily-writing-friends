@@ -301,6 +301,15 @@ describe('contentUtils', () => {
       expect(result).not.toContain('<blockquote>');
     });
 
+    it('preserves blockquotes emitted by the rich-text comment editor', () => {
+      const content = `<blockquote><p>quoted ${mentionSpan('u4', 'dora')}</p></blockquote>`;
+      const result = renderMentionBodyHtml(content);
+
+      expect(result).toContain('<blockquote>');
+      expect(result).toContain('href="/user/u4"');
+      expect(result).toContain('@dora');
+    });
+
     it('strips script tags and inline event handlers', () => {
       const content = `<p onclick="alert(1)">safe ${mentionSpan('u3', 'carol')}</p><script>alert("XSS")</script>`;
       const result = renderMentionBodyHtml(content);

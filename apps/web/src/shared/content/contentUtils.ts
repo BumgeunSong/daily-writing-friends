@@ -266,7 +266,7 @@ const convertMentionsToLinks = (element: HTMLElement): void => {
  */
 const renderMentionBodyHtml = (html: string): string => {
   const sanitized = DOMPurify.sanitize(html, {
-    ALLOWED_TAGS: ['p', 'br', 'span', 'strong', 'em', 's', 'code'],
+    ALLOWED_TAGS: ['blockquote', 'p', 'br', 'span', 'strong', 'em', 's', 'code'],
     ALLOWED_ATTR: ['data-user-id'],
   });
 
