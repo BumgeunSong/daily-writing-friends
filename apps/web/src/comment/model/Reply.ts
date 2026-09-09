@@ -2,6 +2,8 @@ import type { CommentAuthor } from '@/comment/model/Comment';
 import type { FirebaseTimestamp } from '@/shared/model/Timestamp';
 import type { ProseMirrorDoc } from '@/shared/model/ProseMirror';
 
+export const REPLY_PLACEHOLDER = '댓글을 달아줬다면 답을 해주는 게 인지상정!';
+
 export interface Reply {
   id: string;
   content: string;

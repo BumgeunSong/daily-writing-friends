@@ -2,11 +2,11 @@ import { Edit, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { CommentContent } from '@/comment/components/CommentContent';
 import { CommentHeader } from '@/comment/components/CommentHeader';
+import { MentionableInput } from '@/comment/components/MentionableInput';
 import ReactionList from '@/comment/components/ReactionList';
-import ReplyInput from '@/comment/components/ReplyInput';
 import { useDeleteReply, useEditReply } from '@/comment/hooks/useCreateReply';
+import { REPLY_PLACEHOLDER, type Reply } from '@/comment/model/Reply';
 import { Button } from '@/shared/ui/button';
-import type { Reply } from '@/comment/model/Reply';
 import type React from 'react';
 
 interface ReplyRowProps {
@@ -64,7 +64,12 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
       </div>
       <div className='text-base'>
         {isEditing ? (
-          <ReplyInput boardId={boardId} onSubmit={handleEditSubmit} initialValue={reply.content} />
+          <MentionableInput
+            boardId={boardId}
+            onSubmit={handleEditSubmit}
+            initialContent={reply.content}
+            placeholder={REPLY_PLACEHOLDER}
+          />
         ) : (
           <CommentContent
             content={reply.content}

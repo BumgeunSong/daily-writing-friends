@@ -3,12 +3,13 @@ import { useState, Suspense } from "react"
 import { toast } from "sonner"
 import { useCreateReply } from '@/comment/hooks/useCreateReply'
 import { useReplyCount } from '@/comment/hooks/useReplyCount'
+import { REPLY_PLACEHOLDER } from '@/comment/model/Reply'
 import { useAuth } from '@/shared/hooks/useAuth'
 import type { ProseMirrorDoc } from '@/shared/model/ProseMirror'
 import { Button } from "@/shared/ui/button"
 import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
-import ReplyInput from "./ReplyInput"
+import { MentionableInput } from "./MentionableInput"
 import ReplyList from "./ReplyList"
 import type React from "react"
 
@@ -79,7 +80,11 @@ const Replies: React.FC<RepliesProps> = ({ boardId, postId, commentId }) => {
             <ReplyList boardId={boardId} postId={postId} commentId={commentId} currentUserId={currentUser?.uid} />
           </Suspense>
           <div className="space-y-2">
-            <ReplyInput boardId={boardId} onSubmit={handleSubmit} />
+            <MentionableInput
+              boardId={boardId}
+              onSubmit={handleSubmit}
+              placeholder={REPLY_PLACEHOLDER}
+            />
           </div>
         </div>
       )}

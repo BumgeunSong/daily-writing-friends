@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
 
-import { CommentInput } from '@/comment/components/CommentInput';
 import { MentionableInput } from '@/comment/components/MentionableInput';
-import ReplyInput from '@/comment/components/ReplyInput';
+import { REPLY_PLACEHOLDER } from '@/comment/model/Reply';
 
 import { SettledGate } from './SettledGate';
 import type { Fixture } from './fixtures';
@@ -41,12 +40,10 @@ function LegacyHarness() {
 
   return (
     <div data-gate-root style={GATE_ROOT_STYLE}>
-      {which === 'mentionable' ? (
-        <MentionableInput boardId='gate-board' onSubmit={NOOP} />
-      ) : which === 'replyInput' ? (
-        <ReplyInput boardId='gate-board' onSubmit={NOOP} />
+      {which === 'replyInput' ? (
+        <MentionableInput boardId='gate-board' onSubmit={NOOP} placeholder={REPLY_PLACEHOLDER} />
       ) : (
-        <CommentInput boardId='gate-board' onSubmit={NOOP} />
+        <MentionableInput boardId='gate-board' onSubmit={NOOP} />
       )}
     </div>
   );

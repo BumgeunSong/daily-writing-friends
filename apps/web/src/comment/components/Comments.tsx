@@ -1,8 +1,8 @@
 import { Loader2 } from 'lucide-react';
 import { Suspense } from 'react';
 import { toast } from 'sonner';
-import { CommentInput } from '@/comment/components/CommentInput';
 import CommentList from '@/comment/components/CommentList';
+import { MentionableInput } from '@/comment/components/MentionableInput';
 import { useActivity } from '@/comment/hooks/useActivity';
 import { useCreateComment } from '@/comment/hooks/useCreateComment';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -89,7 +89,7 @@ const Comments: React.FC<CommentsProps> = ({
         />
       </Suspense>
       <div className='mt-6 space-y-4 border-t border-border pt-6'>
-        <CommentInput
+        <MentionableInput
           boardId={boardId}
           onSubmit={handleSubmit}
           placeholder={placeholder}

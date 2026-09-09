@@ -1,7 +1,7 @@
 import { Edit, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
-import { CommentInput } from '@/comment/components/CommentInput';
 import { CommentContent } from '@/comment/components/CommentContent';
+import { MentionableInput } from '@/comment/components/MentionableInput';
 import { CommentHeader } from '@/comment/components/CommentHeader';
 import ReactionList from '@/comment/components/ReactionList';
 import { useDeleteComment, useEditComment } from '@/comment/hooks/useCreateComment';
@@ -72,7 +72,11 @@ const CommentRow: React.FC<CommentRowProps> = ({
       </div>
       <div className='text-base'>
         {isEditing ? (
-          <CommentInput boardId={boardId} onSubmit={handleEditSubmit} initialValue={comment.content} />
+          <MentionableInput
+            boardId={boardId}
+            onSubmit={handleEditSubmit}
+            initialContent={comment.content}
+          />
         ) : (
           <CommentContent
             content={comment.content}
