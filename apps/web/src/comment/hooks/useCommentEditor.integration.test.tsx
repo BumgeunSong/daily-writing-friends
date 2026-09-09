@@ -76,6 +76,25 @@ function endOfFirstHardBreak(
   return pos;
 }
 
+// Blockquote's wrapping input rule is registered on the view's handleTextInput
+// prop (prosemirror-inputrules), not on keydown -- invoke that prop directly
+// so "> " is matched exactly as it would be for real typing.
+function typeBlockquoteMarker(
+  editor: NonNullable<ReturnType<typeof useCommentEditor>['editor']>,
+  pos: number,
+) {
+  act(() => {
+    editor.view.someProp('handleTextInput', (f) =>
+      (f as (view: typeof editor.view, from: number, to: number, text: string) => unknown)(
+        editor.view,
+        pos,
+        pos,
+        '> ',
+      ),
+    );
+  });
+}
+
 describe('useCommentEditor — blockquote exit', () => {
   it('lifts an empty paragraph out of the blockquote when Enter is pressed on a blank quoted line', async () => {
     const { result } = renderCommentEditor('<blockquote><p>인용문<br></p></blockquote>');
@@ -103,5 +122,31 @@ describe('useCommentEditor — blockquote exit', () => {
     pressEnterAt(editor, endOfFirstHardBreak(editor));
 
     expect(editor.getHTML()).toBe('<blockquote><p>줄1<br><br>줄2</p></blockquote>');
+  });
+});
+
+describe('useCommentEditor — blockquote input rule', () => {
+  it('wraps the line in a blockquote when "> " is typed at the start of a plain paragraph', async () => {
+    const { result } = renderCommentEditor('<p>인용문</p>');
+    await waitFor(() => expect(result.current.editor).not.toBeNull());
+    const editor = result.current.editor!;
+
+    typeBlockquoteMarker(editor, 1);
+
+    expect(editor.getHTML()).toBe('<blockquote><p>인용문</p></blockquote>');
+  });
+
+  it('does not nest a second blockquote when "> " is typed at the start of an already-quoted line', async () => {
+    const { result } = renderCommentEditor('<blockquote><p>인용문</p></blockquote>');
+    await waitFor(() => expect(result.current.editor).not.toBeNull());
+    const editor = result.current.editor!;
+
+    typeBlockquoteMarker(editor, 2);
+
+    // The rule bails out without dispatching, so the doc is untouched here;
+    // a real keystroke's own default insertion (not simulated by this
+    // synthetic handleTextInput call) would additionally leave "> " as text.
+    // What matters for this regression is that no second <blockquote> wraps it.
+    expect(editor.getHTML()).toBe('<blockquote><p>인용문</p></blockquote>');
   });
 });

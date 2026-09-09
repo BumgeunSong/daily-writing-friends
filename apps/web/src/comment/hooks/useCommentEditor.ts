@@ -1,4 +1,3 @@
-import Blockquote from '@tiptap/extension-blockquote';
 import Document from '@tiptap/extension-document';
 import Paragraph from '@tiptap/extension-paragraph';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -10,6 +9,7 @@ import type { ProseMirrorDoc } from '@/shared/model/ProseMirror';
 import { cn } from '@/shared/utils/cn';
 import { useBoardMembers } from '@/user/hooks/useMentionCandidates';
 
+import { CommentBlockquote } from '@/comment/utils/commentBlockquote';
 import { CommentHardBreak } from '@/comment/utils/commentHardBreak';
 import { createMentionExtension } from '@/comment/utils/mentionExtension';
 
@@ -53,7 +53,7 @@ export function useCommentEditor({
     content: initialContent,
     extensions: [
       Document,
-      Blockquote,
+      CommentBlockquote,
       Paragraph,
       CommentHardBreak,
       Text,
@@ -71,6 +71,9 @@ export function useCommentEditor({
         class: cn(
           'min-h-[90px] w-full rounded-md border border-input bg-background px-3 py-2 text-base',
           'focus:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+          // Visible left border on blockquote so applying "> " has feedback
+          // in the editor itself, not just after posting.
+          '[&_blockquote]:border-l-2 [&_blockquote]:border-muted-foreground [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground',
         ),
       },
     },
