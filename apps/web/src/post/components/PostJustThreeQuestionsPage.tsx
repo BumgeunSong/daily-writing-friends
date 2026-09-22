@@ -75,14 +75,17 @@ export default function PostJustThreeQuestionsPage() {
     if (isSubmittingRef.current || !canSubmitAnswer) return;
     isSubmittingRef.current = true;
 
-    const finalAnswers = [...session.answers, { question: session.currentQuestion, answer }];
-    session.recordAnswer(answer);
-    setAnswer('');
-
-    if (finalAnswers.length >= TOTAL_QUESTION_COUNT) {
-      await submitJustThreeQuestions(finalAnswers);
+    if (!isLastQuestion) {
+      session.recordAnswer(answer);
+      setAnswer('');
+      isSubmittingRef.current = false;
+      return;
     }
 
+    // Only commit the last answer to session state after createPost succeeds,
+    // so a failed submit leaves progress/answer untouched for retry.
+    const finalAnswers = [...session.answers, { question: session.currentQuestion, answer }];
+    await submitJustThreeQuestions(finalAnswers);
     isSubmittingRef.current = false;
   };
 
