@@ -20,6 +20,18 @@ import { useUserNickname } from '@/user/hooks/useUserNickname';
 const TOTAL_QUESTION_COUNT = 3;
 const QUESTION_LABEL_ID = 'just-three-questions-current-question';
 
+function SubmitButtonLabel({ isSubmitting, isLastQuestion }: { isSubmitting: boolean; isLastQuestion: boolean }) {
+  if (isSubmitting) {
+    return (
+      <>
+        <Loader2 className="mr-2 size-4 animate-spin" />
+        게시 중...
+      </>
+    );
+  }
+  return isLastQuestion ? <>완료</> : <>제출</>;
+}
+
 export default function PostJustThreeQuestionsPage() {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
@@ -128,16 +140,7 @@ export default function PostJustThreeQuestionsPage() {
             onClick={handleNext}
             disabled={!canSubmitAnswer || isSubmitting}
           >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 size-4 animate-spin" />
-                게시 중...
-              </>
-            ) : isLastQuestion ? (
-              '완료'
-            ) : (
-              '제출'
-            )}
+            <SubmitButtonLabel isSubmitting={isSubmitting} isLastQuestion={isLastQuestion} />
           </Button>
         </ReadingColumn>
       </div>
