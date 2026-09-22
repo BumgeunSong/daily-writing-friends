@@ -4,6 +4,7 @@ import { useNavigate, useParams } from '@/shared/navigation';
 import { toast } from 'sonner';
 import { PostVisibility } from '@/post/model/Post';
 import { PostJustThreeQuestionAnswerInput } from '@/post/components/PostJustThreeQuestionAnswerInput';
+import { useJustThreeQuestions } from '@/post/hooks/useJustThreeQuestions';
 import { useJustThreeQuestionsSession } from '@/post/hooks/useJustThreeQuestionsSession';
 import { mapCreatePostErrorMessage } from '@/post/hooks/useCreatePostAction';
 import { formatJustThreeQuestionsContent } from '@/post/utils/justThreeQuestionsContentUtils';
@@ -33,12 +34,34 @@ function SubmitButtonLabel({ isSubmitting, isLastQuestion }: { isSubmitting: boo
 }
 
 export default function PostJustThreeQuestionsPage() {
+  const { data: pool, isLoading, isError } = useJustThreeQuestions();
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (isError || !pool || pool.length === 0) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">질문을 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>
+      </div>
+    );
+  }
+
+  return <JustThreeQuestionsSession pool={pool} />;
+}
+
+function JustThreeQuestionsSession({ pool }: { pool: readonly string[] }) {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { boardId } = useParams();
   const { nickname: userNickname } = useUserNickname(currentUser?.uid ?? null);
 
-  const session = useJustThreeQuestionsSession();
+  const session = useJustThreeQuestionsSession(pool);
   const [answer, setAnswer] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
