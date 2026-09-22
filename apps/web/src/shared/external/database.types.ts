@@ -312,6 +312,24 @@ export type Database = {
         }
         Relationships: []
       }
+      just_three_questions: {
+        Row: {
+          created_at: string
+          id: string
+          question: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question?: string
+        }
+        Relationships: []
+      }
       likes: {
         Row: {
           created_at: string
