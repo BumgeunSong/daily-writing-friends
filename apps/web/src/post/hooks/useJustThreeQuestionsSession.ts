@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { JUST_THREE_QUESTIONS } from '@/post/data/justThreeQuestions';
 import type { JustThreeQuestionAnswer } from '@/post/utils/justThreeQuestionsContentUtils';
 
 const TOTAL_QUESTION_COUNT = 3;
@@ -17,8 +16,8 @@ interface QuestionSession {
   answers: JustThreeQuestionAnswer[];
 }
 
-function createInitialSession(): QuestionSession {
-  const { question, remainingPool } = pickRandomQuestion(JUST_THREE_QUESTIONS);
+function createInitialSession(pool: readonly string[]): QuestionSession {
+  const { question, remainingPool } = pickRandomQuestion(pool);
   return { remainingPool, currentQuestion: question, answers: [] };
 }
 
@@ -34,10 +33,12 @@ export interface UseJustThreeQuestionsSessionResult {
 
 /**
  * 질문 풀에서 랜덤 추출/제거를 관리하는 세션 상태.
+ * pool은 admin이 관리하는 DB 목록에서 가져온 값으로, 최소 1개 이상 채워진
+ * 상태로 호출해야 한다 (호출부가 로딩/빈 풀을 먼저 처리).
  * 제출(네트워크 호출)은 페이지 컴포넌트가 담당한다.
  */
-export function useJustThreeQuestionsSession(): UseJustThreeQuestionsSessionResult {
-  const [session, setSession] = useState<QuestionSession>(createInitialSession);
+export function useJustThreeQuestionsSession(pool: readonly string[]): UseJustThreeQuestionsSessionResult {
+  const [session, setSession] = useState<QuestionSession>(() => createInitialSession(pool));
 
   const isComplete = session.answers.length >= TOTAL_QUESTION_COUNT;
   const canSkip = session.remainingPool.length > 0;
