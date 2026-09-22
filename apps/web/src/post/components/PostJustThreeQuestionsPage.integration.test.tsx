@@ -10,16 +10,26 @@ import { withProviders } from '@/test/utils/withProviders';
 
 /**
  * Seam under test: the 3-question session loop (question → answer → next)
- * and the createPost round-trip on the 3rd answer. Pool/randomness and
+ * and the createPost round-trip on the 3rd answer. Randomness and
  * cache-invalidation side effects are stubbed so the test stays deterministic
- * and focused on this page's own contract, not on JUST_THREE_QUESTIONS'
- * content or postCacheUtils' internals.
+ * and focused on this page's own contract, not on the question pool's
+ * content or postCacheUtils' internals. useJustThreeQuestions (the fetch of
+ * the admin-managed pool) is stubbed directly — its own query/error behavior
+ * belongs to a separate test for that hook, not this page's contract.
  */
 
 const SIGNED_IN_USER = { uid: 'alice', email: 'alice@test.local', displayName: 'Alice', photoURL: null };
+const TEST_QUESTIONS = ['질문1', '질문2', '질문3', '질문4'];
 
-vi.mock('@/post/data/justThreeQuestions', () => ({
-  JUST_THREE_QUESTIONS: ['질문1', '질문2', '질문3', '질문4'],
+const useJustThreeQuestionsMock = vi.fn<
+  () => { data: string[] | undefined; isLoading: boolean; isError: boolean }
+>(() => ({
+  data: TEST_QUESTIONS,
+  isLoading: false,
+  isError: false,
+}));
+vi.mock('@/post/hooks/useJustThreeQuestions', () => ({
+  useJustThreeQuestions: () => useJustThreeQuestionsMock(),
 }));
 
 vi.mock('@/shared/hooks/useAuth', async () => {
@@ -84,6 +94,7 @@ describe('PostJustThreeQuestionsPage — 3줄쓰기 세션 흐름', () => {
     // pickRandomQuestion always selects index 0 of the remaining pool, so the
     // question sequence is deterministic: 질문1 → 질문2 → 질문3 → 질문4.
     vi.spyOn(Math, 'random').mockReturnValue(0);
+    useJustThreeQuestionsMock.mockReturnValue({ data: TEST_QUESTIONS, isLoading: false, isError: false });
   });
 
   afterEach(() => {
@@ -91,6 +102,23 @@ describe('PostJustThreeQuestionsPage — 3줄쓰기 세션 흐름', () => {
     invalidatePostCaches.mockClear();
     optimisticallyUpdatePostingStreak.mockClear();
     sendAnalyticsEvent.mockClear();
+    useJustThreeQuestionsMock.mockClear();
+  });
+
+  it('shows a loading spinner while the question pool is being fetched', () => {
+    useJustThreeQuestionsMock.mockReturnValue({ data: undefined, isLoading: true, isError: false });
+    renderPage();
+
+    expect(screen.queryByText('질문1')).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  });
+
+  it('shows an error state when the question pool fails to load', () => {
+    useJustThreeQuestionsMock.mockReturnValue({ data: undefined, isLoading: false, isError: true });
+    renderPage();
+
+    expect(screen.getByText(/질문을 불러오지 못했어요/)).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 
   it('shows the first question and advances progress after an answer is submitted', async () => {
