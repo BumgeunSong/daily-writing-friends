@@ -159,6 +159,16 @@ describe('PostJustThreeQuestionsPage — 3줄쓰기 세션 흐름', () => {
     expect(await screen.findByRole('button', { name: '제출' })).toBeDisabled();
   });
 
+  it('disables submit when the answer is only "<", ">" and whitespace, since formatting strips them to blank', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const textarea = await screen.findByRole('textbox');
+    await user.type(textarea, '<< >>');
+
+    expect(screen.getByRole('button', { name: '제출' })).toBeDisabled();
+  });
+
   it('submits createPost exactly once on rapid double-click of the final "완료" button', async () => {
     const user = userEvent.setup();
     const onInsert = vi.fn();

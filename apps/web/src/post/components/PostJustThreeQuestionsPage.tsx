@@ -8,7 +8,10 @@ import { useJustThreeQuestions } from '@/post/hooks/useJustThreeQuestions';
 import { useJustThreeQuestionsSession } from '@/post/hooks/useJustThreeQuestionsSession';
 import { useKeyboardInset } from '@/post/hooks/useKeyboardInset';
 import { mapCreatePostErrorMessage } from '@/post/hooks/useCreatePostAction';
-import { formatJustThreeQuestionsContent } from '@/post/utils/justThreeQuestionsContentUtils';
+import {
+  formatJustThreeQuestionsContent,
+  removeAngleBrackets,
+} from '@/post/utils/justThreeQuestionsContentUtils';
 import { countNonWhitespaceCharacters } from '@/post/utils/topicInputUtils';
 import { createPost } from '@/post/utils/postUtils';
 import { invalidatePostCaches, optimisticallyUpdatePostingStreak } from '@/post/utils/postCacheUtils';
@@ -78,7 +81,10 @@ function JustThreeQuestionsSession({ pool }: { pool: readonly string[] }) {
   }, []);
 
   const postTitle = userNickname ? `${userNickname}님의 3줄 쓰기` : '3줄 쓰기';
-  const canSubmitAnswer = countNonWhitespaceCharacters(answer) > 0;
+  // Count non-whitespace chars after stripping <, > (same normalization the
+  // content formatter applies), so an answer like "<<<" can't pass this check
+  // and then get published as a blank line once the brackets are removed.
+  const canSubmitAnswer = countNonWhitespaceCharacters(removeAngleBrackets(answer)) > 0;
   const isLastQuestion = session.progress === TOTAL_QUESTION_COUNT - 1;
 
   const submitJustThreeQuestions = async (finalAnswers: typeof session.answers) => {

@@ -9,7 +9,7 @@ export interface JustThreeQuestionAnswer {
  * 텍스트라 제거해도 의미 손실이 거의 없다. question은 admin이 저장하는
  * 외부 입력이라 같은 위험이 있어 동일하게 제거한다.
  */
-function removeAngleBrackets(text: string): string {
+export function removeAngleBrackets(text: string): string {
   return text.replace(/[<>]/g, '');
 }
 
