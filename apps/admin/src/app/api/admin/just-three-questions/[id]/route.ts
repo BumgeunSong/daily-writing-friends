@@ -29,7 +29,7 @@ export async function PATCH(req: NextRequest, ctx: RouteParams) {
       const supabase = getServerSupabase();
       const { data, error } = await supabase
         .from('just_three_questions')
-        .update({ is_active: parsed.data.isActive })
+        .update({ is_active: parsed.data.isActive, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select('*')
         .single();

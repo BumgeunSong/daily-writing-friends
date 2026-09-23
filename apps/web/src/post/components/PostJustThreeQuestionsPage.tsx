@@ -6,6 +6,7 @@ import { PostVisibility } from '@/post/model/Post';
 import { PostJustThreeQuestionAnswerInput } from '@/post/components/PostJustThreeQuestionAnswerInput';
 import { useJustThreeQuestions } from '@/post/hooks/useJustThreeQuestions';
 import { useJustThreeQuestionsSession } from '@/post/hooks/useJustThreeQuestionsSession';
+import { useKeyboardInset } from '@/post/hooks/useKeyboardInset';
 import { mapCreatePostErrorMessage } from '@/post/hooks/useCreatePostAction';
 import { formatJustThreeQuestionsContent } from '@/post/utils/justThreeQuestionsContentUtils';
 import { countNonWhitespaceCharacters } from '@/post/utils/topicInputUtils';
@@ -34,7 +35,7 @@ function SubmitButtonLabel({ isSubmitting, isLastQuestion }: { isSubmitting: boo
 }
 
 export default function PostJustThreeQuestionsPage() {
-  const { data: pool, isLoading, isError } = useJustThreeQuestions();
+  const { data: pool, isLoading } = useJustThreeQuestions();
 
   if (isLoading) {
     return (
@@ -44,7 +45,11 @@ export default function PostJustThreeQuestionsPage() {
     );
   }
 
-  if (isError || !pool || pool.length < TOTAL_QUESTION_COUNT) {
+  // A background refetch (e.g. after regaining focus) can fail while a
+  // previously-fetched pool is still cached — isError alone would unmount
+  // an in-progress session and discard the user's answers, so only treat
+  // "no usable pool" as the error state.
+  if (!pool || pool.length < TOTAL_QUESTION_COUNT) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <p className="text-sm text-muted-foreground">질문을 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>
@@ -60,6 +65,7 @@ function JustThreeQuestionsSession({ pool }: { pool: readonly string[] }) {
   const navigate = useNavigate();
   const { boardId } = useParams();
   const { nickname: userNickname } = useUserNickname(currentUser?.uid ?? null);
+  const keyboardInset = useKeyboardInset();
 
   const session = useJustThreeQuestionsSession(pool);
   const [answer, setAnswer] = useState('');
@@ -89,7 +95,7 @@ function JustThreeQuestionsSession({ pool }: { pool: readonly string[] }) {
         title: postTitle,
         content,
         authorId: currentUser.uid,
-        authorName: userNickname ?? '',
+        authorName: userNickname ?? '??',
         visibility: PostVisibility.PUBLIC,
       });
 
@@ -148,7 +154,10 @@ function JustThreeQuestionsSession({ pool }: { pool: readonly string[] }) {
         </Stack>
       </ReadingColumn>
 
-      <div className="sticky bottom-0 left-0 right-0 border-t border-border bg-background p-4">
+      <div
+        className="sticky bottom-0 left-0 right-0 border-t border-border bg-background p-4"
+        style={keyboardInset > 0 ? { bottom: `${keyboardInset}px` } : undefined}
+      >
         <ReadingColumn as="div" className="flex gap-3 py-0">
           <Button
             variant="ghost"

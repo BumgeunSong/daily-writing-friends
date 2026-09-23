@@ -69,6 +69,7 @@ export default function JustThreeQuestionsPage() {
   })
 
   const handleCreate = () => {
+    if (createMutation.isPending) return
     const question = newQuestion.trim()
     if (!question) return
     createMutation.mutate({ question })
