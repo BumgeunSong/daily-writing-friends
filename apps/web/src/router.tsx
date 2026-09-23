@@ -288,6 +288,15 @@ const privateRoutesWithoutNav = {
       },
     },
     {
+      path: 'create/:boardId/just-three-questions',
+      lazy: async () => {
+        const { default: PostJustThreeQuestionsPage } = await import(
+          '@/post/components/PostJustThreeQuestionsPage'
+        );
+        return { Component: PostJustThreeQuestionsPage };
+      },
+    },
+    {
       path: 'create/:boardId',
       lazy: async () => {
         const [{ default: PostCreationPage }, { createPostAction }] = await Promise.all([

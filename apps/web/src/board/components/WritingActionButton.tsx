@@ -1,4 +1,4 @@
-import { Plus, X, PenSquare, Sparkle } from 'lucide-react';
+import { Plus, X, PenSquare, Sparkle, ListChecks } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from '@/shared/navigation';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -70,6 +70,12 @@ function ExpandedMenu({ boardId, isExpanded, onClose }: ExpandedMenuProps) {
       icon: PenSquare,
       label: "일반 글쓰기",
       ariaLabel: "Create Normal Post"
+    },
+    {
+      to: `/create/${boardId}/just-three-questions`,
+      icon: ListChecks,
+      label: "3줄쓰기",
+      ariaLabel: "Start Just Three Questions"
     }
   ];
 
