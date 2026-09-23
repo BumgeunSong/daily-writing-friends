@@ -23,19 +23,7 @@ WritingActionButton 메뉴에 "3줄쓰기" 항목 추가
 
 ## 2. 데이터 모델 & 질문 풀 소진 처리
 
-질문 풀은 코드 상수 배열로 시작 (최소 20개 이상):
-
-```ts
-// apps/web/src/post/data/justThreeQuestions.ts
-export const JUST_THREE_QUESTIONS: readonly string[] = [
-  "오늘 속으로 가장 많이 한 말은?",
-  "오늘 기분 좋았던 일을 5자로 적는다면?",
-  "내일의 나에게 한마디?",
-  "오늘을 되돌아봤을 때 기록해두고 싶은 3단어는?",
-  "매일 4시간만 자도 개운한 것 vs 먹고 싶은 거 다 먹어도 살 안 찌는 것, 고른다면?",
-  // ... 20개 이상
-];
-```
+질문 풀은 코드 상수가 아니라 `just_three_questions` Supabase 테이블로 관리한다 (`supabase/migrations/20260922000000_add_just_three_questions_table.sql`). `is_active` 소프트 삭제 컬럼으로 활성 질문만 노출하며, apps/admin의 CRUD UI(`apps/admin/src/app/admin/just-three-questions/page.tsx`)에서 질문 추가/비활성화 토글을 관리한다. 웹 클라이언트는 `fetchJustThreeQuestions()`(`apps/web/src/post/external/justThreeQuestions.api.ts`)로 `is_active = true` 질문만 `created_at` 순으로 읽는다. 최소 20개 이상이라는 가정은 없으며, **활성 질문이 `TOTAL_QUESTION_COUNT`(3개) 미만이면 세션 진입 자체를 에러 상태로 막는다** (`PostJustThreeQuestionsPage.tsx`).
 
 세션 상태(로컬, 서버/라우터 state 불필요). **불변식: `remainingPool`은 아직 뽑히지 않은 질문만 담고, `currentQuestion`은 이미 풀에서 제거된 상태로 별도 보관한다** (리뷰에서 지적된 애매함 해소):
 
@@ -47,21 +35,30 @@ interface QuestionSession {
 }
 ```
 
-풀에서 뽑힌 질문은 스킵/답변 여부와 무관하게 `remainingPool`에서 제거되어 같은 세션에서 재등장하지 않는다. 풀 크기를 20개 이상으로 잡아 "다음" 연타로 소진되기 어렵게 하되, **`remainingPool.length === 0`이 되면 스킵 버튼을 비활성화**한다 (currentQuestion이 이미 풀 밖에 있으므로 이때 스킵하면 다음 질문을 뽑을 수 없음 — off-by-one 수정).
+풀에서 뽑힌 질문은 스킵/답변 여부와 무관하게 `remainingPool`에서 제거되어 같은 세션에서 재등장하지 않는다. 질문 풀이 20개보다 훨씬 작을 수 있으므로(admin이 최소 3개만 등록해도 기능이 동작해야 함), **스킵은 답변에 필요한 `TOTAL_QUESTION_COUNT - answers.length`개를 채울 만큼 `remainingPool`이 남아 있을 때만 허용한다** (`remainingPool.length >= TOTAL_QUESTION_COUNT - answers.length`). 단순히 `remainingPool.length > 0`만 검사하면 풀이 작을 때 스킵 후 남은 질문 수가 필요한 답변 수보다 적어져 같은 질문이 반복 노출되는 버그가 있었다.
 
 ## 3. 컴포넌트/파일 구조
 
 ```
 post/
-  data/
-    justThreeQuestions.ts
+  external/
+    justThreeQuestions.api.ts         # Supabase REST 조회 (is_active=true, created_at asc)
   components/
     PostJustThreeQuestionsPage.tsx    # route: create/:boardId/just-three-questions
     PostJustThreeQuestionAnswerInput.tsx
   hooks/
-    useJustThreeQuestionsSession.ts
+    useJustThreeQuestions.ts          # React Query: 질문 풀 조회
+    useJustThreeQuestionsSession.ts   # 세션 상태 (랜덤 추출/스킵/진행도)
   utils/
     justThreeQuestionsContentUtils.ts
+```
+
+질문 풀 관리는 apps/admin에서 담당한다:
+
+```
+apps/admin/src/app/admin/just-three-questions/page.tsx   # 질문 목록/추가/활성 토글 UI
+apps/admin/src/app/api/admin/just-three-questions/route.ts        # GET(목록)/POST(추가)
+apps/admin/src/app/api/admin/just-three-questions/[id]/route.ts   # PATCH(활성 토글)
 ```
 
 컴포넌트 파일명은 `post/components/` 기존 컨벤션(`Post*`/`Editor*` 프리픽스)에 맞춰 `Post` 프리픽스를 붙인다 (기존 계획의 `JustThreeQuestionsPage.tsx`에서 수정).
@@ -69,7 +66,7 @@ post/
 - `WritingActionButton.tsx`의 `actions` 배열에 `{ to: /create/:boardId/just-three-questions, icon: ListChecks, label: "3줄쓰기" }` 추가.
 - `router.tsx`의 `privateRoutesWithoutNav`에 lazy route 추가 (Component-only 등록, `create/:boardId` 라우트처럼 별도 action 없이 — `PostFreewritingPage.tsx`와 동일 패턴, `router.tsx:282-289` 참고).
 - `useJustThreeQuestionsSession`: 마운트 시 첫 질문 추출, `skip()`/`recordAnswer()`로 세션 전진, 3개 완료 시 `isComplete: true`. 제출(네트워크 호출)은 페이지 컴포넌트가 담당 — `PostFreewritingPage.tsx:59-98`과 동일한 훅/페이지 경계.
-- content 포맷: 답변에서 `<`, `>` 문자를 제거한 뒤 `Q. {question} > {answer}` 를 개행 두 번으로 join. (`<`, `>` 를 남기면 `contentUtils.ts`의 `isHtmlContent` 정규식이 오작동해 줄바꿈 변환이 스킵될 수 있음 — DOMPurify가 있어 XSS는 아니지만 레이아웃이 깨짐. 답변은 30자 제한 텍스트라 이 문자를 지워도 의미 손실이 거의 없음.)
+- content 포맷: 질문과 답변 양쪽에서 `<`, `>` 문자를 제거한 뒤 `Q. {question} > {answer}` 를 개행 두 번으로 join. (`<`, `>` 를 남기면 `contentUtils.ts`의 `isHtmlContent` 정규식이 오작동해 줄바꿈 변환이 스킵되거나 마크업으로 렌더링될 수 있음 — DOMPurify가 있어 XSS는 아니지만 레이아웃이 깨짐. 답변은 30자 제한 텍스트, 질문은 admin이 저장하는 외부 입력이라 둘 다 지워도 의미 손실이 거의 없음.)
 - title은 `userNickname ? `${userNickname}님의 3줄 쓰기` : '3줄 쓰기'` (닉네임 미해결 시 fallback, `PostFreewritingPage.tsx:40` 패턴).
 
 ## 4. 답변 입력 UI
@@ -158,5 +155,4 @@ const canSubmit = countNonWhitespaceCharacters(answer) > 0;
 - A/B 선택형 UI 컴포넌트 (질문 문구로만 표현, 별도 데이터 모델 없음)
 - 제출 전 미리보기/수정 화면
 - intro/튜토리얼 화면
-- 질문 풀의 DB/CMS 관리
 - E2E 테스트
