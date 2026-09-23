@@ -1,13 +1,16 @@
-import { adminGet, adminPost } from '@/lib/api-client';
+import { adminGet, adminPatch, adminPost } from '@/lib/api-client';
 import type {
   ApproveUserRequest,
   ApproveUserResponse,
   CreateBoardRequest,
   CreateBoardResponse,
+  CreateJustThreeQuestionRequest,
+  CreateJustThreeQuestionResponse,
   GetAppConfigResponse,
   GetBoardResponse,
   GetBoardUsersResponse,
   GetBoardsResponse,
+  GetJustThreeQuestionsResponse,
   GetLastBoardResponse,
   GetMeResponse,
   GetPostsResponse,
@@ -22,6 +25,8 @@ import type {
   SearchUsersResponse,
   UpdateAppConfigRequest,
   UpdateAppConfigResponse,
+  UpdateJustThreeQuestionRequest,
+  UpdateJustThreeQuestionResponse,
 } from '@/types/admin-api-contracts';
 
 // =============================================================================
@@ -42,6 +47,7 @@ export const adminQueryKeys = {
     ['admin', 'users', userId, 'previous-cohort-posts', cohort] as const,
   posts: (boardId: string, range: PostsRange) => ['admin', 'posts', boardId, range] as const,
   appConfig: ['admin', 'app-config'] as const,
+  justThreeQuestions: ['admin', 'just-three-questions'] as const,
 };
 
 // =============================================================================
@@ -129,6 +135,11 @@ export async function getAppConfig(): Promise<GetAppConfigResponse['config']> {
   return res.config;
 }
 
+export async function getJustThreeQuestions(): Promise<GetJustThreeQuestionsResponse['questions']> {
+  const res = await adminGet<GetJustThreeQuestionsResponse>('/api/admin/just-three-questions');
+  return res.questions;
+}
+
 // =============================================================================
 // Mutation wrappers
 // =============================================================================
@@ -154,4 +165,25 @@ export async function updateAppConfig(
     body,
   );
   return res.config;
+}
+
+export async function createJustThreeQuestion(
+  body: CreateJustThreeQuestionRequest,
+): Promise<CreateJustThreeQuestionResponse['question']> {
+  const res = await adminPost<CreateJustThreeQuestionResponse, CreateJustThreeQuestionRequest>(
+    '/api/admin/just-three-questions',
+    body,
+  );
+  return res.question;
+}
+
+export async function updateJustThreeQuestion(
+  id: string,
+  body: UpdateJustThreeQuestionRequest,
+): Promise<UpdateJustThreeQuestionResponse['question']> {
+  const res = await adminPatch<UpdateJustThreeQuestionResponse, UpdateJustThreeQuestionRequest>(
+    `/api/admin/just-three-questions/${encodeURIComponent(id)}`,
+    body,
+  );
+  return res.question;
 }
