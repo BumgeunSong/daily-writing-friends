@@ -6,6 +6,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PostJustThreeQuestionsPage from './PostJustThreeQuestionsPage';
 import { server } from '@/test/msw/server';
 import { createPostErrorHandler, createPostHandler } from '@/test/msw/handlers/posts';
+import {
+  justThreeQuestionsErrorHandler,
+  justThreeQuestionsHandler,
+  justThreeQuestionsPendingHandler,
+} from '@/test/msw/handlers/justThreeQuestions';
 import { withProviders } from '@/test/utils/withProviders';
 
 /**
@@ -13,24 +18,14 @@ import { withProviders } from '@/test/utils/withProviders';
  * and the createPost round-trip on the 3rd answer. Randomness and
  * cache-invalidation side effects are stubbed so the test stays deterministic
  * and focused on this page's own contract, not on the question pool's
- * content or postCacheUtils' internals. useJustThreeQuestions (the fetch of
- * the admin-managed pool) is stubbed directly — its own query/error behavior
- * belongs to a separate test for that hook, not this page's contract.
+ * content or postCacheUtils' internals. The question pool fetch
+ * (`GET /rest/v1/just_three_questions`) is mocked at the HTTP layer via MSW,
+ * not the `useJustThreeQuestions` hook, so the test exercises the real
+ * query/fetch/mapping path instead of coupling to the hook's implementation.
  */
 
 const SIGNED_IN_USER = { uid: 'alice', email: 'alice@test.local', displayName: 'Alice', photoURL: null };
 const TEST_QUESTIONS = ['질문1', '질문2', '질문3', '질문4'];
-
-const useJustThreeQuestionsMock = vi.fn<
-  () => { data: string[] | undefined; isLoading: boolean; isError: boolean }
->(() => ({
-  data: TEST_QUESTIONS,
-  isLoading: false,
-  isError: false,
-}));
-vi.mock('@/post/hooks/useJustThreeQuestions', () => ({
-  useJustThreeQuestions: () => useJustThreeQuestionsMock(),
-}));
 
 vi.mock('@/shared/hooks/useAuth', async () => {
   const actual = await vi.importActual<typeof import('@/shared/hooks/useAuth')>(
@@ -83,7 +78,7 @@ function renderPage() {
 }
 
 async function answerAndAdvance(user: ReturnType<typeof userEvent.setup>, text: string) {
-  const textarea = screen.getByRole('textbox');
+  const textarea = await screen.findByRole('textbox');
   await user.clear(textarea);
   await user.type(textarea, text);
   await user.click(screen.getByRole('button', { name: /제출|완료/ }));
@@ -94,7 +89,7 @@ describe('PostJustThreeQuestionsPage — 3줄쓰기 세션 흐름', () => {
     // pickRandomQuestion always selects index 0 of the remaining pool, so the
     // question sequence is deterministic: 질문1 → 질문2 → 질문3 → 질문4.
     vi.spyOn(Math, 'random').mockReturnValue(0);
-    useJustThreeQuestionsMock.mockReturnValue({ data: TEST_QUESTIONS, isLoading: false, isError: false });
+    server.use(justThreeQuestionsHandler({ questions: TEST_QUESTIONS }));
   });
 
   afterEach(() => {
@@ -102,22 +97,21 @@ describe('PostJustThreeQuestionsPage — 3줄쓰기 세션 흐름', () => {
     invalidatePostCaches.mockClear();
     optimisticallyUpdatePostingStreak.mockClear();
     sendAnalyticsEvent.mockClear();
-    useJustThreeQuestionsMock.mockClear();
   });
 
   it('shows a loading spinner while the question pool is being fetched', () => {
-    useJustThreeQuestionsMock.mockReturnValue({ data: undefined, isLoading: true, isError: false });
+    server.use(justThreeQuestionsPendingHandler());
     renderPage();
 
     expect(screen.queryByText('질문1')).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 
-  it('shows an error state when the question pool fails to load', () => {
-    useJustThreeQuestionsMock.mockReturnValue({ data: undefined, isLoading: false, isError: true });
+  it('shows an error state when the question pool fails to load', async () => {
+    server.use(justThreeQuestionsErrorHandler());
     renderPage();
 
-    expect(screen.getByText(/질문을 불러오지 못했어요/)).toBeInTheDocument();
+    expect(await screen.findByText(/질문을 불러오지 못했어요/)).toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 
@@ -125,7 +119,7 @@ describe('PostJustThreeQuestionsPage — 3줄쓰기 세션 흐름', () => {
     const user = userEvent.setup();
     renderPage();
 
-    expect(screen.getByText('질문1')).toBeInTheDocument();
+    expect(await screen.findByText('질문1')).toBeInTheDocument();
     expect(screen.getByText('1/3')).toBeInTheDocument();
 
     await answerAndAdvance(user, '답변1');
@@ -138,7 +132,7 @@ describe('PostJustThreeQuestionsPage — 3줄쓰기 세션 흐름', () => {
     const user = userEvent.setup();
     renderPage();
 
-    expect(screen.getByText('질문1')).toBeInTheDocument();
+    expect(await screen.findByText('질문1')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '다음 질문' }));
     expect(screen.getByText('질문2')).toBeInTheDocument();
     expect(screen.queryByText('질문1')).not.toBeInTheDocument();
@@ -153,7 +147,7 @@ describe('PostJustThreeQuestionsPage — 3줄쓰기 세션 흐름', () => {
     const user = userEvent.setup();
     renderPage();
 
-    const textarea = screen.getByRole('textbox');
+    const textarea = await screen.findByRole('textbox');
     await user.type(textarea, 'a'.repeat(35));
 
     expect(textarea).toHaveValue('a'.repeat(30));
@@ -163,7 +157,7 @@ describe('PostJustThreeQuestionsPage — 3줄쓰기 세션 흐름', () => {
   it('disables submit while the answer is blank', async () => {
     renderPage();
 
-    expect(screen.getByRole('button', { name: '제출' })).toBeDisabled();
+    expect(await screen.findByRole('button', { name: '제출' })).toBeDisabled();
   });
 
   it('submits createPost exactly once on rapid double-click of the final "완료" button', async () => {
