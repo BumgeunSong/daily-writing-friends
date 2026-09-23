@@ -6,7 +6,9 @@
 CREATE TABLE just_three_questions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   question TEXT NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 ALTER TABLE just_three_questions ENABLE ROW LEVEL SECURITY;
