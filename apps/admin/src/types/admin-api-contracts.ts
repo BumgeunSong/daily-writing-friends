@@ -298,7 +298,10 @@ export const UpdateAppConfigResponseSchema = z.object({
 export type UpdateAppConfigResponse = z.infer<typeof UpdateAppConfigResponseSchema>;
 
 export const CreateJustThreeQuestionRequestSchema = z.object({
-  question: z.string().min(1),
+  question: z
+    .string()
+    .trim()
+    .min(1, '질문은 공백만으로 구성될 수 없습니다.'),
 });
 export type CreateJustThreeQuestionRequest = z.infer<typeof CreateJustThreeQuestionRequestSchema>;
 

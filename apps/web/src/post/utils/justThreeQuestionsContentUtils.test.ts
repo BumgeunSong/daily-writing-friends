@@ -25,4 +25,14 @@ describe('formatJustThreeQuestionsContent', () => {
       expect(content).toBe('Q. 좋아하는 표현은? > 3 love');
     });
   });
+
+  describe('when a question contains "<" or ">"', () => {
+    it('strips both characters, since the question is admin-controlled and not otherwise sanitized', () => {
+      const content = formatJustThreeQuestionsContent([
+        { question: '<script>오늘의 질문</script>', answer: '답변' },
+      ]);
+
+      expect(content).toBe('Q. script오늘의 질문/script > 답변');
+    });
+  });
 });

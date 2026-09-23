@@ -44,7 +44,7 @@ export default function PostJustThreeQuestionsPage() {
     );
   }
 
-  if (isError || !pool || pool.length === 0) {
+  if (isError || !pool || pool.length < TOTAL_QUESTION_COUNT) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <p className="text-sm text-muted-foreground">질문을 불러오지 못했어요. 잠시 후 다시 시도해주세요.</p>

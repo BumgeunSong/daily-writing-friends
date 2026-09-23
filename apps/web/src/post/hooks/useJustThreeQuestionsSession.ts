@@ -41,7 +41,8 @@ export function useJustThreeQuestionsSession(pool: readonly string[]): UseJustTh
   const [session, setSession] = useState<QuestionSession>(() => createInitialSession(pool));
 
   const isComplete = session.answers.length >= TOTAL_QUESTION_COUNT;
-  const canSkip = session.remainingPool.length > 0;
+  const remainingQuestionsNeeded = TOTAL_QUESTION_COUNT - session.answers.length - 1;
+  const canSkip = session.remainingPool.length > remainingQuestionsNeeded;
 
   const skip = () => {
     if (!canSkip) return;

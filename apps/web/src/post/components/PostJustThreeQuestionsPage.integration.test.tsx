@@ -25,7 +25,7 @@ import { withProviders } from '@/test/utils/withProviders';
  */
 
 const SIGNED_IN_USER = { uid: 'alice', email: 'alice@test.local', displayName: 'Alice', photoURL: null };
-const TEST_QUESTIONS = ['질문1', '질문2', '질문3', '질문4'];
+const TEST_QUESTIONS = ['질문1', '질문2', '질문3', '질문4', '질문5'];
 
 vi.mock('@/shared/hooks/useAuth', async () => {
   const actual = await vi.importActual<typeof import('@/shared/hooks/useAuth')>(
@@ -87,7 +87,7 @@ async function answerAndAdvance(user: ReturnType<typeof userEvent.setup>, text: 
 describe('PostJustThreeQuestionsPage — 3줄쓰기 세션 흐름', () => {
   beforeEach(() => {
     // pickRandomQuestion always selects index 0 of the remaining pool, so the
-    // question sequence is deterministic: 질문1 → 질문2 → 질문3 → 질문4.
+    // question sequence is deterministic: 질문1 → 질문2 → 질문3 → 질문4 → 질문5.
     vi.spyOn(Math, 'random').mockReturnValue(0);
     server.use(justThreeQuestionsHandler({ questions: TEST_QUESTIONS }));
   });
@@ -128,7 +128,7 @@ describe('PostJustThreeQuestionsPage — 3줄쓰기 세션 흐름', () => {
     expect(screen.getByText('2/3')).toBeInTheDocument();
   });
 
-  it('does not show a skipped question again and disables skip once the pool is exhausted', async () => {
+  it('does not show a skipped question again and disables skip once too few questions remain to finish the session', async () => {
     const user = userEvent.setup();
     renderPage();
 
@@ -138,8 +138,7 @@ describe('PostJustThreeQuestionsPage — 3줄쓰기 세션 흐름', () => {
     expect(screen.queryByText('질문1')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '다음 질문' }));
-    await user.click(screen.getByRole('button', { name: '다음 질문' }));
-    expect(screen.getByText('질문4')).toBeInTheDocument();
+    expect(screen.getByText('질문3')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '다음 질문' })).toBeDisabled();
   });
 
