@@ -26,16 +26,14 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { resolveLocalServiceRoleKey } from './lib/local-service-role';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Config ──────────────────────────────────────────────────────────────
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'http://127.0.0.1:54321';
-const SERVICE_ROLE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  // Default local dev service_role key (not a secret — deterministic for local dev)
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
+let SERVICE_ROLE_KEY: string;
 
 /** The default active_board_id from useRemoteConfig. Membership here = "active" user
  *  → RootRedirect sends `/` to `/boards`. Must match REMOTE_CONFIG_DEFAULTS.active_board_id. */
@@ -350,6 +348,7 @@ async function seedNotifications(memberId: string, actorId: string, posts: Seede
 
 async function main() {
   assertLocalSupabase();
+  SERVICE_ROLE_KEY = await resolveLocalServiceRoleKey();
   console.log('Seeding FROZEN perf fixture into local Supabase...\n');
 
   const userIds = await loadUserIds();
