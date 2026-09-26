@@ -26,8 +26,9 @@ const noop = () => {};
  * funnel CTA lives only on the board so the detail read stays uninterrupted.
  *
  * Navigation isolation (§4):
- * - the author profile is inert (no `onClickProfile`) — a jump to `/join` from
- *   tapping the author was unexpected; the join CTA carries that action instead,
+ * - the author profile is inert (`onClickProfile={null}`) — a jump to `/join`
+ *   from tapping the author was unexpected; the join CTA carries that action
+ *   instead,
  * - `isAuthor=false` plus omitted `boardId`/`postId` keep edit/delete hidden,
  * - an unknown `:previewPostId` redirects to `/preview` rather than 404ing.
  */
@@ -76,6 +77,7 @@ export default function PreviewPostDetailPage() {
           isAuthor={false}
           onDelete={noop}
           navigate={navigate}
+          onClickProfile={null}
         />
         <PostContent post={post} isAuthor={false} />
       </PostDetailLayout.Article>

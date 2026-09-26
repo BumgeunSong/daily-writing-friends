@@ -8,6 +8,7 @@ import PostFilterTabs, { type PostFilterType } from "@/board/components/PostFilt
 import RecentPostCardList from "@/board/components/RecentPostCardList"
 import { WritingActionButton } from "@/board/components/WritingActionButton"
 import { useRecordViewingBoard } from "@/board/hooks/useRecordViewingBoard"
+import { userProfilePath } from "@/shared/constants/routes"
 import { useSessionStorage } from "@/shared/hooks/useSessionStorage"
 import { useRouteScrollRestoration } from "@/shared/navigation/useRouteScrollRestoration"
 import { useViewTransitionNavigate } from "@/shared/navigation/useViewTransitionNavigate"
@@ -41,7 +42,7 @@ export default function BoardPage() {
   }
 
   const handleProfileClick = (userId: string) => {
-    navigate(`/user/${userId}`)
+    navigate(userProfilePath(userId))
   }
 
   if (!boardId) {

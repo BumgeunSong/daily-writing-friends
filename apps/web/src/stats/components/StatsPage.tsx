@@ -2,6 +2,7 @@ import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import React from 'react';
 import { useNavigate } from '@/shared/navigation';
+import { userProfilePath } from '@/shared/constants/routes';
 import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/ui/tabs';
 import StatsHeader from '@/stats/components/StatsHeader';
@@ -82,7 +83,7 @@ export default function StatsPage() {
                       isCurrentUserReady={isCurrentUserWritingReady}
                       isLoadingOthers={isLoading}
                       otherUsersCount={otherUsersCount}
-                      onCardClick={(userId) => navigate(`/user/${userId}`)}
+                      onCardClick={(userId) => navigate(userProfilePath(userId))}
                     />
                   </React.Suspense>
                 </TabsContent>
@@ -96,7 +97,7 @@ export default function StatsPage() {
                       isCurrentUserReady={isCurrentUserCommentingReady}
                       isLoadingOthers={isLoadingCommenting}
                       otherUsersCount={otherUsersCount}
-                      onCardClick={(userId) => navigate(`/user/${userId}`)}
+                      onCardClick={(userId) => navigate(userProfilePath(userId))}
                     />
                   </React.Suspense>
                 </TabsContent>

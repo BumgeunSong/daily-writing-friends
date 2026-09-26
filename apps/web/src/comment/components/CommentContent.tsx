@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { renderCommentContentHtml } from '@/shared/content/contentUtils';
+import { userProfilePath } from '@/shared/constants/routes';
 import { useNavigate } from '@/shared/navigation';
 import type { ProseMirrorDoc } from '@/shared/model/ProseMirror';
 
@@ -46,7 +47,7 @@ export function CommentContent({ content, contentJson, className }: CommentConte
       const uid = target.closest('a[data-user-id]')?.getAttribute('data-user-id');
       if (!uid || !isPlainLeftClick(event)) return;
       event.preventDefault();
-      navigate(`/user/${encodeURIComponent(uid)}`);
+      navigate(userProfilePath(uid));
     };
 
     container.addEventListener('click', handleClick);

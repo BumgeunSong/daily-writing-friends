@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify';
+import { userProfilePath } from '@/shared/constants/routes';
 import type { ProseMirrorDoc } from '@/shared/model/ProseMirror';
 
 /**
@@ -248,7 +249,7 @@ const convertMentionsToLinks = (element: HTMLElement): void => {
     if (!uid) return;
 
     const anchor = document.createElement('a');
-    anchor.setAttribute('href', `/user/${encodeURIComponent(uid)}`);
+    anchor.setAttribute('href', userProfilePath(uid));
     anchor.setAttribute('data-user-id', uid);
     anchor.className = MENTION_CHIP_CLASS;
     anchor.textContent = node.textContent ?? '';

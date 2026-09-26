@@ -29,3 +29,6 @@ export const ROUTES = {
   /** 설정 - 비밀번호 변경 페이지 */
   CHANGE_PASSWORD: '/settings/change-password',
 } as const;
+
+/** 특정 사용자의 프로필 페이지 경로. userId를 인코딩해 URL에 안전하게 삽입한다. */
+export const userProfilePath = (userId: string) => `/user/${encodeURIComponent(userId)}`;
