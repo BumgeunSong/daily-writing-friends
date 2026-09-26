@@ -2,6 +2,7 @@ import { Edit, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Post } from '@/post/model/Post';
 import { PostVisibility } from '@/post/model/Post';
+import { userProfilePath } from '@/shared/constants/routes';
 import { Button } from '@/shared/ui/button';
 import { Row } from '@/shared/ui/row';
 import { Stack } from '@/shared/ui/stack';
@@ -9,8 +10,6 @@ import { formatDateToKorean } from '@/shared/utils/dateUtils';
 import type { WritingBadge } from '@/stats/model/WritingStats';
 import type { PostAuthorData } from './PostUserProfile';
 import { PostUserProfile } from './PostUserProfile';
-
-const noop = () => {};
 
 interface PostDetailHeaderProps {
   post: Post;
@@ -25,8 +24,12 @@ interface PostDetailHeaderProps {
   postId?: string;
   onDelete: (boardId: string, postId: string, navigate: (path: string) => void) => void;
   navigate: (path: string) => void;
-  /** Avatar click handler; defaults to a no-op (real app does not navigate). */
-  onClickProfile?: () => void;
+  /**
+   * Omit to navigate to the author's profile by default, pass a handler to
+   * override it, or pass `null` to render the author as inert markup (e.g.
+   * the preview's synthetic authors).
+   */
+  onClickProfile?: (() => void) | null;
 }
 
 export function PostDetailHeader({
@@ -42,8 +45,11 @@ export function PostDetailHeader({
   postId,
   onDelete,
   navigate,
-  onClickProfile = noop,
+  onClickProfile,
 }: PostDetailHeaderProps) {
+  const goToProfile =
+    onClickProfile === null ? null : onClickProfile ?? (() => navigate(userProfilePath(authorData.id)));
+
   return (
     <Stack asChild gap='lg'>
       <header>
@@ -51,7 +57,7 @@ export function PostDetailHeader({
           authorData={authorData}
           isLoading={isAuthorLoading}
           isDonator={isDonator}
-          onClickProfile={onClickProfile}
+          onClickProfile={goToProfile}
           badges={badges}
           streak={streak}
           isStreakLoading={isStreakLoading}
