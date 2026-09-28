@@ -7,7 +7,7 @@ import {
   getJustThreeQuestions,
   updateJustThreeQuestion,
 } from '@/apis/admin-api'
-import { AlertCircle, MessageCircleQuestion, Plus, RefreshCw } from 'lucide-react'
+import { AlertCircle, Check, MessageCircleQuestion, Pencil, Plus, RefreshCw, X } from 'lucide-react'
 import {
   Card,
   CardContent,
@@ -34,6 +34,8 @@ import { toast } from 'sonner'
 export default function JustThreeQuestionsPage() {
   const queryClient = useQueryClient()
   const [newQuestion, setNewQuestion] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingText, setEditingText] = useState('')
 
   const {
     data: questions = [],
@@ -68,11 +70,41 @@ export default function JustThreeQuestionsPage() {
     },
   })
 
+  const editMutation = useMutation({
+    mutationFn: ({ id, question }: { id: string; question: string }) =>
+      updateJustThreeQuestion(id, { question }),
+    onSuccess: () => {
+      setEditingId(null)
+      queryClient.invalidateQueries({ queryKey: adminQueryKeys.justThreeQuestions })
+      toast.success('질문이 수정되었습니다.')
+    },
+    onError: () => {
+      toast.error('질문 수정 중 오류가 발생했습니다.')
+    },
+  })
+
   const handleCreate = () => {
     if (createMutation.isPending) return
     const question = newQuestion.trim()
     if (!question) return
     createMutation.mutate({ question })
+  }
+
+  const startEditing = (id: string, question: string) => {
+    setEditingId(id)
+    setEditingText(question)
+  }
+
+  const cancelEditing = () => {
+    setEditingId(null)
+    setEditingText('')
+  }
+
+  const handleSaveEdit = (id: string) => {
+    if (editMutation.isPending) return
+    const question = editingText.trim()
+    if (!question) return
+    editMutation.mutate({ id, question })
   }
 
   if (isLoading) {
@@ -171,35 +203,76 @@ export default function JustThreeQuestionsPage() {
                   <TableHead>질문</TableHead>
                   <TableHead className="w-[120px]">등록일</TableHead>
                   <TableHead className="w-[100px] text-right">활성</TableHead>
+                  <TableHead className="w-[80px] text-right">편집</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {questions.map((question) => (
-                  <TableRow key={question.id}>
-                    <TableCell className={question.is_active ? '' : 'text-muted-foreground line-through'}>
-                      {question.question}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {new Date(question.created_at).toLocaleDateString('ko-KR')}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={toggleMutation.isPending}
-                        onClick={() =>
-                          toggleMutation.mutate({ id: question.id, isActive: !question.is_active })
-                        }
-                      >
-                        {question.is_active ? (
-                          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">활성</Badge>
+                {questions.map((question) => {
+                  const isEditing = editingId === question.id
+                  return (
+                    <TableRow key={question.id}>
+                      <TableCell className={question.is_active ? '' : 'text-muted-foreground line-through'}>
+                        {isEditing ? (
+                          <Input
+                            value={editingText}
+                            onChange={(e) => setEditingText(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveEdit(question.id)
+                              if (e.key === 'Escape') cancelEditing()
+                            }}
+                            autoFocus
+                          />
                         ) : (
-                          <Badge variant="secondary">비활성</Badge>
+                          question.question
                         )}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(question.created_at).toLocaleDateString('ko-KR')}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={toggleMutation.isPending}
+                          onClick={() =>
+                            toggleMutation.mutate({ id: question.id, isActive: !question.is_active })
+                          }
+                        >
+                          {question.is_active ? (
+                            <Badge className="bg-green-100 text-green-800 hover:bg-green-100">활성</Badge>
+                          ) : (
+                            <Badge variant="secondary">비활성</Badge>
+                          )}
+                        </Button>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {isEditing ? (
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              disabled={!editingText.trim() || editMutation.isPending}
+                              onClick={() => handleSaveEdit(question.id)}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={cancelEditing}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => startEditing(question.id, question.question)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           )}
