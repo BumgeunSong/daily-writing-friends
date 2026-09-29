@@ -220,6 +220,7 @@ export default function JustThreeQuestionsPage() {
                               if (e.key === 'Enter') handleSaveEdit(question.id)
                               if (e.key === 'Escape') cancelEditing()
                             }}
+                            aria-label="질문 수정"
                             autoFocus
                           />
                         ) : (
@@ -264,6 +265,7 @@ export default function JustThreeQuestionsPage() {
                           <Button
                             size="icon"
                             variant="ghost"
+                            disabled={editMutation.isPending}
                             onClick={() => startEditing(question.id, question.question)}
                           >
                             <Pencil className="h-4 w-4" />
