@@ -27,9 +27,12 @@ export async function PATCH(req: NextRequest, ctx: RouteParams) {
         throw AdminApiError.badRequest(`Invalid body: ${JSON.stringify(parsed.error.flatten())}`);
       }
       const supabase = getServerSupabase();
+      const update: Record<string, unknown> = { updated_at: new Date().toISOString() };
+      if (parsed.data.question !== undefined) update.question = parsed.data.question;
+      if (parsed.data.isActive !== undefined) update.is_active = parsed.data.isActive;
       const { data, error } = await supabase
         .from('just_three_questions')
-        .update({ is_active: parsed.data.isActive, updated_at: new Date().toISOString() })
+        .update(update)
         .eq('id', id)
         .select('*')
         .single();
@@ -42,7 +45,7 @@ export async function PATCH(req: NextRequest, ctx: RouteParams) {
       const question = data as SupabaseJustThreeQuestion;
       return {
         data: { question },
-        auditTarget: { questionId: question.id, isActive: question.is_active },
+        auditTarget: { questionId: question.id, question: question.question, isActive: question.is_active },
       };
     },
   });

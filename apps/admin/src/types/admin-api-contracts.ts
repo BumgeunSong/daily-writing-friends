@@ -310,9 +310,18 @@ export const CreateJustThreeQuestionResponseSchema = z.object({
 });
 export type CreateJustThreeQuestionResponse = z.infer<typeof CreateJustThreeQuestionResponseSchema>;
 
-export const UpdateJustThreeQuestionRequestSchema = z.object({
-  isActive: z.boolean(),
-});
+export const UpdateJustThreeQuestionRequestSchema = z
+  .object({
+    question: z
+      .string()
+      .trim()
+      .min(1, '질문은 공백만으로 구성될 수 없습니다.')
+      .optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((data) => data.question !== undefined || data.isActive !== undefined, {
+    message: 'question 또는 isActive 중 하나는 반드시 포함되어야 합니다.',
+  });
 export type UpdateJustThreeQuestionRequest = z.infer<typeof UpdateJustThreeQuestionRequestSchema>;
 
 export const UpdateJustThreeQuestionResponseSchema = z.object({
