@@ -20,9 +20,31 @@ MAIN_ROOT="$(git -C "$PROJECT_DIR" worktree list --porcelain 2>/dev/null | head 
 
 [ -z "$MAIN_ROOT" ] && exit 0
 
+# Worktree tooling outside this repo symlinks anything matching `.env*` from the
+# main checkout, including files git tracks. A symlink over a tracked file is a
+# permanent typechange in `git status`, and a dangling one silently points
+# `dev:local` at cloud Supabase. The committed contents are the source of truth,
+# so restoring is always the right resolution.
+restore_tracked_env_files() {
+  local target="$1"
+  local restored=0
+
+  while IFS= read -r -d '' rel_path; do
+    [ -L "$target/$rel_path" ] || continue
+    git -C "$target" checkout -- "$rel_path"
+    restored=$((restored + 1))
+  done < <(git -C "$target" ls-files -z -- '.env*' 2>/dev/null || true)
+
+  if [ "$restored" -gt 0 ]; then
+    echo "sync-worktree-env: restored $restored tracked env file(s) in $target" >&2
+  fi
+}
+
 sync_env_to() {
   local target="$1"
   [ "$target" = "$MAIN_ROOT" ] && return
+
+  restore_tracked_env_files "$target"
 
   local synced=0
   for rel_path in "${ENV_FILES[@]}"; do
