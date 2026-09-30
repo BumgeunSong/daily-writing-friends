@@ -13,15 +13,14 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { resolveLocalServiceRoleKey } from './lib/local-service-role';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Config ──────────────────────────────────────────────────────────────
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'http://127.0.0.1:54321';
-const SERVICE_ROLE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
+let SERVICE_ROLE_KEY: string;
 
 /** Posts per page in the app (from useBestPosts.ts) */
 const PAGE_SIZE = 20;
@@ -261,6 +260,7 @@ async function seedComments(userIds: UserIds, postIds: string[]) {
 
 async function main() {
   assertLocalSupabase();
+  SERVICE_ROLE_KEY = await resolveLocalServiceRoleKey();
 
   console.log('Seeding E2E domain data into Supabase local...\n');
 

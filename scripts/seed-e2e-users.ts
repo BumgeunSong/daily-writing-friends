@@ -11,30 +11,32 @@
  *   npx tsx scripts/seed-e2e-users.ts --prod    # production
  */
 
+import { resolveLocalServiceRoleKey } from './lib/local-service-role';
+
 const isProd = process.argv.includes('--prod');
 
 let SUPABASE_URL: string;
 let SERVICE_ROLE_KEY: string;
 
-if (isProd) {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url) {
-    console.error('ERROR: SUPABASE_URL env var is required for --prod mode');
-    process.exit(1);
+async function resolveConfig(): Promise<void> {
+  if (isProd) {
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url) {
+      console.error('ERROR: SUPABASE_URL env var is required for --prod mode');
+      process.exit(1);
+    }
+    if (!key) {
+      console.error('ERROR: SUPABASE_SERVICE_ROLE_KEY env var is required for --prod mode');
+      process.exit(1);
+    }
+    SUPABASE_URL = url;
+    SERVICE_ROLE_KEY = key;
+    return;
   }
-  if (!key) {
-    console.error('ERROR: SUPABASE_SERVICE_ROLE_KEY env var is required for --prod mode');
-    process.exit(1);
-  }
-  SUPABASE_URL = url;
-  SERVICE_ROLE_KEY = key;
-} else {
+
   SUPABASE_URL = process.env.SUPABASE_URL || 'http://127.0.0.1:54321';
-  SERVICE_ROLE_KEY =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    // Default local dev service_role key (not a secret — deterministic for local dev)
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
+  SERVICE_ROLE_KEY = await resolveLocalServiceRoleKey();
 }
 
 interface TestUser {
@@ -208,6 +210,8 @@ async function prodWarningCountdown() {
 }
 
 async function main() {
+  await resolveConfig();
+
   if (isProd) {
     await prodWarningCountdown();
     console.log('Seeding E2E test users into Supabase production...\n');
