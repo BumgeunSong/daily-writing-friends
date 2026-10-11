@@ -31,6 +31,72 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 
+function EditableQuestionCell({
+  question,
+  isEditing,
+  editingText,
+  onEditingTextChange,
+  onSave,
+  onCancel,
+}: {
+  question: string
+  isEditing: boolean
+  editingText: string
+  onEditingTextChange: (value: string) => void
+  onSave: () => void
+  onCancel: () => void
+}) {
+  if (!isEditing) return question
+
+  return (
+    <Input
+      value={editingText}
+      onChange={(e) => onEditingTextChange(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') onSave()
+        if (e.key === 'Escape') onCancel()
+      }}
+      aria-label="질문 수정"
+      autoFocus
+    />
+  )
+}
+
+function QuestionRowActions({
+  isEditing,
+  canSave,
+  isSaving,
+  onEdit,
+  onSave,
+  onCancel,
+}: {
+  isEditing: boolean
+  canSave: boolean
+  isSaving: boolean
+  onEdit: () => void
+  onSave: () => void
+  onCancel: () => void
+}) {
+  if (!isEditing) {
+    return (
+      <Button size="icon" variant="ghost" disabled={isSaving} onClick={onEdit}>
+        <Pencil className="h-4 w-4" />
+      </Button>
+    )
+  }
+
+  return (
+    <div className="flex justify-end gap-1">
+      <Button size="icon" variant="ghost" disabled={!canSave || isSaving} onClick={onSave}>
+        <Check className="h-4 w-4" />
+      </Button>
+      <Button size="icon" variant="ghost" onClick={onCancel}>
+        <X className="h-4 w-4" />
+      </Button>
+    </div>
+  )
+}
+
 export default function JustThreeQuestionsPage() {
   const queryClient = useQueryClient()
   const [newQuestion, setNewQuestion] = useState('')
@@ -212,20 +278,14 @@ export default function JustThreeQuestionsPage() {
                   return (
                     <TableRow key={question.id}>
                       <TableCell className={question.is_active ? '' : 'text-muted-foreground line-through'}>
-                        {isEditing ? (
-                          <Input
-                            value={editingText}
-                            onChange={(e) => setEditingText(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleSaveEdit(question.id)
-                              if (e.key === 'Escape') cancelEditing()
-                            }}
-                            aria-label="질문 수정"
-                            autoFocus
-                          />
-                        ) : (
-                          question.question
-                        )}
+                        <EditableQuestionCell
+                          question={question.question}
+                          isEditing={isEditing}
+                          editingText={editingText}
+                          onEditingTextChange={setEditingText}
+                          onSave={() => handleSaveEdit(question.id)}
+                          onCancel={cancelEditing}
+                        />
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(question.created_at).toLocaleDateString('ko-KR')}
@@ -247,30 +307,14 @@ export default function JustThreeQuestionsPage() {
                         </Button>
                       </TableCell>
                       <TableCell className="text-right">
-                        {isEditing ? (
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              disabled={!editingText.trim() || editMutation.isPending}
-                              onClick={() => handleSaveEdit(question.id)}
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button size="icon" variant="ghost" onClick={cancelEditing}>
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            disabled={editMutation.isPending}
-                            onClick={() => startEditing(question.id, question.question)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <QuestionRowActions
+                          isEditing={isEditing}
+                          canSave={!!editingText.trim()}
+                          isSaving={editMutation.isPending}
+                          onEdit={() => startEditing(question.id, question.question)}
+                          onSave={() => handleSaveEdit(question.id)}
+                          onCancel={cancelEditing}
+                        />
                       </TableCell>
                     </TableRow>
                   )
