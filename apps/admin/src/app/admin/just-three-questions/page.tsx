@@ -215,6 +215,8 @@ export default function JustThreeQuestionsPage() {
     )
   }
 
+  const activeCount = questions.filter((q) => q.is_active).length
+
   return (
     <div className="space-y-6">
       <div>
@@ -252,7 +254,7 @@ export default function JustThreeQuestionsPage() {
           <CardTitle>
             질문 목록
             <span className="ml-2 text-muted-foreground font-normal text-sm">
-              ({questions.length}개, 활성 {questions.filter((q) => q.is_active).length}개)
+              ({questions.length}개, 활성 {activeCount}개)
             </span>
           </CardTitle>
           <CardDescription>등록된 순서대로 정렬된 질문 목록입니다.</CardDescription>
