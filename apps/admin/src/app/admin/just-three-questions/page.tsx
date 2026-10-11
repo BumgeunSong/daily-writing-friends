@@ -130,6 +130,7 @@ export default function JustThreeQuestionsPage() {
       updateJustThreeQuestion(id, { isActive }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.justThreeQuestions })
+      toast.success('질문 상태가 변경되었습니다.')
     },
     onError: () => {
       toast.error('질문 상태 변경 중 오류가 발생했습니다.')
