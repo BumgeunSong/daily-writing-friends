@@ -36,9 +36,14 @@ function skipped(postId: unknown, reason: string): Response {
   return new Response(`skipped: ${reason}`, { status: 200 });
 }
 
-/** 오류 객체 전체에는 요청 본문(회원의 글)이 실릴 수 있어 메시지만 남긴다. */
+/**
+ * 오류 객체 전체에는 요청 본문(회원의 글)이 실릴 수 있어 메시지만 남긴다.
+ * Supabase DB 오류는 Error 인스턴스가 아닌 일반 객체라 `message` 필드를 따로 꺼낸다.
+ */
 function describeError(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  if (error instanceof Error) return error.message;
+  const message = (error as { message?: unknown } | null)?.message;
+  return typeof message === 'string' ? message : String(error);
 }
 
 serve(async (req) => {
