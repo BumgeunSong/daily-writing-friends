@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { PostVisibility } from '@/post/model/Post';
 import { PostJustThreeQuestionAnswerInput } from '@/post/components/PostJustThreeQuestionAnswerInput';
 import { useJustThreeQuestions } from '@/post/hooks/useJustThreeQuestions';
-import { useJustThreeQuestionsSession } from '@/post/hooks/useJustThreeQuestionsSession';
+import { useJustThreeQuestionsSession, type QuestionCandidate } from '@/post/hooks/useJustThreeQuestionsSession';
 import { useKeyboardInset } from '@/post/hooks/useKeyboardInset';
 import { mapCreatePostErrorMessage } from '@/post/hooks/useCreatePostAction';
 import {
@@ -63,7 +63,7 @@ export default function PostJustThreeQuestionsPage() {
   return <JustThreeQuestionsSession pool={pool} />;
 }
 
-function JustThreeQuestionsSession({ pool }: { pool: readonly string[] }) {
+function JustThreeQuestionsSession({ pool }: { pool: readonly QuestionCandidate[] }) {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { boardId } = useParams();
@@ -131,7 +131,10 @@ function JustThreeQuestionsSession({ pool }: { pool: readonly string[] }) {
 
     // Only commit the last answer to session state after createPost succeeds,
     // so a failed submit leaves progress/answer untouched for retry.
-    const finalAnswers = [...session.answers, { question: session.currentQuestion, answer }];
+    const finalAnswers = [
+      ...session.answers,
+      { question: session.currentQuestion, questionId: session.currentQuestionId, answer },
+    ];
     await submitJustThreeQuestions(finalAnswers);
     isSubmittingRef.current = false;
   };
