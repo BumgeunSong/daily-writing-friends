@@ -522,6 +522,55 @@ export type Database = {
           },
         ]
       }
+      personalized_questions: {
+        Row: {
+          answered_at: string | null
+          created_at: string
+          id: string
+          question: string
+          source_post_id: string
+          user_id: string
+        }
+        Insert: {
+          answered_at?: string | null
+          created_at?: string
+          id?: string
+          question: string
+          source_post_id: string
+          user_id: string
+        }
+        Update: {
+          answered_at?: string | null
+          created_at?: string
+          id?: string
+          question?: string
+          source_post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personalized_questions_source_post_id_fkey"
+            columns: ["source_post_id"]
+            isOneToOne: true
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personalized_questions_source_post_id_fkey"
+            columns: ["source_post_id"]
+            isOneToOne: true
+            referencedRelation: "posts_feed"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "personalized_questions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           author_id: string
