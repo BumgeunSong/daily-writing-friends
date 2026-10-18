@@ -34,6 +34,7 @@ GRANT UPDATE (answered_at) ON personalized_questions TO authenticated;
 -- public 글이 발행되면 질문 생성 Edge Function을 호출한다. 비공개 글은 함수에
 -- 도달하지 않는다. 실패는 감수한다: 후보 하나가 빠져도 공통 질문 폴백이 있다.
 -- INSERT에만 걸기 때문에 비공개로 썼다가 공개로 바꾼 글은 질문이 생성되지 않는다.
+-- 설정 누락 같은 호출 준비 실패가 글 발행 자체를 막으면 안 되므로 경고만 남기고 넘어간다.
 CREATE OR REPLACE FUNCTION notify_on_public_post() RETURNS TRIGGER
 SECURITY DEFINER
 SET search_path = public, extensions
@@ -49,6 +50,9 @@ BEGIN
       body := jsonb_build_object('post_id', NEW.id)
     );
   END IF;
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'notify_on_public_post failed for post %: %', NEW.id, SQLERRM;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
