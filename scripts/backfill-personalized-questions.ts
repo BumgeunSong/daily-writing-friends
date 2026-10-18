@@ -25,6 +25,7 @@
 const WINDOW_DAYS = 10;
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_CONCURRENCY = 3;
+const REQUEST_TIMEOUT_MS = 60_000;
 
 interface Options {
   apply: boolean;
@@ -35,7 +36,13 @@ interface Options {
 function parseOptions(argv: readonly string[]): Options {
   const valueOf = (flag: string) => {
     const index = argv.indexOf(flag);
-    return index === -1 ? null : Number(argv[index + 1]);
+    if (index === -1) return null;
+    const value = Number(argv[index + 1]);
+    if (!Number.isInteger(value) || value <= 0) {
+      console.error(`${flag} needs a positive integer`);
+      process.exit(1);
+    }
+    return value;
   };
   return {
     apply: argv.includes('--apply'),
@@ -77,21 +84,30 @@ async function findPostIdsMissingQuestion(baseUrl: string, serviceRoleKey: strin
   return posts.map((post) => post.id).filter((id) => !alreadyGenerated.has(id));
 }
 
-async function generateFor(baseUrl: string, serviceRoleKey: string, postId: string): Promise<'ok' | 'failed'> {
-  const response = await fetch(`${baseUrl}/functions/v1/generate-personalized-question`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${serviceRoleKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ post_id: postId }),
-  });
-  if (!response.ok) {
-    console.error(`  ${postId}: ${response.status} ${await response.text()}`);
+type Outcome = 'created' | 'skipped' | 'failed';
+
+async function generateFor(baseUrl: string, serviceRoleKey: string, postId: string): Promise<Outcome> {
+  try {
+    const response = await fetch(`${baseUrl}/functions/v1/generate-personalized-question`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${serviceRoleKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ post_id: postId }),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+    const body = await response.text();
+    if (!response.ok) {
+      console.error(`  ${postId}: ${response.status} ${body}`);
+      return 'failed';
+    }
+    return body === 'created' ? 'created' : 'skipped';
+  } catch (error) {
+    console.error(`  ${postId}: ${error instanceof Error ? error.message : String(error)}`);
     return 'failed';
   }
-  return 'ok';
 }
 
-async function runWithConcurrency<T>(items: readonly T[], concurrency: number, task: (item: T) => Promise<'ok' | 'failed'>) {
-  const results = { ok: 0, failed: 0 };
+async function runWithConcurrency<T>(items: readonly T[], concurrency: number, task: (item: T) => Promise<Outcome>) {
+  const results: Record<Outcome, number> = { created: 0, skipped: 0, failed: 0 };
   let next = 0;
   const worker = async () => {
     while (next < items.length) {
@@ -117,10 +133,10 @@ async function main() {
     return;
   }
 
-  const { ok, failed } = await runWithConcurrency(targets, options.concurrency, (postId) =>
+  const { created, skipped, failed } = await runWithConcurrency(targets, options.concurrency, (postId) =>
     generateFor(baseUrl, serviceRoleKey, postId),
   );
-  console.log(`done: ${ok} ok, ${failed} failed (a "no question" result also counts as ok)`);
+  console.log(`done: ${created} created, ${skipped} skipped (e.g. no question), ${failed} failed`);
   if (failed > 0) process.exit(1);
 }
 
