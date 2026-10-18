@@ -83,6 +83,12 @@ function consumeAnsweredPersonalizedQuestions(
     .finally(() => queryClient.invalidateQueries({ queryKey: ['justThreeQuestions'] }));
 }
 
+type QuestionType = 'common' | 'personalized';
+
+function toQuestionType(questionId: string | null | undefined): QuestionType {
+  return questionId ? 'personalized' : 'common';
+}
+
 function JustThreeQuestionsSession({ pool }: { pool: readonly QuestionCandidate[] }) {
   const queryClient = useQueryClient();
   const { currentUser } = useAuth();
@@ -97,7 +103,10 @@ function JustThreeQuestionsSession({ pool }: { pool: readonly QuestionCandidate[
   const isSubmittingRef = useRef(false);
 
   useEffect(() => {
-    sendAnalyticsEvent(AnalyticsEvent.START_JUST_THREE_QUESTIONS, { boardId });
+    sendAnalyticsEvent(AnalyticsEvent.START_JUST_THREE_QUESTIONS, {
+      boardId,
+      question_type: toQuestionType(session.currentQuestionId),
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 마운트 시 1회만 전송
   }, []);
 
@@ -129,7 +138,12 @@ function JustThreeQuestionsSession({ pool }: { pool: readonly QuestionCandidate[
       consumeAnsweredPersonalizedQuestions(finalAnswers, queryClient);
       invalidatePostCaches(boardId, currentUser.uid);
       optimisticallyUpdatePostingStreak(currentUser.uid);
-      sendAnalyticsEvent(AnalyticsEvent.FINISH_JUST_THREE_QUESTIONS, { boardId });
+      const personalizedAnswerCount = finalAnswers.filter(({ questionId }) => questionId).length;
+      sendAnalyticsEvent(AnalyticsEvent.FINISH_JUST_THREE_QUESTIONS, {
+        boardId,
+        question_type: personalizedAnswerCount > 0 ? 'personalized' : 'common',
+        personalized_answer_count: personalizedAnswerCount,
+      });
 
       navigate(`/board/${boardId}/post/${newPost.id}`, { replace: true });
     } catch (error) {
@@ -162,6 +176,10 @@ function JustThreeQuestionsSession({ pool }: { pool: readonly QuestionCandidate[
   };
 
   const handleSkip = () => {
+    sendAnalyticsEvent(AnalyticsEvent.SKIP_JUST_THREE_QUESTION, {
+      boardId,
+      question_type: toQuestionType(session.currentQuestionId),
+    });
     session.skip();
     setAnswer('');
   };
