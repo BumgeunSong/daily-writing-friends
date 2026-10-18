@@ -2,14 +2,14 @@ import { formatDate } from '@/post/utils/dateFormat';
 import { sanitizeStorageFileName } from '@/post/utils/storageFileName';
 
 /**
- * Compose the Firebase Storage path for an uploaded image.
+ * Compose the Supabase Storage object path for an uploaded image.
  * Takes `now` as a parameter so the function is pure and date-deterministic for tests.
  *
- * Path shape: {prefix}/{YYYYMMDD}/{HHMMSS}_{sanitizedFileName}
+ * Path shape: {uid}/{YYYYMMDD}/{HHMMSS}_{sanitizedFileName}
  */
-const buildImageStoragePath = (prefix: string, fileName: string, now: Date): string => {
+const buildImageStoragePath = (uid: string, fileName: string, now: Date): string => {
   const { dateFolder, timePrefix } = formatDate(now);
-  return `${prefix}/${dateFolder}/${timePrefix}_${sanitizeStorageFileName(fileName)}`;
+  return `${uid}/${dateFolder}/${timePrefix}_${sanitizeStorageFileName(fileName)}`;
 };
 
 export { buildImageStoragePath };

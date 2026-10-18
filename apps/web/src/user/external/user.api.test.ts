@@ -8,13 +8,6 @@ const mockPermissionsUpsert = vi.fn();
 const mockGetSupabaseClient = vi.fn();
 const mockFetchUserFromSupabase = vi.fn();
 
-vi.mock('@/firebase', () => ({ storage: {} }));
-vi.mock('firebase/storage', () => ({
-  ref: vi.fn(),
-  uploadBytes: vi.fn(),
-  getDownloadURL: vi.fn(),
-}));
-
 vi.mock('@/shared/external/supabaseClient', async () => {
   const actual = await vi.importActual<typeof SupabaseClientModule>(
     '@/shared/external/supabaseClient',
