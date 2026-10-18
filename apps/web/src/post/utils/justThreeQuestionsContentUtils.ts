@@ -2,7 +2,7 @@ export interface JustThreeQuestionAnswer {
   question: string;
   answer: string;
   /** 개인화 질문의 행 id. 공통 질문이면 null, 게시 내용에는 쓰이지 않는다. */
-  questionId?: string | null;
+  questionId: string | null;
 }
 
 /**

@@ -8,7 +8,8 @@ import { PostVisibility } from '@/post/model/Post';
 import { PostJustThreeQuestionAnswerInput } from '@/post/components/PostJustThreeQuestionAnswerInput';
 import { markPersonalizedQuestionsAnswered } from '@/post/external/justThreeQuestions.api';
 import { useJustThreeQuestions } from '@/post/hooks/useJustThreeQuestions';
-import { useJustThreeQuestionsSession, type QuestionCandidate } from '@/post/hooks/useJustThreeQuestionsSession';
+import { useJustThreeQuestionsSession } from '@/post/hooks/useJustThreeQuestionsSession';
+import { toQuestionType, type QuestionCandidate, type QuestionType } from '@/post/model/JustThreeQuestion';
 import { useKeyboardInset } from '@/post/hooks/useKeyboardInset';
 import { mapCreatePostErrorMessage } from '@/post/hooks/useCreatePostAction';
 import {
@@ -86,12 +87,6 @@ function consumeAnsweredPersonalizedQuestions(
     .finally(() => queryClient.invalidateQueries({ queryKey: ['justThreeQuestions'] }));
 }
 
-type QuestionType = 'common' | 'personalized';
-
-function toQuestionType(questionId: string | null | undefined): QuestionType {
-  return questionId ? 'personalized' : 'common';
-}
-
 function JustThreeQuestionsSession({ pool }: { pool: readonly QuestionCandidate[] }) {
   const queryClient = useQueryClient();
   const { currentUser } = useAuth();
@@ -142,9 +137,10 @@ function JustThreeQuestionsSession({ pool }: { pool: readonly QuestionCandidate[
       invalidatePostCaches(boardId, currentUser.uid);
       optimisticallyUpdatePostingStreak(currentUser.uid);
       const personalizedAnswerCount = finalAnswers.filter(({ questionId }) => questionId).length;
+      const finishQuestionType: QuestionType = personalizedAnswerCount > 0 ? 'personalized' : 'common';
       sendAnalyticsEvent(AnalyticsEvent.FINISH_JUST_THREE_QUESTIONS, {
         boardId,
-        question_type: personalizedAnswerCount > 0 ? 'personalized' : 'common',
+        question_type: finishQuestionType,
         personalized_answer_count: personalizedAnswerCount,
       });
 

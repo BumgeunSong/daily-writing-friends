@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchJustThreeQuestions, fetchPersonalizedQuestions } from '@/post/external/justThreeQuestions.api';
-import type { QuestionCandidate } from '@/post/hooks/useJustThreeQuestionsSession';
+import type { QuestionCandidate } from '@/post/model/JustThreeQuestion';
 
 async function fetchCommonQuestionCandidates(): Promise<QuestionCandidate[]> {
   const questions = await fetchJustThreeQuestions();

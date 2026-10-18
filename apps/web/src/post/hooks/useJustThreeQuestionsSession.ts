@@ -1,13 +1,8 @@
 import { useState } from 'react';
+import type { QuestionCandidate } from '@/post/model/JustThreeQuestion';
 import type { JustThreeQuestionAnswer } from '@/post/utils/justThreeQuestionsContentUtils';
 
 const TOTAL_QUESTION_COUNT = 3;
-
-/** id는 개인화 질문의 행 id, 공통 질문은 null. */
-export interface QuestionCandidate {
-  id: string | null;
-  text: string;
-}
 
 function pickRandomQuestion(pool: readonly QuestionCandidate[]): {
   question: QuestionCandidate;
