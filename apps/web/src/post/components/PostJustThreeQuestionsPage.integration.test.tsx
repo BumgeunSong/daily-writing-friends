@@ -10,6 +10,8 @@ import {
   justThreeQuestionsErrorHandler,
   justThreeQuestionsHandler,
   justThreeQuestionsPendingHandler,
+  personalizedQuestionsErrorHandler,
+  personalizedQuestionsHandler,
 } from '@/test/msw/handlers/justThreeQuestions';
 import { withProviders } from '@/test/utils/withProviders';
 
@@ -89,7 +91,10 @@ describe('PostJustThreeQuestionsPage — 3줄쓰기 세션 흐름', () => {
     // pickRandomQuestion always selects index 0 of the remaining pool, so the
     // question sequence is deterministic: 질문1 → 질문2 → 질문3 → 질문4 → 질문5.
     vi.spyOn(Math, 'random').mockReturnValue(0);
-    server.use(justThreeQuestionsHandler({ questions: TEST_QUESTIONS }));
+    server.use(
+      justThreeQuestionsHandler({ questions: TEST_QUESTIONS }),
+      personalizedQuestionsHandler({ questions: [] }),
+    );
   });
 
   afterEach(() => {
@@ -233,5 +238,90 @@ describe('PostJustThreeQuestionsPage — 3줄쓰기 세션 흐름', () => {
     expect(screen.queryByText('게시글 상세')).not.toBeInTheDocument();
     expect(screen.getByText('질문3')).toBeInTheDocument();
     expect(textarea).toHaveValue('답변3');
+  });
+});
+
+describe('최근 글에서 파생된 개인화 질문이 있는 유저가 3줄쓰기를 시작할 때', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    sendAnalyticsEvent.mockClear();
+  });
+
+  it('개인화 질문이 공통 질문과 같은 풀에서 뽑혀 노출된다', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    server.use(
+      justThreeQuestionsHandler({ questions: ['질문1', '질문2', '질문3'] }),
+      personalizedQuestionsHandler({ questions: [{ id: 'pq-1', question: '그날 산책길에서 어떤 기분이었어요?' }] }),
+    );
+    renderPage();
+
+    expect(await screen.findByText(/산책길에서 어떤 기분/)).toBeInTheDocument();
+  });
+
+  it('공통 질문이 2개뿐이어도 개인화 질문을 더해 3개가 되면 세션을 시작한다', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    server.use(
+      justThreeQuestionsHandler({ questions: ['질문1', '질문2'] }),
+      personalizedQuestionsHandler({ questions: [{ id: 'pq-1', question: '개인화 질문입니다' }] }),
+    );
+    renderPage();
+
+    expect(await screen.findByRole('textbox')).toBeInTheDocument();
+    expect(screen.queryByText(/질문을 불러오지 못했어요/)).not.toBeInTheDocument();
+  });
+
+  it('이미 답한 개인화 질문은 다시 노출되지 않는다', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    server.use(
+      justThreeQuestionsHandler({ questions: ['질문1', '질문2', '질문3'] }),
+      personalizedQuestionsHandler({
+        questions: [{ id: 'pq-1', question: '이미 답한 질문입니다', answeredAt: '2026-10-17T00:00:00Z' }],
+      }),
+    );
+    renderPage();
+
+    expect(await screen.findByText('질문3')).toBeInTheDocument();
+    expect(screen.queryByText(/이미 답한 질문/)).not.toBeInTheDocument();
+  });
+
+  it('본인의 최근 공개 글 10개 중 10일 이내 글만 조회한다', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const onRequest = vi.fn();
+    server.use(
+      justThreeQuestionsHandler({ questions: ['질문1', '질문2', '질문3'] }),
+      personalizedQuestionsHandler({ questions: [], onRequest }),
+    );
+    renderPage();
+
+    await screen.findByRole('textbox');
+
+    const { searchParams } = onRequest.mock.calls[0][0] as URL;
+    expect(searchParams.get('author_id')).toBe('eq.alice');
+    expect(searchParams.get('visibility')).toBe('eq.public');
+    expect(searchParams.get('limit')).toBe('10');
+    expect(searchParams.get('created_at')).toMatch(/^gte\./);
+  });
+
+  it('개인화 질문을 불러오지 못하면 공통 질문만으로 세션을 시작한다', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    server.use(
+      justThreeQuestionsHandler({ questions: ['질문1', '질문2', '질문3'] }),
+      personalizedQuestionsErrorHandler(),
+    );
+    renderPage();
+
+    expect(await screen.findByText('질문1')).toBeInTheDocument();
+    expect(screen.queryByText(/질문을 불러오지 못했어요/)).not.toBeInTheDocument();
+  });
+
+  it('개인화 질문이 하나도 없으면 공통 질문만으로 세션을 시작한다', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    server.use(
+      justThreeQuestionsHandler({ questions: ['질문1', '질문2', '질문3'] }),
+      personalizedQuestionsHandler({ questions: [] }),
+    );
+    renderPage();
+
+    expect(await screen.findByText('질문1')).toBeInTheDocument();
   });
 });

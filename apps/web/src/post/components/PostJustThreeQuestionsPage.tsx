@@ -38,7 +38,8 @@ function SubmitButtonLabel({ isSubmitting, isLastQuestion }: { isSubmitting: boo
 }
 
 export default function PostJustThreeQuestionsPage() {
-  const { data: pool, isLoading } = useJustThreeQuestions();
+  const { currentUser } = useAuth();
+  const { data: pool, isLoading } = useJustThreeQuestions(currentUser?.uid ?? null);
 
   if (isLoading) {
     return (
