@@ -1,3 +1,4 @@
+import type { QueryClient } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -14,7 +15,7 @@ import {
   personalizedQuestionsErrorHandler,
   personalizedQuestionsHandler,
 } from '@/test/msw/handlers/justThreeQuestions';
-import { withProviders } from '@/test/utils/withProviders';
+import { createTestQueryClient, withProviders } from '@/test/utils/withProviders';
 
 /**
  * Seam under test: the 3-question session loop (question → answer → next)
@@ -28,7 +29,17 @@ import { withProviders } from '@/test/utils/withProviders';
  */
 
 const SIGNED_IN_USER = { uid: 'alice', email: 'alice@test.local', displayName: 'Alice', photoURL: null };
+const PERSONALIZED_QUESTION_TEXT = '그날 산책길에서 어떤 기분이었어요?';
 const TEST_QUESTIONS = ['질문1', '질문2', '질문3', '질문4', '질문5'];
+
+const authState = vi.hoisted(() => ({
+  user: { uid: 'alice', email: 'alice@test.local', displayName: 'Alice', photoURL: null } as {
+    uid: string;
+    email: string;
+    displayName: string;
+    photoURL: null;
+  } | null,
+}));
 
 vi.mock('@/shared/hooks/useAuth', async () => {
   const actual = await vi.importActual<typeof import('@/shared/hooks/useAuth')>(
@@ -36,7 +47,7 @@ vi.mock('@/shared/hooks/useAuth', async () => {
   );
   return {
     ...actual,
-    useAuth: () => ({ currentUser: SIGNED_IN_USER, loading: false }),
+    useAuth: () => ({ currentUser: authState.user, loading: false }),
     AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   };
 });
@@ -72,8 +83,8 @@ vi.mock('@/shared/utils/analyticsUtils', async () => {
   };
 });
 
-function renderPage() {
-  const { Wrapper } = withProviders();
+function renderPage(queryClient?: QueryClient) {
+  const { Wrapper } = withProviders({ queryClient });
   return render(
     <MemoryRouter initialEntries={['/create/board-1/just-three-questions']}>
       <Wrapper>
@@ -250,6 +261,8 @@ describe('PostJustThreeQuestionsPage — 3줄쓰기 세션 흐름', () => {
 
 describe('최근 글에서 파생된 개인화 질문이 있는 유저가 3줄쓰기를 시작할 때', () => {
   afterEach(() => {
+    authState.user = SIGNED_IN_USER;
+    vi.useRealTimers();
     vi.restoreAllMocks();
     sendAnalyticsEvent.mockClear();
     captureException.mockClear();
@@ -293,6 +306,8 @@ describe('최근 글에서 파생된 개인화 질문이 있는 유저가 3줄�
   });
 
   it('본인의 최근 공개 글 10개 중 10일 이내 글만 조회한다', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-18T00:00:00.000Z'));
     vi.spyOn(Math, 'random').mockReturnValue(0);
     const onRequest = vi.fn();
     server.use(
@@ -307,7 +322,7 @@ describe('최근 글에서 파생된 개인화 질문이 있는 유저가 3줄�
     expect(searchParams.get('author_id')).toBe('eq.alice');
     expect(searchParams.get('visibility')).toBe('eq.public');
     expect(searchParams.get('limit')).toBe('10');
-    expect(searchParams.get('created_at')).toMatch(/^gte\./);
+    expect(searchParams.get('created_at')).toBe('gte.2026-10-08T00:00:00.000Z');
   });
 
   it('개인화 질문을 불러오지 못하면 공통 질문만으로 세션을 시작한다', async () => {
@@ -324,6 +339,32 @@ describe('최근 글에서 파생된 개인화 질문이 있는 유저가 3줄�
       expect.anything(),
       expect.objectContaining({ tags: { feature: 'personalized-questions', op: 'read' } }),
     );
+  });
+
+  it('공통 질문 1개와 개인화 질문 1개로는 3개를 채우지 못해 시작하지 못한다', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    server.use(
+      justThreeQuestionsHandler({ questions: ['질문1'] }),
+      personalizedQuestionsHandler({ questions: [{ id: 'pq-1', question: '개인화 질문입니다' }] }),
+    );
+    renderPage();
+
+    expect(await screen.findByText(/질문을 불러오지 못했어요/)).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  });
+
+  it('로그인 정보가 없으면 개인화 질문을 조회하지 않고 공통 질문으로 시작한다', async () => {
+    authState.user = null;
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const onRequest = vi.fn();
+    server.use(
+      justThreeQuestionsHandler({ questions: ['질문1', '질문2', '질문3'] }),
+      personalizedQuestionsHandler({ questions: [{ id: 'pq-1', question: '개인화 질문입니다' }], onRequest }),
+    );
+    renderPage();
+
+    expect(await screen.findByText('질문1')).toBeInTheDocument();
+    expect(onRequest).not.toHaveBeenCalled();
   });
 
   it('개인화 질문이 하나도 없으면 공통 질문만으로 세션을 시작한다', async () => {
@@ -414,6 +455,65 @@ describe('개인화 질문에 답하고 3줄쓰기를 마칠 때', () => {
         expect.objectContaining({ tags: { feature: 'personalized-questions', op: 'consume' } }),
       ),
     );
+  });
+
+  it('답한 개인화 질문이 여럿이면 한 번에 모두 기록한다', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn();
+    server.use(
+      personalizedQuestionsHandler({
+        questions: [
+          { id: 'pq-1', question: '첫 번째 개인화 질문입니다' },
+          { id: 'pq-2', question: '두 번째 개인화 질문입니다' },
+        ],
+      }),
+      answerPersonalizedQuestionsHandler({ onUpdate }),
+    );
+    renderPage();
+
+    await screen.findByText(/개인화 질문입니다/);
+    await answerAndAdvance(user, '답변1');
+    await answerAndAdvance(user, '답변2');
+    await answerAndAdvance(user, '답변3');
+    await screen.findByText('게시글 상세');
+
+    await waitFor(() => expect(onUpdate).toHaveBeenCalledTimes(1));
+    const [url] = onUpdate.mock.calls[0];
+    expect((url as URL).searchParams.get('id')).toMatch(/pq-1/);
+    expect((url as URL).searchParams.get('id')).toMatch(/pq-2/);
+    expect(sendAnalyticsEvent).toHaveBeenCalledWith(
+      'finish_just_three_questions',
+      expect.objectContaining({ personalized_answer_count: 2 }),
+    );
+  });
+
+  it('답한 질문은 같은 세션 캐시로 다시 3줄쓰기에 들어와도 나오지 않는다', async () => {
+    const user = userEvent.setup();
+    const queryClient = createTestQueryClient();
+    const fixtures = [{ id: 'pq-1', question: PERSONALIZED_QUESTION_TEXT, answeredAt: null as string | null }];
+    server.use(
+      personalizedQuestionsHandler({ questions: fixtures }),
+      answerPersonalizedQuestionsHandler({
+        onUpdate: () => {
+          fixtures[0].answeredAt = '2026-10-18T00:00:00Z';
+        },
+      }),
+    );
+    const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
+    const firstVisit = renderPage(queryClient);
+
+    await screen.findByText(PERSONALIZED_QUESTION_TEXT);
+    await answerAndAdvance(user, '답변1');
+    await answerAndAdvance(user, '답변2');
+    await answerAndAdvance(user, '답변3');
+    await screen.findByText('게시글 상세');
+    await waitFor(() => expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['justThreeQuestions'] }));
+    await waitFor(() => expect(queryClient.isFetching()).toBe(0));
+    firstVisit.unmount();
+    renderPage(queryClient);
+
+    expect(await screen.findByText('질문3')).toBeInTheDocument();
+    expect(screen.queryByText(PERSONALIZED_QUESTION_TEXT)).not.toBeInTheDocument();
   });
 
   it('개인화 질문을 건너뛰면 답변 시각을 기록하지 않아 다시 나올 수 있다', async () => {
