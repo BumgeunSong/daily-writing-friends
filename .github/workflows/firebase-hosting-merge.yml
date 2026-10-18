@@ -36,3 +36,14 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ARTICO_APP_4F9D4 }}'
           channelId: live
           projectId: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+      # Storage rules were deployed by hand and drifted from the repo. Deploy
+      # them with the same merge that ships the code that depends on them.
+      - name: Deploy Storage rules
+        run: |
+          echo "$FIREBASE_SA" > "$RUNNER_TEMP/firebase-sa.json"
+          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json" \
+            npx --yes firebase-tools@14 deploy --only storage --project "$FIREBASE_PROJECT"
+          rm -f "$RUNNER_TEMP/firebase-sa.json"
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ARTICO_APP_4F9D4 }}
+          FIREBASE_PROJECT: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}

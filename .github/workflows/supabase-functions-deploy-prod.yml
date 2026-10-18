@@ -1,0 +1,53 @@
+name: Deploy Edge Functions to Production
+
+# Deploys Supabase Edge Functions when their code lands on main. Functions were
+# deployed by hand, so merged code and the deployed version drifted silently
+# (create-notification stayed on a 5-month-old version after its rewrite merged).
+#
+# JWT verification is declared explicitly per function and must match how each
+# function authenticates its caller:
+#   - create-notification: called by DB triggers with a service_role JWT, so the
+#     gateway verifies the JWT (the handler additionally checks the role claim).
+#   - fairy-webhook: called by an external provider with no Supabase JWT, and
+#     authenticates by HMAC signature instead, so the gateway check is disabled.
+# Deploying without the flag would reset a function to the default and break it.
+#
+# The CLI version is PINNED and kept in lockstep with supabase-migrate-prod.yml.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/**'
+      - '.github/workflows/supabase-functions-deploy-prod.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-functions-deploy-prod
+  cancel-in-progress: false
+
+env:
+  SUPABASE_CLI_VERSION: 2.75.0
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Supabase CLI (pinned)
+        uses: supabase/setup-cli@v2
+        with:
+          version: ${{ env.SUPABASE_CLI_VERSION }}
+
+      - name: Deploy create-notification
+        run: supabase functions deploy create-notification --project-ref "$SUPABASE_PROJECT_ID"
+
+      - name: Deploy fairy-webhook
+        run: supabase functions deploy fairy-webhook --no-verify-jwt --project-ref "$SUPABASE_PROJECT_ID"

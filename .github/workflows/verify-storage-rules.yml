@@ -1,0 +1,48 @@
+name: Verify Storage Rules
+
+# Runs the storage-rules accept/reject matrix against the Firebase Storage
+# emulator on PRs, so a rules regression fails CI instead of reaching prod.
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'firebase/storage.rules'
+      - 'firebase.json'
+      - 'apps/web/scripts/verify-storage-rules.mjs'
+      - '.github/workflows/verify-storage-rules.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 9.15.4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22.23.1'
+          cache: 'pnpm'
+
+      - name: Set up JDK (required by the emulator)
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify rules against the storage emulator
+        run: >-
+          npx --yes firebase-tools@14 emulators:exec --only storage
+          --project artico-app-4f9d4
+          "pnpm --filter web verify:storage-rules"
