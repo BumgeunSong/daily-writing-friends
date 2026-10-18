@@ -17,6 +17,13 @@ name: Deploy Migrations to Production
 # add nullable columns first, read them in a later release, drop/rename last) so
 # neither deploy order breaks the other during the rollout window.
 #
+# Connects with --db-url instead of `supabase link`: link calls the Management API
+# with reveal=true to fetch the project's API keys, which would force the access
+# token to carry the "API Key Secrets" permission (it can read service_role).
+# Going straight to the database needs no Management API token at all.
+# PRODUCTION_DB_URL must be the IPv4-reachable pooler connection string
+# (GitHub-hosted runners have no IPv6), e.g. the session pooler on port 5432.
+#
 # The CLI version is PINNED and kept in lockstep with supabase-types-drift.yml
 # so both jobs exercise the same CLI behaviour.
 
@@ -30,8 +37,8 @@ on:
   # Manual trigger to recover from a missed/failed push without an empty commit.
   workflow_dispatch:
 
-# Least privilege: this job only checks out code and talks to Supabase via
-# SUPABASE_* secrets, so GITHUB_TOKEN needs nothing beyond reading the repo.
+# Least privilege: this job only checks out code and talks to the database via
+# the PRODUCTION_DB_URL secret, so GITHUB_TOKEN needs nothing beyond reading the repo.
 permissions:
   contents: read
 
@@ -47,9 +54,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_DB_PASSWORD }}
-      SUPABASE_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
+      PRODUCTION_DB_URL: ${{ secrets.PRODUCTION_DB_URL }}
     steps:
       - uses: actions/checkout@v7
 
@@ -58,8 +63,5 @@ jobs:
         with:
           version: ${{ env.SUPABASE_CLI_VERSION }}
 
-      - name: Link production project
-        run: supabase link --project-ref "$SUPABASE_PROJECT_ID"
-
       - name: Push pending migrations
-        run: supabase db push
+        run: supabase db push --db-url "$PRODUCTION_DB_URL"

@@ -3,11 +3,23 @@ name: Deploy to Firebase Hosting on merge
   push:
     branches:
       - main
+# Hosting and Storage rules go to production from this job. Serialize runs so a
+# slow earlier run cannot finish after a later merge and roll the live rules
+# back to an older version (rules guard access, so a rollback re-opens it).
+# Queue rather than cancel: every merge must still deploy.
+concurrency:
+  group: firebase-prod-deploy
+  cancel-in-progress: false
+
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Full history so the deploy step can tell whether this run is still
+          # the latest commit on main.
+          fetch-depth: 0
       - name: Install pnpm
         uses: pnpm/action-setup@v6
         with:
@@ -36,3 +48,20 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_ARTICO_APP_4F9D4 }}'
           channelId: live
           projectId: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+      # Storage rules were deployed by hand and drifted from the repo. Deploy
+      # them with the same merge that ships the code that depends on them.
+      - name: Deploy Storage rules
+        run: |
+          # A queued or re-run job must not overwrite rules from a newer merge.
+          git fetch --quiet origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+            echo "::warning::Skipping Storage rules deploy: $GITHUB_SHA is no longer the tip of main."
+            exit 0
+          fi
+          echo "$FIREBASE_SA" > "$RUNNER_TEMP/firebase-sa.json"
+          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/firebase-sa.json" \
+            npx --yes firebase-tools@14 deploy --only storage --project "$FIREBASE_PROJECT"
+          rm -f "$RUNNER_TEMP/firebase-sa.json"
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_ARTICO_APP_4F9D4 }}
+          FIREBASE_PROJECT: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
