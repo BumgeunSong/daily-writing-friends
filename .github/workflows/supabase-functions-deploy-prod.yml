@@ -39,33 +39,19 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_ID: ${{ secrets.PRODUCTION_PROJECT_ID }}
     steps:
+      # Always deploy the tip of main, not the triggering SHA: a queued or re-run job
+      # would otherwise roll the functions back to an older version.
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0
-
-      # A queued or re-run job checks out its own (possibly old) SHA; deploying it
-      # would roll the functions back to an older version than main.
-      - name: Check this commit is the tip of main
-        id: tip
-        run: |
-          git fetch --quiet origin main
-          if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ]; then
-            echo "current=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::Skipping functions deploy: $GITHUB_SHA is no longer the tip of main."
-            echo "current=false" >> "$GITHUB_OUTPUT"
-          fi
+          ref: main
 
       - name: Install Supabase CLI (pinned)
-        if: steps.tip.outputs.current == 'true'
         uses: supabase/setup-cli@v2
         with:
           version: ${{ env.SUPABASE_CLI_VERSION }}
 
       - name: Deploy create-notification
-        if: steps.tip.outputs.current == 'true'
         run: supabase functions deploy create-notification --project-ref "$SUPABASE_PROJECT_ID"
 
       - name: Deploy fairy-webhook
-        if: steps.tip.outputs.current == 'true'
         run: supabase functions deploy fairy-webhook --no-verify-jwt --project-ref "$SUPABASE_PROJECT_ID"
