@@ -12,15 +12,28 @@
  * ES256 expects, so no DER transcoding is needed.
  */
 import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
 
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const SUPABASE_CONFIG_PATH = resolve(REPO_ROOT, 'supabase', 'config.toml');
+/**
+ * Walk up from the working directory to the nearest `supabase/config.toml`.
+ * Avoids `import.meta.url`, which breaks when Playwright compiles this file to
+ * CJS, and works from both the repo root and `apps/web` (where `e2e:seed` runs).
+ */
+function findSupabaseConfigPath(startDir: string): string {
+  for (let dir = startDir; ; dir = dirname(dir)) {
+    const candidate = resolve(dir, 'supabase', 'config.toml');
+    if (existsSync(candidate)) return candidate;
+    if (dirname(dir) === dir) {
+      throw new Error(`Could not find supabase/config.toml above ${startDir}`);
+    }
+  }
+}
+
 
 /** A seed run finishes in seconds; an hour is generous headroom without being long-lived. */
 const SERVICE_ROLE_TTL_SECONDS = 60 * 60;
@@ -78,7 +91,7 @@ export function assembleJwt(signingInput: string, signatureBase64url: string): s
 export function parseProjectId(configToml: string): string {
   const match = configToml.match(/^\s*project_id\s*=\s*"([^"]+)"/m);
   if (!match) {
-    throw new Error(`Could not find project_id in ${SUPABASE_CONFIG_PATH}`);
+    throw new Error(`Could not find project_id in supabase/config.toml`);
   }
   return match[1];
 }
@@ -104,7 +117,7 @@ function nowInSeconds(): number {
  * this stack would reject as `bad_jwt`).
  */
 async function findAuthContainerName(): Promise<string> {
-  const projectId = parseProjectId(await readFile(SUPABASE_CONFIG_PATH, 'utf8'));
+  const projectId = parseProjectId(await readFile(findSupabaseConfigPath(process.cwd()), 'utf8'));
   const expectedName = `supabase_auth_${projectId}`;
 
   const { stdout } = await execFileAsync('docker', [
