@@ -41,7 +41,8 @@
     "validate": "npm run type-check && npm run lint && npm run test:run",
     "validate:full": "npm run type-check && npm run lint && npm run test:run && npm run devlog:check",
     "doctor": "npx --yes react-doctor@latest --no-telemetry",
-    "verify:storage-rules": "node scripts/verify-storage-rules.mjs"
+    "verify:storage-rules": "node scripts/verify-storage-rules.mjs",
+    "verify:supabase-storage": "node scripts/verify-supabase-storage-policies.mjs"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.77",
