@@ -47,3 +47,16 @@ export async function fetchPersonalizedQuestions(
     return [{ id: question.id, question: question.question }];
   });
 }
+
+export async function markPersonalizedQuestionsAnswered(
+  questionIds: readonly string[],
+  now: Date = new Date(),
+): Promise<void> {
+  if (questionIds.length === 0) return;
+  const supabase = getSupabaseClient();
+  const result = await supabase
+    .from('personalized_questions')
+    .update({ answered_at: now.toISOString() })
+    .in('id', [...questionIds]);
+  throwOnError(result);
+}

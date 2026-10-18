@@ -1,15 +1,18 @@
+import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from '@/shared/navigation';
 import { toast } from 'sonner';
 import { PostVisibility } from '@/post/model/Post';
 import { PostJustThreeQuestionAnswerInput } from '@/post/components/PostJustThreeQuestionAnswerInput';
+import { markPersonalizedQuestionsAnswered } from '@/post/external/justThreeQuestions.api';
 import { useJustThreeQuestions } from '@/post/hooks/useJustThreeQuestions';
 import { useJustThreeQuestionsSession, type QuestionCandidate } from '@/post/hooks/useJustThreeQuestionsSession';
 import { useKeyboardInset } from '@/post/hooks/useKeyboardInset';
 import { mapCreatePostErrorMessage } from '@/post/hooks/useCreatePostAction';
 import {
   formatJustThreeQuestionsContent,
+  type JustThreeQuestionAnswer,
   removeAngleBrackets,
 } from '@/post/utils/justThreeQuestionsContentUtils';
 import { countNonWhitespaceCharacters } from '@/post/utils/topicInputUtils';
@@ -64,7 +67,24 @@ export default function PostJustThreeQuestionsPage() {
   return <JustThreeQuestionsSession pool={pool} />;
 }
 
+/**
+ * 답한 개인화 질문을 소진 처리한다. 게시는 이미 끝났으므로 실패해도 이동을 막지 않고,
+ * 최악의 경우 질문이 한 번 다시 나올 뿐이다. 풀 캐시는 결과와 무관하게 비워 둔다.
+ */
+function consumeAnsweredPersonalizedQuestions(
+  answers: readonly JustThreeQuestionAnswer[],
+  queryClient: QueryClient,
+) {
+  const answeredIds = answers.flatMap(({ questionId }) => (questionId ? [questionId] : []));
+  if (answeredIds.length === 0) return;
+
+  void markPersonalizedQuestionsAnswered(answeredIds)
+    .catch((error) => console.error('개인화 질문 소진 처리 실패:', error))
+    .finally(() => queryClient.invalidateQueries({ queryKey: ['justThreeQuestions'] }));
+}
+
 function JustThreeQuestionsSession({ pool }: { pool: readonly QuestionCandidate[] }) {
+  const queryClient = useQueryClient();
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const { boardId } = useParams();
@@ -106,6 +126,7 @@ function JustThreeQuestionsSession({ pool }: { pool: readonly QuestionCandidate[
         visibility: PostVisibility.PUBLIC,
       });
 
+      consumeAnsweredPersonalizedQuestions(finalAnswers, queryClient);
       invalidatePostCaches(boardId, currentUser.uid);
       optimisticallyUpdatePostingStreak(currentUser.uid);
       sendAnalyticsEvent(AnalyticsEvent.FINISH_JUST_THREE_QUESTIONS, { boardId });

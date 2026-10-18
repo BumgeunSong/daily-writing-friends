@@ -7,6 +7,7 @@ import PostJustThreeQuestionsPage from './PostJustThreeQuestionsPage';
 import { server } from '@/test/msw/server';
 import { createPostErrorHandler, createPostHandler } from '@/test/msw/handlers/posts';
 import {
+  answerPersonalizedQuestionsHandler,
   justThreeQuestionsErrorHandler,
   justThreeQuestionsHandler,
   justThreeQuestionsPendingHandler,
@@ -323,5 +324,71 @@ describe('최근 글에서 파생된 개인화 질문이 있는 유저가 3줄�
     renderPage();
 
     expect(await screen.findByText('질문1')).toBeInTheDocument();
+  });
+});
+
+describe('개인화 질문에 답하고 3줄쓰기를 마칠 때', () => {
+  beforeEach(() => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    server.use(
+      justThreeQuestionsHandler({ questions: ['질문1', '질문2', '질문3'] }),
+      personalizedQuestionsHandler({ questions: [{ id: 'pq-1', question: '그날 산책길에서 어떤 기분이었어요?' }] }),
+      createPostHandler(),
+    );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    sendAnalyticsEvent.mockClear();
+  });
+
+  it('답한 개인화 질문은 다시 나오지 않도록 답변 시각이 기록된다', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn();
+    server.use(answerPersonalizedQuestionsHandler({ onUpdate }));
+    renderPage();
+
+    await screen.findByText(/산책길에서 어떤 기분/);
+    await answerAndAdvance(user, '답변1');
+    await answerAndAdvance(user, '답변2');
+    await answerAndAdvance(user, '답변3');
+    await screen.findByText('게시글 상세');
+
+    await waitFor(() => expect(onUpdate).toHaveBeenCalledTimes(1));
+    const [url, body] = onUpdate.mock.calls[0];
+    expect((url as URL).searchParams.get('id')).toBe('in.(pq-1)');
+    expect((body as { answered_at: string }).answered_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it('답변 시각 기록에 실패해도 게시글 상세로 이동한다', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn();
+    server.use(answerPersonalizedQuestionsHandler({ onUpdate, fail: true }));
+    renderPage();
+
+    await screen.findByText(/산책길에서 어떤 기분/);
+    await answerAndAdvance(user, '답변1');
+    await answerAndAdvance(user, '답변2');
+    await answerAndAdvance(user, '답변3');
+
+    expect(await screen.findByText('게시글 상세')).toBeInTheDocument();
+    await waitFor(() => expect(onUpdate).toHaveBeenCalledTimes(1));
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it('개인화 질문을 건너뛰면 답변 시각을 기록하지 않아 다시 나올 수 있다', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn();
+    server.use(answerPersonalizedQuestionsHandler({ onUpdate }));
+    renderPage();
+
+    await screen.findByText(/산책길에서 어떤 기분/);
+    await user.click(screen.getByRole('button', { name: '다음 질문' }));
+    await answerAndAdvance(user, '답변1');
+    await answerAndAdvance(user, '답변2');
+    await answerAndAdvance(user, '답변3');
+    await screen.findByText('게시글 상세');
+
+    expect(onUpdate).not.toHaveBeenCalled();
   });
 });

@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? 'http://localhost:54321';
 const JUST_THREE_QUESTIONS_URL = `${SUPABASE_URL}/rest/v1/just_three_questions`;
 const POSTS_URL = `${SUPABASE_URL}/rest/v1/posts`;
+const PERSONALIZED_QUESTIONS_URL = `${SUPABASE_URL}/rest/v1/personalized_questions`;
 
 export interface JustThreeQuestionsHandlerOptions {
   /** Question text served as the active pool, in `created_at` order. */
@@ -62,4 +63,21 @@ export function personalizedQuestionsHandler({ questions, onRequest }: Personali
 /** Convenience: the personalized read always returns 500. */
 export function personalizedQuestionsErrorHandler() {
   return http.get(POSTS_URL, () => HttpResponse.json({ message: 'boom' }, { status: 500 }));
+}
+
+export interface AnswerPersonalizedQuestionsHandlerOptions {
+  onUpdate?: (url: URL, body: unknown) => void;
+  fail?: boolean;
+}
+
+/** MSW handler for `PATCH /rest/v1/personalized_questions` (marking questions answered). */
+export function answerPersonalizedQuestionsHandler({
+  onUpdate,
+  fail = false,
+}: AnswerPersonalizedQuestionsHandlerOptions = {}) {
+  return http.patch(PERSONALIZED_QUESTIONS_URL, async ({ request }) => {
+    onUpdate?.(new URL(request.url), await request.json());
+    if (fail) return HttpResponse.json({ message: 'boom' }, { status: 500 });
+    return new HttpResponse(null, { status: 204 });
+  });
 }
