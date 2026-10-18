@@ -26,6 +26,7 @@ const WINDOW_DAYS = 10;
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 const DEFAULT_CONCURRENCY = 3;
 const REQUEST_TIMEOUT_MS = 60_000;
+const PAGE_SIZE = 1000;
 
 interface Options {
   apply: boolean;
@@ -68,17 +69,30 @@ async function restGet<T>(baseUrl: string, serviceRoleKey: string, pathAndQuery:
   return (await response.json()) as T;
 }
 
+/**
+ * PostgREST는 서버 설정(max_rows)을 넘는 행을 조용히 자른다. 페이지 크기보다 적게 올 때까지
+ * offset으로 끝까지 읽는다. 순서에 고유 키를 포함해야 페이지 경계에서 행이 겹치거나 빠지지 않는다.
+ */
+async function restGetAll<T>(baseUrl: string, serviceRoleKey: string, pathAndQuery: string): Promise<T[]> {
+  const rows: T[] = [];
+  for (let offset = 0; ; offset += PAGE_SIZE) {
+    const page = await restGet<T[]>(baseUrl, serviceRoleKey, `${pathAndQuery}&limit=${PAGE_SIZE}&offset=${offset}`);
+    rows.push(...page);
+    if (page.length < PAGE_SIZE) return rows;
+  }
+}
+
 async function findPostIdsMissingQuestion(baseUrl: string, serviceRoleKey: string): Promise<string[]> {
   const windowStart = new Date(Date.now() - WINDOW_DAYS * MILLISECONDS_PER_DAY).toISOString();
-  const posts = await restGet<{ id: string }[]>(
+  const posts = await restGetAll<{ id: string }>(
     baseUrl,
     serviceRoleKey,
-    `posts?select=id&visibility=eq.public&created_at=gte.${encodeURIComponent(windowStart)}&order=created_at.asc`,
+    `posts?select=id&visibility=eq.public&created_at=gte.${encodeURIComponent(windowStart)}&order=created_at.asc,id.asc`,
   );
-  const questions = await restGet<{ source_post_id: string }[]>(
+  const questions = await restGetAll<{ source_post_id: string }>(
     baseUrl,
     serviceRoleKey,
-    'personalized_questions?select=source_post_id',
+    'personalized_questions?select=source_post_id&order=source_post_id.asc',
   );
   const alreadyGenerated = new Set(questions.map((row) => row.source_post_id));
   return posts.map((post) => post.id).filter((id) => !alreadyGenerated.has(id));
