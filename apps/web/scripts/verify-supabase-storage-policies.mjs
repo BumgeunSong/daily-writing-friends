@@ -34,10 +34,21 @@ function report(label, pass, detail) {
   console.log(`${pass ? 'PASS' : 'FAIL'} ${label}: ${detail}`);
 }
 
+// `expect` is 'allow' or the RegExp the denial message must match. A deny
+// scenario only passes for its intended reason, so an unrelated failure (server
+// 500, network error, wrong policy firing) is reported instead of counted as a
+// successful rejection.
 async function attempt(label, fn, expect) {
   const { error } = await fn();
-  const allowed = !error;
-  report(label, (expect === 'allow') === allowed, allowed ? 'allowed' : `denied (${error.message})`);
+  if (expect === 'allow') {
+    report(label, !error, error ? `denied (${error.message})` : 'allowed');
+  } else if (!error) {
+    report(label, false, 'allowed (expected denial)');
+  } else {
+    const message = String(error.message);
+    const matched = expect.test(message);
+    report(label, matched, `denied (${message})${matched ? '' : `; expected ${expect}`}`);
+  }
 }
 
 // Sign-up (not the admin API): GoTrue's admin endpoints reject the new-style
@@ -57,19 +68,22 @@ const alice = await signedInClient('alice');
 const bob = await signedInClient('bob');
 const anon = createClient(API_URL, PUBLISHABLE_KEY, { auth: { persistSession: false } });
 const png = { contentType: 'image/png' };
+const RLS_DENIED = /row-level security policy/i;
+const MIME_DENIED = /mime type .* is not supported/i;
+const SIZE_DENIED = /exceeded the maximum allowed size/i;
 
 for (const bucket of ['post-images', 'profile-photos', 'feedback-screenshots']) {
   const mine = `${alice.uid}/${runId}/ok.png`;
   const b = (c) => c.storage.from(bucket);
 
   await attempt(`${bucket} owner uploads png to own folder`, () => b(alice.client).upload(mine, smallImage, png), 'allow');
-  await attempt(`${bucket} owner uploads to another user's folder`, () => b(alice.client).upload(`${bob.uid}/${runId}/x.png`, smallImage, png), 'deny');
-  await attempt(`${bucket} owner uploads to bucket root (no uid folder)`, () => b(alice.client).upload(`${runId}-root.png`, smallImage, png), 'deny');
-  await attempt(`${bucket} anonymous upload`, () => b(anon).upload(`${alice.uid}/${runId}/anon.png`, smallImage, png), 'deny');
-  await attempt(`${bucket} svg upload`, () => b(alice.client).upload(`${alice.uid}/${runId}/x.svg`, smallImage, { contentType: 'image/svg+xml' }), 'deny');
-  await attempt(`${bucket} text/html upload`, () => b(alice.client).upload(`${alice.uid}/${runId}/x.html`, smallImage, { contentType: 'text/html' }), 'deny');
-  await attempt(`${bucket} 21MB upload`, () => b(alice.client).upload(`${alice.uid}/${runId}/big.png`, bigImage, png), 'deny');
-  await attempt(`${bucket} overwrite own file (upsert)`, () => b(alice.client).upload(mine, smallImage, { ...png, upsert: true }), 'deny');
+  await attempt(`${bucket} owner uploads to another user's folder`, () => b(alice.client).upload(`${bob.uid}/${runId}/x.png`, smallImage, png), RLS_DENIED);
+  await attempt(`${bucket} owner uploads to bucket root (no uid folder)`, () => b(alice.client).upload(`${runId}-root.png`, smallImage, png), RLS_DENIED);
+  await attempt(`${bucket} anonymous upload`, () => b(anon).upload(`${alice.uid}/${runId}/anon.png`, smallImage, png), RLS_DENIED);
+  await attempt(`${bucket} svg upload`, () => b(alice.client).upload(`${alice.uid}/${runId}/x.svg`, smallImage, { contentType: 'image/svg+xml' }), MIME_DENIED);
+  await attempt(`${bucket} text/html upload`, () => b(alice.client).upload(`${alice.uid}/${runId}/x.html`, smallImage, { contentType: 'text/html' }), MIME_DENIED);
+  await attempt(`${bucket} 21MB upload`, () => b(alice.client).upload(`${alice.uid}/${runId}/big.png`, bigImage, png), SIZE_DENIED);
+  await attempt(`${bucket} overwrite own file (upsert)`, () => b(alice.client).upload(mine, smallImage, { ...png, upsert: true }), RLS_DENIED);
 
   // remove() reports success with an empty list when RLS hides the row, so
   // assert on the object still existing rather than on the error.
