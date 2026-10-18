@@ -8,7 +8,7 @@ import {
   getValidationMessage,
 } from '@/post/utils/ImageValidation';
 import { captureProcessingFailure } from '@/post/utils/imageUploadTelemetry';
-import { buildImageStoragePath } from '@/post/utils/storagePath';
+import { buildImageStoragePath, resolveImageContentType } from '@/post/utils/storagePath';
 
 interface UploadResult {
   success: boolean;
@@ -48,9 +48,9 @@ export async function uploadFeedbackScreenshot(file: File): Promise<UploadResult
     const uid = await getCurrentUserId();
     const downloadURL = await uploadImage({
       bucket: 'feedback-screenshots',
-      path: buildImageStoragePath(uid, processed.file.name, new Date()),
+      path: buildImageStoragePath(uid, processed.file, new Date(), crypto.randomUUID()),
       file: processed.file,
-      contentType: processed.file.type || 'image/jpeg',
+      contentType: resolveImageContentType(processed.file),
     });
 
     return { success: true, url: downloadURL };

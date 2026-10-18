@@ -1,45 +1,61 @@
 import { describe, it, expect } from 'vitest';
-import { buildImageStoragePath } from '../storagePath';
+import { buildImageStoragePath, resolveImageContentType } from '../storagePath';
 
-const FIXED_DATE = new Date('2026-05-28T09:07:03Z');
+const now = new Date(2026, 4, 28, 9, 7, 3); // local 2026-05-28 09:07:03
+const jpeg = { name: 'photo.jpg', type: 'image/jpeg' };
 
 describe('buildImageStoragePath', () => {
-  it('formats path as {uid}/{YYYYMMDD}/{HHMMSS}_{fileName}', () => {
-    const now = new Date(2026, 4, 28, 9, 7, 3); // local 2026-05-28 09:07:03
-    expect(buildImageStoragePath('user-1', 'photo.jpg', now)).toBe(
-      'user-1/20260528/090703_photo.jpg',
+  it('formats path as {uid}/{YYYYMMDD}/{HHMMSS}_{uniqueId}.{ext}', () => {
+    expect(buildImageStoragePath('user-1', jpeg, now, 'abc')).toBe(
+      'user-1/20260528/090703_abc.jpg',
     );
   });
 
   it('zero-pads month, day, hour, minute, second below 10', () => {
-    const now = new Date(2026, 0, 5, 3, 4, 9); // local 2026-01-05 03:04:09
-    expect(buildImageStoragePath('user-1', 'shot.png', now)).toBe(
-      'user-1/20260105/030409_shot.png',
+    const early = new Date(2026, 0, 5, 3, 4, 9);
+    expect(buildImageStoragePath('user-1', { name: 's.png', type: 'image/png' }, early, 'x')).toBe(
+      'user-1/20260105/030409_x.png',
     );
   });
 
-  it('sanitizes filenames containing path separators', () => {
-    const result = buildImageStoragePath('user-1', '../escape/photo.jpg', FIXED_DATE);
-    expect(result.endsWith('__escape_photo.jpg')).toBe(true);
-    expect(result).not.toContain('..');
-    expect(result).not.toContain('/escape/');
+  it('never puts the original filename in the key, so Korean names stay ASCII-safe', () => {
+    const path = buildImageStoragePath('user-1', { name: '오늘의일기.jpg', type: 'image/jpeg' }, now, 'abc');
+    expect(path).toBe('user-1/20260528/090703_abc.jpg');
+    expect(path).toMatch(/^[\x20-\x7e]+$/);
   });
 
-  it('falls back to a default name when the sanitized filename would be empty', () => {
-    const result = buildImageStoragePath('user-1', '\x01\x02\x03', FIXED_DATE);
-    expect(result.endsWith('_image')).toBe(true);
+  it('gives two same-second uploads of the same filename different paths', () => {
+    const a = buildImageStoragePath('user-1', jpeg, now, 'id-a');
+    const b = buildImageStoragePath('user-1', jpeg, now, 'id-b');
+    expect(a).not.toBe(b);
   });
 
-  it('preserves Unicode (Korean) characters in the filename', () => {
-    const result = buildImageStoragePath('user-1', '오늘의일기.jpg', FIXED_DATE);
-    expect(result.endsWith('_오늘의일기.jpg')).toBe(true);
+  it('keeps users in separate folders', () => {
+    expect(buildImageStoragePath('alice', jpeg, now, 'i').startsWith('alice/')).toBe(true);
+    expect(buildImageStoragePath('bob', jpeg, now, 'i').startsWith('bob/')).toBe(true);
   });
 
-  it('produces a different path for different users given the same time and filename', () => {
-    const alice = buildImageStoragePath('alice', 'a.jpg', FIXED_DATE);
-    const bob = buildImageStoragePath('bob', 'a.jpg', FIXED_DATE);
-    expect(alice.startsWith('alice/')).toBe(true);
-    expect(bob.startsWith('bob/')).toBe(true);
-    expect(alice).not.toBe(bob);
+  it('uses the extension that matches the resolved content type', () => {
+    const path = buildImageStoragePath('u', { name: 'IMG_1.JPEG', type: 'application/octet-stream' }, now, 'i');
+    expect(path.endsWith('.jpg')).toBe(true);
+  });
+});
+
+describe('resolveImageContentType', () => {
+  it.each(['image/jpeg', 'image/png', 'image/webp'])('keeps supported type %s', (type) => {
+    expect(resolveImageContentType({ name: 'x.bin', type })).toBe(type);
+  });
+
+  it.each([
+    ['photo.jpg', 'image/jpeg'],
+    ['photo.JPEG', 'image/jpeg'],
+    ['shot.png', 'image/png'],
+    ['pic.webp', 'image/webp'],
+  ])('maps octet-stream %s to %s by extension', (name, expected) => {
+    expect(resolveImageContentType({ name, type: 'application/octet-stream' })).toBe(expected);
+  });
+
+  it('maps an empty browser MIME by extension', () => {
+    expect(resolveImageContentType({ name: 'a.png', type: '' })).toBe('image/png');
   });
 });

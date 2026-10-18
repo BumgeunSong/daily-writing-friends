@@ -11,7 +11,7 @@ import {
   SUPPORTED_ACCEPT_ATTRIBUTE,
 } from '@/post/utils/ImageValidation';
 import { captureProcessingFailure } from '@/post/utils/imageUploadTelemetry';
-import { buildImageStoragePath } from '@/post/utils/storagePath';
+import { buildImageStoragePath, resolveImageContentType } from '@/post/utils/storagePath';
 import type { Editor } from '@tiptap/react';
 
 type UploadStage = 'idle' | ProcessingStage | 'uploading';
@@ -102,9 +102,9 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
       const uid = await getCurrentUserId();
       const downloadURL = await uploadImage({
         bucket: 'post-images',
-        path: buildImageStoragePath(uid, processed.file.name, new Date()),
+        path: buildImageStoragePath(uid, processed.file, new Date(), crypto.randomUUID()),
         file: processed.file,
-        contentType: processed.file.type || 'image/jpeg',
+        contentType: resolveImageContentType(processed.file),
       });
       setUploadProgress(100);
 
