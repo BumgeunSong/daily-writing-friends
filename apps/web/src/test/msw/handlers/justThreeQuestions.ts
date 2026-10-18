@@ -68,16 +68,22 @@ export function personalizedQuestionsErrorHandler() {
 export interface AnswerPersonalizedQuestionsHandlerOptions {
   onUpdate?: (url: URL, body: unknown) => void;
   fail?: boolean;
+  /** RLS가 행을 걸러 내면 오류 없이 0건이 갱신된다. true면 그 상황을 흉내 낸다. */
+  matchesNoRows?: boolean;
 }
 
 /** MSW handler for `PATCH /rest/v1/personalized_questions` (marking questions answered). */
 export function answerPersonalizedQuestionsHandler({
   onUpdate,
   fail = false,
+  matchesNoRows = false,
 }: AnswerPersonalizedQuestionsHandlerOptions = {}) {
   return http.patch(PERSONALIZED_QUESTIONS_URL, async ({ request }) => {
     onUpdate?.(new URL(request.url), await request.json());
     if (fail) return HttpResponse.json({ message: 'boom' }, { status: 500 });
-    return new HttpResponse(null, { status: 204 });
+    const wantsRows = (request.headers.get('Prefer') ?? '').includes('return=representation');
+    if (!wantsRows) return new HttpResponse(null, { status: 204 });
+    const requestedIds = (new URL(request.url).searchParams.get('id') ?? '').replace(/^in\.\(|\)$/g, '').split(',');
+    return HttpResponse.json(matchesNoRows ? [] : requestedIds.map((id) => ({ id })));
   });
 }

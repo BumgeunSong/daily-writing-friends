@@ -48,6 +48,10 @@ export async function fetchPersonalizedQuestions(
   });
 }
 
+/**
+ * RLS가 행을 걸러 내면 PostgREST는 오류 없이 0건을 갱신하므로, 갱신된 행 수를 확인해
+ * 권한 문제를 성공으로 오해하지 않게 한다.
+ */
 export async function markPersonalizedQuestionsAnswered(
   questionIds: readonly string[],
   now: Date = new Date(),
@@ -57,6 +61,12 @@ export async function markPersonalizedQuestionsAnswered(
   const result = await supabase
     .from('personalized_questions')
     .update({ answered_at: now.toISOString() })
-    .in('id', [...questionIds]);
+    .in('id', [...questionIds])
+    .select('id');
   throwOnError(result);
+
+  const updatedCount = result.data?.length ?? 0;
+  if (updatedCount !== questionIds.length) {
+    throw new Error(`personalized_questions: ${questionIds.length}건 중 ${updatedCount}건만 갱신됨`);
+  }
 }

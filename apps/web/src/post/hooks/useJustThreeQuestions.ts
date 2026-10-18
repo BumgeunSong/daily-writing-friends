@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchJustThreeQuestions, fetchPersonalizedQuestions } from '@/post/external/justThreeQuestions.api';
 import type { QuestionCandidate } from '@/post/hooks/useJustThreeQuestionsSession';
@@ -13,7 +14,7 @@ async function fetchPersonalizedQuestionCandidates(userId: string): Promise<Ques
     const questions = await fetchPersonalizedQuestions(userId);
     return questions.map(({ id, question }) => ({ id, text: question }));
   } catch (error) {
-    console.error('개인화 질문 조회 실패, 공통 질문만 사용합니다:', error);
+    Sentry.captureException(error, { tags: { feature: 'personalized-questions', op: 'read' } });
     return [];
   }
 }

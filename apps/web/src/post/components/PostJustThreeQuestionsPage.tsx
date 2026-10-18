@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -79,7 +80,9 @@ function consumeAnsweredPersonalizedQuestions(
   if (answeredIds.length === 0) return;
 
   void markPersonalizedQuestionsAnswered(answeredIds)
-    .catch((error) => console.error('개인화 질문 소진 처리 실패:', error))
+    .catch((error) =>
+      Sentry.captureException(error, { tags: { feature: 'personalized-questions', op: 'consume' } }),
+    )
     .finally(() => queryClient.invalidateQueries({ queryKey: ['justThreeQuestions'] }));
 }
 

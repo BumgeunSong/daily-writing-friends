@@ -55,6 +55,12 @@ vi.mock('@/post/utils/postCacheUtils', () => ({
 const toastError = vi.fn();
 vi.mock('sonner', () => ({ toast: { error: (...args: unknown[]) => toastError(...args), success: vi.fn() } }));
 
+const captureException = vi.fn();
+vi.mock('@sentry/react', async () => {
+  const actual = await vi.importActual<typeof import('@sentry/react')>('@sentry/react');
+  return { ...actual, captureException: (...args: unknown[]) => captureException(...args) };
+});
+
 const sendAnalyticsEvent = vi.fn();
 vi.mock('@/shared/utils/analyticsUtils', async () => {
   const actual = await vi.importActual<typeof import('@/shared/utils/analyticsUtils')>(
@@ -246,6 +252,7 @@ describe('최근 글에서 파생된 개인화 질문이 있는 유저가 3줄�
   afterEach(() => {
     vi.restoreAllMocks();
     sendAnalyticsEvent.mockClear();
+    captureException.mockClear();
   });
 
   it('개인화 질문이 공통 질문과 같은 풀에서 뽑혀 노출된다', async () => {
@@ -313,6 +320,10 @@ describe('최근 글에서 파생된 개인화 질문이 있는 유저가 3줄�
 
     expect(await screen.findByText('질문1')).toBeInTheDocument();
     expect(screen.queryByText(/질문을 불러오지 못했어요/)).not.toBeInTheDocument();
+    expect(captureException).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ tags: { feature: 'personalized-questions', op: 'read' } }),
+    );
   });
 
   it('개인화 질문이 하나도 없으면 공통 질문만으로 세션을 시작한다', async () => {
@@ -324,6 +335,7 @@ describe('최근 글에서 파생된 개인화 질문이 있는 유저가 3줄�
     renderPage();
 
     expect(await screen.findByText('질문1')).toBeInTheDocument();
+    expect(captureException).not.toHaveBeenCalled();
   });
 });
 
@@ -340,6 +352,7 @@ describe('개인화 질문에 답하고 3줄쓰기를 마칠 때', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     sendAnalyticsEvent.mockClear();
+    captureException.mockClear();
   });
 
   it('답한 개인화 질문은 다시 나오지 않도록 답변 시각이 기록된다', async () => {
@@ -358,6 +371,27 @@ describe('개인화 질문에 답하고 3줄쓰기를 마칠 때', () => {
     const [url, body] = onUpdate.mock.calls[0];
     expect((url as URL).searchParams.get('id')).toBe('in.(pq-1)');
     expect((body as { answered_at: string }).answered_at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(captureException).not.toHaveBeenCalled();
+  });
+
+  it('권한 정책 때문에 아무 행도 갱신되지 않으면 조용히 넘기지 않고 보고한다', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn();
+    server.use(answerPersonalizedQuestionsHandler({ onUpdate, matchesNoRows: true }));
+    renderPage();
+
+    await screen.findByText(/산책길에서 어떤 기분/);
+    await answerAndAdvance(user, '답변1');
+    await answerAndAdvance(user, '답변2');
+    await answerAndAdvance(user, '답변3');
+
+    expect(await screen.findByText('게시글 상세')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(captureException).toHaveBeenCalledWith(
+        expect.any(Error),
+        expect.objectContaining({ tags: { feature: 'personalized-questions', op: 'consume' } }),
+      ),
+    );
   });
 
   it('답변 시각 기록에 실패해도 게시글 상세로 이동한다', async () => {
@@ -374,6 +408,12 @@ describe('개인화 질문에 답하고 3줄쓰기를 마칠 때', () => {
     expect(await screen.findByText('게시글 상세')).toBeInTheDocument();
     await waitFor(() => expect(onUpdate).toHaveBeenCalledTimes(1));
     expect(toastError).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(captureException).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ tags: { feature: 'personalized-questions', op: 'consume' } }),
+      ),
+    );
   });
 
   it('개인화 질문을 건너뛰면 답변 시각을 기록하지 않아 다시 나올 수 있다', async () => {
