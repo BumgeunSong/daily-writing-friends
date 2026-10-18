@@ -27,8 +27,8 @@ test.describe('Comment Flow', () => {
     await expect(commentInput).toBeVisible({ timeout: 10000 });
     await commentInput.fill(COMMENT_TEXT);
 
-    // Submit the comment — the button next to the textbox
-    const submitButton = commentInput.locator('..').locator('button');
+    // Submit the comment
+    const submitButton = page.getByRole('button', { name: '댓글 등록' });
     await submitButton.click();
 
     // Verify the comment appears in the comment section

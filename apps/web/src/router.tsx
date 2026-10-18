@@ -288,6 +288,15 @@ const privateRoutesWithoutNav = {
       },
     },
     {
+      path: 'create/:boardId/just-three-questions',
+      lazy: async () => {
+        const { default: PostJustThreeQuestionsPage } = await import(
+          '@/post/components/PostJustThreeQuestionsPage'
+        );
+        return { Component: PostJustThreeQuestionsPage };
+      },
+    },
+    {
       path: 'create/:boardId',
       lazy: async () => {
         const [{ default: PostCreationPage }, { createPostAction }] = await Promise.all([
@@ -375,6 +384,13 @@ const devRoutes = import.meta.env.DEV ? {
       lazy: async () => {
         const { default: EditorTestPage } = await import('@/test/EditorTestPage');
         return { Component: EditorTestPage };
+      },
+    },
+    {
+      path: 'comment-input',
+      lazy: async () => {
+        const { default: CommentInputTestPage } = await import('@/test/CommentInputTestPage');
+        return { Component: CommentInputTestPage };
       },
     },
   ],

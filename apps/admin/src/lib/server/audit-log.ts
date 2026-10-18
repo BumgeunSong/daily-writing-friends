@@ -1,6 +1,12 @@
 import 'server-only';
 
-export type AdminAction = 'user.approve' | 'user.reject' | 'board.create' | 'app-config.update';
+export type AdminAction =
+  | 'user.approve'
+  | 'user.reject'
+  | 'board.create'
+  | 'app-config.update'
+  | 'just-three-questions.create'
+  | 'just-three-questions.update';
 
 export type AuditLogEntry = {
   adminEmail: string;

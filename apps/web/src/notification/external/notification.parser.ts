@@ -64,6 +64,18 @@ export function parseNotificationRow(row: SupabaseNotificationRow): Notification
     case NotificationType.LIKE_ON_POST:
       return { ...base, type: NotificationType.LIKE_ON_POST };
 
+    case NotificationType.MENTION_ON_COMMENT:
+      if (!row.comment_id) {
+        throw new Error(`Notification ${row.id}: MENTION_ON_COMMENT missing commentId`);
+      }
+      return { ...base, type: NotificationType.MENTION_ON_COMMENT, commentId: row.comment_id };
+
+    case NotificationType.MENTION_ON_REPLY:
+      if (!row.reply_id) {
+        throw new Error(`Notification ${row.id}: MENTION_ON_REPLY missing replyId`);
+      }
+      return { ...base, type: NotificationType.MENTION_ON_REPLY, replyId: row.reply_id };
+
     default: {
       const _exhaustive: never = row.type;
       throw new Error(`Notification ${row.id}: unhandled notification type: ${String(_exhaustive)}`);

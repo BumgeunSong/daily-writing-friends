@@ -99,6 +99,32 @@ describe('parseNotificationRow', () => {
       });
       expect(result.type).toBe(NotificationType.LIKE_ON_POST);
     });
+
+    it('parses MENTION_ON_COMMENT', () => {
+      const result = parseNotificationRow({
+        ...baseRow,
+        type: NotificationType.MENTION_ON_COMMENT,
+        comment_id: 'c1',
+        reply_id: null,
+      });
+      expect(result.type).toBe(NotificationType.MENTION_ON_COMMENT);
+      if (result.type === NotificationType.MENTION_ON_COMMENT) {
+        expect(result.commentId).toBe('c1');
+      }
+    });
+
+    it('parses MENTION_ON_REPLY', () => {
+      const result = parseNotificationRow({
+        ...baseRow,
+        type: NotificationType.MENTION_ON_REPLY,
+        comment_id: null,
+        reply_id: 'r1',
+      });
+      expect(result.type).toBe(NotificationType.MENTION_ON_REPLY);
+      if (result.type === NotificationType.MENTION_ON_REPLY) {
+        expect(result.replyId).toBe('r1');
+      }
+    });
   });
 
   describe('runtime guard: throws on missing required fields', () => {
@@ -163,6 +189,21 @@ describe('parseNotificationRow', () => {
       expect(() => parseNotificationRow(row)).toThrow(
         'REACTION_ON_REPLY missing commentId or replyId',
       );
+    });
+
+    it('MENTION_ON_COMMENT missing commentId throws', () => {
+      const row = { ...baseRow, type: NotificationType.MENTION_ON_COMMENT, comment_id: null };
+      expect(() => parseNotificationRow(row)).toThrow('MENTION_ON_COMMENT missing commentId');
+    });
+
+    it('MENTION_ON_REPLY missing replyId throws', () => {
+      const row = {
+        ...baseRow,
+        type: NotificationType.MENTION_ON_REPLY,
+        comment_id: null,
+        reply_id: null,
+      };
+      expect(() => parseNotificationRow(row)).toThrow('MENTION_ON_REPLY missing replyId');
     });
   });
 

@@ -9,6 +9,8 @@ if (!process.env.BASE_URL) {
 
 export default defineConfig({
   testDir: './tests',
+  // Dev-only harness route (router.tsx, import.meta.env.DEV) — doesn't exist in production.
+  testIgnore: ['**/*.logged-out.spec.ts'],
   fullyParallel: false,          // sequential for production safety
   retries: 1,
   workers: 1,                    // single worker to avoid race conditions on prod data

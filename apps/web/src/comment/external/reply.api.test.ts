@@ -11,6 +11,7 @@ describe('답글 로우를 도메인 모델로 매핑할 때', () => {
       user_name: '답글쓴이',
       user_profile_image: 'https://img/snap.png',
       created_at: '2026-02-02T00:00:00.000Z',
+      content_json: null,
       author: { nickname: '이웃', profile_photo_url: 'https://img/live.png' },
     });
 
@@ -33,10 +34,50 @@ describe('답글 로우를 도메인 모델로 매핑할 때', () => {
       user_name: '답글쓴이',
       user_profile_image: null,
       created_at: '2026-02-02T00:00:00.000Z',
+      content_json: null,
       author: null,
     });
 
     expect(reply.author).toBeUndefined();
     expect(reply.userProfileImage).toBe('');
+  });
+
+  it('content_json이 있으면 도메인 contentJson으로 파싱한다', () => {
+    const doc = {
+      type: 'doc',
+      content: [
+        {
+          type: 'paragraph',
+          content: [{ type: 'mention', attrs: { id: 'u1', label: '단짝' } }],
+        },
+      ],
+    };
+    const reply = mapToReply({
+      id: 'r1',
+      content: '@단짝',
+      user_id: 'u2',
+      user_name: '답글쓴이',
+      user_profile_image: 'https://img/snap.png',
+      created_at: '2026-02-02T00:00:00.000Z',
+      content_json: doc,
+      author: null,
+    });
+
+    expect(reply.contentJson).toEqual(doc);
+  });
+
+  it('레거시 답글(content_json 널)은 contentJson을 비워 둔다', () => {
+    const reply = mapToReply({
+      id: 'r1',
+      content: '옛날 답글',
+      user_id: 'u2',
+      user_name: '답글쓴이',
+      user_profile_image: 'https://img/snap.png',
+      created_at: '2026-02-02T00:00:00.000Z',
+      content_json: null,
+      author: null,
+    });
+
+    expect(reply.contentJson).toBeUndefined();
   });
 });

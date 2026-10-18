@@ -22,7 +22,8 @@ import {
   Menu,
   LogOut,
   XCircle,
-  UserCheck
+  UserCheck,
+  MessageCircleQuestion
 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -59,6 +60,11 @@ const navItems: NavItem[] = [
     title: '게시물 관리',
     href: '/admin/posts',
     icon: <MessageSquare className="h-5 w-5" />
+  },
+  {
+    title: '3줄쓰기 질문 관리',
+    href: '/admin/just-three-questions',
+    icon: <MessageCircleQuestion className="h-5 w-5" />
   },
   {
     title: '설정',

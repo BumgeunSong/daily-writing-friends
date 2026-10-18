@@ -2,7 +2,7 @@
 
 // Core Firebase imports (alphabetically ordered)
 import type { Analytics} from 'firebase/analytics';
-import { getAnalytics } from 'firebase/analytics';
+import { getAnalytics, isSupported as isAnalyticsSupported } from 'firebase/analytics';
 import { initializeApp } from 'firebase/app';
 import { getInstallations } from 'firebase/installations';
 import type { FirebasePerformance} from 'firebase/performance';
@@ -58,10 +58,20 @@ if (app && !useEmulators && typeof window !== 'undefined') {
     scheduleIdleTask(() => {
       try {
         optionalServices.performance = getPerformance(app);
-        optionalServices.analytics = getAnalytics(app);
       } catch (error) {
-        console.warn('Analytics/Performance services not available:', error);
+        console.warn('Performance service not available:', error);
       }
+
+      // Analytics는 지원되는 환경에서만 초기화한다. jsdom처럼 미지원 환경에서
+      // getAnalytics를 부르면 내부 비동기 초기화가 window에 접근하다 터진다.
+      isAnalyticsSupported()
+        .then((isSupported) => {
+          if (!isSupported) return;
+          optionalServices.analytics = getAnalytics(app);
+        })
+        .catch((error) => {
+          console.warn('Analytics service not available:', error);
+        });
     });
   } catch (error) {
     console.warn('Optional Firebase services not available:', error);

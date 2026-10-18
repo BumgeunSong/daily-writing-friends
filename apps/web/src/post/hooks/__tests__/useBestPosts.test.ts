@@ -4,6 +4,7 @@ import {
   buildBestPostsQueryKey,
   getBestPostsNextPageParam,
   shouldFetchMoreBestPosts,
+  limitPostGroups,
   BEST_POSTS_PAGE_SIZE,
   BEST_POSTS_MAX_PAGES,
 } from '../useBestPosts';
@@ -155,5 +156,31 @@ describe('shouldFetchMoreBestPosts', () => {
         isFetchingNextPage: true,
       }),
     ).toBe(false);
+  });
+});
+
+describe('limitPostGroups', () => {
+  it('keeps page boundaries while capping the total', () => {
+    const groups = limitPostGroups([[makePost(3), makePost(2)], [makePost(1), makePost(0)]], 3);
+    expect(groups.map((group) => group.length)).toEqual([2, 1]);
+  });
+
+  it('drops pages entirely once the cap is reached', () => {
+    const groups = limitPostGroups([[makePost(3), makePost(2)], [makePost(1)]], 2);
+    expect(groups.map((group) => group.length)).toEqual([2]);
+  });
+
+  it('returns every page untouched when the total is under the cap', () => {
+    const pages = [[makePost(3)], [makePost(2)]];
+    expect(limitPostGroups(pages, 10)).toEqual(pages);
+  });
+
+  it('returns no pages for a zero cap', () => {
+    expect(limitPostGroups([[makePost(3)]], 0)).toEqual([]);
+  });
+
+  it('flattens to the same list the previous flat-then-slice produced', () => {
+    const pages = [[makePost(5), makePost(4)], [makePost(3), makePost(2)], [makePost(1)]];
+    expect(limitPostGroups(pages, 3).flat()).toEqual(pages.flat().slice(0, 3));
   });
 });

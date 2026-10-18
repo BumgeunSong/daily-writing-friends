@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm, type FieldValues, type UseFormRegister } from 'react-hook-form';
 // `tab` is read from `formValues.activeContactTab` (single source of truth) —
 // no local mirror state, to avoid a one-frame flicker when prefill resolves to
@@ -18,7 +18,7 @@ import {
 } from '@/login/utils/onboardingSchema';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { Card, CardContent } from '@/shared/ui/card';
-import CohortConfirmCard from './CohortConfirmCard';
+import CohortSummaryCard from './CohortSummaryCard';
 import FormHeader from './JoinFormHeader';
 import OnboardingFormFields from './OnboardingFormFields';
 import OnboardingLoadingSkeleton from './OnboardingLoadingSkeleton';
@@ -35,8 +35,6 @@ export default function OnboardingPage() {
   const { currentUser, loading: authLoading } = useAuth();
   const { data: upcomingBoard, isLoading: isBoardLoading } = useUpcomingBoard();
   const { isInWaitingList, isLoading: isWaitingLoading } = useIsUserInWaitingList();
-
-  const [hasAgreedToCohort, setHasAgreedToCohort] = useState(false);
 
   const form = useForm<OnboardingFormSchema>({
     resolver: zodResolver(onboardingSchema),
@@ -60,7 +58,7 @@ export default function OnboardingPage() {
   }, [isInWaitingList, isWaitingLoading, navigate]);
 
   const isLoading = authLoading || isBoardLoading || isWaitingLoading || isPrefilling;
-  const requiresCohortAgreement = Boolean(upcomingBoard?.cohort);
+  const hasCohort = Boolean(upcomingBoard?.cohort);
 
   const { onSubmit, submitError } = useOnboardingSubmit({
     currentUser,
@@ -82,17 +80,13 @@ export default function OnboardingPage() {
       <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 lg:max-w-4xl">
         <FormHeader title={headerTitle} subtitle={headerSubtitle} />
 
-        {requiresCohortAgreement && upcomingBoard && (
+        {upcomingBoard?.cohort ? (
           <div className="mb-4">
-            <CohortConfirmCard
-              upcomingBoard={upcomingBoard}
-              agreed={hasAgreedToCohort}
-              onAgreedChange={setHasAgreedToCohort}
-            />
+            <CohortSummaryCard upcomingBoard={upcomingBoard} />
           </div>
-        )}
+        ) : null}
 
-        <Card className="bg-card">
+        <Card className="reading-shadow border-0 bg-card">
           <CardContent className="p-6">
             <form id="onboarding-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               <OnboardingFormFields
@@ -101,7 +95,6 @@ export default function OnboardingPage() {
                 register={register}
                 typedRegister={typedRegister}
                 errors={formState.errors}
-                prefillError={prefillError}
                 submitError={submitError}
               />
             </form>
@@ -112,9 +105,7 @@ export default function OnboardingPage() {
       <OnboardingSubmitBar
         isSubmitting={formState.isSubmitting}
         hasPrefillError={prefillError !== null}
-        requiresCohortAgreement={requiresCohortAgreement}
-        hasAgreedToCohort={hasAgreedToCohort}
-        hasCohort={Boolean(upcomingBoard?.cohort)}
+        hasCohort={hasCohort}
       />
 
       {/* Hidden value sentinel to keep form values from being garbage-collected by linters */}

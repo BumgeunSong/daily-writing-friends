@@ -23,7 +23,13 @@ export type AdminApiErrorBody = z.infer<typeof AdminApiErrorSchema>;
 // Audit log action enum
 // =============================================================================
 
-export type AdminAction = 'user.approve' | 'user.reject' | 'board.create' | 'app-config.update';
+export type AdminAction =
+  | 'user.approve'
+  | 'user.reject'
+  | 'board.create'
+  | 'app-config.update'
+  | 'just-three-questions.create'
+  | 'just-three-questions.update';
 
 // =============================================================================
 // Domain shapes — mirror Supabase row shapes 1:1 (snake_case) so existing pages
@@ -149,6 +155,17 @@ export const AppConfigSchema = z.object({
 });
 export type AppConfig = z.infer<typeof AppConfigSchema>;
 
+// --- just_three_questions -----------------------------------------------
+
+export const SupabaseJustThreeQuestionSchema = z.object({
+  id: z.string(),
+  question: z.string(),
+  is_active: z.boolean(),
+  created_at: z.string(),
+  updated_at: z.string(),
+});
+export type SupabaseJustThreeQuestion = z.infer<typeof SupabaseJustThreeQuestionSchema>;
+
 // =============================================================================
 // Route response schemas
 // =============================================================================
@@ -219,6 +236,11 @@ export const GetAppConfigResponseSchema = z.object({
 });
 export type GetAppConfigResponse = z.infer<typeof GetAppConfigResponseSchema>;
 
+export const GetJustThreeQuestionsResponseSchema = z.object({
+  questions: z.array(SupabaseJustThreeQuestionSchema),
+});
+export type GetJustThreeQuestionsResponse = z.infer<typeof GetJustThreeQuestionsResponseSchema>;
+
 // =============================================================================
 // Mutation routes
 // =============================================================================
@@ -274,6 +296,38 @@ export const UpdateAppConfigResponseSchema = z.object({
   config: AppConfigSchema,
 });
 export type UpdateAppConfigResponse = z.infer<typeof UpdateAppConfigResponseSchema>;
+
+export const CreateJustThreeQuestionRequestSchema = z.object({
+  question: z
+    .string()
+    .trim()
+    .min(1, '질문은 공백만으로 구성될 수 없습니다.'),
+});
+export type CreateJustThreeQuestionRequest = z.infer<typeof CreateJustThreeQuestionRequestSchema>;
+
+export const CreateJustThreeQuestionResponseSchema = z.object({
+  question: SupabaseJustThreeQuestionSchema,
+});
+export type CreateJustThreeQuestionResponse = z.infer<typeof CreateJustThreeQuestionResponseSchema>;
+
+export const UpdateJustThreeQuestionRequestSchema = z
+  .object({
+    question: z
+      .string()
+      .trim()
+      .min(1, '질문은 공백만으로 구성될 수 없습니다.')
+      .optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((data) => data.question !== undefined || data.isActive !== undefined, {
+    message: 'question 또는 isActive 중 하나는 반드시 포함되어야 합니다.',
+  });
+export type UpdateJustThreeQuestionRequest = z.infer<typeof UpdateJustThreeQuestionRequestSchema>;
+
+export const UpdateJustThreeQuestionResponseSchema = z.object({
+  question: SupabaseJustThreeQuestionSchema,
+});
+export type UpdateJustThreeQuestionResponse = z.infer<typeof UpdateJustThreeQuestionResponseSchema>;
 
 // =============================================================================
 // Helper: row → mapped Board (for routes that expose the legacy mapped shape)

@@ -2,7 +2,8 @@ import type { Database } from '@/shared/external/database.types';
 import type { Post } from '@/post/model/Post';
 import { createTimestamp } from '@/shared/model/Timestamp';
 import { computeWeekDaysFromFirstDay } from '@/post/utils/weekDays';
-import { parsePostVisibility, parsePostContentJson } from '@/post/external/post.parser';
+import { parsePostVisibility } from '@/post/external/post.parser';
+import { parseContentJson } from '@/shared/external/proseMirrorContentJson';
 
 /**
  * Columns every feed query projects (see {@link FEED_POST_SELECT}). Derived from
@@ -85,7 +86,7 @@ export function mapToPost(row: PostFeedRow): Post {
     title: row.title ?? '',
     content: row.content ?? '',
     contentPreview: row.content_preview ?? row.content ?? null,
-    contentJson: parsePostContentJson(row.content_json),
+    contentJson: parseContentJson(row.content_json),
     thumbnailImageURL: row.thumbnail_image_url,
     authorId,
     authorName: row.author_name ?? '',

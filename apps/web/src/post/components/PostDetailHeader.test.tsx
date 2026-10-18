@@ -7,12 +7,7 @@ import { PostDetailHeader } from './PostDetailHeader';
 import type { PostAuthorData } from './PostUserProfile';
 import { type Post, PostVisibility } from '@/post/model/Post';
 import { createTimestamp } from '@/shared/model/Timestamp';
-
-/**
- * Refactor 2 no-op proof: onClickProfile lifts from a hardcoded noop to an
- * optional prop that defaults to noop. Omitting it preserves the real-app
- * behavior (clicking the avatar does nothing); passing it forwards the handler.
- */
+import { userProfilePath } from '@/shared/constants/routes';
 
 const AUTHOR: PostAuthorData = { id: 'pv-author-1', displayName: '이몽룡' };
 
@@ -49,16 +44,27 @@ function renderHeader(props: Partial<React.ComponentProps<typeof PostDetailHeade
   );
 }
 
-describe('PostDetailHeader onClickProfile prop (Refactor 2)', () => {
-  it('does nothing on avatar click when onClickProfile is omitted (default noop)', async () => {
+describe('게시물 상세 헤더에서 작성자 아바타를 클릭할 때', () => {
+  it('작성자 프로필로 이동한다', async () => {
     const user = userEvent.setup();
-    renderHeader();
+    const navigate = vi.fn();
+    renderHeader({ navigate });
 
     const avatarButtons = screen.getAllByRole('button', { name: '작성자 프로필로 이동' });
-    // Should not throw — the default noop is invoked.
     await user.click(avatarButtons[0]);
 
-    expect(screen.getByText('봄날의 기록')).toBeInTheDocument();
+    expect(navigate).toHaveBeenCalledWith(userProfilePath(AUTHOR.id));
+  });
+
+  it('본인 글이어도 프로필로 이동해야 한다', async () => {
+    const user = userEvent.setup();
+    const navigate = vi.fn();
+    renderHeader({ navigate, isAuthor: true });
+
+    const avatarButtons = screen.getAllByRole('button', { name: '작성자 프로필로 이동' });
+    await user.click(avatarButtons[0]);
+
+    expect(navigate).toHaveBeenCalledWith(userProfilePath(AUTHOR.id));
   });
 
   it('forwards a provided onClickProfile handler to the avatar button', async () => {

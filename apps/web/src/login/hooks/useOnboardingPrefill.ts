@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { fetchUser } from '@/user/external/user.api';
-import { buildPrefillFormValues, PREFILL_ERROR_MESSAGE } from '@/login/utils/onboardingPrefill';
+import { SUBMIT_BLOCKED_PREFILL_MESSAGE } from '@/login/utils/onboardingDerived';
+import { buildPrefillFormValues } from '@/login/utils/onboardingPrefill';
 import type { OnboardingFormSchema } from '@/login/utils/onboardingSchema';
 
 interface PrefillSource {
@@ -53,7 +54,7 @@ export function useOnboardingPrefill(
       } catch (err) {
         if (cancelled) return;
         console.error('useOnboardingPrefill error', err);
-        setPrefillError(PREFILL_ERROR_MESSAGE);
+        setPrefillError(SUBMIT_BLOCKED_PREFILL_MESSAGE);
       } finally {
         if (!cancelled) setIsPrefilling(false);
       }

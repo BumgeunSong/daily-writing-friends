@@ -1,12 +1,12 @@
 import { Edit, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
+import { CommentContent } from '@/comment/components/CommentContent';
 import { CommentHeader } from '@/comment/components/CommentHeader';
+import { MentionableInput } from '@/comment/components/MentionableInput';
 import ReactionList from '@/comment/components/ReactionList';
-import ReplyInput from '@/comment/components/ReplyInput';
 import { useDeleteReply, useEditReply } from '@/comment/hooks/useCreateReply';
-import { renderCommentBodyHtml } from '@/shared/content/contentUtils';
+import { REPLY_PLACEHOLDER, type Reply } from '@/comment/model/Reply';
 import { Button } from '@/shared/ui/button';
-import type { Reply } from '@/comment/model/Reply';
 import type React from 'react';
 
 interface ReplyRowProps {
@@ -32,16 +32,17 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
     }
   };
 
+  // Edit stays content-only for now; content_json dual-write on edit is a
+  // follow-up (updateReplyToComment does not yet touch content_json).
   const handleEditSubmit = async (content: string) => {
     await editReply.mutateAsync(content);
     setIsEditing(false);
   };
 
   const EditIcon = isEditing ? X : Edit;
-  const sanitizedContent = renderCommentBodyHtml(reply.content);
 
   return (
-    <div className='group flex flex-col space-y-3 pb-4'>
+    <div id={`reply-${reply.id}`} className='group flex flex-col space-y-3 pb-4'>
       <div className='flex items-center justify-between'>
         <CommentHeader
           userId={reply.userId}
@@ -63,11 +64,17 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
       </div>
       <div className='text-base'>
         {isEditing ? (
-          <ReplyInput onSubmit={handleEditSubmit} initialValue={reply.content} />
+          <MentionableInput
+            boardId={boardId}
+            onSubmit={handleEditSubmit}
+            initialContent={reply.content}
+            placeholder={REPLY_PLACEHOLDER}
+          />
         ) : (
-          <div
+          <CommentContent
+            content={reply.content}
+            contentJson={reply.contentJson}
             className='prose prose-slate whitespace-pre-wrap dark:prose-invert'
-            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
         )}
       </div>

@@ -1,23 +1,26 @@
 import { type AuthorEmbed, AUTHOR_EMBED_SELECT, mapToAuthor } from '@/comment/external/authorEmbed';
+import type { ProseMirrorDoc } from '@/shared/model/ProseMirror';
 import type { Comment } from '@/comment/model/Comment';
 import type { Database } from '@/shared/external/database.types';
 import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
 import { formatInFilter } from '@/shared/external/postgrestFilters';
 import { createTimestamp } from '@/shared/model/Timestamp';
+import { parseContentJson, toContentJson } from '@/shared/external/proseMirrorContentJson';
 
 type CommentRow = Pick<
   Database['public']['Tables']['comments']['Row'],
-  'id' | 'content' | 'user_id' | 'user_name' | 'user_profile_image' | 'created_at'
+  'id' | 'content' | 'content_json' | 'user_id' | 'user_name' | 'user_profile_image' | 'created_at'
 > & { author: AuthorEmbed | AuthorEmbed[] | null };
 
 const COMMENT_SELECT =
-  `id, content, user_id, user_name, user_profile_image, created_at, ${AUTHOR_EMBED_SELECT}`;
+  `id, content, content_json, user_id, user_name, user_profile_image, created_at, ${AUTHOR_EMBED_SELECT}`;
 
 /** Pure: project a comments row (with its joined author) onto the domain Comment. */
 export function mapToComment(row: CommentRow): Comment {
   return {
     id: row.id,
     content: row.content,
+    contentJson: parseContentJson(row.content_json),
     userId: row.user_id,
     userName: row.user_name,
     userProfileImage: row.user_profile_image || '',
@@ -36,6 +39,7 @@ export async function createComment(
   userId: string,
   userName: string,
   userProfileImage: string,
+  contentJson?: ProseMirrorDoc,
 ) {
   const supabase = getSupabaseClient();
   const id = crypto.randomUUID();
@@ -48,6 +52,7 @@ export async function createComment(
     user_name: userName,
     user_profile_image: userProfileImage,
     content,
+    content_json: contentJson ? toContentJson(contentJson) : null,
     count_of_replies: 0,
     created_at: createdAt,
   }));

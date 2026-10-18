@@ -1,10 +1,10 @@
 import { Edit, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
-import { CommentInput } from '@/comment/components/CommentInput';
+import { CommentContent } from '@/comment/components/CommentContent';
+import { MentionableInput } from '@/comment/components/MentionableInput';
 import { CommentHeader } from '@/comment/components/CommentHeader';
 import ReactionList from '@/comment/components/ReactionList';
 import { useDeleteComment, useEditComment } from '@/comment/hooks/useCreateComment';
-import { renderCommentBodyHtml } from '@/shared/content/contentUtils';
 import { Button } from '@/shared/ui/button';
 import Replies from './Replies';
 import type { Comment } from '@/comment/model/Comment';
@@ -40,16 +40,17 @@ const CommentRow: React.FC<CommentRowProps> = ({
     }
   };
 
+  // Edit stays content-only for now; content_json dual-write on edit is a
+  // follow-up (updateCommentToPost does not yet touch content_json).
   const handleEditSubmit = async (content: string) => {
     await editComment.mutateAsync(content);
     setIsEditing(false);
   };
 
   const EditIcon = isEditing ? X : Edit;
-  const sanitizedContent = renderCommentBodyHtml(comment.content);
 
   return (
-    <div className='flex flex-col space-y-3 pb-4'>
+    <div id={`comment-${comment.id}`} className='flex flex-col space-y-3 pb-4'>
       <div className='flex items-center justify-between'>
         <CommentHeader
           userId={comment.userId}
@@ -71,11 +72,16 @@ const CommentRow: React.FC<CommentRowProps> = ({
       </div>
       <div className='text-base'>
         {isEditing ? (
-          <CommentInput onSubmit={handleEditSubmit} initialValue={comment.content} />
+          <MentionableInput
+            boardId={boardId}
+            onSubmit={handleEditSubmit}
+            initialContent={comment.content}
+          />
         ) : (
-          <div
+          <CommentContent
+            content={comment.content}
+            contentJson={comment.contentJson}
             className='prose prose-slate whitespace-pre-wrap dark:prose-invert'
-            dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
         )}
       </div>

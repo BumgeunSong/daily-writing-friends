@@ -1,23 +1,21 @@
-import { fetchNotificationsFromSupabase } from './notification.reads';
-import type { Notification } from '@/notification/model/Notification';
-import type { FirebaseTimestamp } from '@/shared/model/Timestamp';
+import { fetchNotificationsFromSupabase, type NotificationPage } from './notification.reads';
+import type { NotificationCursor } from './notificationCursor';
+
+export type { NotificationCursor, NotificationPage };
 
 /**
- * 알림 데이터를 가져오는 API 함수
- *
- * 커서 타임스탬프를 ISO 문자열로 변환하여 Supabase 쿼리에 전달.
- * 실제 파싱과 도메인 변환은 fetchNotificationsFromSupabase 안에서 일어남.
+ * 알림 피드 한 페이지를 가져온다. 커서는 (created_at, id) 튜플이라 같은
+ * created_at을 가진 알림이 페이지 경계에서 누락되지 않는다. 실제 파싱과 도메인
+ * 변환은 fetchNotificationsFromSupabase 안에서 일어난다.
  *
  * @param userId - 사용자 ID
  * @param limitCount - 한 번에 가져올 알림 수
- * @param after - 페이지네이션을 위한 타임스탬프 커서
- * @returns 알림 목록
+ * @param cursor - 이전 페이지 마지막 행의 키셋 커서 (첫 페이지는 생략)
  */
 export const fetchNotifications = async (
   userId: string,
   limitCount: number,
-  after?: FirebaseTimestamp,
-): Promise<Notification[]> => {
-  const afterStr = after ? after.toDate().toISOString() : undefined;
-  return fetchNotificationsFromSupabase(userId, limitCount, afterStr);
+  cursor?: NotificationCursor,
+): Promise<NotificationPage> => {
+  return fetchNotificationsFromSupabase(userId, limitCount, cursor);
 };

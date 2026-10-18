@@ -5,7 +5,10 @@ import type { UserIdRow, PostDateRow } from '@/stats/external/stats.api';
 import {
   deduplicateAuthorIds,
   buildPostCardDataMap,
+  mergeAuthorDataMaps,
+  toDisjointAuthorIdGroups,
   type BuildPostCardDataMapInput,
+  type PostCardPrefetchedData,
 } from './batchPostCardDataUtils';
 
 function createMockPost(authorId: string, id = `post-${authorId}`): Post {
@@ -312,5 +315,65 @@ describe('buildPostCardDataMap', () => {
   it('returns an empty Map when authorIds is empty', () => {
     const result = buildPostCardDataMap(baseInput());
     expect(result.size).toBe(0);
+  });
+});
+
+describe('toDisjointAuthorIdGroups', () => {
+  it('keeps each author in the earliest page they appear on', () => {
+    const groups = toDisjointAuthorIdGroups([
+      [createMockPost('u1', 'p1'), createMockPost('u2', 'p2')],
+      [createMockPost('u2', 'p3'), createMockPost('u3', 'p4')],
+    ]);
+    expect(groups).toEqual([['u1', 'u2'], ['u3']]);
+  });
+
+  it('leaves earlier groups untouched when a page is appended', () => {
+    const firstPage = [createMockPost('u1', 'p1')];
+    const before = toDisjointAuthorIdGroups([firstPage]);
+    const after = toDisjointAuthorIdGroups([firstPage, [createMockPost('u2', 'p2')]]);
+    expect(after[0]).toEqual(before[0]);
+  });
+
+  it('yields an empty group for a page whose authors all appeared earlier', () => {
+    const groups = toDisjointAuthorIdGroups([
+      [createMockPost('u1', 'p1')],
+      [createMockPost('u1', 'p2')],
+    ]);
+    expect(groups).toEqual([['u1'], []]);
+  });
+
+  it('deduplicates repeated authors within a single page', () => {
+    const groups = toDisjointAuthorIdGroups([
+      [createMockPost('u1', 'p1'), createMockPost('u1', 'p2')],
+    ]);
+    expect(groups).toEqual([['u1']]);
+  });
+});
+
+describe('mergeAuthorDataMaps', () => {
+  const prefetched = (displayName: string): PostCardPrefetchedData => ({
+    authorData: { id: 'ignored', displayName, profileImageURL: '' },
+    badges: [],
+    streak: [],
+    isDonator: false,
+  });
+
+  it('merges every resolved map into one lookup', () => {
+    const merged = mergeAuthorDataMaps([
+      new Map([['u1', prefetched('Alice')]]),
+      new Map([['u2', prefetched('Bob')]]),
+    ]);
+    expect(merged.get('u1')?.authorData.displayName).toBe('Alice');
+    expect(merged.get('u2')?.authorData.displayName).toBe('Bob');
+  });
+
+  it('keeps resolved entries when a sibling map is still undefined', () => {
+    const merged = mergeAuthorDataMaps([new Map([['u1', prefetched('Alice')]]), undefined]);
+    expect(merged.size).toBe(1);
+    expect(merged.has('u1')).toBe(true);
+  });
+
+  it('returns an empty map when nothing has resolved', () => {
+    expect(mergeAuthorDataMaps([undefined, undefined]).size).toBe(0);
   });
 });

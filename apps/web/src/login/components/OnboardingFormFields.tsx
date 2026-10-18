@@ -9,7 +9,6 @@ interface OnboardingFormFieldsProps {
   register: UseFormRegister<any>;
   typedRegister: UseFormRegister<OnboardingFormSchema>;
   errors: FieldErrors<OnboardingFormSchema>;
-  prefillError: string | null;
   submitError: string | null;
 }
 
@@ -20,7 +19,6 @@ export default function OnboardingFormFields({
   register,
   typedRegister,
   errors,
-  prefillError,
   submitError,
 }: OnboardingFormFieldsProps) {
   return (
@@ -60,9 +58,6 @@ export default function OnboardingFormFields({
         error={errors.referrer}
         optional
       />
-      {prefillError && (
-        <p className="text-sm text-destructive" role="alert">{prefillError}</p>
-      )}
       {submitError && <p className="text-sm text-destructive">{submitError}</p>}
     </>
   );

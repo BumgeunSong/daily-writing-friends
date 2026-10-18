@@ -36,6 +36,3 @@ export function buildPrefillFormValues(
     nickname: displayName ?? '',
   };
 }
-
-export const PREFILL_ERROR_MESSAGE =
-  '기존 정보를 불러오지 못했어요. 새로고침 후 다시 시도해주세요. 그대로 제출하면 기존 정보가 덮어쓰일 수 있어요.';

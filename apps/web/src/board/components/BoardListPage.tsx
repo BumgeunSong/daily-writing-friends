@@ -5,6 +5,7 @@ import { Link } from '@/shared/navigation';
 import type { Board } from '@/board/model/Board';
 import { userBoardsQueryKey } from '@/board/utils/boardQueryKeys';
 import { fetchBoardsWithUserPermissions } from '@/board/utils/boardUtils';
+import { serializeRecentBoard } from '@/board/utils/recentBoardCache';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
 import { useAuth } from '@/shared/hooks/useAuth';
@@ -38,8 +39,14 @@ const BoardListPage: React.FC = () => {
     }
   );
 
-  const handleBoardClick = (boardId: string) => {
-    storage.set(STORAGE_KEYS.BOARD_ID, boardId);
+  const handleBoardClick = (board: Board) => {
+    const cached = serializeRecentBoard(board);
+    if (cached) {
+      storage.set(STORAGE_KEYS.BOARD_ID, cached);
+    } else {
+      // 종료일 없는 상시 게시판은 기억하지 않는다. 남아 있던 기수 캐시도 함께 버린다.
+      storage.remove(STORAGE_KEYS.BOARD_ID);
+    }
   };
 
   if (isLoading) {
@@ -71,7 +78,7 @@ const BoardListPage: React.FC = () => {
               return (
                 <Link
                   to={`/board/${board.id}`}
-                  onClick={() => handleBoardClick(board.id)}
+                  onClick={() => handleBoardClick(board)}
                   key={board.id}
                   className="reading-focus block"
                 >

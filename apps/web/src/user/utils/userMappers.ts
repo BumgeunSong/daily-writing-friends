@@ -28,17 +28,3 @@ export function mapUserToSupabaseUpdate(data: Partial<User>): SupabaseUserUpdate
   if (data.onboardingComplete !== undefined) updateData.onboarding_complete = data.onboardingComplete;
   return updateData;
 }
-
-/**
- * boardPermissions 객체를 Supabase user_board_permissions 행 배열로 변환
- */
-export function mapBoardPermissionsToRows(
-  userId: string,
-  permissions: Record<string, 'read' | 'write'>,
-): { user_id: string; board_id: string; permission: string }[] {
-  return Object.entries(permissions).map(([boardId, permission]) => ({
-    user_id: userId,
-    board_id: boardId,
-    permission,
-  }));
-}

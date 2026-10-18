@@ -1,11 +1,12 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueries, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useMemo, useEffect } from 'react';
 
 import { fetchActiveDonatorIds } from '@/donator/external/donator.api';
 import type { Post } from '@/post/model/Post';
 import {
   buildPostCardDataMap,
-  deduplicateAuthorIds,
+  mergeAuthorDataMaps,
+  toDisjointAuthorIdGroups,
   type PostCardPrefetchedData,
 } from '@/post/utils/batchPostCardDataUtils';
 import { fetchBatchUsersBasic } from '@/user/external/user.reads';
@@ -24,45 +25,68 @@ import { badgeQueryKey, streakQueryKey } from '@/stats/utils/statsQueryKeys';
 
 export type { PostCardPrefetchedData } from '@/post/utils/batchPostCardDataUtils';
 
-const STALE_TIME_MS = 5 * 60 * 1000;
-const CACHE_TIME_MS = 10 * 60 * 1000;
+const AUTHOR_DATA_QUERY_KEY_PREFIX = 'batchPostCardData';
+const AUTHOR_DATA_STALE_TIME_MS = 5 * 60 * 1000;
+const AUTHOR_DATA_CACHE_TIME_MS = 10 * 60 * 1000;
 
-export function useBatchPostCardData(posts: Post[]) {
-  const queryClient = useQueryClient();
-
-  const authorIds = useMemo(
-    () => deduplicateAuthorIds(posts),
-    [posts],
-  );
-  const authorIdsKey = useMemo(
-    () => [...authorIds].sort((a, b) => a.localeCompare(b)).join(','),
-    [authorIds],
-  );
-
-  const query = useQuery({
-    queryKey: ['batchPostCardData', authorIdsKey],
-    queryFn: () => fetchBatchPostCardData(authorIds),
-    enabled: authorIds.length > 0,
-    staleTime: STALE_TIME_MS,
-    cacheTime: CACHE_TIME_MS,
-    refetchOnWindowFocus: true,
-  });
-
-  // Seed individual query caches so PostDetailPage finds badges/streak
-  // on first render without an extra network round-trip.
-  // badges and streak shapes match their individual hook contracts exactly.
-  useEffect(() => {
-    if (!query.data) return;
-    query.data.forEach((prefetchedData, authorId) => {
-      queryClient.setQueryData(badgeQueryKey(authorId), prefetchedData.badges);
-      queryClient.setQueryData(streakQueryKey(authorId), { streak: prefetchedData.streak });
-    });
-  }, [query.data, queryClient]);
-
-  return query;
+export function buildAuthorGroupQueryKey(authorIds: string[]) {
+  const canonicalAuthorIds = [...authorIds].sort((a, b) => a.localeCompare(b)).join(',');
+  return [AUTHOR_DATA_QUERY_KEY_PREFIX, canonicalAuthorIds];
 }
 
-async function fetchBatchPostCardData(
+function buildAuthorGroupQuery(authorIds: string[]) {
+  return {
+    queryKey: buildAuthorGroupQueryKey(authorIds),
+    queryFn: () => fetchAuthorDataForGroup(authorIds),
+    staleTime: AUTHOR_DATA_STALE_TIME_MS,
+    cacheTime: AUTHOR_DATA_CACHE_TIME_MS,
+    refetchOnWindowFocus: true,
+  };
+}
+
+function toNonEmptyAuthorGroups(postPages: Post[][]): string[][] {
+  return toDisjointAuthorIdGroups(postPages).filter((group) => group.length > 0);
+}
+
+/**
+ * Mirrors each author's badges and streak into the keys the individual hooks
+ * read, so PostDetailPage renders them without its own round-trip.
+ */
+function seedIndividualAuthorCaches(
+  queryClient: QueryClient,
+  prefetchedByAuthorId: Map<string, PostCardPrefetchedData>,
+) {
+  prefetchedByAuthorId.forEach((prefetched, authorId) => {
+    queryClient.setQueryData(badgeQueryKey(authorId), prefetched.badges);
+    queryClient.setQueryData(streakQueryKey(authorId), { streak: prefetched.streak });
+  });
+}
+
+export function useBatchPostCardData(postPages: Post[][]) {
+  const queryClient = useQueryClient();
+
+  const authorGroups = useMemo(() => toNonEmptyAuthorGroups(postPages), [postPages]);
+  const groupResults = useQueries({ queries: authorGroups.map(buildAuthorGroupQuery) });
+
+  const resolvedRevision = groupResults.map((result) => result.dataUpdatedAt).join(',');
+  const prefetchedByAuthorId = useMemo(
+    () => mergeAuthorDataMaps(groupResults.map((result) => result.data)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- useQueries returns a fresh array every render; dataUpdatedAt is the only change that alters the merged map
+    [resolvedRevision],
+  );
+
+  useEffect(() => {
+    seedIndividualAuthorCaches(queryClient, prefetchedByAuthorId);
+  }, [prefetchedByAuthorId, queryClient]);
+
+  return {
+    data: prefetchedByAuthorId,
+    isError: groupResults.some((result) => result.isError),
+    isLoading: groupResults.some((result) => result.isLoading),
+  };
+}
+
+async function fetchAuthorDataForGroup(
   authorIds: string[],
 ): Promise<Map<string, PostCardPrefetchedData>> {
   const streakWorkingDays = getRecentWorkingDays(STREAK_WINDOW_WORKING_DAYS);

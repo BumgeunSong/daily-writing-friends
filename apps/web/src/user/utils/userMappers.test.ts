@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapUserToSupabaseUpdate, mapBoardPermissionsToRows } from './userMappers';
+import { mapUserToSupabaseUpdate } from './userMappers';
 
 describe('mapUserToSupabaseUpdate — full mapping', () => {
   it('maps all user fields to snake_case columns', () => {
@@ -78,34 +78,5 @@ describe('mapUserToSupabaseUpdate — new fields (integrate-signup-cohort-flow)'
 
   it('preserves explicit null kakao_id (clearing the field)', () => {
     expect(mapUserToSupabaseUpdate({ kakaoId: null })).toEqual({ kakao_id: null });
-  });
-});
-
-describe('mapBoardPermissionsToRows', () => {
-  it('converts permissions object to row array', () => {
-    const result = mapBoardPermissionsToRows('user-1', {
-      'board-a': 'read',
-      'board-b': 'write',
-    });
-
-    expect(result).toEqual([
-      { user_id: 'user-1', board_id: 'board-a', permission: 'read' },
-      { user_id: 'user-1', board_id: 'board-b', permission: 'write' },
-    ]);
-  });
-
-  it('returns empty array for empty permissions', () => {
-    expect(mapBoardPermissionsToRows('user-1', {})).toEqual([]);
-  });
-
-  it('handles single permission', () => {
-    const result = mapBoardPermissionsToRows('user-1', { 'board-x': 'write' });
-
-    expect(result).toHaveLength(1);
-    expect(result[0]).toEqual({
-      user_id: 'user-1',
-      board_id: 'board-x',
-      permission: 'write',
-    });
   });
 });

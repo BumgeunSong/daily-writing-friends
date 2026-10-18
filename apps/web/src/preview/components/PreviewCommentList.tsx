@@ -53,6 +53,7 @@ function PreviewReplyRow({ reply }: { reply: PreviewReply }) {
         fallbackName={reply.author.displayName}
         fallbackProfileImage={reply.author.profileImageURL}
         badges={[]}
+        onClickProfile={null}
       />
       <PreviewBody body={reply.body} />
     </div>
@@ -80,6 +81,7 @@ function PreviewCommentRow({ comment }: { comment: PreviewComment }) {
         fallbackName={comment.author.displayName}
         fallbackProfileImage={comment.author.profileImageURL}
         badges={[]}
+        onClickProfile={null}
       />
       <PreviewBody body={comment.body} />
       <div className='flex flex-col space-y-1'>

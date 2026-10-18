@@ -3,6 +3,7 @@ import type { PostRow } from '@/test/fixtures/post';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? 'http://localhost:54321';
 const POSTS_FEED_URL = `${SUPABASE_URL}/rest/v1/posts_feed`;
+const POSTS_URL = `${SUPABASE_URL}/rest/v1/posts`;
 
 export interface PostsFeedHandlerOptions {
   /** Posts to serve, sorted newest-first. The handler slices by `limit` and the `created_at=lt.<iso>` cursor. */
@@ -54,6 +55,27 @@ export function postsFeedHandler({ posts, onRequest }: PostsFeedHandlerOptions) 
 /** Convenience: always returns 500. Used to drive the error precedence branch. */
 export function postsFeedErrorHandler() {
   return http.get(POSTS_FEED_URL, () =>
+    HttpResponse.json({ message: 'boom' }, { status: 500 }),
+  );
+}
+
+export interface CreatePostHandlerOptions {
+  /** Called with the parsed insert body — assert on title/content/visibility. */
+  onInsert?: (body: Record<string, unknown>) => void;
+}
+
+/** MSW handler for `POST /rest/v1/posts` (createPost's insert). */
+export function createPostHandler({ onInsert }: CreatePostHandlerOptions = {}) {
+  return http.post(POSTS_URL, async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+    onInsert?.(body);
+    return HttpResponse.json(body, { status: 201 });
+  });
+}
+
+/** Convenience: always returns 500. Used to drive the createPost failure path. */
+export function createPostErrorHandler() {
+  return http.post(POSTS_URL, () =>
     HttpResponse.json({ message: 'boom' }, { status: 500 }),
   );
 }

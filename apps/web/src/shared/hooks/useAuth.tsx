@@ -4,6 +4,14 @@ import { useContext, useState, useEffect, useRef, createContext } from 'react';
 // eslint-disable-next-line no-restricted-imports -- 기존 위반: external/ 레이어로 이관 예정인 raw 접근
 import { getSupabaseClient } from '@/shared/external/supabaseClient';
 import { setSentryUser } from '@/sentry';
+import {
+  currentUserOf,
+  initialAuthState,
+  isAuthLoading,
+  resolvedAuthState,
+  verifiedUserOf,
+  type AuthState,
+} from '@/shared/auth/authState';
 import type { AuthUser } from '@/shared/auth/authTypes';
 import { mapToAuthUser } from '@/shared/auth/supabaseAuth';
 import { STORAGE_KEYS, storage } from '@/shared/lib/storage';
@@ -11,14 +19,23 @@ import { UUID_RE, parseStoredAuthUser } from '@/shared/utils/authUserParser';
 import { createUserIfNotExists } from '@/user/external/user.api';
 
 export type { AuthUser } from '@/shared/auth/authTypes';
+export type { AuthState } from '@/shared/auth/authState';
 
 interface AuthContextType {
+  /** The authoritative auth state; prefer this in new code. */
+  authState: AuthState;
+  /** Derived from authState: cached-or-verified identity, for display. */
   currentUser: AuthUser | null;
+  /** Derived from authState: identity only when the session is verified. Gates read this. */
+  verifiedUser: AuthUser | null;
+  /** Derived from authState: whether Supabase verification is still pending. */
   loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
+  authState: { status: 'checking' },
   currentUser: null,
+  verifiedUser: null,
   loading: true,
 });
 
@@ -28,12 +45,11 @@ export function useAuth() {
 
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
-    const user = parseStoredAuthUser(storage.get(STORAGE_KEYS.CURRENT_USER));
-    if (!user) storage.remove(STORAGE_KEYS.CURRENT_USER);
-    return user;
+  const [authState, setAuthState] = useState<AuthState>(() => {
+    const cachedUser = parseStoredAuthUser(storage.get(STORAGE_KEYS.CURRENT_USER));
+    if (!cachedUser) storage.remove(STORAGE_KEYS.CURRENT_USER);
+    return initialAuthState(cachedUser);
   });
-  const [loading, setLoading] = useState(true);
   const userCreationAttempted = useRef(false);
 
   useEffect(() => {
@@ -55,26 +71,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!authUser) {
         userCreationAttempted.current = false;
       }
-      syncUserState(authUser, setCurrentUser);
-      setLoading(false);
+      syncUserState(authUser);
+      setAuthState(resolvedAuthState(authUser));
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const value = {
-    currentUser,
-    loading,
+  const value: AuthContextType = {
+    authState,
+    currentUser: currentUserOf(authState),
+    verifiedUser: verifiedUserOf(authState),
+    loading: isAuthLoading(authState),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 /** Sync auth user to localStorage and Sentry */
-function syncUserState(
-  user: AuthUser | null,
-  setCurrentUser: (user: AuthUser | null) => void,
-) {
+function syncUserState(user: AuthUser | null) {
   if (user) {
     // codeql[js/clear-text-storage-of-sensitive-data]: Same cold-start auth cache
     // as the pre-adapter `localStorage.setItem` call this replaced. Supabase issues
@@ -90,5 +105,4 @@ function syncUserState(
     storage.remove(STORAGE_KEYS.CURRENT_USER);
     setSentryUser(null);
   }
-  setCurrentUser(user);
 }

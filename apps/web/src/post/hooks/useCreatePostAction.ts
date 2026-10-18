@@ -7,7 +7,7 @@ import {
   optimisticallyUpdatePostingStreak,
 } from '@/post/utils/postCacheUtils';
 import { createPost } from '@/post/utils/postUtils';
-import { parsePostContentJson } from '@/post/external/post.parser';
+import { parseContentJson } from '@/shared/external/proseMirrorContentJson';
 import { parseJsonUnknown } from '@/shared/lib/parseJson';
 import { sendAnalyticsEvent, AnalyticsEvent } from '@/shared/utils/analyticsUtils';
 
@@ -72,7 +72,7 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
 
   const draftId = formData.get('draftId') as string | null;
   const contentJsonStr = formData.get('contentJson') as string | null;
-  const contentJson = parsePostContentJson(parseJsonUnknown(contentJsonStr));
+  const contentJson = parseContentJson(parseJsonUnknown(contentJsonStr));
 
   try {
     await createPost({ boardId: validBoardId, title, content, authorId, authorName, contentJson });

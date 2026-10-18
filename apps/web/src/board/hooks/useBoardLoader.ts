@@ -9,7 +9,13 @@ import { queryClient } from '@/shared/lib/queryClient';
 import { getCurrentUser } from '@/shared/utils/authUtils';
 import { fetchUser } from '@/user/external/user.api';
 import { userQueryKey } from '@/user/utils/userQueryKeys';
-import { buildMissingBoardIdResponse, mapBoardLoaderError } from '../utils/boardLoaderAccess';
+import {
+  buildMissingBoardIdResponse,
+  buildSignedOutRedirect,
+  isRedirectResponse,
+  mapBoardLoaderError,
+  rememberBoardReturnPath,
+} from '../utils/boardLoaderAccess';
 
 export async function boardLoader({ params }: LoaderFunctionArgs) {
   const { boardId } = params;
@@ -22,7 +28,12 @@ export async function boardLoader({ params }: LoaderFunctionArgs) {
         const user = await Sentry.startSpan({ name: 'getCurrentUser', op: 'auth' }, () =>
           getCurrentUser(),
         );
-        if (!user) return { boardId };
+        // No session means no identity to check membership against; falling
+        // through would render the board to an unverified visitor.
+        if (!user) {
+          rememberBoardReturnPath(boardId);
+          throw buildSignedOutRedirect();
+        }
 
         const userData = await Sentry.startSpan({ name: 'fetchUser', op: 'db.query' }, () =>
           queryClient.ensureQueryData({
@@ -38,6 +49,8 @@ export async function boardLoader({ params }: LoaderFunctionArgs) {
       },
     );
   } catch (error) {
+    if (isRedirectResponse(error)) throw error;
+
     if (isUnknownLoaderError(error)) {
       Sentry.captureException(error, { tags: { surface: 'boardLoader' } });
     }

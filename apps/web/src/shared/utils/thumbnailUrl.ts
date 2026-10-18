@@ -45,7 +45,12 @@ export function extractStoragePath(downloadUrl: string): string | null {
  * Check whether a URL points to Firebase Storage.
  */
 export function isFirebaseStorageUrl(url: string): boolean {
-  return url.includes('firebasestorage.googleapis.com');
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname === 'firebasestorage.googleapis.com';
+  } catch {
+    return false;
+  }
 }
 
 /**

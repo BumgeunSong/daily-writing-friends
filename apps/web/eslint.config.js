@@ -4,6 +4,7 @@ import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import prettier from 'eslint-config-prettier';
+import testingLibrary from 'eslint-plugin-testing-library';
 import requireSortCompare from './eslint-local-rules/require-sort-compare.js';
 import noNewSharedSupabaseFetch from './eslint-local-rules/no-new-shared-supabase-fetch.js';
 import enforceFeatureBoundaries from './eslint-local-rules/enforce-feature-boundaries.js';
@@ -233,6 +234,17 @@ export default tseslint.config(
         message:
           '신뢰할 수 없는 문자열의 JSON.parse는 shared/lib/parseJson.ts(parseJson/parseJsonUnknown)를 통해 가드로 좁혀 쓰세요.',
       }],
+    },
+  },
+  // Testing Library: fireEvent은 디스패치할 이벤트를 테스트가 직접 고르게 해서, 실제
+  // 조작이라면 함께 일어났을 포커스·키다운·pointer 이벤트를 조용히 빠뜨린다. 컴포넌트가
+  // 실제로는 동작하지 않는데 테스트만 초록인 상태가 이렇게 만들어진다.
+  // 판정이 파일 하나로 끝나고 오탐이 없어 error로 둔다.
+  {
+    files: ['**/*.test.ts', '**/*.test.tsx'],
+    plugins: { 'testing-library': testingLibrary },
+    rules: {
+      'testing-library/prefer-user-event': 'error',
     },
   },
 );

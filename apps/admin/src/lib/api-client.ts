@@ -211,3 +211,10 @@ export function adminPost<TResp, TBody = unknown>(path: string, body?: TBody): P
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 }
+
+export function adminPatch<TResp, TBody = unknown>(path: string, body?: TBody): Promise<TResp> {
+  return adminFetch<TResp>(path, {
+    method: 'PATCH',
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+}
