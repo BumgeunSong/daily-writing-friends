@@ -70,6 +70,8 @@ export interface AnswerPersonalizedQuestionsHandlerOptions {
   fail?: boolean;
   /** RLS가 행을 걸러 내면 오류 없이 0건이 갱신된다. true면 그 상황을 흉내 낸다. */
   matchesNoRows?: boolean;
+  /** 이 Promise가 풀릴 때까지 응답을 미룬다. 응답 전에 페이지를 떠나는 상황을 만든다. */
+  respondAfter?: Promise<unknown>;
 }
 
 /** MSW handler for `PATCH /rest/v1/personalized_questions` (marking questions answered). */
@@ -77,9 +79,11 @@ export function answerPersonalizedQuestionsHandler({
   onUpdate,
   fail = false,
   matchesNoRows = false,
+  respondAfter,
 }: AnswerPersonalizedQuestionsHandlerOptions = {}) {
   return http.patch(PERSONALIZED_QUESTIONS_URL, async ({ request }) => {
     onUpdate?.(new URL(request.url), await request.json());
+    await respondAfter;
     if (fail) return HttpResponse.json({ message: 'boom' }, { status: 500 });
     const wantsRows = (request.headers.get('Prefer') ?? '').includes('return=representation');
     if (!wantsRows) return new HttpResponse(null, { status: 204 });

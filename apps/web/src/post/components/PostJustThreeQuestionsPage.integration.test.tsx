@@ -487,19 +487,24 @@ describe('개인화 질문에 답하고 3줄쓰기를 마칠 때', () => {
     );
   });
 
-  it('답한 질문은 같은 세션 캐시로 다시 3줄쓰기에 들어와도 나오지 않는다', async () => {
+  it('상세 페이지로 떠난 뒤 소진 처리가 끝나도 다시 3줄쓰기에 들어오면 답한 질문은 나오지 않는다', async () => {
     const user = userEvent.setup();
     const queryClient = createTestQueryClient();
     const fixtures = [{ id: 'pq-1', question: PERSONALIZED_QUESTION_TEXT, answeredAt: null as string | null }];
+    let finishConsuming: () => void = () => {};
+    const consumingFinishes = new Promise<void>((resolve) => {
+      finishConsuming = resolve;
+    });
     server.use(
       personalizedQuestionsHandler({ questions: fixtures }),
       answerPersonalizedQuestionsHandler({
+        respondAfter: consumingFinishes,
         onUpdate: () => {
           fixtures[0].answeredAt = '2026-10-18T00:00:00Z';
         },
       }),
     );
-    const invalidateQueries = vi.spyOn(queryClient, 'invalidateQueries');
+    const removeQueries = vi.spyOn(queryClient, 'removeQueries');
     const firstVisit = renderPage(queryClient);
 
     await screen.findByText(PERSONALIZED_QUESTION_TEXT);
@@ -507,9 +512,9 @@ describe('개인화 질문에 답하고 3줄쓰기를 마칠 때', () => {
     await answerAndAdvance(user, '답변2');
     await answerAndAdvance(user, '답변3');
     await screen.findByText('게시글 상세');
-    await waitFor(() => expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['justThreeQuestions'] }));
-    await waitFor(() => expect(queryClient.isFetching()).toBe(0));
     firstVisit.unmount();
+    finishConsuming();
+    await waitFor(() => expect(removeQueries).toHaveBeenCalledWith({ queryKey: ['justThreeQuestions'] }));
     renderPage(queryClient);
 
     expect(await screen.findByText('질문3')).toBeInTheDocument();

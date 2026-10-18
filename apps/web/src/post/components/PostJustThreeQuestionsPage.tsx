@@ -71,7 +71,8 @@ export default function PostJustThreeQuestionsPage() {
 
 /**
  * 답한 개인화 질문을 소진 처리한다. 게시는 이미 끝났으므로 실패해도 이동을 막지 않고,
- * 최악의 경우 질문이 한 번 다시 나올 뿐이다. 풀 캐시는 결과와 무관하게 비워 둔다.
+ * 최악의 경우 질문이 한 번 다시 나올 뿐이다. 이 시점에는 페이지를 떠나 질문 쿼리가 비활성이라
+ * invalidate는 stale 표시만 하고 옛 풀을 남기므로, 풀 캐시를 결과와 무관하게 삭제한다.
  */
 function consumeAnsweredPersonalizedQuestions(
   answers: readonly JustThreeQuestionAnswer[],
@@ -84,7 +85,7 @@ function consumeAnsweredPersonalizedQuestions(
     .catch((error) =>
       Sentry.captureException(error, { tags: { feature: 'personalized-questions', op: 'consume' } }),
     )
-    .finally(() => queryClient.invalidateQueries({ queryKey: ['justThreeQuestions'] }));
+    .finally(() => queryClient.removeQueries({ queryKey: ['justThreeQuestions'] }));
 }
 
 function JustThreeQuestionsSession({ pool }: { pool: readonly QuestionCandidate[] }) {
