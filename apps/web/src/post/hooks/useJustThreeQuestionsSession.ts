@@ -1,9 +1,13 @@
 import { useState } from 'react';
+import type { QuestionCandidate } from '@/post/model/JustThreeQuestion';
 import type { JustThreeQuestionAnswer } from '@/post/utils/justThreeQuestionsContentUtils';
 
 const TOTAL_QUESTION_COUNT = 3;
 
-function pickRandomQuestion(pool: readonly string[]): { question: string; remainingPool: string[] } {
+function pickRandomQuestion(pool: readonly QuestionCandidate[]): {
+  question: QuestionCandidate;
+  remainingPool: QuestionCandidate[];
+} {
   const randomIndex = Math.floor(Math.random() * pool.length);
   const question = pool[randomIndex];
   const remainingPool = pool.filter((_, index) => index !== randomIndex);
@@ -11,18 +15,19 @@ function pickRandomQuestion(pool: readonly string[]): { question: string; remain
 }
 
 interface QuestionSession {
-  remainingPool: string[];
-  currentQuestion: string;
+  remainingPool: QuestionCandidate[];
+  currentQuestion: QuestionCandidate;
   answers: JustThreeQuestionAnswer[];
 }
 
-function createInitialSession(pool: readonly string[]): QuestionSession {
+function createInitialSession(pool: readonly QuestionCandidate[]): QuestionSession {
   const { question, remainingPool } = pickRandomQuestion(pool);
   return { remainingPool, currentQuestion: question, answers: [] };
 }
 
 export interface UseJustThreeQuestionsSessionResult {
   currentQuestion: string;
+  currentQuestionId: string | null;
   answers: JustThreeQuestionAnswer[];
   progress: number;
   isComplete: boolean;
@@ -37,7 +42,7 @@ export interface UseJustThreeQuestionsSessionResult {
  * 상태로 호출해야 한다 (호출부가 로딩/빈 풀을 먼저 처리).
  * 제출(네트워크 호출)은 페이지 컴포넌트가 담당한다.
  */
-export function useJustThreeQuestionsSession(pool: readonly string[]): UseJustThreeQuestionsSessionResult {
+export function useJustThreeQuestionsSession(pool: readonly QuestionCandidate[]): UseJustThreeQuestionsSessionResult {
   const [session, setSession] = useState<QuestionSession>(() => createInitialSession(pool));
 
   const isComplete = session.answers.length >= TOTAL_QUESTION_COUNT;
@@ -56,7 +61,11 @@ export function useJustThreeQuestionsSession(pool: readonly string[]): UseJustTh
     setSession((previousSession) => {
       const nextAnswers = [
         ...previousSession.answers,
-        { question: previousSession.currentQuestion, answer },
+        {
+          question: previousSession.currentQuestion.text,
+          questionId: previousSession.currentQuestion.id,
+          answer,
+        },
       ];
 
       const hasNextQuestion = nextAnswers.length < TOTAL_QUESTION_COUNT && previousSession.remainingPool.length > 0;
@@ -70,7 +79,8 @@ export function useJustThreeQuestionsSession(pool: readonly string[]): UseJustTh
   };
 
   return {
-    currentQuestion: session.currentQuestion,
+    currentQuestion: session.currentQuestion.text,
+    currentQuestionId: session.currentQuestion.id,
     answers: session.answers,
     progress: session.answers.length,
     isComplete,

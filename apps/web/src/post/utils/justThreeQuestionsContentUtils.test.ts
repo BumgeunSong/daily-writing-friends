@@ -5,9 +5,9 @@ describe('formatJustThreeQuestionsContent', () => {
   describe('when given three question-answer pairs', () => {
     it('formats each pair as "Q. {question} > {answer}" joined by a blank line', () => {
       const content = formatJustThreeQuestionsContent([
-        { question: '오늘 기분은?', answer: '좋음' },
-        { question: '내일 계획은?', answer: '산책' },
-        { question: '지금 생각은?', answer: '평온함' },
+        { question: '오늘 기분은?', answer: '좋음', questionId: null },
+        { question: '내일 계획은?', answer: '산책', questionId: null },
+        { question: '지금 생각은?', answer: '평온함', questionId: null },
       ]);
 
       expect(content).toBe(
@@ -19,7 +19,7 @@ describe('formatJustThreeQuestionsContent', () => {
   describe('when an answer contains "<" or ">"', () => {
     it('strips both characters so the shared HTML-detection regex is not triggered', () => {
       const content = formatJustThreeQuestionsContent([
-        { question: '좋아하는 표현은?', answer: '<3 love>' },
+        { question: '좋아하는 표현은?', answer: '<3 love>', questionId: null },
       ]);
 
       expect(content).toBe('Q. 좋아하는 표현은? > 3 love');
@@ -29,7 +29,7 @@ describe('formatJustThreeQuestionsContent', () => {
   describe('when a question contains "<" or ">"', () => {
     it('strips both characters, since the question is admin-controlled and not otherwise sanitized', () => {
       const content = formatJustThreeQuestionsContent([
-        { question: '<script>오늘의 질문</script>', answer: '답변' },
+        { question: '<script>오늘의 질문</script>', answer: '답변', questionId: null },
       ]);
 
       expect(content).toBe('Q. script오늘의 질문/script > 답변');

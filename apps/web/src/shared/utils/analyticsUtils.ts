@@ -18,6 +18,7 @@ export enum AnalyticsEvent {
     START_JUST_THREE_QUESTIONS = 'start_just_three_questions',
     // Finish Just Three Questions
     FINISH_JUST_THREE_QUESTIONS = 'finish_just_three_questions',
+    SKIP_JUST_THREE_QUESTION = 'skip_just_three_question',
 
 }
 
