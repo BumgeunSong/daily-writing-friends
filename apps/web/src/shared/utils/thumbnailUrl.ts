@@ -7,6 +7,9 @@
 //   that wants to feed URLs through these hooks MUST emit filenames matching the
 //   `{base}_{width}x{height}.{ext}` pattern, or `deriveThumbPath` will need to be
 //   refactored.
+//
+//   Only Firebase Storage URLs have resized variants. Images stored in Supabase Storage
+//   (no image transformation on the free plan) are served as the original.
 
 import { ref, getDownloadURL } from 'firebase/storage';
 import { storage } from '@/firebase';
@@ -73,6 +76,7 @@ export function deriveThumbPath(originalPath: string, size: ThumbSize): string |
 
 /**
  * Get a resized download URL for a Firebase Storage image.
+ * Non-Firebase URLs (e.g. Supabase Storage) are returned unchanged without any lookup.
  *
  * Looks up the resized version created by the Firebase Resize Images extension.
  * Returns the original URL if no resized version exists (extension not installed,
@@ -84,6 +88,8 @@ export async function getResizedUrl(
   originalUrl: string,
   size: ThumbSize = THUMB_SIZES.POST,
 ): Promise<string> {
+  if (!isFirebaseStorageUrl(originalUrl)) return originalUrl;
+
   const cacheKey = `${originalUrl}__${size}`;
 
   if (cache.has(cacheKey)) {

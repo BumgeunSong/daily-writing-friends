@@ -1,6 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('@/firebase', () => ({ storage: null }));
+vi.mock('firebase/storage', () => ({
+  ref: vi.fn(),
+  getDownloadURL: vi.fn(() => {
+    throw new Error('Firebase lookup must not run for non-Firebase URLs');
+  }),
+}));
+
 import {
   extractStoragePath,
+  getResizedUrl,
   deriveThumbPath,
   isFirebaseStorageUrl,
   THUMB_SIZES,
@@ -69,5 +79,14 @@ describe('deriveThumbPath', () => {
     expect(deriveThumbPath('deeply/nested/path/file.webp', THUMB_SIZES.POST)).toBe(
       'deeply/nested/path/file_600x338.webp',
     );
+  });
+});
+
+describe('getResizedUrl', () => {
+  it('returns Supabase Storage URLs unchanged without a Firebase lookup', async () => {
+    const url =
+      'https://abc.supabase.co/storage/v1/object/public/post-images/user-1/20261018/120000_photo.jpg';
+    await expect(getResizedUrl(url, THUMB_SIZES.POST)).resolves.toBe(url);
+    await expect(getResizedUrl(url, THUMB_SIZES.AVATAR)).resolves.toBe(url);
   });
 });

@@ -1,8 +1,7 @@
 import * as Sentry from '@sentry/react';
-import { ref } from 'firebase/storage';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
-import { storage } from '@/firebase';
+import { getCurrentUserId, uploadImage } from '@/shared/external/imageStorage';
 import { processImageForUpload, type ProcessingStage } from '@/post/utils/ImageUtils';
 import {
   validateFileSize,
@@ -12,8 +11,7 @@ import {
   SUPPORTED_ACCEPT_ATTRIBUTE,
 } from '@/post/utils/ImageValidation';
 import { captureProcessingFailure } from '@/post/utils/imageUploadTelemetry';
-import { buildImageStoragePath } from '@/post/utils/storagePath';
-import { uploadFileWithProgress } from '@/post/utils/uploadWithProgress';
+import { buildImageStoragePath, resolveImageContentType } from '@/post/utils/storagePath';
 import type { Editor } from '@tiptap/react';
 
 type UploadStage = 'idle' | ProcessingStage | 'uploading';
@@ -65,10 +63,6 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
     isUploadingRef.current = true;
 
     try {
-      if (!storage) {
-        throw new Error('스토리지에 연결할 수 없습니다.');
-      }
-
       const typeResult = validateFileType(file);
       if (!typeResult.valid) {
         logValidationRejection(typeResult.reason, file.size);
@@ -105,13 +99,14 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
       setStage('uploading');
       setUploadProgress(0);
 
-      const storagePath = buildImageStoragePath('postImages', processed.file.name, new Date());
-      const storageRef = ref(storage, storagePath);
-
-      const downloadURL = await uploadFileWithProgress(storageRef, processed.file, {
-        metadata: { contentType: processed.file.type || 'image/jpeg' },
-        onProgress: setUploadProgress,
+      const uid = await getCurrentUserId();
+      const downloadURL = await uploadImage({
+        bucket: 'post-images',
+        path: buildImageStoragePath(uid, processed.file, new Date(), crypto.randomUUID()),
+        file: processed.file,
+        contentType: resolveImageContentType(processed.file),
       });
+      setUploadProgress(100);
 
       logUploadSuccess(processed);
       return downloadURL;

@@ -2,8 +2,7 @@
 // Use a consistent naming convention; fetchX() → read-only function, createX(), updateX() → write, cacheX() → caching helpers (if used outside)
 // Abstract repetitive Firebase logic into helpers
 
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/firebase';
+import { uploadImage } from '@/shared/external/imageStorage';
 import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClient';
 import { fetchUserFromSupabase, fetchAllUsersFromSupabase, fetchUsersWithBoardPermissionFromSupabase } from './user.reads';
 import type { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
@@ -11,7 +10,7 @@ import type { AuthUser } from '@/shared/auth/authTypes';
 import { REMOTE_CONFIG_DEFAULTS } from '@/shared/hooks/useRemoteConfig';
 import { mapUserToSupabaseUpdate } from '@/user/utils/userMappers';
 import { resizeImageBlob } from '@/shared/utils/resizeImageBlob';
-import { AVATAR_CACHE_CONTROL } from '@/shared/utils/storageConstants';
+import { AVATAR_CACHE_CONTROL_SECONDS } from '@/shared/utils/storageConstants';
 
 // Supabase에서 User 데이터 읽기
 export async function fetchUser(uid: string): Promise<User | null> {
@@ -63,7 +62,7 @@ export async function fetchUsersWithBoardPermission(boardIds: string[]): Promise
 
 // 프로필 사진 업로드 및 URL 반환
 // 클라이언트에서 256x256 JPEG로 리사이즈 후 업로드. Cache-Control 메타데이터 부여.
-// Firebase 가 재업로드마다 새 download token 을 발급하므로, URL 자체가 버전 키 역할을 한다.
+// 버킷은 덮어쓰기를 막은 append-only 라 재업로드마다 새 경로({uid}/{timestamp}.jpg)를 쓰고, 경로 자체가 버전 키 역할을 한다.
 export async function uploadUserProfilePhoto(userId: string, file: File): Promise<string> {
     const blob = await resizeImageBlob(file, {
         width: 256,
@@ -71,12 +70,13 @@ export async function uploadUserProfilePhoto(userId: string, file: File): Promis
         quality: 0.85,
         mimeType: 'image/jpeg',
     });
-    const storageRef = ref(storage!, `profilePhotos/${userId}`);
-    await uploadBytes(storageRef, blob, {
+    return uploadImage({
+        bucket: 'profile-photos',
+        path: `${userId}/${Date.now()}.jpg`,
+        file: blob,
         contentType: 'image/jpeg',
-        cacheControl: AVATAR_CACHE_CONTROL,
+        cacheControl: AVATAR_CACHE_CONTROL_SECONDS,
     });
-    return getDownloadURL(storageRef);
 }
 
 

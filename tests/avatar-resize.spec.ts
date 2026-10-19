@@ -3,12 +3,12 @@ import { test, expect, TEST_USERS } from './fixtures/auth';
 /**
  * E2E tests for client-side avatar resize pipeline.
  *
- * Hermetic by design: Firebase Storage uploads are intercepted via page.route
- * so the test does NOT depend on Firebase emulator/production availability.
+ * Hermetic by design: Supabase Storage upload and public-URL requests are
+ * intercepted via page.route so the test does NOT depend on a Storage bucket.
  * What we actually want to verify is:
  *   - The blob the app sends to Storage is a 256x256 JPEG (resize worked)
- *   - The upload request carries `cacheControl: public, max-age=2592000`
- *   - The preview swaps from the local blob: URL to the returned download URL
+ *   - The upload request carries `cacheControl` = 2592000 seconds
+ *   - The preview swaps from the local blob: URL to the returned public URL
  *   - The rendered <img> uses loading="lazy"
  *   - Files > 20 MB surface the Korean too-large message before any upload
  *
@@ -18,11 +18,10 @@ import { test, expect, TEST_USERS } from './fixtures/auth';
 const TINY_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
 
-const STORAGE_BUCKET = 'artico-app-4f9d4.firebasestorage.app';
-const STORAGE_HOST = 'firebasestorage.googleapis.com';
-// Stable synthetic download URL returned by the mocked upload; the spec also
-// intercepts GETs to this URL to serve the captured (resized) blob back.
-const SYNTHETIC_DOWNLOAD_URL = `https://${STORAGE_HOST}/v0/b/${STORAGE_BUCKET}/o/profilePhotos%2Fe2e-mock?alt=media&token=mock-token`;
+const UPLOAD_URL_PATTERN = '**/storage/v1/object/profile-photos/**';
+const PUBLIC_URL_PATTERN = '**/storage/v1/object/public/profile-photos/**';
+const PUBLIC_URL_FRAGMENT = '/storage/v1/object/public/profile-photos/';
+const CORS_HEADERS = { 'access-control-allow-origin': '*' };
 
 const AVATAR_BUTTON = 'button[aria-label="프로필 사진 변경"]';
 
@@ -47,70 +46,41 @@ interface CapturedUpload {
   headers: Record<string, string>;
 }
 
-// The Firebase JS SDK sends one POST to /v0/b/{bucket}/o?... for an upload
-// followed by zero or more GET/POST calls to finalize and to fetch the
-// download URL. We accept any non-GET as the upload, capture once, then
-// echo back a stable Firebase-shaped JSON response. The synthetic URL is
-// what `getDownloadURL` will end up returning to the app.
-async function mockFirebaseStorage(page: import('@playwright/test').Page) {
-  const captured: { upload?: CapturedUpload; resizedBlob?: Buffer } = {};
+// supabase-js sends one multipart POST to /storage/v1/object/{bucket}/{path}
+// (FormData: `cacheControl` field + the file part) and builds the public URL
+// locally, so the app never requests it until the <img> loads. We capture the
+// upload, answer it, and serve the captured (resized) blob at the public URL.
+async function mockSupabaseStorage(page: import('@playwright/test').Page) {
+  const captured: { upload?: CapturedUpload; resizedBlob?: Buffer; publicUrl?: string } = {};
 
-  await page.route(`https://${STORAGE_HOST}/**`, async (route) => {
+  await page.route(UPLOAD_URL_PATTERN, async (route) => {
     const req = route.request();
-    const url = req.url();
-
-    if (req.method() === 'GET' && url.startsWith(SYNTHETIC_DOWNLOAD_URL)) {
-      // Echo the resized blob back so the app can decode it for the preview
-      // and the test can probe dimensions + Cache-Control via fetch().
-      const body = captured.resizedBlob ?? Buffer.alloc(0);
-      await route.fulfill({
-        status: 200,
-        headers: {
-          'content-type': 'image/jpeg',
-          'cache-control': 'public, max-age=2592000',
-          'access-control-allow-origin': '*',
-        },
-        body,
-      });
+    if (req.method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers: { ...CORS_HEADERS, 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' } });
       return;
     }
-
-    if (req.method() === 'GET') {
-      // metadata + tokens endpoints — return a generic OK so getDownloadURL works
-      await route.fulfill({
-        status: 200,
-        headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' },
-        body: JSON.stringify({
-          downloadTokens: 'mock-token',
-          bucket: STORAGE_BUCKET,
-          name: 'profilePhotos/e2e-mock',
-          contentType: 'image/jpeg',
-        }),
-      });
-      return;
-    }
-
     if (!captured.upload) {
       const buf = req.postDataBuffer();
-      captured.upload = {
-        body: buf ?? Buffer.alloc(0),
-        headers: req.headers(),
-      };
+      captured.upload = { body: buf ?? Buffer.alloc(0), headers: req.headers() };
       captured.resizedBlob = extractJpegFromMultipart(captured.upload.body);
     }
-
     await route.fulfill({
       status: 200,
-      headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*' },
-      body: JSON.stringify({
-        kind: 'storage#object',
-        name: 'profilePhotos/e2e-mock',
-        bucket: STORAGE_BUCKET,
-        contentType: 'image/jpeg',
-        cacheControl: 'public, max-age=2592000',
-        size: String(captured.resizedBlob?.length ?? 0),
-        downloadTokens: 'mock-token',
-      }),
+      headers: { 'content-type': 'application/json', ...CORS_HEADERS },
+      body: JSON.stringify({ Id: 'e2e-mock-id', Key: 'profile-photos/e2e-mock' }),
+    });
+  });
+
+  await page.route(PUBLIC_URL_PATTERN, async (route) => {
+    captured.publicUrl = route.request().url();
+    await route.fulfill({
+      status: 200,
+      headers: {
+        'content-type': 'image/jpeg',
+        'cache-control': 'public, max-age=2592000',
+        ...CORS_HEADERS,
+      },
+      body: captured.resizedBlob ?? Buffer.alloc(0),
     });
   });
 
@@ -118,18 +88,20 @@ async function mockFirebaseStorage(page: import('@playwright/test').Page) {
 }
 
 /**
- * Firebase multipart upload body shape:
- *   --boundary
- *   Content-Type: application/json; charset=utf-8
- *   { ...metadata... }
- *   --boundary
+ * Supabase multipart upload body shape (FormData):
+ *   ------boundary
+ *   Content-Disposition: form-data; name="cacheControl"
+ *
+ *   2592000
+ *   ------boundary
+ *   Content-Disposition: form-data; name=""; filename="blob"
  *   Content-Type: image/jpeg
  *
  *   <binary JPEG bytes>
- *   --boundary--
+ *   ------boundary--
  *
- * We carve out the JPEG by finding the SOI marker (FF D8 FF) after the second
- * Content-Type header and taking bytes through the next EOI (FF D9).
+ * We carve out the JPEG by finding the SOI marker (FF D8 FF) and taking bytes
+ * through the last EOI (FF D9).
  */
 function extractJpegFromMultipart(body: Buffer): Buffer {
   const soi = body.indexOf(Buffer.from([0xff, 0xd8, 0xff]));
@@ -160,17 +132,18 @@ test.describe('Client-side avatar resize', () => {
   test('happy path: 256x256 JPEG uploaded with Cache-Control, rendered lazy (T.20 + T.21 + T.25)', async ({
     page,
   }) => {
-    const captured = await mockFirebaseStorage(page);
+    const captured = await mockSupabaseStorage(page);
 
     await gotoEditAccount(page);
     await pickFile(page, SMALL_PNG_FIXTURE);
 
-    // Preview swaps from the immediate blob: URL to the mocked download URL
+    // Preview swaps from the immediate blob: URL to the Supabase public URL
     // once uploadUserProfilePhoto resolves.
     const avatarImg = page.locator(`${AVATAR_BUTTON} img`);
     await expect
       .poll(async () => await avatarImg.getAttribute('src'), { timeout: 15_000 })
-      .toContain(SYNTHETIC_DOWNLOAD_URL);
+      .toContain(PUBLIC_URL_FRAGMENT);
+    const publicUrl = (await avatarImg.getAttribute('src')) ?? '';
 
     // T.21: every rendered avatar uses loading="lazy".
     await expect(avatarImg).toHaveAttribute('loading', 'lazy');
@@ -189,7 +162,7 @@ test.describe('Client-side avatar resize', () => {
       };
       bitmap.close?.();
       return result;
-    }, SYNTHETIC_DOWNLOAD_URL);
+    }, publicUrl);
 
     expect(probe.width).toBe(256);
     expect(probe.height).toBe(256);
@@ -197,16 +170,15 @@ test.describe('Client-side avatar resize', () => {
     expect(probe.cacheControl).toBe('public, max-age=2592000');
     expect(probe.sizeKB).toBeLessThan(50);
 
-    // T.25 client-side: confirm the upload request carried the cacheControl
-    // metadata. The Firebase SDK puts it in the JSON metadata part of the
-    // multipart body.
-    const bodyText = captured.upload?.body.toString('utf8') ?? '';
-    expect(bodyText).toContain('"cacheControl":"public, max-age=2592000"');
-    expect(bodyText).toContain('"contentType":"image/jpeg"');
+    // T.25 client-side: confirm the upload carried the cache-control form
+    // field and a JPEG file part.
+    const bodyText = captured.upload?.body.toString('latin1') ?? '';
+    expect(bodyText).toMatch(/name="cacheControl"\r\n\r\n2592000\r\n/);
+    expect(bodyText).toContain('Content-Type: image/jpeg');
   });
 
   test('T.23: oversized file (>20 MB) surfaces the Korean too-large message', async ({ page }) => {
-    await mockFirebaseStorage(page);
+    await mockSupabaseStorage(page);
 
     await gotoEditAccount(page);
     await pickFile(page, OVERSIZED_FIXTURE);

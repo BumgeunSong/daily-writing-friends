@@ -1,6 +1,5 @@
 import * as Sentry from '@sentry/react';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/firebase';
+import { getCurrentUserId, uploadImage } from '@/shared/external/imageStorage';
 import { processImageForUpload } from '@/post/utils/ImageUtils';
 import {
   validateFileSize,
@@ -9,7 +8,7 @@ import {
   getValidationMessage,
 } from '@/post/utils/ImageValidation';
 import { captureProcessingFailure } from '@/post/utils/imageUploadTelemetry';
-import { buildImageStoragePath } from '@/post/utils/storagePath';
+import { buildImageStoragePath, resolveImageContentType } from '@/post/utils/storagePath';
 
 interface UploadResult {
   success: boolean;
@@ -18,14 +17,10 @@ interface UploadResult {
 }
 
 /**
- * Upload feedback screenshot to Firebase Storage.
+ * Upload feedback screenshot to Supabase Storage.
  * Compresses on the client first to stay under the 5MB processed-size cap.
  */
 export async function uploadFeedbackScreenshot(file: File): Promise<UploadResult> {
-  if (!storage) {
-    return { success: false, error: '스토리지에 연결할 수 없습니다.' };
-  }
-
   const typeResult = validateFileType(file);
   if (!typeResult.valid) {
     return { success: false, error: getValidationMessage(typeResult.reason) };
@@ -50,17 +45,13 @@ export async function uploadFeedbackScreenshot(file: File): Promise<UploadResult
       return { success: false, error: getValidationMessage(processedSizeResult.reason) };
     }
 
-    const storagePath = buildImageStoragePath(
-      'feedbackScreenshots',
-      processed.file.name,
-      new Date(),
-    );
-    const storageRef = ref(storage, storagePath);
-
-    const snapshot = await uploadBytes(storageRef, processed.file, {
-      contentType: processed.file.type || 'image/jpeg',
+    const uid = await getCurrentUserId();
+    const downloadURL = await uploadImage({
+      bucket: 'feedback-screenshots',
+      path: buildImageStoragePath(uid, processed.file, new Date(), crypto.randomUUID()),
+      file: processed.file,
+      contentType: resolveImageContentType(processed.file),
     });
-    const downloadURL = await getDownloadURL(snapshot.ref);
 
     return { success: true, url: downloadURL };
   } catch (error) {
