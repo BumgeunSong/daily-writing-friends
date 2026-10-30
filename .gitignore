@@ -125,3 +125,6 @@ test-results/image-perf-report.json
 
 # one-shot skip flag for warn-verbose-comments hook
 .claude/.allow-comments
+
+*storybook.log
+storybook-static
