@@ -57,7 +57,7 @@ tasks/
 .claude/*
 !.claude/settings.json
 !.claude/hooks/
-!.claude/skills/
+!.claude/skills
 
 # Security: Test scripts with real data
 functions/src/commentSuggestion/test-suggestions.sh
