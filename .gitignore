@@ -57,7 +57,7 @@ tasks/
 .claude/*
 !.claude/settings.json
 !.claude/hooks/
-!.claude/skills/
+!.claude/skills
 
 # Security: Test scripts with real data
 functions/src/commentSuggestion/test-suggestions.sh
@@ -83,9 +83,6 @@ data/*
 # Seed data with PII
 scripts/seed/raw-*
 
-# OMC state
-.omc/
-
 # Playwright MCP
 .playwright-mcp/
 
@@ -94,9 +91,6 @@ scripts/seed/raw-*
 
 # Agent observability logs
 .logs/
-
-# Superset
-.superset/
 
 # Monorepo
 apps/*/node_modules/

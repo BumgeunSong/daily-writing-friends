@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Project-wide context for AI coding agents. Facts only — no instructions or how-to guides.
+Project-wide context for AI coding agents. Facts only — no instructions or how-to guides. Domain glossary: [CONTEXT.md](./CONTEXT.md). Architecture decisions: [docs/adr/](./docs/adr/).
 
 ## Project Overview
 
@@ -127,23 +127,10 @@ All commands run from repository root.
 
 ## Skills
 
-`.claude/skills/` contains project-specific coding conventions.
-
-| Skill | Domain |
-|-------|--------|
-| `api-layer` | Data fetchers, API functions, list-fetching hooks (N+1 prevention) |
-| `react-component` | `.tsx` component structure |
-| `react-hook` | Custom hook patterns, exhaustive-deps |
-| `firebase-functions` | Cloud Functions in `/functions` |
-| `daily-writing-friends-design` | UI / Tailwind conventions |
-| `testing` | Test strategy (risk + 4-quadrant), naming, unit, integration, spec, mutation-verification |
-| `refactoring` | Functional Core / Imperative Shell extraction |
-| `type-system` | Type safety reviews |
-| `verify-runtime` | Verifying data-flow changes via dev logs |
-| `code-style` | Naming and clarity rules |
+Project skills live in `.agents/skills/<name>/SKILL.md` (Agent Skills format; `.claude/skills` is a symlink to it). Each skill's frontmatter `description` states when to load it.
 
 ## Related Docs
 
 - [Authentication & Routing](./docs/AUTHENTICATION_ROUTING.md)
-- [Design Theme](./docs/DESIGN_THEME.md)
+- [Design System](./docs/design/README.md)
 - [Migration Progress](./docs/plan_and_review/migration_progress.md)
