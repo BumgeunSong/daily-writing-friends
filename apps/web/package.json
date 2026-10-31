@@ -42,7 +42,9 @@
     "validate:full": "npm run type-check && npm run lint && npm run test:run && npm run devlog:check",
     "doctor": "npx --yes react-doctor@latest --no-telemetry",
     "verify:storage-rules": "node scripts/verify-storage-rules.mjs",
-    "verify:supabase-storage": "node scripts/verify-supabase-storage-policies.mjs"
+    "verify:supabase-storage": "node scripts/verify-supabase-storage-policies.mjs",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.1.77",
@@ -116,9 +118,14 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@chromatic-com/storybook": "^5.6.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.59.1",
     "@rollup/plugin-replace": "^6.0.3",
+    "@storybook/addon-a11y": "^10.6.5",
+    "@storybook/addon-docs": "^10.6.5",
+    "@storybook/addon-themes": "^10.6.5",
+    "@storybook/react-vite": "^10.6.5",
     "@supabase/supabase-js": "^2.105.3",
     "@tanstack/eslint-plugin-query": "^4.44.0",
     "@testing-library/dom": "^10.4.1",
@@ -152,6 +159,7 @@
     "postcss": "^8.5.14",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.5.14",
+    "storybook": "^10.6.5",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.59.2",
