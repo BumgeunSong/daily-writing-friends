@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import type { ComponentProps } from 'react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -65,7 +66,7 @@ beforeAll(() => {
 
 function renderInput(
   onSubmit: (content: string, contentJson: unknown) => Promise<void>,
-  initialContent = '좋은 글이에요',
+  initialContent: ComponentProps<typeof MentionableInput>['initialContent'] = '좋은 글이에요',
 ) {
   const { Wrapper } = withProviders();
   return render(
@@ -103,6 +104,21 @@ describe('MentionableInput — Pattern 4 (form with callback)', () => {
     const [content, contentJson] = onSubmit.mock.calls[0];
     expect(content).toContain('좋은 글이에요');
     expect(contentJson).toMatchObject({ type: 'doc' });
+  });
+
+  it('keeps an existing mention and its user id when the editor starts from structured content', async () => {
+    const user = userEvent.setup({ delay: null });
+    const onSubmit = vi.fn((_content: string, _contentJson: unknown) => Promise.resolve());
+    const mention = { type: 'mention', attrs: { id: 'user-1', label: 'Kim' } };
+    renderInput(onSubmit, {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: '안녕 ' }, mention] }],
+    });
+
+    await user.click(screen.getByRole('button', { name: '댓글 등록' }));
+
+    const [, contentJson] = onSubmit.mock.calls[0];
+    expect(JSON.stringify(contentJson)).toContain('"id":"user-1"');
   });
 
   it('disables the submit button while the mutation is in flight and clears after resolve', async () => {
