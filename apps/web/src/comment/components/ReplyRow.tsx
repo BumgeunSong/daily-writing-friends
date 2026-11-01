@@ -6,6 +6,7 @@ import { MentionableInput } from '@/comment/components/MentionableInput';
 import ReactionList from '@/comment/components/ReactionList';
 import { useDeleteReply, useEditReply } from '@/comment/hooks/useCreateReply';
 import { REPLY_PLACEHOLDER, type Reply } from '@/comment/model/Reply';
+import type { ProseMirrorDoc } from '@/shared/model/ProseMirror';
 import { Button } from '@/shared/ui/button';
 import type React from 'react';
 
@@ -32,10 +33,8 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
     }
   };
 
-  // Edit stays content-only for now; content_json dual-write on edit is a
-  // follow-up (updateReplyToComment does not yet touch content_json).
-  const handleEditSubmit = async (content: string) => {
-    await editReply.mutateAsync(content);
+  const handleEditSubmit = async (content: string, contentJson: ProseMirrorDoc) => {
+    await editReply.mutateAsync({ content, contentJson });
     setIsEditing(false);
   };
 

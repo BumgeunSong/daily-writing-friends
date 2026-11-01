@@ -41,10 +41,16 @@ export function useCreateReply(boardId: string, postId: string, commentId: strin
   );
 }
 
+interface EditReplyInput {
+  content: string;
+  contentJson: ProseMirrorDoc;
+}
+
 export function useEditReply(boardId: string, postId: string, commentId: string, replyId: string) {
   const queryClient = useQueryClient();
   return useMutation(
-    (content: string) => updateReplyToComment(boardId, postId, commentId, replyId, content),
+    ({ content, contentJson }: EditReplyInput) =>
+      updateReplyToComment(boardId, postId, commentId, replyId, content, contentJson),
     {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['replies', boardId, postId, commentId] });
