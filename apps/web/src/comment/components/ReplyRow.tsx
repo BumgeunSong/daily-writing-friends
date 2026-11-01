@@ -66,7 +66,7 @@ const ReplyRow: React.FC<ReplyRowProps> = ({ boardId, reply, commentId, postId, 
           <MentionableInput
             boardId={boardId}
             onSubmit={handleEditSubmit}
-            initialContent={reply.content}
+            initialContent={reply.contentJson ?? reply.content}
             placeholder={REPLY_PLACEHOLDER}
           />
         ) : (

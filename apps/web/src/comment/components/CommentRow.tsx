@@ -74,7 +74,7 @@ const CommentRow: React.FC<CommentRowProps> = ({
           <MentionableInput
             boardId={boardId}
             onSubmit={handleEditSubmit}
-            initialContent={comment.content}
+            initialContent={comment.contentJson ?? comment.content}
           />
         ) : (
           <CommentContent
