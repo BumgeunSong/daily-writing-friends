@@ -1,8 +1,8 @@
 import { Suspense } from "react"
 import EmojiReaction from "@/comment/components/EmojiReaction"
 import ReactWithEmoji from "@/comment/components/ReactWithEmoji"
-import type { CommentParams, ReplyParams} from "@/comment/hooks/useReactions";
-import { useReactions } from "@/comment/hooks/useReactions"
+import type { CommentParams, ReplyParams } from "@/comment/hooks/useReactions";
+import { useCommentReactions, useReplyReactions } from "@/comment/hooks/useReactions"
 import { useAuth } from "@/shared/hooks/useAuth"
 import { Skeleton } from "@/shared/ui/skeleton"
 import type React from "react"
@@ -11,10 +11,35 @@ interface ReactionListProps {
   entity: CommentParams | ReplyParams
 }
 
+const ReactionContent: React.FC<ReactionListProps> = ({ entity }) =>
+  entity.type === 'comment' ? (
+    <CommentReactionContent entity={entity} />
+  ) : (
+    <ReplyReactionContent entity={entity} />
+  )
+
+const CommentReactionContent: React.FC<{ entity: CommentParams }> = ({ entity }) => (
+  <ReactionView {...useCommentReactions(entity)} />
+)
+
+const ReplyReactionContent: React.FC<{ entity: ReplyParams }> = ({ entity }) => (
+  <ReactionView {...useReplyReactions(entity)} />
+)
+
+type ReactionViewProps = Pick<
+  ReturnType<typeof useCommentReactions>,
+  'reactions' | 'isLoading' | 'isError' | 'createReaction' | 'deleteReaction'
+>
+
 // 실제 반응 데이터를 표시하는 컴포넌트
-const ReactionContent: React.FC<ReactionListProps> = ({ entity }) => {
+const ReactionView: React.FC<ReactionViewProps> = ({
+  reactions,
+  isLoading,
+  isError,
+  createReaction,
+  deleteReaction,
+}) => {
   const { verifiedUser } = useAuth()
-  const { reactions, isLoading, isError, createReaction, deleteReaction } = useReactions({ entity })
 
   // 로그인하지 않은 경우 반응 버튼만 표시
   if (!verifiedUser) {

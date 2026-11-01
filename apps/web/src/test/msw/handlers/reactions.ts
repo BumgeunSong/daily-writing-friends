@@ -22,7 +22,7 @@ function matchedCommentIds(filter: string | null): { kind: 'in'; ids: string[] }
 
 /**
  * MSW handler for `GET /rest/v1/reactions` — the batch prefetch
- * (`comment_id=in.(…)`) that `usePrefetchCommentReactions` fires. Also answers a
+ * (`comment_id=in.(…)`) that `useCommentReactions` fires. Also answers a
  * per-comment `comment_id=eq.` read as a safety net. Rows carry `comment_id` so
  * the batch grouper can bucket them.
  */

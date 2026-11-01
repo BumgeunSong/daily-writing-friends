@@ -1,21 +1,20 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import {
   type GetReactionsParams,
   getReactions,
+  fetchBatchReactionsForComments,
   createReaction,
   deleteUserReaction
 } from '@/comment/external/reaction.api';
+import { useComments } from '@/comment/hooks/useComments';
 import type { GroupedReaction, ReactionUser } from '@/comment/model/Reaction';
 import { groupReactionsByEmoji } from '@/comment/utils/reactionUtils';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { fetchUser } from '@/user/external/user.api';
 
-// 엔티티 타입 정의
-export type EntityType = 'comment' | 'reply';
-
 // 공통 파라미터 타입
 interface BaseEntityParams {
-  type: EntityType;
+  type: 'comment' | 'reply';
   boardId: string;
   postId: string;
   commentId: string;
@@ -32,11 +31,6 @@ export interface ReplyParams extends BaseEntityParams {
   replyId: string;
 }
 
-// 훅 프롭스 타입
-interface UseReactionsProps {
-  entity: CommentParams | ReplyParams;
-}
-
 // 훅 반환 타입
 interface UseReactionsReturn {
   reactions: GroupedReaction[];
@@ -47,41 +41,67 @@ interface UseReactionsReturn {
   deleteReaction: (emoji: string, userId: string) => Promise<void>;
 }
 
-export function useReactions({ entity }: UseReactionsProps): UseReactionsReturn {
-  const { currentUser } = useAuth();
-  const queryClient = useQueryClient();
+export function useCommentReactions(entity: CommentParams): UseReactionsReturn {
   const { boardId, postId, commentId } = entity;
+  const { comments } = useComments(boardId, postId);
+  const commentIds = comments.map((comment) => comment.id);
+  const commentIdsKey = [...commentIds].sort((a, b) => a.localeCompare(b)).join(',');
 
-  // 엔티티 파라미터 생성
-  const getEntityParams = (): GetReactionsParams => {
-    const base = { boardId, postId, commentId };
-    return entity.type === 'reply' ? { ...base, replyId: (entity as ReplyParams).replyId } : base;
-  };
-
-  // 쿼리 키
-  const reactionsQueryKey = [
-    'reactions',
-    boardId,
-    postId,
-    commentId,
-    entity.type === 'reply' ? (entity as ReplyParams).replyId : undefined
-  ];
-
-  // 쿼리
   const { data: reactions = [], isLoading, isError, error } = useQuery({
-    queryKey: reactionsQueryKey,
-    queryFn: async () => {
-      const params = getEntityParams();
-      const list = (await getReactions(params)).match(
-        (reactions) => reactions,
-        (error) => { throw error; },
-      );
-      return groupReactionsByEmoji(list);
-    },
+    queryKey: [...commentReactionsKeyPrefix(boardId, postId), commentIdsKey],
+    queryFn: async () =>
+      (await fetchBatchReactionsForComments(commentIds)).match(
+        (reactionsByComment) => reactionsByComment,
+        (fetchError) => {
+          throw fetchError;
+        },
+      ),
+    select: (reactionsByComment) =>
+      groupReactionsByEmoji(reactionsByComment.get(commentId) ?? []),
+    keepPreviousData: true,
     suspense: true,
   });
 
-  // 리액션 생성
+  const mutations = useReactionMutations(entity, commentReactionsKeyPrefix(boardId, postId));
+  return { reactions, isLoading, isError, error: error as Error | null, ...mutations };
+}
+
+export function useReplyReactions(entity: ReplyParams): UseReactionsReturn {
+  const { boardId, postId, commentId, replyId } = entity;
+  const queryKey = ['reactions', boardId, postId, commentId, replyId];
+
+  const { data: reactions = [], isLoading, isError, error } = useQuery({
+    queryKey,
+    queryFn: async () =>
+      groupReactionsByEmoji(
+        (await getReactions(entity)).match(
+          (list) => list,
+          (fetchError) => {
+            throw fetchError;
+          },
+        ),
+      ),
+    suspense: true,
+  });
+
+  const mutations = useReactionMutations(entity, queryKey);
+  return { reactions, isLoading, isError, error: error as Error | null, ...mutations };
+}
+
+function commentReactionsKeyPrefix(boardId: string, postId: string): QueryKey {
+  return ['commentReactions', boardId, postId];
+}
+
+function useReactionMutations(
+  entity: CommentParams | ReplyParams,
+  invalidateKey: QueryKey,
+): Pick<UseReactionsReturn, 'createReaction' | 'deleteReaction'> {
+  const { currentUser } = useAuth();
+  const queryClient = useQueryClient();
+  const { boardId, postId, commentId } = entity;
+  const entityParams: GetReactionsParams =
+    entity.type === 'reply' ? { boardId, postId, commentId, replyId: entity.replyId } : { boardId, postId, commentId };
+
   const createReactionMutation = useMutation(
     async (emoji: string) => {
       if (!currentUser) throw new Error('로그인이 필요합니다.');
@@ -91,34 +111,29 @@ export function useReactions({ entity }: UseReactionsProps): UseReactionsReturn 
         userName: userData?.nickname || userData?.realName || currentUser.displayName || '익명 사용자',
         userProfileImage: userData?.profilePhotoURL || currentUser.photoURL || ''
       };
-      await createReaction({ ...getEntityParams(), content: emoji, reactionUser });
+      await createReaction({ ...entityParams, content: emoji, reactionUser });
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: reactionsQueryKey });
+        queryClient.invalidateQueries({ queryKey: invalidateKey });
       },
     }
   );
 
-  // 리액션 삭제
   const deleteReactionMutation = useMutation(
     async ({ emoji, userId }: { emoji: string; userId: string }) => {
       if (!currentUser || currentUser.uid !== userId) throw new Error('자신의 반응만 삭제할 수 있습니다.');
-      await deleteUserReaction(getEntityParams(), userId, emoji);
+      await deleteUserReaction(entityParams, userId, emoji);
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: reactionsQueryKey });
+        queryClient.invalidateQueries({ queryKey: invalidateKey });
       },
     }
   );
 
   return {
-    reactions,
-    isLoading,
-    isError,
-    error: error as Error | null,
     createReaction: (emoji: string) => createReactionMutation.mutateAsync(emoji),
     deleteReaction: (emoji: string, userId: string) => deleteReactionMutation.mutateAsync({ emoji, userId })
   };
-} 
+}
