@@ -32,12 +32,19 @@ function tryPersistReloadAttempt(nowMs: number): boolean {
  * Leave a trace before the reload throws the JS context away. Without it an
  * auto-reload is invisible: we lose the deploy-health signal (how often stale
  * chunks bite) and the eventual error-boundary report for a persistent failure
- * has no history explaining the earlier reload. Sent as a warning message, not
+ * has no history explaining the earlier reload. Sent as an info message, not
  * the raw error, because the common stale-chunk cause is a NetworkError that
- * Sentry's IGNORED_ERRORS filters out.
+ * Sentry's IGNORED_ERRORS filters out. The message is constant and the payload
+ * rides in `extra`, so every browser's wording groups into one issue instead of
+ * opening a new unresolved issue per error text; info level keeps a handled,
+ * self-healing recovery out of the warning/alert feed.
  */
 function reportChunkReloadRecovery(payload: unknown): void {
-  Sentry.captureMessage(`vite:preloadError auto-reload: ${String(payload)}`, 'warning');
+  Sentry.captureMessage('vite:preloadError auto-reload', {
+    level: 'info',
+    extra: { payload: String(payload) },
+    fingerprint: ['vite-preload-error-auto-reload'],
+  });
 }
 
 /**
