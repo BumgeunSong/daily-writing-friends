@@ -14,6 +14,7 @@ import { getRemoteConfig } from 'firebase/remote-config';
 // Internal imports (alphabetically ordered)
 import { connectToEmulators } from './firebase/emulator';
 import { configureRemoteConfig } from './firebase/remote-config';
+import { runWhenOnline, shouldInitOptionalFirebaseServices } from './firebase/optional-services';
 import { createFirebaseConfig, shouldUseEmulators } from './firebase/utils';
 
 // Initialize Firebase app
@@ -42,7 +43,12 @@ const optionalServices: {
 
 const useEmulators = shouldUseEmulators();
 
-if (app && !useEmulators && typeof window !== 'undefined') {
+const initOptionalServices = shouldInitOptionalFirebaseServices({
+  isEmulator: useEmulators,
+  apiKey: firebaseConfig.apiKey,
+});
+
+if (app && initOptionalServices && typeof window !== 'undefined') {
   try {
     optionalServices.remoteConfig = getRemoteConfig(app);
     configureRemoteConfig(optionalServices.remoteConfig);
@@ -56,29 +62,31 @@ if (app && !useEmulators && typeof window !== 'undefined') {
     };
 
     scheduleIdleTask(() => {
-      try {
-        optionalServices.performance = getPerformance(app);
-      } catch (error) {
-        console.warn('Performance service not available:', error);
-      }
+      runWhenOnline(() => {
+        try {
+          optionalServices.performance = getPerformance(app);
+        } catch (error) {
+          console.warn('Performance service not available:', error);
+        }
 
-      // Analytics는 지원되는 환경에서만 초기화한다. jsdom처럼 미지원 환경에서
-      // getAnalytics를 부르면 내부 비동기 초기화가 window에 접근하다 터진다.
-      isAnalyticsSupported()
-        .then((isSupported) => {
-          if (!isSupported) return;
-          optionalServices.analytics = getAnalytics(app);
-        })
-        .catch((error) => {
-          console.warn('Analytics service not available:', error);
-        });
+        // Analytics는 지원되는 환경에서만 초기화한다. jsdom처럼 미지원 환경에서
+        // getAnalytics를 부르면 내부 비동기 초기화가 window에 접근하다 터진다.
+        isAnalyticsSupported()
+          .then((isSupported) => {
+            if (!isSupported) return;
+            optionalServices.analytics = getAnalytics(app);
+          })
+          .catch((error) => {
+            console.warn('Analytics service not available:', error);
+          });
+      });
     });
   } catch (error) {
     console.warn('Optional Firebase services not available:', error);
   }
 } else if (app) {
   console.log(
-    '🧪 Analytics, Performance, and Remote Config disabled in emulator mode - using default values',
+    '🧪 Analytics, Performance, and Remote Config disabled (emulator or placeholder API key) - using default values',
   );
 }
 
