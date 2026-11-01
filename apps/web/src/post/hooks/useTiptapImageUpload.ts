@@ -9,7 +9,9 @@ import {
   validateFileType,
   getValidationMessage,
   SUPPORTED_ACCEPT_ATTRIBUTE,
+  aggregateResults,
 } from '@/post/utils/ImageValidation';
+import { planFileTransfer } from '@/post/utils/fileTransferPlan';
 import { captureProcessingFailure } from '@/post/utils/imageUploadTelemetry';
 import { buildImageStoragePath, resolveImageContentType } from '@/post/utils/storagePath';
 import type { Editor } from '@tiptap/react';
@@ -144,60 +146,68 @@ export function useTiptapImageUpload({ editor }: UseTiptapImageUploadProps) {
     };
   }, [insertImageIntoEditor, uploadFile]);
 
-  const handlePaste = useCallback(
-    async (event: ClipboardEvent): Promise<boolean> => {
-      const items = event.clipboardData?.items;
+  // Shell: claims the event, uploads the planned files one by one, reports the outcome.
+  // The decision of *what* to take lives in planFileTransfer (pure, unit-tested).
+  const handleFileTransfer = useCallback(
+    async (
+      event: Event,
+      items: DataTransferItemList | undefined,
+      source: { operation: string; altFor: (file: File) => string },
+    ): Promise<boolean> => {
       if (!items) return false;
 
-      for (const item of Array.from(items)) {
-        if (item.kind !== 'file') continue;
-        const file = item.getAsFile();
-        if (!file) continue;
+      // Must read files synchronously: the item list is invalidated once we `await`.
+      const plan = planFileTransfer(
+        Array.from(items, (item) => ({ kind: item.kind, file: item.getAsFile() })),
+      );
+      if (!plan.shouldClaimEvent) return false;
 
-        event.preventDefault();
-        event.stopPropagation();
+      event.preventDefault();
+      event.stopPropagation();
 
+      // Sequential on purpose: uploadFile rejects concurrent calls.
+      const outcomes: Array<{ success: boolean }> = [];
+      for (const file of plan.files) {
         try {
           const downloadURL = await uploadFile(file);
-          insertImageIntoEditor(downloadURL, 'Pasted image');
-          toast.success('이미지가 업로드되었습니다.', { position: 'bottom-center' });
-          return true;
+          insertImageIntoEditor(downloadURL, source.altFor(file));
+          outcomes.push({ success: true });
         } catch (error) {
-          handleUploadError(error, 'paste_upload', file);
+          handleUploadError(error, source.operation, file);
+          outcomes.push({ success: false });
         }
       }
 
-      return false;
+      const { succeeded } = aggregateResults(outcomes);
+      if (succeeded > 0) {
+        toast.success(
+          succeeded === 1
+            ? '이미지가 업로드되었습니다.'
+            : `이미지 ${succeeded}장이 업로드되었습니다.`,
+          { position: 'bottom-center' },
+        );
+      }
+      return true;
     },
     [insertImageIntoEditor, uploadFile],
   );
 
+  const handlePaste = useCallback(
+    (event: ClipboardEvent) =>
+      handleFileTransfer(event, event.clipboardData?.items, {
+        operation: 'paste_upload',
+        altFor: () => 'Pasted image',
+      }),
+    [handleFileTransfer],
+  );
+
   const handleDrop = useCallback(
-    async (event: DragEvent): Promise<boolean> => {
-      const items = event.dataTransfer?.items;
-      if (!items) return false;
-
-      for (const item of Array.from(items)) {
-        if (item.kind !== 'file') continue;
-        const file = item.getAsFile();
-        if (!file) continue;
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        try {
-          const downloadURL = await uploadFile(file);
-          insertImageIntoEditor(downloadURL, file.name);
-          toast.success('이미지가 업로드되었습니다.', { position: 'bottom-center' });
-          return true;
-        } catch (error) {
-          handleUploadError(error, 'drop_upload', file);
-        }
-      }
-
-      return false;
-    },
-    [insertImageIntoEditor, uploadFile],
+    (event: DragEvent) =>
+      handleFileTransfer(event, event.dataTransfer?.items, {
+        operation: 'drop_upload',
+        altFor: (file) => file.name,
+      }),
+    [handleFileTransfer],
   );
 
   return {
