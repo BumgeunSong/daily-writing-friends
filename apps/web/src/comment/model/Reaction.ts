@@ -17,3 +17,20 @@ export interface GroupedReaction {
   content: string;
   by: UserSummary[];
 }
+
+interface ReactionEntityBase {
+  boardId: string;
+  postId: string;
+  commentId: string;
+}
+
+export interface CommentParams extends ReactionEntityBase {
+  type: 'comment';
+}
+
+export interface ReplyParams extends ReactionEntityBase {
+  type: 'reply';
+  replyId: string;
+}
+
+export type ReactionEntity = CommentParams | ReplyParams;

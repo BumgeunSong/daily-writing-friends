@@ -1,8 +1,8 @@
 import { Suspense } from "react"
 import EmojiReaction from "@/comment/components/EmojiReaction"
 import ReactWithEmoji from "@/comment/components/ReactWithEmoji"
-import type { CommentParams, ReplyParams } from "@/comment/hooks/useReactions";
 import { useCommentReactions, useReplyReactions } from "@/comment/hooks/useReactions"
+import type { CommentParams, ReplyParams } from "@/comment/model/Reaction"
 import { useAuth } from "@/shared/hooks/useAuth"
 import { Skeleton } from "@/shared/ui/skeleton"
 import type React from "react"
