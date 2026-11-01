@@ -20,12 +20,6 @@ function matchedCommentIds(filter: string | null): { kind: 'in'; ids: string[] }
   return null;
 }
 
-/**
- * MSW handler for `GET /rest/v1/reactions` — the batch prefetch
- * (`comment_id=in.(…)`) that `useCommentReactions` fires. Also answers a
- * per-comment `comment_id=eq.` read as a safety net. Rows carry `comment_id` so
- * the batch grouper can bucket them.
- */
 export function reactionsHandler({ rows }: { rows: ReactionRowWire[] }) {
   return http.get(REACTIONS_URL, ({ request }) => {
     const match = matchedCommentIds(new URL(request.url).searchParams.get('comment_id'));
