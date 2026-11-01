@@ -1,8 +1,6 @@
 // src/firebase.ts
 
 // Core Firebase imports (alphabetically ordered)
-import type { Analytics} from 'firebase/analytics';
-import { getAnalytics, isSupported as isAnalyticsSupported } from 'firebase/analytics';
 import { initializeApp } from 'firebase/app';
 import { getInstallations } from 'firebase/installations';
 import { getStorage } from 'firebase/storage';
@@ -12,7 +10,7 @@ import { getRemoteConfig } from 'firebase/remote-config';
 // Internal imports (alphabetically ordered)
 import { connectToEmulators } from './firebase/emulator';
 import { configureRemoteConfig } from './firebase/remote-config';
-import { runWhenOnline, shouldInitOptionalFirebaseServices } from './firebase/optional-services';
+import { shouldInitOptionalFirebaseServices } from './firebase/optional-services';
 import { createFirebaseConfig, shouldUseEmulators } from './firebase/utils';
 
 // Initialize Firebase app
@@ -30,10 +28,8 @@ if (!hasFirebaseConfig) {
 
 // Non-critical services (initialized conditionally, wrapped in object to avoid mutable exports)
 const optionalServices: {
-  analytics: Analytics | null;
   remoteConfig: RemoteConfig | null;
 } = {
-  analytics: null,
   remoteConfig: null,
 };
 
@@ -48,35 +44,12 @@ if (app && initOptionalServices && typeof window !== 'undefined') {
   try {
     optionalServices.remoteConfig = getRemoteConfig(app);
     configureRemoteConfig(optionalServices.remoteConfig);
-
-    const scheduleIdleTask = (callback: () => void) => {
-      if ('requestIdleCallback' in window) {
-        (window as Window & { requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback(callback, { timeout: 2000 });
-      } else {
-        setTimeout(callback, 1);
-      }
-    };
-
-    scheduleIdleTask(() => {
-      runWhenOnline(() => {
-        // Analytics는 지원되는 환경에서만 초기화한다. jsdom처럼 미지원 환경에서
-        // getAnalytics를 부르면 내부 비동기 초기화가 window에 접근하다 터진다.
-        isAnalyticsSupported()
-          .then((isSupported) => {
-            if (!isSupported) return;
-            optionalServices.analytics = getAnalytics(app);
-          })
-          .catch((error) => {
-            console.warn('Analytics service not available:', error);
-          });
-      });
-    });
   } catch (error) {
     console.warn('Optional Firebase services not available:', error);
   }
 } else if (app) {
   console.log(
-    '🧪 Analytics, Performance, and Remote Config disabled (emulator or placeholder API key) - using default values',
+    '🧪 Remote Config disabled (emulator or placeholder API key) - using default values',
   );
 }
 
@@ -90,7 +63,6 @@ export const isUsingEmulators = useEmulators;
 
 // Getter functions for lazily-initialized services
 export const getFirebaseRemoteConfig = () => optionalServices.remoteConfig;
-export const getFirebaseAnalytics = () => optionalServices.analytics;
 
 // Backward-compatible named exports (remoteConfig is set synchronously at module init)
 const remoteConfig = optionalServices.remoteConfig;

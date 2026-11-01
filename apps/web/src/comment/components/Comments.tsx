@@ -6,7 +6,6 @@ import { MentionableInput } from '@/comment/components/MentionableInput';
 import { useActivity } from '@/comment/hooks/useActivity';
 import { useCreateComment } from '@/comment/hooks/useCreateComment';
 import { useAuth } from '@/shared/hooks/useAuth';
-import { sendAnalyticsEvent, AnalyticsEvent } from '@/shared/utils/analyticsUtils';
 import type { PostVisibility } from '@/post/model/Post';
 import type { ProseMirrorDoc } from '@/shared/model/ProseMirror';
 import type React from 'react';
@@ -56,14 +55,6 @@ const Comments: React.FC<CommentsProps> = ({
   const handleSubmit = async (content: string, contentJson: ProseMirrorDoc) => {
     try {
       await addComment.mutateAsync({ content, contentJson });
-      if (currentUser) {
-        sendAnalyticsEvent(AnalyticsEvent.CREATE_COMMENT, {
-          boardId,
-          postId,
-          userId: currentUser.uid,
-          userName: currentUser.displayName,
-        });
-      }
     } catch (e) {
       toast.error('댓글을 등록하는 중 문제가 발생했습니다. 다시 시도해 주세요.', {
         position: 'bottom-center',

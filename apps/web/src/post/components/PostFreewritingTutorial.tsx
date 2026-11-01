@@ -1,6 +1,5 @@
 import { motion } from "framer-motion"
 import { ArrowLeft } from "lucide-react"
-import { useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 
 import {
@@ -10,18 +9,12 @@ import {
   type TutorialCard
 } from "@/post/data/freewritingTutorialContent"
 import { Button } from '@/shared/ui/button'
-import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
-import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { cn } from "@/shared/utils/cn"
 import type React from "react"
 
 const PostFreewritingTutorial: React.FC = () => {
   const navigate = useNavigate()
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-
-  useEffect(() => {
-    sendAnalyticsEvent(AnalyticsEvent.VIEW_FREE_WRITING_TUTORIAL)
-  }, [])
 
   const navigateBack = () => {
     navigate(-1)

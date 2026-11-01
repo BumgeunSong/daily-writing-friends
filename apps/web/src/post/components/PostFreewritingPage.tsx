@@ -9,8 +9,6 @@ import { prependTopicToContent } from '@/post/utils/freewritingContentUtils'
 import { createPost } from '@/post/utils/postUtils'
 import { useAuth } from '@/shared/hooks/useAuth'
 import { Button } from "@/shared/ui/button"
-import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
-import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { WritingStatus } from "@/stats/model/WritingStatus"
 import { useUserNickname } from '@/user/hooks/useUserNickname'
 import CountupWritingTimer from "./CountupWritingTimer"
@@ -85,8 +83,6 @@ export default function PostFreewritingPage() {
       })
 
       toast.success("프리라이팅으로 쓴 글의 내용은 나만 볼 수 있어요.", {position: 'bottom-center'})
-
-      sendAnalyticsEvent(AnalyticsEvent.FINISH_FREE_WRITING, { boardId })
 
       navigate(`/board/${boardId}/post/${newPost.id}`)
     } catch (error) {
