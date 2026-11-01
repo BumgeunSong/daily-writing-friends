@@ -1,11 +1,5 @@
-import { getId } from 'firebase/installations';
-import { Copy, Check } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
-import { installations } from '@/firebase';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
-import { Button } from '@/shared/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/card';
 
 // Helper function to get status badge styles
@@ -50,74 +44,13 @@ const ConfigRow = ({ label, value, type = 'feature' }: ConfigRowProps) => {
 };
 
 export function DebugInfo() {
-  const [fid, setFid] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
   const { currentUser: user } = useAuth();
 
-  // Get all remote config values
   const { value: activeBoardId } = useRemoteConfig('active_board_id');
-  const { value: blockUserEnabled } = useRemoteConfig('block_user_feature_enabled');
-
-  useEffect(() => {
-    // Get Firebase Installation ID
-    const fetchFID = async () => {
-      try {
-        const installationId = await getId(installations!);
-        setFid(installationId);
-      } catch (error) {
-        console.error('Error getting Firebase Installation ID:', error);
-        setFid('Error loading FID');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFID();
-  }, []);
-
-  const copyToClipboard = async () => {
-    try {
-      await navigator.clipboard.writeText(fid);
-      setCopied(true);
-      toast.success('Firebase Installation ID copied to clipboard!');
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      toast.error('Failed to copy to clipboard');
-    }
-  };
 
   return (
     <div className='container mx-auto max-w-4xl p-6'>
       <h1 className='mb-6 text-3xl font-bold'>Debug Information</h1>
-
-      {/* Firebase Installation ID */}
-      <Card className='mb-6'>
-        <CardHeader>
-          <CardTitle>Firebase Installation ID (FID)</CardTitle>
-          <CardDescription>
-            Use this ID in Firebase Console Remote Config to create admin conditions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className='h-10 animate-pulse rounded bg-muted' />
-          ) : (
-            <div className='flex items-center gap-4'>
-              <code className='flex-1 break-all rounded-md bg-muted p-3 font-mono text-sm'>
-                {fid}
-              </code>
-              <Button onClick={copyToClipboard} variant='outline' size='icon' className='shrink-0'>
-                {copied ? (
-                  <Check className='size-4 text-green-600' />
-                ) : (
-                  <Copy className='size-4' />
-                )}
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* User Information */}
       <Card className='mb-6'>
@@ -144,12 +77,11 @@ export function DebugInfo() {
       <Card>
         <CardHeader>
           <CardTitle>Remote Config Values</CardTitle>
-          <CardDescription>Current values from Firebase Remote Config</CardDescription>
+          <CardDescription>Current values from Supabase app_config</CardDescription>
         </CardHeader>
         <CardContent>
           <div className='space-y-3'>
             <ConfigRow label='Active Board ID' value={activeBoardId} type='text' />
-            <ConfigRow label='Block User Feature' value={blockUserEnabled} type='feature' />
           </div>
         </CardContent>
       </Card>

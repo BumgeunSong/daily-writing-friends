@@ -5,7 +5,6 @@ import { useNavigate } from '@/shared/navigation';
 import { userProfilePath } from '@/shared/constants/routes';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/ui/tabs';
 import StatsHeader from '@/stats/components/StatsHeader';
-import { StatsNoticeBanner } from '@/stats/components/StatsNoticeBanner';
 import {
   StatsLoadingState,
   StatsErrorState,
@@ -51,7 +50,6 @@ export default function StatsPage() {
       <StatsHeader />
       <main className='container mx-auto px-3 py-2 md:px-4'>
         <div className='h-full overflow-y-auto' id={STATS_SCROLL_ID}>
-          <StatsNoticeBanner />
           <Tabs value={tab} onValueChange={(v) => setTab(v as TabType)}>
             <TabsList className='mb-4 flex w-full justify-between rounded-lg bg-muted'>
               <TabsTrigger

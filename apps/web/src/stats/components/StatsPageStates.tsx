@@ -1,5 +1,4 @@
 import StatsHeader from '@/stats/components/StatsHeader';
-import { StatsNoticeBanner } from '@/stats/components/StatsNoticeBanner';
 import { UserPostingStatsCardSkeleton } from '@/stats/components/UserPostingStatsCardSkeleton';
 
 const STATS_SCROLL_ID = 'stats-scroll';
@@ -10,7 +9,6 @@ export function StatsLoadingState() {
       <StatsHeader />
       <main className='container mx-auto px-3 py-2 md:px-4'>
         <div className='h-full overflow-y-auto' id={STATS_SCROLL_ID}>
-          <StatsNoticeBanner />
           <div className='grid grid-cols-1 gap-4 pb-20 md:grid-cols-2'>
             {Array.from({ length: 5 }, (_, i) => (
               <UserPostingStatsCardSkeleton key={`loading-skeleton-${i}`} />
