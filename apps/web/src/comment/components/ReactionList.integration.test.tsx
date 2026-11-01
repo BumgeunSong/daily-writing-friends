@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { http } from 'msw';
+import { render, screen, waitFor } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -48,11 +48,12 @@ function countReactionRequests(rows: ReactionRowWire[]) {
   return requests;
 }
 
-function renderCommentReactionLists() {
+function renderCommentReactionLists(siblingText?: string) {
   const { Wrapper } = withProviders();
-  render(
+  return render(
     <MemoryRouter>
       <Wrapper>
+        {siblingText && <p>{siblingText}</p>}
         {COMMENTS.map((comment) => (
           <ReactionList
             key={comment.id}
@@ -76,5 +77,17 @@ describe('ReactionList for comments', () => {
     expect(await screen.findByText('👍')).toBeInTheDocument();
     expect(screen.getByText('❤️')).toBeInTheDocument();
     expect(requests).toHaveLength(1);
+  });
+
+  it('keeps the rest of the page rendered when the reactions request fails', async () => {
+    server.use(
+      commentsHandler({ comments: COMMENTS }),
+      http.get(/\/rest\/v1\/reactions/, () => HttpResponse.json({ message: 'boom' }, { status: 500 })),
+    );
+
+    const { container } = renderCommentReactionLists('still here');
+
+    await waitFor(() => expect(container.querySelector('.animate-pulse')).toBeNull());
+    expect(screen.getByText('still here')).toBeInTheDocument();
   });
 });

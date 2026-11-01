@@ -34,6 +34,7 @@ export function useCommentReactions(entity: CommentParams): UseReactionsReturn {
       groupReactionsByEmoji(reactionsByComment.get(commentId) ?? []),
     keepPreviousData: true,
     suspense: true,
+    useErrorBoundary: false,
   });
 
   const mutations = useReactionMutations(entity, commentReactionsKeyPrefix(boardId, postId));
@@ -56,6 +57,7 @@ export function useReplyReactions(entity: ReplyParams): UseReactionsReturn {
         ),
       ),
     suspense: true,
+    useErrorBoundary: false,
   });
 
   const mutations = useReactionMutations(entity, queryKey);
