@@ -1,20 +1,35 @@
 import { Suspense } from "react"
 import EmojiReaction from "@/comment/components/EmojiReaction"
 import ReactWithEmoji from "@/comment/components/ReactWithEmoji"
-import type { CommentParams, ReplyParams} from "@/comment/hooks/useReactions";
-import { useReactions } from "@/comment/hooks/useReactions"
+import { type UseReactionsReturn, useCommentReactions, useReplyReactions } from "@/comment/hooks/useReactions"
+import type { CommentParams, ReactionEntity, ReplyParams } from "@/comment/model/Reaction"
 import { useAuth } from "@/shared/hooks/useAuth"
 import { Skeleton } from "@/shared/ui/skeleton"
 import type React from "react"
 
 interface ReactionListProps {
-  entity: CommentParams | ReplyParams
+  entity: ReactionEntity
 }
 
+const CommentReactions: React.FC<{ entity: CommentParams }> = ({ entity }) => (
+  <ReactionView {...useCommentReactions(entity)} />
+)
+
+const ReplyReactions: React.FC<{ entity: ReplyParams }> = ({ entity }) => (
+  <ReactionView {...useReplyReactions(entity)} />
+)
+
+type ReactionViewProps = Omit<UseReactionsReturn, 'error'>
+
 // 실제 반응 데이터를 표시하는 컴포넌트
-const ReactionContent: React.FC<ReactionListProps> = ({ entity }) => {
+const ReactionView: React.FC<ReactionViewProps> = ({
+  reactions,
+  isLoading,
+  isError,
+  createReaction,
+  deleteReaction,
+}) => {
   const { verifiedUser } = useAuth()
-  const { reactions, isLoading, isError, createReaction, deleteReaction } = useReactions({ entity })
 
   // 로그인하지 않은 경우 반응 버튼만 표시
   if (!verifiedUser) {
@@ -69,7 +84,11 @@ const ReactionList: React.FC<ReactionListProps> = ({ entity }) => {
   return (
     <div className="mb-3 mt-2">
       <Suspense fallback={<ReactionFallback />}>
-        <ReactionContent entity={entity} />
+        {entity.type === 'comment' ? (
+          <CommentReactions entity={entity} />
+        ) : (
+          <ReplyReactions entity={entity} />
+        )}
       </Suspense>
     </div>
   )

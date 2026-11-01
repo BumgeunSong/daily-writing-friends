@@ -8,6 +8,7 @@ import { useDeleteComment, useEditComment } from '@/comment/hooks/useCreateComme
 import { Button } from '@/shared/ui/button';
 import Replies from './Replies';
 import type { Comment } from '@/comment/model/Comment';
+import type { ProseMirrorDoc } from '@/shared/model/ProseMirror';
 import type { PostVisibility } from '@/post/model/Post';
 import type React from 'react';
 
@@ -40,10 +41,8 @@ const CommentRow: React.FC<CommentRowProps> = ({
     }
   };
 
-  // Edit stays content-only for now; content_json dual-write on edit is a
-  // follow-up (updateCommentToPost does not yet touch content_json).
-  const handleEditSubmit = async (content: string) => {
-    await editComment.mutateAsync(content);
+  const handleEditSubmit = async (content: string, contentJson: ProseMirrorDoc) => {
+    await editComment.mutateAsync({ content, contentJson });
     setIsEditing(false);
   };
 
@@ -75,7 +74,7 @@ const CommentRow: React.FC<CommentRowProps> = ({
           <MentionableInput
             boardId={boardId}
             onSubmit={handleEditSubmit}
-            initialContent={comment.content}
+            initialContent={comment.contentJson ?? comment.content}
           />
         ) : (
           <CommentContent

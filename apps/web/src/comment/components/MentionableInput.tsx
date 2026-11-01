@@ -10,7 +10,7 @@ interface MentionableInputProps {
   boardId: string;
   participantIds?: string[];
   placeholder?: string;
-  initialContent?: string;
+  initialContent?: string | ProseMirrorDoc;
   disabled?: boolean;
   onSubmit: (content: string, contentJson: ProseMirrorDoc) => Promise<void>;
 }

@@ -66,9 +66,15 @@ export async function updateCommentToPost(
   _postId: string,
   commentId: string,
   content: string,
+  contentJson: ProseMirrorDoc,
 ) {
   const supabase = getSupabaseClient();
-  throwOnError(await supabase.from('comments').update({ content }).eq('id', commentId));
+  throwOnError(
+    await supabase
+      .from('comments')
+      .update({ content, content_json: toContentJson(contentJson) })
+      .eq('id', commentId),
+  );
 }
 
 /**

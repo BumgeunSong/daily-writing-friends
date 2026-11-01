@@ -39,10 +39,16 @@ export function useCreateComment(boardId: string, postId: string) {
   );
 }
 
+interface EditCommentInput {
+  content: string;
+  contentJson: ProseMirrorDoc;
+}
+
 export function useEditComment(boardId: string, postId: string, commentId: string) {
   const queryClient = useQueryClient();
   return useMutation(
-    (content: string) => updateCommentToPost(boardId, postId, commentId, content),
+    ({ content, contentJson }: EditCommentInput) =>
+      updateCommentToPost(boardId, postId, commentId, content, contentJson),
     {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['comments', boardId, postId] });
