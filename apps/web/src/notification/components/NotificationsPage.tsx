@@ -9,7 +9,6 @@ import StatusMessage from '@/shared/components/StatusMessage';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useInfiniteScroll } from '@/shared/hooks/useInfiniteScroll';
-import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
 
 // DATA - Constants
 const NOTIFICATIONS_CONFIG = {
@@ -23,7 +22,6 @@ const NOTIFICATIONS_CONFIG = {
  */
 const NotificationsPage = () => {
   // ACTION - Performance monitoring
-  usePerformanceMonitoring('NotificationsPage');
   
   // DATA - State and refs
   const { currentUser } = useAuth();

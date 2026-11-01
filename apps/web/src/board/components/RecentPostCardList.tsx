@@ -12,7 +12,6 @@ import type { Post } from '@/post/model/Post';
 import { seedPostCache } from '@/post/utils/postCacheUtils';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
-import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
 import { Button } from '@/shared/ui/button';
 import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
 import type React from 'react';
@@ -171,7 +170,6 @@ function useRecentPostCardEntries(boardId: string) {
 const RecentPostCardList: React.FC<RecentPostCardListProps> = ({ boardId, onPostClick, onClickProfile }) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  usePerformanceMonitoring('RecentPostCardList');
 
   const {
     cardEntries,

@@ -5,8 +5,6 @@ import type { Analytics} from 'firebase/analytics';
 import { getAnalytics, isSupported as isAnalyticsSupported } from 'firebase/analytics';
 import { initializeApp } from 'firebase/app';
 import { getInstallations } from 'firebase/installations';
-import type { FirebasePerformance} from 'firebase/performance';
-import { getPerformance } from 'firebase/performance';
 import { getStorage } from 'firebase/storage';
 import type { RemoteConfig } from 'firebase/remote-config';
 import { getRemoteConfig } from 'firebase/remote-config';
@@ -32,11 +30,9 @@ if (!hasFirebaseConfig) {
 
 // Non-critical services (initialized conditionally, wrapped in object to avoid mutable exports)
 const optionalServices: {
-  performance: FirebasePerformance | null;
   analytics: Analytics | null;
   remoteConfig: RemoteConfig | null;
 } = {
-  performance: null,
   analytics: null,
   remoteConfig: null,
 };
@@ -63,12 +59,6 @@ if (app && initOptionalServices && typeof window !== 'undefined') {
 
     scheduleIdleTask(() => {
       runWhenOnline(() => {
-        try {
-          optionalServices.performance = getPerformance(app);
-        } catch (error) {
-          console.warn('Performance service not available:', error);
-        }
-
         // Analytics는 지원되는 환경에서만 초기화한다. jsdom처럼 미지원 환경에서
         // getAnalytics를 부르면 내부 비동기 초기화가 window에 접근하다 터진다.
         isAnalyticsSupported()
@@ -100,7 +90,6 @@ export const isUsingEmulators = useEmulators;
 
 // Getter functions for lazily-initialized services
 export const getFirebaseRemoteConfig = () => optionalServices.remoteConfig;
-export const getFirebasePerformance = () => optionalServices.performance;
 export const getFirebaseAnalytics = () => optionalServices.analytics;
 
 // Backward-compatible named exports (remoteConfig is set synchronously at module init)

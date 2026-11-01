@@ -9,7 +9,6 @@ import type { Post } from '@/post/model/Post';
 import { seedPostCache } from '@/post/utils/postCacheUtils';
 import StatusMessage from '@/shared/components/StatusMessage';
 import { useRegisterTabHandler } from '@/shared/contexts/BottomTabHandlerContext';
-import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
 import PostCardSkeleton from '@/shared/ui/PostCardSkeleton';
 import type React from 'react';
 
@@ -43,7 +42,6 @@ function EmptyBestPostsMessage() {
 
 /** 최근 7일 베스트 게시글 목록 (engagementScore 내림차순) */
 const BestPostCardList: React.FC<BestPostCardListProps> = ({ boardId, onPostClick, onClickProfile }) => {
-  usePerformanceMonitoring('BestPostCardList');
   const queryClient = useQueryClient();
 
   const {

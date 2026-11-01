@@ -3,7 +3,6 @@ import { useState } from 'react';
 import React from 'react';
 import { useNavigate } from '@/shared/navigation';
 import { userProfilePath } from '@/shared/constants/routes';
-import { usePerformanceMonitoring } from '@/shared/hooks/usePerformanceMonitoring';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/ui/tabs';
 import StatsHeader from '@/stats/components/StatsHeader';
 import { StatsNoticeBanner } from '@/stats/components/StatsNoticeBanner';
@@ -20,7 +19,6 @@ const STATS_SCROLL_ID = 'stats-scroll';
 type TabType = 'posting' | 'commenting';
 
 export default function StatsPage() {
-  usePerformanceMonitoring('StatsPage');
   const navigate = useNavigate();
   const [tab, setTab] = useState<TabType>('posting');
 
