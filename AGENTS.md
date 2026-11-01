@@ -42,7 +42,7 @@ apps/
 │       │   ├── ui/     # shadcn/ui components
 │       │   └── utils/
 │       ├── firebase/   # Firebase config (Storage only)
-│       └── firebase.ts # Firebase init (Storage, Analytics, Performance)
+│       └── firebase.ts # Firebase init (Storage only)
 ├── admin/              # Admin dashboard (Next.js)
 └── mcp/                # MCP server tools
 supabase/

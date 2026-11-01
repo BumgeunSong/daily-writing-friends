@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import { ROUTES } from '@/shared/constants/routes';
 import { signOutUser } from '@/shared/auth/supabaseAuth';
 import { SentryFeedbackDialog } from '@/shared/components/SentryFeedbackDialog';
-import { useRemoteConfig } from '@/shared/hooks/useRemoteConfig';
 import { useAuth } from '@/shared/hooks/useAuth';
 import { useClearCache } from '@/shared/hooks/useClearCache';
 import { useTheme } from '@/shared/hooks/useTheme';
@@ -35,9 +34,6 @@ export default function UserSettingPage() {
   const navigate = useNavigate();
   const clearCache = useClearCache();
   const { theme, toggleTheme } = useTheme();
-  const { value: blockUserFeatureEnabled, isPlaceholderData: isFlagResolving } =
-    useRemoteConfig('block_user_feature_enabled');
-  const showBlockUserMenu = !isFlagResolving && blockUserFeatureEnabled;
   const { currentUser } = useAuth();
   const donateUrl = useMemo(() => buildDonateUrl(currentUser?.uid), [currentUser?.uid]);
   const hasPassword = useHasPasswordIdentity();
@@ -176,18 +172,6 @@ export default function UserSettingPage() {
               </div>
             </a>
           </Button>
-          {showBlockUserMenu && (
-            <Button
-              variant="ghost"
-              className="reading-hover reading-focus flex h-14 w-full items-center justify-start gap-3 rounded-none px-4 text-base transition-[background-color] duration-200"
-              onClick={() => navigate('/user/blocked-users')}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="size-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-1.414 1.414M6.343 17.657l-1.415 1.415M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-foreground">접근 제어 관리</span>
-            </Button>
-          )}
         </div>
       </main>
     </div>

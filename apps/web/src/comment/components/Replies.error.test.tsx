@@ -10,11 +10,10 @@ import Replies from './Replies';
  * it. The double reports the resolve/reject outcome it observed.
  */
 
-const { submitOutcome, mutateAsync, toastError, sendAnalyticsEvent } = vi.hoisted(() => ({
+const { submitOutcome, mutateAsync, toastError } = vi.hoisted(() => ({
   submitOutcome: vi.fn(),
   mutateAsync: vi.fn(),
   toastError: vi.fn(),
-  sendAnalyticsEvent: vi.fn(),
 }));
 
 vi.mock('@/comment/components/MentionableInput', () => ({
@@ -53,11 +52,6 @@ vi.mock('@/comment/hooks/useCreateReply', () => ({
 
 vi.mock('sonner', () => ({ toast: { error: toastError } }));
 
-vi.mock('@/shared/utils/analyticsUtils', () => ({
-  sendAnalyticsEvent,
-  AnalyticsEvent: { CREATE_REPLY: 'CREATE_REPLY' },
-}));
-
 async function expandAndFindDrive() {
   const user = userEvent.setup();
   render(<Replies boardId="b1" postId="p1" commentId="c1" />);
@@ -88,6 +82,5 @@ describe('Replies — submit failure handling', () => {
 
     await vi.waitFor(() => expect(submitOutcome).toHaveBeenCalledWith('resolved'));
     expect(toastError).not.toHaveBeenCalled();
-    expect(sendAnalyticsEvent).toHaveBeenCalled();
   });
 });

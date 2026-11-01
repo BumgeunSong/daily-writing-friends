@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/react';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate, useParams } from '@/shared/navigation';
 import { toast } from 'sonner';
 import { PostVisibility } from '@/post/model/Post';
@@ -9,7 +9,7 @@ import { PostJustThreeQuestionAnswerInput } from '@/post/components/PostJustThre
 import { markPersonalizedQuestionsAnswered } from '@/post/external/justThreeQuestions.api';
 import { useJustThreeQuestions } from '@/post/hooks/useJustThreeQuestions';
 import { useJustThreeQuestionsSession } from '@/post/hooks/useJustThreeQuestionsSession';
-import { toQuestionType, type QuestionCandidate, type QuestionType } from '@/post/model/JustThreeQuestion';
+import { type QuestionCandidate } from '@/post/model/JustThreeQuestion';
 import { useKeyboardInset } from '@/post/hooks/useKeyboardInset';
 import { mapCreatePostErrorMessage } from '@/post/hooks/useCreatePostAction';
 import {
@@ -24,7 +24,6 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { Button } from '@/shared/ui/button';
 import { ReadingColumn } from '@/shared/ui/reading-column';
 import { Stack } from '@/shared/ui/stack';
-import { AnalyticsEvent, sendAnalyticsEvent } from '@/shared/utils/analyticsUtils';
 import { useUserNickname } from '@/user/hooks/useUserNickname';
 
 const TOTAL_QUESTION_COUNT = 3;
@@ -101,14 +100,6 @@ function JustThreeQuestionsSession({ pool }: { pool: readonly QuestionCandidate[
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
 
-  useEffect(() => {
-    sendAnalyticsEvent(AnalyticsEvent.START_JUST_THREE_QUESTIONS, {
-      boardId,
-      question_type: toQuestionType(session.currentQuestionId),
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- 마운트 시 1회만 전송
-  }, []);
-
   const postTitle = userNickname ? `${userNickname}님의 3줄 쓰기` : '3줄 쓰기';
   // Count non-whitespace chars after stripping <, > (same normalization the
   // content formatter applies), so an answer like "<<<" can't pass this check
@@ -137,14 +128,6 @@ function JustThreeQuestionsSession({ pool }: { pool: readonly QuestionCandidate[
       consumeAnsweredPersonalizedQuestions(finalAnswers, queryClient);
       invalidatePostCaches(boardId, currentUser.uid);
       optimisticallyUpdatePostingStreak(currentUser.uid);
-      const personalizedAnswerCount = finalAnswers.filter(({ questionId }) => questionId).length;
-      const finishQuestionType: QuestionType = personalizedAnswerCount > 0 ? 'personalized' : 'common';
-      sendAnalyticsEvent(AnalyticsEvent.FINISH_JUST_THREE_QUESTIONS, {
-        boardId,
-        question_type: finishQuestionType,
-        personalized_answer_count: personalizedAnswerCount,
-      });
-
       navigate(`/board/${boardId}/post/${newPost.id}`, { replace: true });
     } catch (error) {
       console.error('3줄쓰기 게시 중 오류:', error);
@@ -176,10 +159,6 @@ function JustThreeQuestionsSession({ pool }: { pool: readonly QuestionCandidate[
   };
 
   const handleSkip = () => {
-    sendAnalyticsEvent(AnalyticsEvent.SKIP_JUST_THREE_QUESTION, {
-      boardId,
-      question_type: toQuestionType(session.currentQuestionId),
-    });
     session.skip();
     setAnswer('');
   };

@@ -9,7 +9,6 @@ import {
 import { createPost } from '@/post/utils/postUtils';
 import { parseContentJson } from '@/shared/external/proseMirrorContentJson';
 import { parseJsonUnknown } from '@/shared/lib/parseJson';
-import { sendAnalyticsEvent, AnalyticsEvent } from '@/shared/utils/analyticsUtils';
 
 export interface ValidatedCreatePostInput {
   title: string;
@@ -76,13 +75,6 @@ export async function createPostAction({ request, params }: ActionFunctionArgs) 
 
   try {
     await createPost({ boardId: validBoardId, title, content, authorId, authorName, contentJson });
-
-    sendAnalyticsEvent(AnalyticsEvent.CREATE_POST, {
-      boardId: validBoardId,
-      title,
-      userId: authorId,
-      userName: authorName,
-    });
 
     if (draftId) {
       try {

@@ -1,5 +1,5 @@
 import { ArrowRight, Info } from "lucide-react"
-import { useEffect, useState, type ChangeEvent } from "react"
+import { useState, type ChangeEvent } from "react"
 import { useNavigate, useParams } from "@/shared/navigation"
 
 import {
@@ -10,8 +10,6 @@ import {
 import { Button } from '@/shared/ui/button'
 import { Label } from '@/shared/ui/label'
 import { Textarea } from '@/shared/ui/textarea'
-import { AnalyticsEvent } from "@/shared/utils/analyticsUtils"
-import { sendAnalyticsEvent } from "@/shared/utils/analyticsUtils"
 import { cn } from "@/shared/utils/cn"
 import type React from "react"
 
@@ -26,10 +24,6 @@ const PostFreewritingIntro: React.FC = () => {
 
   const [selectedTargetTimeInSeconds, setSelectedTargetTimeInSeconds] = useState(DEFAULT_TARGET_TIME_IN_SECONDS)
   const [topic, setTopic] = useState("")
-
-  useEffect(() => {
-    sendAnalyticsEvent(AnalyticsEvent.START_FREE_WRITING, { boardId })
-  }, [boardId])
 
   const handleTopicChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const inputValue = e.target.value

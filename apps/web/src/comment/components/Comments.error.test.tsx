@@ -15,11 +15,10 @@ import Comments from './Comments';
  * signal MentionableInput keys its clear/retain decision on.
  */
 
-const { submitOutcome, mutateAsync, toastError, sendAnalyticsEvent } = vi.hoisted(() => ({
+const { submitOutcome, mutateAsync, toastError } = vi.hoisted(() => ({
   submitOutcome: vi.fn(),
   mutateAsync: vi.fn(),
   toastError: vi.fn(),
-  sendAnalyticsEvent: vi.fn(),
 }));
 
 vi.mock('@/comment/components/MentionableInput', () => ({
@@ -61,11 +60,6 @@ vi.mock('@/comment/hooks/useActivity', () => ({
 
 vi.mock('sonner', () => ({ toast: { error: toastError } }));
 
-vi.mock('@/shared/utils/analyticsUtils', () => ({
-  sendAnalyticsEvent,
-  AnalyticsEvent: { CREATE_COMMENT: 'CREATE_COMMENT' },
-}));
-
 function renderComments() {
   return render(
     <Comments boardId="b1" postId="p1" postAuthorId="a1" postAuthorNickname="작성자" />,
@@ -97,6 +91,5 @@ describe('Comments — submit failure handling', () => {
 
     await vi.waitFor(() => expect(submitOutcome).toHaveBeenCalledWith('resolved'));
     expect(toastError).not.toHaveBeenCalled();
-    expect(sendAnalyticsEvent).toHaveBeenCalled();
   });
 });

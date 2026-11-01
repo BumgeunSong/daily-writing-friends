@@ -93,6 +93,16 @@ function shouldFilterInDevelopment(event: Sentry.Event, isDevelopment: boolean):
 }
 
 /**
+ * 로컬·CI E2E의 Firebase 오류(가짜 키 등)가 운영 프로젝트로 유입되지 않게 걸러낸다.
+ */
+export function isDevelopmentFirebaseError(event: Sentry.Event): boolean {
+  return (
+    event.environment === 'development' &&
+    event.exception?.values?.[0]?.type === 'FirebaseError'
+  );
+}
+
+/**
  * Initialize Sentry with comprehensive error tracking configuration
  */
 export const initSentry = (): void => {
@@ -127,6 +137,10 @@ export const initSentry = (): void => {
     beforeSend(event, hint) {
       // Filter out development network errors
       if (shouldFilterInDevelopment(event, isDevelopment)) {
+        return null;
+      }
+
+      if (isDevelopmentFirebaseError(event)) {
         return null;
       }
 

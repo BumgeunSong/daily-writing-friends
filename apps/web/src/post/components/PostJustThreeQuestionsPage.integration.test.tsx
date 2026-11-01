@@ -72,17 +72,6 @@ vi.mock('@sentry/react', async () => {
   return { ...actual, captureException: (...args: unknown[]) => captureException(...args) };
 });
 
-const sendAnalyticsEvent = vi.fn();
-vi.mock('@/shared/utils/analyticsUtils', async () => {
-  const actual = await vi.importActual<typeof import('@/shared/utils/analyticsUtils')>(
-    '@/shared/utils/analyticsUtils',
-  );
-  return {
-    ...actual,
-    sendAnalyticsEvent: (...args: unknown[]) => sendAnalyticsEvent(...args),
-  };
-});
-
 function renderPage(queryClient?: QueryClient) {
   const { Wrapper } = withProviders({ queryClient });
   return render(
@@ -119,7 +108,6 @@ describe('PostJustThreeQuestionsPage — 3줄쓰기 세션 흐름', () => {
     vi.restoreAllMocks();
     invalidatePostCaches.mockClear();
     optimisticallyUpdatePostingStreak.mockClear();
-    sendAnalyticsEvent.mockClear();
   });
 
   it('shows a loading spinner while the question pool is being fetched', () => {
@@ -232,10 +220,6 @@ describe('PostJustThreeQuestionsPage — 3줄쓰기 세션 흐름', () => {
 
     expect(invalidatePostCaches).toHaveBeenCalledWith('board-1', SIGNED_IN_USER.uid);
     expect(optimisticallyUpdatePostingStreak).toHaveBeenCalledWith(SIGNED_IN_USER.uid);
-    expect(sendAnalyticsEvent).toHaveBeenCalledWith(
-      'finish_just_three_questions',
-      expect.objectContaining({ boardId: 'board-1' }),
-    );
   });
 
   it('shows an error toast and keeps the last answer when createPost fails', async () => {
@@ -264,7 +248,6 @@ describe('최근 글에서 파생된 개인화 질문이 있는 유저가 3줄�
     authState.user = SIGNED_IN_USER;
     vi.useRealTimers();
     vi.restoreAllMocks();
-    sendAnalyticsEvent.mockClear();
     captureException.mockClear();
   });
 
@@ -392,7 +375,6 @@ describe('개인화 질문에 답하고 3줄쓰기를 마칠 때', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
-    sendAnalyticsEvent.mockClear();
     captureException.mockClear();
   });
 
@@ -481,10 +463,6 @@ describe('개인화 질문에 답하고 3줄쓰기를 마칠 때', () => {
     const [url] = onUpdate.mock.calls[0];
     expect((url as URL).searchParams.get('id')).toMatch(/pq-1/);
     expect((url as URL).searchParams.get('id')).toMatch(/pq-2/);
-    expect(sendAnalyticsEvent).toHaveBeenCalledWith(
-      'finish_just_three_questions',
-      expect.objectContaining({ personalized_answer_count: 2 }),
-    );
   });
 
   it('상세 페이지로 떠난 뒤 소진 처리가 끝나도 다시 3줄쓰기에 들어오면 답한 질문은 나오지 않는다', async () => {
@@ -535,125 +513,5 @@ describe('개인화 질문에 답하고 3줄쓰기를 마칠 때', () => {
     await screen.findByText('게시글 상세');
 
     expect(onUpdate).not.toHaveBeenCalled();
-  });
-});
-
-describe('3줄쓰기 분석 이벤트에 질문 유형을 남길 때', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-    sendAnalyticsEvent.mockClear();
-  });
-
-  it('첫 질문이 개인화 질문이면 시작 이벤트에 개인화 유형이 실린다', async () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.99);
-    server.use(
-      justThreeQuestionsHandler({ questions: ['질문1', '질문2', '질문3'] }),
-      personalizedQuestionsHandler({ questions: [{ id: 'pq-1', question: '그날 산책길에서 어떤 기분이었어요?' }] }),
-    );
-    renderPage();
-
-    await screen.findByText(/산책길에서 어떤 기분/);
-
-    expect(sendAnalyticsEvent).toHaveBeenCalledWith(
-      'start_just_three_questions',
-      expect.objectContaining({ question_type: 'personalized' }),
-    );
-  });
-
-  it('첫 질문이 공통 질문이면 시작 이벤트에 공통 유형이 실린다', async () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0);
-    server.use(
-      justThreeQuestionsHandler({ questions: ['질문1', '질문2', '질문3'] }),
-      personalizedQuestionsHandler({ questions: [{ id: 'pq-1', question: '그날 산책길에서 어떤 기분이었어요?' }] }),
-    );
-    renderPage();
-
-    await screen.findByText('질문1');
-
-    expect(sendAnalyticsEvent).toHaveBeenCalledWith(
-      'start_just_three_questions',
-      expect.objectContaining({ question_type: 'common' }),
-    );
-  });
-
-  it('개인화 질문을 건너뛰면 스킵 이벤트에 개인화 유형이 실린다', async () => {
-    const user = userEvent.setup();
-    vi.spyOn(Math, 'random').mockReturnValue(0.99);
-    server.use(
-      justThreeQuestionsHandler({ questions: ['질문1', '질문2', '질문3'] }),
-      personalizedQuestionsHandler({ questions: [{ id: 'pq-1', question: '그날 산책길에서 어떤 기분이었어요?' }] }),
-    );
-    renderPage();
-
-    await screen.findByText(/산책길에서 어떤 기분/);
-    await user.click(screen.getByRole('button', { name: '다음 질문' }));
-
-    expect(sendAnalyticsEvent).toHaveBeenCalledWith(
-      'skip_just_three_question',
-      expect.objectContaining({ boardId: 'board-1', question_type: 'personalized' }),
-    );
-  });
-
-  it('공통 질문을 건너뛰면 스킵 이벤트에 공통 유형이 실린다', async () => {
-    const user = userEvent.setup();
-    vi.spyOn(Math, 'random').mockReturnValue(0);
-    server.use(
-      justThreeQuestionsHandler({ questions: ['질문1', '질문2', '질문3', '질문4'] }),
-      personalizedQuestionsHandler({ questions: [] }),
-    );
-    renderPage();
-
-    await screen.findByText('질문1');
-    await user.click(screen.getByRole('button', { name: '다음 질문' }));
-
-    expect(sendAnalyticsEvent).toHaveBeenCalledWith(
-      'skip_just_three_question',
-      expect.objectContaining({ question_type: 'common' }),
-    );
-  });
-
-  it('개인화 질문에 답하고 마치면 완료 이벤트에 개인화 유형과 답한 개수가 실린다', async () => {
-    const user = userEvent.setup();
-    vi.spyOn(Math, 'random').mockReturnValue(0.99);
-    server.use(
-      justThreeQuestionsHandler({ questions: ['질문1', '질문2', '질문3'] }),
-      personalizedQuestionsHandler({ questions: [{ id: 'pq-1', question: '그날 산책길에서 어떤 기분이었어요?' }] }),
-      createPostHandler(),
-      answerPersonalizedQuestionsHandler(),
-    );
-    renderPage();
-
-    await screen.findByText(/산책길에서 어떤 기분/);
-    await answerAndAdvance(user, '답변1');
-    await answerAndAdvance(user, '답변2');
-    await answerAndAdvance(user, '답변3');
-    await screen.findByText('게시글 상세');
-
-    expect(sendAnalyticsEvent).toHaveBeenCalledWith(
-      'finish_just_three_questions',
-      expect.objectContaining({ question_type: 'personalized', personalized_answer_count: 1 }),
-    );
-  });
-
-  it('공통 질문에만 답하고 마치면 완료 이벤트에 공통 유형이 실린다', async () => {
-    const user = userEvent.setup();
-    vi.spyOn(Math, 'random').mockReturnValue(0);
-    server.use(
-      justThreeQuestionsHandler({ questions: ['질문1', '질문2', '질문3'] }),
-      personalizedQuestionsHandler({ questions: [] }),
-      createPostHandler(),
-    );
-    renderPage();
-
-    await screen.findByText('질문1');
-    await answerAndAdvance(user, '답변1');
-    await answerAndAdvance(user, '답변2');
-    await answerAndAdvance(user, '답변3');
-    await screen.findByText('게시글 상세');
-
-    expect(sendAnalyticsEvent).toHaveBeenCalledWith(
-      'finish_just_three_questions',
-      expect.objectContaining({ question_type: 'common', personalized_answer_count: 0 }),
-    );
   });
 });

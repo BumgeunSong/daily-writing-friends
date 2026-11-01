@@ -1,28 +1,5 @@
 // src/firebase/constants.ts
 
-// Time constants
-export const TIME_CONSTANTS = {
-  SECOND_IN_MS: 1000,
-  MINUTE_IN_SECONDS: 60,
-} as const;
-
-// Remote Config fetch intervals
-export const REMOTE_CONFIG_INTERVALS = {
-  DEVELOPMENT_MINUTES: 1,
-  PRODUCTION_MINUTES: 5,
-} as const;
-
-export const REMOTE_CONFIG_FETCH_INTERVALS = {
-  DEVELOPMENT:
-    REMOTE_CONFIG_INTERVALS.DEVELOPMENT_MINUTES *
-    TIME_CONSTANTS.MINUTE_IN_SECONDS *
-    TIME_CONSTANTS.SECOND_IN_MS,
-  PRODUCTION:
-    REMOTE_CONFIG_INTERVALS.PRODUCTION_MINUTES *
-    TIME_CONSTANTS.MINUTE_IN_SECONDS *
-    TIME_CONSTANTS.SECOND_IN_MS,
-} as const;
-
 // Default emulator configuration
 export const DEFAULT_EMULATOR_CONFIG = {
   HOST: 'localhost',
