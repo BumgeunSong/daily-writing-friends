@@ -7,7 +7,6 @@ import { getSupabaseClient, throwOnError } from '@/shared/external/supabaseClien
 import { fetchUserFromSupabase, fetchAllUsersFromSupabase, fetchUsersWithBoardPermissionFromSupabase } from './user.reads';
 import type { User, UserOptionalFields, UserRequiredFields } from '@/user/model/User';
 import type { AuthUser } from '@/shared/auth/authTypes';
-import { REMOTE_CONFIG_DEFAULTS } from '@/shared/hooks/useRemoteConfig';
 import { mapUserToSupabaseUpdate } from '@/user/utils/userMappers';
 import { resizeImageBlob } from '@/shared/utils/resizeImageBlob';
 import { AVATAR_CACHE_CONTROL_SECONDS } from '@/shared/utils/storageConstants';
@@ -23,7 +22,7 @@ export async function fetchUser(uid: string): Promise<User | null> {
 // supabase-js 의 upsert(..., { onConflict: 'id', ignoreDuplicates: true }) 로 idempotent 하게 작성한다.
 // 내부적으로 PostgREST 의 Prefer: resolution=ignore-duplicates 를 사용하므로 의미상
 // INSERT ... ON CONFLICT DO NOTHING 과 동일하지만, 실제 호출은 upsert API 임을 분명히 한다.
-export async function createUser(data: User): Promise<void> {
+export async function createUser(data: Omit<User, 'boardPermissions'>): Promise<void> {
     const supabase = getSupabaseClient();
     throwOnError(await supabase.from('users').upsert({
         id: data.uid,
@@ -103,9 +102,6 @@ export async function createUserIfNotExists(user: AuthUser): Promise<void> {
             phoneNumber: null,
             kakaoId: null,
             referrer: null,
-            boardPermissions: {
-                [REMOTE_CONFIG_DEFAULTS.active_board_id]: 'read',
-            },
             updatedAt: null,
         }
         await createUser({
