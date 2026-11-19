@@ -7,6 +7,7 @@ const mockUsersUpsert = vi.fn();
 const mockPermissionsUpsert = vi.fn();
 const mockGetSupabaseClient = vi.fn();
 const mockFetchUserFromSupabase = vi.fn();
+let mockTablesAccessed: string[] = [];
 
 vi.mock('@/shared/external/supabaseClient', async () => {
   const actual = await vi.importActual<typeof SupabaseClientModule>(
@@ -40,8 +41,10 @@ const authUser: AuthUser = {
 describe('createUserIfNotExists', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockTablesAccessed = [];
     mockGetSupabaseClient.mockReturnValue({
       from: (table: string) => {
+        mockTablesAccessed.push(table);
         if (table === 'users') {
           return { insert: mockUsersInsert, upsert: mockUsersUpsert };
         }
@@ -77,6 +80,15 @@ describe('createUserIfNotExists', () => {
       expect.objectContaining({ onConflict: 'id', ignoreDuplicates: true }),
     );
     expect(mockUsersInsert).not.toHaveBeenCalled();
+  });
+
+  it('가입 시 user_board_permissions 에는 아무것도 쓰지 않는다', async () => {
+    mockFetchUserFromSupabase.mockResolvedValue(null);
+
+    await createUserIfNotExists(authUser);
+
+    expect(mockPermissionsUpsert).not.toHaveBeenCalled();
+    expect(mockTablesAccessed).toEqual(['users']);
   });
 
   it('does not throw when a concurrent caller has already inserted the row (TOCTOU race)', async () => {

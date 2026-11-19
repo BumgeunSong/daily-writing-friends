@@ -40,9 +40,6 @@ export interface UserOptionalFields {
   phoneNumber: string | null;
   kakaoId: string | null;
   referrer: string | null;
-  boardPermissions: {
-    [boardId: string]: 'read' | 'write'; // Permissions for each board
-  };
   updatedAt: FirebaseTimestamp | null; // 마지막 업데이트 시각 (Firestore Timestamp)
   knownBuddy?: {
     uid: string;
