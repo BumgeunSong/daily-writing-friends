@@ -1015,11 +1015,12 @@ export type Database = {
       }
     }
     Functions: {
-      can_read_post: { Args: { p_post_id: string }; Returns: boolean }
-      can_read_reaction_target: {
+      can_interact_with_post: { Args: { p_post_id: string }; Returns: boolean }
+      can_interact_with_reaction_target: {
         Args: { p_comment_id: string; p_reply_id: string }
         Returns: boolean
       }
+      can_read_post: { Args: { p_post_id: string }; Returns: boolean }
       check_counter_integrity: {
         Args: never
         Returns: {
