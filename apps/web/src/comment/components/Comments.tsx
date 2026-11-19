@@ -45,6 +45,9 @@ const Comments: React.FC<CommentsProps> = ({
     if (isAuthorViewingPrivatePost) {
       return '이 프리라이팅의 내용에서 중요하다고 느껴지는 부분을 요약해보세요. 내가 쓰고 싶은 글감을 찾는데 큰 도움이 될 거예요!';
     }
+    if (postVisibility === 'private') {
+      return `${authorNickname}님에게 응원을 남겨보세요.`;
+    }
     if (!isLoading && totalActivityCounts > 0) {
       return `${authorNickname}님은 최근 ${fromDaysAgo}일간 나에게 ${totalActivityCounts}개의 댓글을 달아주었어요. 나도 댓글을 달아볼까요?`;
     }
