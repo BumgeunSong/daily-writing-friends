@@ -73,7 +73,7 @@ export const SlashMenuList = forwardRef<SlashMenuListHandle, SlashMenuListProps>
         role="listbox"
         aria-label="블록 삽입"
         data-testid="slash-menu"
-        className="reading-shadow z-50 max-h-72 w-64 max-w-[calc(100vw-1rem)] overflow-y-auto rounded-lg border border-border/50 bg-popover p-1"
+        className="reading-shadow z-50 max-h-[min(18rem,40dvh)] w-64 max-w-[calc(100vw-1rem)] overflow-y-auto rounded-lg border border-border/50 bg-popover p-1"
       >
         {items.map((item, index) => {
           const Icon = ICONS[item.id];
