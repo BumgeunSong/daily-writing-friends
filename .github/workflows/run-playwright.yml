@@ -41,6 +41,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Guard - every e2e spec is collected by the CI projects
+        run: |
+          node --test scripts/e2e/collection.test.mjs
+          node scripts/e2e/check-collection.mjs
+
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
@@ -65,11 +70,6 @@ jobs:
           VITE_FIREBASE_APP_ID=1:000000000000:web:0000000000000000
           EOF
           sed -i 's/^          //' .env.local
-
-      - name: Guard - every e2e spec is collected by the CI projects
-        run: |
-          node --test scripts/e2e/collection.test.mjs
-          node scripts/e2e/check-collection.mjs
 
       - name: Run Playwright tests
         run: pnpm exec playwright test --project=chromium-data-flows --project=chromium-non-member

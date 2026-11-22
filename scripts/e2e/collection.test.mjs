@@ -1,10 +1,14 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, it } from 'node:test';
 
 import {
   checkCollection,
   collectListedSpecs,
   compareRunCount,
+  findSpecFiles,
   listedTotalOf,
   parseCiProjects,
 } from './collection.mjs';
@@ -14,6 +18,24 @@ describe('워크플로에서 CI 프로젝트를 읽을 때', () => {
     const workflow = 'run: pnpm exec playwright test --project=chromium-data-flows --project=chromium-non-member';
 
     assert.deepEqual(parseCiProjects(workflow), ['chromium-data-flows', 'chromium-non-member']);
+  });
+
+  it('주석 줄에 적힌 --project는 무시한다', () => {
+    const workflow = ['# run: pnpm exec playwright test --project=old', 'run: pnpm exec playwright test --project=chromium'].join('\n');
+
+    assert.deepEqual(parseCiProjects(workflow), ['chromium']);
+  });
+
+  it('playwright를 실행하지 않는 줄의 --project는 무시한다', () => {
+    const workflow = ['run: echo --project=unrelated', 'run: pnpm exec playwright test --project=chromium'].join('\n');
+
+    assert.deepEqual(parseCiProjects(workflow), ['chromium']);
+  });
+
+  it('공백으로 구분하거나 따옴표로 감싼 프로젝트 이름도 읽는다', () => {
+    const workflow = `run: pnpm exec playwright test --project chromium --project="Mobile Chrome" --project='Desktop Safari'`;
+
+    assert.deepEqual(parseCiProjects(workflow), ['chromium', 'Mobile Chrome', 'Desktop Safari']);
   });
 
   it('--project 인자가 없으면 빈 목록이다', () => {
@@ -104,5 +126,28 @@ describe('--list가 센 수와 실제 실행 수를 비교할 때', () => {
     });
 
     assert.deepEqual(result, { listedTotal: 35, executed: 34, matches: false });
+  });
+});
+
+describe('디스크에서 spec 파일을 찾을 때', () => {
+  const makeTree = (files) => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-find-'));
+    for (const file of files) {
+      fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+      fs.writeFileSync(path.join(root, file), '');
+    }
+    return root;
+  };
+
+  it('확장자가 ts가 아닌 spec도 spec으로 찾는다', () => {
+    const root = makeTree(['tests/a.spec.ts', 'tests/b.spec.js', 'tests/c.spec.tsx', 'tests/d.spec.mjs']);
+
+    assert.deepEqual(findSpecFiles(root), ['tests/a.spec.ts', 'tests/b.spec.js', 'tests/c.spec.tsx', 'tests/d.spec.mjs']);
+  });
+
+  it('spec이 아닌 파일과 하위 폴더의 spec은 구분해서 찾는다', () => {
+    const root = makeTree(['tests/helper.ts', 'tests/auth.setup.ts', 'tests/data-flows/x.spec.ts', 'tests/x.test.ts']);
+
+    assert.deepEqual(findSpecFiles(root), ['tests/data-flows/x.spec.ts']);
   });
 });

@@ -1,9 +1,20 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-/** CI가 실행하는 Playwright 프로젝트 이름을 워크플로의 `--project=` 인자에서 읽는다. */
+/**
+ * CI가 실행하는 Playwright 프로젝트 이름을 워크플로에서 읽는다.
+ * 주석 줄은 무시하고, `playwright test`를 실행하는 줄의 `--project`만 본다.
+ * `--project=a`, `--project a`, `--project="Mobile Chrome"` 형태를 모두 받는다.
+ */
 export function parseCiProjects(workflowText) {
-  return [...workflowText.matchAll(/--project=([^\s"']+)/g)].map((match) => match[1]);
+  const runLines = workflowText
+    .split('\n')
+    .filter((line) => !line.trim().startsWith('#') && /playwright\s+test/.test(line));
+  return runLines.flatMap((line) =>
+    [...line.matchAll(/--project[=\s]+(?:"([^"]+)"|'([^']+)'|([^\s"']+))/g)].map(
+      (match) => match[1] ?? match[2] ?? match[3],
+    ),
+  );
 }
 
 /**
@@ -26,7 +37,10 @@ export function collectListedSpecs(listJson, repoRoot) {
   return listed;
 }
 
-/** 디스크에서 `*.spec.ts` 파일을 저장소 루트 기준 경로로 모은다. */
+/** Playwright 기본 testMatch처럼 `.spec.{js,mjs,cjs,ts,mts,cts,jsx,tsx}`를 spec으로 본다. */
+const SPEC_FILE_PATTERN = /\.spec\.[cm]?[jt]sx?$/;
+
+/** 디스크에서 spec 파일을 저장소 루트 기준 경로로 모은다. */
 export function findSpecFiles(repoRoot, dir = 'tests') {
   const found = [];
   const walk = (current) => {
@@ -34,7 +48,7 @@ export function findSpecFiles(repoRoot, dir = 'tests') {
       const relative = `${current}/${entry.name}`;
       if (entry.isDirectory()) {
         if (entry.name !== 'node_modules') walk(relative);
-      } else if (entry.name.endsWith('.spec.ts')) {
+      } else if (SPEC_FILE_PATTERN.test(entry.name)) {
         found.push(relative);
       }
     }

@@ -7,6 +7,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -28,14 +29,21 @@ function readJson(file) {
 }
 
 function listCiTests(projects) {
+  // 표준출력에 섞이는 spec/설정의 console.log가 JSON을 깨지 않도록 파일로 받는다.
+  const outputFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-list-')), 'list.json');
   const args = ['exec', 'playwright', 'test', '--list', '--reporter=json', ...projects.map((p) => `--project=${p}`)];
-  const output = execFileSync('pnpm', args, {
+  execFileSync('pnpm', args, {
     cwd: repoRoot,
-    env: { ...process.env, SKIP_SEED: '1' },
-    encoding: 'utf8',
-    maxBuffer: 64 * 1024 * 1024,
+    env: { ...process.env, SKIP_SEED: '1', PLAYWRIGHT_JSON_OUTPUT_NAME: outputFile },
+    stdio: ['ignore', 'ignore', 'inherit'],
   });
-  return JSON.parse(output);
+  const listJson = JSON.parse(fs.readFileSync(outputFile, 'utf8'));
+  if (listJson.errors.length > 0) {
+    console.error('playwright --list가 오류를 보고했다:');
+    for (const error of listJson.errors) console.error(`  - ${error.message}`);
+    process.exit(1);
+  }
+  return listJson;
 }
 
 function main() {
