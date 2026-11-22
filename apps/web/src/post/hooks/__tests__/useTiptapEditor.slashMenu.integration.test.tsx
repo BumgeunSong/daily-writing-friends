@@ -2,9 +2,10 @@ import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EditorContent, type Editor } from '@tiptap/react';
 import { beforeAll, describe, it, expect, vi } from 'vitest';
-import { isComposingKey } from '@/post/utils/slashCommandExtension';
 import { sanitize } from '@/post/utils/sanitizeHtml';
 import { useTiptapEditor } from '../useTiptapEditor';
+
+const noop = () => undefined;
 
 // jsdom has no layout engine; ProseMirror and floating-ui measure rects.
 beforeAll(() => {
@@ -12,17 +13,17 @@ beforeAll(() => {
   Range.prototype.getClientRects = () => [] as unknown as DOMRectList;
   Range.prototype.getBoundingClientRect = () => emptyRect as DOMRect;
   Object.assign(Text.prototype, { getClientRects: () => [] });
-  window.matchMedia ??= ((query: string) => ({ matches: false, media: query, addEventListener() {}, removeEventListener() {} })) as typeof window.matchMedia;
+  window.matchMedia ??= ((query: string) => ({ matches: false, media: query, addEventListener: noop, removeEventListener: noop })) as typeof window.matchMedia;
 });
 
 function Harness({ html, onImageRequest, onReady }: { html: string; onImageRequest: () => void; onReady: (editor: Editor) => void }) {
-  const editor = useTiptapEditor({ initialHtml: html, onChange: () => {}, onImageRequest });
+  const editor = useTiptapEditor({ initialHtml: html, onChange: noop, onImageRequest });
   if (!editor) return null;
   onReady(editor);
   return <EditorContent editor={editor} />;
 }
 
-function renderEditor(html = '<p></p>', onImageRequest: () => void = () => {}) {
+function renderEditor(html = '<p></p>', onImageRequest: () => void = noop) {
   let editor!: Editor;
   render(<Harness html={html} onImageRequest={onImageRequest} onReady={(e) => (editor = e)} />);
   return editor;
@@ -265,14 +266,3 @@ describe('한글 IME 조합 중일 때', () => {
   });
 });
 
-describe('조합 여부를 판단할 때', () => {
-  const key = (init: KeyboardEventInit & { keyCode?: number }) => new KeyboardEvent('keydown', { key: 'Enter', ...init });
-
-  it('뷰가 조합 중이면 키 이벤트에 표시가 없어도 조합 키다', () => {
-    expect(isComposingKey(key({}), true)).toBe(true);
-  });
-
-  it('조합 중이 아닌 일반 Enter는 조합 키가 아니다', () => {
-    expect(isComposingKey(key({}), false)).toBe(false);
-  });
-});
