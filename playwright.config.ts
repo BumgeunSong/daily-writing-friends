@@ -6,13 +6,20 @@ const baseURL = `http://localhost:${port}`;
 // Ensure auth.setup.ts uses the correct origin for storageState
 process.env.E2E_BASE_URL = process.env.E2E_BASE_URL || baseURL;
 
+const NON_SPEC_PATHS = ['**/fixtures/**', '**/helpers/**', '**/*.test.ts', '**/data-flows/**'];
+
+// Logged-out specs need an empty session. They run only in `chromium-no-auth`;
+// every project that loads the saved member session must skip them.
+const LOGGED_OUT_SPECS = '**/*.logged-out.spec.ts';
+const authenticatedTestIgnore = [...NON_SPEC_PATHS, LOGGED_OUT_SPECS];
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
   globalSetup: './tests/global-setup.ts',
   testDir: './tests',
-  testIgnore: ['**/fixtures/**', '**/helpers/**', '**/*.test.ts', '**/data-flows/**'],
+  testIgnore: NON_SPEC_PATHS,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
@@ -67,6 +74,7 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         storageState: './tests/storageState.auth.json',
       },
+      testIgnore: authenticatedTestIgnore,
       dependencies: ['setup'],
     },
     {
@@ -75,6 +83,7 @@ export default defineConfig({
         ...devices['Desktop Firefox'],
         storageState: './tests/storageState.auth.json',
       },
+      testIgnore: authenticatedTestIgnore,
       dependencies: ['setup'],
     },
     {
@@ -83,6 +92,7 @@ export default defineConfig({
         ...devices['Desktop Safari'],
         storageState: './tests/storageState.auth.json',
       },
+      testIgnore: authenticatedTestIgnore,
       dependencies: ['setup'],
     },
     {
@@ -91,6 +101,7 @@ export default defineConfig({
         ...devices['Pixel 5'],
         storageState: './tests/storageState.auth.json',
       },
+      testIgnore: authenticatedTestIgnore,
       dependencies: ['setup'],
     },
     {
