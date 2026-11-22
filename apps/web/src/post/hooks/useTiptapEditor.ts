@@ -8,6 +8,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { useCallback, useEffect, useRef } from 'react';
 import type { ProseMirrorDoc } from '@/post/model/Post';
 import { decideEditorContentSync } from '@/post/utils/editorContentSync';
+import { SlashCommand, resolveSlashMenuPlacement } from '@/post/utils/slashCommandExtension';
 import { sanitize } from '@/post/utils/sanitizeHtml';
 
 // Editor configuration constants
@@ -34,6 +35,8 @@ interface UseTiptapEditorProps {
   onTyping?: () => void;
   placeholder?: string;
   debounceDelay?: number;
+  /** `/` 메뉴의 이미지 항목을 골랐을 때 호출한다. */
+  onImageRequest?: () => void;
 }
 
 /**
@@ -47,12 +50,18 @@ export function useTiptapEditor({
   onTyping,
   placeholder = DEFAULT_PLACEHOLDER,
   debounceDelay = DEFAULT_DEBOUNCE_DELAY,
+  onImageRequest,
 }: UseTiptapEditorProps) {
   const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const onTypingRef = useRef(onTyping);
   useEffect(() => {
     onTypingRef.current = onTyping;
   }, [onTyping]);
+
+  const onImageRequestRef = useRef(onImageRequest);
+  useEffect(() => {
+    onImageRequestRef.current = onImageRequest;
+  }, [onImageRequest]);
 
   // Configure TipTap extensions
   const extensions = [
@@ -89,6 +98,10 @@ export function useTiptapEditor({
     }),
     Dropcursor.configure({
       color: '#6B7280',
+    }),
+    SlashCommand.configure({
+      onImageRequest: () => onImageRequestRef.current?.(),
+      placement: resolveSlashMenuPlacement(),
     }),
   ];
 
