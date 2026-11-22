@@ -1,17 +1,21 @@
+import { randomUUID } from 'node:crypto';
+
 import { test, expect } from '@playwright/test';
 import { cleanupWriteComments } from '../helpers/seed-cleanup';
 
 const BOARD_ID = 'e2e-test-board';
 const POST_ID = 'e2e-post-000';
-const COMMENT_TEXT = 'e2e-write-test-comment';
 
 test.describe('Comment Flow', () => {
+  // 테스트마다 고유한 본문을 써서 다른 실행이나 병렬 테스트의 댓글과 섞이지 않게 한다.
+  const commentText = `e2e-write-comment-${randomUUID()}`;
+
   test.beforeEach(async () => {
     await cleanupWriteComments();
   });
 
   test.afterEach(async () => {
-    await cleanupWriteComments();
+    await cleanupWriteComments(commentText);
   });
 
   test('write a comment and verify it appears', async ({ page }) => {
@@ -25,13 +29,14 @@ test.describe('Comment Flow', () => {
     // Find the comment input textbox
     const commentInput = page.getByRole('textbox', { name: /댓글|글값/ });
     await expect(commentInput).toBeVisible({ timeout: 10000 });
-    await commentInput.fill(COMMENT_TEXT);
+    await commentInput.fill(commentText);
 
     // Submit the comment
     const submitButton = page.getByRole('button', { name: '댓글 등록' });
     await submitButton.click();
 
-    // Verify the comment appears in the comment section
-    await expect(page.getByText(COMMENT_TEXT)).toBeVisible({ timeout: 10000 });
+    // 등록되면 입력창이 비워지고 댓글 목록에 방금 쓴 댓글이 보인다.
+    await expect(commentInput).toHaveText('');
+    await expect(page.getByText(commentText)).toBeVisible({ timeout: 10000 });
   });
 });
