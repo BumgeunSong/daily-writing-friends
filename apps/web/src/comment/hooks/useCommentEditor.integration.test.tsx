@@ -50,6 +50,7 @@ function renderCommentEditor(initialContent: string) {
 function pressEnterAt(
   editor: NonNullable<ReturnType<typeof useCommentEditor>['editor']>,
   pos: number,
+  { shiftKey = false }: { shiftKey?: boolean } = {},
 ) {
   act(() => {
     editor.commands.setTextSelection(pos);
@@ -58,7 +59,7 @@ function pressEnterAt(
     // userEvent dispatches on document.activeElement, which renderHook's
     // detached container can never hold -- fireEvent targets the node itself.
     // eslint-disable-next-line testing-library/prefer-user-event
-    fireEvent.keyDown(editor.view.dom, { key: 'Enter', code: 'Enter' });
+    fireEvent.keyDown(editor.view.dom, { key: 'Enter', code: 'Enter', shiftKey });
   });
 }
 
@@ -148,5 +149,33 @@ describe('useCommentEditor — blockquote input rule', () => {
     // synthetic handleTextInput call) would additionally leave "> " as text.
     // What matters for this regression is that no second <blockquote> wraps it.
     expect(editor.getHTML()).toBe('<blockquote><p>인용문</p></blockquote>');
+  });
+});
+
+describe('useCommentEditor — 줄바꿈', () => {
+  it.each([
+    ['Enter', {}],
+    ['Shift+Enter', { shiftKey: true }],
+  ])('일반 문단 끝에서 %s를 누르면 문단을 나누지 않고 줄바꿈을 넣는다', async (_key, options) => {
+    const { result } = renderCommentEditor('<p>첫째 줄</p>');
+    await waitFor(() => expect(result.current.editor).not.toBeNull());
+    const editor = result.current.editor!;
+
+    pressEnterAt(editor, editor.state.doc.content.size - 1, options);
+
+    expect(editor.getHTML()).toBe('<p>첫째 줄<br></p>');
+  });
+
+  it('줄바꿈 뒤에 이어 쓴 글자는 같은 문단의 다음 줄이 된다', async () => {
+    const { result } = renderCommentEditor('<p>첫째 줄</p>');
+    await waitFor(() => expect(result.current.editor).not.toBeNull());
+    const editor = result.current.editor!;
+
+    pressEnterAt(editor, editor.state.doc.content.size - 1);
+    act(() => {
+      editor.view.dispatch(editor.state.tr.insertText('둘째 줄'));
+    });
+
+    expect(editor.getHTML()).toBe('<p>첫째 줄<br>둘째 줄</p>');
   });
 });

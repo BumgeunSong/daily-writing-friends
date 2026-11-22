@@ -106,6 +106,18 @@ describe('MentionableInput — Pattern 4 (form with callback)', () => {
     expect(contentJson).toMatchObject({ type: 'doc' });
   });
 
+  it('여러 줄로 쓴 댓글은 줄바꿈이 그대로 남아 제출된다', async () => {
+    const user = userEvent.setup({ delay: null });
+    const onSubmit = vi.fn((_content: string, _contentJson: unknown) => Promise.resolve());
+    renderInput(onSubmit, '<p>첫째 줄<br>둘째 줄</p>');
+
+    await user.click(screen.getByRole('button', { name: '댓글 등록' }));
+
+    const [content, contentJson] = onSubmit.mock.calls[0];
+    expect(content).toContain('첫째 줄<br>둘째 줄');
+    expect(JSON.stringify(contentJson)).toContain('"type":"hardBreak"');
+  });
+
   it('keeps an existing mention and its user id when the editor starts from structured content', async () => {
     const user = userEvent.setup({ delay: null });
     const onSubmit = vi.fn((_content: string, _contentJson: unknown) => Promise.resolve());
