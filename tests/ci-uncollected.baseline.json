@@ -1,0 +1,46 @@
+[
+  {
+    "file": "tests/auth-flow.logged-out.spec.ts",
+    "reason": "chromium-no-auth 프로젝트에만 있고 CI가 그 프로젝트를 돌리지 않는다"
+  },
+  {
+    "file": "tests/comment-input.logged-out.spec.ts",
+    "reason": "integration으로 이전해 삭제 예정이다"
+  },
+  {
+    "file": "tests/avatar-resize.spec.ts",
+    "reason": "루트 spec은 엔진 프로젝트에만 있고 CI는 그 프로젝트를 돌리지 않는다"
+  },
+  {
+    "file": "tests/editor-image-upload-mock.spec.ts",
+    "reason": "루트 spec은 엔진 프로젝트에만 있고 CI는 그 프로젝트를 돌리지 않는다"
+  },
+  {
+    "file": "tests/editor-korean-ime.spec.ts",
+    "reason": "루트 spec은 엔진 프로젝트에만 있고 CI는 그 프로젝트를 돌리지 않는다"
+  },
+  {
+    "file": "tests/editor-mobile.spec.ts",
+    "reason": "루트 spec은 엔진 프로젝트에만 있고 CI는 그 프로젝트를 돌리지 않는다"
+  },
+  {
+    "file": "tests/editor-text-formatting.spec.ts",
+    "reason": "루트 spec은 엔진 프로젝트에만 있고 CI는 그 프로젝트를 돌리지 않는다"
+  },
+  {
+    "file": "tests/editor-undo-redo.spec.ts",
+    "reason": "루트 spec은 엔진 프로젝트에만 있고 CI는 그 프로젝트를 돌리지 않는다"
+  },
+  {
+    "file": "tests/freewriting-timer.spec.ts",
+    "reason": "루트 spec은 엔진 프로젝트에만 있고 CI는 그 프로젝트를 돌리지 않는다"
+  },
+  {
+    "file": "tests/e2e/otp-signup-happy-path.spec.ts",
+    "reason": "로컬 supabase 설정이 enable_confirmations=true여야 해서 CI 설정 결정이 필요하다"
+  },
+  {
+    "file": "tests/image-perf.spec.ts",
+    "reason": "단언이 하나뿐인 측정 스크립트라 spec으로 둘지 오너 판단이 필요하다"
+  }
+]
