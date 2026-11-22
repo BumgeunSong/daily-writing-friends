@@ -27,7 +27,7 @@ test.describe('Editor Korean IME', () => {
   test('Korean + "..." does not create unwanted line break', async ({ page }) => {
     await imeCompose(page, '그런데', '.');
     await page.keyboard.type('..');
-    await expectSingleParagraphWith(page, '그런데');
+    await expectSingleParagraphWith(page, '그런데...');
   });
 
   // --- Common punctuation stability ---
@@ -71,13 +71,13 @@ test.describe('Editor Korean IME', () => {
   test('Korean then English in same paragraph — no break', async ({ page }) => {
     await imeType(page, '안녕 ');
     await page.keyboard.type('hello');
-    await expectSingleParagraphWith(page, '안녕', 'hello');
+    await expectSingleParagraphWith(page, '안녕 hello');
   });
 
   test('English then Korean — no break', async ({ page }) => {
     await page.keyboard.type('hello ');
     await imeType(page, '세계');
-    await expectSingleParagraphWith(page, 'hello', '세계');
+    await expectSingleParagraphWith(page, 'hello 세계');
   });
 
   test('rapid Korean/English alternation — no phantom line breaks', async ({ page }) => {
@@ -87,7 +87,7 @@ test.describe('Editor Korean IME', () => {
     await page.keyboard.type('B');
     await imeType(page, '다');
     await page.keyboard.type('C');
-    await expectSingleParagraphWith(page, '가', '나', '다', 'A', 'B', 'C');
+    await expectSingleParagraphWith(page, '가A나B다C');
   });
 
   test('Korean text with bold formatting preserved', async ({ page }) => {

@@ -6,9 +6,9 @@ export const EDITOR_AREA = '[data-testid="editor-area"]';
 export const EDITOR_OUTPUT = '[data-testid="editor-output"]';
 
 /**
- * Control on every platform. Playwright delivers Meta+Shift+Z to the page as
- * undo-redo only unreliably on macOS Chromium (redo never fires), while
- * Control+Z / Control+Shift+Z drive the editor history the same on macOS and Linux.
+ * Control on every host. Desktop Chrome device emulation reports a non-Mac `navigator.platform`,
+ * so the editor's Mod key is Ctrl even on a macOS host. On a macOS host Playwright also maps
+ * Meta+Shift+Z to the native redo command instead of a keydown the page sees.
  */
 export function getModKey(): string {
   return 'Control';
@@ -42,5 +42,6 @@ export async function expectSingleParagraphWith(page: Page, ...texts: string[]):
     for (const text of texts) expect(html).toContain(text);
     const paragraphCount = (html.match(/<p[ >]/g) || []).length;
     expect(paragraphCount).toBe(1);
+    expect(html).not.toMatch(/<br/);
   }).toPass({ timeout: 5000 });
 }

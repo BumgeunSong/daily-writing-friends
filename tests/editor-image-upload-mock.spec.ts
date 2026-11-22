@@ -12,10 +12,25 @@ const TEST_IMAGE_BUFFER = Buffer.from(
 const UPLOAD_URL_PATTERN = '**/storage/v1/object/post-images/**';
 const PUBLIC_URL_PATTERN = '**/storage/v1/object/public/post-images/**';
 const CORS_HEADERS = { 'access-control-allow-origin': '*' };
+const UPLOAD_REQUEST_PATH = /\/storage\/v1\/object\/post-images\/[0-9a-f-]{36}\//;
+const PUBLIC_IMAGE_SRC = /\/storage\/v1\/object\/public\/post-images\/[0-9a-f-]{36}\//;
+
+const waitForUploadRequest = (page: import('@playwright/test').Page) =>
+  page.waitForRequest((req) => req.method() === 'POST' && UPLOAD_REQUEST_PATH.test(req.url()));
+
+// The inserted image must point at the bucket's public URL and actually load through it.
+async function expectUploadedImageInserted(page: import('@playwright/test').Page) {
+  const image = page.locator(`${EDITOR_AREA} img`);
+  await expect(image).toHaveCount(1);
+  await expect(image).toHaveAttribute('src', PUBLIC_IMAGE_SRC);
+  await expect
+    .poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0))
+    .toBe(true);
+}
 
 // The editor uploads through supabase-js: one multipart POST to
 // /storage/v1/object/post-images/{uid}/{file}, then builds the public URL locally.
-// Answer the upload and serve a tiny JPEG at the public URL so no real bucket is needed.
+// Answer the upload and serve a tiny PNG at the public URL so no real bucket is needed.
 async function setupMockUpload(page: import('@playwright/test').Page) {
   await page.route(UPLOAD_URL_PATTERN, async (route) => {
     if (route.request().method() === 'OPTIONS') {
@@ -68,6 +83,7 @@ test.describe('Editor Image Upload (Mocked)', () => {
 
     // Wait for Tiptap's paste/drop handlers to be attached (signaled by data attribute)
     await page.waitForSelector('[data-image-handlers="ready"]', { timeout: 5000 });
+    const uploadRequest = waitForUploadRequest(page);
 
     // Synthetic ClipboardEvent ignores clipboardData in constructor — use Object.defineProperty
     // Must include getData/types so ProseMirror's internal paste handler doesn't throw
@@ -93,10 +109,8 @@ test.describe('Editor Image Upload (Mocked)', () => {
       { buffer: Array.from(fileBuffer) },
     );
 
-    await expect(async () => {
-      const html = await page.locator(EDITOR_OUTPUT).innerHTML();
-      expect(html).toContain('<img');
-    }).toPass({ timeout: 15000 });
+    await uploadRequest;
+    await expectUploadedImageInserted(page);
   });
 
   test('drag and drop inserts image', async ({ page }) => {
@@ -105,6 +119,7 @@ test.describe('Editor Image Upload (Mocked)', () => {
 
     // Wait for Tiptap's drop handler to be attached (signaled by data attribute)
     await page.waitForSelector('[data-image-handlers="ready"]', { timeout: 5000 });
+    const uploadRequest = waitForUploadRequest(page);
 
     // Synthetic DragEvent ignores dataTransfer in constructor — use Object.defineProperty
     // Must include getData/types so ProseMirror's internal drop handler doesn't throw
@@ -134,9 +149,7 @@ test.describe('Editor Image Upload (Mocked)', () => {
       { buffer: Array.from(fileBuffer) },
     );
 
-    await expect(async () => {
-      const html = await page.locator(EDITOR_OUTPUT).innerHTML();
-      expect(html).toContain('<img');
-    }).toPass({ timeout: 15000 });
+    await uploadRequest;
+    await expectUploadedImageInserted(page);
   });
 });
