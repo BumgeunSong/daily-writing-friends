@@ -1,4 +1,4 @@
-import { useImperativeHandle, forwardRef, useEffect, useRef } from 'react';
+import { useCallback, useImperativeHandle, forwardRef, useEffect, useRef } from 'react';
 import { useEditorCopy } from '@/post/hooks/useEditorCopy';
 import { useTiptapEditor } from '@/post/hooks/useTiptapEditor';
 import { useTiptapImageUpload } from '@/post/hooks/useTiptapImageUpload';
@@ -35,6 +35,10 @@ export interface EditorTiptapHandle {
  */
 export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
   ({ initialHtml, initialJson, onChange, onTyping, placeholder = '내용을 입력하세요...', onUploadingChange }, ref) => {
+    // The upload hook needs the editor, so the editor's `/` menu reaches the picker through a ref.
+    const openFilePickerRef = useRef<() => void>(() => {});
+    const requestImage = useCallback(() => openFilePickerRef.current(), []);
+
     // Initialize editor with custom configuration
     const editor = useTiptapEditor({
       initialHtml,
@@ -42,12 +46,16 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
       onChange,
       onTyping,
       placeholder,
+      onImageRequest: requestImage,
     });
 
     // Image upload functionality
     const { openFilePicker, handlePaste, handleDrop, isUploading, stage, uploadProgress } = useTiptapImageUpload({
       editor,
     });
+    useEffect(() => {
+      openFilePickerRef.current = openFilePicker;
+    }, [openFilePicker]);
 
     // Expose upload state to parent for submit button control
     useEffect(() => {

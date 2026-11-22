@@ -8,11 +8,13 @@ import StarterKit from '@tiptap/starter-kit';
 import { useCallback, useEffect, useRef } from 'react';
 import type { ProseMirrorDoc } from '@/post/model/Post';
 import { decideEditorContentSync } from '@/post/utils/editorContentSync';
+import { SlashCommand } from '@/post/utils/slashCommandExtension';
 import { sanitize } from '@/post/utils/sanitizeHtml';
 
 // Editor configuration constants
 const DEFAULT_DEBOUNCE_DELAY = 300; // milliseconds
 const DEFAULT_PLACEHOLDER = '내용을 입력하세요...';
+const MOBILE_MEDIA_QUERY = '(max-width: 767px)';
 
 /**
  * Block types after which the trailing-node plugin must not append a paragraph.
@@ -34,6 +36,8 @@ interface UseTiptapEditorProps {
   onTyping?: () => void;
   placeholder?: string;
   debounceDelay?: number;
+  /** `/` 메뉴의 이미지 항목이 호출한다. 업로드 훅이 에디터보다 늦게 만들어져 ref로 읽는다. */
+  onImageRequest?: () => void;
 }
 
 /**
@@ -47,12 +51,18 @@ export function useTiptapEditor({
   onTyping,
   placeholder = DEFAULT_PLACEHOLDER,
   debounceDelay = DEFAULT_DEBOUNCE_DELAY,
+  onImageRequest,
 }: UseTiptapEditorProps) {
   const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const onTypingRef = useRef(onTyping);
   useEffect(() => {
     onTypingRef.current = onTyping;
   }, [onTyping]);
+
+  const onImageRequestRef = useRef(onImageRequest);
+  useEffect(() => {
+    onImageRequestRef.current = onImageRequest;
+  }, [onImageRequest]);
 
   // Configure TipTap extensions
   const extensions = [
@@ -89,6 +99,10 @@ export function useTiptapEditor({
     }),
     Dropcursor.configure({
       color: '#6B7280',
+    }),
+    SlashCommand.configure({
+      onImageRequest: () => onImageRequestRef.current?.(),
+      placement: window.matchMedia(MOBILE_MEDIA_QUERY).matches ? 'top-start' : 'bottom-start',
     }),
   ];
 
