@@ -8,13 +8,12 @@ import StarterKit from '@tiptap/starter-kit';
 import { useCallback, useEffect, useRef } from 'react';
 import type { ProseMirrorDoc } from '@/post/model/Post';
 import { decideEditorContentSync } from '@/post/utils/editorContentSync';
-import { SlashCommand } from '@/post/utils/slashCommandExtension';
+import { SlashCommand, resolveSlashMenuPlacement } from '@/post/utils/slashCommandExtension';
 import { sanitize } from '@/post/utils/sanitizeHtml';
 
 // Editor configuration constants
 const DEFAULT_DEBOUNCE_DELAY = 300; // milliseconds
 const DEFAULT_PLACEHOLDER = '내용을 입력하세요...';
-const MOBILE_MEDIA_QUERY = '(max-width: 767px)';
 
 /**
  * Block types after which the trailing-node plugin must not append a paragraph.
@@ -102,7 +101,7 @@ export function useTiptapEditor({
     }),
     SlashCommand.configure({
       onImageRequest: () => onImageRequestRef.current?.(),
-      placement: window.matchMedia(MOBILE_MEDIA_QUERY).matches ? 'top-start' : 'bottom-start',
+      placement: resolveSlashMenuPlacement(),
     }),
   ];
 

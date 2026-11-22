@@ -55,11 +55,25 @@ const IME_PROCESS_KEY_CODE = 229;
 export const isComposingKey = (event: KeyboardEvent, viewIsComposing: boolean) =>
   viewIsComposing || event.isComposing || event.keyCode === IME_PROCESS_KEY_CODE;
 
+const noop = () => undefined;
+
+const MOBILE_MEDIA_QUERY = '(max-width: 767px)';
+
+/**
+ * 좁은 화면에서는 가상 키보드가 아래를 가리므로 커서 위쪽을 먼저 노린다.
+ * Suggestion의 placement는 에디터를 만들 때 한 번 정해지므로 회전·리사이즈로 뷰포트가 바뀌어도 따라가지 않는다.
+ * 그 경우에도 floating-ui flip이 화면 밖으로 나가는 것은 막는다.
+ */
+export const resolveSlashMenuPlacement = (): SlashCommandOptions['placement'] =>
+  typeof window.matchMedia === 'function' && window.matchMedia(MOBILE_MEDIA_QUERY).matches
+    ? 'top-start'
+    : 'bottom-start';
+
 export const SlashCommand = Extension.create<SlashCommandOptions>({
   name: 'slashCommand',
 
   addOptions() {
-    return { onImageRequest: () => {}, placement: 'bottom-start' };
+    return { onImageRequest: noop, placement: 'bottom-start' };
   },
 
   addProseMirrorPlugins() {
