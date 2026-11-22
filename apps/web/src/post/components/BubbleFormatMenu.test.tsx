@@ -56,13 +56,18 @@ describe('BubbleFormatMenu', () => {
 
   it('이미지 노드를 선택하면 보이지 않는다', async () => {
     const editor = renderMenu('<p>글자</p><img src="https://example.com/a.png">');
+    select(editor, 1, 3);
+    await waitFor(() => expect(isShown()).toBe(true));
 
     act(() => {
-      editor.chain().focus().setNodeSelection(editor.state.doc.content.size - 1).run();
+      let imagePos = -1;
+      editor.state.doc.descendants((node, pos) => {
+        if (node.type.name === 'image') imagePos = pos;
+      });
+      editor.chain().focus().setNodeSelection(imagePos).run();
     });
 
-    await new Promise((r) => setTimeout(r, 400));
-    expect(isShown()).toBe(false);
+    await waitFor(() => expect(isShown()).toBe(false));
   });
 
   it('현재 서식에 맞춰 버튼의 활성 상태를 표시한다', async () => {
@@ -111,6 +116,79 @@ describe('BubbleFormatMenu', () => {
     await user.type(screen.getByLabelText('링크 URL'), 'javascript:alert(1){Enter}');
 
     expect(editor.getHTML()).not.toContain('<a ');
+  });
+
+  it('잘못된 URL이면 입력을 닫지 않고 오류 안내를 보인다', async () => {
+    const user = userEvent.setup({ delay: null });
+    const editor = renderMenu('<p>글자</p>');
+    select(editor, 1, 3);
+    await waitFor(() => expect(isShown()).toBe(true));
+
+    await user.click(screen.getByLabelText('Link'));
+    await user.type(screen.getByLabelText('링크 URL'), 'example.com{Enter}');
+
+    expect(screen.getByLabelText('링크 URL')).toBeInTheDocument();
+    expect(screen.getByLabelText('링크 URL')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByText('URL은 http:// 또는 https://로 시작해야 합니다')).toBeInTheDocument();
+    expect(editor.getHTML()).not.toContain('<a ');
+  });
+
+  it('Escape로 링크 입력을 취소하면 편집을 이어갈 수 있도록 에디터에 포커스가 돌아간다', async () => {
+    const user = userEvent.setup({ delay: null });
+    const editor = renderMenu('<p>글자</p>');
+    select(editor, 1, 3);
+    await waitFor(() => expect(isShown()).toBe(true));
+
+    await user.click(screen.getByLabelText('Link'));
+    await user.type(screen.getByLabelText('링크 URL'), 'https://example.com{Escape}');
+
+    expect(editor.getHTML()).not.toContain('<a ');
+    expect(screen.getByLabelText('Link')).toBeInTheDocument();
+    await waitFor(() => expect(editor.view.hasFocus()).toBe(true));
+  });
+
+  it('링크 입력으로 포커스가 옮겨져도 메뉴는 유지된다', async () => {
+    const user = userEvent.setup({ delay: null });
+    const editor = renderMenu('<p>글자</p>');
+    select(editor, 1, 3);
+    await waitFor(() => expect(isShown()).toBe(true));
+
+    await user.click(screen.getByLabelText('Link'));
+
+    expect(screen.getByLabelText('링크 URL')).toHaveFocus();
+    await new Promise((r) => setTimeout(r, 400));
+    expect(isShown()).toBe(true);
+  });
+
+  it('링크 입력에서 포커스가 에디터 밖으로 나가면 메뉴가 닫힌다', async () => {
+    const user = userEvent.setup({ delay: null });
+    const editor = renderMenu('<p>글자</p>');
+    select(editor, 1, 3);
+    await waitFor(() => expect(isShown()).toBe(true));
+    await user.click(screen.getByLabelText('Link'));
+
+    act(() => {
+      (document.activeElement as HTMLElement).blur();
+    });
+
+    await waitFor(() => expect(isShown()).toBe(false));
+  });
+
+  it('링크 입력 중 메뉴가 숨겨지면 입력 상태가 초기화된다', async () => {
+    const user = userEvent.setup({ delay: null });
+    const editor = renderMenu('<p>글자 하나 둘</p>');
+    select(editor, 1, 3);
+    await waitFor(() => expect(isShown()).toBe(true));
+    await user.click(screen.getByLabelText('Link'));
+    await user.type(screen.getByLabelText('링크 URL'), 'https://stale.com');
+
+    select(editor, 5, 5);
+    await waitFor(() => expect(isShown()).toBe(false));
+    select(editor, 6, 8);
+    await waitFor(() => expect(isShown()).toBe(true));
+
+    expect(screen.queryByLabelText('링크 URL')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Link')).toBeInTheDocument();
   });
 
   it('기존 링크는 URL이 채워지고 비우면 해제된다', async () => {

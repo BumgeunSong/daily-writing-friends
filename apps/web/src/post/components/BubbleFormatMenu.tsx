@@ -1,4 +1,6 @@
-import { NodeSelection } from '@tiptap/pm/state';
+import { NodeSelection, PluginKey } from '@tiptap/pm/state';
+import type { EditorState } from '@tiptap/pm/state';
+import type { EditorView } from '@tiptap/pm/view';
 import { useEditorState, type Editor } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import {
@@ -11,12 +13,27 @@ import {
   Check,
   X,
 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useLinkEditor } from '@/post/hooks/useLinkEditor';
 import { shouldShowBubbleMenu } from '@/post/utils/bubbleMenuVisibility';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { ToolbarButton } from './ToolbarButton';
+
+/** Explicit key so the menu can be hidden by transaction meta (a string key would not match). */
+const BUBBLE_MENU_KEY = new PluginKey('formatBubbleMenu');
+
+// Module-level so BubbleMenu does not dispatch an options-update transaction on every render.
+const BUBBLE_PLACEMENT = { placement: 'top', offset: 8, flip: true, shift: { padding: 8 } } as const;
+
+function shouldShowFormatMenu({ state, view, element }: { state: EditorState; view: EditorView; element: HTMLElement }) {
+  return shouldShowBubbleMenu({
+    isEmpty: state.selection.empty,
+    isNodeSelection: state.selection instanceof NodeSelection,
+    isComposing: view.composing,
+    hasFocus: view.hasFocus() || element.contains(document.activeElement),
+  });
+}
 
 interface BubbleFormatMenuProps {
   editor: Editor;
@@ -28,6 +45,19 @@ interface BubbleFormatMenuProps {
  */
 export function BubbleFormatMenu({ editor }: BubbleFormatMenuProps) {
   const link = useLinkEditor(editor);
+  const cancelLinkRef = useRef(link.cancel);
+  cancelLinkRef.current = link.cancel;
+  const bubbleOptions = useMemo(
+    () => ({ ...BUBBLE_PLACEMENT, onHide: () => cancelLinkRef.current() }),
+    [],
+  );
+  const cancelLinkEditing = () => {
+    link.cancel();
+    editor.commands.focus();
+  };
+  const submitLink = () => {
+    if (!link.isInvalid) link.apply();
+  };
   const urlInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -49,45 +79,58 @@ export function BubbleFormatMenu({ editor }: BubbleFormatMenuProps) {
   return (
     <BubbleMenu
       editor={editor}
-      options={{ placement: 'top', offset: 8, flip: true, shift: { padding: 8 } }}
-      shouldShow={({ state, view, element }) =>
-        shouldShowBubbleMenu({
-          isEmpty: state.selection.empty,
-          isNodeSelection: state.selection instanceof NodeSelection,
-          isComposing: view.composing,
-          hasFocus: view.hasFocus() || element.contains(document.activeElement),
-        })
-      }
+      pluginKey={BUBBLE_MENU_KEY}
+      options={bubbleOptions}
+      shouldShow={shouldShowFormatMenu}
+      onMouseDown={(e) => {
+        // Keep editor focus on button clicks (Safari does not focus buttons); the URL input needs its own focus.
+        if (!(e.target instanceof HTMLInputElement)) e.preventDefault();
+      }}
       className='z-50 flex items-center gap-0.5 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md'
       data-testid='bubble-format-menu'
     >
       {link.isOpen ? (
-        <div className='flex w-72 items-center gap-1'>
-          <Input
-            type='url'
-            ref={urlInputRef}
-            placeholder='https://example.com'
-            aria-label='링크 URL'
-            value={link.linkUrl}
-            onChange={(e) => link.setLinkUrl(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                link.apply();
-              } else if (e.key === 'Escape') {
-                e.preventDefault();
-                link.cancel();
-                editor.commands.focus();
-              }
-            }}
-            className='h-9 flex-1'
-          />
-          <Button type='button' size='icon' variant='ghost' aria-label='링크 적용' onClick={link.apply} className='size-9 shrink-0'>
-            <Check className='size-4' />
-          </Button>
-          <Button type='button' size='icon' variant='ghost' aria-label='링크 편집 취소' onClick={link.cancel} className='size-9 shrink-0'>
-            <X className='size-4' />
-          </Button>
+        <div
+          className='w-72'
+          onBlur={(e) => {
+            if (e.currentTarget.contains(e.relatedTarget)) return;
+            link.cancel();
+            // Focus left the menu for somewhere outside the editor; the plugin only hides on editor blur.
+            editor.view.dispatch(editor.state.tr.setMeta(BUBBLE_MENU_KEY, 'hide'));
+          }}
+        >
+          <div className='flex items-center gap-1'>
+            <Input
+              type='url'
+              ref={urlInputRef}
+              placeholder='https://example.com'
+              aria-label='링크 URL'
+              aria-invalid={link.isInvalid}
+              value={link.linkUrl}
+              onChange={(e) => link.setLinkUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  submitLink();
+                } else if (e.key === 'Escape') {
+                  e.preventDefault();
+                  cancelLinkEditing();
+                }
+              }}
+              className='h-9 flex-1'
+            />
+            <Button type='button' size='icon' variant='ghost' aria-label='링크 적용' onClick={submitLink} className='size-9 shrink-0'>
+              <Check className='size-4' />
+            </Button>
+            <Button type='button' size='icon' variant='ghost' aria-label='링크 편집 취소' onClick={cancelLinkEditing} className='size-9 shrink-0'>
+              <X className='size-4' />
+            </Button>
+          </div>
+          {link.isInvalid && (
+            <p role='alert' className='px-1 pt-1 text-xs text-muted-foreground'>
+              URL은 http:// 또는 https://로 시작해야 합니다
+            </p>
+          )}
         </div>
       ) : (
         <>

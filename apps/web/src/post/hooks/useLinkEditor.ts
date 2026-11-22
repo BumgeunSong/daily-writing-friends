@@ -30,7 +30,8 @@ export function useLinkEditor(editor: Editor) {
     close();
   };
 
-  const showProtocolHint = !!linkUrl && !isValidHttpUrl(linkUrl) && !linkUrl.startsWith('http');
+  const isInvalid = !!linkUrl && !isValidHttpUrl(linkUrl);
+  const showProtocolHint = isInvalid && !linkUrl.startsWith('http');
 
-  return { linkUrl, setLinkUrl, isOpen, setIsOpen, open, apply, cancel: close, showProtocolHint };
+  return { linkUrl, setLinkUrl, isOpen, setIsOpen, open, apply, cancel: close, isInvalid, showProtocolHint };
 }
