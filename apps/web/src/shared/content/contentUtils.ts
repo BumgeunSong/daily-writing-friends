@@ -407,6 +407,8 @@ const extractPlainText = (html: string): string => {
 
     // 정규식으로 HTML 태그 제거 및 변환 (DOM 조작보다 빠름)
     const text = html
+      // 구분선은 문단 사이에 놓이므로 먼저 지워 </p><p>가 인접하게 만든다
+      .replace(/<hr[^>]*>/gi, '')
       // </p><p> 사이를 줄바꿈으로 변환 (단락 구분)
       .replace(/<\/p>\s*<p[^>]*>/gi, '\n')
       // <br> 태그를 줄바꿈으로 변환

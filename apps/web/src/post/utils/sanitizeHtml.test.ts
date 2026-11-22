@@ -15,6 +15,18 @@ describe('sanitizeHtml', () => {
       expect(sanitize('')).toBe('');
     });
 
+    it('구분선 hr 태그를 유지한다', () => {
+      const result = sanitize('<p>위</p><hr><p>아래</p>');
+
+      expect(result).toBe('<p>위</p><hr><p>아래</p>');
+    });
+
+    it('구분선 hr의 속성은 모두 제거한다', () => {
+      const result = sanitize('<hr class="x" style="color:red" id="a" onclick="alert(1)">');
+
+      expect(result).toBe('<hr>');
+    });
+
     it('should allow paragraph tags', () => {
       const html = '<p>Hello World</p>';
       const result = sanitize(html);

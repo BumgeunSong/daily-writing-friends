@@ -14,6 +14,14 @@ import { sanitize } from '@/post/utils/sanitizeHtml';
 const DEFAULT_DEBOUNCE_DELAY = 300; // milliseconds
 const DEFAULT_PLACEHOLDER = '내용을 입력하세요...';
 
+/**
+ * Block types after which the trailing-node plugin must not append a paragraph.
+ * That append is a separate doc-changing transaction, which resets the input
+ * rules' undo state, so Backspace could no longer restore the typed markdown
+ * (`# `, `> `, ...). Users leave these blocks with Enter instead.
+ */
+const BLOCKS_WITHOUT_TRAILING_PARAGRAPH = ['heading', 'blockquote', 'bulletList', 'orderedList'];
+
 interface UseTiptapEditorProps {
   initialHtml?: string;
   initialJson?: ProseMirrorDoc;
@@ -51,8 +59,8 @@ export function useTiptapEditor({
     StarterKit.configure({
       codeBlock: false,
       code: false,
-      horizontalRule: false,
       dropcursor: false,
+      trailingNode: { notAfter: BLOCKS_WITHOUT_TRAILING_PARAGRAPH },
       heading: {
         levels: [1, 2],
       },

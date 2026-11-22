@@ -62,9 +62,23 @@ describe('contentUtils', () => {
       expect(result).toContain('Bold');
       expect(result).toContain('italic');
     });
+
+    it('구분선 hr은 피드 카드 미리보기에서 제거한다', () => {
+      const result = renderPostPreviewHtml('<p>위</p><hr><p>아래</p>');
+
+      expect(result).not.toContain('<hr');
+      expect(result).toContain('위');
+      expect(result).toContain('아래');
+    });
   });
 
   describe('renderPostBodyHtml', () => {
+    it('구분선 hr을 글 상세 본문에 그대로 렌더링한다', () => {
+      const result = renderPostBodyHtml('<p>위</p><hr><p>아래</p>');
+
+      expect(result).toBe('<p>위</p><hr><p>아래</p>');
+    });
+
     it('should sanitize basic HTML content', () => {
       const content = '<p>Hello <strong>World</strong></p>';
       const result = renderPostBodyHtml(content);
@@ -366,6 +380,18 @@ describe('contentUtils', () => {
   });
 
   describe('extractPlainText', () => {
+    it('구분선을 사이에 둔 두 문단은 줄바꿈으로 나뉘어 복사된다', () => {
+      const result = extractPlainText('<p>위</p><hr><p>아래</p>');
+
+      expect(result).toBe('위\n아래');
+    });
+
+    it('에디터에서 복사한 속성 있는 hr도 줄바꿈으로 나뉜다', () => {
+      const result = extractPlainText('<p>위</p><hr contenteditable="false"><p>아래</p>');
+
+      expect(result).toBe('위\n아래');
+    });
+
     it('should remove all HTML tags', () => {
       const html = '<p>Hello <strong>World</strong></p>';
       const result = extractPlainText(html);

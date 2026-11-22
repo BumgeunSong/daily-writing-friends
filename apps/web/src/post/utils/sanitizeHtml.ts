@@ -14,7 +14,7 @@ export function sanitize(html: string): string {
     // Allowed HTML tags
     ALLOWED_TAGS: [
       'p', 'h1', 'h2', 'strong', 'em', 's', 'a', 
-      'blockquote', 'ul', 'ol', 'li', 'img', 'br'
+      'blockquote', 'ul', 'ol', 'li', 'img', 'br', 'hr'
     ],
     // Allowed attributes for specific tags
     ALLOWED_ATTR: ['href', 'src', 'alt', 'target', 'rel'],
