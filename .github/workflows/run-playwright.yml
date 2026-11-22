@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
 
     steps:
@@ -47,7 +47,7 @@ jobs:
       - name: Install Supabase CLI
         uses: supabase/setup-cli@v2
         with:
-          version: latest
+          version: 2.75.0
 
       - name: Start Supabase (minimal)
         run: supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector,realtime
