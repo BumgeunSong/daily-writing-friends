@@ -5,8 +5,13 @@ export const EDITOR_URL = '/test/editor';
 export const EDITOR_AREA = '[data-testid="editor-area"]';
 export const EDITOR_OUTPUT = '[data-testid="editor-output"]';
 
+/**
+ * Control on every host. Desktop Chrome device emulation reports a non-Mac `navigator.platform`,
+ * so the editor's Mod key is Ctrl even on a macOS host. On a macOS host Playwright also maps
+ * Meta+Shift+Z to the native redo command instead of a keydown the page sees.
+ */
 export function getModKey(): string {
-  return process.platform === 'darwin' ? 'Meta' : 'Control';
+  return 'Control';
 }
 
 export async function modPress(page: Page, key: string): Promise<void> {
@@ -27,14 +32,16 @@ export async function getTextContent(locator: Locator): Promise<string> {
 }
 
 /**
- * Assert the editor output contains only a single paragraph (no unwanted line breaks).
- * Also verifies the output is non-empty to prevent vacuous passes.
+ * Assert the typed text landed in the editor output as one paragraph.
+ * The output panel follows the editor through a debounced onChange, so this polls;
+ * requiring the text keeps an empty output from passing as "no line break".
  */
-export async function expectNoParagraphSplit(page: Page): Promise<void> {
+export async function expectSingleParagraphWith(page: Page, ...texts: string[]): Promise<void> {
   await expect(async () => {
     const html = await page.locator(EDITOR_OUTPUT).innerHTML();
-    expect(html.length).toBeGreaterThan(0);
+    for (const text of texts) expect(html).toContain(text);
     const paragraphCount = (html.match(/<p[ >]/g) || []).length;
-    expect(paragraphCount).toBeLessThanOrEqual(1);
+    expect(paragraphCount).toBe(1);
+    expect(html).not.toMatch(/<br/);
   }).toPass({ timeout: 5000 });
 }

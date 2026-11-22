@@ -124,7 +124,6 @@ test.describe('Editor Text Formatting', () => {
     // Undo heading
     await modPress(page, 'Z');
     await modPress(page, 'Z');
-    await page.keyboard.type(' ');
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();
       expect(html).not.toContain('<h1>');
@@ -150,7 +149,6 @@ test.describe('Editor Text Formatting', () => {
     // Undo heading
     await modPress(page, 'Z');
     await modPress(page, 'Z');
-    await page.keyboard.type(' ');
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();
       expect(html).not.toContain('<h1>');
@@ -159,10 +157,9 @@ test.describe('Editor Text Formatting', () => {
     // Redo heading
     await modShiftPress(page, 'Z');
     await modShiftPress(page, 'Z');
-    await page.keyboard.type(' ');
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();
-      expect(html).toContain('<h1>');
+      expect(html).toContain('<h1>hello');
     }).toPass({ timeout: 5000 });
   });
 });
