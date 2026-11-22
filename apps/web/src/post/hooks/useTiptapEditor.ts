@@ -59,7 +59,6 @@ export function useTiptapEditor({
     StarterKit.configure({
       codeBlock: false,
       code: false,
-      horizontalRule: false,
       dropcursor: false,
       trailingNode: { notAfter: BLOCKS_EXITED_WITH_ENTER },
       heading: {
