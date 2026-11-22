@@ -9,11 +9,13 @@ Add E2E thinly, **only after unit and integration are placed**, and only for beh
 - **One folder: the repo-root `tests/`**, one config: root `playwright.config.ts`. Add new specs only there. Do not add to `apps/web/tests/` or `apps/web/playwright.config.ts` (legacy, being removed).
 - Extension `*.spec.ts`. The Playwright API is `test.describe` / `test(...)` (no `it`).
 - Local Supabase is the backend. Run from the **repo root**, naming the project: `pnpm exec playwright test --project=chromium-data-flows <file>`. A bare `playwright test` runs every spec on every engine.
-- **What CI runs is defined by `.github/workflows/run-playwright.yml`**, not by the folder alone. Today CI runs only the `chromium-data-flows` and `chromium-non-member` projects, which collect `tests/data-flows/` only. A spec elsewhere shows up in plain `--list` but never runs in CI.
+- **What CI runs is defined by `.github/workflows/run-playwright.yml`**, not by the folder alone. Today CI runs only the `chromium-data-flows` and `chromium-non-member` projects. A spec outside `tests/data-flows/` shows up in plain `--list` but never runs in CI.
+- **Known gap:** `chromium-non-member` currently collects nothing. It inherits the top-level `testIgnore`, which excludes `**/data-flows/**` (`chromium-data-flows` overrides it, `chromium-non-member` does not). So `*.non-member.spec.ts` runs in no project at all. Do not assume a non-member spec is running: check with the `--list` command below.
 - Routing by name and folder:
   - `tests/data-flows/*.spec.ts` → `chromium-data-flows` (authenticated member).
-  - `tests/data-flows/*.non-member.spec.ts` → `chromium-non-member`. Outside `data-flows/` this suffix routes nowhere useful.
-  - `*.logged-out.spec.ts` in root `tests/` → `chromium-no-auth`.
+  - `tests/data-flows/*.non-member.spec.ts` → `chromium-non-member` (intended; see the known gap above). Outside `data-flows/` this suffix routes nowhere useful.
+  - `*.logged-out.spec.ts` in root `tests/` → `chromium-no-auth` (not run in CI).
+  - Other root specs, including `tests/e2e/`, → the engine projects (`chromium`, `firefox`, `webkit`, `Mobile Chrome`), not run in CI.
 - Confirm a new spec is collected **by the CI projects**:
   `pnpm exec playwright test --list --project=chromium-data-flows --project=chromium-non-member | grep <file>`
 
@@ -89,7 +91,7 @@ An E2E assertion is verified like any other: plant a mutation, see it fail. Proc
 - Run the mutated source through a real dev server (Vite HMR picks it up) against local Supabase. Confirm the server on the e2e port serves **this** worktree (`reuseExistingServer` silently reuses a stray one). Pass `--retries=0` so a pass cannot hide behind a retry.
 - Reachability (condition 2) has no coverage tool here: confirm the mutation visibly changes behavior in the dev server, or that the spec's own steps exercise the mutated path.
 - Revert every mutation, confirm the spec is green again and `git status` is clean.
-- E2E is expensive: 2–3 distinct failure surfaces per spec, on the core guard only.
+- E2E is expensive: 2–3 distinct failure surfaces per spec, on the core guard only. (verification.md §3-E asks 3–5 for unit and integration; E2E is lower because every run costs a browser.)
 
 ## 8. Checklist
 
@@ -100,4 +102,4 @@ An E2E assertion is verified like any other: plant a mutation, see it fail. Proc
 - Role/label locators, no sleeps, no order dependence?
 - Own data, own cleanup, second run identical?
 - Survives `--repeat-each=10`?
-- Mutation-verified, with the result recorded?
+- Mutation-verified, with the result (planted mutation, prediction, outcome, classification) recorded in the PR body? The repo has no commit trailer for it.
