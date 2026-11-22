@@ -380,6 +380,18 @@ describe('contentUtils', () => {
   });
 
   describe('extractPlainText', () => {
+    it('구분선을 사이에 둔 두 문단은 줄바꿈으로 나뉘어 복사된다', () => {
+      const result = extractPlainText('<p>위</p><hr><p>아래</p>');
+
+      expect(result).toBe('위\n아래');
+    });
+
+    it('에디터에서 복사한 속성 있는 hr도 줄바꿈으로 나뉜다', () => {
+      const result = extractPlainText('<p>위</p><hr contenteditable="false"><p>아래</p>');
+
+      expect(result).toBe('위\n아래');
+    });
+
     it('should remove all HTML tags', () => {
       const html = '<p>Hello <strong>World</strong></p>';
       const result = extractPlainText(html);
