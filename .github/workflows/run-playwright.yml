@@ -66,11 +66,19 @@ jobs:
           EOF
           sed -i 's/^          //' .env.local
 
+      - name: Guard - every e2e spec is collected by the CI projects
+        run: |
+          node --test scripts/e2e/collection.test.mjs
+          node scripts/e2e/check-collection.mjs
+
       - name: Run Playwright tests
         run: pnpm exec playwright test --project=chromium-data-flows --project=chromium-non-member
         env:
           CI: true
           E2E_PORT: 5173
+
+      - name: Guard - executed test count matches the collected count
+        run: node scripts/e2e/check-collection.mjs --report playwright-report.json
 
       - name: Upload test results
         if: failure()
