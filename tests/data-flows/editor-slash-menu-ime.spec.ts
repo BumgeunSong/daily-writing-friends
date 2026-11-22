@@ -4,14 +4,11 @@ import { test, expect, type CDPSession, type Page } from '@playwright/test';
  * 슬래시(/) 블록 삽입 메뉴를 실제 Chromium에서 확인한다.
  * 한글 IME 조합은 CDP Input.imeSetComposition으로 실제 compositionstart/update/end를 만든다.
  *
- * 전제: local Supabase에 e2e@example.com(보드 vb 쓰기 권한)이 시드되어 있다.
- * 실행: E2E_BASE_URL(기본 playwright baseURL)로 dev 서버를 가리킨다.
+ * 전제: e2e@example.com(보드 e2e-test-board 쓰기 권한)이 시드되어 있고 storageState로 로그인된다.
  */
 
-const BOARD_ID = 'vb';
+const BOARD_ID = 'e2e-test-board';
 const SHOT_DIR = process.env.E2E_SHOT_DIR;
-
-if (process.env.E2E_BASE_URL) test.use({ baseURL: process.env.E2E_BASE_URL });
 
 function composingSteps(syllable: string): string[] {
   const jamo = [...syllable.normalize('NFD')];
@@ -40,8 +37,6 @@ async function typeKorean(page: Page, cdp: CDPSession, text: string) {
 }
 
 async function openEditor(page: Page) {
-  await page.goto('/__e2e-login.html?mode=email&email=e2e@example.com&password=test1234');
-  await page.waitForFunction(() => document.body.getAttribute('data-auth-status'));
   await page.goto(`/create/${BOARD_ID}`);
   const editor = page.locator('.ProseMirror').first();
   await editor.click();
