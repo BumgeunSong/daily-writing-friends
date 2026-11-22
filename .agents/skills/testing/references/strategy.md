@@ -88,6 +88,9 @@ Do not add a giant integration test or mock-heavy test to a deep+wide file. See 
 |---|---|
 | Unit | policy truth, calculation correctness, domain decisions, edge cases |
 | Integration | whether the policy connects to user action; query→model→container→UI→callback wiring |
+| E2E | only what a fake cannot show: real browser engine, real Supabase/RLS, cross-page journeys ([e2e.md](e2e.md)) |
+
+E2E is the thinnest layer: 1–2 happy paths per feature plus irreversible failures. If integration can reproduce it, it goes down.
 
 Integration does not try to catch every quadrant-1 policy mutation — unit owns quadrant 1, wiring owns quadrant 3.
 

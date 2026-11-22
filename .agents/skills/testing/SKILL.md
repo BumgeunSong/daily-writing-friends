@@ -1,6 +1,6 @@
 ---
 name: testing
-description: Use when writing, adding, or modifying tests (*.test.ts, *.test.tsx, *.integration.test.tsx), adding coverage, implementing business logic, or doing TDD — unit tests for pure functions AND integration tests for components/hooks (React Query cache, MSW-mocked Supabase, React Router data-router loaders). Routes to strategy, naming, unit, integration, spec, and mutation-verification references. Does NOT cover cross-page journeys (use Playwright E2E in apps/web/tests/).
+description: Use when writing, adding, or modifying tests (*.test.ts, *.test.tsx, *.integration.test.tsx), adding coverage, implementing business logic, or doing TDD — unit tests for pure functions AND integration tests for components/hooks (React Query cache, MSW-mocked Supabase, React Router data-router loaders). Routes to strategy, naming, unit, integration, e2e, spec, and mutation-verification references. Also covers Playwright E2E (root tests/) for cross-page journeys, real-browser and real-Supabase behavior.
 ---
 
 # Writing Tests
@@ -16,6 +16,7 @@ The goal is not coverage. **The goal is trust: after reading this test, can you 
 3. **Level doc** — Write with the rules of the level strategy picked:
    - **[references/unit.md](references/unit.md)** — pure functions, output-based, boundary+exception.
    - **[references/integration.md](references/integration.md)** — components/hooks/loaders, MSW + React Query + data-router, user-observable results.
+   - **[references/e2e.md](references/e2e.md)** — Playwright, only for what jsdom + MSW cannot reproduce (real browser engine, real Supabase, cross-page journeys). Push down to integration first.
 4. **[references/verification.md](references/verification.md)** — If you added or changed an assertion, run the mutation loop to filter false-green. Skip for pure refactors (but record the skip).
 
 Test names follow **[references/naming.md](references/naming.md)** at every level.
@@ -32,7 +33,7 @@ Tests are colocated with source (next to the file, or in a sibling `__tests__/`)
 **Missing the `.integration` suffix routes the file to the unit project with no MSW → silent false green.** This is the #1 filename mistake.
 
 - Config: `apps/web/vite.config.ts` (`test.projects`). Run: `pnpm --filter web test` / `test:run` / `test:coverage`.
-- E2E (Playwright, `apps/web/tests/*.spec.ts`, local Supabase) is out of scope for this skill.
+- E2E (Playwright): new specs go only in the root `tests/` folder (`*.spec.ts`, local Supabase, root `playwright.config.ts`). Rules: [references/e2e.md](references/e2e.md). Which specs CI runs and how to confirm collection are in e2e.md §0.
 
 ## Stack facts (assume these; verify if surprised)
 

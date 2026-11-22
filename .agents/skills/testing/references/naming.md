@@ -1,6 +1,6 @@
 # Test Naming
 
-Applies at every level (unit / integration). Level-specific examples live in each level doc.
+Applies at every level (unit / integration / E2E). Level-specific examples live in each level doc.
 
 **The name has one job: from the name alone, you know which risk or policy broke.** Reveal the risk at the right level of detail — unit reveals input condition → output contract, integration reveals the user's situation → observable result.
 
@@ -19,7 +19,7 @@ Test **names** (`describe`/`it` strings) are Korean policy sentences, so the bro
 
 ## Use `it`, not `test`
 
-`describe('상황') > it('결과')` BDD structure fits Korean sentence endings. Never mix `test`/`it` in one file.
+`describe('상황') > it('결과')` BDD structure fits Korean sentence endings. Never mix `test`/`it` in one file. Playwright E2E is the exception: its API is `test.describe` / `test(...)`, with the same Korean-sentence rules.
 
 ## `describe` is context, not a function name
 
