@@ -15,6 +15,26 @@ describe('sanitizeHtml', () => {
       expect(sanitize('')).toBe('');
     });
 
+    it('밑줄 u 태그를 유지한다', () => {
+      const result = sanitize('<p>가<u>밑줄</u>나</p>');
+
+      expect(result).toBe('<p>가<u>밑줄</u>나</p>');
+    });
+
+    it('밑줄 u의 속성은 모두 제거한다', () => {
+      const result = sanitize('<u class="x" style="color:red" id="a" onclick="alert(1)" onmouseover="alert(2)">글</u>');
+
+      expect(result).toBe('<u>글</u>');
+    });
+
+    it('u 안의 script와 이벤트 핸들러가 걸린 자식은 실행되지 않게 제거한다', () => {
+      const result = sanitize('<u>글<script>alert(1)</script><img src="x" onerror="alert(1)"></u>');
+
+      expect(result).not.toContain('<script');
+      expect(result).not.toContain('onerror');
+      expect(result).toContain('<u>글');
+    });
+
     it('구분선 hr 태그를 유지한다', () => {
       const result = sanitize('<p>위</p><hr><p>아래</p>');
 
