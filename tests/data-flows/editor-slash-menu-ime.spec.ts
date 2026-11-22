@@ -80,6 +80,18 @@ test.describe('슬래시 메뉴 열기', () => {
     await expect(menu(page)).toBeHidden();
     await expect(editor).toContainText('안녕하세요 /');
   });
+
+  test('목록 안의 줄 처음에서도 /는 메뉴를 열지 않는다', async ({ page }) => {
+    const { editor } = await openEditor(page);
+
+    // "- "로 글머리 목록을 만들면 첫 항목의 줄 처음이다. 줄 처음 규칙(startOfLine)은 통과하지만
+    // 목록 안은 이 앱의 허용 정책이 막는다.
+    await page.keyboard.type('- ');
+    await expect(editor.locator('ul > li')).toHaveCount(1);
+    await page.keyboard.type('/');
+    await expect(menu(page)).toBeHidden();
+    await expect(editor.locator('ul > li')).toContainText('/');
+  });
 });
 
 test.describe('한글 IME 조합과 슬래시 메뉴', () => {
