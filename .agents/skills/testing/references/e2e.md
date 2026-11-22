@@ -26,7 +26,7 @@ Ask:
 Yes → write it there. Only what a fake cannot reproduce goes up:
 
 - **Real browser engine behavior**: contenteditable + IME composition, selection, undo history, input rules firing on real key events, focus/scroll/`position: sticky`, layout and overflow measured by bounding boxes.
-- **Real Supabase boundary**: RLS and board-access gates, auth session/redirect, state that really lands in Postgres. (Image storage is Firebase Storage, not Supabase: mock it.)
+- **Real Supabase boundary**: RLS and board-access gates, auth session/redirect, state that really lands in Postgres. (Image uploads go to Supabase Storage through `shared/external/imageStorage.ts`. Specs mock the request hermetically, as `avatar-resize.spec.ts` does. A mock aimed at a backend the app no longer calls fails silently as "nothing happened".)
 - **Cross-page journeys**: login → board → write → publish → appears in the feed.
 - **Browser/device differences that matter**: WebKit vs Blink input and scroll, mobile viewport (`Mobile Chrome`). CI installs chromium only, so such specs are not gated until a project and CI step for them exist.
 
@@ -59,6 +59,14 @@ Shared mutable state is the biggest flake source.
 - Clean up what the test created (`afterEach`/fixture teardown; see `tests/helpers/seed-cleanup.ts`), and also tolerate leftovers from a crashed run.
 - Tests do not depend on order. A second run gives the same result.
 - Never point E2E at production. Local Supabase only.
+
+## 4.5 Pitfalls that already cost us failing specs
+
+- **Assert the content, not the container.** Read the output panel with a web-first assertion or `toPass`, and require the text you typed. An assertion that accepts an empty paragraph passes vacuously while the real output is still debounced.
+- **Do not type after undo when the test wants redo.** New input clears the redo history.
+- **Keys differ by platform.** On macOS `End` scrolls instead of moving the caret, and `Meta+Shift+Z` does not reach the page as redo. Use `ArrowRight` and `Control`-based shortcuts (helpers: `modPress`, `modShiftPress`).
+- **Fixtures must be what the app accepts.** The image pipeline refuses bytes it cannot decode, so a truncated JPEG never reaches the upload mock. Use a real PNG.
+- **Specs outside the CI projects rot.** Before trusting an old spec, run it locally (`--retries=0`) and read the failure: classify it as a test problem or an app regression, and file an issue for the latter instead of hiding the spec.
 
 ## 5. Flaky is the enemy of trust
 
