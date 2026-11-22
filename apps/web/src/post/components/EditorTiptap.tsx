@@ -4,6 +4,7 @@ import { useTiptapEditor } from '@/post/hooks/useTiptapEditor';
 import { useTiptapImageUpload } from '@/post/hooks/useTiptapImageUpload';
 import type { ProseMirrorDoc } from '@/post/model/Post';
 import { sanitize } from '@/post/utils/sanitizeHtml';
+import { BubbleFormatMenu } from './BubbleFormatMenu';
 import { CopyErrorBoundary } from './CopyErrorBoundary';
 import { EditorContentArea } from './EditorContentArea';
 import { ResponsiveEditorToolbar } from './ResponsiveEditorToolbar';
@@ -131,6 +132,9 @@ export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
 
           {/* Editor content area */}
           <EditorContentArea editor={editor} isMobile={isMobile} />
+
+          {/* Floating format menu (desktop only; mobile keeps the native selection menu + bottom toolbar) */}
+          {!isMobile && <BubbleFormatMenu editor={editor} />}
 
           {/* Upload progress overlay */}
           <UploadProgress stage={stage} uploadProgress={uploadProgress} />
