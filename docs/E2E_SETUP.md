@@ -1,350 +1,90 @@
-# Firebase Emulator E2E Testing Setup
+# E2E 테스트 (Playwright)
 
-This document explains how to use Firebase emulators for E2E testing with Playwright, bypassing Google OAuth for fast, reliable, and hermetic tests.
+로컬 Supabase와 실제 브라우저로 도는 E2E 테스트의 실행 방법과 구조를 적는다. 무엇을 E2E로 쓰고 무엇을 아래 계층으로 내릴지, 단언과 데이터 규칙은 `.agents/skills/testing/references/e2e.md`가 정본이다. 이 문서는 환경과 명령만 다룬다.
 
-## 🎯 Overview
+## 구조
 
-This setup provides:
-- **Fast authentication**: No external OAuth flows
-- **Hermetic testing**: Isolated emulator environment 
-- **Deterministic data**: Seeded test users and data
-- **Flexible auth strategies**: Email/password and custom tokens
-- **CI/CD ready**: Automated setup and teardown
+E2E는 저장소 루트의 `tests/` 한 곳과 루트 `playwright.config.ts` 하나만 쓴다.
 
-## 🚀 Quick Start
+```
+tests/
+├── data-flows/      # 로컬 DB에 실제로 쓰고 읽는 흐름 (CI에서 돈다)
+├── e2e/             # 가입 OTP 같은 메일 여정과 그 헬퍼
+├── fixtures/        # auth 픽스처, 시드된 도메인 ID(e2e-domain.json)
+├── helpers/         # 에디터 조작, IME 시뮬레이션, 시드 정리
+├── qa/              # 수동 실행 스크립트(spec 아님)
+├── utils/           # Supabase 인증 헬퍼
+├── auth.setup.ts    # 로그인해서 storageState 파일을 만든다
+├── global-setup.ts  # 로컬 Supabase 확인과 시드
+└── *.spec.ts
+```
 
-### 1. Install Dependencies
+## 준비
+
+1. 로컬 Supabase를 띄운다: `supabase start`. 마이그레이션이 모두 적용되어 있어야 한다.
+2. 의존성을 설치한다: `pnpm install`. 브라우저가 없으면 `pnpm exec playwright install chromium`.
+3. dev 서버는 Playwright가 띄운다(`webServer`). 기본 포트는 `5174`이고 `E2E_PORT`로 바꾼다.
+
+`global-setup.ts`가 `http://127.0.0.1:54321/auth/v1/health`로 Supabase를 확인하고 아래 두 스크립트로 시드한다. Supabase가 꺼져 있으면 실패한다.
+
+- `scripts/seed-e2e-users.ts`: 테스트 사용자 생성
+- `scripts/seed-e2e-domain.ts`: 게시판, 글, 댓글 시드. 생성한 ID를 `tests/fixtures/e2e-domain.json`에 쓴다
+
+## 실행
+
+루트에서 실행한다.
+
 ```bash
-npm install
+pnpm e2e --project=chromium-data-flows        # CI와 같은 프로젝트
+pnpm e2e tests/editor-korean-ime.spec.ts --project=chromium
+pnpm e2e --ui                                  # UI 모드
+pnpm e2e --headed                              # 브라우저 표시
+pnpm e2e --debug                               # 디버거
+pnpm e2e --list --project=chromium-data-flows  # 수집되는 spec만 확인
+pnpm e2e --project=chromium --repeat-each=10 --retries=0   # flaky 점검
 ```
 
-### 2. Start Development with Emulators
-```bash
-# Start both Vite dev server and Firebase emulators
-npm run dev:emu
-```
+- `pnpm e2e`에 `--`를 붙이지 않는다. `pnpm run e2e -- --list`는 인자가 그대로 넘어가 "No tests found"가 난다.
+- 프로젝트를 지정하지 않으면 모든 spec이 모든 엔진(chromium, firefox, webkit, Mobile Chrome)에서 돈다. 보통 `--project`를 붙인다.
+- `SKIP_SEED=1`이면 Supabase 확인과 시드를 건너뛴다(`--list`만 볼 때).
 
-### 3. Run E2E Tests
-```bash
-# Run all E2E tests
-npm run e2e
+## 인증
 
-# Run with UI
-npm run e2e:ui
+`tests/auth.setup.ts`가 Supabase Auth REST API로 Node에서 로그인하고(브라우저를 쓰지 않는다) `tests/storageState.auth.json`(멤버)과 `tests/storageState.non-member.json`(비멤버)을 만든다. 프로젝트가 이 파일을 불러와 로그인된 상태로 시작한다. 이 파일은 `.gitignore`에 있다.
 
-# Run in headed mode (see browser)
-npm run e2e:headed
+| 사용자 | 용도 |
+|---|---|
+| `e2e@example.com` | 멤버. 대부분의 spec |
+| `e2e2@example.com` | 비멤버. 보드 접근 차단 확인 |
 
-# Debug mode
-npm run e2e:debug
-```
+비로그인 spec은 `*.logged-out.spec.ts`로 이름을 짓고, 세션을 비우는 `chromium-no-auth` 프로젝트에서만 돈다. 인증된 프로젝트는 이 파일들을 건너뛴다.
 
-## 🛠 Setup Details
+## 프로젝트
 
-### Environment Configuration
+`playwright.config.ts`의 `projects`가 어느 spec이 어디서 도는지 정한다. 표는 시한성이 있으니 어긋나면 설정이 정본이다.
 
-The setup uses environment-specific configuration files:
+| 프로젝트 | 대상 | 세션 |
+|---|---|---|
+| `setup`, `cleanup` | `auth.setup.ts`, `auth.teardown.ts` | - |
+| `chromium`, `firefox`, `webkit`, `Mobile Chrome` | 루트 `tests/`의 spec | 멤버 |
+| `chromium-no-auth` | `*.logged-out.spec.ts` | 없음 |
+| `chromium-data-flows` | `tests/data-flows/` (non-member 제외) | 멤버 |
+| `chromium-non-member` | `tests/data-flows/*.non-member.spec.ts` | 비멤버 |
 
-- **`config/.env.example`**: Template for local development
-- **`config/.env.e2e`**: E2E test configuration with emulator settings
-- **`.env`**: Your local development settings (not tracked)
+## CI
 
-Key environment variables:
-```bash
-VITE_USE_EMULATORS=true  # Enable emulator mode
-VITE_EMULATOR_AUTH_HOST=localhost
-VITE_EMULATOR_AUTH_PORT=9099
-VITE_EMULATOR_FIRESTORE_HOST=localhost  
-VITE_EMULATOR_FIRESTORE_PORT=8080
-VITE_EMULATOR_STORAGE_HOST=localhost
-VITE_EMULATOR_STORAGE_PORT=9199
-```
+`.github/workflows/run-playwright.yml`이 PR마다 `chromium-data-flows`와 `chromium-non-member`만 실행한다. 그 밖의 spec은 CI에서 돌지 않는다.
 
-### Firebase Client Configuration
+**알려진 공백:** `chromium-non-member`는 전역 `testIgnore`(`**/data-flows/**`)를 상속해서 지금은 아무 spec도 수집하지 않는다. `board-access.non-member.spec.ts`가 어느 프로젝트에서도 실행되지 않는다. `pnpm e2e --list --project=chromium-non-member`로 확인할 수 있다.
 
-The `src/firebase.ts` file automatically detects emulator mode and connects to local emulators when `VITE_USE_EMULATORS=true`:
+## 자주 만나는 문제
 
-```typescript
-// Emulator connections are established automatically
-// - Auth: localhost:9099
-// - Firestore: localhost:8080  
-// - Storage: localhost:9199
-// - Functions: localhost:5001
-```
+- **다른 worktree의 dev 서버가 응답한다.** `webServer`는 로컬에서 `reuseExistingServer`라서 같은 포트에 떠 있는 서버를 그대로 쓴다. 변경이 안 보이면 `lsof -i :5174`로 확인하고 `E2E_PORT`를 바꾼다.
+- **실행 뒤 `tests/fixtures/e2e-domain.json`이 바뀐다.** 시드가 매번 새 ID를 쓴다. 커밋하지 않고 `git checkout`으로 되돌린다.
+- **가입 OTP spec이 "No OTP found"로 실패한다.** spec은 `supabase/config.toml`의 `[auth.email] enable_confirmations = true`를 전제하는데 설정이 `false`면 메일이 가지 않는다. 메일함은 Mailpit(`http://127.0.0.1:54324`)이다.
+- **이미지는 Supabase Storage로 올라간다.** spec은 요청을 가로채서(`page.route`) 실제 버킷 없이 돈다. `tests/avatar-resize.spec.ts`가 예시다.
+- **macOS에서 단축키가 먹지 않는다.** 에디터 단축키는 `Control`을 쓴다(`modPress`, `modShiftPress`). `Meta+Shift+Z`는 redo로 전달되지 않는다.
 
-### Test Users
+## 운영 환경
 
-The setup creates these test users automatically:
-
-| Email | Password | Role | UID |
-|-------|----------|------|-----|
-| `e2e@example.com` | `test1234` | user | `e2e-user-1` |
-| `e2e2@example.com` | `test1234` | user | `e2e-user-2` | 
-| `admin@example.com` | `admin1234` | admin | `e2e-admin` |
-
-## 📝 Writing Tests
-
-### Basic Test with Authentication
-
-```typescript
-import { test, expect } from './fixtures/auth';
-
-test('should access protected feature', async ({ page }) => {
-  // User is automatically authenticated via storageState
-  await page.goto('/dashboard');
-  await expect(page.locator('h1')).toContainText('Dashboard');
-});
-```
-
-### Test with Different User
-
-```typescript
-import { test, expect, AuthUtils, TEST_USERS } from './fixtures/auth';
-
-test('should work with admin user', async ({ adminPage }) => {
-  await adminPage.goto('/admin');
-  await expect(adminPage.locator('[data-testid="admin-panel"]')).toBeVisible();
-});
-```
-
-### Test User Switching
-
-```typescript
-test('should handle user switching', async ({ loggedOutPage }) => {
-  // Start logged out
-  let isSignedIn = await AuthUtils.isSignedIn(loggedOutPage);
-  expect(isSignedIn).toBe(false);
-  
-  // Sign in as specific user
-  await AuthUtils.signInWithEmail(
-    loggedOutPage, 
-    TEST_USERS.SECOND.email, 
-    TEST_USERS.SECOND.password
-  );
-  
-  isSignedIn = await AuthUtils.isSignedIn(loggedOutPage);
-  expect(isSignedIn).toBe(true);
-});
-```
-
-### Test Unauthenticated Scenarios
-
-```typescript
-test('should redirect to login', async ({ loggedOutPage }) => {
-  await loggedOutPage.goto('/protected-route');
-  await expect(loggedOutPage).toHaveURL('/login');
-});
-```
-
-## 🔧 Available Scripts
-
-### Development
-```bash
-npm run dev:emu          # Start dev server + emulators
-npm run emu:start        # Start emulators only
-npm run emu:start:clean  # Start emulators without data import
-npm run emu:stop         # Stop emulators
-npm run emu:clear        # Stop emulators and clear data
-npm run emu:seed         # Seed emulators with test data
-```
-
-### Testing
-```bash
-npm run e2e              # Run E2E tests
-npm run e2e:ui           # Run E2E tests with UI
-npm run e2e:headed       # Run E2E tests in headed mode
-npm run e2e:debug        # Run E2E tests in debug mode
-npm run e2e:setup        # Setup emulators for E2E
-npm run e2e:teardown     # Teardown emulators after E2E
-```
-
-## 📁 Project Structure
-
-```
-├── config/
-│   ├── .env.example          # Environment template
-│   └── .env.e2e              # E2E test environment
-├── firebase/
-│   ├── firestore.rules       # Production Firestore rules
-│   ├── firestore.test.rules  # Permissive test rules
-│   ├── storage.rules         # Production Storage rules
-│   └── storage.test.rules    # Permissive test rules
-├── firebase.json             # Firebase config with emulators
-├── public/
-│   └── __e2e-login.html     # E2E login helper page
-├── scripts/
-│   ├── seed-auth-emulator.js # Auth emulator seeding
-│   └── setup-emulator-rules.js
-├── src/
-│   └── firebase.ts          # Firebase config with emulator support
-└── tests/
-    ├── fixtures/
-    │   ├── auth.ts          # Auth test fixtures
-    │   └── auth-tokens.json # Generated custom tokens
-    ├── global-setup.ts      # Playwright global setup
-    ├── global-teardown.ts   # Playwright global teardown
-    ├── auth.setup.ts        # Auth setup for tests
-    ├── auth.teardown.ts     # Auth cleanup
-    └── example-auth.spec.ts # Example tests
-```
-
-## 🔐 Authentication Strategies
-
-### 1. Email/Password (Default)
-- Realistic user flow
-- Tests actual login UI
-- Slower but more thorough
-
-```typescript
-await AuthUtils.signInWithEmail(page, 'e2e@example.com', 'test1234');
-```
-
-### 2. Custom Tokens (Fast)
-- Bypasses UI login flow  
-- Faster test execution
-- Direct authentication
-
-```typescript
-const tokens = await import('./fixtures/auth-tokens.json');
-await AuthUtils.signInWithToken(page, tokens['e2e-user-1']);
-```
-
-### 3. Storage State (Fastest)
-- Reuses authenticated session
-- No authentication per test
-- Shared across all tests
-
-```typescript
-// Automatically applied via playwright.config.ts storageState
-```
-
-## 🎛 Configuration Options
-
-### Playwright Configuration
-
-Key settings in `playwright.config.ts`:
-
-```typescript
-// Base URL for your app
-baseURL: 'http://localhost:5173'
-
-// Storage state for authentication
-storageState: './tests/storageState.auth.json'
-
-// Web server with emulator environment
-webServer: {
-  command: 'cross-env VITE_USE_EMULATORS=true vite --mode e2e',
-  env: { VITE_USE_EMULATORS: 'true' }
-}
-```
-
-### Firebase Emulator Configuration
-
-Settings in `firebase.json`:
-
-```json
-{
-  "emulators": {
-    "auth": { "port": 9099 },
-    "firestore": { "port": 8080 },
-    "storage": { "port": 9199 },
-    "functions": { "port": 5001 }
-  }
-}
-```
-
-## 🐛 Troubleshooting
-
-### Emulators Not Starting
-```bash
-# Check if ports are in use
-lsof -i :9099 -i :8080 -i :9199
-
-# Kill processes on ports
-kill -9 $(lsof -t -i:9099)
-
-# Clear emulator data
-npm run emu:clear
-```
-
-### Authentication Failing
-```bash
-# Re-seed test users
-npm run emu:seed
-
-# Check emulator logs
-firebase emulators:start --debug
-```
-
-### Tests Hanging
-```bash
-# Check if dev server is running
-curl http://localhost:5173
-
-# Restart with clean state
-npm run emu:clear && npm run dev:emu
-```
-
-### Storage State Issues
-```bash
-# Delete and regenerate auth state
-rm tests/storageState.auth.json
-npm run e2e -- tests/auth.setup.ts
-```
-
-## 🚨 Security Notes
-
-### Test vs Production Rules
-
-The setup uses different security rules for testing:
-
-- **Production**: `firebase/firestore.rules`, `firebase/storage.rules` (strict)
-- **Testing**: `firebase/firestore.test.rules`, `firebase/storage.test.rules` (permissive)
-
-⚠️ **Never deploy test rules to production!**
-
-### Test User Identification
-
-Test users are marked with `testUser: true` claims and can be filtered in production if needed.
-
-## 🔄 CI/CD Integration
-
-### GitHub Actions Example
-
-```yaml
-- name: Run E2E tests
-  run: |
-    npm run e2e:setup &
-    sleep 10
-    npm run e2e
-    npm run e2e:teardown
-  env:
-    CI: true
-```
-
-### Environment Variables for CI
-
-Set these in your CI environment:
-```bash
-VITE_USE_EMULATORS=true
-NODE_ENV=test
-```
-
-## 📚 Additional Resources
-
-- [Firebase Emulator Suite](https://firebase.google.com/docs/emulator-suite)
-- [Playwright Testing](https://playwright.dev/docs/intro)
-- [Firebase Auth Emulator](https://firebase.google.com/docs/emulator-suite/connect_auth)
-
-## 🤝 Contributing
-
-When adding new tests:
-
-1. Use the auth fixtures from `tests/fixtures/auth.ts`
-2. Follow the existing authentication patterns
-3. Test both authenticated and unauthenticated scenarios
-4. Update this documentation for new features
-
----
-
-Happy testing! 🎉
+`E2E_ENV=production`이면 시드와 비멤버 로그인을 건너뛰고 `E2E_REGULAR_EMAIL`/`E2E_REGULAR_PASSWORD`로 로그인한다. 운영 데이터에 쓰는 spec은 만들지 않는다.
