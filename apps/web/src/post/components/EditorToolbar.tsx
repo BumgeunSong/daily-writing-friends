@@ -14,10 +14,9 @@ import {
   Check,
   X,
 } from 'lucide-react';
-import { useState } from 'react';
 import { useKeyboardInset } from '@/post/hooks/useKeyboardInset';
+import { useLinkEditor } from '@/post/hooks/useLinkEditor';
 import { useScrollIndicators } from '@/post/hooks/useScrollIndicators';
-import { isValidHttpUrl } from '@/post/utils/sanitizeHtml';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover';
@@ -32,8 +31,7 @@ interface EditorToolbarProps {
 }
 
 export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: EditorToolbarProps) {
-  const [linkUrl, setLinkUrl] = useState('');
-  const [isLinkPopoverOpen, setIsLinkPopoverOpen] = useState(false);
+  const link = useLinkEditor(editor);
   const { scrollContainerRef, canScrollLeft, canScrollRight } = useScrollIndicators();
   const keyboardInset = useKeyboardInset();
 
@@ -53,26 +51,6 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
       isLink: ctx.editor.isActive('link'),
     }),
   });
-
-  const handleSetLink = () => {
-    if (!linkUrl) {
-      // Remove link
-      editor.chain().focus().unsetLink().run();
-    } else if (isValidHttpUrl(linkUrl)) {
-      // Set link with proper protocol
-      const url = linkUrl.startsWith('http') ? linkUrl : `https://${linkUrl}`;
-      editor.chain().focus().setLink({ href: url }).run();
-    }
-    setLinkUrl('');
-    setIsLinkPopoverOpen(false);
-  };
-
-  const handleOpenLinkPopover = () => {
-    // Get current link if any
-    const currentLink = editor.getAttributes('link').href || '';
-    setLinkUrl(currentLink);
-    setIsLinkPopoverOpen(true);
-  };
 
   const containerClass = variant === 'sticky' 
     ? cn(
@@ -204,12 +182,12 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
           <div className='mx-1 h-6 w-px bg-border' />
 
           {/* Link button with popover */}
-          <Popover open={isLinkPopoverOpen} onOpenChange={setIsLinkPopoverOpen}>
+          <Popover open={link.isOpen} onOpenChange={link.setIsOpen}>
             <PopoverTrigger asChild>
               <div>
                 <ToolbarButton
                   isActive={editorState.isLink}
-                  onClick={handleOpenLinkPopover}
+                  onClick={link.open}
                   icon={<Link2 className='size-5' />}
                   title='Insert Link'
                   ariaLabel='Insert Link'
@@ -224,12 +202,12 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
                   <Input
                     type='url'
                     placeholder='https://example.com'
-                    value={linkUrl}
-                    onChange={(e) => setLinkUrl(e.target.value)}
+                    value={link.linkUrl}
+                    onChange={(e) => link.setLinkUrl(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
-                        handleSetLink();
+                        link.apply();
                       }
                     }}
                     className='flex-1'
@@ -238,7 +216,7 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
                     type='button'
                     size='icon'
                     variant='ghost'
-                    onClick={handleSetLink}
+                    onClick={link.apply}
                     className='shrink-0'
                   >
                     <Check className='size-4' />
@@ -247,16 +225,13 @@ export function EditorToolbar({ editor, onImageUpload, variant = 'sticky' }: Edi
                     type='button'
                     size='icon'
                     variant='ghost'
-                    onClick={() => {
-                      setLinkUrl('');
-                      setIsLinkPopoverOpen(false);
-                    }}
+                    onClick={link.cancel}
                     className='shrink-0'
                   >
                     <X className='size-4' />
                   </Button>
                 </div>
-                {linkUrl && !isValidHttpUrl(linkUrl) && !linkUrl.startsWith('http') && (
+                {link.showProtocolHint && (
                   <p className='text-xs text-muted-foreground'>
                     URL은 http:// 또는 https://로 시작해야 합니다
                   </p>
