@@ -63,6 +63,12 @@ describe('contentUtils', () => {
       expect(result).toContain('italic');
     });
 
+    it('밑줄 u는 피드 카드 미리보기에서도 유지한다', () => {
+      const result = renderPostPreviewHtml('<p>가<u>밑줄</u>나</p>');
+
+      expect(result).toContain('<u>밑줄</u>');
+    });
+
     it('구분선 hr은 피드 카드 미리보기에서 제거한다', () => {
       const result = renderPostPreviewHtml('<p>위</p><hr><p>아래</p>');
 
@@ -73,6 +79,12 @@ describe('contentUtils', () => {
   });
 
   describe('renderPostBodyHtml', () => {
+    it('밑줄 u를 글 상세 본문에 그대로 렌더링한다', () => {
+      const result = renderPostBodyHtml('<p>가<u>밑줄</u>나</p>');
+
+      expect(result).toBe('<p>가<u>밑줄</u>나</p>');
+    });
+
     it('구분선 hr을 글 상세 본문에 그대로 렌더링한다', () => {
       const result = renderPostBodyHtml('<p>위</p><hr><p>아래</p>');
 
