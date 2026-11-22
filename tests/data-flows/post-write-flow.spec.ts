@@ -3,6 +3,7 @@ import { cleanupWritePosts } from '../helpers/seed-cleanup';
 
 const BOARD_ID = 'e2e-test-board';
 const POST_TITLE = 'e2e-write-test-post';
+const POST_BODY = 'This is a test post created by E2E tests.';
 
 test.describe('Post Write Flow', () => {
   test.beforeEach(async () => {
@@ -26,7 +27,7 @@ test.describe('Post Write Flow', () => {
     // Type content in the editor area (TipTap ProseMirror)
     const editorArea = page.locator('.ProseMirror');
     await editorArea.click();
-    await editorArea.pressSequentially('This is a test post created by E2E tests.');
+    await editorArea.pressSequentially(POST_BODY);
 
     // Submit the post — "글 저장" button becomes enabled after content is entered
     const submitButton = page.getByRole('button', { name: '글 저장' });
@@ -44,5 +45,8 @@ test.describe('Post Write Flow', () => {
 
     // Verify the post title is visible in the list
     await expect(page.getByRole('heading', { name: POST_TITLE }).first()).toBeVisible({ timeout: 10000 });
+
+    // 제목만 저장되고 본문이 사라지는 회귀를 막는다: 같은 글 카드에 쓴 본문이 미리보기로 보인다.
+    await expect(postCards.filter({ hasText: POST_TITLE })).toContainText(POST_BODY);
   });
 });
