@@ -14,6 +14,14 @@ import { sanitize } from '@/post/utils/sanitizeHtml';
 const DEFAULT_DEBOUNCE_DELAY = 300; // milliseconds
 const DEFAULT_PLACEHOLDER = '내용을 입력하세요...';
 
+/**
+ * Blocks a markdown input rule can create at the end of the document. The
+ * trailing-node plugin appends a paragraph in a follow-up transaction, which
+ * makes ProseMirror drop the input rule's undo state, so Backspace could no
+ * longer restore the typed markdown. Users leave these blocks with Enter.
+ */
+const BLOCKS_EXITED_WITH_ENTER = ['heading', 'blockquote', 'bulletList', 'orderedList'];
+
 interface UseTiptapEditorProps {
   initialHtml?: string;
   initialJson?: ProseMirrorDoc;
@@ -53,6 +61,7 @@ export function useTiptapEditor({
       code: false,
       horizontalRule: false,
       dropcursor: false,
+      trailingNode: { notAfter: BLOCKS_EXITED_WITH_ENTER },
       heading: {
         levels: [1, 2],
       },
