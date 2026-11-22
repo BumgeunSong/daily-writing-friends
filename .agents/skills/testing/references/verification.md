@@ -1,6 +1,6 @@
 # Mutation Verification
 
-After you write or change an assertion (`expect`), verify the test **actually blocks a bug** by mutation — deliberately breaking the source and checking the test goes red. This filters false green (a test that passes but guards nothing) before commit. Applies to unit and integration alike.
+After you write or change an assertion (`expect`), verify the test **actually blocks a bug** by mutation — deliberately breaking the source and checking the test goes red. This filters false green (a test that passes but guards nothing) before commit. Applies to unit, integration and E2E alike.
 
 There is no Stryker here; this is a **manual** loop. Reachability is checked with `vitest run <file> --coverage` (v8 branch coverage).
 
@@ -22,7 +22,7 @@ A good mutation genuinely tests the guard's protection. All five conditions must
 | **4. Different failure surface than the last** | hits the same assertion again — no new info after the first |
 | **5. Compiles** | the experiment doesn't run — a type error isn't a bug |
 
-**Observed surface** = what the level can see. Unit → the return value. Integration → the screen/flow/side effect the user observes (a "next step" callback counts).
+**Observed surface** = what the level can see. Unit → the return value. Integration → the screen/flow/side effect the user observes (a "next step" callback counts). E2E → what the user sees in a real browser, or the row that lands in the DB ([e2e.md §7](e2e.md#7-prove-it-blocks-a-bug)).
 
 > **AI-mutation trap.** Model-generated mutations are close to real bugs (good at exposing weak tests) but often break conditions 2/3/4/5 — especially dead branches. Vitest doesn't type-check, so an unreachable mutation runs anyway and gets logged as "survived", easily misread as a weak test.
 
