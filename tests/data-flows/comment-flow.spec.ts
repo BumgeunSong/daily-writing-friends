@@ -8,10 +8,12 @@ const POST_ID = 'e2e-post-000';
 
 test.describe('Comment Flow', () => {
   // 테스트마다 고유한 본문을 써서 다른 실행이나 병렬 테스트의 댓글과 섞이지 않게 한다.
-  const commentText = `e2e-write-comment-${randomUUID()}`;
+  // 이전 실행이 남긴 댓글은 본문이 달라 이 테스트의 조회에 걸리지 않으므로 시작 전 일괄 정리는 하지 않는다
+  // (병렬로 도는 다른 실행의 댓글을 지울 수 있다).
+  let commentText: string;
 
-  test.beforeEach(async () => {
-    await cleanupWriteComments();
+  test.beforeEach(() => {
+    commentText = `e2e-write-comment-${randomUUID()}`;
   });
 
   test.afterEach(async () => {
