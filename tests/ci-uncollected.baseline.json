@@ -38,9 +38,5 @@
   {
     "file": "tests/e2e/otp-signup-happy-path.spec.ts",
     "reason": "로컬 supabase 설정이 enable_confirmations=true여야 해서 CI 설정 결정이 필요하다"
-  },
-  {
-    "file": "tests/image-perf.spec.ts",
-    "reason": "단언이 하나뿐인 측정 스크립트라 spec으로 둘지 오너 판단이 필요하다"
   }
 ]
