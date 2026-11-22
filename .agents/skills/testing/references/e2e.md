@@ -6,10 +6,16 @@ Add E2E thinly, **only after unit and integration are placed**, and only for beh
 
 ## 0. File conventions
 
-- **One folder: the repo-root `tests/`.** `apps/web/tests/` must not exist. Config: root `playwright.config.ts`.
-- Extension `*.spec.ts`. Auth variants route by filename: `*.logged-out.spec.ts`, `*.non-member.spec.ts` (see config `projects`).
-- Local Supabase is the backend. Run from the **repo root** (not `apps/web`): `pnpm exec playwright test`.
-- After adding a spec, confirm the runner collects it: `pnpm exec playwright test --list | grep <file>`. An uncollected spec never fails, it never runs.
+- **One folder: the repo-root `tests/`**, one config: root `playwright.config.ts`. Add new specs only there. Do not add to `apps/web/tests/` or `apps/web/playwright.config.ts` (legacy, being removed).
+- Extension `*.spec.ts`. The Playwright API is `test.describe` / `test(...)` (no `it`).
+- Local Supabase is the backend. Run from the **repo root**, naming the project: `pnpm exec playwright test --project=chromium-data-flows <file>`. A bare `playwright test` runs every spec on every engine.
+- **What CI runs is defined by `.github/workflows/run-playwright.yml`**, not by the folder alone. Today CI runs only the `chromium-data-flows` and `chromium-non-member` projects, which collect `tests/data-flows/` only. A spec elsewhere shows up in plain `--list` but never runs in CI.
+- Routing by name and folder:
+  - `tests/data-flows/*.spec.ts` → `chromium-data-flows` (authenticated member).
+  - `tests/data-flows/*.non-member.spec.ts` → `chromium-non-member`. Outside `data-flows/` this suffix routes nowhere useful.
+  - `*.logged-out.spec.ts` in root `tests/` → `chromium-no-auth`.
+- Confirm a new spec is collected **by the CI projects**:
+  `pnpm exec playwright test --list --project=chromium-data-flows --project=chromium-non-member | grep <file>`
 
 ## 1. Push down first
 
@@ -20,9 +26,9 @@ Ask:
 Yes → write it there. Only what a fake cannot reproduce goes up:
 
 - **Real browser engine behavior**: contenteditable + IME composition, selection, undo history, input rules firing on real key events, focus/scroll/`position: sticky`, layout and overflow measured by bounding boxes.
-- **Real Supabase boundary**: RLS and board-access gates, auth session/redirect, storage upload round-trip, state that really lands in Postgres.
+- **Real Supabase boundary**: RLS and board-access gates, auth session/redirect, state that really lands in Postgres. (Image storage is Firebase Storage, not Supabase: mock it.)
 - **Cross-page journeys**: login → board → write → publish → appears in the feed.
-- **Browser/device differences that matter**: WebKit vs Blink input and scroll, mobile viewport (`Mobile Chrome`).
+- **Browser/device differences that matter**: WebKit vs Blink input and scroll, mobile viewport (`Mobile Chrome`). CI installs chromium only, so such specs are not gated until a project and CI step for them exist.
 
 Form validation, conditional rendering, button states and error branches belong to integration or unit.
 
@@ -39,10 +45,10 @@ Form validation, conditional rendering, button states and error branches belong 
 ## 3. Assert user behavior, not implementation
 
 - Locators: `getByRole`, `getByLabel`, `getByText` in that order. `data-testid` only when no accessible handle exists (and add the handle to the product code first if it should exist).
-- No CSS-class or DOM-structure selectors, no `page.evaluate` poking app internals.
+- No CSS-class or DOM-structure selectors, no `page.evaluate` poking app internals. Some existing specs and helpers still use `data-testid`, `waitForTimeout` or `evaluate`: new specs must not, and touched specs should migrate.
 - **No fixed sleeps** (`waitForTimeout`). Wait on an observable condition: web-first assertions (`expect(locator).toBeVisible()`), `expect.poll`, `waitForResponse`.
-- Name by what the user can do ([naming.md](naming.md)): `describe('글쓰기')` / `it('제목과 본문을 입력해 발행하면 피드에 글이 보인다')`. A name that starts with "click" or "text is shown" is too low-level.
-- Repeated editor/page manipulation lives in a helper (`tests/helpers/`) named in user language (`typeInEditor`, `selectText`), so a UI refactor touches one place.
+- Name by what the user can do ([naming.md](naming.md)): `test.describe('글쓰기')` / `test('제목과 본문을 입력해 발행하면 피드에 글이 보인다')`. A name that starts with "click" or "text is shown" is too low-level.
+- Repeated editor/page manipulation lives in a helper in `tests/helpers/` (see `editor-helpers.ts`, `ime-helper.ts`) named in user language, so a UI refactor touches one place.
 
 ## 4. Data: own it, isolate it
 
@@ -50,7 +56,7 @@ Shared mutable state is the biggest flake source.
 
 - Each test **creates its own data** (post, comment, user) via API/fixture, not by clicking through UI.
 - Tag created rows with a timestamp or UUID; look them up **by that identity**, never "the first item in the list".
-- Clean up what the test created (afterEach/fixture teardown), and also tolerate leftovers from a crashed run.
+- Clean up what the test created (`afterEach`/fixture teardown; see `tests/helpers/seed-cleanup.ts`), and also tolerate leftovers from a crashed run.
 - Tests do not depend on order. A second run gives the same result.
 - Never point E2E at production. Local Supabase only.
 
@@ -59,20 +65,21 @@ Shared mutable state is the biggest flake source.
 One flaky spec makes every pass suspect.
 
 - Fix the root: data ownership (§4) and arbitrary sleeps (§3).
-- Retries are for environment flake only: **CI ≤ 1–2, local 0** (config `retries`). A test that passes only on retry is a signal, not a pass: record it.
+- Retries are for environment flake only. The config sets CI 1, local 0 (`retries` in `playwright.config.ts`): do not raise it. A test that passes only on retry is a signal, not a pass: record it.
 - Check stability with `pnpm exec playwright test <file> --repeat-each=10`. Any failure → fix or delete, do not retry-mask.
-- Repro-able flake: quarantine from the gate but keep running and logging; fix or delete within two weeks.
+- A repro-able flake is fixed or deleted, not left retrying. If it must be parked, use `test.fixme` with a reason so it stays visible.
 
 ## 6. Browsers: only where it differs
 
-Do not run every spec on every browser. Default to one engine (chromium). Add WebKit/Firefox/Mobile only for specs whose risk is an engine or viewport difference (IME, selection, sticky, touch).
+Do not run every spec on every browser. Default to one engine (chromium). Specs whose risk is an engine or viewport difference (IME, selection, sticky, touch) justify WebKit/Firefox/Mobile, but the current config runs every root spec on all four non-CI projects, and CI runs none of them. Narrow with `--project`.
 
 ## 7. Prove it blocks a bug
 
 An E2E assertion is verified like any other: plant a mutation, see it fail. Procedure and classification: [verification.md](verification.md). E2E specifics:
 
 - **Observed surface** = what the user sees in the browser or what lands in the DB.
-- Run the mutated source through a real dev server (Vite HMR picks it up) against local Supabase. Use `--repeat-each` or `--retries=0` so a pass cannot hide behind a retry.
+- Run the mutated source through a real dev server (Vite HMR picks it up) against local Supabase. Confirm the server on the e2e port serves **this** worktree (`reuseExistingServer` silently reuses a stray one). Pass `--retries=0` so a pass cannot hide behind a retry.
+- Reachability (condition 2) has no coverage tool here: confirm the mutation visibly changes behavior in the dev server, or that the spec's own steps exercise the mutated path.
 - Revert every mutation, confirm the spec is green again and `git status` is clean.
 - E2E is expensive: 2–3 distinct failure surfaces per spec, on the core guard only.
 
@@ -81,7 +88,7 @@ An E2E assertion is verified like any other: plant a mutation, see it fail. Proc
 - Does it need a real browser engine, real Supabase, or a cross-page journey?
 - Can integration not reproduce it meaningfully?
 - Only representative happy paths and irreversible failures kept?
-- Is the spec collected by the CI project (`playwright test --list`)?
+- Does `--list --project=<CI projects>` show the spec (does CI actually run it)?
 - Role/label locators, no sleeps, no order dependence?
 - Own data, own cleanup, second run identical?
 - Survives `--repeat-each=10`?

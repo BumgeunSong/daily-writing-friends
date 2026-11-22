@@ -33,7 +33,7 @@ Tests are colocated with source (next to the file, or in a sibling `__tests__/`)
 **Missing the `.integration` suffix routes the file to the unit project with no MSW → silent false green.** This is the #1 filename mistake.
 
 - Config: `apps/web/vite.config.ts` (`test.projects`). Run: `pnpm --filter web test` / `test:run` / `test:coverage`.
-- E2E (Playwright) lives only in the root `tests/` folder (`*.spec.ts`, local Supabase, root `playwright.config.ts`). Rules: [references/e2e.md](references/e2e.md). Confirm the runner collects a new spec with `pnpm exec playwright test --list`.
+- E2E (Playwright) lives only in the root `tests/` folder (`*.spec.ts`, local Supabase, root `playwright.config.ts`). Rules: [references/e2e.md](references/e2e.md). Which specs CI runs and how to confirm collection are in e2e.md §0.
 
 ## Stack facts (assume these; verify if surprised)
 

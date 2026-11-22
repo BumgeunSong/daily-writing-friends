@@ -2,7 +2,7 @@
 
 After you write or change an assertion (`expect`), verify the test **actually blocks a bug** by mutation — deliberately breaking the source and checking the test goes red. This filters false green (a test that passes but guards nothing) before commit. Applies to unit, integration and E2E alike.
 
-There is no Stryker here; this is a **manual** loop. Reachability is checked with `vitest run <file> --coverage` (v8 branch coverage).
+There is no Stryker here; this is a **manual** loop. Reachability is checked with `vitest run <file> --coverage` (v8 branch coverage). For E2E there is no coverage tool: see [e2e.md §7](e2e.md#7-prove-it-blocks-a-bug).
 
 > The one question everything reduces to: **does this test block a bug that reaches the user or operations?**
 
