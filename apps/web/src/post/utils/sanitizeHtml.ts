@@ -14,7 +14,7 @@ export function sanitize(html: string): string {
     // Allowed HTML tags
     ALLOWED_TAGS: [
       'p', 'h1', 'h2', 'strong', 'em', 's', 'a', 
-      'blockquote', 'ul', 'ol', 'li', 'img', 'br', 'hr'
+      'blockquote', 'ul', 'ol', 'li', 'img', 'br', 'hr', 'u'
     ],
     // Allowed attributes for specific tags
     ALLOWED_ATTR: ['href', 'src', 'alt', 'target', 'rel'],
@@ -41,7 +41,19 @@ export function sanitize(html: string): string {
     link.setAttribute('rel', 'noopener noreferrer');
   });
 
+  stripAllAttributes(tempDiv, 'u');
+
   return tempDiv.innerHTML;
+}
+
+/**
+ * ALLOWED_ATTR은 모든 태그에 공통 적용되어 `<u>`에도 href/src 같은 속성이 남을 수 있다.
+ * selector에 해당하는 요소의 속성을 모두 제거한다. 속성이 필요 없는 태그는 호출하는 쪽이 직접 넘긴다.
+ */
+function stripAllAttributes(root: HTMLElement, selector: string): void {
+  root.querySelectorAll(selector).forEach(element => {
+    element.getAttributeNames().forEach(name => element.removeAttribute(name));
+  });
 }
 
 /**
