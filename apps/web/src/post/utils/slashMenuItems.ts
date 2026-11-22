@@ -26,6 +26,8 @@ export const SLASH_MENU_ITEMS: readonly SlashMenuItem[] = [
   { id: 'divider', title: '구분선', keywords: ['divider', 'hr', 'line', 'rule', '가로선'] },
 ];
 
+const TOP_LEVEL_DEPTH = 1;
+
 const stripSpaces = (text: string) => text.replace(/\s+/g, '');
 
 /** 슬래시 뒤에 입력한 검색어로 항목을 거른다. 이름과 별칭 모두 대상이다. */
@@ -40,17 +42,20 @@ export function filterSlashMenuItems(query: string): SlashMenuItem[] {
 
 interface SlashTriggerInput {
   parentTypeName: string;
+  /** 문서 루트(0)에서 블록까지의 깊이. 1이면 인용이나 목록 안이 아닌 최상위 블록이다. */
+  parentDepth: number;
   /** 커서가 있는 블록의 전체 텍스트. */
   parentText: string;
   /** 슬래시부터 커서까지의 텍스트(`/제목`). */
   triggerText: string;
 }
 
-/** 빈 문단에 슬래시와 검색어만 있을 때만 메뉴를 연다. */
+/** 최상위 문단의 텍스트가 슬래시와 검색어뿐일 때만 메뉴를 연다. 인용이나 목록 안에서는 열지 않는다. */
 export function isSlashTriggerAllowed({
   parentTypeName,
+  parentDepth,
   parentText,
   triggerText,
 }: SlashTriggerInput): boolean {
-  return parentTypeName === 'paragraph' && parentText === triggerText;
+  return parentTypeName === 'paragraph' && parentDepth === TOP_LEVEL_DEPTH && parentText === triggerText;
 }

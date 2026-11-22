@@ -8,7 +8,7 @@ import {
   Quote,
   type LucideIcon,
 } from 'lucide-react';
-import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useState, type MouseEvent } from 'react';
 import type { SlashMenuItem, SlashMenuItemId } from '@/post/utils/slashMenuItems';
 import { cn } from '@/shared/utils/cn';
 
@@ -30,6 +30,9 @@ const ICONS: Record<SlashMenuItemId, LucideIcon> = {
   orderedList: ListOrdered,
   divider: Minus,
 };
+
+/** 옵션을 눌러도 에디터의 포커스(와 모바일 키보드)가 빠지지 않게 한다. */
+const keepEditorFocus = (event: MouseEvent<HTMLButtonElement>) => event.preventDefault();
 
 /**
  * Slash menu popover body. The TipTap suggestion `render` mounts this and drives
@@ -83,8 +86,7 @@ export const SlashMenuList = forwardRef<SlashMenuListHandle, SlashMenuListProps>
               role="option"
               aria-selected={index === selectedIndex}
               key={item.id}
-              // Keep the editor focused (and the IME/keyboard up) when tapping an option.
-              onMouseDown={(event) => event.preventDefault()}
+              onMouseDown={keepEditorFocus}
               onClick={() => select(index)}
               onMouseEnter={() => setSelectedIndex(index)}
               className={cn(

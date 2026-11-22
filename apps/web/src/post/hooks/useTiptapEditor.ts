@@ -36,7 +36,7 @@ interface UseTiptapEditorProps {
   onTyping?: () => void;
   placeholder?: string;
   debounceDelay?: number;
-  /** `/` 메뉴의 이미지 항목이 호출한다. 업로드 훅이 에디터보다 늦게 만들어져 ref로 읽는다. */
+  /** `/` 메뉴의 이미지 항목을 골랐을 때 호출한다. */
   onImageRequest?: () => void;
 }
 

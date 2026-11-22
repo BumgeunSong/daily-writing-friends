@@ -8,11 +8,15 @@ import {
 } from '@/post/utils/slashMenuItems';
 
 interface SlashCommandOptions {
-  /** 이미지 항목이 호출한다. 에디터 밖(업로드 훅)에 있어 외부에서 주입한다. */
+  /** 이미지 항목을 골랐을 때 호출한다. */
   onImageRequest: () => void;
-  /** 모바일에서는 가상 키보드를 피해 커서 위쪽에 띄운다. */
+  /** 메뉴를 커서 위/아래 어느 쪽에 먼저 띄울지. */
   placement: 'top-start' | 'bottom-start';
 }
+
+const assertNever = (id: never): never => {
+  throw new Error(`처리되지 않은 슬래시 메뉴 항목: ${String(id)}`);
+};
 
 /** 입력한 `/검색어`를 지우고 선택한 블록을 삽입한다. */
 export function runSlashCommand(
@@ -39,12 +43,17 @@ export function runSlashCommand(
       return chain.toggleOrderedList().run();
     case 'divider':
       return chain.setHorizontalRule().run();
+    default:
+      return assertNever(item.id);
   }
 }
 
+/** 조합 중 keydown의 keyCode. 일부 브라우저는 isComposing 없이 이 값만 보낸다. */
+const IME_PROCESS_KEY_CODE = 229;
+
 /** IME 조합 중의 키는 조합기의 것이다. 메뉴가 가로채면 한글 입력이 깨진다. */
-const isComposingKey = (event: KeyboardEvent, composing: boolean) =>
-  composing || event.isComposing || event.keyCode === 229;
+export const isComposingKey = (event: KeyboardEvent, viewIsComposing: boolean) =>
+  viewIsComposing || event.isComposing || event.keyCode === IME_PROCESS_KEY_CODE;
 
 export const SlashCommand = Extension.create<SlashCommandOptions>({
   name: 'slashCommand',
@@ -62,9 +71,11 @@ export const SlashCommand = Extension.create<SlashCommandOptions>({
         startOfLine: true,
         placement,
         allow: ({ state, range }) => {
-          const { parent } = state.doc.resolve(range.from);
+          const $from = state.doc.resolve(range.from);
+          const { parent } = $from;
           return isSlashTriggerAllowed({
             parentTypeName: parent.type.name,
+            parentDepth: $from.depth,
             parentText: parent.textContent,
             triggerText: state.doc.textBetween(range.from, range.to),
           });
@@ -87,6 +98,8 @@ export const SlashCommand = Extension.create<SlashCommandOptions>({
             onExit: () => {
               unmount?.();
               component?.destroy();
+              unmount = undefined;
+              component = null;
             },
           };
         },

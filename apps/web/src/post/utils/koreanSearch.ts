@@ -18,7 +18,7 @@ const FINAL_TO_INITIAL: Record<string, string> = {
   'ᇂ': 'ᄒ', // ㅎ
 };
 
-// NFKD는 호환 자모(ㅈ)를 초성 자모로 펼쳐, 조합 중 단독 자음도 음절의 초성과 비교할 수 있게 한다.
+/** NFKD는 호환 자모(ㅈ)를 초성 자모로 펼쳐, 조합 중 단독 자음도 음절의 초성과 비교할 수 있게 한다. 영문은 소문자로 맞춘다. */
 const toJamo = (text: string) => text.normalize('NFKD').toLowerCase();
 
 /**
@@ -33,7 +33,7 @@ function withTrailingFinalAsInitial(jamo: string): string {
 
 /**
  * 한글 IME 조합 중에도 깨지지 않는 부분 일치 검사.
- * 자모 단위로 비교해 미완성 음절(제모, 젬, ㅈ)이 완성 단어(제목)의 앞부분으로 일치한다.
+ * 자모 단위 부분 문자열 일치. 받침이 빠졌거나 받침이 다음 음절 초성이 될 미완성 음절(젬, ㅈ)이 완성 단어(제목)에 걸린다.
  */
 export function matchesKoreanQuery(target: string, query: string): boolean {
   const targetJamo = toJamo(target);

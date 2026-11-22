@@ -35,9 +35,11 @@ export interface EditorTiptapHandle {
  */
 export const EditorTiptap = forwardRef<EditorTiptapHandle, EditorTiptapProps>(
   ({ initialHtml, initialJson, onChange, onTyping, placeholder = '내용을 입력하세요...', onUploadingChange }, ref) => {
-    // The upload hook needs the editor, so the editor's `/` menu reaches the picker through a ref.
-    const openFilePickerRef = useRef<() => void>(() => {});
-    const requestImage = useCallback(() => openFilePickerRef.current(), []);
+    // 업로드 훅이 에디터를 필요로 해서 늦게 만들어진다. 에디터의 `/` 메뉴는 ref로 파일 선택기에 닿는다.
+    const openFilePickerRef = useRef<() => Promise<void>>(async () => {});
+    const requestImage = useCallback(() => {
+      void openFilePickerRef.current();
+    }, []);
 
     // Initialize editor with custom configuration
     const editor = useTiptapEditor({

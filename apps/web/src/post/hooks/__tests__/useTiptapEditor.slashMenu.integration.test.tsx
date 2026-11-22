@@ -2,6 +2,8 @@ import { render, screen, act, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EditorContent, type Editor } from '@tiptap/react';
 import { beforeAll, describe, it, expect, vi } from 'vitest';
+import { isComposingKey } from '@/post/utils/slashCommandExtension';
+import { sanitize } from '@/post/utils/sanitizeHtml';
 import { useTiptapEditor } from '../useTiptapEditor';
 
 // jsdom has no layout engine; ProseMirror and floating-ui measure rects.
@@ -81,6 +83,15 @@ describe('빈 줄에서 슬래시를 입력했을 때', () => {
     const editor = renderEditor('<p>안녕</p>');
     act(() => {
       editor.commands.setTextSelection(1);
+    });
+    typeText(editor, '/');
+    expect(menu()).toBeNull();
+  });
+
+  it('인용 안의 빈 줄에서는 열리지 않는다', () => {
+    const editor = renderEditor('<blockquote><p></p></blockquote>');
+    act(() => {
+      editor.commands.setTextSelection(2);
     });
     typeText(editor, '/');
     expect(menu()).toBeNull();
@@ -173,7 +184,8 @@ describe('각 항목을 골랐을 때', () => {
     pressKey(editor, 'Enter');
 
     expect(blockTypes(editor)).toEqual(['horizontalRule', 'paragraph']);
-    expect(editor.isFocused || editor.state.selection.from > 0).toBe(true);
+    expect(editor.state.selection.$from.parent.type.name).toBe('paragraph');
+    expect(editor.state.selection.$from.parentOffset).toBe(0);
   });
 
   it('이미지는 입력한 /검색어를 지우고 파일 선택기 요청을 호출한다', async () => {
@@ -188,19 +200,28 @@ describe('각 항목을 골랐을 때', () => {
     expect(editor.state.doc.textContent).toBe('');
   });
 
-  it('고른 블록은 JSON으로 저장했다 다시 열어도 유지된다', async () => {
+  it.each([
+    ['/제목', 'heading'],
+    ['/인용', 'blockquote'],
+    ['/글머리', 'bulletList'],
+    ['/번호', 'orderedList'],
+    ['/구분', 'horizontalRule'],
+  ])('%s로 고른 블록은 저장된 html과 json으로 다시 열어도 유지된다', async (query, blockType) => {
     const editor = renderEditor();
-    typeText(editor, '/구분');
-    await waitFor(() => expect(options()).toEqual(['구분선']));
+    typeText(editor, query);
+    await waitFor(() => expect(menu()).not.toBeNull());
     pressKey(editor, 'Enter');
-    const saved = editor.getJSON();
+    const savedHtml = sanitize(editor.getHTML());
+    const savedJson = editor.getJSON();
 
-    const reopened = renderEditor('<p></p>');
+    const fromHtml = renderEditor(savedHtml);
+    const fromJson = renderEditor();
     act(() => {
-      reopened.commands.setContent(saved);
+      fromJson.commands.setContent(savedJson);
     });
 
-    expect(blockTypes(reopened)).toEqual(['horizontalRule', 'paragraph']);
+    expect(blockTypes(fromHtml)?.[0]).toBe(blockType);
+    expect(blockTypes(fromJson)?.[0]).toBe(blockType);
   });
 });
 
@@ -241,5 +262,17 @@ describe('한글 IME 조합 중일 때', () => {
     const editor = renderEditor();
     typeText(editor, '/제모');
     await waitFor(() => expect(options()).toEqual(['제목 1', '제목 2']));
+  });
+});
+
+describe('조합 여부를 판단할 때', () => {
+  const key = (init: KeyboardEventInit & { keyCode?: number }) => new KeyboardEvent('keydown', { key: 'Enter', ...init });
+
+  it('뷰가 조합 중이면 키 이벤트에 표시가 없어도 조합 키다', () => {
+    expect(isComposingKey(key({}), true)).toBe(true);
+  });
+
+  it('조합 중이 아닌 일반 Enter는 조합 키가 아니다', () => {
+    expect(isComposingKey(key({}), false)).toBe(false);
   });
 });
