@@ -22,7 +22,9 @@ describe('sanitizeHtml', () => {
     });
 
     it('밑줄 u의 속성은 모두 제거한다', () => {
-      const result = sanitize('<u class="x" style="color:red" id="a" onclick="alert(1)" onmouseover="alert(2)">글</u>');
+      const result = sanitize(
+        '<u class="x" style="color:red" id="a" onclick="alert(1)" href="https://e.com" src="x" alt="y" target="_blank" rel="z">글</u>',
+      );
 
       expect(result).toBe('<u>글</u>');
     });

@@ -41,7 +41,18 @@ export function sanitize(html: string): string {
     link.setAttribute('rel', 'noopener noreferrer');
   });
 
+  stripAllAttributes(tempDiv, 'u');
+
   return tempDiv.innerHTML;
+}
+
+/**
+ * ALLOWED_ATTR은 모든 태그에 공통 적용되므로, 속성이 필요 없는 태그는 따로 비운다.
+ */
+function stripAllAttributes(root: HTMLElement, selector: string): void {
+  root.querySelectorAll(selector).forEach(element => {
+    element.getAttributeNames().forEach(name => element.removeAttribute(name));
+  });
 }
 
 /**
