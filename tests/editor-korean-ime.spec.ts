@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { imeCompose, imeType } from './helpers/ime-helper';
-import { modPress, getTextContent, expectNoParagraphSplit, EDITOR_URL, EDITOR_AREA, EDITOR_OUTPUT } from './helpers/editor-helpers';
+import { modPress, getTextContent, expectSingleParagraphWith, EDITOR_URL, EDITOR_AREA, EDITOR_OUTPUT } from './helpers/editor-helpers';
 
 // Korean IME tests require CDP — skip on non-Chromium browsers
 test.skip(({ browserName }) => browserName !== 'chromium', 'CDP required for IME simulation');
@@ -16,26 +16,18 @@ test.describe('Editor Korean IME', () => {
 
   test('Korean + ")" does not create unwanted line break', async ({ page }) => {
     await imeCompose(page, '안녕하세요', ')');
-    await expectNoParagraphSplit(page);
-    const html = await page.locator(EDITOR_OUTPUT).innerHTML();
-    expect(html).toContain('안녕하세요');
-    expect(html).toContain(')');
+    await expectSingleParagraphWith(page, '안녕하세요', ')');
   });
 
   test('Korean + "/" does not create unwanted line break', async ({ page }) => {
     await imeCompose(page, '테스트', '/');
-    await expectNoParagraphSplit(page);
-    const html = await page.locator(EDITOR_OUTPUT).innerHTML();
-    expect(html).toContain('테스트');
-    expect(html).toContain('/');
+    await expectSingleParagraphWith(page, '테스트', '/');
   });
 
   test('Korean + "..." does not create unwanted line break', async ({ page }) => {
     await imeCompose(page, '그런데', '.');
     await page.keyboard.type('..');
-    await expectNoParagraphSplit(page);
-    const html = await page.locator(EDITOR_OUTPUT).innerHTML();
-    expect(html).toContain('그런데');
+    await expectSingleParagraphWith(page, '그런데');
   });
 
   // --- Common punctuation stability ---
@@ -44,10 +36,7 @@ test.describe('Editor Korean IME', () => {
   for (const char of punctuationChars) {
     test(`Korean + "${char}" does not create unwanted line break`, async ({ page }) => {
       await imeCompose(page, '한글', char);
-      await expectNoParagraphSplit(page);
-      const html = await page.locator(EDITOR_OUTPUT).innerHTML();
-      expect(html).toContain('한글');
-      expect(html).toContain(char);
+      await expectSingleParagraphWith(page, '한글', char);
     });
   }
 
@@ -82,19 +71,13 @@ test.describe('Editor Korean IME', () => {
   test('Korean then English in same paragraph — no break', async ({ page }) => {
     await imeType(page, '안녕 ');
     await page.keyboard.type('hello');
-    await expectNoParagraphSplit(page);
-    const html = await page.locator(EDITOR_OUTPUT).innerHTML();
-    expect(html).toContain('안녕');
-    expect(html).toContain('hello');
+    await expectSingleParagraphWith(page, '안녕', 'hello');
   });
 
   test('English then Korean — no break', async ({ page }) => {
     await page.keyboard.type('hello ');
     await imeType(page, '세계');
-    await expectNoParagraphSplit(page);
-    const html = await page.locator(EDITOR_OUTPUT).innerHTML();
-    expect(html).toContain('hello');
-    expect(html).toContain('세계');
+    await expectSingleParagraphWith(page, 'hello', '세계');
   });
 
   test('rapid Korean/English alternation — no phantom line breaks', async ({ page }) => {
@@ -104,15 +87,15 @@ test.describe('Editor Korean IME', () => {
     await page.keyboard.type('B');
     await imeType(page, '다');
     await page.keyboard.type('C');
-    await expectNoParagraphSplit(page);
+    await expectSingleParagraphWith(page, '가', '나', '다', 'A', 'B', 'C');
   });
 
   test('Korean text with bold formatting preserved', async ({ page }) => {
     await imeType(page, '볼드테스트');
+    await expect(page.locator(EDITOR_AREA)).toContainText('볼드테스트');
     await modPress(page, 'A');
     await modPress(page, 'B');
-    await page.keyboard.press('End');
-    await page.keyboard.type(' ');
+    await expect(page.locator(EDITOR_AREA).locator('strong')).toHaveText('볼드테스트');
 
     await expect(async () => {
       const html = await page.locator(EDITOR_OUTPUT).innerHTML();

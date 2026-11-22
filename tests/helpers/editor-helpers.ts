@@ -27,14 +27,15 @@ export async function getTextContent(locator: Locator): Promise<string> {
 }
 
 /**
- * Assert the editor output contains only a single paragraph (no unwanted line breaks).
- * Also verifies the output is non-empty to prevent vacuous passes.
+ * Assert the typed text landed in the editor output as one paragraph.
+ * The output panel follows the editor through a debounced onChange, so this polls;
+ * requiring the text keeps an empty output from passing as "no line break".
  */
-export async function expectNoParagraphSplit(page: Page): Promise<void> {
+export async function expectSingleParagraphWith(page: Page, ...texts: string[]): Promise<void> {
   await expect(async () => {
     const html = await page.locator(EDITOR_OUTPUT).innerHTML();
-    expect(html.length).toBeGreaterThan(0);
+    for (const text of texts) expect(html).toContain(text);
     const paragraphCount = (html.match(/<p[ >]/g) || []).length;
-    expect(paragraphCount).toBeLessThanOrEqual(1);
+    expect(paragraphCount).toBe(1);
   }).toPass({ timeout: 5000 });
 }
