@@ -22,7 +22,10 @@ beforeAll(() => {
   vi.stubGlobal('IntersectionObserver', NoopObserver);
 });
 
-function renderCommentEditor(initialContent: string) {
+function renderCommentEditor(
+  initialContent: string,
+  onSubmit: () => Promise<void> = vi.fn(() => Promise.resolve()),
+) {
   const { Wrapper } = withProviders();
   return renderHook(
     () =>
@@ -30,7 +33,7 @@ function renderCommentEditor(initialContent: string) {
         boardId: '',
         placeholder: '테스트',
         initialContent,
-        onSubmit: vi.fn(() => Promise.resolve()),
+        onSubmit,
       }),
     {
       wrapper: ({ children }) => (
@@ -152,18 +155,20 @@ describe('useCommentEditor — blockquote input rule', () => {
   });
 });
 
-describe('useCommentEditor — 줄바꿈', () => {
+describe('댓글 입력에서 줄바꿈할 때', () => {
   it.each([
     ['Enter', {}],
     ['Shift+Enter', { shiftKey: true }],
-  ])('일반 문단 끝에서 %s를 누르면 문단을 나누지 않고 줄바꿈을 넣는다', async (_key, options) => {
-    const { result } = renderCommentEditor('<p>첫째 줄</p>');
+  ])('일반 문단 끝에서 %s를 누르면 문단을 나누지 않고 줄바꿈을 넣을 뿐 제출하지 않는다', async (_key, options) => {
+    const onSubmit = vi.fn(() => Promise.resolve());
+    const { result } = renderCommentEditor('<p>첫째 줄</p>', onSubmit);
     await waitFor(() => expect(result.current.editor).not.toBeNull());
     const editor = result.current.editor!;
 
     pressEnterAt(editor, editor.state.doc.content.size - 1, options);
 
     expect(editor.getHTML()).toBe('<p>첫째 줄<br></p>');
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 
   it('줄바꿈 뒤에 이어 쓴 글자는 같은 문단의 다음 줄이 된다', async () => {
