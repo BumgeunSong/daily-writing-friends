@@ -17,6 +17,18 @@ function publishedHtmlAfterUnderlining(text: string): string {
 }
 
 describe('에디터에서 밑줄을 적용한 글을 발행할 때', () => {
+  it('문장 일부만 밑줄을 적용해도 그 구간만 u로 발행된다', () => {
+    const { result } = renderHook(() =>
+      useTiptapEditor({ initialHtml: '<p>가나다</p>', onChange: () => {} }),
+    );
+    const editor = result.current;
+    if (!editor) throw new Error('editor not initialized');
+
+    editor.chain().setTextSelection({ from: 2, to: 3 }).toggleUnderline().run();
+
+    expect(sanitize(editor.getHTML())).toBe('<p>가<u>나</u>다</p>');
+  });
+
   it('발행 HTML에 u 태그가 남는다', () => {
     const published = publishedHtmlAfterUnderlining('밑줄 글');
 

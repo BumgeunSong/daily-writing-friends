@@ -32,9 +32,25 @@ describe('sanitizeHtml', () => {
     it('u 안의 script와 이벤트 핸들러가 걸린 자식은 실행되지 않게 제거한다', () => {
       const result = sanitize('<u>글<script>alert(1)</script><img src="x" onerror="alert(1)"></u>');
 
-      expect(result).not.toContain('<script');
-      expect(result).not.toContain('onerror');
-      expect(result).toContain('<u>글');
+      expect(result).toBe('<u>글<img src="x"></u>');
+    });
+
+    it('u로 감싼 링크는 href를 유지하고 새 탭 속성을 강제한다', () => {
+      const result = sanitize('<u><a href="https://e.com" target="_self">링크</a></u>');
+
+      expect(result).toBe('<u><a href="https://e.com" target="_blank" rel="noopener noreferrer">링크</a></u>');
+    });
+
+    it('링크 안의 u는 링크 속성에 영향을 주지 않는다', () => {
+      const result = sanitize('<a href="https://e.com"><u class="x" href="y">링크</u></a>');
+
+      expect(result).toBe('<a href="https://e.com" target="_blank" rel="noopener noreferrer"><u>링크</u></a>');
+    });
+
+    it('중첩된 u의 속성도 모두 제거한다', () => {
+      const result = sanitize('<u alt="a"><strong><u alt="b">글</u></strong></u>');
+
+      expect(result).toBe('<u><strong><u>글</u></strong></u>');
     });
 
     it('구분선 hr 태그를 유지한다', () => {
