@@ -58,7 +58,7 @@ test.describe('Editor Mobile Viewport', () => {
 
     // 글 맨 위로 올리면 글 흐름 안에 있는 툴바는 화면 밖으로 밀려난다. 하단에 고정된 툴바만 남는다.
     await page.mouse.wheel(0, -10000);
-    await expect(page.getByText('Line 1 of long content')).toBeInViewport();
+    await expect(page.locator(EDITOR_AREA).getByText('Line 1 of long content')).toBeInViewport();
 
     // Tiptap renders desktop + mobile toolbars — mobile toolbar is last
     await expect(page.locator('[data-testid="toolbar-bold"]').last()).toBeInViewport();
