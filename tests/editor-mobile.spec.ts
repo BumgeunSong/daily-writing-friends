@@ -47,27 +47,21 @@ test.describe('Editor Mobile Viewport', () => {
     await expect(imageButton).toBeAttached();
   });
 
-  test('toolbar stays visible after scrolling long content', async ({ page }) => {
+  test('긴 글을 쓰고 맨 위로 스크롤해도 서식 툴바는 화면에 남아 있다', async ({ page }) => {
     await page.click(EDITOR_AREA);
 
-    // Type enough content to force scrolling
+    // 화면을 넘길 만큼 길게 쓴다.
     for (let i = 0; i < 30; i++) {
       await page.keyboard.type(`Line ${i + 1} of long content`);
       await page.keyboard.press('Enter');
     }
 
-    // Scroll to bottom of editor
-    await page.keyboard.press('End');
+    // 글 맨 위로 올리면 글 흐름 안에 있는 툴바는 화면 밖으로 밀려난다. 하단에 고정된 툴바만 남는다.
+    await page.mouse.wheel(0, -10000);
+    await expect(page.getByText('Line 1 of long content')).toBeInViewport();
 
     // Tiptap renders desktop + mobile toolbars — mobile toolbar is last
-    const toolbar = page.locator('[data-testid="toolbar-bold"]').last();
-    await expect(toolbar).toBeVisible({ timeout: 3000 });
-
-    // Toolbar should not overlap with page header
-    const toolbarBox = await toolbar.boundingBox();
-    expect(toolbarBox).not.toBeNull();
-    // Toolbar should be within viewport (y > 0 means not hidden above)
-    expect(toolbarBox!.y).toBeGreaterThanOrEqual(0);
+    await expect(page.locator('[data-testid="toolbar-bold"]').last()).toBeInViewport();
   });
 
   test('Korean text at mobile viewport works correctly', async ({ page }) => {
