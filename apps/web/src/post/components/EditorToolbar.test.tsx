@@ -134,6 +134,15 @@ describe('EditorToolbar 서식', () => {
     expect(editor.getHTML()).toBe(expected);
   });
 
+  it.each(blocks)('%s 버튼(%s)을 한 번 더 누르면 일반 문단으로 돌아온다', async (button) => {
+    const editor = renderToolbar('<p>글자</p>', { from: 1, to: 1 });
+
+    await pressToolbar(button);
+    await pressToolbar(button);
+
+    expect(editor.getHTML()).toBe('<p>글자</p>');
+  });
+
   it('제목 1인 줄에서 제목 2 버튼을 누르면 제목 2로 바뀐다', async () => {
     const editor = renderToolbar('<h1>글자</h1>', { from: 1, to: 1 });
 
