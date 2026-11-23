@@ -76,3 +76,78 @@ describe('EditorToolbar 링크', () => {
     expect(screen.queryByPlaceholderText('https://example.com')).not.toBeInTheDocument();
   });
 });
+
+describe('EditorToolbar 서식', () => {
+  const pressToolbar = async (name: string) => {
+    const user = userEvent.setup({ delay: null });
+    await user.click(screen.getByRole('button', { name }));
+  };
+
+  const marks = [
+    ['Bold', '굵게', '<p><strong>글자</strong></p>'],
+    ['Italic', '기울임', '<p><em>글자</em></p>'],
+    ['Underline', '밑줄', '<p><u>글자</u></p>'],
+    ['Strikethrough', '취소선', '<p><s>글자</s></p>'],
+  ] as const;
+
+  it.each(marks)('글자를 선택하고 %s 버튼(%s)을 누르면 선택한 글자에 서식이 걸린다', async (button, _label, expected) => {
+    const editor = renderToolbar('<p>글자</p>', { from: 1, to: 3 });
+
+    await pressToolbar(button);
+
+    expect(editor.getHTML()).toBe(expected);
+  });
+
+  it.each(marks)('%s 버튼(%s)을 한 번 더 누르면 서식이 풀린다', async (button) => {
+    const editor = renderToolbar('<p>글자</p>', { from: 1, to: 3 });
+
+    await pressToolbar(button);
+    await pressToolbar(button);
+
+    expect(editor.getHTML()).toBe('<p>글자</p>');
+  });
+
+  it('커서만 놓고 굵게 버튼을 누른 뒤 이어서 쓰는 글자에 서식이 걸린다', async () => {
+    const editor = renderToolbar('<p></p>', { from: 1, to: 1 });
+
+    await pressToolbar('Bold');
+    act(() => {
+      editor.view.dispatch(editor.state.tr.insertText('글자'));
+    });
+
+    expect(editor.getHTML()).toBe('<p><strong>글자</strong></p>');
+  });
+
+  const blocks = [
+    ['Heading 1', '제목 1', '<h1>글자</h1>'],
+    ['Heading 2', '제목 2', '<h2>글자</h2>'],
+    ['Blockquote', '인용', '<blockquote><p>글자</p></blockquote>'],
+    ['Bullet List', '글머리 목록', '<ul><li><p>글자</p></li></ul>'],
+    ['Ordered List', '번호 목록', '<ol><li><p>글자</p></li></ol>'],
+  ] as const;
+
+  it.each(blocks)('줄에서 %s 버튼(%s)을 누르면 그 줄이 해당 구조로 바뀐다', async (button, _label, expected) => {
+    const editor = renderToolbar('<p>글자</p>', { from: 1, to: 1 });
+
+    await pressToolbar(button);
+
+    expect(editor.getHTML()).toBe(expected);
+  });
+
+  it.each(blocks)('%s 버튼(%s)을 한 번 더 누르면 일반 문단으로 돌아온다', async (button) => {
+    const editor = renderToolbar('<p>글자</p>', { from: 1, to: 1 });
+
+    await pressToolbar(button);
+    await pressToolbar(button);
+
+    expect(editor.getHTML()).toBe('<p>글자</p>');
+  });
+
+  it('제목 1인 줄에서 제목 2 버튼을 누르면 제목 2로 바뀐다', async () => {
+    const editor = renderToolbar('<h1>글자</h1>', { from: 1, to: 1 });
+
+    await pressToolbar('Heading 2');
+
+    expect(editor.getHTML()).toBe('<h2>글자</h2>');
+  });
+});
