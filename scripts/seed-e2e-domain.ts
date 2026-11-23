@@ -133,9 +133,36 @@ async function seedBoard() {
   console.log(`  Board "${BOARD_ID}" upserted`);
 }
 
+// 앱은 app_config를 읽지 못하면 코드 기본값(REMOTE_CONFIG_DEFAULTS.active_board_id)을 활성 기수로 쓴다.
+// 기록 페이지는 그 보드의 멤버만 보여 주므로, 같은 ID의 보드와 e2e 멤버의 write 권한을 시드한다.
+const DEFAULT_ACTIVE_BOARD_ID = '1a65026a-cf93-4828-be54-fd8d034008da';
+
+async function seedActiveBoard(memberId: string) {
+  console.log('Seeding default active board for the stats page...');
+  await upsert('boards', [
+    {
+      id: DEFAULT_ACTIVE_BOARD_ID,
+      title: 'E2E Active Board',
+      description: 'Default active board for E2E stats page',
+      first_day: daysAgo(30),
+      cohort: 2,
+    },
+  ]);
+  await upsert('user_board_permissions', [
+    {
+      id: `e2e-active-perm-${memberId}`,
+      user_id: memberId,
+      board_id: DEFAULT_ACTIVE_BOARD_ID,
+      permission: 'write',
+    },
+  ]);
+  console.log(`  Board "${DEFAULT_ACTIVE_BOARD_ID}" and e2e@ write permission upserted`);
+}
+
 async function seedMemberships(userIds: UserIds) {
   console.log('Seeding memberships...');
   const memberId = userIds['e2e@example.com'];
+  await seedActiveBoard(memberId);
 
   await upsert('user_board_permissions', [
     {
