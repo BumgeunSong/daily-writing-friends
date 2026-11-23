@@ -11,6 +11,8 @@
     "test": "pnpm --filter web test",
     "test:run": "pnpm --filter web test:run",
     "e2e": "playwright test",
+    "e2e:guard": "node scripts/e2e/check-collection.mjs",
+    "e2e:guard:test": "node --test scripts/e2e/collection.test.mjs",
     "type-check": "pnpm --filter web type-check",
     "db:types": "supabase gen types typescript --local --schema public > apps/web/src/shared/external/database.types.ts",
     "lint": "pnpm --filter web lint",

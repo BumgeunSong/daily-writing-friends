@@ -127,6 +127,9 @@ export default defineConfig({
       },
       testDir: './tests/data-flows',
       testMatch: /.*\.non-member\.spec\.ts/,
+      // A project-level testIgnore replaces the top-level one. Without this override the
+      // top-level `**/data-flows/**` is inherited and this project collects nothing.
+      testIgnore: ['**/*.test.ts'],
       dependencies: ['setup'],
     },
   ],

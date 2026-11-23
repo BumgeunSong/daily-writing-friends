@@ -2,19 +2,15 @@ import { test, expect } from '@playwright/test';
 
 const BOARD_ID = 'e2e-test-board';
 
-test.describe('Board Access Control', () => {
-  test('non-member sees error page when accessing board', async ({ page }) => {
-    // Navigate to the board as a non-member user (e2e2@, no board membership)
+test.describe('참여하지 않은 기수의 게시판', () => {
+  test('비멤버는 글 목록 대신 참여하지 않은 기수라는 안내를 본다', async ({ page }) => {
+    // 비멤버(e2e2@, 이 게시판 멤버십 없음)로 게시판을 연다.
     await page.goto(`/board/${BOARD_ID}`);
-    await page.waitForLoadState('networkidle');
 
-    // The PermissionErrorBoundary should show "읽기 권한 없음" dialog
-    await expect(
-      page.getByText(/읽기 권한 없음|권한이 없|접근할 수 없/i),
-    ).toBeVisible({ timeout: 10000 });
+    // 안내가 먼저 보여야 "글이 0개"가 아직 로딩 중이라서 생긴 거짓 통과가 되지 않는다.
+    await expect(page.getByRole('heading', { name: '아직 참여하지 않은 기수예요' })).toBeVisible();
 
-    // The board content (post list) should NOT be visible
-    const postLinks = page.locator('[role="button"][aria-label="게시글 상세로 이동"]');
-    await expect(postLinks).toHaveCount(0);
+    const postCards = page.getByRole('button', { name: '게시글 상세로 이동' });
+    await expect(postCards).toHaveCount(0);
   });
 });
