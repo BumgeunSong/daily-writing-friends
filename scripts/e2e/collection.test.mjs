@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { describe, it } from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import {
   checkCollection,
@@ -18,6 +20,12 @@ describe('워크플로에서 CI 프로젝트를 읽을 때', () => {
     const workflow = 'run: pnpm exec playwright test --project=chromium-data-flows --project=chromium-non-member';
 
     assert.deepEqual(parseCiProjects(workflow), ['chromium-data-flows', 'chromium-non-member']);
+  });
+
+  it('줄 끝 \\로 이어 쓴 명령의 --project도 모두 읽는다', () => {
+    const workflow = 'run: pnpm exec playwright test --project=a \\\n  --project=b \\\n  --project=c';
+
+    assert.deepEqual(parseCiProjects(workflow), ['a', 'b', 'c']);
   });
 
   it('주석 줄에 적힌 --project는 무시한다', () => {
@@ -149,5 +157,24 @@ describe('디스크에서 spec 파일을 찾을 때', () => {
     const root = makeTree(['tests/helper.ts', 'tests/auth.setup.ts', 'tests/data-flows/x.spec.ts', 'tests/x.test.ts']);
 
     assert.deepEqual(findSpecFiles(root), ['tests/data-flows/x.spec.ts']);
+  });
+});
+
+describe('check-collection CLI 인자를 잘못 줬을 때', () => {
+  const cli = fileURLToPath(new URL('./check-collection.mjs', import.meta.url));
+  const run = (...args) => spawnSync(process.execPath, [cli, ...args], { encoding: 'utf8' });
+
+  it('--report에 값이 없으면 실행 수 대조를 건너뛰지 않고 실패한다', () => {
+    const result = run('--report');
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /--report에는/);
+  });
+
+  it('--report 뒤에 다른 플래그가 오면 값이 없는 것으로 보고 실패한다', () => {
+    const result = run('--report', '--verbose');
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /--report에는/);
   });
 });

@@ -5,9 +5,11 @@ import path from 'node:path';
  * CI가 실행하는 Playwright 프로젝트 이름을 워크플로에서 읽는다.
  * 주석 줄은 무시하고, `playwright test`를 실행하는 줄의 `--project`만 본다.
  * `--project=a`, `--project a`, `--project="Mobile Chrome"` 형태를 모두 받는다.
+ * 줄 끝 `\`로 이어 쓴 명령은 한 줄로 합쳐서 읽는다.
  */
 export function parseCiProjects(workflowText) {
   const runLines = workflowText
+    .replace(/\\\r?\n\s*/g, ' ')
     .split('\n')
     .filter((line) => !line.trim().startsWith('#') && /playwright\s+test/.test(line));
   return runLines.flatMap((line) =>

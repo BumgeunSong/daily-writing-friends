@@ -49,6 +49,10 @@ function listCiTests(projects) {
 function main() {
   const reportFlag = process.argv.indexOf('--report');
   const reportPath = reportFlag === -1 ? null : process.argv[reportFlag + 1];
+  if (reportFlag !== -1 && (!reportPath || reportPath.startsWith('--'))) {
+    console.error('--report에는 Playwright JSON 리포트 경로가 필요하다. 값이 없으면 실행 수 대조가 조용히 꺼진다.');
+    process.exit(1);
+  }
 
   const projects = parseCiProjects(fs.readFileSync(path.join(repoRoot, workflowPath), 'utf8'));
   if (projects.length === 0) {
@@ -84,6 +88,10 @@ function main() {
   }
 
   if (reportPath) {
+    if (!fs.existsSync(reportPath)) {
+      console.error(`리포트 파일이 없다: ${reportPath}. 테스트 스텝이 JSON 리포트를 쓰는지 확인하라.`);
+      process.exit(1);
+    }
     const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
     const comparison = compareRunCount({ listedTotal: listedTotalOf(listJson), reportStats: report.stats });
     console.log(`\n--list ${comparison.listedTotal}건, 실제 리포트 ${comparison.executed}건`);
