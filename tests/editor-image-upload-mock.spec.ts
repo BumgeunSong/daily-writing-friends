@@ -63,17 +63,18 @@ test.describe('Editor Image Upload (Mocked)', () => {
     await page.waitForSelector(EDITOR_AREA, { timeout: 10000 });
   });
 
-  test('toolbar image button opens file chooser', async ({ page }) => {
+  test('툴바 이미지 버튼으로 파일을 고르면 이미지가 올라가 글에 들어간다', async ({ page }) => {
     await page.click(EDITOR_AREA);
+    const uploadRequest = waitForUploadRequest(page);
 
-    // Verify that clicking the image button triggers a file chooser
     // Tiptap renders desktop + mobile toolbars — use .first() to avoid strict mode error
     const fileChooserPromise = page.waitForEvent('filechooser', { timeout: 5000 });
     await page.locator('[data-testid="toolbar-image"]').first().click();
-
     const fileChooser = await fileChooserPromise;
-    expect(fileChooser).toBeTruthy();
-    // Cancel the file chooser (don't actually upload)
+    await fileChooser.setFiles({ name: 'picked-image.png', mimeType: 'image/png', buffer: TEST_IMAGE_BUFFER });
+
+    await uploadRequest;
+    await expectUploadedImageInserted(page);
   });
 
   test('clipboard paste inserts image', async ({ page }) => {
