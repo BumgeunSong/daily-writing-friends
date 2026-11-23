@@ -35,12 +35,15 @@ test.describe('Freewriting timer chip', () => {
   test('stays in "쓰는 중" through sustained Korean IME composition (>2s)', async ({
     authenticatedPage: page,
   }) => {
-    // Drive composition every 400ms for 4 seconds — well past the 2s pause
-    // window. Without the DOM-level listener fix, Tiptap onUpdate is silent
-    // during composition and the chip flips to "일시정지" mid-typing.
-    const syllables = ['가', '나', '다', '라', '마', '바', '사', '아', '자', '차'];
-    for (const syllable of syllables) {
-      await imeType(page, syllable);
+    // Chromium's CDP composition still dispatches ProseMirror transactions, so Tiptap's onUpdate
+    // keeps firing and hides this bug. Dispatch only DOM composition events, with no DOM
+    // mutation: that is the "onUpdate silent, only DOM events" condition the fix targets.
+    // Every 400ms for 4 seconds is well past the 2s pause window.
+    for (let i = 0; i < 10; i += 1) {
+      await page.evaluate(() => {
+        const editor = document.querySelector('.ProseMirror');
+        editor?.dispatchEvent(new CompositionEvent('compositionupdate', { data: '가', bubbles: true }));
+      });
       await page.waitForTimeout(400);
       await expect(writingChip(page)).toBeVisible();
     }
