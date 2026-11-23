@@ -75,7 +75,7 @@ pnpm e2e --project=chromium --repeat-each=10 --retries=0   # flaky 점검
 
 `.github/workflows/run-playwright.yml`이 PR마다 `chromium-data-flows`와 `chromium-non-member`만 실행한다. 그 밖의 spec은 CI에서 돌지 않는다.
 
-**알려진 공백:** `chromium-non-member`는 전역 `testIgnore`(`**/data-flows/**`)를 상속해서 지금은 아무 spec도 수집하지 않는다. `board-access.non-member.spec.ts`가 어느 프로젝트에서도 실행되지 않는다. `pnpm e2e --list --project=chromium-non-member`로 확인할 수 있다.
+`node scripts/e2e/check-collection.mjs`가 CI 프로젝트가 수집하지 않는 spec 파일을 찾아 실패시키고, 실제 실행 수가 수집 수와 다르면 실패시킨다. CI가 아직 돌릴 수 없는 spec은 이유와 함께 `tests/ci-uncollected.baseline.json`에 있고, 이 목록은 줄이기만 한다. 프로젝트에 `testIgnore`를 따로 주면 최상위 `testIgnore`를 대체한다(추가가 아니다).
 
 ## 자주 만나는 문제
 

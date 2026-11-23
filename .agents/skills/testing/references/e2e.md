@@ -10,10 +10,10 @@ Add E2E thinly, **only after unit and integration are placed**, and only for beh
 - Extension `*.spec.ts`. The Playwright API is `test.describe` / `test(...)` (no `it`).
 - Local Supabase is the backend. Run from the **repo root**, naming the project: `pnpm exec playwright test --project=chromium-data-flows <file>`. A bare `playwright test` runs every spec on every engine.
 - **What CI runs is defined by `.github/workflows/run-playwright.yml`**, not by the folder alone. Today CI runs only the `chromium-data-flows` and `chromium-non-member` projects. A spec outside `tests/data-flows/` shows up in plain `--list` but never runs in CI.
-- **Known gap:** `chromium-non-member` currently collects nothing. It inherits the top-level `testIgnore`, which excludes `**/data-flows/**` (`chromium-data-flows` overrides it, `chromium-non-member` does not). So `*.non-member.spec.ts` runs in no project at all. Do not assume a non-member spec is running: check with the `--list` command below.
+- **A guard keeps specs collected.** `node scripts/e2e/check-collection.mjs` (run in CI before the tests) fails when a spec file is collected by no CI project, and when the executed count differs from the collected count. Specs CI cannot run yet are listed in `tests/ci-uncollected.baseline.json` with a reason; that list only shrinks. `chromium-non-member` overrides the top-level `testIgnore` itself, so a project-level `testIgnore` replaces the top-level one instead of adding to it.
 - Routing by name and folder:
   - `tests/data-flows/*.spec.ts` → `chromium-data-flows` (authenticated member).
-  - `tests/data-flows/*.non-member.spec.ts` → `chromium-non-member` (intended; see the known gap above). Outside `data-flows/` this suffix routes nowhere useful.
+  - `tests/data-flows/*.non-member.spec.ts` → `chromium-non-member`.
   - `*.logged-out.spec.ts` in root `tests/` → `chromium-no-auth` (not run in CI).
   - Other root specs, including `tests/e2e/`, → the engine projects (`chromium`, `firefox`, `webkit`, `Mobile Chrome`), not run in CI.
 - Confirm a new spec is collected **by the CI projects**:
