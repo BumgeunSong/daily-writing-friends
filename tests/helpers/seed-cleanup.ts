@@ -40,21 +40,24 @@ async function adminDelete(table: string, filter: string): Promise<number> {
 }
 
 /**
- * Clean up posts created by write tests (title starts with e2e-write-).
+ * Clean up posts created by write tests (title contains the marker, default `e2e-write-`).
  * Also cleans up any comments/replies on those posts via cascade.
+ * Pass a test's own unique title to leave other tests' posts alone.
  */
-export async function cleanupWritePosts(): Promise<void> {
-  const count = await adminDelete('posts', `title=like.${encodeURIComponent(WRITE_PREFIX)}*`);
+export async function cleanupWritePosts(marker: string = WRITE_PREFIX): Promise<void> {
+  const count = await adminDelete('posts', `title=like.*${encodeURIComponent(marker)}*`);
   if (count > 0) {
     console.log(`  Cleaned up ${count} write-test posts`);
   }
 }
 
 /**
- * Clean up comments created by write tests (content starts with e2e-write-).
+ * Clean up comments created by write tests (content contains the marker, default `e2e-write-`).
+ * Comment content is stored as HTML (`<p>e2e-write-...</p>`), so the match must be a
+ * "contains", not a "starts with". Pass a test's own unique text to leave other tests alone.
  */
-export async function cleanupWriteComments(): Promise<void> {
-  const count = await adminDelete('comments', `content=like.${encodeURIComponent(WRITE_PREFIX)}*`);
+export async function cleanupWriteComments(marker: string = WRITE_PREFIX): Promise<void> {
+  const count = await adminDelete('comments', `content=like.*${encodeURIComponent(marker)}*`);
   if (count > 0) {
     console.log(`  Cleaned up ${count} write-test comments`);
   }
