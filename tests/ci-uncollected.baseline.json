@@ -4,10 +4,6 @@
     "reason": "chromium-no-auth 프로젝트에만 있고 CI가 그 프로젝트를 돌리지 않는다"
   },
   {
-    "file": "tests/comment-input.logged-out.spec.ts",
-    "reason": "integration으로 이전해 삭제 예정이다"
-  },
-  {
     "file": "tests/avatar-resize.spec.ts",
     "reason": "루트 spec은 엔진 프로젝트에만 있고 CI는 그 프로젝트를 돌리지 않는다"
   },
